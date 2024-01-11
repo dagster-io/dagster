@@ -12,6 +12,8 @@ Related Guides:
 
 * `Using Dagster with Polars tutorial </integrations/polars>`_
 
+Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
+
 Installation
 ~~~~~~~~~~~~
 .. code-block::
@@ -75,7 +77,7 @@ The same logic applies to partitioned assets:
     def downstream(upstream: Optional[pl.LazyFrame]):  # upstream will be None if it doesn't exist in storage
         ...
 
-Some IOManagers support saving/loading custom metadata along with the DataFrame. This is often useful for external systems which read the data outside of Dagster.
+Some IOManagers support saving/loading custom metadata along with the DataFrame. This is often useful for external systems which read the data outside of Dagster. The `DataFrameWithMetadata` is a type alias provided by :py:mod:`dagster_polars.types` for convenience.
 
 .. code-block:: python
 
@@ -87,47 +89,64 @@ Some IOManagers support saving/loading custom metadata along with the DataFrame.
         assert isinstance(upstream[0], pl.DataFrame)
         assert isinstance(upstream[1], dict)
 
-The following typing aliases are provided by :py:mod:`dagster_polars.types` for convenience:
- - `StorageMetadata` = `Dict[str, Any]`
- - `DataFramePartitions` = `Dict[str, DataFrame]`
- - `LazyFramePartitions` = `Dict[str, LazyFrame]`
- - `DataFrameWithMetadata` = `Tuple[DataFrame, StorageMetadata]`
- - `LazyFrameWithMetadata` = `Tuple[LazyFrame, StorageMetadata]`
- - `DataFramePartitionsWithMetadata` = `Dict[str, DataFrameWithMetadata]`
- - `LazyFramePartitionsWithMetadata` = `Dict[str, LazyFrameWithMetadata]`
 
-.. list-table::  behavior for supported type annotations
-   :widths: 25 75
+.. _Types:
+
+Type Annotation Behavior
+------------------------
+
+Type aliases like `DataFrameWithPartitions` are provided by :py:mod:`dagster_polars.types` for convenience.
+
+In the table below `StorageMetadata` expands to `Dict[str, Any]`.
+
+.. list-table:: Supported type annotations
+   :widths: 25 10 75
    :header-rows: 1
 
    * - Type annotation
+     - Type Alias
      - Behavior
    * - `DataFrame`
+     -
      - read/write DataFrame. Raise error if it's not found in storage.
    * - `LazyFrame`
+     -
      - read LazyFrame. Raise error if it's not found in storage.
    * - `Optional[DataFrame]`
+     -
      - read/write DataFrame. Skip if it's not found in storage or the output is `None`.
    * - `Optional[LazyFrame]`
+     -
      - read LazyFrame. Skip if it's not found in storage.
-   * - `DataFrameWithMetadata`
+   * - `Dict[str, DataFrame]`
+     - `DataFrameWithPartitions`
+     - read multiple DataFrames as `Dict[str, DataFrame]`. Raises an error for missing partitions, unless `"allow_missing_partitions"` input metadata is set to `True`
+   * - `Dict[str, LazyFrame]`
+     - `LazyFramePartitions`
+     - read multiple LazyFrames as `Dict[str, LazyFrame]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
+   * - `Tuple[DataFrame, StorageMetadata]`
+     - `DataFrameWithMetadata`
      - read/write DataFrame and metadata. Raise error if it's not found in storage.
-   * - `LazyFrameWithMetadata`
+   * - `Tuple[LazyFrame, StorageMetadata]`
+     - `LazyFrameWithMetadata`
      - read LazyFrame and metadata. Raise error if it's not found in storage.
    * - `Optional[DataFrameWithMetadata]`
+     -
      - read/write DataFrame and metadata. Skip if it's not found in storage or the output is `None`.
    * - `Optional[LazyFrameWithMetadata]`
+     -
      - read LazyFrame and metadata. Skip if it's not found in storage.
-   * - `DataFramePartitions`
-     - read multiple DataFrames as `Dict[str, DataFrame]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`
-   * - `LazyFramePartitions`
-     - read multiple LazyFrames as `Dict[str, LazyFrame]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`
-   * - `DataFramePartitionsWithMetadata`
-     - read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`
-   * - `LazyFramePartitionsWithMetadata`
-     - read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`
+   * - `Dict[str, DataFrameWithMetadata]`
+     - `DataFramePartitionsWithMetadata`
+     - read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
+   * - `Dict[str, LazyFrameWithMetadata]`
+     - `LazyFramePartitionsWithMetadata`
+     - read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
 
 Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
+
+API Documentation
+-----------------
 
 .. autoconfigurable:: BasePolarsUPathIOManager
   :annotation: IOManagerDefinition

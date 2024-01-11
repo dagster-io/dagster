@@ -123,7 +123,7 @@ def downstream(
 ```python
 import polars as pl
 from dagster import asset, StaticPartitionsDefinition
-from dagster_polars import DataFramePartitions, LazyFramePartitions
+from dagster_polars import PartitionedDataFrame, PartitionedLazyFrame
 
 
 @asset(
@@ -137,7 +137,7 @@ def upstream() -> pl.DataFrame:
 @asset(
     io_manager_key="polars_parquet_io_manager",
 )
-def downstream_eager(upstream: DataFramePartitions):
+def downstream_eager(upstream: PartitionedDataFrame):
     assert isinstance(upstream, dict)
     assert isinstance(upstream["a"], pl.DataFrame)
     assert isinstance(upstream["b"], pl.DataFrame)
@@ -146,7 +146,7 @@ def downstream_eager(upstream: DataFramePartitions):
 @asset(
     io_manager_key="polars_parquet_io_manager",
 )
-def downstream_lazy(upstream: LazyFramePartitions):
+def downstream_lazy(upstream: PartitionedLazyFrame):
     assert isinstance(upstream, dict)
     assert isinstance(upstream["a"], pl.LazyFrame)
     assert isinstance(upstream["b"], pl.LazyFrame)
