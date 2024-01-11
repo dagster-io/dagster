@@ -1,0 +1,144 @@
+---
+title: "Scheduling an Asset | Dagster Docs"
+description: "Learn how to schedule Dagster Assets."
+---
+
+# Running an Asset on a Schedule
+
+Once you have created a [Software-Defined Asset](/concepts/assets/software-defiend-assets), the natural next step is to run it automatically on a schedule.
+
+In Dagster, there are two ways in which assets are automatically run on a schedule:
+
+- [Schedules and Jobs](/concepts/partitions-schedules-sensors/schedules)
+- [Auto-Materialized Policies](/concepts/assets/asset-auto-execution)
+
+In this guide, we will show you how to use both of these methods to automatically run your assets on a defined schedule.
+
+Our example will create two assets, `hello` and `world`, and then run them on a predefined cron schedule at 4am.
+
+---
+
+## Using Schedules and Jobs
+
+In Dagster, Schedules are attached to a [Job](/concepts/ops-jobs-graphs/jobs) and are used to run a pipeline on a schedule.
+
+A Schedule is a good choice for running a set of assets on a schedule if those assets are attached to a job.
+
+First, we will define two assets that we wish to run on a schedule:
+
+```python file=/concepts/schedules/schedule-assets.py startafter=start_asset_marker endbefore=end_asset_marker
+from dagster import asset
+
+
+@asset
+def hello():
+    return "hello"
+
+
+@asset(deps=[hello])
+def world():
+    return "world"
+```
+
+Since a schedule requires a job to be defined, our next step is to add these assets to a job. We will use the `asset_name*` [`AssetSelection`](/\_apidocs/assets#dagster.AssetSelection) syntax to select the `hello` job and all downstream assets:
+
+```python file=/concepts/schedules/schedule-assets.py startafter=start_job_marker endbefore=end_job_marker
+from dagster import define_asset_job
+
+hello_world_job = define_asset_job("hello_world_job", selection="hello+")
+```
+
+With the assets defined and attached to a job, we can now define a schedule that will run the job at 4am every day:
+
+```python file=/concepts/schedules/schedule-assets.py startafter=start_schedule_marker endbefore=end_schedule_marker
+from dagster import ScheduleDefinition
+
+hello_schedule = ScheduleDefinition(
+    name="my_first_schedule",
+    cron_schedule="0 4 * * *",
+    job=hello_world_job,
+    description="A daily schedule that says hello and world",
+)
+```
+
+With our assets and schedule defined, we can now add them to a Definitions, which will allow Dagster to see what we have just created:
+
+```python file=/concepts/schedules/schedule-assets.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[hello, world],
+    jobs=[hello_world_job],
+    schedules=[hello_schedule],
+)
+```
+
+Here is the full code from our example.
+
+```python file=/concepts/schedules/schedule-assets.py hidecomments=true
+from dagster import asset
+
+
+@asset
+def hello():
+    return "hello"
+
+
+@asset(deps=[hello])
+def world():
+    return "world"
+
+
+
+from dagster import define_asset_job
+
+hello_world_job = define_asset_job("hello_world_job", selection="hello+")
+
+
+from dagster import ScheduleDefinition
+
+hello_schedule = ScheduleDefinition(
+    name="my_first_schedule",
+    cron_schedule="0 4 * * *",
+    job=hello_world_job,
+    description="A daily schedule that says hello and world",
+)
+
+
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[hello, world],
+    jobs=[hello_world_job],
+    schedules=[hello_schedule],
+)
+```
+
+If we save this file, for example, to `hello-schedule.py` then we can test it out by running:
+
+```shell
+dagster dev -f hello-schedule.py
+```
+
+You can try Materializing the asset by clicking on it and clicking Materialize Asset, and you can confirm the schedule has been created by visiting the Schedules page under Overview.
+
+Note that Schedules must be explicitly enabled before they will run.
+
+## Using Auto-Materialized Policies
+
+Another approach to automating the execution of assets is to use [Auto-Materialized Policies](/concepts/assets/asset-auto-execution). Auto-Materialized Policies help reduce the complexity of scheduling assets by enabling a declarative approach to scheduling. While there are many possible policies that you can use, we will focus on the [`AutoMaterializeRule.materialize_on_cron`](/assets#dagster.AutoMaterializeRule.materialize_on_cron) rule, which will automatically materialize an asset on a cron schedule, similar to the schedule we created above.
+
+First, we'll define a `AutoMaterializePolicy.eager` which we will supplement with a `materialize_on_cron` Rule.
+
+The `AutoMaterializePolicy.eager` policy will automatically materialize an asset when its parent has been updated or if it has never been materialized before by default. We add a cron-schedule to ensure that the asset is also materialized on a schedule.
+
+Next, we apply the policy we created to the `world` asset. Dagster will now run the `world` aset on a schedule and whenever its parent `hello` asset is updated.
+
+Note that there is a subtle difference between the AutoMaterializePolicy and our original Schedule. Here, Dagster is more eager about ensuring this asset gets updated.
+
+We've also only applied the policy the final asset, which means the `hello` asset will not automatically be updated. If we wanted to ensure both are updated, we could apply the same policy to both assets.
+
+```python file=/concepts/schedules/schedule-assets.py startafter=start_policy_marker endbefore=end_policy_marker
+No match for startAfter value "start_policy_marker"
+```

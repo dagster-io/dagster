@@ -36,7 +36,7 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
       codes.push([node, index]);
     });
 
-    const optionKeys = ['lines', 'startafter', 'endbefore', 'dedent', 'trim'];
+    const optionKeys = ['lines', 'startafter', 'endbefore', 'dedent', 'trim', 'hidecomments'];
 
     const stats: CodeBlockStats = {
       totalCodeBlocks: 0,
@@ -56,8 +56,10 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
         startafter?: string;
         endbefore?: string;
         trim?: boolean;
+        hidecomments?: boolean;
       } = {
         trim: true,
+        hidecomments: false,
       };
 
       for (const option of optionKeys) {
@@ -83,6 +85,10 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
         // remove pragmas
         contentWithLimit = contentWithLimit.replace(/^\s*# (type|ruff|isort|noqa):.*$/g, '');
         contentWithLimit = contentWithLimit.replace(/  # (type|ruff|isort|noqa):.*$/g, '');
+
+        if (metaOptions.hidecomments) {
+          contentWithLimit = contentWithLimit.replace(/^\s*#.*$/gm, '');
+        }
 
         if (metaOptions.trim) {
           contentWithLimit = contentWithLimit.trim();
