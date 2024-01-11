@@ -20,6 +20,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
+    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -614,6 +615,26 @@ def test_dbt_with_downstream_asset():
     assert len(downstream_of_dbt.input_names) == 2
     assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
     assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
+
+
+def test_dbt_with_custom_resource_key() -> None:
+    dbt_resource_key = "my_custom_dbt_resource_key"
+
+    @dbt_assets(manifest=test_dagster_metadata_manifest, required_resource_keys={dbt_resource_key})
+    def my_dbt_assets(context: AssetExecutionContext):
+        dbt = getattr(context.resources, dbt_resource_key)
+
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            dbt_resource_key: DbtCliResource(
+                project_dir=os.fspath(test_dagster_metadata_manifest_path.joinpath("..").resolve())
+            )
+        },
+    )
+    assert result.success
 
 
 def test_dbt_with_python_interleaving() -> None:
