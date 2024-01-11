@@ -134,6 +134,8 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 
 ## Routing requests to specific agents
 
+<Note>Agent queues are a Dagster Cloud Enterprise feature.</Note>
+
 Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
 
 In some cases, you might want to route requests for certain code locations to specific agents. For example, routing requests for one code location to an agent running in an on-premise data center, but then routing requests for all other code locations to an agent running in AWS.
