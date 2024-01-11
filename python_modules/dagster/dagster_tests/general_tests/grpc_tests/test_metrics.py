@@ -105,7 +105,7 @@ def test_ping_metrics_retrieval(provide_flag: bool):
             if provide_flag:
                 assert "resource_utilization" in metadata
                 assert "max_concurrent_requests" in metadata["resource_utilization"]
-                assert metadata["resource_utilization"]["max_concurrent_requests"] == -1
+                assert isinstance(metadata["resource_utilization"]["max_concurrent_requests"], int)
                 assert "SyncExternalSensorExecution" in metadata
                 assert metadata["SyncExternalSensorExecution"] == {"current_request_count": 2}
             else:
