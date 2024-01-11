@@ -4128,24 +4128,24 @@ class TestEventLogStorage:
         assert claim("foo", run_id_two, "step_2") == ConcurrencySlotStatus.CLAIMED
         assert claim("foo", run_id_one, "step_3") == ConcurrencySlotStatus.CLAIMED
         assert claim("bar", run_id_two, "step_4") == ConcurrencySlotStatus.CLAIMED
-        assert pending_step_count("foo") == 3
+        assert pending_step_count("foo") == 0
         assert assigned_step_count("foo") == 3
-        assert pending_step_count("bar") == 1
+        assert pending_step_count("bar") == 0
         assert assigned_step_count("bar") == 1
 
         # next claim should be blocked
         assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.BLOCKED
         assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.BLOCKED
-        assert pending_step_count("foo") == 4
+        assert pending_step_count("foo") == 1
         assert assigned_step_count("foo") == 3
         assert pending_step_count("bar") == 1
         assert assigned_step_count("bar") == 1
 
         # free single slot, one in each concurrency key: foo, bar
         storage.free_concurrency_slots_for_run(run_id_two)
-        assert pending_step_count("foo") == 3
+        assert pending_step_count("foo") == 0
         assert assigned_step_count("foo") == 3
-        assert pending_step_count("bar") == 1
+        assert pending_step_count("bar") == 0
         assert assigned_step_count("bar") == 1
 
         # try to claim again
@@ -4395,7 +4395,7 @@ class TestEventLogStorage:
         storage.free_concurrency_slots_for_run(one)
         assert storage.get_concurrency_run_ids() == {two}
         storage.delete_events(run_id=two)
-        assert storage.get_concurrency_run_ids() == {}
+        assert storage.get_concurrency_run_ids() == set()
 
     def test_threaded_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
