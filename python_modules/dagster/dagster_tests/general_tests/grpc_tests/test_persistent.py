@@ -667,7 +667,7 @@ def test_load_with_missing_env_var(entrypoint):
             list_repositories_response = deserialize_value(
                 client.list_repositories(), SerializableErrorInfo
             )
-            assert "Missing env var" in list_repositories_response.message
+            assert "Missing env var" in str(list_repositories_response)
         finally:
             client.shutdown_server()
             process.communicate(timeout=30)

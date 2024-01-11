@@ -477,6 +477,13 @@ class TestRunStorage:
         assert runs_with_multiple_tag_values[1].run_id == two
         assert runs_with_multiple_tag_values[2].run_id == one
 
+        multiple_tags_values_filter = RunsFilter(
+            tags={"tag": ["hello", "goodbye", "farewell"], "tag2": "world"},
+        )
+        runs_with_multiple_tags_values = storage.get_runs(multiple_tags_values_filter)
+        assert len(runs_with_multiple_tags_values) == 1
+        assert runs_with_multiple_tags_values[0].run_id == one
+
         count_with_multiple_tag_values = storage.get_runs_count(multiple_tag_values_filter)
         assert count_with_multiple_tag_values == 3
 

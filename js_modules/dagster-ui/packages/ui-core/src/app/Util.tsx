@@ -93,10 +93,15 @@ export const formatElapsedTimeWithoutMsec = (msec: number) => {
 
 export const formatElapsedTimeWithMsec = (msec: number) => {
   const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+
   const negative = msec < 0;
-  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(
-    seconds,
-  )}${formatMsecMantissa(milliseconds)}`;
+  const sign = negative ? '-' : '';
+  const hourStr = hours > 0 ? `${hours}:` : '';
+  const minuteStr = hours > 0 ? `${twoDigit(minutes)}:` : minutes > 0 ? `${minutes}:` : '';
+  const secStr = hours > 0 || minutes > 0 ? `${twoDigit(seconds)}` : `${seconds}`;
+  const mantissa = formatMsecMantissa(milliseconds);
+
+  return `${sign}${hourStr}${minuteStr}${secStr}${mantissa}`;
 };
 
 export function breakOnUnderscores(str: string) {

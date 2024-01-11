@@ -150,3 +150,53 @@ def partitions_defs_changes_location_2_fixture(
         instance=instance_module_scoped,
     ) as workspace_context:
         yield workspace_context
+
+
+def base_job_name_changes_workspace_1_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_1",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="base_job_name_changes",
+        )
+    )
+
+
+@pytest.fixture(name="base_job_name_changes_location_1_workspace_context", scope="module")
+def base_job_name_changes_location_1_fixture(
+    instance_module_scoped,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=base_job_name_changes_workspace_1_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context
+
+
+def base_job_name_changes_workspace_2_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_2",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="base_job_name_changes",
+        )
+    )
+
+
+@pytest.fixture(name="base_job_name_changes_location_2_workspace_context", scope="module")
+def base_job_name_changes_location_2_fixture(
+    instance_module_scoped,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=base_job_name_changes_workspace_2_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context

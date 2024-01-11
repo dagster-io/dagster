@@ -236,6 +236,7 @@ class ExternalRepository:
                     metadata=None,
                     default_status=None,
                     sensor_type=SensorType.AUTOMATION_POLICY,
+                    run_tags=None,
                 )
                 sensor_datas[default_sensor_data.name] = ExternalSensor(
                     default_sensor_data, self._handle
@@ -863,6 +864,10 @@ class ExternalSensor:
         ):
             return self._external_sensor_data.min_interval
         return DEFAULT_SENSOR_DAEMON_INTERVAL
+
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        return self._external_sensor_data.run_tags
 
     def get_external_origin(self) -> ExternalInstigatorOrigin:
         return self._handle.get_external_origin()

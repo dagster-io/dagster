@@ -27,7 +27,7 @@
     "add": "^2.0.6",
     "amator": "^1.1.0",
     "autoprefixer": "^10.1.0",
-    "axios": "^1.6.0",
+    "axios": "^1.6.5",
     "classnames": "^2.2.6",
     "eslint-config-next": "^13.4.19",
     "fast-glob": "^3.2.5",

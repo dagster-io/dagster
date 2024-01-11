@@ -41,7 +41,7 @@ export const AssetNodeLineageGraph = ({
     return {allGroups: Object.keys(groupedAssets), groupedAssets};
   }, [assetGraphData]);
 
-  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+  const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
   // and so that different assets dont invalidate each others layout
@@ -98,6 +98,7 @@ export const AssetNodeLineageGraph = ({
                     assets: groupedAssets[group.id]!,
                   }}
                   minimal={scale < MINIMAL_SCALE}
+                  setHighlighted={setHighlighted}
                 />
               </foreignObject>
             ))}
@@ -125,7 +126,7 @@ export const AssetNodeLineageGraph = ({
                   {...bounds}
                   key={id}
                   style={{overflow: 'visible'}}
-                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
                   onClick={() => onClickAsset({path})}
                   onDoubleClick={(e) => {

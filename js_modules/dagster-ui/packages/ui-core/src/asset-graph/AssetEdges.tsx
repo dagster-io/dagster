@@ -7,7 +7,7 @@ import {AssetLayoutEdge} from './layout';
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
   selected: string[] | null;
-  highlighted: string | null;
+  highlighted: string[] | null;
   strokeWidth?: number;
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
@@ -42,8 +42,8 @@ export const AssetEdges = ({
           ({fromId, toId}) =>
             selected?.includes(fromId) ||
             selected?.includes(toId) ||
-            highlighted === fromId ||
-            highlighted === toId,
+            highlighted?.includes(fromId) ||
+            highlighted?.includes(toId),
         )}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
