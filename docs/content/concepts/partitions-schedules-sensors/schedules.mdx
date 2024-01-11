@@ -326,6 +326,15 @@ Once the schedule is started, the schedule will begin executing immediately if y
 
 ## Logging in schedules
 
+<Note>
+  Schedule logs are stored in your{" "}
+  <a href="/deployment/dagster-instance#compute-log-storage">
+    Dagster instance's compute log storage
+  </a>
+  . You should ensure that your compute log storage is configured to view your schedule
+  logs.
+</Note>
+
 Any schedule can emit log messages during its evaluation function:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
