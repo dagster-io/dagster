@@ -24,7 +24,7 @@ describe('TickTag', () => {
 
       render(<TickStatusTag tick={skippedTick} />);
 
-      const tag = screen.queryByText(/0 requested/i);
+      const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();
 
       await userEvent.hover(tag as HTMLElement);
@@ -38,7 +38,7 @@ describe('TickTag', () => {
 
       render(<TickStatusTag tick={skippedTick} />);
 
-      const tag = screen.queryByText(/0 requested/i);
+      const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();
 
       await userEvent.hover(tag as HTMLElement);
