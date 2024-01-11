@@ -2,12 +2,16 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {
   PartitionDefinitionType,
+  buildAsset,
   buildAssetNode,
+  buildAssetPartitions,
   buildDefaultPartitionStatuses,
   buildDimensionPartitionKeys,
+  buildMultiPartitionStatuses,
 } from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
+import {buildQueryMock} from '../../testing/mocking';
 
 export const buildPartitionHealthMock = (
   assetKey: string,

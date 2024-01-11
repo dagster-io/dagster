@@ -425,7 +425,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     if (target.type === 'pureWithAnchorAsset') {
       notices.push(
         `Dagster will materialize all partitions downstream of the ` +
-          `selected partitions for the selected assets, using separate runs 
+          `selected partitions for the selected assets, using separate runs
                 ${backfillPolicyVaries ? `and obeying backfill policies.` : `as needed.`}`,
       );
     } else if (backfillPolicyVaries) {

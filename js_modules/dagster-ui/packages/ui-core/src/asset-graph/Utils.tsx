@@ -233,6 +233,7 @@ export const buildLiveDataForNode = (
 };
 
 export function tokenForAssetKey(key: {path: string[]}) {
+  console.log(key);
   return key.path.join('/');
 }
 
