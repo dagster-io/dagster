@@ -25,10 +25,6 @@
 - **Report arbitrary messages between pipes processes and the orchestrating process** – with `report_custom_message` and `get_custom_messages`.
 - **Termination forwarding** – ensures that external processes are terminated when an orchestration process is.
 
-### Dagster Cloud
-
-- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For example, you can route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to another agent running in the cloud. For more information, see [https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
-
 ## **Since 1.5.14 (core) / 0.21.14 (libraries)**
 
 ### New
@@ -62,7 +58,7 @@
 
 ### Dagster Cloud
 
-- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For more information, see [https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
+- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For example, you can route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to another agent running in the cloud. For more information, see [the docs](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
 
 # 1.5.14 / 0.21.14 (libraries)
 
