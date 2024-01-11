@@ -338,7 +338,6 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
-  automationPolicySensor: Maybe<Sensor>;
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
@@ -380,6 +379,7 @@ export type AssetNode = {
   staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
   staleStatusByPartition: Array<StaleStatus>;
+  targetingInstigators: Array<Instigator>;
   type: Maybe<DagsterType>;
 };
 
@@ -1638,6 +1638,8 @@ export enum InstigationType {
 }
 
 export type InstigationTypeSpecificData = ScheduleData | SensorData;
+
+export type Instigator = Schedule | Sensor;
 
 export type IntMetadataEntry = MetadataEntry & {
   __typename: 'IntMetadataEntry';
@@ -5181,12 +5183,6 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
-    automationPolicySensor:
-      overrides && overrides.hasOwnProperty('automationPolicySensor')
-        ? overrides.automationPolicySensor!
-        : relationshipsToOmit.has('Sensor')
-        ? ({} as Sensor)
-        : buildSensor({}, relationshipsToOmit),
     backfillPolicy:
       overrides && overrides.hasOwnProperty('backfillPolicy')
         ? overrides.backfillPolicy!
@@ -5316,6 +5312,10 @@ export const buildAssetNode = (
     staleStatusByPartition:
       overrides && overrides.hasOwnProperty('staleStatusByPartition')
         ? overrides.staleStatusByPartition!
+        : [],
+    targetingInstigators:
+      overrides && overrides.hasOwnProperty('targetingInstigators')
+        ? overrides.targetingInstigators!
         : [],
     type:
       overrides && overrides.hasOwnProperty('type')
