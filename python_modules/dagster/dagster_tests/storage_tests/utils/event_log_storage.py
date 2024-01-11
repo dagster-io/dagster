@@ -307,7 +307,7 @@ def _store_materialization_events(storage, ops_fn, instance, run_id):
     return last_materialization.storage_id + 1
 
 
-def _fetch_all_events(configured_storage, run_id=None):
+def _fetch_all_events(configured_storage, run_id=None) -> Sequence[Tuple[str]]:
     with configured_storage.run_connection(run_id=run_id) as conn:
         res = conn.execute(db.text("SELECT event from event_logs"))
         return res.fetchall()
@@ -461,7 +461,7 @@ class TestEventLogStorage:
     def set_default_op_concurrency(self, instance, storage, limit):
         pass
 
-    def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
+    def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage: EventLogStorage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
             EventLogEntry(
@@ -484,7 +484,11 @@ class TestEventLogStorage:
             storage.wipe()
             assert len(storage.get_logs_for_run(test_run_id)) == 0
 
-    def test_event_log_storage_store_with_multiple_runs(self, instance, storage):
+    def test_event_log_storage_store_with_multiple_runs(
+        self,
+        instance: DagsterInstance,
+        storage: EventLogStorage,
+    ):
         runs = ["foo", "bar", "baz"]
         if instance:
             for run in runs:
@@ -521,7 +525,11 @@ class TestEventLogStorage:
 
     # .watch() is async, there's a small chance they don't run before the asserts
     @pytest.mark.flaky(reruns=1)
-    def test_event_log_storage_watch(self, test_run_id, storage):
+    def test_event_log_storage_watch(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
 
@@ -585,7 +593,12 @@ class TestEventLogStorage:
 
         assert [int(evt.user_message) for evt in watched] == [2, 3, 4]
 
-    def test_event_log_storage_pagination(self, test_run_id, instance, storage):
+    def test_event_log_storage_pagination(
+        self,
+        test_run_id: str,
+        instance: DagsterInstance,
+        storage: EventLogStorage,
+    ):
         with create_and_delete_test_runs(instance, ["other_run"]):
             # two runs events to ensure pagination is not affected by other runs
             storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
@@ -603,7 +616,11 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(test_run_id, 2)) == 1
             assert len(storage.get_logs_for_run(test_run_id, 3)) == 0
 
-    def test_event_log_delete(self, test_run_id, storage):
+    def test_event_log_delete(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(create_test_event_log_record(str(0), test_run_id))
         assert len(storage.get_logs_for_run(test_run_id)) == 1
@@ -611,13 +628,21 @@ class TestEventLogStorage:
         storage.delete_events(test_run_id)
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
-    def test_event_log_get_stats_without_start_and_success(self, test_run_id, storage):
+    def test_event_log_get_stats_without_start_and_success(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         # When an event log doesn't have a PIPELINE_START or PIPELINE_SUCCESS | PIPELINE_FAILURE event,
         # we want to ensure storage.get_stats_for_run(...) doesn't throw an error.
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         assert storage.get_stats_for_run(test_run_id)
 
-    def test_event_log_get_stats_for_run(self, test_run_id, storage):
+    def test_event_log_get_stats_for_run(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         import math
 
         enqueued_time = time.time()
@@ -662,11 +687,19 @@ class TestEventLogStorage:
                 ),
             )
         )
-        assert math.isclose(storage.get_stats_for_run(test_run_id).enqueued_time, enqueued_time)
-        assert math.isclose(storage.get_stats_for_run(test_run_id).launch_time, launched_time)
-        assert math.isclose(storage.get_stats_for_run(test_run_id).start_time, start_time)
+        stats = storage.get_stats_for_run(test_run_id)
+        assert stats.enqueued_time
+        assert math.isclose(stats.enqueued_time, enqueued_time)
+        assert stats.launch_time
+        assert math.isclose(stats.launch_time, launched_time)
+        assert stats.start_time
+        assert math.isclose(stats.start_time, start_time)
 
-    def test_event_log_step_stats(self, test_run_id, storage):
+    def test_event_log_step_stats(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         # When an event log doesn't have a PIPELINE_START or PIPELINE_SUCCESS | PIPELINE_FAILURE event,
         # we want to ensure storage.get_stats_for_run(...) doesn't throw an error.
 
@@ -678,31 +711,43 @@ class TestEventLogStorage:
 
         a_stats = next(stats for stats in step_stats if stats.step_key == "A")
         assert a_stats.step_key == "A"
+        assert a_stats.status
         assert a_stats.status.value == "SUCCESS"
+        assert a_stats.end_time
+        assert a_stats.start_time
         assert a_stats.end_time - a_stats.start_time == 100
         assert len(a_stats.attempts_list) == 1
 
         b_stats = next(stats for stats in step_stats if stats.step_key == "B")
         assert b_stats.step_key == "B"
+        assert b_stats.status
         assert b_stats.status.value == "FAILURE"
+        assert b_stats.end_time
+        assert b_stats.start_time
         assert b_stats.end_time - b_stats.start_time == 50
         assert len(b_stats.attempts_list) == 1
 
         c_stats = next(stats for stats in step_stats if stats.step_key == "C")
         assert c_stats.step_key == "C"
+        assert c_stats.status
         assert c_stats.status.value == "SKIPPED"
+        assert c_stats.end_time
+        assert c_stats.start_time
         assert c_stats.end_time - c_stats.start_time == 25
         assert len(c_stats.attempts_list) == 1
 
         d_stats = next(stats for stats in step_stats if stats.step_key == "D")
         assert d_stats.step_key == "D"
+        assert d_stats.status
         assert d_stats.status.value == "SUCCESS"
+        assert d_stats.end_time
+        assert d_stats.start_time
         assert d_stats.end_time - d_stats.start_time == 150
         assert len(d_stats.materialization_events) == 3
         assert len(d_stats.expectation_results) == 2
         assert len(c_stats.attempts_list) == 1
 
-    def test_secondary_index(self, storage):
+    def test_secondary_index(self, storage: EventLogStorage):
         if not isinstance(storage, SqlEventLogStorage):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
@@ -720,7 +765,11 @@ class TestEventLogStorage:
         assert storage.has_secondary_index("_A")
         assert storage.has_secondary_index("_B")
 
-    def test_basic_event_store(self, test_run_id, storage):
+    def test_basic_event_store(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
         from collections import Counter as CollectionsCounter
 
         if not isinstance(storage, SqlEventLogStorage):
@@ -1045,6 +1094,7 @@ class TestEventLogStorage:
             assert len(records) == 1
             record = records[0]
             assert isinstance(record, EventLogRecord)
+            assert record.event_log_entry.dagster_event
             assert record.event_log_entry.dagster_event.asset_key == asset_key
 
             # new API
@@ -1052,6 +1102,7 @@ class TestEventLogStorage:
             assert isinstance(result, EventRecordsResult)
             assert len(result.records) == 1
             record = result.records[0]
+            assert record.event_log_entry.dagster_event
             assert record.event_log_entry.dagster_event.asset_key == asset_key
             assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
@@ -2902,7 +2953,7 @@ class TestEventLogStorage:
                 }
             )
 
-    def test_get_observation(self, storage, test_run_id):
+    def test_get_observation(self, storage: EventLogStorage, test_run_id: str):
         a = AssetKey(["key_a"])
 
         @op
@@ -2935,10 +2986,11 @@ class TestEventLogStorage:
             assert isinstance(result, EventRecordsResult)
             assert len(result.records) == 1
             record = result.records[0]
+            assert record.event_log_entry.dagster_event
             assert record.event_log_entry.dagster_event.asset_key == a
             assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
-    def test_get_planned_materialization(self, storage, test_run_id):
+    def test_get_planned_materialization(self, storage: EventLogStorage, test_run_id: str):
         a = AssetKey(["key_a"])
 
         storage.store_event(
@@ -2970,10 +3022,15 @@ class TestEventLogStorage:
         assert isinstance(result, EventRecordsResult)
         assert len(result.records) == 1
         record = result.records[0]
+        assert record.event_log_entry.dagster_event
         assert record.event_log_entry.dagster_event.asset_key == a
         assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
-    def test_asset_key_exists_on_observation(self, storage, instance):
+    def test_asset_key_exists_on_observation(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         key = AssetKey("hello")
 
         @op
@@ -3009,7 +3066,12 @@ class TestEventLogStorage:
 
                     assert [key] == storage.all_asset_keys()
 
-    def test_filter_on_storage_ids(self, storage, instance, test_run_id):
+    def test_filter_on_storage_ids(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+        test_run_id: str,
+    ):
         a = AssetKey(["key_a"])
 
         @op
@@ -3056,7 +3118,11 @@ class TestEventLogStorage:
                 == 1
             )
 
-    def test_get_asset_records(self, storage, instance):
+    def test_get_asset_records(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         @asset
         def my_asset():
             return 1
@@ -3099,6 +3165,7 @@ class TestEventLogStorage:
                 materialize_event = next(
                     event for event in result.all_events if event.is_step_materialization
                 )
+                assert asset_entry.last_materialization
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details is None
@@ -3130,7 +3197,7 @@ class TestEventLogStorage:
                     records = storage.get_asset_records()  # should select all assets
                     assert len(records) == 2
 
-                    records.sort(
+                    list(records).sort(
                         key=lambda record: record.asset_entry.asset_key
                     )  # order by asset key
                     asset_entry = records[0].asset_entry
@@ -3138,11 +3205,16 @@ class TestEventLogStorage:
                     materialize_event = next(
                         event for event in result.all_events if event.is_step_materialization
                     )
+                    assert asset_entry.last_materialization
                     assert asset_entry.last_materialization.dagster_event == materialize_event
                     assert asset_entry.last_run_id == result.run_id
                     assert isinstance(asset_entry.asset_details, AssetDetails)
 
-    def test_asset_record_run_id_wiped(self, storage, instance):
+    def test_asset_record_run_id_wiped(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         asset_key = AssetKey("foo")
 
         @op
@@ -3195,7 +3267,11 @@ class TestEventLogStorage:
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                     assert asset_entry.last_run_id is None
 
-    def test_last_run_id_updates_on_materialization_planned(self, storage, instance):
+    def test_last_run_id_updates_on_materialization_planned(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         @asset
         def never_materializes_asset():
             raise Exception("foo")
@@ -3237,7 +3313,7 @@ class TestEventLogStorage:
                     assert len(records) == 1
                     assert result.run_id == records[0].asset_entry.last_run_id
 
-    def test_get_logs_for_all_runs_by_log_id_of_type(self, storage):
+    def test_get_logs_for_all_runs_by_log_id_of_type(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
             pytest.skip("storage does not support event consumer queries")
 
@@ -3279,7 +3355,7 @@ class TestEventLogStorage:
             DagsterEventType.RUN_SUCCESS,
         ]
 
-    def test_get_logs_for_all_runs_by_log_id_cursor(self, storage):
+    def test_get_logs_for_all_runs_by_log_id_cursor(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
             pytest.skip("storage does not support event consumer queries")
 
@@ -3323,7 +3399,7 @@ class TestEventLogStorage:
             DagsterEventType.RUN_SUCCESS,
         ]
 
-    def test_get_logs_for_all_runs_by_log_id_limit(self, storage):
+    def test_get_logs_for_all_runs_by_log_id_limit(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
             pytest.skip("storage does not support event consumer queries")
 
@@ -3353,7 +3429,7 @@ class TestEventLogStorage:
             DagsterEventType.STEP_SUCCESS,
         ]
 
-    def test_get_maximum_record_id(self, storage):
+    def test_get_maximum_record_id(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
             pytest.skip("storage does not support event consumer queries")
 
@@ -3396,7 +3472,11 @@ class TestEventLogStorage:
 
         assert storage.get_maximum_record_id() == index + 10
 
-    def test_get_materialization_tag(self, storage, instance):
+    def test_get_materialization_tag(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         key = AssetKey("hello")
 
         @op
@@ -3440,7 +3520,11 @@ class TestEventLogStorage:
         asset_event_tags = storage.get_event_tags_for_asset(key)
         assert asset_event_tags == []
 
-    def test_add_asset_event_tags(self, storage, instance):
+    def test_add_asset_event_tags(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         if not storage.supports_add_asset_event_tags():
             pytest.skip("storage does not support adding asset event tags")
 
@@ -3477,7 +3561,7 @@ class TestEventLogStorage:
                     "dagster/partition/date": "2022-10-13",
                 }
             ]
-
+            assert mat_record.asset_key
             storage.add_asset_event_tags(
                 event_id=mat_record.storage_id,
                 event_timestamp=mat_record.event_log_entry.timestamp,
@@ -3513,7 +3597,11 @@ class TestEventLogStorage:
                 }
             ]
 
-    def test_add_asset_event_tags_initially_empty(self, storage, instance):
+    def test_add_asset_event_tags_initially_empty(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         if not storage.supports_add_asset_event_tags():
             pytest.skip("storage does not support adding asset event tags")
         key = AssetKey("hello")
@@ -3539,7 +3627,7 @@ class TestEventLogStorage:
             assert (
                 storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == []
             )
-
+            assert mat_record.asset_key
             storage.add_asset_event_tags(
                 event_id=mat_record.storage_id,
                 event_timestamp=mat_record.event_log_entry.timestamp,
@@ -3551,7 +3639,11 @@ class TestEventLogStorage:
                 {"a": "apple", "b": "boot"}
             ]
 
-    def test_materialization_tag_on_wipe(self, storage, instance):
+    def test_materialization_tag_on_wipe(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         key = AssetKey("hello")
 
         @op
@@ -3678,7 +3770,11 @@ class TestEventLogStorage:
                     {"dagster/partition/country": "Brazil", "dagster/partition/date": "2022-10-13"}
                 ]
 
-    def test_event_record_filter_tags(self, storage, instance):
+    def test_event_record_filter_tags(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         key = AssetKey("hello")
 
         @op
@@ -3743,6 +3839,7 @@ class TestEventLogStorage:
             )
             assert len(materializations) == 2
             for record in materializations:
+                assert record.event_log_entry.dagster_event
                 materialization = (
                     record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
@@ -3778,9 +3875,11 @@ class TestEventLogStorage:
             )
             assert len(materializations) == 3
             for record in materializations:
+                assert record.event_log_entry.dagster_event
                 materialization = (
                     record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
+                assert isinstance(materialization.partition, MultiPartitionKey)
                 date_dimension = next(
                     dimension
                     for dimension in materialization.partition.dimension_keys
@@ -3797,7 +3896,11 @@ class TestEventLogStorage:
                 )
             )
 
-    def test_multi_partitions_partition_deserialization(self, storage, instance):
+    def test_multi_partitions_partition_deserialization(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         key = AssetKey("hello")
 
         @op
@@ -3839,7 +3942,11 @@ class TestEventLogStorage:
                 MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
             }
 
-    def test_store_and_wipe_cached_status(self, storage, instance):
+    def test_store_and_wipe_cached_status(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         asset_key = AssetKey("yay")
 
         @op
@@ -3917,7 +4024,7 @@ class TestEventLogStorage:
 
                 assert _get_cached_status_for_asset(storage, asset_key) is None
 
-    def test_add_dynamic_partitions(self, storage):
+    def test_add_dynamic_partitions(self, storage: EventLogStorage):
         assert storage
 
         assert storage.get_dynamic_partitions("foo") == []
@@ -3945,7 +4052,7 @@ class TestEventLogStorage:
         # Adding no partitions is a no-op
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=[])
 
-    def test_delete_dynamic_partitions(self, storage):
+    def test_delete_dynamic_partitions(self, storage: EventLogStorage):
         assert storage
 
         assert storage.get_dynamic_partitions("foo") == []
@@ -3965,7 +4072,7 @@ class TestEventLogStorage:
         storage.delete_dynamic_partition(partitions_def_name="bar", partition_key="foo")
         assert set(storage.get_dynamic_partitions("baz")) == set()
 
-    def test_has_dynamic_partition(self, storage):
+    def test_has_dynamic_partition(self, storage: EventLogStorage):
         assert storage
         assert storage.get_dynamic_partitions("foo") == []
         assert (
@@ -3979,7 +4086,7 @@ class TestEventLogStorage:
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
 
-    def test_concurrency(self, storage):
+    def test_concurrency(self, storage: EventLogStorage):
         assert storage
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
@@ -4012,34 +4119,34 @@ class TestEventLogStorage:
 
         # now there are two concurrency limited keys
         assert storage.get_concurrency_keys() == {"foo", "bar"}
-        pending_step_count("foo") == 0
-        assigned_step_count("foo") == 0
-        pending_step_count("bar") == 0
-        assigned_step_count("bar") == 0
+        assert pending_step_count("foo") == 0
+        assert assigned_step_count("foo") == 0
+        assert pending_step_count("bar") == 0
+        assert assigned_step_count("bar") == 0
 
         assert claim("foo", run_id_one, "step_1") == ConcurrencySlotStatus.CLAIMED
         assert claim("foo", run_id_two, "step_2") == ConcurrencySlotStatus.CLAIMED
         assert claim("foo", run_id_one, "step_3") == ConcurrencySlotStatus.CLAIMED
         assert claim("bar", run_id_two, "step_4") == ConcurrencySlotStatus.CLAIMED
-        pending_step_count("foo") == 3
-        assigned_step_count("foo") == 3
-        pending_step_count("bar") == 1
-        assigned_step_count("bar") == 1
+        assert pending_step_count("foo") == 3
+        assert assigned_step_count("foo") == 3
+        assert pending_step_count("bar") == 1
+        assert assigned_step_count("bar") == 1
 
         # next claim should be blocked
         assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.BLOCKED
         assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.BLOCKED
-        pending_step_count("foo") == 4
-        assigned_step_count("foo") == 3
-        pending_step_count("bar") == 1
-        assigned_step_count("bar") == 1
+        assert pending_step_count("foo") == 4
+        assert assigned_step_count("foo") == 3
+        assert pending_step_count("bar") == 1
+        assert assigned_step_count("bar") == 1
 
         # free single slot, one in each concurrency key: foo, bar
         storage.free_concurrency_slots_for_run(run_id_two)
-        pending_step_count("foo") == 3
-        assigned_step_count("foo") == 3
-        pending_step_count("bar") == 1
-        assigned_step_count("bar") == 1
+        assert pending_step_count("foo") == 3
+        assert assigned_step_count("foo") == 3
+        assert pending_step_count("bar") == 1
+        assert assigned_step_count("bar") == 1
 
         # try to claim again
         assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.CLAIMED
@@ -4048,7 +4155,7 @@ class TestEventLogStorage:
         assert claim("foo", run_id_three, "step_7") == ConcurrencySlotStatus.BLOCKED
         assert claim("foo", run_id_three, "step_8") == ConcurrencySlotStatus.BLOCKED
 
-    def test_concurrency_priority(self, storage):
+    def test_concurrency_priority(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4107,7 +4214,7 @@ class TestEventLogStorage:
 
         assert claim("foo", run_id, "e") == ConcurrencySlotStatus.CLAIMED
 
-    def test_concurrency_allocate_from_pending(self, storage):
+    def test_concurrency_allocate_from_pending(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4170,7 +4277,7 @@ class TestEventLogStorage:
         assert storage.check_concurrency_claim("foo", run_id, "d").assigned_timestamp is None
         assert storage.check_concurrency_claim("foo", run_id, "e").assigned_timestamp is None
 
-    def test_invalid_concurrency_limit(self, storage):
+    def test_invalid_concurrency_limit(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4180,7 +4287,7 @@ class TestEventLogStorage:
         with pytest.raises(DagsterInvalidInvocationError):
             storage.set_concurrency_slots("foo", 1001)
 
-    def test_slot_downsize(self, storage):
+    def test_slot_downsize(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4213,7 +4320,7 @@ class TestEventLogStorage:
         assert foo_info.slot_count == 1
         assert foo_info.active_slot_count == 3
 
-    def test_slot_upsize(self, storage):
+    def test_slot_upsize(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4262,7 +4369,7 @@ class TestEventLogStorage:
         assert foo_info.pending_step_count == 1
         assert foo_info.assigned_step_count == 4
 
-    def test_concurrency_run_ids(self, storage):
+    def test_concurrency_run_ids(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4284,13 +4391,13 @@ class TestEventLogStorage:
         storage.claim_concurrency_slot("foo", two, "b")
         storage.claim_concurrency_slot("foo", one, "c")
 
-        storage.get_concurrency_run_ids() == {one, two}
+        assert storage.get_concurrency_run_ids() == {one, two}
         storage.free_concurrency_slots_for_run(one)
-        storage.get_concurrency_run_ids() == {two}
+        assert storage.get_concurrency_run_ids() == {two}
         storage.delete_events(run_id=two)
-        storage.get_concurrency_run_ids() == {}
+        assert storage.get_concurrency_run_ids() == {}
 
-    def test_threaded_concurrency(self, storage):
+    def test_threaded_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
@@ -4328,7 +4435,7 @@ class TestEventLogStorage:
 
             assert all(f.done() for f in futures)
 
-    def test_zero_concurrency(self, storage):
+    def test_zero_concurrency(self, storage: EventLogStorage):
         assert storage
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
@@ -4360,7 +4467,11 @@ class TestEventLogStorage:
         assert info.pending_step_count == 1
         assert info.assigned_step_count == 0
 
-    def test_default_concurrency(self, storage, instance):
+    def test_default_concurrency(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
         assert storage
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
@@ -4383,7 +4494,10 @@ class TestEventLogStorage:
         assert storage.get_concurrency_keys() == set(["foo"])
         assert storage.get_concurrency_info("foo").slot_count == 1
 
-    def test_asset_checks(self, storage):
+    def test_asset_checks(
+        self,
+        storage: EventLogStorage,
+    ):
         if self.can_wipe():
             storage.wipe()
 
@@ -4411,6 +4525,7 @@ class TestEventLogStorage:
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
+        assert checks[0].event
         assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
@@ -4446,21 +4561,21 @@ class TestEventLogStorage:
         checks = storage.get_asset_check_execution_history(check_key_1, limit=10)
         assert len(checks) == 1
         assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-        assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
-        assert (
-            checks[0].event.dagster_event.event_specific_data.target_materialization_data.storage_id
-            == 42
-        )
+        assert checks[0].event
+        assert checks[0].event.dagster_event
+        check_data = checks[0].event.dagster_event.asset_check_evaluation_data
+        assert check_data.target_materialization_data
+        assert check_data.target_materialization_data.storage_id == 42
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
-        assert latest_checks[check_key_1].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-        assert (
-            latest_checks[
-                check_key_1
-            ].event.dagster_event.event_specific_data.target_materialization_data.storage_id
-            == 42
-        )
+        check = latest_checks[check_key_1]
+        assert check.status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert check.event
+        assert check.event.dagster_event
+        check_data = check.event.dagster_event.asset_check_evaluation_data
+        assert check_data.target_materialization_data
+        assert check_data.target_materialization_data.storage_id == 42
 
         storage.store_event(
             EventLogEntry(
@@ -4525,7 +4640,10 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == "fizbuz"
 
-    def test_external_asset_event(self, storage):
+    def test_external_asset_event(
+        self,
+        storage: EventLogStorage,
+    ):
         key = AssetKey("test_asset")
         log_entry = EventLogEntry(
             error_info=None,
@@ -4546,9 +4664,16 @@ class TestEventLogStorage:
 
         mats = storage.get_latest_materialization_events([key])
         assert mats
-        assert mats[key].asset_materialization.metadata["was"].value == "here"
+        mat = mats[key]
+        assert mat
+        assert mat.asset_materialization
+        assert mat.asset_materialization.metadata["was"].value == "here"
 
-    def test_large_asset_metadata(self, storage, test_run_id):
+    def test_large_asset_metadata(
+        self,
+        storage: EventLogStorage,
+        test_run_id: str,
+    ):
         key = AssetKey("test_asset")
 
         large_metadata = {
@@ -4571,7 +4696,14 @@ class TestEventLogStorage:
             )
         )
 
-    def test_transaction(self, test_run_id, storage):
+    def test_transaction(
+        self,
+        test_run_id: str,
+        storage: EventLogStorage,
+    ):
+        if not isinstance(storage, SqlEventLogStorage):
+            pytest.skip("This test is for SQL-backed Event Log behavior")
+
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
             EventLogEntry(
@@ -4589,12 +4721,15 @@ class TestEventLogStorage:
         )
         assert len(storage.get_logs_for_run(test_run_id)) == 1
 
+        class BlowUp(Exception):
+            ...
+
         # now try to delete
-        with pytest.raises(Exception):
+        with pytest.raises(BlowUp):
             with storage.index_transaction() as conn:
                 conn.execute(SqlEventLogStorageTable.delete())
                 # Invalid insert, which should rollback the entire transaction
-                raise Exception()
+                raise BlowUp()
 
         assert len(storage.get_logs_for_run(test_run_id)) == 1
 
