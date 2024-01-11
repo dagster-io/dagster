@@ -111,6 +111,11 @@ class PipesClientCompletedInvocation:
         return _check_result_from_pipes_results(self.get_results())
 
     def get_custom_messages(self) -> Sequence[Any]:
+        """Get the sequence of deserialized JSON data that was reported from the external process using
+        `report_custom_message`.
+
+        Returns: Sequence[Any]
+        """
         return self._session.get_custom_messages()
 
 
