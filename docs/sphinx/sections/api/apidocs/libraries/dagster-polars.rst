@@ -92,14 +92,14 @@ Some IOManagers support saving/loading custom metadata along with the DataFrame.
 
 .. _Types:
 
-Type Annotation Behavior
-------------------------
+Type Annotations
+----------------
 
 Type aliases like `DataFrameWithPartitions` are provided by :py:mod:`dagster_polars.types` for convenience.
 
 In the table below `StorageMetadata` expands to `Dict[str, Any]`.
 
-.. list-table:: Supported type annotations
+.. list-table:: Supported type annotations and `dagster-polars` behavior
    :widths: 25 10 75
    :header-rows: 1
 
