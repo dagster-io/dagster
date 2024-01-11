@@ -13,6 +13,7 @@ export type TickLogEventsQuery = {
     | {
         __typename: 'InstigationState';
         id: string;
+        instigationType: Types.InstigationType;
         tick: {
           __typename: 'InstigationTick';
           id: string;

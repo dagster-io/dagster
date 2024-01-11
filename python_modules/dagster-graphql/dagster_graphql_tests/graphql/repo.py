@@ -1191,6 +1191,10 @@ def define_sensors():
         context.log.info("hello hello")
         return SkipReason()
 
+    @sensor(asset_selection=AssetSelection.all())
+    def every_asset_sensor(_):
+        return SkipReason("just kidding")
+
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
@@ -1233,6 +1237,7 @@ def define_sensors():
         fresh_sensor,
         the_failure_sensor,
         automation_policy_sensor,
+        every_asset_sensor,
     ]
 
 
@@ -1891,15 +1896,23 @@ def define_jobs():
     ]
 
 
+typed_assets_job = define_asset_job(
+    "typed_assets",
+    AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
+)
+
+
+@schedule(cron_schedule="* * * * *", job=typed_assets_job)
+def asset_job_schedule():
+    return {}
+
+
 def define_asset_jobs():
     return [
         untyped_asset,
         typed_asset,
         typed_multi_asset,
-        define_asset_job(
-            "typed_assets",
-            AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
-        ),
+        typed_assets_job,
         multipartitions_1,
         multipartitions_2,
         define_asset_job(
@@ -2023,6 +2036,7 @@ def test_repo():
     return [
         *define_jobs(),
         *define_schedules(),
+        asset_job_schedule,
         *define_sensors(),
         *define_asset_jobs(),
         *define_asset_checks(),

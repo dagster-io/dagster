@@ -46,10 +46,10 @@ jobs:
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
         run: |
-          echo "Base ref is $GITHUB_BASE_SHA"
           echo "Head ref is $GITHUB_HEAD_SHA"
           git fetch origin $GITHUB_HEAD_SHA
-          CHANGED_MDX_FILES=$(git diff --name-only "$GITHUB_BASE_SHA" "$GITHUB_HEAD_SHA" -- '*.mdx')
+          # Compare the commit the branch is based on to its head to list changed files
+          CHANGED_MDX_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.mdx')
           CHANGES_ENTRY=$(echo "$CHANGED_MDX_FILES" | sed 's/\.mdx$//' | sed 's/^docs\/content/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
           echo "$CHANGES_ENTRY"
@@ -59,7 +59,6 @@ jobs:
           echo "$CHANGES_ENTRY" >> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV
         env:
-          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: Publish Preview to Vercel
