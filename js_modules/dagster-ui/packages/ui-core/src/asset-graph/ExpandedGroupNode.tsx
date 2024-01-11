@@ -19,13 +19,15 @@ export const ExpandedGroupNode = ({
   group,
   minimal,
   onCollapse,
+  toggleSelectAllNodes,
   preferredJobName,
   onFilterToGroup,
   setHighlighted,
 }: {
   group: GroupLayout & {assets: GraphNode[]};
   minimal: boolean;
-  onCollapse?: (e: React.MouseEvent) => void;
+  onCollapse?: () => void;
+  toggleSelectAllNodes?: (e: React.MouseEvent) => void;
   preferredJobName?: string;
   onFilterToGroup?: () => void;
   setHighlighted: (ids: string[] | null) => void;
@@ -43,7 +45,11 @@ export const ExpandedGroupNode = ({
           onMouseEnter={() => setHighlighted(group.assets.map((a) => a.id))}
           onMouseLeave={() => setHighlighted(null)}
           onClick={(e) => {
-            onCollapse?.(e);
+            if (e.metaKey && toggleSelectAllNodes) {
+              toggleSelectAllNodes(e);
+            } else {
+              onCollapse?.();
+            }
             e.stopPropagation();
           }}
         >

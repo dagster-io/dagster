@@ -66,11 +66,13 @@ export const CollapsedGroupNode = ({
   group,
   minimal,
   onExpand,
+  toggleSelectAllNodes,
   preferredJobName,
   onFilterToGroup,
 }: {
   minimal: boolean;
-  onExpand: (e: React.MouseEvent) => void;
+  onExpand: () => void;
+  toggleSelectAllNodes?: (e: React.MouseEvent) => void;
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
   preferredJobName: string;
   onFilterToGroup: () => void;
@@ -84,7 +86,11 @@ export const CollapsedGroupNode = ({
     <ContextMenuWrapper menu={menu} stopPropagation>
       <CollapsedGroupNodeContainer
         onClick={(e) => {
-          onExpand(e);
+          if (e.metaKey && toggleSelectAllNodes) {
+            toggleSelectAllNodes(e);
+          } else {
+            onExpand();
+          }
           e.stopPropagation();
         }}
       >
