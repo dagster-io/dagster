@@ -1,5 +1,30 @@
 # Changelog
 
+# 1.6.0 (core) / 0.22.0 (libraries)
+
+## Major Changes since 1.5.0 (core) / 0.21.0 (libraries)
+
+### Core
+
+- **Asset lineage graph UI revamp, to make it easier to visualize and navigate large graphs**
+  - Lineage now flows left-to-right instead of top-to-bottom.
+  - You can expand and collapse asset groups in the graph.
+  - A new left-hand sidebar provides a list of assets, organized by asset group and code location.
+  - You can right-click on assets or groups to filter or materialize them.
+  - You can filter by compute kind.
+- **Dark mode for the Dagster UI** – By default, Dagster will match your system’s light or dark theme but you can adjust this in the user settings in the top right of the UI.
+- **Report asset materializations from the UI** – I.e. you record an asset materialization event without executing the code to materialize the asset. This is useful in cases where you overwrote data outside of Dagster, and you want Dagster to know about it and represent it in the UI. It’s also useful when you have a preexisting partitioned asset and start managing it with Dagster: you want Dagster to show the historical partitions as materialized instead of missing.
+- **`MaterializeResult`, `AssetSpec`, and `AssetDep` now marked stable** – These APIs, introduced in Dagster 1.5, were previously marked experimental. They offer a more straightforward way of defining assets when you don’t want to use I/O managers.
+- **Backfill previews** – When launching a backfill that covers assets with different partitions, can you now click “Preview” to see that partitions for each asset that will be covered by the backfill.
+- **Viewing logs for a sensor or schedule tick is no longer considered experimental** – previously, accessing this functionality required turning on a feature flag in user settings.
+- **Runs triggered by a sensor or schedule link to the tick that triggered them.**
+
+### dagster-pipes
+
+- **AWS Lambda Pipes client** –`PipesLambdaClient` [[guide](https://docs.dagster.io/guides/dagster-pipes/aws-lambda)].
+- **Report arbitrary messages between pipes processes and the orchestrating process** – with `report_custom_message` and `get_custom_messages`.
+- **Termination forwarding** – ensures that external processes are terminated when an orchestration process is.
+
 # 1.5.14 / 0.21.14 (libraries)
 
 ### New
