@@ -2,6 +2,9 @@ import subprocess
 
 import pytest
 from kubernetes.client import models
+from kubernetes import client as k8s_client
+
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from schema.charts.dagster.subschema.migrate import Migrate
 from schema.charts.dagster.subschema.webserver import (
     Webserver,
@@ -68,3 +71,45 @@ def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
 
     assert job.metadata.annotations == annotations
     assert job.spec.template.metadata.annotations == annotations
+
+def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTemplate):
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
+    volume_mounts = [
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        }
+    ]
+
+    helm_values_migrate_enabled = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True),
+        dagsterWebserver=Webserver.construct(volumes=volumes, volumeMounts=volume_mounts),
+    )
+
+    jobs = template.render(helm_values_migrate_enabled)
+
+    assert len(jobs) == 1
+
+    job = jobs[0]
+    job_volume_mounts = job.spec.template.spec.containers[0].volume_mounts
+
+    assert job_volume_mounts[1:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1VolumeMount,
+            k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
+        )
+        for volume_mount in volume_mounts
+    ]
+
+    job_volumes = job.spec.template.spec.volumes
+    assert job_volumes[1:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+        )
+        for volume in volumes
+    ]
