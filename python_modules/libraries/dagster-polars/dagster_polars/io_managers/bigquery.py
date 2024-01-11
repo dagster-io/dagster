@@ -2,7 +2,6 @@ from typing import Optional, Sequence, Type
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
-from dagster._annotations import experimental
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 try:
@@ -13,8 +12,7 @@ except ImportError as e:
 from dagster_polars.io_managers.utils import get_polars_metadata
 
 
-
-class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
+class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load Polars DataFrames as BigQuery tables.
 
     Examples:
@@ -27,7 +25,7 @@ class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             class MyBigQueryIOManager(BigQueryIOManager):
                 @staticmethod
                 def type_handlers() -> Sequence[DbTypeHandler]:
-                    return [BigQueryPolarsTypeHandler()]
+                    return [PolarsBigQueryTypeHandler()]
 
             @asset(
                 key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
@@ -109,8 +107,12 @@ class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         return [pl.DataFrame]
 
 
-class BigQueryPolarsIOManager(BigQueryIOManager):
-    """An I/O manager definition that reads inputs from and writes polars DataFrames to BigQuery.
+class PolarsBigQueryIOManager(BigQueryIOManager):
+    """Implements reading and writing Polars DataFrames from/to `BigQuery <https://cloud.google.com/bigquery>`_).
+
+    Features:
+    - All :py:class:`~dagster.DBIOManager` features
+    - Supports writing partitioned tables (`"partition_expr"` input metadata key must be specified).
 
     Returns:
         IOManagerDefinition
@@ -118,19 +120,19 @@ class BigQueryPolarsIOManager(BigQueryIOManager):
     Examples:
         .. code-block:: python
 
-            from dagster_gcp_polars import BigQueryPolarsIOManager
             from dagster import Definitions, EnvVar
+            from dagster_polars import PolarsBigQueryIOManager
 
             @asset(
                 key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
             )
-            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
 
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": BigQueryPolarsIOManager(project=EnvVar("GCP_PROJECT"))
+                    "io_manager": PolarsBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
                 }
             )
 
@@ -147,7 +149,7 @@ class BigQueryPolarsIOManager(BigQueryIOManager):
             @op(
                 out={"my_table": Out(metadata={"schema": "my_dataset"})}
             )
-            def make_my_table() -> pd.DataFrame:
+            def make_my_table() -> pl.DataFrame:
                 # the returned value will be stored at my_dataset.my_table
                 ...
 
@@ -159,7 +161,7 @@ class BigQueryPolarsIOManager(BigQueryIOManager):
             @asset(
                 ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
             )
-            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+            def my_table_a(my_table: pl.DataFrame) -> pd.DataFrame:
                 # my_table will just contain the data from column "a"
                 ...
 
@@ -175,11 +177,13 @@ class BigQueryPolarsIOManager(BigQueryIOManager):
         of `bigquery.JobConfig`. For example, set it to `"WRITE_APPEND"` to append to an existing table intead of
         overwriting it.
 
+    Install `dagster-polars[bigquery]` to use this IOManager.
+
     """
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
-        return [BigQueryPolarsTypeHandler()]
+        return [PolarsBigQueryTypeHandler()]
 
     @staticmethod
     def default_load_type() -> Optional[Type]:

@@ -58,11 +58,10 @@ Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for P
 .. autoconfigurable:: PolarsDeltaIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: BigQueryPolarsIOManager
+.. autoconfigurable:: PolarsBigQueryIOManager
   :annotation: IOManagerDefinition
 
 
 Required dependencies can be installed with `pip install 'dagster-polars[deltalake]'`. Supports writing/reading custom metadata to/from the DeltaTable directory.
 
-Implements reading and writing data from/to `BigQuery <https://cloud.google.com/bigquery>`_). Supports writing partitioned tables (`"partition_expr"` input metadata key must be specified). Required dependencies can be installed with `pip install 'dagster-polars[gcp]'`.
 

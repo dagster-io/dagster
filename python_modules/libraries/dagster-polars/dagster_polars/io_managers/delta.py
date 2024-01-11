@@ -30,16 +30,17 @@ class DeltaWriteMode(str, Enum):
 @experimental
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     """Implements writing and reading DeltaLake tables.
-    
+
     Features:
-     - All features provided by :py:class:`~dagster_polars.io_managers.base.BasePolarsUPathIOManager`.
-     - All read/write options can be set via corresponding metadata or config parameters (metadata takes preference).
+     - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
+     - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
      - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). When using native DeltaLake partitioning, you are responsible for filtering correct partitions when reading the data in downstream assets.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
-     
+
     Install `dagster-polars[delta]` to use this IOManager.
 
-    Examples
+    Examples:
+
         .. code-block:: python
 
             from dagster import asset
@@ -61,7 +62,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             )
 
 
-    Appending to a DeltaLake table:
+        Appending to a DeltaLake table:
+
         .. code-block:: python
 
             @asset(
@@ -72,7 +74,6 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             )
             def my_table() -> pl.DataFrame:
                 ...
-
     """
 
     extension: str = ".delta"

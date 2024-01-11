@@ -6,11 +6,11 @@ import pyarrow as pa
 import pyarrow.dataset
 import pyarrow.parquet
 from dagster import InputContext, OutputContext
+from dagster._annotations import experimental
 from packaging.version import Version
 from pyarrow import Table
 from upath import UPath
 
-from dagster._annotations import experimental
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
@@ -101,12 +101,13 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
     """Implements reading and writing Polars DataFrames in Apache Parquet format.
 
     Features:
-     - All features provided by :py:class:`~dagster_polars.io_managers.base.BasePolarsUPathIOManager`.
-     - All read/write options can be set via corresponding metadata or config parameters (metadata takes preference).
+     - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
+     - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
      - Supports reading partitioned Parquet datasets (for example, often produced by Spark).
      - Supports reading/writing custom metadata in the Parquet file's schema as json-serialized bytes at `"dagster_polars_metadata"` key.
-        
+
     Examples:
+
         .. code-block:: python
 
             from dagster import asset
@@ -126,7 +127,43 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                     "polars_parquet_io_manager": PolarsParquetIOManager(base_dir="s3://my-bucket/my-dir")
                 }
             )
+
+        Reading partitioned Parquet datasets:
+
+        .. code-block:: python
+
+            from dagster import SourceAsset
+
+            my_asset = SourceAsset(
+                key=["path", "to", "dataset"],
+                io_manager_key="polars_parquet_io_manager",
+                metadata={
+                    "partitioning": ["year", "month", "day"]
+                }
+            )
+
+        Storing custom metadata in the Parquet file schema (this metadata can be read outside of Dagster with a helper function :py:meth:`dagster_polars.PolarsParquetIOManager.read_parquet_metadata`):
+
+        .. code-block:: python
+
+            from dagster_polars import DataFrameWithMetadata
+
+
+            @asset(
+                io_manager_key="polars_parquet_io_manager",
+            )
+            def upstream() -> DataFrameWithMetadata:
+                return pl.DataFrame(...), {"my_custom_metadata": "my_custom_value"}
+
+
+            @asset(
+                io_manager_key="polars_parquet_io_manager",
+            )
+            def downsteam(upstream: DataFrameWithMetadata):
+                df, metadata = upstream
+                assert metadata["my_custom_metadata"] == "my_custom_value"
     """
+
     extension: str = ".parquet"
     use_legacy_reader: bool = False
 

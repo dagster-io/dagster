@@ -10,7 +10,10 @@ Here you should include one short sentence about the guide .
 
 | Name                                                                 | Description                  |
 | -------------------------------------------------------------------- | ---------------------------- |
-| <PyObject module="dagster_polars" object="PolarsParquetIOManager" /> | IOManager for Parquet format |
+| <PyObject module="dagster_polars" object="BasePolarsUPathIOManager" /> | Base IOManager        |
+| <PyObject module="dagster_polars" object="PolarsParquetIOManager" /> | IOManager for Parquet        |
+| <PyObject module="dagster_polars" object="PolarsDeltaIOManager" /> | IOManager for DeltaLake |
+| <PyObject module="dagster_polars" object="PolarsBigQueryIOManager" /> | IOManager for BigQuery |
 
 ---
 
@@ -164,31 +167,6 @@ from dagster import asset
 def downstream(upstream: Optional[pl.DataFrame]) -> Optional[pl.DataFrame]:
     maybe_df: Optional[pl.DataFrame] = ...
     return maybe_df
-```
-
-### Reading/writing custom metadata from/to storage
-
-It's possible to write any custom metadata dict into storage for some IOManagers. For example, `PolarsParquetIOManager` supports this feature.
-
-```python
-import polars as pl
-from dagster import asset
-from dagster_polars import DataFrameWithMetadata
-
-
-@asset(
-    io_manager_key="polars_parquet_io_manager",
-)
-def upstream() -> DataFrameWithMetadata:
-    return pl.DataFrame(...), {"my_custom_metadata": "my_custom_value"}
-
-
-@asset(
-    io_manager_key="polars_parquet_io_manager",
-)
-def downsteam(upstream: DataFrameWithMetadata):
-    df, metadata = upstream
-    assert metadata["my_custom_metadata"] == "my_custom_value"
 ```
 
 The metadata can be retrieved from the materialized asset outside of Dagster runtime.

@@ -24,10 +24,10 @@ from dagster import (
     UPathIOManager,
     _check as check,
 )
+from dagster._annotations import experimental
 from pydantic.fields import Field, PrivateAttr
 from upath import UPath
 
-from dagster._annotations import experimental
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
     DataFramePartitions,
@@ -127,14 +127,14 @@ def annotation_for_storage_metadata(annotation) -> bool:
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """Base class for `dagster-polars` IOManagers.
 
-    Doesn't define a specific storage format (parquet, csv, etc).
+    Doesn't define a specific storage format.
 
-    To implement a specific storage format, inherit from this class and implement the `dump_df_to_path` and `scan_df_from_path` methods.
+    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `dump_df_to_path` and `scan_df_from_path` methods.
 
     Features:
      - All the features of :py:class:`~dagster.UPathIOManager` - works with local and remote filesystems (like S3), supports loading multiple partitions, and more
      - returns the correct type - `polars.DataFrame`, `polars.LazyFrame`, or other types defined in :py:mod:`dagster_polars.types` - based on the input type annotation (or `dagster.DagsterType`'s `typing_type`)
-     - handles `Optional` types by skipping loading missing inputs or `None` outputs
+     - handles `Nones` with `Optional` types by skipping loading missing inputs or saving `None` outputs
      - logs various metadata about the DataFrame - size, schema, sample, stats, ...
      - the `"columns"` input metadata value can be used to select a subset of columns to load
     """
