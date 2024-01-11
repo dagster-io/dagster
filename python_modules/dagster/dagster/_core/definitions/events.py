@@ -35,6 +35,7 @@ from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
     from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.context.output import OutputContext
 
@@ -487,7 +488,7 @@ class AssetMaterialization(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
-            ("partition", PublicAttr[Optional[str]]),
+            ("partition", PublicAttr[Optional[Union[str, "MultiPartitionKey"]]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
     )
