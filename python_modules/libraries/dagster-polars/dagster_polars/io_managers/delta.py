@@ -74,6 +74,32 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             )
             def my_table() -> pl.DataFrame:
                 ...
+
+        Using native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table:
+
+        .. code-block:: python
+
+            from dagster import AssetExecutionContext, DailyPartitionedDefinition
+            from dagster_polars import LazyFramePartitions
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "partition_by": "partition_col"
+                },
+                partitions_def=...
+            )
+            def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+                df = ...
+
+                # add partition to the DataFrame
+                df = df.with_columns(pl.lit(context.partition_key).alias("partition_col"))
+                return df
+
+            @asset
+            def downstream(upstream: LazyFramePartitions) -> pl.DataFrame:
+                # concat LazyFrames, filter required partitions and call .collect()
+                ...
     """
 
     extension: str = ".delta"

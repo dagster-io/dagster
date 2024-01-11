@@ -15,7 +15,7 @@ Related Guides:
 Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
 
 Installation
-~~~~~~~~~~~~
+------------
 .. code-block::
 
     pip install dagster-polars
@@ -25,7 +25,7 @@ Some IOManagers (like :py:class:`PolarsDeltaIOManager`) may require additional d
 Please check the documentation for each IOManager for more details.
 
 Quickstart
-~~~~~~~~~~
+----------
 
 Common filesystem-based IOManagers features highlights, using :py:class:`PolarsParquetIOManager` as an example (check :py:class:`BasePolarsUPathIOManager` for more details):
 
