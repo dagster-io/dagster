@@ -693,12 +693,8 @@ const UpstreamUnavailableWarning = ({
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return (
-        a.dimensions.length &&
-        ![AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MATERIALIZING].includes(
-          a.stateForKey([singleDimensionKey]),
-        )
-      );
+      const state = a.dimensions.length ? a.stateForKey([singleDimensionKey]) : null;
+      return state === AssetPartitionStatus.FAILED || state === AssetPartitionStatus.MISSING;
     });
 
   const upstreamUnavailableSpans =
