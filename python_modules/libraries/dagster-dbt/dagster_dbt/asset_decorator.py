@@ -57,6 +57,7 @@ def dbt_assets(
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -87,6 +88,7 @@ def dbt_assets(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        required_resource_keys (Optional[Set[str]]): Set of required resource handles.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -188,6 +190,37 @@ def dbt_assets(
             def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
 
+        Using a custom resource key for dbt:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, my_custom_dbt_resource_key: DbtCliResource):
+                yield from my_custom_dbt_resource_key.cli(["build"], context=context).stream()
+
+        Using a dynamically generated resource key for dbt using `required_resource_keys`:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            dbt_resource_key = "my_custom_dbt_resource_key"
+
+            @dbt_assets(manifest=Path("target", "manifest.json"), required_resource_keys={my_custom_dbt_resource_key})
+            def my_dbt_assets(context: AssetExecutionContext):
+                dbt = getattr(context.resources, dbt_resource_key)
+                yield from dbt.cli(["build"], context=context).stream()
+
         Invoking another Dagster :py:class:`~dagster.ResourceDefinition` alongside dbt:
 
         .. code-block:: python
@@ -195,7 +228,7 @@ def dbt_assets(
             from pathlib import Path
 
             from dagster import AssetExecutionContext
-            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+            from dagster_dbt import DbtCliResource, dbt_assets
             from dagster_slack import SlackResource
 
 
@@ -213,7 +246,7 @@ def dbt_assets(
             from pathlib import Path
 
             from dagster import AssetExecutionContext, Config
-            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+            from dagster_dbt import DbtCliResource, dbt_assets
 
 
             class MyDbtConfig(Config):
@@ -314,6 +347,7 @@ def dbt_assets(
             name=name,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
+            required_resource_keys=required_resource_keys,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
