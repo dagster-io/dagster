@@ -530,3 +530,8 @@ def test_to_string_basic():
         str(AssetSelection.key_prefixes("marketing", ["foo", "bar"]))
         == "key_prefix:(marketing or foo/bar)"
     )
+
+
+def test_empty_namedtuple_truthy():
+    # namedtuples with no fields are still truthy
+    assert bool(AssetSelection.all())
