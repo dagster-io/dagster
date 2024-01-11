@@ -76,6 +76,10 @@ class AssetConditionEvaluation(NamedTuple):
         )
 
     def discarded_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
+        """Returns the AssetSubset representing asset partitions that were discarded during this
+        evaluation. Note that 'discarding' is a deprecated concept that is only used for backwards
+        compatibility.
+        """
         not_discard_condition = condition.not_discard_condition
         if not not_discard_condition or len(self.child_evaluations) != 3:
             return None
@@ -88,7 +92,8 @@ class AssetConditionEvaluation(NamedTuple):
         discarded_subset = self.discarded_subset(condition)
         if discarded_subset is None:
             return self.true_subset
-        return self.true_subset | discarded_subset
+        else:
+            return self.true_subset | discarded_subset
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
