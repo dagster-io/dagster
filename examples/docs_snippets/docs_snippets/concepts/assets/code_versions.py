@@ -1,10 +1,13 @@
-from dagster import AssetOut, Output, asset, multi_asset
+import json
+
+from dagster import AssetOut, AssetSpec, Output, asset, multi_asset
 
 
 # start_single_asset
 @asset(code_version="1")
 def asset_with_version():
-    return 100
+    with open("data/asset_with_version.json", "w") as f:
+        json.dump(100, f)
 
 
 # end_single_asset
@@ -12,14 +15,13 @@ def asset_with_version():
 
 # start_multi_asset
 @multi_asset(
-    outs={
-        "a": AssetOut(code_version="1"),
-        "b": AssetOut(code_version="2"),
-    }
+    specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")]
 )
 def multi_asset_with_versions():
-    yield Output(100, "a")
-    yield Output(200, "b")
+    with open("data/a.json", "w") as f:
+        json.dump(100, f)
+    with open("data/b.json", "w") as f:
+        json.dump(200, f)
 
 
 # end_multi_asset
