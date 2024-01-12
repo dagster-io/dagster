@@ -484,10 +484,11 @@ class AndAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return replace(self,
+        return replace(
+            self,
             operands=[
                 operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
-            ]
+            ],
         )
 
 
@@ -508,10 +509,11 @@ class OrAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return replace( self,
+        return replace(
+            self,
             operands=[
                 operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
-            ]
+            ],
         )
 
 
@@ -530,7 +532,8 @@ class SubtractAssetSelection(AssetSelection):
         )
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return replace(self,
+        return replace(
+            self,
             left=self.left.to_serializable_asset_selection(asset_graph),
             right=self.right.to_serializable_asset_selection(asset_graph),
         )
