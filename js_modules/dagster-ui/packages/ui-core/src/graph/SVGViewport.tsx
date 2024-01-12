@@ -650,7 +650,6 @@ const ZoomSliderContainer = styled.div`
   background: ${colorBackgroundLight()};
 `;
 
-
 const SVGExporter = ({
   element,
   onDone,
