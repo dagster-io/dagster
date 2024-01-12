@@ -425,7 +425,7 @@ const AssetGraphExplorerWithData = ({
         <Tooltip
           content={
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Expand all groups <KeyboardTag tooltip={true}>⌥E</KeyboardTag>
+              Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
             </Box>
           }
         >
@@ -440,7 +440,7 @@ const AssetGraphExplorerWithData = ({
         <Tooltip
           content={
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Collapse all groups <KeyboardTag tooltip={true}>⌥E</KeyboardTag>
+              Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
             </Box>
           }
         >
@@ -819,12 +819,12 @@ const AssetGraphExplorerWithData = ({
 };
 
 interface KeyboardTagProps {
-  tooltip?: boolean;
+  $withinTooltip?: boolean;
 }
 
 const KeyboardTag = styled.div<KeyboardTagProps>`
   ${(props) => {
-    return props.tooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
   }};
   background: ${colorBackgroundGray()};
   border-radius: 4px;
