@@ -7,7 +7,7 @@ description: "Learn how to automate asset materialization using schedules and jo
 
 After you've created some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll likely want to automate their materialization.
 
-In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/schedules/running-ops).
+In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/automation/schedules/running-ops).
 
 By the end of this guide, you will:
 
@@ -71,7 +71,7 @@ Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more in
 
 ## Step 2: Define the schedule
 
-Next, we'll use <PyObject object="ScheduleDefinition" /> to construct the schedule and attach it to the job we created in [Step 1](#step-1-create-the-job).
+Next, we'll use <PyObject object="ScheduleDefinition" /> to construct the schedule and attach it to the job we created in [Step 1](#step-1-create-a-job).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
 from dagster import ScheduleDefinition
@@ -156,7 +156,7 @@ defs = Definitions(
 
 ## Step 4: Turn the schedule on
 
-Schedules need to be turned on before can be used. In our case, we already turned the schedule on by using the `default_status` parameter in its <PyObject object="ScheduleDefinition" />, but there are a few other ways to do this:
+Schedules need to be turned on before they can be used. In our case, we already turned the schedule on by using the `default_status` parameter in its <PyObject object="ScheduleDefinition" />, but there are a few other ways to do this:
 
 <TabGroup>
 <TabItem name="Dagster UI">
@@ -208,7 +208,7 @@ ecommerce_schedule = ScheduleDefinition(
 
 Once the schedule is started, it will begin executing immediately if the [dagster-daemon](/deployment/dagster-daemon) process is running - which is started automatically when `dagster dev` is run - as part of your deployoment.
 
-Refer to the [Troubleshooting schedules](/concepts/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs.
+Refer to the [Troubleshooting schedules](/concepts/automation/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs.
 
 ---
 
@@ -216,8 +216,8 @@ Refer to the [Troubleshooting schedules](/concepts/schedules/troubleshooting) gu
 
 That's it! At this point, you should have a working, running schedule in your Dagster project. From here, you can:
 
-- Check out the [Schedule examples](/concepts/schedules/examples) for ideas and inspiration
-- Create [tests for your schedules](/concepts/schedules/testing) to make sure things are running smoothly
+- Check out the [Schedule examples](/concepts/automation/schedules/examples) for ideas and inspiration
+- Create [tests for your schedules](/concepts/automation/schedules/testing) to make sure things are running smoothly
 - Refer to the [Automating pipelines guide](/guides/dagster/automating-pipelines) for more pipeline automation ideas
 
 ---
@@ -238,11 +238,11 @@ That's it! At this point, you should have a working, running schedule in your Da
 <ArticleList>
   <ArticleListItem
     title="Defining schedules for ops"
-    href="/concepts/schedules/running-ops"
+    href="/concepts/automation/schedules/running-ops"
   ></ArticleListItem>
   <ArticleListItem
     title="Testing schedules"
-    href="/concepts/schedules/testing"
+    href="/concepts/automation/schedules/testing"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset jobs"
@@ -254,10 +254,10 @@ That's it! At this point, you should have a working, running schedule in your Da
   ></ArticleListItem>
   <ArticleListItem
     title="Schedule examples"
-    href="/concepts/schedules/examples"
+    href="/concepts/automation/schedules/examples"
   ></ArticleListItem>
   <ArticleListItem
     title="Troubleshooting schedules"
-    href="/concepts/schedules/troubleshooting"
+    href="/concepts/automation/schedules/troubleshooting"
   ></ArticleListItem>
 </ArticleList>
