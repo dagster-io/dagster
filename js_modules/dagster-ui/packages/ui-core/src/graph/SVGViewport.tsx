@@ -649,59 +649,6 @@ const ZoomSliderContainer = styled.div`
   width: 30px;
 `;
 
-// const WheelInstructionTooltip = () => {
-//   const [usedMeta, setUsedMeta] = React.useState(false);
-//   const [wheeling, setWheeling] = React.useState(false);
-//   const timeout = React.useRef<ReturnType<typeof setTimeout>>();
-
-//   React.useEffect(() => {
-//     const listener = (e: WheelEvent) => {
-//       clearTimeout(timeout.current);
-
-//       // Once the user tries any modifier keys while zooming, we set usedMeta to dismiss
-//       // the instructions and avoid showing them again. (they know what they're doing)
-//       if (e.metaKey || e.shiftKey || e.ctrlKey) {
-//         setUsedMeta(true);
-//         setWheeling(false);
-//         return;
-//       }
-//       setWheeling(true);
-//       timeout.current = setTimeout(() => {
-//         setWheeling(false);
-//       }, 2000);
-//     };
-//     document.addEventListener('wheel', listener);
-//     return () => {
-//       document.removeEventListener('wheel', listener);
-//       clearTimeout(timeout.current);
-//     };
-//   }, []);
-
-//   const zoomKey = navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl';
-//   const visible = wheeling && !usedMeta;
-
-//   return (
-//     <WheelInstructionTooltipContainer style={{opacity: visible ? 1 : 0}}>
-//       {`Hold ${zoomKey} to zoom`}
-//     </WheelInstructionTooltipContainer>
-//   );
-// };
-
-// const WheelInstructionTooltipContainer = styled.div`
-//   position: absolute;
-//   bottom: 42px;
-//   right: 40px;
-//   white-space: nowrap;
-//   transition: opacity 300ms ease-in-out;
-//   font-family: ${FontFamily.default};
-//   font-size: 12px;
-//   line-height: 16px;
-//   border-radius: 2px;
-//   background: ${CoreColors.Gray900};
-//   color: ${CoreColors.Gray50};
-//   padding: 8px 16px;
-// `;
-
 const SVGExporter = ({
   element,
   onDone,

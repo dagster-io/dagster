@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Caption,
   Checkbox,
   ErrorBoundary,
   Icon,
@@ -11,12 +10,11 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
-  colorAccentGray,
   colorAccentWhite,
   colorBackgroundDefault,
-  colorBackgroundLight,
+  colorBackgroundGray,
   colorKeylineDefault,
-  colorTextDisabled,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -426,21 +424,9 @@ const AssetGraphExplorerWithData = ({
       {expandedGroups.length === 0 ? (
         <Tooltip
           content={
-            <>
-              Expand all groups{' '}
-              <Caption
-                style={{
-                  width: 16,
-                  borderRadius: 4,
-                  padding: '2px 4px',
-                  color: colorAccentWhite(),
-                  background: colorAccentGray(),
-                  marginLeft: 4,
-                }}
-              >
-                ⌥E
-              </Caption>
-            </>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Expand all groups <KeyboardTag tooltip={true}>⌥E</KeyboardTag>
+            </Box>
           }
         >
           <Button
@@ -453,21 +439,9 @@ const AssetGraphExplorerWithData = ({
       ) : (
         <Tooltip
           content={
-            <>
-              Collapse all groups{' '}
-              <Caption
-                style={{
-                  width: 16,
-                  borderRadius: 4,
-                  padding: '2px 4px',
-                  color: colorAccentWhite(),
-                  background: colorAccentGray(),
-                  marginLeft: 4,
-                }}
-              >
-                ⌥E
-              </Caption>
-            </>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Collapse all groups <KeyboardTag tooltip={true}>⌥E</KeyboardTag>
+            </Box>
           }
         >
           <Button
@@ -678,22 +652,9 @@ const AssetGraphExplorerWithData = ({
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
                       text={
-                        <>
-                          Collapse all groups{' '}
-                          <Caption
-                            style={{
-                              width: 16,
-                              height: 16,
-                              borderRadius: 8,
-                              padding: 6,
-                              color: colorTextDisabled(),
-                              background: colorBackgroundLight(),
-                              marginLeft: 4,
-                            }}
-                          >
-                            ⌥E
-                          </Caption>
-                        </>
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Collapse all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
                       }
                       icon={<Icon name="unfold_less" />}
                       onClick={() => {
@@ -704,22 +665,9 @@ const AssetGraphExplorerWithData = ({
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
                       text={
-                        <>
-                          Expand all groups{' '}
-                          <Caption
-                            style={{
-                              width: 16,
-                              height: 16,
-                              borderRadius: 8,
-                              padding: 6,
-                              color: colorTextDisabled(),
-                              background: colorBackgroundLight(),
-                              marginLeft: 4,
-                            }}
-                          >
-                            ⌥E
-                          </Caption>
-                        </>
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
                       }
                       icon={<Icon name="unfold_more" />}
                       onClick={() => {
@@ -869,6 +817,21 @@ const AssetGraphExplorerWithData = ({
   }
   return explorer;
 };
+
+interface KeyboardTagProps {
+  tooltip?: boolean;
+}
+
+const KeyboardTag = styled.div<KeyboardTagProps>`
+  ${(props) => {
+    return props.tooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+  }};
+  background: ${colorBackgroundGray()};
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  font-size: 12px;
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;
