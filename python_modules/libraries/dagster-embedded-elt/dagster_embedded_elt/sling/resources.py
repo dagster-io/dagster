@@ -1,11 +1,15 @@
 import contextlib
 import json
+import os
 import re
+import tempfile
+import uuid
 from abc import abstractmethod
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
+import sling
 from dagster import (
     ConfigurableResource,
     MaterializeResult,
@@ -16,9 +20,13 @@ from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Extra, Field
-from sling import Sling
 
+from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_replication import (
+    SlingReplicationParam,
+    validate_replication,
+)
 
 logger = get_dagster_logger()
 
@@ -127,37 +135,6 @@ class _SlingSyncBase:
             proc.wait()
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
-
-    def stream(
-        self,
-        *,
-        dagster_sling_translator: DagsterSlingTranslator,
-        stream_definition: Dict[str, Any],
-        target_object: str,
-        mode: SlingMode,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-    ):
-        logs = ""
-        """
-        for line in self.sync(
-            source_stream,
-            target_object,
-            mode,
-            primary_key,
-            update_key,
-            source_options,
-            target_options,
-        ):
-            logger.info(line)
-            logs += line
-            # TODO: capture actual metadata here
-        """
-
-        output_name = dagster_sling_translator.get_asset_key(stream_definition)
-        yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
 
     def sync(
         self,
@@ -340,26 +317,27 @@ class SlingResource(ConfigurableResource, _SlingSyncBase):
             config["source"] = {k: v for k, v in config["source"].items() if v is not None}
             config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-            sling_cli = Sling(**config)
+            sling_cli = sling.Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    def replicate(
+        self,
+        *,
+        replication_config: SlingReplicationParam,
+        dagster_sling_translator: DagsterSlingTranslator,
+        debug: bool = False,
+    ):
+        replication_config = validate_replication(replication_config)
+        stream_definition = get_streams_from_replication(replication_config)
 
-class SlingConnectionResource(ConfigurableResource):
-    """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
-
-    This resource is responsible for the managing how Sling connects to a resource. To manage how Sling uses this connection (as a source or target), see the specific source_options or target_options in the `build_assets_from_sling_stream` function.
-
-    Examples:
-        Creating a Sling Connection for a file, such as CSV or JSON:
-
-        .. code-block:: python
-
-             source = SlingConnectionResource(type="file")
-
-        Create a Sling Connection for a Postgres database, using a connection string:
+        with self._setup_config():
+            uid = uuid.uuid4()
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
+            env = os.environ.copy()
 
         .. code-block:: python
 
@@ -462,7 +440,7 @@ class SlingStreamReplicator(_SlingSyncBase):
             config["source"] = {k: v for k, v in config["source"].items() if v is not None}
             config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-            sling_cli = Sling(**config)
+            sling_cli = sling.Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
