@@ -1,0 +1,148 @@
+---
+title: "Troubleshooting schedules | Dagster Docs"
+description: "If you're running into problems with a schedule, use these steps to troubleshoot."
+---
+
+# Troubleshooting schedules
+
+If you're running into problems with a schedule, use the steps in this guide to troubleshoot. Some problems with schedules include:
+
+- Schedules that won't run
+- Schedules that are started, but not submitting runs
+- Schedules that aren't visible in the Dagster UI
+
+---
+
+## Is the schedule included in Definitions?
+
+If the schedule isn't visible in the Dagster UI, it may not be included in the code location's <PyObject object="Definitions" /> object. Inclusion in this object ensures that the schedule is detectable and loadable by Dagster tools like the UI and CLI.
+
+For example:
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
+from dagster import Definitions
+
+
+defs = Definitions(
+    assets=[orders_asset, users_asset],
+    jobs=[ecommerce_asset_job],
+    schedules=[ecommerce_schedule],
+)
+```
+
+Refer to the [Code locations documentation](/concepts/code-locations) for more info.
+
+---
+
+## Has the schedule been started?
+
+If the schedule is visible in the UI but isn't running, it might be that it hasn't been started. Schedules must be started before they can run.
+
+To verify that a schedule has been started, use the **Schedules** page in the UI:
+
+1. In the UI, click **Overview (top nav) > Schedules tab** and locate the schedule in the list.
+2. Locate the **Running** column. If the schedule has been started, the toggle in this column should be purple and to the right:
+
+   <!-- ![Highlighted enabled Running toggle in the Schedules page of the Dagster UI, meaning the schedule is started](/images/concepts/partitions-schedules-sensors/schedules/schedules-page-running-schedule.png) -->
+
+   <Image
+   alt="Highlighted enabled Running toggle in the Schedules page of the Dagster UI, meaning the schedule is started"
+   src="/images/concepts/partitions-schedules-sensors/schedules/schedules-page-running-schedule.png"
+   width={1920}
+   height={327}
+   />
+
+Additionally, there will be a **Next tick** value in the **Schedule** column that indicates when the schedule is next expected to run. In the above example, the **Next tick** is `Jan 15, 5:15 AM UTC`. Verify that the time is what you expect, including the timezone.
+
+**Note**: Schedules can be set to run by default in code. Refer to the [Automating assets using schedules and jobs guide](/concepts/automation/schedules/running-assets#step-4-turn-the-schedule-on) for more info.
+
+---
+
+## Is Dagster using the latest version of the schedule?
+
+If you've made changes to the schedule but they're not reflected in the UI, you may need to reload the code location's definitions.
+
+1. In the UI, click **Deployment** in the top navigation.
+
+2. In the **Code locations** tab, locate the code location containing the schedule.
+
+3. In the **Actions** column, click **Reload** (local webserver) or **Redeploy** (Dagster Cloud).
+
+If the webserver is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left UI sidenav.
+
+If the code location is loaded successfully but the schedule doesn't appear in the list of schedules, verify that the schedule is included in a <PyObject object="Definitions" /> object. Refer to the [first section of this guide](#is-the-schedule-included-in-definitions) for more info.
+
+---
+
+## Is the dagster-daemon set up correctly?
+
+<Note>This section is applicable to Open Source (OSS) deployments.</Note>
+
+If the schedule interval is correctly configured but runs aren't being created, the dagster-daemon process may not be working correctly. If you haven't set up a Dagster daemon yet, refer to the [Deployment guides](/deployment) for more info.
+
+**Note**: If you used `dagster dev` to start the webserver, daemons are also automatically started.
+
+### Step 1: Verify the daemon is running
+
+1. In the UI, click **Deployment** in the top navigation.
+2. Click the **Daemons** tab.
+3. Locate the **Scheduler** row. The **Status** should be **Running**:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/deployment-daemons-tab.png"
+   width={2646}
+   height={1500}
+   />
+
+The daemon process periodically sends out a heartbeat from the scheduler. If the scheduler daemon has a status of **Not running**, this indicates that there's an issue with your daemon deployment. If the daemon ran into an error that resulted in an exception, this error will often display in this tab.
+
+If there isn't a clear error on this page or if the daemon should be sending heartbeats but isn't, move on to the next step.
+
+### Step 2: Check the daemon process logs
+
+Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search the logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
+
+If the daemon output contains errors indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+
+If the logs don't indicate the cause of the issue, move on to the next step.
+
+### Step 3: Verify your schedule code
+
+1. In the Dagster UI, click **Overview (top nav) > Schedules tab**.
+
+2. In the list of schedules, click the schedule's **Schedule name** to open its details page.
+
+3. In the **Schedule details** page, locate the latest tick for the schedule in the **Tick history**.
+
+   If an error occurred when a run was submitted for the schedule, the tick will have a red **Failure** badge in the **Status** column.
+
+4. Click the badge to display an error and stack trace describing the execution failure.
+
+---
+
+## Still stuck?
+
+If these steps haven't resolved the issue, ask the Dagster Slack community or get help in [GitHub discussions](https://github.com/dagster-io/dagster/discussions).
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Schedules"
+    href="/concepts/automation/schedules"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Code locations"
+    href="/concepts/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Code locations"
+    href="/concepts/code-locations/workspace-files"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-daemon"
+    href="/deployment/dagster-daemon"
+  ></ArticleListItem>
+</ArticleList>
