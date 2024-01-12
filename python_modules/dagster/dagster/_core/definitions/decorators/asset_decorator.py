@@ -56,7 +56,7 @@ from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
 
 @overload
 def asset(
-    compute_fn: Callable,
+    compute_fn: Callable[..., Any],
 ) -> AssetsDefinition:
     ...
 
@@ -103,7 +103,7 @@ def asset(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
 def asset(
-    compute_fn: Optional[Callable] = None,
+    compute_fn: Optional[Callable[..., Any]] = None,
     *,
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
