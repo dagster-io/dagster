@@ -601,7 +601,7 @@ def test_partition_mapping_with_asset_deps():
     )
     def downstream(context: AssetExecutionContext):
         upstream_key = datetime.strptime(
-            context.asset_partition_key_for_input("upstream"), "%Y-%m-%d"
+            context.upstream_partition_info("upstream").key, "%Y-%m-%d"
         )
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
@@ -653,12 +653,8 @@ def test_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
     def multi_asset_2(context: AssetExecutionContext):
-        asset_1_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_1"), "%Y-%m-%d"
-        )
-        asset_2_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_2"), "%Y-%m-%d"
-        )
+        asset_1_key = datetime.strptime(context.upstream_partition_info("asset_1").key, "%Y-%m-%d")
+        asset_2_key = datetime.strptime(context.upstream_partition_info("asset_2").key, "%Y-%m-%d")
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
 
@@ -760,7 +756,7 @@ def test_self_dependent_partition_mapping_with_asset_deps():
     )
     def self_dependent(context: AssetExecutionContext):
         upstream_key = datetime.strptime(
-            context.asset_partition_key_for_input("self_dependent"), "%Y-%m-%d"
+            context.upstream_partition_info("self_dependent").key, "%Y-%m-%d"
         )
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
@@ -786,9 +782,7 @@ def test_self_dependent_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_1], partitions_def=partitions_def)
     def the_multi_asset(context: AssetExecutionContext):
-        asset_1_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_1"), "%Y-%m-%d"
-        )
+        asset_1_key = datetime.strptime(context.upstream_partition_info("asset_1").key, "%Y-%m-%d")
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
 
@@ -810,7 +804,7 @@ def test_dynamic_partition_mapping_with_asset_deps():
         deps=[AssetDep(upstream, partition_mapping=SpecificPartitionsPartitionMapping(["apple"]))],
     )
     def downstream(context: AssetExecutionContext):
-        assert context.asset_partition_key_for_input("upstream") == "apple"
+        assert context.upstream_partition_info("upstream").key == "apple"
         assert context.partition_key == "orange"
 
     with instance_for_test() as instance:
@@ -840,7 +834,7 @@ def test_dynamic_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_2], partitions_def=partitions_def)
     def asset_2_multi_asset(context: AssetExecutionContext):
-        assert context.asset_partition_key_for_input("asset_1") == "apple"
+        assert context.upstream_partition_info("asset_1").key == "apple"
         assert context.partition_key == "orange"
 
     with instance_for_test() as instance:
