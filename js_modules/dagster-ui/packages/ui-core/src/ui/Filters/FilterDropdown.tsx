@@ -11,7 +11,6 @@ import {
   colorBackgroundLight,
   colorPopoverBackground,
   colorTextLight,
-  CoreColors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
@@ -432,7 +431,6 @@ export const FilterDropdownMenuItem = React.memo(
 
 const StyledMenuItem = styled(MenuItem)`
   &.bp4-active:focus {
-    color: ${CoreColors.White};
     box-shadow: initial;
   }
 `;

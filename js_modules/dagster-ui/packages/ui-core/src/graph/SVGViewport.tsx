@@ -8,7 +8,8 @@ import {
   colorBackgroundLight,
   colorBorderDefault,
   colorLineageDots,
-  CoreColors,
+  colorTooltipBackground,
+  colorTooltipText,
 } from '@dagster-io/ui-components';
 import animate from 'amator';
 import * as React from 'react';
@@ -697,8 +698,8 @@ const WheelInstructionTooltipContainer = styled.div`
   font-size: 12px;
   line-height: 16px;
   border-radius: 2px;
-  background: ${CoreColors.Gray900};
-  color: ${CoreColors.Gray50};
+  background: ${colorTooltipBackground()};
+  color: ${colorTooltipText()};
   padding: 8px 16px;
 `;
 
