@@ -1,10 +1,10 @@
 import collections.abc
 import operator
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, replace
 from functools import reduce
 from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 
-from pydantic.dataclasses import dataclass, replace
 from typing_extensions import TypeAlias
 
 import dagster._check as check
