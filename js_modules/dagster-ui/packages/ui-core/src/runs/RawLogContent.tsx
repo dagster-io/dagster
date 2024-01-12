@@ -4,14 +4,12 @@ import {
   Spinner,
   FontFamily,
   colorAccentYellow,
-  CoreColors,
   colorBackgroundLight,
   colorBackgroundLighter,
   colorKeylineDefault,
   colorBackgroundLightHover,
   colorTextDefault,
   colorTextLight,
-  colorBorderDefault,
   colorBackgroundYellow,
   colorTextLighter,
   colorAccentBlue,
@@ -21,6 +19,11 @@ import {
   colorAccentCyan,
   colorAccentGray,
   colorAccentOlive,
+  colorBackgroundDefault,
+  colorBackgroundLighterHover,
+  colorAccentPrimary,
+  colorBorderDefault,
+  colorBorderHover,
 } from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
@@ -104,7 +107,7 @@ export const RawLogContent = React.memo((props: Props) => {
               onMouseOut={scheduleHideWarning}
             >
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="arrow_upward" color={CoreColors.White} />
+                <Icon name="arrow_upward" color={colorAccentPrimary()} />
                 Scroll to top
               </Group>
             </ScrollToTop>
@@ -410,6 +413,7 @@ const LogContent = styled(ScrollContainer)`
   left: 0;
   right: 0;
 `;
+
 const LoadingContainer = styled.div`
   display: flex;
   justifycontent: center;
@@ -419,7 +423,7 @@ const LoadingContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  backgroundcolor: ${CoreColors.Gray800};
+  background-color: ${colorBackgroundDefault()};
   opacity: 0.3;
 `;
 
@@ -435,16 +439,22 @@ const ScrollToast = styled.div`
   align-items: flex-start;
   z-index: 1;
 `;
-const ScrollToTop = styled.div`
+
+const ScrollToTop = styled.button`
   background-color: ${colorBackgroundLighter()};
-  padding: 10px 20px;
+  padding: 12px 20px 12px 14px;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
   color: ${colorTextDefault()};
-  border-bottom: 1px solid ${colorBorderDefault()};
-  border-left: 1px solid ${colorBorderDefault()};
-  border-right: 1px solid ${colorBorderDefault()};
+  border: 1px solid ${colorBorderDefault()};
+  border-width: 0 1px 1px 1px;
   cursor: pointer;
+  transition: background-color 100ms linear;
+
+  :hover {
+    background-color: ${colorBackgroundLighterHover()};
+    border-color: ${colorBorderHover()};
+  }
 `;
 
 const FileWarning = styled.div`

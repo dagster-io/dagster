@@ -1,4 +1,9 @@
-import {IconWrapper, Icon, CoreColors} from '@dagster-io/ui-components';
+import {
+  IconWrapper,
+  Icon,
+  colorNavTextSelected,
+  colorNavTextHover,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -16,18 +21,18 @@ const SettingsButton = styled.button`
   }
 
   &:hover ${IconWrapper} {
-    background: ${CoreColors.White};
+    background: ${colorNavTextHover()};
   }
 
   &:active ${IconWrapper} {
-    background: ${CoreColors.White};
+    background: ${colorNavTextHover()};
   }
 
   &:focus {
     outline: none;
 
     ${IconWrapper} {
-      background: ${CoreColors.White};
+      background: ${colorNavTextHover()};
     }
   }
 `;
@@ -37,7 +42,7 @@ export const UserSettingsButton = () => {
   return (
     <>
       <SettingsButton onClick={() => setIsOpen(true)} title="User settings">
-        <Icon name="settings" color={CoreColors.Gray200} />
+        <Icon name="settings" color={colorNavTextSelected()} />
       </SettingsButton>
       <UserSettingsDialog
         isOpen={isOpen}
