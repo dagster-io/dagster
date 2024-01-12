@@ -924,6 +924,19 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
+            running_to_not_running_schedule = ExternalSchedule(
+                external_schedule_data=running_schedule._external_schedule_data._replace(  # noqa: SLF001
+                    default_status=DefaultScheduleStatus.STOPPED
+                ),
+                handle=running_schedule.handle.repository_handle,
+            )
+            current_state = running_to_not_running_schedule.get_current_instigator_state(
+                stored_state=reset_instigator_state
+            )
+
+            assert current_state.status == InstigatorStatus.STOPPED
+            assert current_state.instigator_data == reset_instigator_state.instigator_data
+
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))

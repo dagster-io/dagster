@@ -55,7 +55,11 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.host_representation import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+    ExternalSensor,
+)
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -2662,6 +2666,19 @@ def test_status_in_code_sensor(executor, instance):
 
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
+            running_to_not_running_sensor = ExternalSensor(
+                external_sensor_data=running_sensor._external_sensor_data._replace(  # noqa: SLF001
+                    default_status=DefaultSensorStatus.STOPPED
+                ),
+                handle=running_sensor.handle.repository_handle,
+            )
+            current_state = running_to_not_running_sensor.get_current_instigator_state(
+                stored_state=reset_instigator_state
+            )
+
+            assert current_state.status == InstigatorStatus.STOPPED
+            assert current_state.instigator_data == reset_instigator_state.instigator_data
 
             evaluate_sensors(workspace_context, executor)
 

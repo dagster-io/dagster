@@ -783,8 +783,12 @@ class ExternalSchedule:
             # isn't DefaultScheduleStatus.RUNNING - this would indicate that the schedule's
             # default has been changed in code but there's still a lingering DECLARED_IN_CODE
             # row in the database that can be ignored
-            if stored_state and stored_state.status != InstigatorStatus.DECLARED_IN_CODE:
-                return stored_state
+            if stored_state:
+                return (
+                    stored_state.with_status(InstigatorStatus.STOPPED)
+                    if stored_state.status == InstigatorStatus.DECLARED_IN_CODE
+                    else stored_state
+                )
 
             return InstigatorState(
                 self.get_external_origin(),
@@ -926,8 +930,12 @@ class ExternalSensor:
             # Ignore DECLARED_IN_CODE states in the DB if the default status
             # isn't DefaultSensorStatus.RUNNING - this would indicate that the schedule's
             # default has changed
-            if stored_state and stored_state.status != InstigatorStatus.DECLARED_IN_CODE:
-                return stored_state
+            if stored_state:
+                return (
+                    stored_state.with_status(InstigatorStatus.STOPPED)
+                    if stored_state.status == InstigatorStatus.DECLARED_IN_CODE
+                    else stored_state
+                )
 
             return InstigatorState(
                 self.get_external_origin(),
