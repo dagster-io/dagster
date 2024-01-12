@@ -19,12 +19,12 @@ def inject_object_flag(
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "deprecated"
-        message = f"This API will be removed in version {info.breaking_version}.{additional_text}"
+        message = f"This API will be removed in version {info.breaking_version}.\n{additional_text}"
     elif isinstance(info, ExperimentalInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "experimental"
         message = (
-            f"This API may break in future versions, even between dot releases.{additional_text}"
+            f"This API may break in future versions, even between dot releases.\n{additional_text}"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")
@@ -104,6 +104,9 @@ def visit_flag(self, node: flag):
     # all `references` with `<cite>` tags, which is what the HTML writer does
     # for parsed RST.
     message = re.sub(r"`(\S+?)`", r"<cite>\1</cite>", message)
+    header, *body = message.splitlines()
+    processed_lines = [header, *(f"<p>{line}</>" for line in body)]
+    message_html = "\n".join(processed_lines)
     # The "hidden" elements are not visible on screen, but are picked up by the search
     # crawler to provide better structure to search results.
     html = f"""
@@ -114,8 +117,8 @@ def visit_flag(self, node: flag):
           {flag_type}
           <span class="hidden">)</span>
         </span>
-        {message}
       </>
+      {message_html}
     </div>
     """
     self.body.append(html)
