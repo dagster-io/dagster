@@ -155,6 +155,15 @@ serviceAccount:
 # Whether to bind a role to the service account that allows it to create Kubernetes jobs
 rbacEnabled: true
 
+extraInitContainers: []
+
+extraContainers: []
+# Example:
+# - name: my-sidecar
+#   image: ...
+#   volumeMounts: []
+#   env: []
+
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################
