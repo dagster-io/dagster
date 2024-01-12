@@ -1,8 +1,9 @@
 import collections.abc
 import operator
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import reduce
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -398,7 +399,8 @@ class AssetSelection(ABC):
 
 
 @whitelist_for_serdes
-class AllSelection(AssetSelection, NamedTuple("_AllSelection", [])):
+@dataclass(frozen=True)
+class AllSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
 
@@ -410,7 +412,8 @@ class AllSelection(AssetSelection, NamedTuple("_AllSelection", [])):
 
 
 @whitelist_for_serdes
-class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelection", [])):
+@dataclass(frozen=True)
+class AllAssetCheckSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
@@ -425,10 +428,12 @@ class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelectio
 
 
 @whitelist_for_serdes
+@dataclass(frozen=True)
 class AssetChecksForAssetKeysSelection(
-    NamedTuple("_AssetChecksForAssetKeysSelection", [("selected_asset_keys", Sequence[AssetKey])]),
     AssetSelection,
 ):
+    selected_asset_keys: Sequence[AssetKey]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
@@ -444,12 +449,10 @@ class AssetChecksForAssetKeysSelection(
 
 
 @whitelist_for_serdes
-class AssetCheckKeysSelection(
-    NamedTuple(
-        "_AssetCheckKeysSelection", [("selected_asset_check_keys", Sequence[AssetCheckKey])]
-    ),
-    AssetSelection,
-):
+@dataclass(frozen=True)
+class AssetCheckKeysSelection(AssetSelection):
+    selected_asset_check_keys: Sequence[AssetCheckKey]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
@@ -465,10 +468,10 @@ class AssetCheckKeysSelection(
 
 
 @whitelist_for_serdes
-class AndAssetSelection(
-    AssetSelection,
-    NamedTuple("_AndAssetSelection", [("operands", Sequence[AssetSelection])]),
-):
+@dataclass(frozen=True)
+class AndAssetSelection(AssetSelection):
+    operands: Sequence[AssetSelection]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return reduce(
             operator.and_, (selection.resolve_inner(asset_graph) for selection in self.operands)
@@ -489,10 +492,10 @@ class AndAssetSelection(
 
 
 @whitelist_for_serdes
-class OrAssetSelection(
-    AssetSelection,
-    NamedTuple("_OrAssetSelection", [("operands", Sequence[AssetSelection])]),
-):
+@dataclass(frozen=True)
+class OrAssetSelection(AssetSelection):
+    operands: Sequence[AssetSelection]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return reduce(
             operator.or_, (selection.resolve_inner(asset_graph) for selection in self.operands)
@@ -513,10 +516,11 @@ class OrAssetSelection(
 
 
 @whitelist_for_serdes
-class SubtractAssetSelection(
-    AssetSelection,
-    NamedTuple("_SubtractAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
-):
+@dataclass(frozen=True)
+class SubtractAssetSelection(AssetSelection):
+    left: AssetSelection
+    right: AssetSelection
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return self.left.resolve_inner(asset_graph) - self.right.resolve_inner(asset_graph)
 
@@ -533,10 +537,10 @@ class SubtractAssetSelection(
 
 
 @whitelist_for_serdes
-class SinksAssetSelection(
-    AssetSelection,
-    NamedTuple("_SinksAssetSelection", [("child", AssetSelection)]),
-):
+@dataclass(frozen=True)
+class SinksAssetSelection(AssetSelection):
+    child: AssetSelection
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
@@ -546,10 +550,10 @@ class SinksAssetSelection(
 
 
 @whitelist_for_serdes
-class RequiredNeighborsAssetSelection(
-    AssetSelection,
-    NamedTuple("_RequiredNeighborsAssetSelection", [("child", AssetSelection)]),
-):
+@dataclass(frozen=True)
+class RequiredNeighborsAssetSelection(AssetSelection):
+    child: AssetSelection
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         output = set(selection)
@@ -562,10 +566,10 @@ class RequiredNeighborsAssetSelection(
 
 
 @whitelist_for_serdes
-class RootsAssetSelection(
-    AssetSelection,
-    NamedTuple("_RootsAssetSelection", [("child", AssetSelection)]),
-):
+@dataclass(frozen=True)
+class RootsAssetSelection(AssetSelection):
+    child: AssetSelection
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         return fetch_sources(asset_graph.asset_dep_graph, selection)
@@ -575,17 +579,12 @@ class RootsAssetSelection(
 
 
 @whitelist_for_serdes
-class DownstreamAssetSelection(
-    AssetSelection,
-    NamedTuple(
-        "_DownstreamAssetSelection",
-        [
-            ("child", AssetSelection),
-            ("depth", Optional[int]),
-            ("include_self", bool),
-        ],
-    ),
-):
+@dataclass(frozen=True)
+class DownstreamAssetSelection(AssetSelection):
+    child: AssetSelection
+    depth: Optional[int]
+    include_self: bool
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         return operator.sub(
@@ -610,16 +609,11 @@ class DownstreamAssetSelection(
 
 
 @whitelist_for_serdes
-class GroupsAssetSelection(
-    NamedTuple(
-        "_GroupsAssetSelection",
-        [
-            ("selected_groups", Sequence[str]),
-            ("include_sources", bool),
-        ],
-    ),
-    AssetSelection,
-):
+@dataclass(frozen=True)
+class GroupsAssetSelection(AssetSelection):
+    selected_groups: Sequence[str]
+    include_sources: bool
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
@@ -643,10 +637,10 @@ class GroupsAssetSelection(
 
 
 @whitelist_for_serdes
-class KeysAssetSelection(
-    NamedTuple("_KeysAssetSelection", [("selected_keys", Sequence[AssetKey])]),
-    AssetSelection,
-):
+@dataclass(frozen=True)
+class KeysAssetSelection(AssetSelection):
+    selected_keys: Sequence[AssetKey]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self.selected_keys)
         invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
@@ -666,13 +660,11 @@ class KeysAssetSelection(
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(
-    NamedTuple(
-        "_KeyPrefixesAssetSelection",
-        [("selected_key_prefixes", Sequence[Sequence[str]]), ("include_sources", bool)],
-    ),
-    AssetSelection,
-):
+@dataclass(frozen=True)
+class KeyPrefixesAssetSelection(AssetSelection):
+    selected_key_prefixes: Sequence[Sequence[str]]
+    include_sources: bool
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
@@ -722,17 +714,12 @@ def _fetch_all_upstream(
 
 
 @whitelist_for_serdes
-class UpstreamAssetSelection(
-    AssetSelection,
-    NamedTuple(
-        "_UpstreamAssetSelection",
-        [
-            ("child", AssetSelection),
-            ("depth", Optional[int]),
-            ("include_self", bool),
-        ],
-    ),
-):
+@dataclass(frozen=True)
+class UpstreamAssetSelection(AssetSelection):
+    child: AssetSelection
+    depth: Optional[int]
+    include_self: bool
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
@@ -745,10 +732,12 @@ class UpstreamAssetSelection(
 
 
 @whitelist_for_serdes
+@dataclass(frozen=True)
 class ParentSourcesAssetSelection(
     AssetSelection,
-    NamedTuple("_ParentSourcesAssetSelection", [("child", AssetSelection)]),
 ):
+    child: AssetSelection
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
