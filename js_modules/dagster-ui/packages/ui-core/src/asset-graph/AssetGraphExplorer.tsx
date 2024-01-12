@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Caption,
   Checkbox,
   ErrorBoundary,
   Icon,
@@ -10,8 +11,12 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
+  colorAccentGray,
+  colorAccentWhite,
   colorBackgroundDefault,
+  colorBackgroundLight,
   colorKeylineDefault,
+  colorTextDisabled,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -419,17 +424,59 @@ const AssetGraphExplorerWithData = ({
       shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
     >
       {expandedGroups.length === 0 ? (
-        <Button
-          title="Expand all groups"
-          icon={<Icon name="unfold_more" />}
-          onClick={() => setExpandedGroups(allGroups)}
-        />
+        <Tooltip
+          content={
+            <>
+              Expand all groups{' '}
+              <Caption
+                style={{
+                  width: 16,
+                  borderRadius: 4,
+                  padding: '2px 4px',
+                  color: colorAccentWhite(),
+                  background: colorAccentGray(),
+                  marginLeft: 4,
+                }}
+              >
+                ⌥E
+              </Caption>
+            </>
+          }
+        >
+          <Button
+            title="Expand all groups"
+            icon={<Icon name="unfold_more" />}
+            onClick={() => setExpandedGroups(allGroups)}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       ) : (
-        <Button
-          title="Collapse all groups"
-          icon={<Icon name="unfold_less" />}
-          onClick={() => setExpandedGroups([])}
-        />
+        <Tooltip
+          content={
+            <>
+              Collapse all groups{' '}
+              <Caption
+                style={{
+                  width: 16,
+                  borderRadius: 4,
+                  padding: '2px 4px',
+                  color: colorAccentWhite(),
+                  background: colorAccentGray(),
+                  marginLeft: 4,
+                }}
+              >
+                ⌥E
+              </Caption>
+            </>
+          }
+        >
+          <Button
+            title="Collapse all groups"
+            icon={<Icon name="unfold_less" />}
+            onClick={() => setExpandedGroups([])}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       )}
     </ShortcutHandler>
   );
@@ -630,7 +677,24 @@ const AssetGraphExplorerWithData = ({
                 <Menu>
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
-                      text="Collapse all groups"
+                      text={
+                        <>
+                          Collapse all groups{' '}
+                          <Caption
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 8,
+                              padding: 6,
+                              color: colorTextDisabled(),
+                              background: colorBackgroundLight(),
+                              marginLeft: 4,
+                            }}
+                          >
+                            ⌥E
+                          </Caption>
+                        </>
+                      }
                       icon={<Icon name="unfold_less" />}
                       onClick={() => {
                         setExpandedGroups([]);
@@ -639,7 +703,24 @@ const AssetGraphExplorerWithData = ({
                   )}
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
-                      text="Expand all groups"
+                      text={
+                        <>
+                          Expand all groups{' '}
+                          <Caption
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 8,
+                              padding: 6,
+                              color: colorTextDisabled(),
+                              background: colorBackgroundLight(),
+                              marginLeft: 4,
+                            }}
+                          >
+                            ⌥E
+                          </Caption>
+                        </>
+                      }
                       icon={<Icon name="unfold_more" />}
                       onClick={() => {
                         setExpandedGroups(allGroups);
