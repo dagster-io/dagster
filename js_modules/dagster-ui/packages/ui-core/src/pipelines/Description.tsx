@@ -82,7 +82,7 @@ export class Description extends React.Component<IDescriptionProps, IDescription
         }}
         style={{
           maxHeight: expanded ? undefined : this.props.maxHeight || DEFAULT_MAX_HEIGHT,
-          fontSize: this.props.fontSize || '0.8rem',
+          fontSize: this.props.fontSize || '0.9rem',
         }}
       >
         {hasMore && (

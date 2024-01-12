@@ -72,7 +72,7 @@ export const OverdueTag = ({
   if (freshnessInfo.currentMinutesLate === 0) {
     return (
       <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-        <Tag intent="success" icon="check_circle" />
+        <Tag intent="success" icon="check_circle">Fresh</Tag>
       </OverdueLineagePopover>
     );
   }

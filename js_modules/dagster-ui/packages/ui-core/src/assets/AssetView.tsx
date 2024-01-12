@@ -3,32 +3,6 @@ import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-i
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {AssetEvents} from './AssetEvents';
-import {AssetFeatureContext} from './AssetFeatureContext';
-import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
-import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
-import {AssetNodeLineage} from './AssetNodeLineage';
-import {AssetPageHeader} from './AssetPageHeader';
-import {AssetPartitions} from './AssetPartitions';
-import {AssetPlots} from './AssetPlots';
-import {AssetTabs} from './AssetTabs';
-import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
-import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
-import {OverdueTag} from './OverdueTag';
-import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
-import {AssetChecks} from './asset-checks/AssetChecks';
-import {AssetKey, AssetViewParams} from './types';
-import {
-  AssetViewDefinitionNodeFragment,
-  AssetViewDefinitionQuery,
-  AssetViewDefinitionQueryVariables,
-} from './types/AssetView.types';
-import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
-import {useReportEventsModal} from './useReportEventsModal';
 import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -40,13 +14,37 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
-import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RepositoryLink} from '../nav/RepositoryLink';
 import {useStartTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {AssetEvents} from './AssetEvents';
+import {AssetFeatureContext} from './AssetFeatureContext';
+import {ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeLineage} from './AssetNodeLineage';
+import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPartitions} from './AssetPartitions';
+import {AssetPlots} from './AssetPlots';
+import {AssetTabs} from './AssetTabs';
+import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
+import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
+import {AssetChecks} from './asset-checks/AssetChecks';
+import {AssetKey, AssetViewParams} from './types';
+import {
+  AssetViewDefinitionNodeFragment,
+  AssetViewDefinitionQuery,
+  AssetViewDefinitionQueryVariables,
+} from './types/AssetView.types';
+import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
+import {useReportEventsModal} from './useReportEventsModal';
+
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
+import {AssetNodeOverview} from './AssetNodeOverview';
 
 interface Props {
   assetKey: AssetKey;
@@ -62,7 +60,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     useAssetViewAssetDefinition(assetKey);
   const tabList = useMemo(() => tabBuilder({definition, params}), [definition, params, tabBuilder]);
 
-  const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
+  const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
@@ -96,21 +94,32 @@ export const AssetView = ({assetKey, trace}: Props) => {
     }
   }, [definitionQueryResult, liveData, trace]);
 
-  const renderDefinitionTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+  const renderOverviewTab = () => {
+    if (!liveData || (definitionQueryResult.loading && !definitionQueryResult.previousData)) {
       return <AssetLoadingDefinitionState />;
     }
     if (!definition) {
       return <AssetNoDefinitionState />;
     }
     return (
-      <AssetNodeDefinition
+      <AssetNodeOverview
         assetNode={definition}
+        liveData={liveData}
         upstream={upstream}
         downstream={downstream}
         dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
       />
     );
+  };
+
+  const renderLaunchpadTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    if (!definition) {
+      return <AssetNoDefinitionState />;
+    }
+    return <>This is the launchpad tab</>;
   };
 
   const renderLineageTab = () => {
@@ -211,13 +220,13 @@ export const AssetView = ({assetKey, trace}: Props) => {
 
   const renderContent = () => {
     switch (selectedTab) {
-      case 'definition':
-        return renderDefinitionTab();
+      case 'overview':
+        return renderOverviewTab();
       case 'lineage':
         return renderLineageTab();
       case 'partitions':
         return renderPartitionsTab();
-      case 'events':
+      case 'executions':
         return renderEventsTab();
       case 'plots':
         return renderPlotsTab();
@@ -225,6 +234,8 @@ export const AssetView = ({assetKey, trace}: Props) => {
         return renderAutomaterializeHistoryTab();
       case 'checks':
         return renderChecksTab();
+      case 'launchpad':
+        return renderLaunchpadTab();
       default:
         return renderFeatureView({
           selectedTab,
@@ -253,22 +264,28 @@ export const AssetView = ({assetKey, trace}: Props) => {
       <AssetPageHeader
         assetKey={assetKey}
         tags={
-          <AssetViewPageHeaderTags
-            definition={definition}
-            liveData={liveData}
-            onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
-          />
+          <>
+            <AssetViewPageHeaderTags
+              definition={definition}
+              liveData={liveData}
+              onShowUpstream={() =>
+                setParams({...params, view: 'lineage', lineageScope: 'upstream'})
+              }
+            />
+          </>
         }
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <AssetTabs selectedTab={selectedTab} tabs={tabList} />
-            <Box padding={{bottom: 8}}>
+            {/* <Box padding={{bottom: 8}}>
               <AssetLiveDataRefresh />
-            </Box>
+            </Box> */}
           </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}}>
+          <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}} style={{margin: '-4px 0'}}>
+            <AssetLiveDataRefresh />
+            <ReloadAllButton label="Reload definition" />
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
                 intent="primary"
@@ -486,17 +503,19 @@ const AssetViewPageHeaderTags = ({
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
-
+  const privateAsset = definition?.metadataEntries?.some(
+    (item) => item.label === 'owner' && 'text' in item && item?.text === 'josh@mycompany.com',
+  );
   return (
-    <>
-      {definition && repoAddress ? (
+    <Box flex={{direction: 'row', gap: 6}}>
+      {/* {definition && repoAddress ? (
         <Tag icon="asset">
           Asset in <RepositoryLink repoAddress={repoAddress} />
         </Tag>
       ) : (
         <Tag icon="asset_non_sda">Asset</Tag>
-      )}
-      {definition && repoAddress && (
+      )} */}
+      {/* {definition && repoAddress && (
         <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
       )}
       {definition && repoAddress && definition.groupName && (
@@ -505,24 +524,31 @@ const AssetViewPageHeaderTags = ({
             {definition.groupName}
           </Link>
         </Tag>
-      )}
-      {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
+      )} */}
+      {/* {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
         <AutomaterializeDaemonStatusTag />
-      ) : null}
-      {definition && definition.freshnessPolicy && (
+      ) : null} */}
+      {/* {definition && definition.freshnessPolicy && (
         <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
-      )}
-      {definition && (
+      )} */}
+      {/* {definition && (
         <StaleReasonsTags
           liveData={liveData}
           assetKey={definition.assetKey}
           onClick={onShowUpstream}
           include="all"
         />
+      )} */}
+      {privateAsset ? (
+        <Tag icon="lock">Private</Tag>
+      ) : (
+        <Tag icon="people" intent="primary">
+          Public
+        </Tag>
       )}
       {definition && (
         <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
       )}
-    </>
+    </Box>
   );
 };

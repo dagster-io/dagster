@@ -114,6 +114,7 @@ import partition_success from '../icon-svgs/partition_success.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
+import reload_definitions from '../icon-svgs/reload_definitions.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import search from '../icon-svgs/search.svg';
@@ -212,6 +213,7 @@ export const Icons = {
   open_in_new,
   folder,
   tag,
+  reload_definitions,
   slack,
   github,
   github_pr_open,

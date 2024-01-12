@@ -6,6 +6,7 @@ import {BaseTag} from './BaseTag';
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
+import { AnimatedAutomatorIcon } from './AutomationIcon';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
@@ -57,25 +58,30 @@ const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
 
 interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
   children?: React.ReactNode;
-  icon?: IconName | 'spinner';
-  rightIcon?: IconName | 'spinner';
+  icon?: IconName | 'spinner' | 'automator';
+  rightIcon?: IconName | 'spinner' | 'automator';
+  animatedIcon?: boolean;
   tooltipText?: string;
 }
 
 interface IconOrSpinnerProps {
-  icon: IconName | 'spinner' | null;
+  icon: IconName | 'spinner' | 'automator' | null;
   color: string;
+  stopped?: boolean;
 }
 
-const IconOrSpinner = React.memo(({icon, color}: IconOrSpinnerProps) => {
+const IconOrSpinner = React.memo(({icon, color, stopped}: IconOrSpinnerProps) => {
   if (icon === 'spinner') {
-    return <Spinner fillColor={color} purpose="body-text" />;
+    return <Spinner fillColor={color} purpose="body-text" stopped={stopped}/>;
+  }
+  if (icon === 'automator') {
+    return <AnimatedAutomatorIcon fillColor={color} stopped={stopped} />;
   }
   return icon ? <Icon name={icon} color={color} /> : null;
 });
 
 export const Tag = (props: Props) => {
-  const {children, icon = null, rightIcon = null, intent, ...rest} = props;
+  const {children, icon = null, rightIcon = null, intent, animatedIcon = false, ...rest} = props;
 
   const fillColor = intentToFillColor(intent);
   const textColor = intentToTextColor(intent);
@@ -86,7 +92,7 @@ export const Tag = (props: Props) => {
       {...rest}
       fillColor={fillColor}
       textColor={textColor}
-      icon={<IconOrSpinner icon={icon} color={iconColor} />}
+      icon={<IconOrSpinner icon={icon} color={iconColor} stopped={animatedIcon}/>}
       rightIcon={<IconOrSpinner icon={rightIcon} color={iconColor} />}
       label={children}
     />

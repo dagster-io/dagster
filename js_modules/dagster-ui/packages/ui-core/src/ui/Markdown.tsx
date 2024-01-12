@@ -24,7 +24,12 @@ const Container = styled.div`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
-
+  &&& pre {
+    background: ${Colors.backgroundLight()};
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid ${Colors.keylineDefault()};
+  }
   &&& table tr th {
     box-shadow: none !important;
     color: ${Colors.textLight()};

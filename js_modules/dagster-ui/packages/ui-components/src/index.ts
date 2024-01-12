@@ -1,3 +1,4 @@
+export * from './components/AutomationIcon';
 export * from './components/Alert';
 export * from './components/BaseButton';
 export * from './components/BaseTag';
