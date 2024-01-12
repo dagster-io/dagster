@@ -1,0 +1,7 @@
+source: "file://test.csv"
+target: "sqlite://tmp_db.db"
+
+streams:
+  file://test.csv:
+    object: "main.tbl"
+
