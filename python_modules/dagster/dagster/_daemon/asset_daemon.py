@@ -409,7 +409,7 @@ class AssetDaemon(DagsterDaemon):
                     auto_materialize_state = InstigatorState(
                         sensor.get_external_origin(),
                         InstigatorType.SENSOR,
-                        InstigatorStatus.AUTOMATICALLY_RUNNING,
+                        InstigatorStatus.DECLARED_IN_CODE,
                         SensorInstigatorData(
                             min_interval=sensor.min_interval_seconds,
                             cursor=None,

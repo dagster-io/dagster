@@ -2621,7 +2621,7 @@ def test_status_in_code_sensor(executor, instance):
             instigator_state = instance.get_instigator_state(
                 always_running_origin.get_id(), running_sensor.selector_id
             )
-            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+            assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
