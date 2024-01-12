@@ -79,7 +79,7 @@ hourly_partitions = HourlyPartitionsDefinition(start_date="2024-01-01")
 
 
 @asset(io_manager_def="parquet_io_manager", partitions_def=hourly_partitions)
-def my_custom_df(context) -> pd.DataFrame:
+def my_custom_df(context: AssetExecutionContext) -> pd.DataFrame:
     start, end = context.asset_partitions_time_window_for_output()
 
     df = pd.DataFrame({"timestamp": pd.date_range(start, end, freq="5T")})
@@ -92,7 +92,7 @@ def fetch_blog_posts_from_external_api(*args, **kwargs):
 
 
 @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
-def blog_posts(context) -> List[Dict]:
+def blog_posts(context: AssetExecutionContext) -> List[Dict]:
     partition_datetime_str = context.asset_partition_key_for_output()
     hour = datetime.datetime.fromisoformat(partition_datetime_str)
     posts = fetch_blog_posts_from_external_api(hour_when_posted=hour)
@@ -105,7 +105,7 @@ def blog_posts(context) -> List[Dict]:
     partitions_def=WeeklyPartitionsDefinition(start_date="2022-11-01"),
     key_prefix=["snowflake", "eldermark_proxy"],
 )
-def resident(context) -> Output[pd.DataFrame]:
+def resident(context: AssetExecutionContext) -> Output[pd.DataFrame]:
     start, end = context.asset_partitions_time_window_for_output()
     filter_str = f"LastMod_Stamp >= {start.timestamp()} AND LastMod_Stamp < {end.timestamp()}"
 
