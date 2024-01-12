@@ -1,7 +1,7 @@
 import collections.abc
 import operator
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, replace
+from pydantic.dataclasses import dataclass, replace
 from functools import reduce
 from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 
