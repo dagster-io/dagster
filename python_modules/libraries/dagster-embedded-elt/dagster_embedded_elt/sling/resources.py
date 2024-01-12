@@ -1,16 +1,19 @@
 import contextlib
 import json
+import os
 import re
+import tempfile
+import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
-from dagster import ConfigurableResource, MaterializeResult, PermissiveConfig, get_dagster_logger
+import sling
+from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Field
-from sling import Sling
 
 logger = get_dagster_logger()
 
@@ -235,7 +238,7 @@ class SlingResource(ConfigurableResource):
             config["source"] = {k: v for k, v in config["source"].items() if v is not None}
             config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-            sling_cli = Sling(**config)
+            sling_cli = sling.Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
@@ -244,31 +247,18 @@ class SlingResource(ConfigurableResource):
     def replicate(
         self,
         *,
+        replication_config: SlingReplicationParam,
         dagster_sling_translator: DagsterSlingTranslator,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
+        debug: bool = False,
     ):
-        logs = ""
-        for line in self.sync(
-            source_stream,
-            target_object,
-            mode,
-            primary_key,
-            update_key,
-            source_options,
-            target_options,
-        ):
-            logger.info(line)
-            logs += line
-            # TODO: capture actual metadata here
+        replication_config = validate_replication(replication_config)
+        stream_definition = get_streams_from_replication(replication_config)
 
-        output_name = dagster_sling_translator.get_asset_key(target_object)
-        yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
+        with self._setup_config():
+            uid = uuid.uuid4()
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
+            env = os.environ.copy()
 
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:

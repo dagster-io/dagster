@@ -5,6 +5,7 @@ import tempfile
 import pytest
 from dagster import file_relative_path
 from dagster_embedded_elt.sling import (
+    SlingConnectionResource,
     SlingResource,
     SlingSourceConnection,
     SlingTargetConnection,
@@ -35,4 +36,26 @@ def sling_sqlite_resource(temp_db):
         target_connection=SlingTargetConnection(
             type="sqlite", connection_string=f"sqlite://{temp_db}"
         ),
+    )
+
+
+@pytest.fixture
+def sling_file_connection():
+    return SlingConnectionResource(name="SLING_FILE", type="file")
+
+
+@pytest.fixture
+def sling_sqlite_connection(temp_db):
+    return SlingConnectionResource(
+        name="SLING_SQLITE", type="sqlite", connection_string=f"sqlite://{temp_db}"
+    )
+
+
+@pytest.fixture()
+def sling_csv_sqlite_resource(sling_file_connection, sling_sqlite_connection):
+    return SlingResource(
+        connections=[
+            sling_file_connection,
+            sling_sqlite_connection,
+        ]
     )
