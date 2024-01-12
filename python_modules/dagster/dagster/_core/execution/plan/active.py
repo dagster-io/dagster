@@ -586,6 +586,10 @@ class ActiveExecution:
     def retry_state(self) -> RetryState:
         return self._retry_state
 
+    @property
+    def has_in_flight_steps(self) -> bool:
+        return len(self._in_flight) > 0
+
     def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
