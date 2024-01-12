@@ -2246,6 +2246,24 @@ class SqlEventLogStorage(EventLogStorage):
             # they will be unutilized until free_concurrency_slots is called
             self.assign_pending_steps(keys_to_assign)
 
+    def delete_concurrency_limit(self, concurrency_key: str) -> None:
+        """Delete a concurrency limit and its associated slots.
+
+        Args:
+            concurrency_key (str): The key to delete.
+        """
+        # ensure that we have concurrency limits set for all keys
+        self._reconcile_concurrency_limits_from_slots()
+
+        with self.index_transaction() as conn:
+            if self.has_table(ConcurrencyLimitsTable.name):
+                conn.execute(
+                    ConcurrencyLimitsTable.delete().where(
+                        ConcurrencyLimitsTable.c.concurrency_key == concurrency_key
+                    )
+                )
+            self._allocate_concurrency_slots(conn, concurrency_key, 0)
+
     def _allocate_concurrency_slots(self, conn, concurrency_key: str, num: int) -> List[str]:
         keys_to_assign = []
         count_row = conn.execute(

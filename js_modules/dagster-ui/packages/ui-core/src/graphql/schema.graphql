@@ -3448,6 +3448,7 @@ type Mutation {
   ): AddDynamicPartitionResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
+  deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
   freeConcurrencySlotsForRun(runId: String!): Boolean!
   freeConcurrencySlots(runId: String!, stepKey: String): Boolean!
 }
