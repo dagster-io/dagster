@@ -178,7 +178,6 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
         content={
           <MetadataTable
             spacing={0}
-            dark
             rows={[
               {
                 key: 'Since start of run',
