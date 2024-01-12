@@ -1,10 +1,12 @@
 import contextlib
 import json
+import os
 import re
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
+import sling
 from dagster import (
     ConfigurableResource,
     PermissiveConfig,
@@ -14,7 +16,6 @@ from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Field
-from sling import Sling
 
 logger = get_dagster_logger()
 
@@ -237,11 +238,27 @@ class SlingResource(ConfigurableResource):
             config["source"] = {k: v for k, v in config["source"].items() if v is not None}
             config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-            sling_cli = Sling(**config)
+            sling_cli = sling.Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
+
+    def replicate(
+        self,
+        *,
+        replication_config: SlingReplicationParam,
+        dagster_sling_translator: DagsterSlingTranslator,
+        debug: bool = False,
+    ):
+        replication_config = validate_replication(replication_config)
+        stream_definition = get_streams_from_replication(replication_config)
+
+        with self._setup_config():
+            uid = uuid.uuid4()
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
+            env = os.environ.copy()
 
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
