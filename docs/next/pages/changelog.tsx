@@ -21,7 +21,8 @@ import {getPaginatedChangeLog} from '../util/paginatedChangelog';
 const PAGINATION_VERSION_COUNT_PER_PAGE = 5;
 const PAGINATION_QUERY_NAME = 'page';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
 
 enum PageType {
   MDX = 'MDX',

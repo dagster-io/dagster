@@ -21,7 +21,9 @@ import MDXComponents, {SearchIndexContext} from '../components/mdx/MDXComponents
 import MDXRenderer, {MDXData, VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import {SphinxPrefix, sphinxPrefixFromPage} from '../util/useSphinx';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
+const searchProvider: React.ReactNode = SearchIndexContext.Provider as any;
 
 type HTMLData = {
   body: string;
@@ -55,7 +57,7 @@ function HTMLRenderer({data}: {data: HTMLData}) {
         />
       </VersionedContentLayout>
 
-      <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+      <aside className="relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
         <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
           <div className="mb-8 px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
@@ -192,7 +194,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
     const mdxSource = await renderToString(content, {
       components,
       provider: {
-        component: SearchIndexContext.Provider,
+        component: searchProvider,
         props: {value: searchIndex},
       },
       mdxOptions: {
