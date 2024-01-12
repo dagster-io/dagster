@@ -9,9 +9,7 @@ import {
   Menu,
   Popover,
   useViewport,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -380,7 +378,7 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
 const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   width: 30px;
   position: absolute;
-  border: 1px solid ${colorKeylineDefault()};
+  border: 1px solid ${Colors.keylineDefault()};
   border-radius: 3px;
   display: flex;
   justify-content: center;
@@ -388,7 +386,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   top: calc(50% - 15px);
   bottom: calc(50% - 15px);
   ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   z-index: 10;
 
   justify-content: center;
@@ -396,7 +394,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   cursor: pointer;
   display: flex;
   &:hover {
-    background: ${colorBackgroundDefaultHover()};
+    background: ${Colors.backgroundDefaultHover()};
   }
 `;
 
@@ -408,7 +406,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan

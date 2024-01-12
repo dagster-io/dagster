@@ -7,7 +7,7 @@ import {
   Heading,
   Page,
   Spinner,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -110,7 +110,7 @@ export const InstanceBackfills = () => {
         <Box padding={{vertical: 64}} flex={{direction: 'column', alignItems: 'center'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading backfills…</div>
+            <div style={{color: Colors.textLight()}}>Loading backfills…</div>
           </Box>
         </Box>
       );

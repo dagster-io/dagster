@@ -3,28 +3,10 @@ import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {CoreColors} from '../palettes/Colors';
-import {
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentPrimary,
-  colorAccentPrimaryHover,
-  colorAccentRed,
-  colorAccentRedHover,
-  colorAccentReversed,
-  colorAccentYellow,
-  colorAccentYellowHover,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorBorderDefault,
-  colorBorderHover,
-  colorBackgroundLightHover,
-} from '../theme/color';
+import {CoreColors} from '../palettes/CoreColors';
 
 import {BaseButton} from './BaseButton';
+import {Colors} from './Color';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
@@ -40,94 +22,94 @@ export const outlinedIntentToFillColor = () => {
 export const outlinedIntentToFillColorHover = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'danger':
-      return colorBackgroundRed();
+      return Colors.backgroundRed();
     case 'success':
-      return colorBackgroundGreen();
+      return Colors.backgroundGreen();
     case 'warning':
-      return colorBackgroundYellow();
+      return Colors.backgroundYellow();
     case 'primary':
     case 'none':
     default:
-      return colorBackgroundGray();
+      return Colors.backgroundGray();
   }
 };
 
 export const outlinedIntentToStrokeColor = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
       return 'transparent';
     case 'primary':
     default:
-      return colorBorderDefault();
+      return Colors.borderDefault();
   }
 };
 
 export const outlinedIntentToStrokeColorHover = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'danger':
-      return colorAccentRedHover();
+      return Colors.accentRedHover();
     case 'success':
-      return colorAccentGreenHover();
+      return Colors.accentGreenHover();
     case 'warning':
-      return colorAccentYellowHover();
+      return Colors.accentYellowHover();
     case 'none':
       return 'transparent';
     case 'primary':
     default:
-      return colorBorderHover();
+      return Colors.borderHover();
   }
 };
 
 export const outlinedIntentToTextColor = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'primary':
     case 'none':
     default:
-      return colorAccentPrimary();
+      return Colors.accentPrimary();
   }
 };
 
 export const outlinedIntentToIconColor = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'primary':
     case 'none':
     default:
-      return colorAccentPrimary();
+      return Colors.accentPrimary();
   }
 };
 
 export const outlinedIntentToSpinnerColor = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'primary':
-      return colorBorderDefault();
+      return Colors.borderDefault();
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'primary':
     case 'none':
     default:
-      return colorAccentGray();
+      return Colors.accentGray();
   }
 };
 
@@ -135,7 +117,7 @@ export const outlinedIntentToSpinnerColor = (intent: BlueprintIntent) => {
 
 export const intentToStrokeColor = (intent: BlueprintIntent) => {
   if (intent === undefined) {
-    return colorBorderDefault();
+    return Colors.borderDefault();
   }
   return 'transparent';
 };
@@ -143,13 +125,13 @@ export const intentToStrokeColor = (intent: BlueprintIntent) => {
 export const intentToFillColor = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'primary':
-      return colorAccentPrimary();
+      return Colors.accentPrimary();
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
     default:
       return 'transparent';
@@ -159,25 +141,25 @@ export const intentToFillColor = (intent: BlueprintIntent) => {
 export const intentToFillColorHover = (intent: BlueprintIntent) => {
   switch (intent) {
     case 'primary':
-      return colorAccentPrimaryHover();
+      return Colors.accentPrimaryHover();
     case 'danger':
-      return colorAccentRedHover();
+      return Colors.accentRedHover();
     case 'success':
-      return colorAccentGreenHover();
+      return Colors.accentGreenHover();
     case 'warning':
-      return colorAccentYellowHover();
+      return Colors.accentYellowHover();
     case 'none':
     default:
-      return colorBackgroundLightHover();
+      return Colors.backgroundLightHover();
   }
 };
 
 export const intentToTextAndIconColor = (intent: BlueprintIntent) => {
   if (!intent || intent === 'none') {
-    return colorAccentPrimary();
+    return Colors.accentPrimary();
   }
   if (intent === 'primary') {
-    return colorAccentReversed();
+    return Colors.accentReversed();
   }
   return CoreColors.White;
 };

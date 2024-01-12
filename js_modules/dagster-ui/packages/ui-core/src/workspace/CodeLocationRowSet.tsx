@@ -7,8 +7,7 @@ import {
   MiddleTruncate,
   Tag,
   Tooltip,
-  colorBackgroundDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -45,7 +44,7 @@ export const CodeLocationRowSet = ({locationNode}: Props) => {
   if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
     return (
       <tr>
-        <td style={{maxWidth: '400px', color: colorTextLight()}}>
+        <td style={{maxWidth: '400px', color: Colors.textLight()}}>
           <MiddleTruncate text={name} />
         </td>
         <td>
@@ -140,7 +139,7 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
 
 const ImageNameBox = styled(Box)`
   width: 100%;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 12px;
 
   .bp4-popover2-target {
@@ -148,9 +147,9 @@ const ImageNameBox = styled(Box)`
   }
 
   button {
-    background: ${colorBackgroundDefault()};
+    background: ${Colors.backgroundDefault()};
     border: none;
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     cursor: pointer;
     font-size: 12px;
     overflow: hidden;
@@ -176,7 +175,7 @@ export const ModuleOrPackageOrFile = ({
     return (
       <Box
         flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: colorTextLight(), fontSize: 12}}
+        style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
         <MiddleTruncate text={imageKV.value} />

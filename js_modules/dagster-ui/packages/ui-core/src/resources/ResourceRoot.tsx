@@ -17,11 +17,7 @@ import {
   Table,
   Tag,
   Tooltip,
-  colorAccentBlue,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorLinkDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
@@ -77,7 +73,7 @@ const resourceDisplayName = (
 
 const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
-    <Box padding={{left: 24, vertical: 16}} background={colorBackgroundLight()} border="all">
+    <Box padding={{left: 24, vertical: 16}} background={Colors.backgroundLight()} border="all">
       {props.children}
     </Box>
   );
@@ -154,7 +150,7 @@ export const ResourceRoot = (props: Props) => {
                     <div>Could not load resource.</div>
                     {message && (
                       <ButtonLink
-                        color={colorLinkDefault()}
+                        color={Colors.linkDefault()}
                         underline="always"
                         onClick={() => {
                           showCustomAlert({
@@ -209,7 +205,7 @@ export const ResourceRoot = (props: Props) => {
                     </Box>
                     <Box
                       border="top-and-bottom"
-                      background={colorBackgroundLight()}
+                      background={Colors.backgroundLight()}
                       padding={{vertical: 8, horizontal: 24}}
                       style={{fontSize: '12px', fontWeight: 500}}
                     >
@@ -328,7 +324,7 @@ const ResourceConfig = (props: {
                     <td>
                       <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
                         <strong>{field.name}</strong>
-                        <div style={{fontSize: 12, color: colorTextLight()}}>
+                        <div style={{fontSize: 12, color: Colors.textLight()}}>
                           {field.description}
                         </div>
                       </Box>
@@ -461,7 +457,7 @@ const ResourceUses = (props: {
                         }}
                         style={{maxWidth: '100%'}}
                       >
-                        <Icon name="job" color={colorAccentGray()} />
+                        <Icon name="job" color={Colors.accentGray()} />
 
                         <Link
                           to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
@@ -491,7 +487,7 @@ const ResourceUses = (props: {
                             style={{maxWidth: '100%'}}
                             key={op.handleID}
                           >
-                            <Icon name="op" color={colorAccentGray()} />
+                            <Icon name="op" color={Colors.accentGray()} />
 
                             <Link
                               to={workspacePathFromAddress(
@@ -516,12 +512,12 @@ const ResourceUses = (props: {
         {
           name: 'Schedules',
           objects: resourceDetails.schedulesUsing,
-          icon: <Icon name="schedule" color={colorAccentGray()} />,
+          icon: <Icon name="schedule" color={Colors.accentGray()} />,
         },
         {
           name: 'Sensors',
           objects: resourceDetails.sensorsUsing,
-          icon: <Icon name="sensors" color={colorAccentGray()} />,
+          icon: <Icon name="sensors" color={Colors.accentGray()} />,
         },
       ]
         .filter(({objects}) => objects.length > 0)
@@ -579,7 +575,7 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
   return (
     <Box flex={{direction: 'column'}}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{maxWidth: '100%'}}>
-        <Icon name="resource" color={colorAccentBlue()} />
+        <Icon name="resource" color={Colors.accentBlue()} />
         <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
           {url ? (
             <Link to={url} style={{overflow: 'hidden'}}>

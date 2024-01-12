@@ -1,12 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Icon,
-  IconWrapper,
-  Tag,
-  colorBackgroundLight,
-  colorLinkDefault,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconWrapper, Tag, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -156,7 +149,7 @@ const GroupNameRow = ({
       }}
     >
       <Box
-        background={colorBackgroundLight()}
+        background={Colors.backgroundLight()}
         flex={{direction: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
         padding={{horizontal: 24}}
         border="bottom"
@@ -174,7 +167,7 @@ const GroupNameRow = ({
                   <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`)}>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                       <span>View lineage</span>
-                      <Icon name="open_in_new" size={16} color={colorLinkDefault()} />
+                      <Icon name="open_in_new" size={16} color={Colors.linkDefault()} />
                     </Box>
                   </Link>
                 </Box>

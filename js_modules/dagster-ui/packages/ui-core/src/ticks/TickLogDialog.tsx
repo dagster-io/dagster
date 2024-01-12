@@ -5,7 +5,7 @@ import {
   DialogFooter,
   Dialog,
   DialogBody,
-  colorTextLight,
+  Colors,
   NonIdealState,
   ExternalAnchorButton,
   Icon,
@@ -63,7 +63,7 @@ export const TickLogDialog = ({
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: colorTextLight()}}
+            style={{flex: 1, color: Colors.textLight()}}
           >
             No logs available
           </Box>

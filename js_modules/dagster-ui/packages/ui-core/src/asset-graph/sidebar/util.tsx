@@ -1,11 +1,4 @@
-import {
-  Spinner,
-  Tooltip,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentRed,
-} from '@dagster-io/ui-components';
+import {Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import styled, {keyframes} from 'styled-components';
 
@@ -64,33 +57,33 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
-          <Dot style={{border: `2px solid ${colorAccentGray()}`}} />
+          <Dot style={{border: `2px solid ${Colors.accentGray()}`}} />
         </Tooltip>
       );
     case 'failed':
       return (
         <Tooltip content="Failed" position="top">
-          <Dot style={{backgroundColor: colorAccentRed()}} />
+          <Dot style={{backgroundColor: Colors.accentRed()}} />
         </Tooltip>
       );
     case 'inprogress':
       return <Spinner purpose="caption-text" />;
     case 'successful':
-      return <Dot style={{backgroundColor: colorAccentGreen()}} />;
+      return <Dot style={{backgroundColor: Colors.accentGreen()}} />;
   }
 }
 
 const pulse = keyframes`
   from {
-    background-color: ${colorAccentGray()}
+    background-color: ${Colors.accentGray()}
   }
 
   50% {
-    background-color: ${colorAccentGrayHover()}
+    background-color: ${Colors.accentGrayHover()}
   }
 
   to {
-    background-color: ${colorAccentGray()}
+    background-color: ${Colors.accentGray()}
   }
 `;
 

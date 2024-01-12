@@ -8,19 +8,13 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorBackgroundLighter,
-  colorShadowDefault,
-} from '../theme/color';
+import {Colors} from './Color';
 
 interface SliderProps extends BlueprintSliderProps {
   fillColor?: string;
 }
 
-export const Slider = ({fillColor = colorAccentGray(), ...rest}: SliderProps) => {
+export const Slider = ({fillColor = Colors.accentGray(), ...rest}: SliderProps) => {
   return <StyledSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
@@ -29,7 +23,7 @@ interface MultiSliderProps extends BlueprintMultiSliderProps {
   children: React.ReactNode;
 }
 
-export const MultiSlider = ({fillColor = colorAccentGray(), ...rest}: MultiSliderProps) => {
+export const MultiSlider = ({fillColor = Colors.accentGray(), ...rest}: MultiSliderProps) => {
   return <StyledMultiSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
@@ -62,17 +56,17 @@ export const SliderStyles = css<{$fillColor: string}>`
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    border: 2px solid ${colorAccentGray()};
-    background: ${colorBackgroundLighter()};
+    border: 2px solid ${Colors.accentGray()};
+    background: ${Colors.backgroundLighter()};
     box-shadow: none;
     &:hover {
-      border: 2px solid ${colorAccentGrayHover()};
-      box-shadow: ${colorShadowDefault()} 0px 2px 12px 0px;
+      border: 2px solid ${Colors.accentGrayHover()};
+      box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
     }
 
     .bp4-slider-label {
-      background: ${colorAccentBlue()};
-      box-shadow: 0 1px 4px ${colorShadowDefault()};
+      background: ${Colors.accentBlue()};
+      box-shadow: 0 1px 4px ${Colors.shadowDefault()};
       padding: 4px 8px;
     }
   }

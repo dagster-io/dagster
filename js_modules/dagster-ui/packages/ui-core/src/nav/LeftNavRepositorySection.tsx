@@ -1,4 +1,4 @@
-import {Body, Box, colorBackgroundLight, colorTextLighter} from '@dagster-io/ui-components';
+import {Body, Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -58,7 +58,7 @@ const LoadedRepositorySection = ({
 };
 
 const Container = styled.div`
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   display: flex;
   flex: 1;
   overflow: none;
@@ -74,7 +74,7 @@ const ListContainer = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   line-height: 20px;
   padding: 6px 24px 0;
 `;

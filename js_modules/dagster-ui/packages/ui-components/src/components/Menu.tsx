@@ -8,20 +8,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextLight,
-  colorPopoverBackground,
-  colorPopoverBackgroundHover,
-  colorBackgroundBlue,
-} from '../theme/color';
-
+import {Colors} from './Color';
 import {IconName, Icon, IconWrapper} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
@@ -33,32 +20,32 @@ export const Menu = (props: Props) => {
 const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return colorAccentBlue();
+      return Colors.accentBlue();
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
     default:
-      return colorTextDefault();
+      return Colors.textDefault();
   }
 };
 
 const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return colorAccentBlue();
+      return Colors.accentBlue();
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
     default:
-      return colorAccentGray();
+      return Colors.accentGray();
   }
 };
 
@@ -115,7 +102,7 @@ export const MenuExternalLink = (props: MenuExternalLinkProps) => {
 };
 
 export const MenuDivider = styled(BlueprintMenuDivider)`
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
   margin: 2px 0;
 
   :focus {
@@ -123,7 +110,7 @@ export const MenuDivider = styled(BlueprintMenuDivider)`
   }
 
   && h6 {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     padding: 8px 6px 2px;
     font-size: 12px;
     font-weight: 300;
@@ -132,7 +119,7 @@ export const MenuDivider = styled(BlueprintMenuDivider)`
 `;
 
 const StyledMenu = styled(BlueprintMenu)`
-  background-color: ${colorPopoverBackground()};
+  background-color: ${Colors.popoverBackground()};
   border-radius: 4px;
   padding: 8px 4px;
 `;
@@ -162,11 +149,11 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
 
   &.bp4-active,
   &.bp4-active:hover {
-    background-color: ${colorBackgroundBlue()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundBlue()};
+    color: ${Colors.textDefault()};
 
     ${IconWrapper} {
-      background-color: ${colorTextDefault()};
+      background-color: ${Colors.textDefault()};
     }
   }
 
@@ -175,7 +162,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &.bp4-active ${IconWrapper} {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
   }
 
   ${IconWrapper}:first-child {
@@ -183,7 +170,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &:hover {
-    background: ${colorPopoverBackgroundHover()};
+    background: ${Colors.popoverBackgroundHover()};
     color: ${({$textColor}) => $textColor};
   }
 

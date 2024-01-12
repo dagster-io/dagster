@@ -9,11 +9,7 @@ import {
   Spinner,
   Table,
   Tag,
-  colorAccentBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorBackgroundLight,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -309,7 +305,7 @@ export const BackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/overview/backfills" style={{color: colorTextLight()}}>
+            <Link to="/overview/backfills" style={{color: Colors.textLight()}}>
               Backfills
             </Link>
             {' / '}
@@ -356,7 +352,7 @@ function StatusBar({
     <div
       style={{
         borderRadius: '8px',
-        backgroundColor: colorBackgroundLight(),
+        backgroundColor: Colors.backgroundLight(),
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
           (100 * inProgress) / targeted
@@ -367,15 +363,15 @@ function StatusBar({
         overflow: 'hidden',
       }}
     >
-      <div style={{background: colorAccentGreen()}} />
-      <div style={{background: colorAccentRed()}} />
-      <div style={{background: colorAccentBlue()}} />
+      <div style={{background: Colors.accentGreen()}} />
+      <div style={{background: Colors.accentRed()}} />
+      <div style={{background: Colors.accentBlue()}} />
     </div>
   );
 }
 
 const Label = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 12px;
   line-height: 16px;
 `;

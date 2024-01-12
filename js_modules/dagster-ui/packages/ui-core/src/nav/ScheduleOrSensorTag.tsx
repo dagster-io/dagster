@@ -5,7 +5,7 @@ import {
   Tooltip,
   FontFamily,
   MiddleTruncate,
-  colorLinkDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -49,7 +49,7 @@ export const ScheduleOrSensorTag = ({
     return (
       <>
         <Tag icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={colorLinkDefault()}>
+          <ButtonLink onClick={() => setOpen(true)} color={Colors.linkDefault()}>
             {buttonText}
           </ButtonLink>
         </Tag>

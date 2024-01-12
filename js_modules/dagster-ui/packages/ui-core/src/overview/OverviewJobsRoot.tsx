@@ -6,7 +6,7 @@ import {
   PageHeader,
   Spinner,
   TextInput,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -79,7 +79,7 @@ export const OverviewJobsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading jobs…</div>
+            <div style={{color: Colors.textLight()}}>Loading jobs…</div>
           </Box>
         </Box>
       );

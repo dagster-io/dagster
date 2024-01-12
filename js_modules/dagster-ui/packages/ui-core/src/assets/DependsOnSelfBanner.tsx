@@ -1,4 +1,4 @@
-import {Alert, Box, Icon, colorAccentBlue} from '@dagster-io/ui-components';
+import {Alert, Box, Icon, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
 export const DependsOnSelfBanner = () => {
@@ -10,7 +10,7 @@ export const DependsOnSelfBanner = () => {
           <Icon
             name="history_toggle_off"
             size={16}
-            color={colorAccentBlue()}
+            color={Colors.accentBlue()}
             style={{marginTop: 1}}
           />
         }

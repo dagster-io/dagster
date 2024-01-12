@@ -9,9 +9,7 @@ import {
   Icon,
   Checkbox,
   MiddleTruncate,
-  colorLinkDefault,
-  colorTextLight,
-  colorAccentGreen,
+  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -115,7 +113,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                   });
                 }}
               />
-              <label htmlFor="check-all" style={{color: colorTextLight(), cursor: 'pointer'}}>
+              <label htmlFor="check-all" style={{color: Colors.textLight(), cursor: 'pointer'}}>
                 Asset Name
               </label>
             </RowGrid>
@@ -157,7 +155,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>
                           <Link to={assetDetailsPathForKey(item)} target="_blank">
-                            <Icon name="open_in_new" color={colorLinkDefault()} />
+                            <Icon name="open_in_new" color={Colors.linkDefault()} />
                           </Link>
                         </Box>
                       </RowGrid>
@@ -171,7 +169,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
       }
       return (
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="check_circle" color={colorAccentGreen()} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           <div>All assets are up to date</div>
         </Box>
       );

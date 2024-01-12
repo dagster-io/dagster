@@ -13,8 +13,7 @@ import {
   JoinedButtons,
   DialogBody,
   Box,
-  colorBackgroundLight,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -479,8 +478,8 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${colorBackgroundLight()};
-  color: ${colorTextLight()};
+  background: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
 `;
 
 const LinkNoUnderline = styled(Link)`

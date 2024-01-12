@@ -1,4 +1,4 @@
-import {Alert, Icon, colorAccentBlue} from '@dagster-io/ui-components';
+import {Alert, Colors, Icon} from '@dagster-io/ui-components';
 import React from 'react';
 
 export const AssetChecksBanner = () => {
@@ -6,7 +6,7 @@ export const AssetChecksBanner = () => {
     <Alert
       intent="info"
       title="Asset Checks are experimental"
-      icon={<Icon name="info" color={colorAccentBlue()} />}
+      icon={<Icon name="info" color={Colors.accentBlue()} />}
       description={
         <span>
           You can learn more about this new feature and provide feedback{' '}

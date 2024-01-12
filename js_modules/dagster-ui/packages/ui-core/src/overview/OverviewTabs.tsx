@@ -1,5 +1,5 @@
 import {QueryResult} from '@apollo/client';
-import {Box, Spinner, Tabs, colorAccentBlue, colorAccentGray} from '@dagster-io/ui-components';
+import {Box, Spinner, Tabs, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
@@ -41,7 +41,9 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
                       height: '10px',
                       borderRadius: '50%',
                       backgroundColor:
-                        automaterialize.paused === false ? colorAccentBlue() : colorAccentGray(),
+                        automaterialize.paused === false
+                          ? Colors.accentBlue()
+                          : Colors.accentGray(),
                     }}
                   />
                 )}

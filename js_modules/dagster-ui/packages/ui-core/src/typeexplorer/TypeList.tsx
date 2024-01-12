@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -50,7 +50,7 @@ export const TypeList = (props: ITypeListProps) => {
                   ))}
                 </StyledUL>
               ) : (
-                <div style={{color: colorTextLight(), fontSize: '12px'}}>None</div>
+                <div style={{color: Colors.textLight(), fontSize: '12px'}}>None</div>
               )}
             </Box>
           </SidebarSection>

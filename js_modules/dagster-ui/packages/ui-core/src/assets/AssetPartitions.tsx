@@ -7,9 +7,7 @@ import {
   Spinner,
   Subheading,
   Tooltip,
-  colorAccentGray,
-  colorBackgroundDefault,
-  colorBackgroundLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -230,12 +228,12 @@ export const AssetPartitions = ({
               style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
               flex={{direction: 'column'}}
               border="right"
-              background={colorBackgroundLight()}
+              background={Colors.backgroundLight()}
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
                 flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                background={colorBackgroundDefault()}
+                background={Colors.backgroundDefault()}
                 border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
@@ -317,7 +315,7 @@ export const AssetPartitions = ({
                   position="bottom-left"
                 >
                   <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={colorAccentGray()} />
+                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
                   </SortButton>
                 </Popover>
               </Box>

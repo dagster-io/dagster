@@ -12,12 +12,7 @@ import {
   Table,
   DialogBody,
   CaptionMono,
-  colorKeylineDefault,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorBackgroundDefault,
-  colorTextLight,
-  colorBackgroundLighter,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -101,7 +96,7 @@ export const MetadataEntry = ({
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={colorAccentGray()} />
+            <Icon name="assignment" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
@@ -115,7 +110,7 @@ export const MetadataEntry = ({
           copyContent={() => entry.jsonString}
           content={() => (
             <Box
-              background={colorBackgroundLight()}
+              background={Colors.backgroundLight()}
               margin={{bottom: 12}}
               padding={24}
               border="bottom"
@@ -136,7 +131,7 @@ export const MetadataEntry = ({
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
-            <Icon name="link" color={colorAccentGray()} />
+            <Icon name="link" color={Colors.accentGray()} />
           </a>
         </Group>
       );
@@ -152,7 +147,7 @@ export const MetadataEntry = ({
           content={() => (
             <Box
               padding={{vertical: 16, horizontal: 20}}
-              background={colorBackgroundDefault()}
+              background={Colors.backgroundDefault()}
               style={{overflow: 'auto'}}
               margin={{bottom: 12}}
             >
@@ -201,7 +196,7 @@ export const MetadataEntry = ({
           }}
           style={{maxWidth: '100%'}}
         >
-          <Icon name="job" color={colorAccentGray()} />
+          <Icon name="job" color={Colors.accentGray()} />
           <MetadataEntryLink to={workspacePath}>{entry.jobName}</MetadataEntryLink>
         </Box>
       );
@@ -218,7 +213,7 @@ export const MetadataEntry = ({
           content={() => (
             <Box
               padding={{vertical: 16, horizontal: 20}}
-              background={colorBackgroundDefault()}
+              background={Colors.backgroundDefault()}
               style={{overflow: 'auto'}}
               margin={{bottom: 12}}
             >
@@ -239,7 +234,7 @@ export const MetadataEntry = ({
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={colorAccentGray()} />
+            <Icon name="assignment" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
@@ -402,7 +397,7 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <MetadataEntryAction onClick={() => setShowSchema(true)}>Show schema</MetadataEntryAction>
-      <Table style={{borderRight: `1px solid ${colorKeylineDefault()}`}}>
+      <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}}>
         <thead>
           <tr>
             {schema.columns.map((column) => (
@@ -480,18 +475,18 @@ const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid ${colorKeylineDefault()};
-  border-left: 1px solid ${colorKeylineDefault()};
-  background: ${colorBackgroundLighter()};
+  border-top: 1px solid ${Colors.keylineDefault()};
+  border-left: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundLighter()};
 
   td:first-child {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 
   &&& tbody > tr > td {
     padding: 4px 8px;
-    border-bottom: 1px solid ${colorKeylineDefault()};
-    border-right: 1px solid ${colorKeylineDefault()};
+    border-bottom: 1px solid ${Colors.keylineDefault()};
+    border-right: 1px solid ${Colors.keylineDefault()};
     vertical-align: top;
     box-shadow: none !important;
   }

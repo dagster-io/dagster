@@ -8,11 +8,7 @@ import {
   Spinner,
   Tag,
   TextInput,
-  colorAccentGreen,
-  colorBackgroundDefault,
-  colorBorderDefault,
-  colorTextDefault,
-  colorTextLight,
+  Colors,
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -199,11 +195,11 @@ function VirtualHeaderRow() {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
         position: 'sticky',
         top: 0,
         zIndex: 1,
-        background: colorBackgroundDefault(),
+        background: Colors.backgroundDefault(),
       }}
     >
       <HeaderCell>Group name</HeaderCell>
@@ -354,7 +350,7 @@ function VirtualRow({height, start, group}: RowProps) {
                     style={{
                       width: '12px',
                       height: '12px',
-                      border: `2px solid ${colorBorderDefault()}`,
+                      border: `2px solid ${Colors.borderDefault()}`,
                       borderRadius: '50%',
                     }}
                   />
@@ -434,7 +430,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
                     style={{
-                      backgroundColor: colorAccentGreen(),
+                      backgroundColor: Colors.accentGreen(),
                       width: '10px',
                       height: '10px',
                       borderRadius: '50%',
@@ -464,7 +460,7 @@ const RowGrid = styled(Box)`
 
 const Cell = ({children}: {children: React.ReactNode}) => {
   return (
-    <RowCell style={{color: colorTextDefault()}}>
+    <RowCell style={{color: Colors.textDefault()}}>
       <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
     </RowCell>
   );
@@ -474,7 +470,7 @@ const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
   font-size: 12px;
   pointer-events: none;
   a {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     pointer-events: none;
     max-width: ${({maxWidth}) => (maxWidth ? 'unset' : `${maxWidth}px`)};
   }
@@ -521,7 +517,7 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <Caption style={{color: colorTextLight()}}>
+                      <Caption style={{color: Colors.textLight()}}>
                         {partitionCountString(count)} {adjective}
                       </Caption>
                     ) : null}

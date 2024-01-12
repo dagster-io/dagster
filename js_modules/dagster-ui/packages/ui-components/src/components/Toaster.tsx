@@ -3,9 +3,9 @@ import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {CoreColors} from '../palettes/Colors';
-import {colorAccentBlue, colorAccentGray, colorAccentPrimary, colorAccentRed} from '../theme/color';
+import {CoreColors} from '../palettes/CoreColors';
 
+import {Colors} from './Color';
 import {IconName, Icon, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
 
@@ -17,7 +17,7 @@ export const GlobalToasterStyle = createGlobalStyle`
       font-size: 14px;
       line-height: 22px;
       color: ${CoreColors.White};
-      background-color: ${colorAccentGray()};
+      background-color: ${Colors.accentGray()};
     }
 
     .bp4-button-group {
@@ -41,22 +41,22 @@ export const GlobalToasterStyle = createGlobalStyle`
 
     .bp4-toast.bp4-intent-primary,
     .bp4-toast.bp4-intent-primary .bp4-button {
-      background-color: ${colorAccentGray()} !important;
+      background-color: ${Colors.accentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-success,
     .bp4-toast.bp4-intent-success .bp4-button {
-      background-color: ${colorAccentBlue()} !important;
+      background-color: ${Colors.accentBlue()} !important;
     }
 
     .bp4-toast.bp4-intent-warning,
     .bp4-toast.bp4-intent-warning .bp4-button {
-      background-color: ${colorAccentGray()} !important;
+      background-color: ${Colors.accentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-danger,
     .bp4-toast.bp4-intent-danger .bp4-button {
-      background-color: ${colorAccentRed()} !important;
+      background-color: ${Colors.accentRed()} !important;
     }
   }
 `;
@@ -72,7 +72,7 @@ const setup = (instance: ToasterInstance): DToaster => {
     if (icon && typeof icon === 'string') {
       rest.message = (
         <>
-          <Icon name={icon} color={colorAccentPrimary()} />
+          <Icon name={icon} color={Colors.accentPrimary()} />
           {rest.message}
         </>
       );

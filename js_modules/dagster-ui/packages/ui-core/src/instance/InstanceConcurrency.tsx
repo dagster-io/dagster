@@ -23,9 +23,7 @@ import {
   NonIdealState,
   Page,
   Tooltip,
-  colorAccentGray,
-  colorTextLight,
-  colorBackgroundYellow,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -844,7 +842,7 @@ const PendingStepsTable = ({
               placement="top"
               content="Priority can be set on each op/asset using the 'dagster/priority' tag. Higher priority steps will be assigned slots first."
             >
-              <Icon name="info" color={colorAccentGray()} />
+              <Icon name="info" color={Colors.accentGray()} />
             </Tooltip>
           </Box>
         </th>
@@ -862,7 +860,7 @@ const PendingStepsTable = ({
             <td colSpan={6}>
               <Box
                 flex={{alignItems: 'center', justifyContent: 'center'}}
-                style={{color: colorTextLight()}}
+                style={{color: Colors.textLight()}}
                 padding={16}
               >
                 There are no active or pending steps for this concurrency key.
@@ -877,7 +875,7 @@ const PendingStepsTable = ({
   return (
     <Table>
       {tableHeader}
-      <tbody style={{backgroundColor: colorBackgroundYellow()}}>
+      <tbody style={{backgroundColor: Colors.backgroundYellow()}}>
         {assignedSteps.map((step) => (
           <PendingStepRow
             key={step.runId + step.stepKey}
@@ -924,7 +922,7 @@ const PendingStepRow = ({
                   placement="top"
                   content="Slots for canceled / failed runs can automatically be freed by configuring a run monitoring setting."
                 >
-                  <Icon name="info" color={colorAccentGray()} />
+                  <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               ) : null}
             </Box>

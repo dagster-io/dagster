@@ -7,7 +7,7 @@ import {
   Dialog,
   Group,
   TextArea,
-  colorAccentReversed,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -56,7 +56,7 @@ export const EditCursorDialog = ({
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={colorAccentReversed()}
+              color={Colors.accentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({

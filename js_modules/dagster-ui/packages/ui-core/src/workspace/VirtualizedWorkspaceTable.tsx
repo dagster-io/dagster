@@ -1,5 +1,5 @@
 import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
-import {Caption, colorTextLight} from '@dagster-io/ui-components';
+import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -52,7 +52,7 @@ export const LoadingOrNone = ({
 }) => {
   const {called, loading, data} = queryResult;
   return (
-    <div style={{color: colorTextLight()}}>
+    <div style={{color: Colors.textLight()}}>
       {!called || (loading && !data) ? 'Loading' : noneString}
     </div>
   );
@@ -72,7 +72,7 @@ const CaptionTextContainer = styled.div`
   text-overflow: ellipsis;
 
   ${Caption} {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     white-space: nowrap;
   }
 `;

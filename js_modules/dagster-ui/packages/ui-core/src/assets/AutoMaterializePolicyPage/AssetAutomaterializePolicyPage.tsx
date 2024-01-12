@@ -1,4 +1,4 @@
-import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Subheading, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -66,7 +66,7 @@ export const AssetAutomaterializePolicyPage = ({
 
   return (
     <AutomaterializePage
-      style={{flex: 1, minHeight: 0, color: colorTextLight(), overflow: 'hidden'}}
+      style={{flex: 1, minHeight: 0, color: Colors.textLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
       <Box padding={{horizontal: 24, vertical: 12}} border="bottom">

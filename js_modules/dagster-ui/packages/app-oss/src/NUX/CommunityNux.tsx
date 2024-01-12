@@ -4,16 +4,13 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Dialog,
   ExternalAnchorButton,
   Heading,
   Icon,
   Spinner,
   TextInput,
-  colorAccentRed,
-  colorBackgroundDefault,
-  colorTextLight,
-  colorTextRed,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import React from 'react';
@@ -95,7 +92,7 @@ const Form = ({dismiss, submit}: FormProps) => {
   return (
     <Box
       flex={{direction: 'column', gap: 16}}
-      style={{padding: '36px', width: '680px', background: colorBackgroundDefault()}}
+      style={{padding: '36px', width: '680px', background: Colors.backgroundDefault()}}
     >
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}
@@ -104,7 +101,7 @@ const Form = ({dismiss, submit}: FormProps) => {
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading>Join the Dagster community</Heading>
-          <Body style={{color: colorTextLight(), marginBottom: '4px'}}>
+          <Body style={{color: Colors.textLight(), marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
@@ -129,11 +126,11 @@ const Form = ({dismiss, submit}: FormProps) => {
           }}
           onBlur={() => setBlurred(true)}
           placeholder="hello@dagster.io"
-          strokeColor={!emailChanged || validEmail ? undefined : colorAccentRed()}
+          strokeColor={!emailChanged || validEmail ? undefined : Colors.accentRed()}
           style={{width: '100%'}}
         />
         {emailChanged && blurred && !validEmail ? (
-          <div style={{paddingBottom: '12px', color: colorTextRed(), fontSize: '12px'}}>
+          <div style={{paddingBottom: '12px', color: Colors.textRed(), fontSize: '12px'}}>
             Add your email to get updates from Dagster.
           </div>
         ) : null}

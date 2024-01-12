@@ -1,4 +1,4 @@
-import {Box, Caption, Mono, colorKeylineDefault, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Mono} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
 import React from 'react';
@@ -25,7 +25,7 @@ export const AssetEventMetadataEntriesTable = ({
   observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
 }) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {
-    return <Caption color={colorTextLight()}>No metadata entries</Caption>;
+    return <Caption color={Colors.textLight()}>No metadata entries</Caption>;
   }
   const {metadataEntries, timestamp} = event;
 
@@ -103,7 +103,7 @@ const AssetEventMetadataTable = styled.table`
     width: 25%;
   }
   tr td {
-    border: 1px solid ${colorKeylineDefault()};
+    border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

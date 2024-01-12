@@ -8,12 +8,7 @@ import {
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorAccentLime,
-  colorTextLight,
-  colorTextDefault,
-  colorBackgroundLighter,
+  Colors,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -360,11 +355,12 @@ const OPS_ROOT_QUERY = gql`
 
 const OpListItem = styled.div<{$selected: boolean}>`
   align-items: flex-start;
-  background: ${({$selected}) => ($selected ? colorBackgroundLighter() : colorBackgroundDefault())};
+  background: ${({$selected}) =>
+    $selected ? Colors.backgroundLighter() : Colors.backgroundDefault()};
   box-shadow:
-    ${({$selected}) => ($selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
-    ${colorKeylineDefault()} 0 -1px 0 inset;
-  color: ${({$selected}) => ($selected ? colorTextDefault() : colorTextLight())};
+    ${({$selected}) => ($selected ? Colors.accentLime() : 'transparent')} 4px 0 0 inset,
+    ${Colors.keylineDefault()} 0 -1px 0 inset;
+  color: ${({$selected}) => ($selected ? Colors.textDefault() : Colors.textLight())};
   cursor: pointer;
   font-size: 14px;
   display: flex;

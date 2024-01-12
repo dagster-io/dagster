@@ -9,12 +9,7 @@ import {
   IconWrapper,
   Spinner,
   Tooltip,
-  colorTextLighter,
-  colorBackgroundLighter,
-  colorTextDisabled,
-  colorTextLight,
-  colorTextDefault,
-  colorAccentBlue,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -44,7 +39,7 @@ export const RepoNavItem = (props: Props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: colorTextLighter()}}>No definitions</span>;
+      return <span style={{color: Colors.textLighter()}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repo={allRepos[0]!} onlyRepo />;
@@ -58,7 +53,7 @@ export const RepoNavItem = (props: Props) => {
 
   return (
     <Box
-      background={colorBackgroundLighter()}
+      background={Colors.backgroundLighter()}
       padding={{vertical: 12, left: 24, right: 20}}
       border="top"
     >
@@ -150,7 +145,7 @@ const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo
                   <ReloadButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? colorTextLight() : colorTextDisabled()}
+                      color={hasReloadPermission ? Colors.textLight() : Colors.textDisabled()}
                     />
                   </ReloadButton>
                 )}
@@ -171,7 +166,7 @@ const SummaryText = styled.div`
 `;
 
 const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   display: block;
   max-width: ${({$onlyRepo}) => ($onlyRepo ? '248px' : '192px')};
   overflow-x: hidden;
@@ -179,12 +174,12 @@ const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
   transition: color 100ms linear;
 
   &&:hover {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
   }
 
   &&:hover,
   &&:active {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
     text-decoration: none;
   }
 `;
@@ -213,7 +208,7 @@ const ReloadButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${colorAccentBlue()};
+    color: ${Colors.accentBlue()};
   }
 `;
 

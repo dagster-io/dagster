@@ -1,22 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundBlue,
-  colorBackgroundGreen,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorTextBlue,
-  colorTextGreen,
-  colorTextRed,
-  colorTextYellow,
-} from '../theme/color';
-
 import {Box} from './Box';
+import {Colors} from './Color';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
 
@@ -37,36 +23,36 @@ export const Alert = (props: Props) => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: colorBackgroundYellow(),
-          borderColor: colorAccentYellow(),
+          backgroundColor: Colors.backgroundYellow(),
+          borderColor: Colors.accentYellow(),
           icon: 'warning',
-          iconColor: colorAccentYellow(),
-          textColor: colorTextYellow(),
+          iconColor: Colors.accentYellow(),
+          textColor: Colors.textYellow(),
         };
       case 'error':
         return {
-          backgroundColor: colorBackgroundRed(),
-          borderColor: colorAccentRed(),
+          backgroundColor: Colors.backgroundRed(),
+          borderColor: Colors.accentRed(),
           icon: 'error',
-          iconColor: colorAccentRed(),
-          textColor: colorTextRed(),
+          iconColor: Colors.accentRed(),
+          textColor: Colors.textRed(),
         };
       case 'success':
         return {
-          backgroundColor: colorBackgroundGreen(),
-          borderColor: colorAccentGreen(),
+          backgroundColor: Colors.backgroundGreen(),
+          borderColor: Colors.accentGreen(),
           icon: 'done',
-          iconColor: colorAccentGreen(),
-          textColor: colorTextGreen(),
+          iconColor: Colors.accentGreen(),
+          textColor: Colors.textGreen(),
         };
       case 'info':
       default:
         return {
-          backgroundColor: colorBackgroundBlue(),
-          borderColor: colorAccentBlue(),
+          backgroundColor: Colors.backgroundBlue(),
+          borderColor: Colors.accentBlue(),
           icon: 'info',
-          iconColor: colorAccentBlue(),
-          textColor: colorTextBlue(),
+          iconColor: Colors.accentBlue(),
+          textColor: Colors.textBlue(),
         };
     }
   }, [intent]);

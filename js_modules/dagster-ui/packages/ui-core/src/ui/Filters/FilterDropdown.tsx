@@ -8,9 +8,7 @@ import {
   Popover,
   Spinner,
   TextInput,
-  colorBackgroundLight,
-  colorPopoverBackground,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
@@ -268,7 +266,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               </Inner>
             </Container>
           ) : (
-            <Box padding={{vertical: 12, horizontal: 12}} style={{color: colorTextLight()}}>
+            <Box padding={{vertical: 12, horizontal: 12}} style={{color: Colors.textLight()}}>
               {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
             </Box>
           )}
@@ -389,7 +387,7 @@ const TextInputWrapper = styled.div`
   }
 
   input {
-    background-color: ${colorPopoverBackground()};
+    background-color: ${Colors.popoverBackground()};
     padding: 12px 16px;
 
     &,
@@ -397,7 +395,7 @@ const TextInputWrapper = styled.div`
     :active,
     :hover {
       box-shadow: none;
-      background-color: ${colorPopoverBackground()};
+      background-color: ${Colors.popoverBackground()};
     }
   }
 `;
@@ -438,8 +436,8 @@ const StyledMenuItem = styled(MenuItem)`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${colorBackgroundLight()};
-  color: ${colorTextLight()};
+  background: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
 `;
 
 const PopoverStyle = createGlobalStyle`

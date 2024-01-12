@@ -4,10 +4,7 @@ import {
   SuggestionProvider,
   useSuggestionsForString,
   Icon,
-  colorBackgroundDefault,
-  colorAccentPrimary,
-  colorBackgroundBlue,
-  colorBackgroundGray,
+  Colors,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -249,8 +246,8 @@ interface HighlightableTextProps {
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) =>
-    isHighlight ? colorBackgroundBlue() : colorBackgroundDefault()};
-  color: ${({isHighlight}) => (isHighlight ? colorAccentPrimary() : 'default')};
+    isHighlight ? Colors.backgroundBlue() : Colors.backgroundDefault()};
+  color: ${({isHighlight}) => (isHighlight ? Colors.accentPrimary() : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -263,6 +260,6 @@ const Item = styled.li<HighlightableTextProps>`
 
   &:hover {
     background-color: ${({isHighlight}) =>
-      isHighlight ? colorBackgroundBlue() : colorBackgroundGray()};
+      isHighlight ? Colors.backgroundBlue() : Colors.backgroundGray()};
   }
 `;

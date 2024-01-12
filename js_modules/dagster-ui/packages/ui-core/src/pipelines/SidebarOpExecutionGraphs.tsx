@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Spinner,
-  Tooltip,
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentRed,
-} from '@dagster-io/ui-components';
+import {Box, Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -23,10 +15,10 @@ import {
 } from './types/SidebarOpExecutionGraphs.types';
 
 const StateColors = {
-  SUCCESS: colorAccentGreen(),
-  FAILURE: colorAccentRed(),
-  SKIPPED: colorAccentGray(),
-  IN_PROGRESS: colorAccentBlue(),
+  SUCCESS: Colors.accentGreen(),
+  FAILURE: Colors.accentRed(),
+  SKIPPED: Colors.accentGray(),
+  IN_PROGRESS: Colors.accentBlue(),
 };
 
 export const SidebarOpExecutionGraphs = ({
@@ -130,10 +122,10 @@ export const SidebarOpExecutionGraphs = ({
                       style={{
                         border: `2px solid ${
                           startTime && startTime * 1000 === highlightedStartTime
-                            ? colorAccentBlue()
+                            ? Colors.accentBlue()
                             : 'transparent'
                         }`,
-                        backgroundColor: status ? StateColors[status] : colorAccentGray(),
+                        backgroundColor: status ? StateColors[status] : Colors.accentGray(),
                       }}
                     />
                   </Link>

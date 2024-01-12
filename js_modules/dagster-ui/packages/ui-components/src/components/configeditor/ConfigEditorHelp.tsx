@@ -1,12 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorBackgroundLight,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextLight,
-} from '../../theme/color';
+import {Colors} from '../Color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 
@@ -38,14 +33,14 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${colorKeylineDefault()};
-  background: ${colorBackgroundLight()};
-  color: ${colorTextLight()};
+  border-top: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
 `;
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   flex: 1;
   pointer-events: initial;
   max-height: 100%;
@@ -56,6 +51,6 @@ const Container = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: ${colorBackgroundLight()};
+  background-color: ${Colors.backgroundLight()};
   height: 100%;
 `;

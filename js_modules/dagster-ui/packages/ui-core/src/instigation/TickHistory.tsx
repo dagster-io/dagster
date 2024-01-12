@@ -15,9 +15,7 @@ import {
   ButtonLink,
   ifPlural,
   Caption,
-  colorLinkDefault,
-  colorAccentGray,
-  colorAccentGrayHover,
+  Colors,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -552,16 +550,16 @@ const CopyButton = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${colorAccentGray()};
+    background-color: ${Colors.accentGray()};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${colorAccentGrayHover()};
+    background-color: ${Colors.accentGrayHover()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${colorLinkDefault()};
+    background-color: ${Colors.linkDefault()};
   }
 `;
 

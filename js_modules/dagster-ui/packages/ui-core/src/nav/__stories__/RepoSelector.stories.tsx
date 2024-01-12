@@ -1,4 +1,4 @@
-import {Box, colorAccentPrimary} from '@dagster-io/ui-components';
+import {Box, Colors} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
 import * as React from 'react';
@@ -145,7 +145,7 @@ export const ManyRepos = () => {
   );
 
   return (
-    <Box background={colorAccentPrimary()} padding={16}>
+    <Box background={Colors.accentPrimary()} padding={16}>
       <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
     </Box>
   );

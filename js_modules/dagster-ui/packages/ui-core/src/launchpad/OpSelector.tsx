@@ -1,11 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Popover,
-  colorAccentRed,
-  colorBackgroundRed,
-  colorTextRed,
-} from '@dagster-io/ui-components';
+import {Box, Popover, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -168,7 +162,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
 const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
   border-radius: 2px;
-  border: 1px solid ${colorAccentRed()};
-  background: ${colorBackgroundRed()};
-  color: ${colorTextRed()};
+  border: 1px solid ${Colors.accentRed()};
+  background: ${Colors.backgroundRed()};
+  color: ${Colors.textRed()};
 `;

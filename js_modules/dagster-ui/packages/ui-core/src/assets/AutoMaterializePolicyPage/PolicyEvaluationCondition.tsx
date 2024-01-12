@@ -1,12 +1,4 @@
-import {
-  Box,
-  Icon,
-  IconName,
-  colorAccentPrimary,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -33,7 +25,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
       style={{height: '48px'}}
     >
       {depthLines}
-      <Icon name={icon} color={colorAccentPrimary()} />
+      <Icon name={icon} color={Colors.accentPrimary()} />
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
       </ConditionLabel>
@@ -42,7 +34,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
 };
 
 const DepthLine = styled.div`
-  background-color: ${colorKeylineDefault()};
+  background-color: ${Colors.keylineDefault()};
   height: 100%;
   margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
   width: 2px;
@@ -55,5 +47,5 @@ interface ConditionLabelProps {
 
 const ConditionLabel = styled.div<ConditionLabelProps>`
   font-weight: ${({$type}) => ($type === 'group' ? '600' : '400')};
-  color: ${({$skipped}) => ($skipped ? colorTextDisabled() : colorTextDefault())};
+  color: ${({$skipped}) => ($skipped ? Colors.textDisabled() : Colors.textDefault())};
 `;

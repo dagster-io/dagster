@@ -9,9 +9,7 @@ import {
   NonIdealState,
   Popover,
   Tooltip,
-  colorAccentRed,
-  colorBackgroundDefault,
-  colorTextDisabled,
+  Colors,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
@@ -151,7 +149,7 @@ export const AssetTable = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={colorBackgroundDefault()}
+          background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
           padding={{vertical: 8, left: 24, right: 12}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
@@ -226,7 +224,7 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
               icon={
-                <Icon name="delete" color={disabled ? colorTextDisabled() : colorAccentRed()} />
+                <Icon name="delete" color={disabled ? Colors.textDisabled() : Colors.accentRed()} />
               }
               disabled={disabled}
               intent="danger"

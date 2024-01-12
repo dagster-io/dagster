@@ -152,7 +152,8 @@ import wysiwyg from '../icon-svgs/wysiwyg.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
-import {colorAccentPrimary} from '../theme/color';
+
+import {Colors} from './Color';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
@@ -350,7 +351,7 @@ export const Icon = React.memo((props: Props) => {
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
   const color: string | null =
-    props.color || (SVGS_WITH_COLORS.has(img) ? null : colorAccentPrimary());
+    props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.accentPrimary());
   return (
     <IconWrapper
       role="img"

@@ -6,8 +6,7 @@ import {
   Icon,
   Mono,
   Spinner,
-  colorBackgroundDefault,
-  colorLinkDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -91,7 +90,7 @@ export const StepLogsDialog = ({
       ) : (
         ''
       )}
-      <div style={{zIndex: 2, background: colorBackgroundDefault()}}>
+      <div style={{zIndex: 2, background: Colors.backgroundDefault()}}>
         <DialogFooter topBorder>
           <Button intent="primary" onClick={onClose}>
             Done
@@ -161,7 +160,7 @@ export const StepLogsModalContent = ({
               <Spinner purpose="body-text" />
             )}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
-            <Icon name="open_in_new" color={colorLinkDefault()} />
+            <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
         </Link>
       </LogsToolbar>

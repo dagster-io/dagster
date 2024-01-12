@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {colorShadowDefault, colorTooltipBackground, colorTooltipText} from '../theme/color';
+import {Colors} from './Color';
 
 export const CustomTooltipProvider = () => {
   const [state, setState] = React.useState<null | {
@@ -73,10 +73,10 @@ const TooltipContainer = styled.div`
   left: 0;
   font-size: 12px;
   padding: 4px 6px;
-  color: ${colorTooltipText()};
-  background: ${colorTooltipBackground()};
+  color: ${Colors.tooltipText()};
+  background: ${Colors.tooltipBackground()};
   transform: translate(5px, 5px);
-  box-shadow: 1px 1px 3px ${colorShadowDefault()}};
+  box-shadow: 1px 1px 3px ${Colors.shadowDefault()}};
   z-index: 100;
   pointer-events: none;
   user-select: none;

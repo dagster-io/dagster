@@ -1,4 +1,4 @@
-import {Box, Icon, Subheading, Table, Tag, colorKeylineDefault} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {DynamicPartitionsRequestType} from '../graphql/types';
@@ -41,7 +41,7 @@ export function DynamicPartitionRequests({
           <Subheading>Dynamic Partition Requests</Subheading>
         </Box>
       ) : null}
-      <Table style={{borderRight: `1px solid ${colorKeylineDefault()}`}}>
+      <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}}>
         <thead>
           <tr>
             <th>Partition</th>

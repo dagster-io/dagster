@@ -9,7 +9,7 @@ import {
   DialogFooter,
   Mono,
   Tag,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -178,7 +178,7 @@ export const RunRow = ({
                   onClick={() => {
                     setShowRunTags(true);
                   }}
-                  color={colorTextLight()}
+                  color={Colors.textLight()}
                   style={{margin: '-4px', padding: '4px'}}
                 >
                   View all tags ({allTagsWithPinned.length})

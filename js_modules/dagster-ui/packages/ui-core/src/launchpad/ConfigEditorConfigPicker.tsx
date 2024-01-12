@@ -12,10 +12,7 @@ import {
   Select,
   Spinner,
   Suggest,
-  colorAccentGray,
-  colorBackgroundLighter,
-  colorBackgroundLighterHover,
-  colorBackgroundLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -209,7 +206,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const rightElement = partitions.length ? (
     <SortButton onMouseDown={onClickSort}>
-      <Icon name="sort_by_alpha" color={colorAccentGray()} />
+      <Icon name="sort_by_alpha" color={Colors.accentGray()} />
     </SortButton>
   ) : undefined;
 
@@ -423,17 +420,17 @@ export const SortButton = styled.button`
   cursor: pointer;
   padding: 4px;
   margin: 3px 3px 0 0;
-  background-color: ${colorBackgroundLighter()};
+  background-color: ${Colors.backgroundLighter()};
   border-radius: 4px;
   transition: background-color 100ms;
 
   :focus {
-    background-color: ${colorBackgroundLighterHover()};
+    background-color: ${Colors.backgroundLighterHover()};
     outline: none;
   }
   :hover {
     ${IconWrapper} {
-      background-color: ${colorBackgroundLight()};
+      background-color: ${Colors.backgroundLight()};
     }
   }
 `;

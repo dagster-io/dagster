@@ -1,14 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  Button,
-  Icon,
-  FontFamily,
-  colorKeylineDefault,
-  colorAccentRed,
-  colorBackgroundRed,
-  colorTextLight,
-  colorTextRed,
-} from '@dagster-io/ui-components';
+import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -131,7 +122,7 @@ const CopyErrorButtonWrapper = styled.button`
   gap: 8px;
   top: 0px;
   right: -8px;
-  border: 1px solid ${colorKeylineDefault()};
+  border: 1px solid ${Colors.keylineDefault()};
   background: transparent;
   cursor: pointer;
   border: none;
@@ -150,14 +141,14 @@ const CauseHeader = styled.h3`
 `;
 
 const ErrorHeader = styled.h3`
-  color: ${colorTextRed()};
+  color: ${Colors.textRed()};
   font-weight: 400;
   margin: 0.5em 0 0.25em;
   white-space: pre-wrap;
 `;
 
 const Trace = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
   font-size: 1em;
   white-space: pre;
@@ -165,8 +156,8 @@ const Trace = styled.div`
 `;
 
 export const ErrorWrapper = styled.div`
-  background-color: ${colorBackgroundRed()};
-  border: 1px solid ${colorAccentRed()};
+  background-color: ${Colors.backgroundRed()};
+  border: 1px solid ${Colors.accentRed()};
   border-radius: 3px;
   max-width: 90vw;
   max-height: calc(100vh - 250px);

@@ -15,16 +15,7 @@ import {
   DialogBody,
   Table,
   Tag,
-  colorKeylineDefault,
-  colorLinkDefault,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundDefault,
-  colorTextLight,
-  colorBorderDefault,
-  colorAccentGray,
-  colorShadowDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -116,15 +107,15 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
 const intentToStrokeColor = (intent: Intent | undefined) => {
   switch (intent) {
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
     case 'primary':
     default:
-      return colorBorderDefault();
+      return Colors.borderDefault();
   }
 };
 
@@ -297,7 +288,7 @@ export const GraphQueryInput = React.memo(
             pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
           })}
         >
-          Graph Preview <Icon color={colorLinkDefault()} name="open_in_new" />
+          Graph Preview <Icon color={Colors.linkDefault()} name="open_in_new" />
         </Link>
       </OpCountWrap>
     );
@@ -384,7 +375,7 @@ export const GraphQueryInput = React.memo(
                       content="Flatten subgraphs to select ops within nested graphs"
                       placement="right"
                     >
-                      <Icon name="info" color={colorAccentGray()} />
+                      <Icon name="info" color={Colors.accentGray()} />
                     </Tooltip>
                   </Box>
                   {opCountInfo}
@@ -547,16 +538,16 @@ const CustomTable = styled(Table)`
 
   &&& tr {
     &:last-child td {
-      box-shadow: inset 1px 1px 0 ${colorKeylineDefault()} !important;
+      box-shadow: inset 1px 1px 0 ${Colors.keylineDefault()} !important;
     }
     &:last-child td:first-child,
     td:first-child,
     th:first-child {
       vertical-align: middle;
-      box-shadow: inset 0 1px 0 ${colorKeylineDefault()} !important;
+      box-shadow: inset 0 1px 0 ${Colors.keylineDefault()} !important;
     }
   }
-  border: 1px solid ${colorKeylineDefault()};
+  border: 1px solid ${Colors.keylineDefault()};
   border-top: none;
   margin-bottom: 12px;
 `;
@@ -571,9 +562,9 @@ const OpInfoWrap = styled.div`
   top: 100%;
   margin-top: 2px;
   font-size: 0.85rem;
-  background: ${colorBackgroundDefault()};
-  color: ${colorTextLight()};
-  box-shadow: 1px 1px 3px ${colorShadowDefault()};
+  background: ${Colors.backgroundDefault()};
+  color: ${Colors.textLight()};
+  box-shadow: 1px 1px 3px ${Colors.shadowDefault()};
   z-index: 2;
   left: 0;
 `;
@@ -587,10 +578,10 @@ const EnterHint = styled.div`
   right: 6px;
   top: 5px;
   border-radius: 5px;
-  border: 1px solid ${colorBorderDefault()};
-  background: ${colorBackgroundDefault()};
+  border: 1px solid ${Colors.borderDefault()};
+  background: ${Colors.backgroundDefault()};
   font-weight: 500;
   font-size: 12px;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   padding: 2px 6px;
 `;

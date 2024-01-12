@@ -18,11 +18,7 @@ import {
   CustomTooltipProvider,
   GlobalInter,
   GlobalInconsolata,
-  colorLinkDefault,
-  colorBackgroundDefault,
-  colorTextDefault,
-  browserColorScheme,
-  colorFocusRing,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -61,9 +57,9 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color-scheme: ${browserColorScheme()};
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    color-scheme: ${Colors.browserColorScheme()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -76,7 +72,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${colorLinkDefault()};
+    color: ${Colors.linkDefault()};
   }
 
   #root {
@@ -95,7 +91,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   button {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
     font-family: inherit;
   }
 
@@ -105,7 +101,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   :focus-visible {
-    outline: ${colorFocusRing()} auto 1px;
+    outline: ${Colors.focusRing()} auto 1px;
   }
 
   :focus:not(:focus-visible) {

@@ -1,4 +1,4 @@
-import {Box, Icon, colorAccentGray} from '@dagster-io/ui-components';
+import {Box, Icon, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -56,7 +56,7 @@ export const PipelineReference = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <Icon color={colorAccentGray()} name="job" />
+          <Icon color={Colors.accentGray()} name="job" />
         </Box>
       )}
       <span>

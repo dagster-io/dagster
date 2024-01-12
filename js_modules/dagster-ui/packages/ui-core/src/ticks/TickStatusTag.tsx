@@ -9,7 +9,7 @@ import {
   ButtonLink,
   Tooltip,
   ifPlural,
-  colorBackgroundLighter,
+  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -41,7 +41,7 @@ export const TickStatusTag = ({
       case InstigationTickStatus.SKIPPED:
         const tag = (
           <BaseTag
-            fillColor={colorBackgroundLighter()}
+            fillColor={Colors.backgroundLighter()}
             label={isAssetDaemonTick ? '0 materializations requested' : '0 runs requested'}
           />
         );

@@ -9,13 +9,7 @@ import {
   Spinner,
   MiddleTruncate,
   useViewport,
-  colorKeylineDefault,
-  colorTextLighter,
-  colorAccentReversed,
-  colorTextDefault,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorAccentPrimary,
+  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -434,7 +428,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         ))}
       </DividerLabels>
       <DividerLines>
-        <DividerLine style={{left: 0, backgroundColor: colorKeylineDefault()}} />
+        <DividerLine style={{left: 0, backgroundColor: Colors.keylineDefault()}} />
         {timeMarkers.map((marker) => (
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
@@ -442,7 +436,7 @@ const TimeDividers = (props: TimeDividersProps) => {
           <>
             <NowMarker style={{left: nowLeft}}>Now</NowMarker>
             <DividerLine
-              style={{left: nowLeft, backgroundColor: colorAccentPrimary(), zIndex: 1}}
+              style={{left: nowLeft, backgroundColor: Colors.accentPrimary(), zIndex: 1}}
             />
           </>
         ) : null}
@@ -457,16 +451,16 @@ const DividerContainer = styled.div`
   left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
 `;
 
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
   box-shadow:
-    inset 1px 0 0 ${colorKeylineDefault()},
-    inset 0 1px 0 ${colorKeylineDefault()},
-    inset -1px 0 0 ${colorKeylineDefault()};
+    inset 1px 0 0 ${Colors.keylineDefault()},
+    inset 0 1px 0 ${Colors.keylineDefault()},
+    inset -1px 0 0 ${Colors.keylineDefault()};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
   user-select: none;
@@ -476,8 +470,8 @@ const DividerLabels = styled.div`
 
   :first-child {
     box-shadow:
-      inset 1px 0 0 ${colorKeylineDefault()},
-      inset -1px 0 0 ${colorKeylineDefault()};
+      inset 1px 0 0 ${Colors.keylineDefault()},
+      inset -1px 0 0 ${Colors.keylineDefault()};
   }
 `;
 
@@ -487,14 +481,14 @@ const DateLabel = styled.div`
   white-space: nowrap;
 
   :not(:first-child) {
-    box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
+    box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
   }
 `;
 
 const TimeLabel = styled.div`
   position: absolute;
   padding: 8px;
-  box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
+  box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
   white-space: nowrap;
 `;
 
@@ -503,12 +497,12 @@ const DividerLines = styled.div`
   position: relative;
   width: 100%;
   box-shadow:
-    inset 1px 0 0 ${colorKeylineDefault()},
-    inset -1px 0 0 ${colorKeylineDefault()};
+    inset 1px 0 0 ${Colors.keylineDefault()},
+    inset -1px 0 0 ${Colors.keylineDefault()};
 `;
 
 const DividerLine = styled.div`
-  background-color: ${colorKeylineDefault()};
+  background-color: ${Colors.keylineDefault()};
   height: 100%;
   position: absolute;
   top: 0;
@@ -516,9 +510,9 @@ const DividerLine = styled.div`
 `;
 
 const NowMarker = styled.div`
-  background-color: ${colorAccentPrimary()};
+  background-color: ${Colors.accentPrimary()};
   border-radius: 1px;
-  color: ${colorAccentReversed()};
+  color: ${Colors.accentReversed()};
   cursor: default;
   font-size: 12px;
   line-height: 12px;
@@ -573,7 +567,7 @@ const RunTimelineRow = ({
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
         <div style={{width: LABEL_WIDTH}}>
           {job.jobType === 'asset' ? (
-            <span style={{color: colorTextDefault()}}>
+            <span style={{color: Colors.textDefault()}}>
               <MiddleTruncate text={job.jobName} />
             </span>
           ) : (
@@ -653,7 +647,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
 
   return (
     <Box
-      background={colorBackgroundDefault()}
+      background={Colors.backgroundDefault()}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
       border="top-and-bottom"
@@ -672,7 +666,7 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   },
 }))<RowProps>`
   align-items: center;
-  box-shadow: inset 0 -1px 0 ${colorKeylineDefault()};
+  box-shadow: inset 0 -1px 0 ${Colors.keylineDefault()};
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -685,7 +679,7 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   transition: background-color 100ms linear;
 
   :hover {
-    background-color: ${colorBackgroundDefaultHover()};
+    background-color: ${Colors.backgroundDefaultHover()};
   }
 `;
 
@@ -739,7 +733,7 @@ const RunChunk = styled.div<ChunkProps>`
 `;
 
 const BatchCount = styled.div`
-  color: ${colorAccentReversed()};
+  color: ${Colors.accentReversed()};
   cursor: default;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

@@ -1,9 +1,4 @@
-import {
-  IconWrapper,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
+import {IconWrapper, Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const ClearButton = styled.button`
@@ -14,16 +9,16 @@ export const ClearButton = styled.button`
   padding: 2px;
 
   ${IconWrapper} {
-    background-color: ${colorAccentGray()};
+    background-color: ${Colors.accentGray()};
     transition: background-color 100ms linear;
   }
 
   :hover ${IconWrapper}, :focus ${IconWrapper} {
-    background-color: ${colorAccentGrayHover()};
+    background-color: ${Colors.accentGrayHover()};
   }
 
   :active ${IconWrapper} {
-    background-color: ${colorTextDefault()};
+    background-color: ${Colors.textDefault()};
   }
 
   :focus {

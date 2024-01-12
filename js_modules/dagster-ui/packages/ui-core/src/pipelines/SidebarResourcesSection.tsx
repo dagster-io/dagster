@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ConfigTypeSchema, Icon, IconWrapper, Box, colorAccentGray} from '@dagster-io/ui-components';
+import {ConfigTypeSchema, Icon, IconWrapper, Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -29,7 +29,7 @@ export const SidebarResourcesSection = ({
       <Box flex={{direction: 'column', gap: 16}}>
         {[...mode.resources, ...mode.loggers].map((resource) => (
           <ContextResourceContainer key={resource.name}>
-            <Icon name="resource" color={colorAccentGray()} />
+            <Icon name="resource" color={Colors.accentGray()} />
             <div>
               <ContextResourceHeader>{resource.name}</ContextResourceHeader>
               <Description description={resource.description || NO_DESCRIPTION} />

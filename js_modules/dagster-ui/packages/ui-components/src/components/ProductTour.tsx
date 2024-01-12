@@ -3,10 +3,9 @@ import {Placement} from '@blueprintjs/popover2';
 import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
-import {colorShadowDefault, colorTooltipBackground, colorTooltipText} from '../theme/color';
-
 import {Box} from './Box';
 import {Button} from './Button';
+import {Colors} from './Color';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
 
@@ -102,17 +101,17 @@ export const ProductTour = ({
 
 const ProductTourContainer = styled(Box)`
   pointer-events: all;
-  background: ${colorTooltipBackground()};
+  background: ${Colors.tooltipBackground()};
   border-radius: 4px;
   padding: 16px;
-  box-shadow: 0px 2px 12px ${colorShadowDefault()};
+  box-shadow: 0px 2px 12px ${Colors.shadowDefault()};
 
   &,
   button {
     &,
     &:hover,
     &:focus {
-      color: ${colorTooltipText()};
+      color: ${Colors.tooltipText()};
     }
   }
 `;

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, StyledTable, Tag, Tooltip, colorTextLighter} from '@dagster-io/ui-components';
+import {Box, Colors, StyledTable, Tag, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -82,7 +82,7 @@ export const LatestRunTag = ({
               <StyledTable>
                 <tbody>
                   <tr>
-                    <td style={{color: colorTextLighter()}}>
+                    <td style={{color: Colors.textLighter()}}>
                       <Box padding={{right: 16}}>Started</Box>
                     </td>
                     <td>
@@ -94,7 +94,7 @@ export const LatestRunTag = ({
                     </td>
                   </tr>
                   <tr>
-                    <td style={{color: colorTextLighter()}}>Ended</td>
+                    <td style={{color: Colors.textLighter()}}>Ended</td>
                     <td>
                       {stats.end ? (
                         <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />

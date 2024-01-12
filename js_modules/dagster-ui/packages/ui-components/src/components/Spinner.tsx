@@ -3,7 +3,7 @@ import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorAccentGray} from '../theme/color';
+import {Colors} from './Color';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 
@@ -18,7 +18,7 @@ interface Props {
 export const Spinner = ({
   purpose,
   value,
-  fillColor = colorAccentGray(),
+  fillColor = Colors.accentGray(),
   stopped,
   title = 'Loading…',
 }: Props) => {

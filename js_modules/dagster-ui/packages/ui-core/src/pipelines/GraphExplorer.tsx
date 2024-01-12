@@ -6,9 +6,9 @@ import {
   SplitPanelContainer,
   TextInput,
   ErrorBoundary,
-  colorBackgroundDefault,
+  Colors,
 } from '@dagster-io/ui-components';
-import Color from 'color';
+import ColorLib from 'color';
 import qs from 'qs';
 import * as React from 'react';
 import {Route} from 'react-router-dom';
@@ -351,7 +351,7 @@ export const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
 `;
 
 export const RightInfoPanelContent = styled.div`
@@ -360,7 +360,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 20px;
   display: inline-flex;
@@ -373,7 +373,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 const HighlightOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
   display: inline-flex;
@@ -394,7 +394,7 @@ export const QueryOverlay = styled.div`
 `;
 
 const BreadcrumbsOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

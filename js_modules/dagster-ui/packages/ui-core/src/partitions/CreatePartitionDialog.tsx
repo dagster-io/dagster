@@ -10,7 +10,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
-  colorAccentRed,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -206,7 +206,7 @@ export const CreatePartitionDialog = ({
                   handleSave();
                 }
               }}
-              strokeColor={isValidPartitionName ? undefined : colorAccentRed()}
+              strokeColor={isValidPartitionName ? undefined : Colors.accentRed()}
               ref={React.useCallback((inputElement: HTMLInputElement) => {
                 if (inputElement) {
                   inputElement.focus();
