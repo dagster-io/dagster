@@ -5,7 +5,7 @@ import path from 'path';
 import {usePath} from 'util/usePath';
 
 import {PersistentTabProvider} from 'components/PersistentTabContext';
-import {RightSidebar} from 'components/SidebarNavigation';
+import {collectHeadings, RightSidebar} from 'components/SidebarNavigation';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
@@ -47,7 +47,7 @@ interface Props {
   asPath: string;
   pageProps: any;
 }
-const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
+const Layout = ({asPath, children, pageProps}: Props) => {
   const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] = React.useState<boolean>(false);
   const openMobileDocsMenu = () => {
     setMobileDocsMenuOpen(true);
@@ -75,10 +75,9 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
 
   const {markdoc} = pageProps;
   let navigationItems = [];
+  let markdownHeadings = [];
   if (markdoc) {
-    // const tableOfContents = pageProps.markdoc?.content
-    //   ? collectHeadings(pageProps.markdoc.content, {})
-    //   : {};
+    markdownHeadings = markdoc?.content ? collectHeadings(markdoc.content, []) : [];
     navigationItems = [];
   } else {
     const tableOfContents = pageProps?.data?.tableOfContents;
@@ -106,7 +105,6 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
               isMobileDocsMenuOpen={isMobileDocsMenuOpen}
               closeMobileDocsMenu={closeMobileDocsMenu}
             />
-            {/* <div className="lg:pl-80 flex w-full prose">{children}</div> */}
             <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
             <div className="lg:pl-80 flex w-full">
               <VersionedContentLayout asPath={asPath}>
@@ -115,6 +113,7 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
 
               <RightSidebar
                 editMode={editMode}
+                markdownHeadings={markdownHeadings}
                 navigationItemsForMDX={navigationItems}
                 githubLink={githubLink}
                 toggleFeedback={toggleFeedback}

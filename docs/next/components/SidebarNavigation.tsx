@@ -64,22 +64,24 @@ const MARGINS = ['ml-0', 'ml-2', 'ml-4', 'ml-6'];
 const renderItems = (items, activeId) => {
   return (
     <ol>
-      {items.map((item, idx) => (
-        <li key={`${idx}`} className={cx(MARGINS[item.level - 1], 'mt-2 list-inside ')}>
-          <a
-            href={`#${item.id}`}
-            className={cx(
-              'font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2',
-              {
-                'text-blurple': activeId === item.id,
-                'text-gray-500 hover:text-gray-800 transition': activeId !== item.id,
-              },
-            )}
-          >
-            {item.title}
-          </a>
-        </li>
-      ))}
+      {items.map((item, idx) => {
+        return (
+          <li key={`${idx}`} className={cx(MARGINS[item.level - 1], 'mt-2 list-inside ')}>
+            <a
+              href={`#${item.id}`}
+              className={cx(
+                'font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2',
+                {
+                  'text-blurple': activeId === item.id,
+                  'text-gray-500 hover:text-gray-800 transition': activeId !== item.id,
+                },
+              )}
+            >
+              {item.title}
+            </a>
+          </li>
+        );
+      })}
     </ol>
   );
 };
@@ -98,7 +100,7 @@ export const SidebarNavigation = ({headings}) => {
 
 export const RightSidebar = ({
   editMode,
-  headings = null,
+  markdownHeadings = null,
   navigationItemsForMDX = null,
   githubLink,
   toggleFeedback,
@@ -114,8 +116,9 @@ export const RightSidebar = ({
           >
             <div className="font-medium text-gable-green">On This Page</div>
             <div className="mt-4">
+              {/* This should be an either-or case. Once we migrate over all the MDX content to Markdown, we can remove the SidebarNavigationForMDX portion */}
               {navigationItemsForMDX && <SidebarNavigationForMDX items={navigationItemsForMDX} />}
-              {headings && <SidebarNavigation headings={headings} />}
+              {markdownHeadings && <SidebarNavigation headings={markdownHeadings} />}
             </div>
           </div>
           <div className="py-2 px-4 flex items-center group">

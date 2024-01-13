@@ -50,7 +50,9 @@ export const latestAllPaths = () => {
     });
 };
 
-export const latestAllDynamicPaths = (excludeNonMdx = false) => {
+export function latestAllDynamicPaths(config: {excludeNonMdx: boolean}) {
+  const {excludeNonMdx} = config;
+
   // only include paths that will be dynamically generated
   return flatten(navigation)
     .filter((n: NavEntry) => {
@@ -68,6 +70,6 @@ export const latestAllDynamicPaths = (excludeNonMdx = false) => {
         },
       };
     });
-};
+}
 
 export default navigation;

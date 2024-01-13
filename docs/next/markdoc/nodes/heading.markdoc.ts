@@ -1,4 +1,5 @@
 import {Tag} from '@markdoc/markdoc';
+import GithubSlugger from 'github-slugger';
 
 import {Heading} from '../../components/Heading';
 
@@ -6,12 +7,9 @@ function generateID(children, attributes) {
   if (attributes.id && typeof attributes.id === 'string') {
     return attributes.id;
   }
-  return children
-    .filter((child) => typeof child === 'string')
-    .join(' ')
-    .replace(/[?]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase();
+  const headingStr = children.find((child) => typeof child === 'string');
+  const slugger = new GithubSlugger();
+  return slugger.slug(headingStr);
 }
 
 export const heading = {

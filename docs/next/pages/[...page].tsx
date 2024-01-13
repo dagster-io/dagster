@@ -215,7 +215,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllDynamicPaths(true),
+    paths: latestAllDynamicPaths({excludeNonMdx: true}),
     fallback: true,
   };
 }
