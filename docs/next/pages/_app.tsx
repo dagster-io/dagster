@@ -66,8 +66,6 @@ const Layout = ({asPath, children, pageProps}: Props) => {
     setOpenFeedback(!isFeedbackOpen);
   };
 
-  const {query} = useRouter();
-  const {editMode} = query;
   const githubLink = new URL(
     path.join('dagster-io/dagster/tree/master/docs/content', '/', asPath + '.mdx'),
     'https://github.com',
@@ -112,7 +110,6 @@ const Layout = ({asPath, children, pageProps}: Props) => {
               </VersionedContentLayout>
 
               <RightSidebar
-                editMode={editMode}
                 markdownHeadings={markdownHeadings}
                 navigationItemsForMDX={navigationItems}
                 githubLink={githubLink}

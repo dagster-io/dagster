@@ -163,9 +163,6 @@ export function UnversionedMDXRenderer({
   toggleFeedback: any;
   bottomContent?: React.ReactNode | null;
 }) {
-  const {query} = useRouter();
-  const {editMode} = query;
-
   const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink, asPath} = data;
 
   const content = hydrate(mdxSource, {
@@ -206,8 +203,8 @@ export function UnversionedMDXRenderer({
       </div>
 
       <RightSidebar
-        editMode={editMode}
         navigationItemsForMDX={navigationItemsForMDX}
+        markdownHeadings={null}
         githubLink={githubLink}
         toggleFeedback={toggleFeedback}
       />

@@ -7,7 +7,13 @@ import visit from 'unist-util-visit';
 // handling Markdoc-style Markdown
 // ==============================
 
-export function collectHeadings(node, headings = []) {
+type MarkdownHeading = {
+  id: string;
+  title: string;
+  level: number;
+};
+
+export function collectHeadings(node, headings: MarkdownHeading[] = []): MarkdownHeading[] {
   if (node) {
     if (node.name === 'Heading') {
       const title = node.children[0];
@@ -86,7 +92,11 @@ const renderItems = (items, activeId) => {
   );
 };
 
-export const SidebarNavigation = ({headings}) => {
+type SidebarNavigationProps = {
+  headings: MarkdownHeading[];
+};
+
+export const SidebarNavigation = ({headings}: SidebarNavigationProps) => {
   // handle Markdoc content
   const idList = headings.map((heading) => heading.id);
   const activeId = useActiveId(idList);
@@ -98,83 +108,87 @@ export const SidebarNavigation = ({headings}) => {
   return renderItems(headings, activeId);
 };
 
+type RightSidebarProps = {
+  markdownHeadings?: MarkdownHeading[];
+  navigationItemsForMDX?: MDXHeading[]; // Replace `any` with the actual type
+  githubLink: string;
+  toggleFeedback: () => void; // Update the function signature if needed
+};
+
 export const RightSidebar = ({
-  editMode,
   markdownHeadings = null,
   navigationItemsForMDX = null,
   githubLink,
   toggleFeedback,
-}) => {
+}: RightSidebarProps) => {
   return (
-    !editMode && (
-      <aside className="hidden relative xl:block flex-none w-80 shrink-0 border-l border-gray-200">
-        {/* Start secondary column (hidden on smaller screens) */}
-        <div className="flex flex-col justify-between top-24 px-2 sticky">
-          <div
-            className="mb-8 px-4 pb-10 relative overflow-y-scroll border-b border-gray-200"
-            style={{maxHeight: 'calc(100vh - 300px)'}}
-          >
-            <div className="font-medium text-gable-green">On This Page</div>
-            <div className="mt-4">
-              {/* This should be an either-or case. Once we migrate over all the MDX content to Markdown, we can remove the SidebarNavigationForMDX portion */}
-              {navigationItemsForMDX && <SidebarNavigationForMDX items={navigationItemsForMDX} />}
-              {markdownHeadings && <SidebarNavigation headings={markdownHeadings} />}
-            </div>
-          </div>
-          <div className="py-2 px-4 flex items-center group">
-            <svg
-              className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-              role="img"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-            </svg>
-            <a
-              className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-              href={githubLink}
-            >
-              Edit Page on GitHub
-            </a>
-          </div>
-          <div className="py-2 px-4 flex items-center group">
-            <svg
-              className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-              role="img"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              fill="none"
-              strokeWidth="2"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-            <button
-              className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-              onClick={toggleFeedback}
-            >
-              Share Feedback
-            </button>
-          </div>
-          <div className="py-2 px-4 flex items-center group">
-            <GitHubButton
-              href={process.env.NEXT_PUBLIC_DAGSTER_REPO_URL}
-              data-icon="octicon-star"
-              data-show-count="true"
-              aria-label="Star dagster-io/dagster on GitHub"
-            >
-              Star
-            </GitHubButton>
+    <aside className="hidden relative xl:block flex-none w-80 shrink-0 border-l border-gray-200">
+      {/* Start secondary column (hidden on smaller screens) */}
+      <div className="flex flex-col justify-between top-24 px-2 sticky">
+        <div
+          className="mb-8 px-4 pb-10 relative overflow-y-scroll border-b border-gray-200"
+          style={{maxHeight: 'calc(100vh - 300px)'}}
+        >
+          <div className="font-medium text-gable-green">On This Page</div>
+          <div className="mt-4">
+            {/* This should be an either-or case. Once we migrate over all the MDX content to Markdown, we can remove the SidebarNavigationForMDX portion */}
+            {navigationItemsForMDX && <SidebarNavigationForMDX items={navigationItemsForMDX} />}
+            {markdownHeadings && <SidebarNavigation headings={markdownHeadings} />}
           </div>
         </div>
-        {/* End secondary column */}
-      </aside>
-    )
+        <div className="py-2 px-4 flex items-center group">
+          <svg
+            className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+            role="img"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+          </svg>
+          <a
+            className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+            href={githubLink}
+          >
+            Edit Page on GitHub
+          </a>
+        </div>
+        <div className="py-2 px-4 flex items-center group">
+          <svg
+            className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+            role="img"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="2"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
+          </svg>
+          <button
+            className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+            onClick={toggleFeedback}
+          >
+            Share Feedback
+          </button>
+        </div>
+        <div className="py-2 px-4 flex items-center group">
+          <GitHubButton
+            href={process.env.NEXT_PUBLIC_DAGSTER_REPO_URL}
+            data-icon="octicon-star"
+            data-show-count="true"
+            aria-label="Star dagster-io/dagster on GitHub"
+          >
+            Star
+          </GitHubButton>
+        </div>
+      </div>
+      {/* End secondary column */}
+    </aside>
   );
 };
 
@@ -182,8 +196,14 @@ export const RightSidebar = ({
 // handling MDX (will be deprecated)
 // ==============================
 
+type MDXHeading = {
+  url: string;
+  title: string;
+  items: MDXHeading[];
+};
+
 // Travel the tree to get the headings
-export function getMDXItems(node, current) {
+export function getMDXItems(node, current: Partial<MDXHeading> = {}) {
   if (!node) {
     return {};
   } else if (node.type === `paragraph`) {
@@ -238,7 +258,7 @@ export function getMDXItems(node, current) {
 //   }]}
 
 // Given the tree, get all the IDS
-export const getIds = (items) => {
+export const getIds = (items: MDXHeading[]) => {
   return items.reduce((acc, item) => {
     if (item.url) {
       // url has a # as first character, remove it to get the raw CSS-id
@@ -253,7 +273,7 @@ export const getIds = (items) => {
 
 const MDX_ITEM_MARGINS = ['ml-0', 'ml-1', 'ml-2', 'ml-3'];
 
-const renderMDXItems = (items, activeId, depth, key) => {
+const renderMDXItems = (items: MDXHeading[], activeId: string, depth: number, key: string) => {
   return (
     <ol key={key}>
       {items.map((item, idx) => {
@@ -281,7 +301,11 @@ const renderMDXItems = (items, activeId, depth, key) => {
   );
 };
 
-export const SidebarNavigationForMDX = ({items}) => {
+type SidebarNavigationForMDXProps = {
+  items: MDXHeading[];
+};
+
+export const SidebarNavigationForMDX = ({items}: SidebarNavigationForMDXProps) => {
   // handle legacy MDX content
 
   const idList = getIds(items);
@@ -290,5 +314,5 @@ export const SidebarNavigationForMDX = ({items}) => {
   if (!items) {
     return null;
   }
-  return renderMDXItems(items, activeId, 0, 0);
+  return renderMDXItems(items, activeId, 0, '0');
 };
