@@ -19,9 +19,6 @@ from dagster import (
     asset,
     materialize,
 )
-from deepdiff import DeepDiff
-from packaging.version import Version
-
 from dagster_polars import (
     BasePolarsUPathIOManager,
     DataFramePartitions,
@@ -30,6 +27,9 @@ from dagster_polars import (
     PolarsParquetIOManager,
     StorageMetadata,
 )
+from deepdiff import DeepDiff
+from packaging.version import Version
+
 from dagster_polars_tests.utils import get_saved_path
 
 
@@ -48,7 +48,9 @@ def test_polars_upath_io_manager_stats_metadata(
         [upstream],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream"))
+    )
 
     stats = handled_output_events[0].event_specific_data.metadata["stats"].value  # type: ignore
 
@@ -546,7 +548,9 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
             "upstream": AssetIn(
                 partition_mapping=MultiPartitionMapping(
                     {
-                        "time": DimensionPartitionMapping("time", TimeWindowPartitionMapping(start_offset=-1)),
+                        "time": DimensionPartitionMapping(
+                            "time", TimeWindowPartitionMapping(start_offset=-1)
+                        ),
                         "static": DimensionPartitionMapping("static", IdentityPartitionMapping()),
                     }
                 )

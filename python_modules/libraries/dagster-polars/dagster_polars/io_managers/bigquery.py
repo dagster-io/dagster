@@ -65,7 +65,9 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
         assert obj is not None
         assert isinstance(connection, bigquery.Client)
         assert context.metadata is not None
-        job_config = bigquery.LoadJobConfig(write_disposition=context.metadata.get("write_disposition"))
+        job_config = bigquery.LoadJobConfig(
+            write_disposition=context.metadata.get("write_disposition")
+        )
 
         # FIXME: load_table_from_dataframe writes the dataframe to a temporary parquet file
         # and then calls load_table_from_file. This can cause problems in cloud environments
@@ -83,7 +85,9 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
 
         context.add_output_metadata(get_polars_metadata(context=context, df=obj))
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> pl.DataFrame:
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pl.DataFrame:
         """Loads the input as a Polars DataFrame."""
         assert isinstance(connection, bigquery.Client)
 

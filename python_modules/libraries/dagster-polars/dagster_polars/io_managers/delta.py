@@ -43,7 +43,6 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     Install `dagster-polars[delta]` to use this IOManager.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import asset

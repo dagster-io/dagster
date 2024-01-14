@@ -107,7 +107,6 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
      - Supports reading/writing custom metadata in the Parquet file's schema as json-serialized bytes at `"dagster_polars_metadata"` key.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import asset
@@ -179,7 +178,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         table: Table = df.to_arrow()
 
         if metadata is not None:
-            existing_metadata = table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
+            existing_metadata = (
+                table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
+            )
             existing_metadata.update({DAGSTER_POLARS_STORAGE_METADATA_KEY: json.dumps(metadata)})
             table = table.replace_schema_metadata(existing_metadata)
 
@@ -235,7 +236,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 else None
             )
 
-            metadata = json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
+            metadata = (
+                json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
+            )
 
             return ldf, metadata
 
@@ -252,7 +255,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         ).metadata
 
         dagster_polars_metadata = (
-            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8")) if metadata is not None else None
+            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
+            if metadata is not None
+            else None
         )
 
         return json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}

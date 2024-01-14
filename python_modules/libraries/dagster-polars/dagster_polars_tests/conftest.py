@@ -9,7 +9,6 @@ import pytest
 import pytest_cases
 from _pytest.tmpdir import TempPathFactory
 from dagster import DagsterInstance
-
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
 
 logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
@@ -49,7 +48,9 @@ def session_polars_parquet_io_manager(
 def session_polars_delta_io_manager(
     session_scoped_dagster_instance: DagsterInstance,
 ) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
+    return PolarsDeltaIOManager(
+        base_dir=session_scoped_dagster_instance.storage_directory()
+    )  # to use with hypothesis
 
 
 _df_for_parquet = pl.DataFrame(

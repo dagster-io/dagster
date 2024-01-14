@@ -23,8 +23,6 @@ from dagster import (
     MetadataValue,
     OutputContext,
     UPathIOManager,
-)
-from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
@@ -194,7 +192,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         path: "UPath",
     ):
         if annotation_is_typing_optional(context.dagster_type.typing_type) and (
-            obj is None or annotation_for_storage_metadata(context.dagster_type.typing_type) and obj[0] is None
+            obj is None
+            or annotation_for_storage_metadata(context.dagster_type.typing_type)
+            and obj[0] is None
         ):
             context.log.warning(self.get_optional_output_none_log_message(context, path))
             return
@@ -252,7 +252,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 assert metadata is not None
                 return ldf, metadata
         else:
-            raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
+            raise NotImplementedError(
+                f"Can't load object for type annotation {context.dagster_type.typing_type}"
+            )
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
         if obj is None:
@@ -262,7 +264,11 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 df = obj[0]
             else:
                 df = obj
-            return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
+            return (
+                get_polars_metadata(context, df)
+                if df is not None
+                else {"missing": MetadataValue.bool(True)}
+            )
 
     @staticmethod
     def get_storage_options(path: "UPath") -> dict:

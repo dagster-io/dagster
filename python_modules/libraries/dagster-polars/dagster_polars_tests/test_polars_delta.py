@@ -15,12 +15,12 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster_polars import PolarsDeltaIOManager
+from dagster_polars.io_managers.delta import DeltaWriteMode
 from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
-from dagster_polars import PolarsDeltaIOManager
-from dagster_polars.io_managers.delta import DeltaWriteMode
 from dagster_polars_tests.utils import get_saved_path
 
 # TODO: remove pl.Time once it's supported
@@ -48,7 +48,9 @@ from dagster_polars_tests.utils import get_saved_path
     )
 )
 @settings(max_examples=50, deadline=None)
-def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
+def test_polars_delta_io_manager(
+    session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame
+):
     time.sleep(0.2)  # too frequent writes mess up DeltaLake concurrent
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
@@ -63,7 +65,9 @@ def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOM
         [upstream, downstream],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream"))
+    )
 
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
     assert isinstance(saved_path, str)
@@ -86,7 +90,9 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
         [append_asset],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+    )
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 3  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
@@ -95,7 +101,9 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
     result = materialize(
         [append_asset],
     )
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+    )
     assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 6  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
 
@@ -185,7 +193,9 @@ def test_polars_delta_io_manager_overwrite_schema(
     )
 
 
-def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+def test_polars_delta_native_partitioning(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
     manager = polars_delta_io_manager
     df = df_for_delta
 
@@ -212,7 +222,9 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
         )
 
         saved_path = get_saved_path(result, "upstream_partitioned")
-        assert saved_path.endswith("upstream_partitioned.delta"), saved_path  # DeltaLake should handle partitioning!
+        assert saved_path.endswith(
+            "upstream_partitioned.delta"
+        ), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 
     materialize(
@@ -223,7 +235,9 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
     )
 
 
-def test_polars_delta_time_travel(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+def test_polars_delta_time_travel(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
     manager = polars_delta_io_manager
     df = df_for_delta
 

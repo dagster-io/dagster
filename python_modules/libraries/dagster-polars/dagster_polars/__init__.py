@@ -29,7 +29,7 @@ try:
     # provided by dagster-polars[delta]
     from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
 
-    __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])  # noqa
+    __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])
 except ImportError:
     pass
 

@@ -2,7 +2,6 @@
 
 import polars as pl
 from dagster import Definitions, asset
-
 from dagster_polars import PolarsDeltaIOManager, PolarsParquetIOManager
 
 
