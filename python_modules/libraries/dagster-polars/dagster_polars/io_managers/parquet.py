@@ -9,19 +9,19 @@ from dagster import InputContext, OutputContext
 from dagster._annotations import experimental
 from packaging.version import Version
 from pyarrow import Table
-from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
 if TYPE_CHECKING:
     import fsspec
+    from upath import UPath
 
 
 DAGSTER_POLARS_STORAGE_METADATA_KEY = "dagster_polars_metadata"
 
 
-def get_pyarrow_dataset(path: UPath, context: InputContext) -> pyarrow.dataset.Dataset:
+def get_pyarrow_dataset(path: "UPath", context: InputContext) -> pyarrow.dataset.Dataset:
     assert context.metadata is not None
 
     fs: Union[fsspec.AbstractFileSystem, None] = None
@@ -44,7 +44,7 @@ def get_pyarrow_dataset(path: UPath, context: InputContext) -> pyarrow.dataset.D
     return ds
 
 
-def scan_parquet_legacy(path: UPath, context: InputContext) -> pl.LazyFrame:
+def scan_parquet_legacy(path: "UPath", context: InputContext) -> pl.LazyFrame:
     """Scan a parquet file and return a lazy frame (uses pyarrow).
 
     :param path:
@@ -61,7 +61,7 @@ def scan_parquet_legacy(path: UPath, context: InputContext) -> pl.LazyFrame:
     return ldf
 
 
-def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
+def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     """Scan a parquet file and return a lazy frame (uses polars native reader).
 
     :param path:
@@ -164,14 +164,14 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 assert metadata["my_custom_metadata"] == "my_custom_value"
     """
 
-    extension: str = ".parquet"
+    extension: str = ".parquet"  # type: ignore
     use_legacy_reader: bool = False
 
     def dump_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
-        path: UPath,
+        path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
         assert context.metadata is not None
@@ -179,9 +179,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         table: Table = df.to_arrow()
 
         if metadata is not None:
-            existing_metadata = (
-                table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
-            )
+            existing_metadata = table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
             existing_metadata.update({DAGSTER_POLARS_STORAGE_METADATA_KEY: json.dumps(metadata)})
             table = table.replace_schema_metadata(existing_metadata)
 
@@ -217,8 +215,8 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 **(pyarrow_options or {}),
             )
 
-    def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Optional[bool] = False
+    def scan_df_from_path(  # type: ignore
+        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
@@ -237,14 +235,12 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 else None
             )
 
-            metadata = (
-                json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
-            )
+            metadata = json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
 
             return ldf, metadata
 
     @classmethod
-    def read_parquet_metadata(cls, path: UPath) -> StorageMetadata:
+    def read_parquet_metadata(cls, path: "UPath") -> StorageMetadata:
         """Just a helper method to read metadata from a parquet file.
 
         Is not used internally, but is helpful for reading Parquet metadata from outside of Dagster.
@@ -256,9 +252,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         ).metadata
 
         dagster_polars_metadata = (
-            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
-            if metadata is not None
-            else None
+            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8")) if metadata is not None else None
         )
 
         return json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}

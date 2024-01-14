@@ -29,7 +29,7 @@ try:
     # provided by dagster-polars[delta]
     from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
 
-    __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])
+    __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])  # noqa
 except ImportError:
     pass
 
@@ -37,9 +37,9 @@ except ImportError:
 try:
     # provided by dagster-polars[bigquery]
     from dagster_polars.io_managers.bigquery import (
-        PolarsBigQueryIOManager,
-        PolarsBigQueryTypeHandler,
-    )  # noqa
+        PolarsBigQueryIOManager,  # noqa
+        PolarsBigQueryTypeHandler,  # noqa
+    )
 
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])
 except ImportError:
