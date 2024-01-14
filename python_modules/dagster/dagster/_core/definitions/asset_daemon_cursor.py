@@ -1,5 +1,7 @@
+import base64
 import datetime
 import json
+import zlib
 from typing import (
     AbstractSet,
     Mapping,
@@ -17,7 +19,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
@@ -296,3 +298,32 @@ class AssetDaemonCursor(NamedTuple):
             }
         )
         return serialized
+
+
+@whitelist_for_serdes
+class LegacyAssetDaemonCursorWrapper(NamedTuple):
+    """Wrapper class for the legacy AssetDaemonCursor object, which is not a serializable NamedTuple."""
+
+    serialized_cursor: str
+
+    def get_asset_daemon_cursor(self, asset_graph: AssetGraph) -> AssetDaemonCursor:
+        return AssetDaemonCursor.from_serialized(self.serialized_cursor, asset_graph)
+
+    @staticmethod
+    def from_compressed(compressed: str) -> "LegacyAssetDaemonCursorWrapper":
+        """This method takes a b64 encoded, zlib compressed string and returns the original
+        BackcompatAssetDaemonEvaluationInfo object.
+        """
+        decoded_bytes = base64.b64decode(compressed)
+        decompressed_bytes = zlib.decompress(decoded_bytes)
+        decoded_str = decompressed_bytes.decode("utf-8")
+        return deserialize_value(decoded_str, LegacyAssetDaemonCursorWrapper)
+
+    def to_compressed(self) -> str:
+        """This method compresses the serialized cursor and returns a b64 encoded string to be
+        stored as a string value.
+        """
+        serialized_bytes = serialize_value(self).encode("utf-8")
+        compressed_bytes = zlib.compress(serialized_bytes)
+        encoded_str = base64.b64encode(compressed_bytes)
+        return encoded_str.decode("utf-8")

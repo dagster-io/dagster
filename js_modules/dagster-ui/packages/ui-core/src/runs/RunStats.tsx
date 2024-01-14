@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Spinner, CoreColors} from '@dagster-io/ui-components';
+import {Box, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -80,11 +80,10 @@ const RUN_STATS_QUERY = gql`
 `;
 
 const RunStatsDetailsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 200px;
   padding: 12px;
-  color: ${CoreColors.White};
   font-size: 12px;
-  & > a {
-    display: block;
-  }
 `;

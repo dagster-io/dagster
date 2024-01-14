@@ -31,7 +31,7 @@ import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
 
-const TIME_FORMAT = {showSeconds: false, showTimezone: true};
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
 export const ScheduleDetails = (props: {
   schedule: ScheduleFragment;
@@ -87,16 +87,6 @@ export const ScheduleDetails = (props: {
             <Tag icon="schedule">
               Schedule in <RepositoryLink repoAddress={repoAddress} />
             </Tag>
-            {futureTicks.results[0] && running ? (
-              <Tag icon="timer">
-                Next tick:{' '}
-                <TimestampDisplay
-                  timestamp={futureTicks.results[0].timestamp!}
-                  timezone={executionTimezone}
-                  timeFormat={TIME_FORMAT}
-                />
-              </Tag>
-            ) : null}
             <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
               <Tooltip content={copyText}>
                 <ButtonLink
@@ -157,6 +147,18 @@ export const ScheduleDetails = (props: {
               )}
             </td>
           </tr>
+          {futureTicks.results[0] && running && (
+            <tr>
+              <td>Next tick</td>
+              <td>
+                <TimestampDisplay
+                  timestamp={futureTicks.results[0].timestamp!}
+                  timezone={executionTimezone}
+                  timeFormat={TIME_FORMAT}
+                />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>{isJob ? 'Job' : 'Pipeline'}</td>
             <td>

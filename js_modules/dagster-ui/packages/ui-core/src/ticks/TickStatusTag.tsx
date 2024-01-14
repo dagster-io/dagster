@@ -8,6 +8,7 @@ import {
   Box,
   ButtonLink,
   Tooltip,
+  ifPlural,
   colorBackgroundLighter,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -29,15 +30,21 @@ export const TickStatusTag = ({
   const [showErrors, setShowErrors] = React.useState(false);
   const tag = React.useMemo(() => {
     const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
+    const requestedItem = isAssetDaemonTick ? 'materialization' : 'run';
     switch (tick.status) {
       case InstigationTickStatus.STARTED:
         return (
-          <Tag intent="primary" icon="spinner">
-            {isStuckStarted ? 'Started' : 'Evaluating'}
+          <Tag intent="primary" icon={isStuckStarted ? undefined : 'spinner'}>
+            {isStuckStarted ? 'In progress' : 'Evaluating'}
           </Tag>
         );
       case InstigationTickStatus.SKIPPED:
-        const tag = <BaseTag fillColor={colorBackgroundLighter()} label="0 requested" />;
+        const tag = (
+          <BaseTag
+            fillColor={colorBackgroundLighter()}
+            label={isAssetDaemonTick ? '0 materializations requested' : '0 runs requested'}
+          />
+        );
         if ('runKeys' in tick && tick.runKeys.length) {
           const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
           return (
@@ -73,7 +80,12 @@ export const TickStatusTag = ({
         const count = isAssetDaemonTick
           ? tick.requestedAssetMaterializationCount
           : tick.runIds.length;
-        const successTag = <Tag intent="success">{count} requested</Tag>;
+        const successTag = (
+          <Tag intent="success">
+            {count} {requestedItem}
+            {ifPlural(count, '', 's')} requested
+          </Tag>
+        );
         if ('runKeys' in tick && tick.runKeys.length > tick.runIds.length) {
           const message = `${tick.runKeys.length} runs requested, but ${
             tick.runKeys.length - tick.runIds.length

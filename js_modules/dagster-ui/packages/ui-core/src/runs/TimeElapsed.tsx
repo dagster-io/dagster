@@ -1,15 +1,16 @@
 import {Group, Icon, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {formatElapsedTimeWithoutMsec} from '../app/Util';
+import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Util';
 
 export interface Props {
   startUnix: number | null;
   endUnix: number | null;
+  showMsec?: boolean;
 }
 
 export const TimeElapsed = (props: Props) => {
-  const {startUnix, endUnix} = props;
+  const {startUnix, endUnix, showMsec} = props;
 
   const [endTime, setEndTime] = React.useState(() => (endUnix ? endUnix * 1000 : null));
   const interval = React.useRef<ReturnType<typeof setInterval>>();
@@ -44,7 +45,11 @@ export const TimeElapsed = (props: Props) => {
     <Group direction="row" spacing={4} alignItems="center">
       <Icon name="timer" color={colorTextLight()} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
-        {startTime ? formatElapsedTimeWithoutMsec((endTime || Date.now()) - startTime) : '–'}
+        {startTime
+          ? showMsec
+            ? formatElapsedTimeWithMsec((endTime || Date.now()) - startTime)
+            : formatElapsedTimeWithoutMsec((endTime || Date.now()) - startTime)
+          : '–'}
       </span>
     </Group>
   );

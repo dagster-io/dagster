@@ -50,7 +50,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {isOldTickWithoutEndtimestamp, truncate} from './util';
+import {isStuckStartedTick, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -73,7 +73,7 @@ const DEFAULT_SHOWN_STATUS_STATE = {
 const STATUS_TEXT_MAP = {
   [InstigationTickStatus.SUCCESS]: 'Requested',
   [InstigationTickStatus.FAILURE]: 'Failed',
-  [InstigationTickStatus.STARTED]: 'Started',
+  [InstigationTickStatus.STARTED]: 'In progress',
   [InstigationTickStatus.SKIPPED]: 'Skipped',
 };
 
@@ -254,8 +254,13 @@ export const TicksTable = ({
             </tr>
           </thead>
           <tbody>
-            {ticks.map((tick) => (
-              <TickRow key={tick.id} tick={tick} instigationSelector={instigationSelector} />
+            {ticks.map((tick, index) => (
+              <TickRow
+                key={tick.id}
+                tick={tick}
+                instigationSelector={instigationSelector}
+                index={index}
+              />
             ))}
           </tbody>
         </TableWrapper>
@@ -382,9 +387,11 @@ export const TickHistoryTimeline = ({
 function TickRow({
   tick,
   instigationSelector,
+  index,
 }: {
   tick: HistoryTickFragment;
   instigationSelector: InstigationSelector;
+  index: number;
 }) {
   const copyToClipboard = useCopyToClipboard();
   const [showResults, setShowResults] = React.useState(false);
@@ -403,6 +410,8 @@ function TickRow({
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
+  const isStuckStarted = isStuckStartedTick(tick, index);
+
   return (
     <tr>
       <td>
@@ -412,10 +421,10 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} />
+        <TickStatusTag tick={tick} isStuckStarted={isStuckStarted} />
       </td>
       <td>
-        {isOldTickWithoutEndtimestamp(tick) ? (
+        {isStuckStarted ? (
           '- '
         ) : (
           <TimeElapsed

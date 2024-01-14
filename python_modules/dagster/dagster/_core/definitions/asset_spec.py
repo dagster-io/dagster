@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -46,7 +46,6 @@ class AssetExecutionType(Enum):
         )
 
 
-@experimental
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",

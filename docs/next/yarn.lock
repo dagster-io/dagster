@@ -2921,27 +2921,27 @@ __metadata:
   linkType: hard
 
 "@types/prop-types@npm:*":
-  version: 15.7.4
-  resolution: "@types/prop-types@npm:15.7.4"
-  checksum: ef6e1899e59b876c273811b1bd845022fc66d5a3d11cb38a25b6c566b30514ae38fe20a40f67622f362a4f4f7f9224e22d8da101cff3d6e97e11d7b4c307cfc1
+  version: 15.7.11
+  resolution: "@types/prop-types@npm:15.7.11"
+  checksum: 7519ff11d06fbf6b275029fe03fff9ec377b4cb6e864cac34d87d7146c7f5a7560fd164bdc1d2dbe00b60c43713631251af1fd3d34d46c69cd354602bc0c7c54
   languageName: node
   linkType: hard
 
-"@types/react@npm:^17.0.0":
-  version: 17.0.39
-  resolution: "@types/react@npm:17.0.39"
+"@types/react@npm:^18.2.47":
+  version: 18.2.47
+  resolution: "@types/react@npm:18.2.47"
   dependencies:
     "@types/prop-types": "*"
     "@types/scheduler": "*"
     csstype: ^3.0.2
-  checksum: bf04d3c2894559012710d595553e12b422d3b91cd8f4f7e122d8cb044ba9c2ba17f6e8a4e09581359cc5509ddc59cd8c8fabd6774f3505a40a45393f074d6e6e
+  checksum: 49608f07f73374e535b21f99fee28e6cfd5801d887c6ed88c41b4dc701dbcee9f0c4d289d9af7b2b23114f76dbf203ffe2c9191bfb4958cf18dae5a25daedbd0
   languageName: node
   linkType: hard
 
 "@types/scheduler@npm:*":
-  version: 0.16.2
-  resolution: "@types/scheduler@npm:0.16.2"
-  checksum: b6b4dcfeae6deba2e06a70941860fb1435730576d3689225a421280b7742318d1548b3d22c1f66ab68e414f346a9542f29240bc955b6332c5b11e561077583bc
+  version: 0.16.8
+  resolution: "@types/scheduler@npm:0.16.8"
+  checksum: 6c091b096daa490093bf30dd7947cd28e5b2cd612ec93448432b33f724b162587fed9309a0acc104d97b69b1d49a0f3fc755a62282054d62975d53d7fd13472d
   languageName: node
   linkType: hard
 
@@ -3692,14 +3692,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.0":
-  version: 1.6.1
-  resolution: "axios@npm:1.6.1"
+"axios@npm:^1.6.5":
+  version: 1.6.5
+  resolution: "axios@npm:1.6.5"
   dependencies:
-    follow-redirects: ^1.15.0
+    follow-redirects: ^1.15.4
     form-data: ^4.0.0
     proxy-from-env: ^1.1.0
-  checksum: 573f03f59b7487d54551b16f5e155d1d130ad4864ed32d1da93d522b78a57123b34e3bde37f822a65ee297e79f1db840f9ad6514addff50d3cbf5caeed39e8dc
+  checksum: e28d67b2d9134cb4608c44d8068b0678cfdccc652742e619006f27264a30c7aba13b2cd19c6f1f52ae195b5232734925928fb192d5c85feea7edd2f273df206d
   languageName: node
   linkType: hard
 
@@ -4550,7 +4550,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csstype@npm:^3.0.2, csstype@npm:^3.0.6":
+"csstype@npm:^3.0.2":
+  version: 3.1.3
+  resolution: "csstype@npm:3.1.3"
+  checksum: 8db785cc92d259102725b3c694ec0c823f5619a84741b5c7991b8ad135dfaa66093038a1cc63e03361a6cd28d122be48f2106ae72334e067dd619a51f49eddf7
+  languageName: node
+  linkType: hard
+
+"csstype@npm:^3.0.6":
   version: 3.0.10
   resolution: "csstype@npm:3.0.10"
   checksum: 20a8fa324f2b33ddf94aa7507d1b6ab3daa6f3cc308888dc50126585d7952f2471de69b2dbe0635d1fdc31223fef8e070842691877e725caf456e2378685a631
@@ -4575,11 +4582,11 @@ __metadata:
     "@types/jest": ^29.5.3
     "@types/mdx": ^2.0.2
     "@types/node": ^14.14.22
-    "@types/react": ^17.0.0
+    "@types/react": ^18.2.47
     add: ^2.0.6
     amator: ^1.1.0
     autoprefixer: ^10.1.0
-    axios: ^1.6.0
+    axios: ^1.6.5
     classnames: ^2.2.6
     eslint: ^8.45.0
     eslint-config-next: ^13.4.19
@@ -4593,7 +4600,7 @@ __metadata:
     mdast-util-toc: ^5.1.0
     new-github-issue-url: ^0.2.1
     next: ^13.5.4
-    next-mdx-remote: ^2.1.3
+    next-mdx-remote: ^2.1.4
     next-remote-watch: "git+https://github.com/hashicorp/next-remote-watch.git#405c803c6b9b19eb8307d66cf5c93fc3a66a1c5"
     next-seo: ^4.17.0
     node-html-parser: ^5.3.3
@@ -4601,7 +4608,7 @@ __metadata:
     prettier: ^2.8.8
     react: ^18.2.0
     react-dom: ^18.2.0
-    react-github-btn: ^1.2.2
+    react-github-btn: ^1.4.0
     react-instantsearch-dom: ^6.31.1
     react-intersection-observer: ^8.31.0
     react-medium-image-zoom: ^4.3.5
@@ -6000,13 +6007,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.15.0":
-  version: 1.15.3
-  resolution: "follow-redirects@npm:1.15.3"
+"follow-redirects@npm:^1.15.4":
+  version: 1.15.4
+  resolution: "follow-redirects@npm:1.15.4"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: 584da22ec5420c837bd096559ebfb8fe69d82512d5585004e36a3b4a6ef6d5905780e0c74508c7b72f907d1fa2b7bd339e613859e9c304d0dc96af2027fd0231
+  checksum: e178d1deff8b23d5d24ec3f7a94cde6e47d74d0dc649c35fc9857041267c12ec5d44650a0c5597ef83056ada9ea6ca0c30e7c4f97dbf07d035086be9e6a5b7b6
   languageName: node
   linkType: hard
 
@@ -6227,10 +6234,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"github-buttons@npm:^2.21.1":
-  version: 2.21.1
-  resolution: "github-buttons@npm:2.21.1"
-  checksum: 5c90dc19a9301cfd5cedbb6adcd62725a7a013d5a564d15383c8cd92090beb3a5290fbdf0dd370b94e4a81e61a417b68f7b5df98da411b7df7453c2012d9a37a
+"github-buttons@npm:^2.22.0":
+  version: 2.27.0
+  resolution: "github-buttons@npm:2.27.0"
+  checksum: 1954e04fc7e65a5c14b9c0726b486015deee648c9de62f7f0d4267bbd548090f57137d33e1755490736b10578c4fc7bf149fe64c296d7634a1bfc3707e25e96b
   languageName: node
   linkType: hard
 
@@ -8826,7 +8833,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next-mdx-remote@npm:^2.1.3":
+"next-mdx-remote@npm:^2.1.4":
   version: 2.1.4
   resolution: "next-mdx-remote@npm:2.1.4"
   dependencies:
@@ -9747,12 +9754,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-github-btn@npm:^1.2.2":
-  version: 1.2.2
-  resolution: "react-github-btn@npm:1.2.2"
+"react-github-btn@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "react-github-btn@npm:1.4.0"
   dependencies:
-    github-buttons: ^2.21.1
-  checksum: 8e6a2e187d0c300657ed6da00b51b8b8de8f7635e203285a835551aaedde796edb2b101f8bcfd06c25f0f1f4bc555d53cff32dc783152f744ff0715f5619c22c
+    github-buttons: ^2.22.0
+  peerDependencies:
+    react: ">=16.3.0"
+  checksum: 33a416ad76ab4cc9238ac5cf5cfcab636bb2127c48fb30805385350fd3a3c2aa0aaeb78f6c726c52a0d3d133ca469be35d4b3d188c8e40c735c7ff458d2c8c3c
   languageName: node
   linkType: hard
 

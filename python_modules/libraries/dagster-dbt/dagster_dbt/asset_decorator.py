@@ -20,6 +20,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
     multi_asset,
 )
 from dagster._utils.warnings import (
@@ -56,6 +57,7 @@ def dbt_assets(
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -80,11 +82,13 @@ def dbt_assets(
         dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
         backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
-            how to execute backfills that target multiple partitions.
+            how to execute backfills that target multiple partitions. If a time window partition
+            definition is used, this parameter defaults to a single-run policy.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the assets.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        required_resource_keys (Optional[Set[str]]): Set of required resource handles.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -186,6 +190,37 @@ def dbt_assets(
             def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
 
+        Using a custom resource key for dbt:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, my_custom_dbt_resource_key: DbtCliResource):
+                yield from my_custom_dbt_resource_key.cli(["build"], context=context).stream()
+
+        Using a dynamically generated resource key for dbt using `required_resource_keys`:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            dbt_resource_key = "my_custom_dbt_resource_key"
+
+            @dbt_assets(manifest=Path("target", "manifest.json"), required_resource_keys={my_custom_dbt_resource_key})
+            def my_dbt_assets(context: AssetExecutionContext):
+                dbt = getattr(context.resources, dbt_resource_key)
+                yield from dbt.cli(["build"], context=context).stream()
+
         Invoking another Dagster :py:class:`~dagster.ResourceDefinition` alongside dbt:
 
         .. code-block:: python
@@ -193,7 +228,7 @@ def dbt_assets(
             from pathlib import Path
 
             from dagster import AssetExecutionContext
-            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+            from dagster_dbt import DbtCliResource, dbt_assets
             from dagster_slack import SlackResource
 
 
@@ -211,7 +246,7 @@ def dbt_assets(
             from pathlib import Path
 
             from dagster import AssetExecutionContext, Config
-            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+            from dagster_dbt import DbtCliResource, dbt_assets
 
 
             class MyDbtConfig(Config):
@@ -299,12 +334,20 @@ def dbt_assets(
         **(op_tags if op_tags else {}),
     }
 
+    if (
+        partitions_def
+        and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+        and not backfill_policy
+    ):
+        backfill_policy = BackfillPolicy.single_run()
+
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
             name=name,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
+            required_resource_keys=required_resource_keys,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,

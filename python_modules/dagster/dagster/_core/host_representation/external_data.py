@@ -56,6 +56,9 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -532,6 +535,7 @@ class ExternalSensorData(
             ("default_status", Optional[DefaultSensorStatus]),
             ("sensor_type", Optional[SensorType]),
             ("asset_selection", Optional[AssetSelection]),
+            ("run_tags", Mapping[str, str]),
         ],
     )
 ):
@@ -548,6 +552,7 @@ class ExternalSensorData(
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
         asset_selection: Optional[AssetSelection] = None,
+        run_tags: Optional[Mapping[str, str]] = None,
     ):
         if job_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -590,6 +595,7 @@ class ExternalSensorData(
             ),
             sensor_type=sensor_type,
             asset_selection=asset_selection,
+            run_tags=run_tags or {},
         )
 
 
@@ -2080,6 +2086,11 @@ def external_sensor_data_from_def(
         default_status=sensor_def.default_status,
         sensor_type=sensor_def.sensor_type,
         asset_selection=serializable_asset_selection,
+        run_tags=(
+            sensor_def.run_tags
+            if isinstance(sensor_def, AutomationPolicySensorDefinition)
+            else None
+        ),
     )
 
 

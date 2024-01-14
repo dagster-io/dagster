@@ -68,7 +68,7 @@ def test_load_grpc_server(entrypoint):
         wait_for_grpc_server(process, client, subprocess_args)
         assert client.ping("foobar") == {
             "echo": "foobar",
-            "serialized_server_utilization_metrics": "{}",
+            "serialized_server_utilization_metrics": "",
         }
 
         list_repositories_response = sync_list_repositories_grpc(client)
@@ -246,7 +246,7 @@ def test_load_via_auto_env_var_prefix():
             client = DagsterGrpcClient(port=port)
             assert client.ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
+                "serialized_server_utilization_metrics": "",
             }
 
             list_repositories_response = sync_list_repositories_grpc(client)
@@ -290,7 +290,7 @@ def test_load_via_env_var():
             )
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
+                "serialized_server_utilization_metrics": "",
             }
         finally:
             process.terminate()
@@ -329,7 +329,7 @@ def test_load_code_server_via_env_var():
             )
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
+                "serialized_server_utilization_metrics": "",
             }
         finally:
             process.terminate()
@@ -442,7 +442,7 @@ def test_load_with_empty_working_directory(capfd):
             )
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
+                "serialized_server_utilization_metrics": "",
             }
         finally:
             process.terminate()
@@ -667,7 +667,7 @@ def test_load_with_missing_env_var(entrypoint):
             list_repositories_response = deserialize_value(
                 client.list_repositories(), SerializableErrorInfo
             )
-            assert "Missing env var" in list_repositories_response.message
+            assert "Missing env var" in str(list_repositories_response)
         finally:
             client.shutdown_server()
             process.communicate(timeout=30)
@@ -894,7 +894,7 @@ def test_load_with_container_context(entrypoint):
         wait_for_grpc_server(process, client, subprocess_args)
         assert client.ping("foobar") == {
             "echo": "foobar",
-            "serialized_server_utilization_metrics": "{}",
+            "serialized_server_utilization_metrics": "",
         }
 
         list_repositories_response = sync_list_repositories_grpc(client)

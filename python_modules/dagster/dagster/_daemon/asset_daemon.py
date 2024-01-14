@@ -9,7 +9,10 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+    LegacyAssetDaemonCursorWrapper,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -94,7 +97,7 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     )
 
 
-def _get_pre_sensor_auto_materialize_raw_cursor(instance: DagsterInstance) -> Optional[str]:
+def _get_pre_sensor_auto_materialize_serialized_cursor(instance: DagsterInstance) -> Optional[str]:
     return instance.daemon_cursor_storage.get_cursor_values(
         {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
     ).get(_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY)
@@ -104,18 +107,27 @@ def get_current_evaluation_id(
     instance: DagsterInstance, sensor_origin: Optional[ExternalInstigatorOrigin]
 ) -> Optional[int]:
     if not sensor_origin:
-        raw_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
+        serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
     else:
         instigator_state = check.not_none(instance.schedule_storage).get_instigator_state(
             sensor_origin.get_id(), sensor_origin.get_selector().get_id()
         )
-        raw_cursor = (
+        compressed_cursor = (
             cast(SensorInstigatorData, instigator_state.instigator_data).cursor
             if instigator_state
             else None
         )
+        serialized_cursor = (
+            LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor).serialized_cursor
+            if compressed_cursor
+            else None
+        )
 
-    return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
+    return (
+        AssetDaemonCursor.get_evaluation_id_from_serialized(serialized_cursor)
+        if serialized_cursor
+        else None
+    )
 
 
 class AutoMaterializeLaunchContext:
@@ -264,17 +276,18 @@ class AssetDaemon(DagsterDaemon):
                 instigator_data = cast(SensorInstigatorData, auto_materialize_state.instigator_data)
                 if instigator_data.sensor_type != SensorType.AUTOMATION_POLICY:
                     continue
-                raw_cursor = instigator_data.cursor
-                if raw_cursor:
-                    stored_evaluation_id = AssetDaemonCursor.from_serialized(
-                        raw_cursor,
-                        asset_graph,
-                    ).evaluation_id
+                compressed_cursor = instigator_data.cursor
+                if compressed_cursor:
+                    stored_evaluation_id = (
+                        LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor)
+                        .get_asset_daemon_cursor(asset_graph)
+                        .evaluation_id
+                    )
                     self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
 
-            raw_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
-            if raw_cursor:
-                stored_cursor = AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
+            serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+            if serialized_cursor:
+                stored_cursor = AssetDaemonCursor.from_serialized(serialized_cursor, asset_graph)
                 self._next_evaluation_id = max(
                     self._next_evaluation_id, stored_cursor.evaluation_id
                 )
@@ -399,7 +412,7 @@ class AssetDaemon(DagsterDaemon):
                         InstigatorStatus.AUTOMATICALLY_RUNNING,
                         SensorInstigatorData(
                             min_interval=sensor.min_interval_seconds,
-                            cursor=AssetDaemonCursor.empty().serialize(),
+                            cursor=None,
                             last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
                             sensor_type=SensorType.AUTOMATION_POLICY,
                         ),
@@ -516,23 +529,27 @@ class AssetDaemon(DagsterDaemon):
         )
 
         if sensor:
-            raw_cursor = cast(
+            compressed_cursor = cast(
                 SensorInstigatorData,
                 check.not_none(auto_materialize_instigator_state).instigator_data,
             ).cursor
-            stored_cursor = (
-                AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
-                if raw_cursor
+
+            stored_cursor: AssetDaemonCursor = (
+                LegacyAssetDaemonCursorWrapper.from_compressed(
+                    compressed_cursor
+                ).get_asset_daemon_cursor(asset_graph)
+                if compressed_cursor
                 else AssetDaemonCursor.empty()
             )
+
             instigator_origin_id = sensor.get_external_origin().get_id()
             instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
             instigator_name = sensor.name
         else:
-            raw_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
+            serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
             stored_cursor = (
-                AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
-                if raw_cursor
+                AssetDaemonCursor.from_serialized(serialized_cursor, asset_graph)
+                if serialized_cursor
                 else AssetDaemonCursor.empty()
             )
             instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
@@ -644,7 +661,7 @@ class AssetDaemon(DagsterDaemon):
                 else:
                     evaluations_by_asset_key = {}
             else:
-                sensor_tags = {SENSOR_NAME_TAG: sensor.name} if sensor else {}
+                sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,
@@ -699,7 +716,9 @@ class AssetDaemon(DagsterDaemon):
                                 SensorInstigatorData(
                                     last_tick_timestamp=tick.timestamp,
                                     min_interval=sensor.min_interval_seconds,
-                                    cursor=new_cursor.serialize(),
+                                    cursor=LegacyAssetDaemonCursorWrapper(
+                                        new_cursor.serialize()
+                                    ).to_compressed(),
                                     sensor_type=SensorType.AUTOMATION_POLICY,
                                 )
                             )

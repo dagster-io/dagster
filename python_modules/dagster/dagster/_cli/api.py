@@ -29,6 +29,7 @@ from dagster._core.origin import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.server import DagsterApiServer
@@ -693,6 +694,7 @@ def grpc_command(
     logger.info("Starting %s", server_desc)
 
     server_termination_event = threading.Event()
+    threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
     api_servicer = DagsterApiServer(
         server_termination_event=server_termination_event,
         logger=logger,
@@ -714,6 +716,7 @@ def grpc_command(
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         location_name=location_name,
         enable_metrics=enable_metrics,
+        server_threadpool_executor=threadpool_executor,
     )
 
     server = DagsterGrpcServer(
@@ -722,9 +725,9 @@ def grpc_command(
         port=port,
         socket=socket,
         host=host,
-        max_workers=max_workers,
         logger=logger,
         enable_metrics=enable_metrics,
+        threadpool_executor=threadpool_executor,
     )
 
     logger.info("Started %s", server_desc)

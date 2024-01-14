@@ -2,6 +2,78 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.6.0
+
+### Breaking changes
+
+#### Dagster Ingestion-as-Code is being deprecated
+
+With Dagster 1.1.8, we launched experimental “[ingestion-as-code](https://docs.dagster.io/guides/dagster/airbyte-ingestion-as-code)” functionality for our Airbyte integration, in response to user feedback that users would like to manage their Airbyte connections in code. In the months since, Airbyte has released an official [Terraform provider](https://registry.terraform.io/providers/airbytehq/airbyte/latest/docs) which accomplishes many of the same goals, making ingestion-as-code largely redundant.
+
+In light of this, we will no longer be publishing new versions of the `dagster-managed-elements` package. `dagster_airbyte.AirbyteManagedElementReconciler` and objects in `dagster_airbyte.managed.*` will be removed.
+
+We suggest that users consider the official Terraform provider if they would like to continue managing their connections in code.
+
+#### I/O manager `handle_output` will no longer be called when the output typing type is Nothing
+
+Most Dagster-maintained I/O managers include special logic that does not store outputs typed as `None` or `Nothing` (either via return type annotation or explicitly setting the type in `Out`).
+
+In 1.6, the Dagster framework will no longer invoke the `IOManager.handle_output` at all for outputs with these types. This ensures that I/O managers behave consistently and protects against storing unnecessary `None` s in storage.
+
+For some I/O managers, e.g. the `InMemoryIOManager` and some user-developed I/O managers, this change may result in input-loading errors when assets downstream try to use the default IO manager to load the upstream output:
+
+```python
+@asset
+def upstream() -> None:
+    # when this asset is materialized, no `None` value will be stored
+
+@asset
+def downstream(upstream):
+    # if the default IO manager is the InMemoryIOManager, then, when this asset
+    # is executed, it will hit a load_input error because it can't find the
+    # stored value corresponding to "upstream"
+```
+
+The best way to avoid these errors is to write the downstream asset in a way that `IOManager.load_input` won’t be invoked:
+
+```python
+@asset(deps=[upstream])
+def downstream():
+    # because `deps` is used instead of a function argument,
+    # IOManager.load_input won't be invoked
+```
+
+### Deprecations
+
+#### dbt
+
+- Prebuilt ops for executing common dbt Core operations (e.g. `dbt_build_op`, `dbt_compile_op`, …) have been marked as deprecated. Instead, we recommend creating your op using the `@op` decorator and `DbtCliResource` directly.
+- `load_assets_from_dbt_manifest` and `load_assets_from_dbt_project` have been marked as deprecated. Instead, we recommend using `@dbt_assets`, `DbtCliResource`, and `DagsterDbtTranslator`.
+  - For examples on how to use `@dbt_assets` and `DbtCliResource` to execute commands like `dbt run` or `dbt build` on your dbt project, see our [API docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_assets).
+  - For examples on how to customize your dbt software-defined assets using `DagsterDbtTranslator`, see the [reference](https://docs.dagster.io/integrations/dbt/reference#understanding-asset-definition-attributes).
+  - To replicate the behavior of `load_assets_from_dbt_project`, which generates a dbt manifest at run time using `dbt parse`, see the [reference](https://docs.dagster.io/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project).
+  - To replicate the behavior of `load_assets_from_dbt_manifest`:
+
+```python
+# Before, using `load_assets_from_dbt_manifest`
+from dagster_dbt import load_assets_from_dbt_manifest
+
+my_dbt_assets = load_assets_from_dbt_manifest(
+    manifest=manifest,
+    use_build_command=True,
+)
+
+# After, using `@dbt_assets`, `DbtCliResource`, and `DagsterDbtTranslator
+from dagster import AssetExecutionContext
+from dagster_dbt import dbt_assets, DbtCliResource
+
+@dbt_assets(manifest=manifest)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+- When using `@dbt_assets`, if a time window partition definition is used without an explicit backfill policy, the backfill policy now defaults to a `BackfillPolicy.single_run()` instead of `BackfillPolicy.multi_run()`.
+
 ## Migrating to 1.5.0
 
 ### Breaking changes

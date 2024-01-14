@@ -42,48 +42,33 @@ export type AssetViewDefinitionQuery = {
             name: string;
             location: {__typename: 'RepositoryLocation'; id: string; name: string};
           };
-          jobs: Array<{
-            __typename: 'Pipeline';
-            id: string;
-            name: string;
-            schedules: Array<{
-              __typename: 'Schedule';
-              id: string;
-              name: string;
-              cronSchedule: string;
-              executionTimezone: string | null;
-              scheduleState: {
-                __typename: 'InstigationState';
+          targetingInstigators: Array<
+            | {
+                __typename: 'Schedule';
                 id: string;
-                selectorId: string;
-                status: Types.InstigationStatus;
-              };
-            }>;
-            sensors: Array<{
-              __typename: 'Sensor';
-              id: string;
-              jobOriginId: string;
-              name: string;
-              sensorState: {
-                __typename: 'InstigationState';
+                name: string;
+                cronSchedule: string;
+                executionTimezone: string | null;
+                scheduleState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                };
+              }
+            | {
+                __typename: 'Sensor';
                 id: string;
-                selectorId: string;
-                status: Types.InstigationStatus;
-              };
-            }>;
-          }>;
-          automationPolicySensor: {
-            __typename: 'Sensor';
-            id: string;
-            jobOriginId: string;
-            name: string;
-            sensorState: {
-              __typename: 'InstigationState';
-              id: string;
-              selectorId: string;
-              status: Types.InstigationStatus;
-            };
-          } | null;
+                jobOriginId: string;
+                name: string;
+                sensorState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                };
+              }
+          >;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
@@ -15878,48 +15863,33 @@ export type AssetViewDefinitionNodeFragment = {
     name: string;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
-  jobs: Array<{
-    __typename: 'Pipeline';
-    id: string;
-    name: string;
-    schedules: Array<{
-      __typename: 'Schedule';
-      id: string;
-      name: string;
-      cronSchedule: string;
-      executionTimezone: string | null;
-      scheduleState: {
-        __typename: 'InstigationState';
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
         id: string;
-        selectorId: string;
-        status: Types.InstigationStatus;
-      };
-    }>;
-    sensors: Array<{
-      __typename: 'Sensor';
-      id: string;
-      jobOriginId: string;
-      name: string;
-      sensorState: {
-        __typename: 'InstigationState';
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
         id: string;
-        selectorId: string;
-        status: Types.InstigationStatus;
-      };
-    }>;
-  }>;
-  automationPolicySensor: {
-    __typename: 'Sensor';
-    id: string;
-    jobOriginId: string;
-    name: string;
-    sensorState: {
-      __typename: 'InstigationState';
-      id: string;
-      selectorId: string;
-      status: Types.InstigationStatus;
-    };
-  } | null;
+        jobOriginId: string;
+        name: string;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+  >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
