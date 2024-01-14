@@ -52,6 +52,8 @@ spec:
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml $_.Values.dagsterWebserver.initContainers.resources | nindent 12 }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
@@ -59,6 +61,8 @@ spec:
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml $_.Values.dagsterWebserver.initContainers.resources | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:

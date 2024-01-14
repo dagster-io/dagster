@@ -163,6 +163,10 @@ dagsterWebserver:
   securityContext: {}
   resources: {}
 
+  # Configure initContainer resources separately from main container
+  initContainers:
+    resources: {}
+
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -1198,6 +1202,10 @@ dagsterDaemon:
   podSecurityContext: {}
   securityContext: {}
   resources: {}
+
+  # Configure initContainer resources separately from main container
+  initContainers:
+    resources: {}
 
   # Override the default K8s scheduler
   # schedulerName: ~

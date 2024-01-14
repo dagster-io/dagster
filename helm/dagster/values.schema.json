@@ -516,6 +516,20 @@
                             "type": "null"
                         }
                     ]
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Resources"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2866,6 +2880,20 @@
                     "anyOf": [
                         {
                             "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Resources"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
                         },
                         {
                             "type": "null"
