@@ -8,10 +8,6 @@ It allows using Polars DataFrames as inputs and outputs with Dagster's `@asset` 
 Type annotations are used to control whether to load an eager or lazy DataFrame.
 Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, ...) are supported.
 
-Related Guides:
-
-* `Using Dagster with Polars tutorial </integrations/polars>`_
-
 Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
 
 Installation
@@ -27,14 +23,13 @@ Please check the documentation for each IOManager for more details.
 Quickstart
 ----------
 
-Common filesystem-based IOManagers features highlights, using :py:class:`PolarsParquetIOManager` as an example (check :py:class:`BasePolarsUPathIOManager` for more details):
+Common filesystem-based IOManagers features highlights, using :py:class:`PolarsParquetIOManager` as an example (see :py:class:`BasePolarsUPathIOManager` for the full list of features provided by `dagster-polars`):
 
 Type annotations are not required. By default an eager `pl.DataFrame` will be loaded.
 
 .. code-block:: python
 
     from dagster import asset
-    from dagster_polars import PolarsParquetIOManager
     import polars as pl
 
     @asset(io_manager_key="polars_parquet_io_manager")
@@ -45,12 +40,12 @@ Type annotations are not required. By default an eager `pl.DataFrame` will be lo
     def downstream(upstream):
         assert isinstance(upstream, pl.DataFrame)
 
-Lazy `pl.LazyFrame` can be loaded by annotating the input with `LazyFrame`:
+Lazy `pl.LazyFrame` can be loaded by annotating the input with `pl.LazyFrame`:
 
 .. code-block:: python
 
     @asset(io_manager_key="polars_parquet_io_manager")
-    def downstream(upstream: LazyFrame):
+    def downstream(upstream: pl.LazyFrame):
         assert isinstance(upstream, pl.LazyFrame)
 
 The same logic applies to partitioned assets:
@@ -77,7 +72,7 @@ The same logic applies to partitioned assets:
     def downstream(upstream: Optional[pl.LazyFrame]):  # upstream will be None if it doesn't exist in storage
         ...
 
-Some IOManagers support saving/loading custom metadata along with the DataFrame. This is often useful for external systems which read the data outside of Dagster. The `DataFrameWithMetadata` is a type alias provided by :py:mod:`dagster_polars.types` for convenience.
+Some IOManagers support saving/loading custom metadata along with the DataFrame. This is often useful for external systems which would read the asset data outside of Dagster. The `DataFrameWithMetadata` is a type alias provided by :py:mod:`dagster_polars.types`.
 
 .. code-block:: python
 
@@ -108,40 +103,40 @@ In the table below `StorageMetadata` expands to `Dict[str, Any]`.
      - Behavior
    * - `DataFrame`
      -
-     - read/write DataFrame. Raise error if it's not found in storage.
+     - read/write a `DataFrame`
    * - `LazyFrame`
      -
-     - read LazyFrame. Raise error if it's not found in storage.
+     - read a `LazyFrame`
    * - `Optional[DataFrame]`
      -
-     - read/write DataFrame. Skip if it's not found in storage or the output is `None`.
+     - read/write a `DataFrame`. Do nothing if no data is found in storage or the output is `None`
    * - `Optional[LazyFrame]`
      -
-     - read LazyFrame. Skip if it's not found in storage.
+     - read a `LazyFrame`. Do nothing if no data is found in storage
    * - `Dict[str, DataFrame]`
      - `DataFrameWithPartitions`
-     - read multiple DataFrames as `Dict[str, DataFrame]`. Raises an error for missing partitions, unless `"allow_missing_partitions"` input metadata is set to `True`
+     - read multiple `DataFrame`s as `Dict[str, DataFrame]`. Raises an error for missing partitions, unless `"allow_missing_partitions"` input metadata is set to `True`
    * - `Dict[str, LazyFrame]`
      - `LazyFramePartitions`
-     - read multiple LazyFrames as `Dict[str, LazyFrame]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
+     - read multiple `LazyFrame`s as `Dict[str, LazyFrame]`. Raises an error for missing partitions, unless `"allow_missing_partitions"` input metadata is set to `True`
    * - `Tuple[DataFrame, StorageMetadata]`
      - `DataFrameWithMetadata`
-     - read/write DataFrame and metadata. Raise error if it's not found in storage.
+     - read/write a `DataFrame` and a metadata dict (if supported by the IOManager)
    * - `Tuple[LazyFrame, StorageMetadata]`
      - `LazyFrameWithMetadata`
-     - read LazyFrame and metadata. Raise error if it's not found in storage.
+     - read a `LazyFrame` and a metadata dict (if supported by the IOManager)
    * - `Optional[DataFrameWithMetadata]`
      -
-     - read/write DataFrame and metadata. Skip if it's not found in storage or the output is `None`.
+     - read/write a `DataFrame` and metadata dict (if supported by the IOManager). Do nothing if no data is found in storage or the output is `None`
    * - `Optional[LazyFrameWithMetadata]`
      -
-     - read LazyFrame and metadata. Skip if it's not found in storage.
+     - read `LazyFrame` and a metadata dict. Do nothing if no data is found in storage or the output is `None`
    * - `Dict[str, DataFrameWithMetadata]`
      - `DataFramePartitionsWithMetadata`
-     - read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
+     - read multiple `DataFrame`s and metadata dicts as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
    * - `Dict[str, LazyFrameWithMetadata]`
      - `LazyFramePartitionsWithMetadata`
-     - read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
+     - read multiple `LazyFrame`s and metadata dicts as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raises an error for missing partitions,  unless `"allow_missing_partitions"` input metadata is set to `True`
 
 Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
 
