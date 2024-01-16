@@ -46,11 +46,7 @@ export const TimeElapsed = (props: Props) => {
       <Icon name="timer" color={colorTextLight()} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
         {startTime
-<<<<<<< HEAD
           ? showMsec
-=======
-          ? msec
->>>>>>> 1d3458f405 (??)
             ? formatElapsedTimeWithMsec((endTime || Date.now()) - startTime)
             : formatElapsedTimeWithoutMsec((endTime || Date.now()) - startTime)
           : '–'}
