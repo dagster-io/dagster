@@ -1,3 +1,4 @@
+import {useApolloClient} from '@apollo/client';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
@@ -34,10 +35,10 @@ describe('AssetNode', () => {
         : JSON.parse(scenario.definition.id);
 
       function SetCacheEntry() {
-        AssetLiveDataThreadManager.__setCacheEntryForTest(
-          tokenForAssetKey(definitionCopy.assetKey),
-          scenario.liveData,
-        );
+        const client = useApolloClient();
+        AssetLiveDataThreadManager.getInstance(client)._updateCache({
+          [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
+        });
         return null;
       }
 

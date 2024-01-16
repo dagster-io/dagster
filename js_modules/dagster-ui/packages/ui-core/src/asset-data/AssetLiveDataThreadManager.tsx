@@ -238,12 +238,4 @@ export class AssetLiveDataThreadManager {
     // @ts-expect-error - its ok
     AssetLiveDataThreadManager._instance = undefined;
   }
-
-  public static __setCacheEntryForTest(key: string, data: LiveDataForNode | undefined) {
-    if (data) {
-      this._instance.cache[key] = data;
-    } else {
-      delete this._instance.cache[key];
-    }
-  }
 }

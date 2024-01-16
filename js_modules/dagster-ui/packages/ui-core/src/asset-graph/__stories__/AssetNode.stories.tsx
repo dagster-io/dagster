@@ -1,3 +1,5 @@
+import {useApolloClient} from '@apollo/client';
+import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -33,15 +35,15 @@ export const LiveStates = () => {
     const dimensions = getAssetNodeDimensions(definitionCopy);
 
     function SetCacheEntry() {
-      AssetLiveDataThreadManager.__setCacheEntryForTest(
-        tokenForAssetKey(definitionCopy.assetKey),
-        scenario.liveData,
-      );
+      const client = useApolloClient();
+      AssetLiveDataThreadManager.getInstance(client)._updateCache({
+        [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
+      });
       return null;
     }
 
     return (
-      <AssetLiveDataProvider>
+      <>
         <SetCacheEntry />
         <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
           <div
@@ -64,23 +66,25 @@ export const LiveStates = () => {
             <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
           </code>
         </Box>
-      </AssetLiveDataProvider>
+      </>
     );
   };
 
   return (
-    <>
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
-      </Box>
+    <MockedProvider>
+      <AssetLiveDataProvider>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
+        </Box>
 
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosSource.map(caseWithLiveData)}
-      </Box>
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosPartitioned.map(caseWithLiveData)}
-      </Box>
-    </>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosSource.map(caseWithLiveData)}
+        </Box>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosPartitioned.map(caseWithLiveData)}
+        </Box>
+      </AssetLiveDataProvider>
+    </MockedProvider>
   );
   return;
 };
@@ -100,17 +104,17 @@ export const PartnerTags = () => {
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
     function SetCacheEntry() {
-      AssetLiveDataThreadManager.__setCacheEntryForTest(
-        tokenForAssetKey(buildAssetKey({path: [liveData.stepKey]})),
-        liveData,
-      );
+      const client = useApolloClient();
+      AssetLiveDataThreadManager.getInstance(client)._updateCache({
+        [tokenForAssetKey(buildAssetKey({path: [liveData.stepKey]}))]: liveData!,
+      });
       return null;
     }
 
     const dimensions = getAssetNodeDimensions(def);
 
     return (
-      <AssetLiveDataProvider>
+      <>
         <SetCacheEntry />
         <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
           <strong>{computeKind}</strong>
@@ -125,15 +129,19 @@ export const PartnerTags = () => {
             <AssetNode definition={def} selected={false} />
           </div>
         </Box>
-      </AssetLiveDataProvider>
+      </>
     );
   };
 
   return (
-    <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-      {Object.keys(KNOWN_TAGS).map(caseWithComputeKind)}
-      {caseWithComputeKind('Unknown-Kind-Long')}
-      {caseWithComputeKind('another')}
-    </Box>
+    <MockedProvider>
+      <AssetLiveDataProvider>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Object.keys(KNOWN_TAGS).map(caseWithComputeKind)}
+          {caseWithComputeKind('Unknown-Kind-Long')}
+          {caseWithComputeKind('another')}
+        </Box>
+      </AssetLiveDataProvider>
+    </MockedProvider>
   );
 };
