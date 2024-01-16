@@ -5,11 +5,13 @@ import {
   Menu,
   MenuItem,
   Tag,
+  Tooltip,
   colorBackgroundLight,
   colorBackgroundLightHover,
   colorLineageGroupNodeBorder,
   colorTextLight,
   colorTextLighter,
+  ifPlural,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -133,25 +135,57 @@ const GroupNodeAssetStatusCounts = ({
         <>
           <>
             {statuses.successful.length ? (
-              <Tag icon="dot_filled" intent="success">
-                {statuses.successful.length}
-              </Tag>
+              <Tooltip
+                content={`${statuses.successful.length} asset${ifPlural(
+                  statuses.successful.length,
+                  '',
+                  's',
+                )} are up to date`}
+              >
+                <Tag icon="dot_filled" intent="success">
+                  {statuses.successful.length}
+                </Tag>
+              </Tooltip>
             ) : null}
           </>
           {statuses.missing.length ? (
-            <Tag icon="dot_filled" intent="warning">
-              {statuses.missing.length}
-            </Tag>
+            <Tooltip
+              content={`${statuses.missing.length} asset${ifPlural(
+                statuses.missing.length,
+                '',
+                's',
+              )} are missing or have changed`}
+            >
+              <Tag icon="dot_filled" intent="warning">
+                {statuses.missing.length}
+              </Tag>
+            </Tooltip>
           ) : null}
           {statuses.failed.length ? (
-            <Tag icon="dot_filled" intent="danger">
-              {statuses.failed.length}
-            </Tag>
+            <Tooltip
+              content={`${statuses.failed.length} asset${ifPlural(
+                statuses.failed.length,
+                '',
+                's',
+              )} have failed or are overdue`}
+            >
+              <Tag icon="dot_filled" intent="danger">
+                {statuses.failed.length}
+              </Tag>
+            </Tooltip>
           ) : null}
           {statuses.inprogress.length ? (
-            <Tag icon="spinner" intent="primary">
-              {statuses.inprogress.length}
-            </Tag>
+            <Tooltip
+              content={`${statuses.inprogress.length} asset${ifPlural(
+                statuses.inprogress.length,
+                '',
+                's',
+              )} are executing`}
+            >
+              <Tag icon="spinner" intent="primary">
+                {statuses.inprogress.length}
+              </Tag>
+            </Tooltip>
           ) : null}
         </>
       )}
