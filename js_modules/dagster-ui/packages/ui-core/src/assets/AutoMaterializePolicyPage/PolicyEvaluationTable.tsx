@@ -111,7 +111,7 @@ const UnpartitionedPolicyEvaluationTable = ({
               </td>
               {startTimestamp && endTimestamp ? (
                 <td>
-                  <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
+                  <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
                 </td>
               ) : null}
               <td>
@@ -239,7 +239,7 @@ const PartitionedPolicyEvaluationTable = ({
                 </Box>
               </td>
               <td>
-                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} msec />
+                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
               </td>
             </EvaluationRow>
           );

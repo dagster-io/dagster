@@ -6,19 +6,11 @@ import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Ut
 export interface Props {
   startUnix: number | null;
   endUnix: number | null;
-<<<<<<< HEAD
   showMsec?: boolean;
 }
 
 export const TimeElapsed = (props: Props) => {
   const {startUnix, endUnix, showMsec} = props;
-=======
-  msec?: boolean;
-}
-
-export const TimeElapsed = (props: Props) => {
-  const {startUnix, endUnix, msec} = props;
->>>>>>> 1d3458f405 (??)
 
   const [endTime, setEndTime] = React.useState(() => (endUnix ? endUnix * 1000 : null));
   const interval = React.useRef<ReturnType<typeof setInterval>>();
