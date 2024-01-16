@@ -9,6 +9,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from sling.translator import DagsterSlingTranslator
 
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
