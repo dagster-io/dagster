@@ -59,23 +59,24 @@ export function useAssetsLiveData(
     let didUpdateOnce = false;
     let updates: {stringKey: string; assetData: LiveDataForNode | undefined}[] = [];
 
+    function processUpdates() {
+      const copy = {...dataRef.current};
+      updates.forEach(({stringKey, assetData}) => {
+        if (assetData) {
+          copy[stringKey] = assetData;
+        } else {
+          delete copy[stringKey];
+        }
+      });
+      updates = [];
+      setData(copy);
+    }
+
     const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
       /**
        * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
        */
       updates.push({stringKey, assetData});
-      function processUpdates() {
-        const copy = {...dataRef.current};
-        updates.forEach(({stringKey, assetData}) => {
-          if (assetData) {
-            copy[stringKey] = assetData;
-          } else {
-            delete copy[stringKey];
-          }
-        });
-        updates = [];
-        setData(copy);
-      }
       if (!didUpdateOnce) {
         didUpdateOnce = true;
         requestAnimationFrame(processUpdates);
