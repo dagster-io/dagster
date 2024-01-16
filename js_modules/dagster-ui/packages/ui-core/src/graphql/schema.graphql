@@ -2876,6 +2876,7 @@ type Sensor {
   nextTick: DryRunInstigationTick
   metadata: SensorMetadata!
   sensorType: SensorType!
+  assetSelection: AssetSelection
 }
 
 type Target {
@@ -2896,6 +2897,10 @@ enum SensorType {
   FRESHNESS_POLICY
   AUTOMATION_POLICY
   UNKNOWN
+}
+
+type AssetSelection {
+  assetSelectionString: String
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError

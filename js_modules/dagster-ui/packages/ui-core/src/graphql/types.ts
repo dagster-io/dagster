@@ -476,6 +476,11 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsTargeted: Scalars['Int'];
 };
 
+export type AssetSelection = {
+  __typename: 'AssetSelection';
+  assetSelectionString: Maybe<Scalars['String']>;
+};
+
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -3970,6 +3975,7 @@ export type SelectorTypeConfigError = PipelineConfigValidationError & {
 
 export type Sensor = {
   __typename: 'Sensor';
+  assetSelection: Maybe<AssetSelection>;
   description: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   jobOriginId: Scalars['String'];
@@ -5430,6 +5436,21 @@ export const buildAssetPartitionsStatusCounts = (
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
         : 5211,
+  };
+};
+
+export const buildAssetSelection = (
+  overrides?: Partial<AssetSelection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSelection'} & AssetSelection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSelection');
+  return {
+    __typename: 'AssetSelection',
+    assetSelectionString:
+      overrides && overrides.hasOwnProperty('assetSelectionString')
+        ? overrides.assetSelectionString!
+        : 'dolores',
   };
 };
 
@@ -12031,6 +12052,12 @@ export const buildSensor = (
   relationshipsToOmit.add('Sensor');
   return {
     __typename: 'Sensor',
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection')
+        ? overrides.assetSelection!
+        : relationshipsToOmit.has('AssetSelection')
+        ? ({} as AssetSelection)
+        : buildAssetSelection({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
     id:
