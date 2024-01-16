@@ -1,11 +1,13 @@
 import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataThreadManager} from '../../asset-data/AssetLiveDataThreadManager';
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNodeLink} from '../ForeignNode';
+import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
 
@@ -29,29 +31,40 @@ export const LiveStates = () => {
       : JSON.parse(scenario.definition.id);
 
     const dimensions = getAssetNodeDimensions(definitionCopy);
-    _setCacheEntryForTest(definitionCopy.assetKey, scenario.liveData);
+
+    function SetCacheEntry() {
+      AssetLiveDataThreadManager.__setCacheEntryForTest(
+        tokenForAssetKey(definitionCopy.assetKey),
+        scenario.liveData,
+      );
+      return null;
+    }
+
     return (
-      <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
-        <div
-          style={{
-            position: 'relative',
-            width: dimensions.width,
-            height: dimensions.height,
-            overflowY: 'hidden',
-          }}
-        >
-          <AssetNode definition={definitionCopy} selected={false} />
-        </div>
-        <div style={{position: 'relative', width: dimensions.width, height: 82}}>
-          <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
-            <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
+      <AssetLiveDataProvider>
+        <SetCacheEntry />
+        <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
+          <div
+            style={{
+              position: 'relative',
+              width: dimensions.width,
+              height: dimensions.height,
+              overflowY: 'hidden',
+            }}
+          >
+            <AssetNode definition={definitionCopy} selected={false} />
           </div>
-        </div>
-        <code>
-          <strong>{scenario.title}</strong>
-          <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
-        </code>
-      </Box>
+          <div style={{position: 'relative', width: dimensions.width, height: 82}}>
+            <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
+              <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
+            </div>
+          </div>
+          <code>
+            <strong>{scenario.title}</strong>
+            <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
+          </code>
+        </Box>
+      </AssetLiveDataProvider>
     );
   };
 
@@ -85,18 +98,34 @@ export const PartnerTags = () => {
   const caseWithComputeKind = (computeKind: string) => {
     const def = {...Mocks.AssetNodeFragmentBasic, computeKind};
     const liveData = Mocks.LiveDataForNodeMaterialized;
-    _setCacheEntryForTest(buildAssetKey({path: [liveData.stepKey]}), liveData);
+
+    function SetCacheEntry() {
+      AssetLiveDataThreadManager.__setCacheEntryForTest(
+        tokenForAssetKey(buildAssetKey({path: [liveData.stepKey]})),
+        liveData,
+      );
+      return null;
+    }
+
     const dimensions = getAssetNodeDimensions(def);
 
     return (
-      <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
-        <strong>{computeKind}</strong>
-        <div
-          style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
-        >
-          <AssetNode definition={def} selected={false} />
-        </div>
-      </Box>
+      <AssetLiveDataProvider>
+        <SetCacheEntry />
+        <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
+          <strong>{computeKind}</strong>
+          <div
+            style={{
+              position: 'relative',
+              width: 280,
+              height: dimensions.height,
+              overflowY: 'hidden',
+            }}
+          >
+            <AssetNode definition={def} selected={false} />
+          </div>
+        </Box>
+      </AssetLiveDataProvider>
     );
   };
 

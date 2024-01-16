@@ -8,6 +8,7 @@ import {AssetKeyInput} from '../graphql/types';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
+import {AssetDataRefreshButton} from './AssetDataRefreshButton';
 import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;

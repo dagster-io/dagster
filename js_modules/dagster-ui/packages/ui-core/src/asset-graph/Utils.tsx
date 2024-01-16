@@ -11,7 +11,7 @@ import {
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
   AssetCheckLiveFragment,
-} from '../asset-data/types/AssetLiveDataProvider.types';
+} from '../asset-data/types/AssetLiveDataThread.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
