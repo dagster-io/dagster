@@ -57,6 +57,7 @@ export function useAssetsLiveData(
   React.useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let didUpdateOnce = false;
+    let didScheduleUpdateOnce = false;
     let updates: {stringKey: string; assetData: LiveDataForNode | undefined}[] = [];
 
     function processUpdates() {
@@ -78,8 +79,13 @@ export function useAssetsLiveData(
        */
       updates.push({stringKey, assetData});
       if (!didUpdateOnce) {
-        didUpdateOnce = true;
-        requestAnimationFrame(processUpdates);
+        if (!didScheduleUpdateOnce) {
+          didScheduleUpdateOnce = true;
+          requestAnimationFrame(() => {
+            processUpdates();
+            didUpdateOnce = true;
+          });
+        }
       } else if (!timeout) {
         timeout = setTimeout(processUpdates, batchUpdatesInterval);
       }
