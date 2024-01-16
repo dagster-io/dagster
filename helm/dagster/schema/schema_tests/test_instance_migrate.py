@@ -1,10 +1,9 @@
 import subprocess
 
 import pytest
-from kubernetes.client import models
-from kubernetes import client as k8s_client
-
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
+from kubernetes import client as k8s_client
+from kubernetes.client import models
 from schema.charts.dagster.subschema.migrate import Migrate
 from schema.charts.dagster.subschema.webserver import (
     Webserver,
@@ -71,6 +70,7 @@ def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
 
     assert job.metadata.annotations == annotations
     assert job.spec.template.metadata.annotations == annotations
+
 
 def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTemplate):
     volumes = [
