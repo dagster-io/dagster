@@ -38,7 +38,7 @@ setup(
         f"dagster{pin}",
         "polars>=0.17.0",
         "pyarrow>=8.0.0",
-        "typing-extensions>=4.7.1",
+        "typing-extensions>=4.4.0",
         "universal_pathlib>=0.1.4",
     ],
     extras_require={

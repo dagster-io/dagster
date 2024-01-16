@@ -76,7 +76,7 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
         job = connection.load_table_from_dataframe(
             dataframe=obj.to_pandas(),
             destination=f"{table_slice.schema}.{table_slice.table}",
-            project=table_slice.database,  # type: ignore
+            project=table_slice.database,
             location=context.resource_config.get("location") if context.resource_config else None,  # type: ignore
             timeout=context.resource_config.get("timeout") if context.resource_config else None,  # type: ignore
             job_config=job_config,
@@ -95,8 +95,8 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
             return pl.DataFrame()
         result = connection.query(
             query=BigQueryClient.get_select_statement(table_slice),
-            project=table_slice.database,  # type: ignore
-            location=context.resource_config.get("location") if context.resource_config else None,  # type: ignore
+            project=table_slice.database,
+            location=context.resource_config.get("location") if context.resource_config else None,
             timeout=context.resource_config.get("timeout") if context.resource_config else None,
         ).to_arrow()
 

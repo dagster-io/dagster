@@ -134,7 +134,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         df.write_delta(
             str(path),
-            mode=context.metadata.get("mode") or self.mode,
+            mode=context.metadata.get("mode") or self.mode,  # type: ignore[reportGeneralTypeIssues]
             overwrite_schema=context.metadata.get("overwrite_schema") or self.overwrite_schema,
             storage_options=storage_options,
             delta_write_options=delta_write_options,
