@@ -411,7 +411,11 @@ def get_dbt_multi_asset_args(
         for test_unique_id in test_unique_ids:
             test_resource_props = manifest["nodes"][test_unique_id]
             check_spec = default_asset_check_fn(
-                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                asset_key,
+                unique_id,
+                dagster_dbt_translator,
+                test_resource_props,
+                dbt_nodes,
             )
 
             if check_spec:

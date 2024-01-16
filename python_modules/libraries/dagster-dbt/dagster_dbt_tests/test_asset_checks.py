@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     AssetCheckKey,
     AssetCheckResult,
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetSelection,
@@ -72,6 +73,102 @@ def test_with_asset_checks() -> None:
     ]:
         assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
         assert asset_def.check_specs_by_output_name
+
+        assert asset_def.check_specs_by_output_name == {
+            "customers_not_null_customers_customer_id": AssetCheckSpec(
+                name="not_null_customers_customer_id",
+                asset=AssetKey(["customers"]),
+                description="",
+            ),
+            "customers_unique_customers_customer_id": AssetCheckSpec(
+                name="unique_customers_customer_id",
+                asset=AssetKey(["customers"]),
+                description="",
+            ),
+            "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+                name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
+                asset=AssetKey(["orders"]),
+                description="",
+            ),
+            "orders_not_null_orders_amount": AssetCheckSpec(
+                name="not_null_orders_amount", asset=AssetKey(["orders"]), description=""
+            ),
+            "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
+                name="not_null_orders_bank_transfer_amount",
+                asset=AssetKey(["orders"]),
+                description="",
+            ),
+            "orders_not_null_orders_coupon_amount": AssetCheckSpec(
+                name="not_null_orders_coupon_amount", asset=AssetKey(["orders"]), description=""
+            ),
+            "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
+                name="not_null_orders_credit_card_amount",
+                asset=AssetKey(["orders"]),
+                description="",
+            ),
+            "orders_not_null_orders_customer_id": AssetCheckSpec(
+                name="not_null_orders_customer_id", asset=AssetKey(["orders"]), description=""
+            ),
+            "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
+                name="not_null_orders_gift_card_amount",
+                asset=AssetKey(["orders"]),
+                description="",
+            ),
+            "orders_not_null_orders_order_id": AssetCheckSpec(
+                name="not_null_orders_order_id", asset=AssetKey(["orders"]), description=""
+            ),
+            "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
+                name="relationships_orders_customer_id__customer_id__ref_customers_",
+                asset=AssetKey(["orders"]),
+                description="",
+                additional_deps=[
+                    AssetKey(["customers"]),
+                ],
+            ),
+            "orders_unique_orders_order_id": AssetCheckSpec(
+                name="unique_orders_order_id", asset=AssetKey(["orders"]), description=""
+            ),
+            "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
+                name="not_null_stg_customers_customer_id",
+                asset=AssetKey(["stg_customers"]),
+                description="",
+            ),
+            "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
+                name="unique_stg_customers_customer_id",
+                asset=AssetKey(["stg_customers"]),
+                description="",
+            ),
+            "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+                name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
+                asset=AssetKey(["stg_orders"]),
+                description="",
+            ),
+            "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
+                name="not_null_stg_orders_order_id",
+                asset=AssetKey(["stg_orders"]),
+                description="",
+            ),
+            "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
+                name="unique_stg_orders_order_id",
+                asset=AssetKey(["stg_orders"]),
+                description="",
+            ),
+            "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
+                name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
+                asset=AssetKey(["stg_payments"]),
+                description="",
+            ),
+            "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
+                name="not_null_stg_payments_payment_id",
+                asset=AssetKey(["stg_payments"]),
+                description="",
+            ),
+            "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
+                name="unique_stg_payments_payment_id",
+                asset=AssetKey(["stg_payments"]),
+                description="",
+            ),
+        }
 
         # dbt singular tests are not modeled as Dagster asset checks
         for check_spec in asset_def.check_specs_by_output_name.values():
