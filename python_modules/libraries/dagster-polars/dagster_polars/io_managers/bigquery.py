@@ -97,7 +97,7 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
             query=BigQueryClient.get_select_statement(table_slice),
             project=table_slice.database,  # type: ignore
             location=context.resource_config.get("location") if context.resource_config else None,  # type: ignore
-            timeout=context.resource_config.get("timeout") if context.resource_config else None,  # type: ignore
+            timeout=context.resource_config.get("timeout") if context.resource_config else None,
         ).to_arrow()
 
         return pl.DataFrame(result)

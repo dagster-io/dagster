@@ -74,7 +74,6 @@ def main(
         "-e python_modules/libraries/dagster-pagerduty",
         "-e python_modules/libraries/dagster-pandas",
         "-e python_modules/libraries/dagster-papertrail",
-        "-e python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         "-e python_modules/libraries/dagster-postgres",
         "-e python_modules/libraries/dagster-prometheus",
         "-e python_modules/libraries/dagster-pyspark",
@@ -105,6 +104,7 @@ def main(
             "-e python_modules/libraries/dagster-pandera",
             "-e python_modules/libraries/dagster-snowflake",
             "-e python_modules/libraries/dagster-snowflake-pandas",
+            "-e python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         ]
 
     if sys.version_info > (3, 6) and sys.version_info < (3, 10):

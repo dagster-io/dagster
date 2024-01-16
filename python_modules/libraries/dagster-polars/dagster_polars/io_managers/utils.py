@@ -82,7 +82,7 @@ def get_metadata_table_and_schema(
             records=[
                 TableRecord(
                     {
-                        col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col])  # type: ignore
+                        col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col])
                         for col in df.columns
                     }
                 )

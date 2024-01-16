@@ -17,11 +17,11 @@ except ImportError:
 
 
 try:
-    # provided by dagster-polars[bigquery]
+    # provided by dagster-polars[gcp]
     from dagster_polars.io_managers.bigquery import (
-        PolarsBigQueryIOManager,
-        PolarsBigQueryTypeHandler,
-    )  # noqa
+        PolarsBigQueryIOManager,  # noqa: F401
+        PolarsBigQueryTypeHandler,  # noqa: F401
+    )
 
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])
 except ImportError:

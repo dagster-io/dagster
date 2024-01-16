@@ -16,15 +16,14 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dagster_polars",
+    name="dagster-polars",
     version=get_version(),
     author="Daniel Gafni",
     author_email="danielgafni16@gmail.com",
     license="Apache-2.0",
     description="Dagster integration library for Polars",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-polars"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-polars"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.8",

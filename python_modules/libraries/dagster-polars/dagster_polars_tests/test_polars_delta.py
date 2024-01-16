@@ -114,7 +114,7 @@ def test_polars_delta_io_manager_overwrite_schema(
     polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
 ):
     @asset(io_manager_def=polars_delta_io_manager)
-    def overwrite_schema_asset_1() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_1() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -170,7 +170,7 @@ def test_polars_delta_io_manager_overwrite_schema(
             overwrite_schema=True,
         )
     )
-    def overwrite_schema_asset_3() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_3() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
