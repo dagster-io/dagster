@@ -107,7 +107,7 @@ export const AssetSidebarNode = ({
             )}
             <GrayOnHoverBox
               onClick={selectThisNode}
-              onDoubleClick={toggleOpen}
+              onDoubleClick={(e) => !e.metaKey && toggleOpen()}
               style={{
                 width: '100%',
                 borderRadius: '8px',
