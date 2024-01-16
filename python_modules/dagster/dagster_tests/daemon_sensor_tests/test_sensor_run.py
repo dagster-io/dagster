@@ -2644,6 +2644,27 @@ def test_status_in_code_sensor(executor, instance):
                 == 0
             )
 
+            # The instigator state status can be manually updated, as well as reset.
+            instance.stop_sensor(
+                always_running_origin.get_id(), running_sensor.selector_id, running_sensor
+            )
+            stopped_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert stopped_instigator_state
+            assert stopped_instigator_state.status == InstigatorStatus.STOPPED
+
+            instance.reset_sensor(running_sensor)
+            reset_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert reset_instigator_state
+            assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
+            evaluate_sensors(workspace_context, executor)
+
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum.test(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
@@ -2654,7 +2675,7 @@ def test_status_in_code_sensor(executor, instance):
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
             )
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
             expected_datetime = create_pendulum_time(
                 year=2019, month=2, day=28, hour=0, minute=0, second=29
