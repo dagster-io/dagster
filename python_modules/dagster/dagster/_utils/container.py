@@ -58,14 +58,14 @@ def memory_limit_path():
     return os.getenv("DAGSTER_MEMORY_LIMIT_PATH", "/sys/fs/cgroup/memory/memory.limit_in_bytes")
 
 
-class UtilizationMetrics(TypedDict):
+class ContainerUtilizationMetrics(TypedDict):
     num_allocated_cores: Optional[int]
     cpu_usage: Optional[float]
     cpu_cfs_quota_us: Optional[float]
     cpu_cfs_period_us: Optional[float]
     memory_usage: Optional[float]
     memory_limit: Optional[int]
-    measurement_timestamp: float
+    measurement_timestamp: Optional[float]
     previous_cpu_usage: Optional[float]
     previous_measurement_timestamp: Optional[float]
 
@@ -74,7 +74,7 @@ def retrieve_containerized_utilization_metrics(
     logger: Optional[logging.Logger],
     previous_measurement_timestamp: Optional[float],
     previous_cpu_usage: Optional[float],
-) -> UtilizationMetrics:
+) -> ContainerUtilizationMetrics:
     """Retrieve the CPU and memory utilization metrics from cgroup and proc files."""
     return {
         "num_allocated_cores": _retrieve_containerized_num_allocated_cores(logger),

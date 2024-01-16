@@ -1,3 +1,8 @@
+import {
+  colorBackgroundDefault,
+  colorLineageEdge,
+  colorLineageEdgeHighlighted,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {Edge} from './OpEdges';
@@ -29,16 +34,16 @@ export const MappingLine = ({
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
-        strokeWidth={minified ? 6 : 5}
+        strokeWidth={minified ? 10 : 6}
         strokeLinecap="round"
-        stroke={highlighted ? 'black' : 'rgb(137, 206, 206)'}
+        stroke={highlighted ? colorLineageEdgeHighlighted() : colorLineageEdge()}
       />
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
-        strokeWidth={4}
+        strokeWidth={3}
         strokeLinecap="round"
-        stroke="white"
+        stroke={colorBackgroundDefault()}
       />
     </g>
   );

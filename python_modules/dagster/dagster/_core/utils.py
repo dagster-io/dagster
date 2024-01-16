@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -125,6 +126,14 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         return (env_var_str, cast(str, env_var_value))
 
 
+class RequestUtilizationMetrics(TypedDict):
+    """A dict of utilization metrics for a threadpool executor. We use generic language in case we use this metrics in a scenario where we switch away from a threadpool executor at a later time."""
+
+    max_concurrent_requests: Optional[int]
+    num_running_requests: Optional[int]
+    num_queued_requests: Optional[int]
+
+
 class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(
         self,
@@ -160,6 +169,13 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
     @property
     def num_queued_futures(self) -> int:
         return self._work_queue.qsize()
+
+    def get_current_utilization_metrics(self) -> RequestUtilizationMetrics:
+        return {
+            "max_concurrent_requests": self.max_workers,
+            "num_running_requests": self.num_running_futures,
+            "num_queued_requests": self.num_queued_futures,
+        }
 
 
 class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
