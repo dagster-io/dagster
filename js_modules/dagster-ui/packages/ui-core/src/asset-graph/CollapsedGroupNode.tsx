@@ -115,7 +115,8 @@ const GroupNodeAssetStatusCounts = ({
 }: {
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
 }) => {
-  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group]);
+  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
+
   const {liveDataByNode} = useAssetsLiveData(assetKeys, 'group-node');
   const statuses = React.useMemo(
     () =>
@@ -123,7 +124,7 @@ const GroupNodeAssetStatusCounts = ({
         group.assets.map((asset) => ({...asset, key: asset.assetKey})),
         liveDataByNode,
       ),
-    [group, liveDataByNode],
+    [group.assets, liveDataByNode],
   );
   return (
     <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
