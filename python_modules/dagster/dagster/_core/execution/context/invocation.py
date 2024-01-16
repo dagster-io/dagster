@@ -22,6 +22,7 @@ from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
     ExpectationResult,
     UserEvent,
 )
@@ -832,6 +833,13 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
+
+    def latest_materialization_for_upstream_asset(
+        self, key: CoercibleToAssetKey
+    ) -> Optional[AssetMaterialization]:
+        raise DagsterInvalidPropertyError(
+            _property_msg("latest_materialization_for_upstream_asset", "method")
+        )
 
 
 def _validate_resource_requirements(
