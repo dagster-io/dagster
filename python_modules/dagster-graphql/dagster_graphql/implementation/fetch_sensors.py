@@ -135,6 +135,23 @@ def stop_sensor(
     return GrapheneStopSensorMutationResult(state)
 
 
+def reset_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
+    from ..schema.errors import GrapheneSensorNotFoundError
+    from ..schema.sensors import GrapheneSensor
+
+    check.inst_param(sensor_selector, "sensor_selector", SensorSelector)
+
+    location = graphene_info.context.get_code_location(sensor_selector.location_name)
+    repository = location.get_repository(sensor_selector.repository_name)
+    if not repository.has_external_sensor(sensor_selector.sensor_name):
+        raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
+
+    external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
+    sensor_state = graphene_info.context.instance.reset_sensor(external_sensor)
+
+    return GrapheneSensor(external_sensor, sensor_state)
+
+
 def get_sensors_for_pipeline(
     graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
 ) -> Sequence["GrapheneSensor"]:

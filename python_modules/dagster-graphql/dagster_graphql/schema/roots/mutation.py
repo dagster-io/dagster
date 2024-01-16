@@ -74,9 +74,14 @@ from ..runs import (
     parse_run_config_input,
 )
 from ..schedule_dry_run import GrapheneScheduleDryRunMutation
-from ..schedules import GrapheneStartScheduleMutation, GrapheneStopRunningScheduleMutation
+from ..schedules import (
+    GrapheneResetScheduleMutation,
+    GrapheneStartScheduleMutation,
+    GrapheneStopRunningScheduleMutation,
+)
 from ..sensor_dry_run import GrapheneSensorDryRunMutation
 from ..sensors import (
+    GrapheneResetSensorMutation,
     GrapheneSetSensorCursorMutation,
     GrapheneStartSensorMutation,
     GrapheneStopSensorMutation,
@@ -902,9 +907,11 @@ class GrapheneMutation(graphene.ObjectType):
     launchRunReexecution = GrapheneLaunchRunReexecutionMutation.Field()
     startSchedule = GrapheneStartScheduleMutation.Field()
     stopRunningSchedule = GrapheneStopRunningScheduleMutation.Field()
+    resetSchedule = GrapheneResetScheduleMutation.Field()
     startSensor = GrapheneStartSensorMutation.Field()
     setSensorCursor = GrapheneSetSensorCursorMutation.Field()
     stopSensor = GrapheneStopSensorMutation.Field()
+    resetSensor = GrapheneResetSensorMutation.Field()
     sensorDryRun = GrapheneSensorDryRunMutation.Field()
     scheduleDryRun = GrapheneScheduleDryRunMutation.Field()
     terminatePipelineExecution = GrapheneTerminateRunMutation.Field()
