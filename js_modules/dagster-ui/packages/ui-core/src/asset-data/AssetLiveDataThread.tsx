@@ -6,7 +6,7 @@ import {BATCHING_INTERVAL} from './util';
 import {buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 
-export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph';
+export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph' | 'group-node';
 
 export class AssetLiveDataThread {
   private isFetching: boolean = false;

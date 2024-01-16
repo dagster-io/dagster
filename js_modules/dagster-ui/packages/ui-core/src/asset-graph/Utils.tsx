@@ -16,6 +16,10 @@ import {
 } from '../asset-data/types/AssetLiveDataThread.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
+
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment;

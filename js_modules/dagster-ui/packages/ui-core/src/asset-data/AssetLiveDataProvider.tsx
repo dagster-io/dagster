@@ -44,24 +44,45 @@ export function useAssetLiveData(
 export function useAssetsLiveData(
   assetKeys: AssetKeyInput[],
   thread: AssetLiveDataThreadID = 'default',
+  batchUpdatesInterval: number = 1000,
 ) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
+  const dataRef = React.useRef(data);
+  dataRef.current = data;
+
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const client = useApolloClient();
   const manager = AssetLiveDataThreadManager.getInstance(client);
 
   React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let didUpdateOnce = false;
+    let updates: {stringKey: string; assetData: LiveDataForNode | undefined}[] = [];
+
     const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
-      setData((data) => {
-        const copy = {...data};
-        if (!assetData) {
-          delete copy[stringKey];
-        } else {
-          copy[stringKey] = assetData;
-        }
-        return copy;
-      });
+      /**
+       * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
+       */
+      updates.push({stringKey, assetData});
+      function processUpdates() {
+        const copy = {...dataRef.current};
+        updates.forEach(({stringKey, assetData}) => {
+          if (assetData) {
+            copy[stringKey] = assetData;
+          } else {
+            delete copy[stringKey];
+          }
+        });
+        updates = [];
+        setData(copy);
+      }
+      if (!didUpdateOnce) {
+        didUpdateOnce = true;
+        requestAnimationFrame(processUpdates);
+      } else if (!timeout) {
+        timeout = setTimeout(processUpdates, batchUpdatesInterval);
+      }
     };
     const unsubscribeCallbacks = assetKeys.map((key) =>
       manager.subscribe(key, setDataSingle, thread),
@@ -71,7 +92,7 @@ export function useAssetsLiveData(
         cb();
       });
     };
-  }, [assetKeys, manager, thread]);
+  }, [assetKeys, batchUpdatesInterval, manager, thread]);
 
   return {
     liveDataByNode: data,
