@@ -3279,7 +3279,7 @@ export type ReportRunlessAssetEventsSuccess = {
   assetKey: AssetKey;
 };
 
-export type RepositoriesOrError = PythonError | RepositoryConnection;
+export type RepositoriesOrError = PythonError | RepositoryConnection | RepositoryNotFoundError;
 
 export type Repository = {
   __typename: 'Repository';

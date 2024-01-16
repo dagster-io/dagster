@@ -67,8 +67,11 @@ export const ScheduledRunListRoot = () => {
       <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
           const {repositoriesOrError, instance} = result;
-          if (repositoriesOrError.__typename === 'PythonError') {
-            const message = repositoriesOrError.message;
+          if (repositoriesOrError.__typename !== 'RepositoryConnection') {
+            const message =
+              repositoriesOrError.__typename === 'PythonError'
+                ? repositoriesOrError.message
+                : 'Repository not found';
             return (
               <Alert
                 intent="warning"
