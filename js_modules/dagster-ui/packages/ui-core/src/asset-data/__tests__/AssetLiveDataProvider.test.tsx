@@ -8,6 +8,7 @@ import React from 'react';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
 import {getMockResultFn} from '../../testing/mocking';
 import {AssetLiveDataProvider, useAssetsLiveData} from '../AssetLiveDataProvider';
+import {AssetLiveDataThreadID} from '../AssetLiveDataThread';
 import {AssetLiveDataThreadManager} from '../AssetLiveDataThreadManager';
 import {SUBSCRIPTION_IDLE_POLL_RATE, BATCH_SIZE} from '../util';
 
@@ -27,24 +28,27 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
+    thread?: AssetLiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }[];
 }) {
   function Hook({
     keys,
+    thread,
     hookResult,
   }: {
     keys: AssetKeyInput[];
+    thread?: AssetLiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }) {
-    hookResult(useAssetsLiveData(keys).liveDataByNode);
+    hookResult(useAssetsLiveData(keys, thread).liveDataByNode);
     return <div />;
   }
   return (
     <MockedProvider mocks={mocks}>
       <AssetLiveDataProvider>
-        {hooks.map(({keys, hookResult}, idx) => (
-          <Hook key={idx} keys={keys} hookResult={hookResult} />
+        {hooks.map(({keys, thread, hookResult}, idx) => (
+          <Hook key={idx} keys={keys} hookResult={hookResult} thread={thread} />
         ))}
       </AssetLiveDataProvider>
     </MockedProvider>
@@ -409,5 +413,45 @@ describe('AssetLiveDataProvider', () => {
     });
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
+  });
+
+  it('Has multiple threads', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']})];
+    const assetKeys2 = [buildAssetKey({path: ['key2']})];
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys2);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
+
+    render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[
+          {keys: assetKeys, thread: 'default', hookResult},
+          {keys: assetKeys2, thread: 'asset-graph', hookResult: hookResult2},
+        ]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(resultFn2).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+      expect(hookResult2.mock.calls[1]!.value).not.toEqual({});
+    });
   });
 });

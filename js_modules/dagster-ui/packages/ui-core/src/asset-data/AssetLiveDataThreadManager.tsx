@@ -61,11 +61,7 @@ export class AssetLiveDataThreadManager {
     this.onUpdatedOrUpdating = onUpdatingOrUpdated;
   }
 
-  public subscribe(
-    key: AssetKeyInput,
-    listener: Listener,
-    threadID: AssetLiveDataThreadID = 'default',
-  ) {
+  public subscribe(key: AssetKeyInput, listener: Listener, threadID: AssetLiveDataThreadID) {
     const assetKey = tokenForAssetKey(key);
     let _thread = this.threads[threadID];
     if (!_thread) {

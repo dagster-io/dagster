@@ -9,10 +9,9 @@ import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+import {AssetLiveDataThreadID} from './AssetLiveDataThread';
 import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
-
-export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
-const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
+import {SUBSCRIPTION_IDLE_POLL_RATE, SUBSCRIPTION_MAX_POLL_RATE} from './util';
 
 export const LiveDataPollRateContext = React.createContext<number>(SUBSCRIPTION_IDLE_POLL_RATE);
 
@@ -26,9 +25,13 @@ export const AssetLiveDataRefreshContext = React.createContext<{
   refresh: () => {},
 });
 
-export function useAssetLiveData(assetKey: AssetKeyInput) {
+export function useAssetLiveData(
+  assetKey: AssetKeyInput,
+  thread: AssetLiveDataThreadID = 'default',
+) {
   const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
     React.useMemo(() => [assetKey], [assetKey]),
+    thread,
   );
   return {
     liveData: liveDataByNode[tokenForAssetKey(assetKey)],
@@ -37,7 +40,10 @@ export function useAssetLiveData(assetKey: AssetKeyInput) {
   };
 }
 
-export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
+export function useAssetsLiveData(
+  assetKeys: AssetKeyInput[],
+  thread: AssetLiveDataThreadID = 'default',
+) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -57,14 +63,14 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
       });
     };
     const unsubscribeCallbacks = assetKeys.map((key) =>
-      manager.subscribe(key, setDataSingle, 'default'),
+      manager.subscribe(key, setDataSingle, thread),
     );
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
     };
-  }, [assetKeys, manager]);
+  }, [assetKeys, manager, thread]);
 
   return {
     liveDataByNode: data,
