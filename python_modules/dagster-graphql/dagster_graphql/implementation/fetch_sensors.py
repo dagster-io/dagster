@@ -95,11 +95,7 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     if not repository.has_external_sensor(sensor_selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
-    graphene_info.context.instance.start_sensor(external_sensor)
-    sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id(),
-        external_sensor.selector_id,
-    )
+    sensor_state = graphene_info.context.instance.start_sensor(external_sensor)
     return GrapheneSensor(external_sensor, sensor_state)
 
 
