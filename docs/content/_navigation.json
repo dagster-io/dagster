@@ -1394,7 +1394,8 @@
       },
       {
         "title": "Telemetry",
-        "path": "/about/telemetry"
+        "path": "/about/telemetry",
+        "nonMDX": true
       }
     ]
   }

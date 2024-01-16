@@ -1,5 +1,5 @@
 ---
-title: "Dagster telemetry | Dagster Docs"
+title: 'Dagster telemetry | Dagster Docs'
 ---
 
 # Dagster telemetry
@@ -7,6 +7,13 @@ title: "Dagster telemetry | Dagster Docs"
 As an open source project, we collect usage statistics to better understand how users engage with Dagster and to inform development priorities. Telemetry data will motivate projects such as adding functionality in frequently-used parts of the product and will help us understand adoption of new features.
 
 The following is an example telemetry blob:
+
+```python
+def a():
+  return 1
+```
+
+---
 
 ```json
 {
