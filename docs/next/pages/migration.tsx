@@ -18,7 +18,8 @@ import FeedbackModal from '../components/FeedbackModal';
 import MDXComponents from '../components/mdx/MDXComponents';
 import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
 
 enum PageType {
   MDX = 'MDX',

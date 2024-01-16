@@ -134,6 +134,11 @@ def schedule_times_out():
     time.sleep(2)
 
 
+@schedule(job_name="baz", cron_schedule="* * * * *")
+def schedule_error():
+    raise Exception("womp womp")
+
+
 def define_bar_schedules():
     return {
         "foo_schedule": ScheduleDefinition(
@@ -163,6 +168,7 @@ def define_bar_schedules():
         ),
         "partitioned_run_request_schedule": partitioned_run_request_schedule,
         "schedule_times_out": schedule_times_out,
+        "schedule_error": schedule_error,
     }
 
 

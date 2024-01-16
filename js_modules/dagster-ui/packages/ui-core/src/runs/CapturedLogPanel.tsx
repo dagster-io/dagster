@@ -1,5 +1,5 @@
 import {gql, useQuery, useSubscription} from '@apollo/client';
-import {Box, Icon, CoreColors} from '@dagster-io/ui-components';
+import {Box, Icon, colorTooltipBackground, colorTooltipText} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -38,8 +38,8 @@ export const CapturedOrExternalLogPanel = React.memo(
       return (
         <Box
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 1}}
-          background={CoreColors.Gray900}
-          style={{color: CoreColors.White, flex: 1, minHeight: 0}}
+          background={colorTooltipBackground()}
+          style={{color: colorTooltipText(), flex: 1, minHeight: 0}}
         >
           View logs at
           <a
@@ -47,7 +47,7 @@ export const CapturedOrExternalLogPanel = React.memo(
             target="_blank"
             rel="noreferrer"
             style={{
-              color: CoreColors.White,
+              color: colorTooltipText(),
               textDecoration: 'underline',
               marginLeft: 4,
               marginRight: 4,
@@ -55,7 +55,7 @@ export const CapturedOrExternalLogPanel = React.memo(
           >
             {externalUrl}
           </a>
-          <Icon name="open_in_new" color={CoreColors.White} size={20} style={{marginTop: 2}} />
+          <Icon name="open_in_new" color={colorTooltipText()} size={20} style={{marginTop: 2}} />
         </Box>
       );
     }

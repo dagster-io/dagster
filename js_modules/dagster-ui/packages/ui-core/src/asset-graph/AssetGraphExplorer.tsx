@@ -10,8 +10,11 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
+  colorAccentWhite,
   colorBackgroundDefault,
+  colorBackgroundGray,
   colorKeylineDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -203,7 +206,7 @@ const AssetGraphExplorerWithData = ({
   trace,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
-  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+  const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
 
   const {allGroups, allGroupCounts, groupedAssets} = React.useMemo(() => {
     const groupedAssets: Record<string, GraphNode[]> = {};
@@ -419,17 +422,35 @@ const AssetGraphExplorerWithData = ({
       shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
     >
       {expandedGroups.length === 0 ? (
-        <Button
-          title="Expand all groups"
-          icon={<Icon name="unfold_more" />}
-          onClick={() => setExpandedGroups(allGroups)}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Expand all groups"
+            icon={<Icon name="unfold_more" />}
+            onClick={() => setExpandedGroups(allGroups)}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       ) : (
-        <Button
-          title="Collapse all groups"
-          icon={<Icon name="unfold_less" />}
-          onClick={() => setExpandedGroups([])}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Collapse all groups"
+            icon={<Icon name="unfold_less" />}
+            onClick={() => setExpandedGroups([])}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       )}
     </ShortcutHandler>
   );
@@ -485,6 +506,7 @@ const AssetGraphExplorerWithData = ({
                 }}
               >
                 <ExpandedGroupNode
+                  setHighlighted={setHighlighted}
                   preferredJobName={explorerPath.pipelineName}
                   onFilterToGroup={() => onFilterToGroup(group)}
                   group={{
@@ -517,6 +539,8 @@ const AssetGraphExplorerWithData = ({
                 key={group.id}
                 {...group.bounds}
                 className="group"
+                onMouseEnter={() => setHighlighted([group.id])}
+                onMouseLeave={() => setHighlighted(null)}
                 onDoubleClick={(e) => {
                   if (!viewportEl.current) {
                     return;
@@ -569,7 +593,7 @@ const AssetGraphExplorerWithData = ({
                 <foreignObject
                   {...bounds}
                   key={id}
-                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
                   onClick={(e) => onSelectNode(e, {path}, graphNode)}
                   onDoubleClick={(e) => {
@@ -627,7 +651,11 @@ const AssetGraphExplorerWithData = ({
                 <Menu>
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
-                      text="Collapse all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Collapse all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_less" />}
                       onClick={() => {
                         setExpandedGroups([]);
@@ -636,7 +664,11 @@ const AssetGraphExplorerWithData = ({
                   )}
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
-                      text="Expand all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_more" />}
                       onClick={() => {
                         setExpandedGroups(allGroups);
@@ -785,6 +817,21 @@ const AssetGraphExplorerWithData = ({
   }
   return explorer;
 };
+
+interface KeyboardTagProps {
+  $withinTooltip?: boolean;
+}
+
+const KeyboardTag = styled.div<KeyboardTagProps>`
+  ${(props) => {
+    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+  }};
+  background: ${colorBackgroundGray()};
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  font-size: 12px;
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;

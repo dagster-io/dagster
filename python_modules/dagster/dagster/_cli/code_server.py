@@ -15,6 +15,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
@@ -215,6 +216,7 @@ def start_command(
 
     server_termination_event = threading.Event()
 
+    threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
     api_servicer = DagsterProxyApiServicer(
         loadable_target_origin=loadable_target_origin,
         fixed_server_id=fixed_server_id,
@@ -236,7 +238,7 @@ def start_command(
         port=port,
         socket=socket,
         host=host,
-        max_workers=max_workers,
+        threadpool_executor=threadpool_executor,
         logger=logger,
     )
 

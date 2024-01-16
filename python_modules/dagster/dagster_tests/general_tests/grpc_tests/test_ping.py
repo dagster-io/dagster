@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -11,8 +12,13 @@ import dagster._seven as seven
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
-from dagster._grpc.server import GrpcServerProcess, open_server_process
+from dagster._grpc.server import (
+    DagsterCodeServerUtilizationMetrics,
+    GrpcServerProcess,
+    open_server_process,
+)
 from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port, safe_tempfile_path
 
@@ -35,6 +41,7 @@ def test_server_socket_on_windows():
                 dagster_api_servicer=mock.MagicMock(),
                 logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
             )
 
 
@@ -50,6 +57,7 @@ def test_server_port_and_socket():
                 logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
                 port=find_free_port(),
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
             )
 
 
@@ -61,7 +69,7 @@ def test_server_socket():
             try:
                 assert DagsterGrpcClient(socket=skt).ping("foobar") == {
                     "echo": "foobar",
-                    "serialized_server_utilization_metrics": "{}",
+                    "serialized_server_utilization_metrics": "",
                 }
             finally:
                 interrupt_ipc_subprocess_pid(server_process.pid)
@@ -104,7 +112,7 @@ def test_server_port():
         try:
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
+                "serialized_server_utilization_metrics": "",
             }
         finally:
             _cleanup_process(server_process)
@@ -163,7 +171,7 @@ def test_ephemeral_client():
     with ephemeral_grpc_api_client() as api_client:
         assert api_client.ping("foo") == {
             "echo": "foo",
-            "serialized_server_utilization_metrics": "{}",
+            "serialized_server_utilization_metrics": "",
         }
 
 
@@ -233,13 +241,17 @@ def test_detect_server_restart():
 def test_ping_metrics_retrieval():
     with instance_for_test() as instance:
         port = find_free_port()
-        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        server_process = open_server_process(
+            instance.get_ref(), port=port, socket=None, enable_metrics=True
+        )
         assert server_process is not None
 
         try:
-            assert DagsterGrpcClient(port=port).ping("foobar") == {
-                "echo": "foobar",
-                "serialized_server_utilization_metrics": "{}",
-            }
+            result = DagsterGrpcClient(port=port).ping("foobar")
+            assert result["echo"] == "foobar"
+            metrics = json.loads(result["serialized_server_utilization_metrics"])
+            assert all(
+                key in metrics for key in DagsterCodeServerUtilizationMetrics.__annotations__
+            )
         finally:
             _cleanup_process(server_process)

@@ -13,9 +13,12 @@ It's recommended to only use multiple agents of the same type (e.g. multiple Kub
 
 ---
 
-## Multiple agents in the same environment
+## Running multiple agents in the same environment
 
-If you want to run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
+To run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
+
+<TabGroup>
+<TabItem name="Docker">
 
 ### In Docker
 
@@ -29,6 +32,9 @@ services:
       mode: replicated
       replicas: 2
 ```
+
+</TabItem>
+<TabItem name="Kubernetes">
 
 ### In Kubernetes
 
@@ -48,6 +54,9 @@ dagsterCloudAgent:
   replicas: 2
 ```
 
+</TabItem>
+<TabItem name="Amazon ECS">
+
 ### In Amazon ECS
 
 In Amazon ECS, the number of replicas can be set via the CloudFormation template:
@@ -62,11 +71,17 @@ DagsterCloudAgent:
 
 If using the CloudFormation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the Amazon Web Services (AWS) UI.
 
+</TabItem>
+</TabGroup>
+
 ---
 
-## Multiple agents in different environments
+## Running multiple agents in different environments
 
-If you want to run multiple agents in an environment where each agent can not access the others' resources (for example, multiple kubernetes namespaces or different clusters), you need to enable the `isolated_agents` option. This is supported for all agent types.
+To run multiple agents in an environment where each agent can not access the others' resources (for example, multiple Kubernetes namespaces or different clusters), enable the `isolated_agents` option. This is supported for all agent types.
+
+<TabGroup>
+<TabItem name="Docker">
 
 ### In Docker
 
@@ -80,6 +95,9 @@ dagster_cloud_api:
   # <your other config>
   agent_label: "My agent" # optional
 ```
+
+</TabItem>
+<TabItem name="Kubernetes">
 
 ### In Kubernetes
 
@@ -102,17 +120,31 @@ dagsterCloud:
   agentLabel: "My agent" # optional, only supported on 0.13.14 and later
 ```
 
+</TabItem>
+<TabItem name="Amazon ECS">
+
 ### In Amazon ECS
 
 The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
 
+</TabItem>
+</TabGroup>
+
+---
+
 ## Routing requests to specific agents
 
-Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent reads requests only from that default queue. This default configuration is sufficient for most use cases.
+<Note>Agent queues are a Dagster Cloud Enterprise feature.</Note>
 
-In some cases, you might want to route requests for certain code locations to specific agents. For example, you might want to route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to an agent running in AWS. To route requests for a code locations to a specific agent, you can annotate the code locations with the name of a custom queue and configure an agent to serve only requests for that queue.
+Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
 
-When configuring your code location, set an agent queue:
+In some cases, you might want to route requests for certain code locations to specific agents. For example, routing requests for one code location to an agent running in an on-premise data center, but then routing requests for all other code locations to an agent running in AWS.
+
+To route requests for a code location to a specific agent, annotate the code locations with the name of a custom queue and configure an agent to serve only requests for that queue.
+
+### Step 1: Define an agent queue for the code location
+
+First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml):
 
 ```yaml
 # dagster_cloud.yaml
@@ -125,11 +157,16 @@ locations:
     agent_queue: special-queue
 ```
 
+### Step 2: Configure an agent to handle the agent queue
+
 Next, configure an agent to handle your agent queue.
 
-### In Docker
+<TabGroup>
+<TabItem name="Docker">
 
-Add the following to the `dagster.yaml` file:
+#### In Docker
+
+Add the following to your project's [`dagster.yaml`](/deployment/dagster-instance) file:
 
 ```yaml
 agent_queues:
@@ -138,7 +175,10 @@ agent_queues:
     - special-queue
 ```
 
-### In Kubernetes
+</TabItem>
+<TabItem name="Kubernetes">
+
+#### In Kubernetes
 
 Add the following options to your Helm command:
 
@@ -159,3 +199,6 @@ dagsterCloued
     additionalQueues:
       - special-queue
 ```
+
+</TabItem>
+</TabGroup>

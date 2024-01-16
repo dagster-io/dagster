@@ -228,6 +228,15 @@ def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
 
 
+@functools.lru_cache(maxsize=None)
+def has_storage_test_fixture_changes():
+    # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
+    return any(
+        Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+        for path in ChangedFiles.all
+    )
+
+
 def skip_if_no_helm_changes():
     if not is_feature_branch():
         return None

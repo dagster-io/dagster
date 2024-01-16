@@ -305,6 +305,10 @@ class AssetSelection(ABC):
 
         return AndAssetSelection(operands)
 
+    def __bool__(self):
+        # Ensure that even if a subclass is a NamedTuple with no fields, it is still truthy
+        return True
+
     def __sub__(self, other: "AssetSelection") -> "SubtractAssetSelection":
         check.inst_param(other, "other", AssetSelection)
         return SubtractAssetSelection(self, other)

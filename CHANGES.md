@@ -1,5 +1,65 @@
 # Changelog
 
+# 1.6.0 (core) / 0.22.0 (libraries)
+
+## Major Changes since 1.5.0 (core) / 0.21.0 (libraries)
+
+### Core
+
+- **Asset lineage graph UI revamp, to make it easier to visualize and navigate large graphs**
+  - Lineage now flows left-to-right instead of top-to-bottom.
+  - You can expand and collapse asset groups in the graph.
+  - A new left-hand sidebar provides a list of assets, organized by asset group and code location.
+  - You can right-click on assets or groups to filter or materialize them.
+  - You can filter by compute kind.
+- **Dark mode for the Dagster UI** – By default, Dagster will match your system’s light or dark theme but you can adjust this in the user settings in the top right of the UI.
+- **Report asset materializations from the UI** – I.e. you record an asset materialization event without executing the code to materialize the asset. This is useful in cases where you overwrote data outside of Dagster, and you want Dagster to know about it and represent it in the UI. It’s also useful when you have a preexisting partitioned asset and start managing it with Dagster: you want Dagster to show the historical partitions as materialized instead of missing.
+- **`MaterializeResult`, `AssetSpec`, and `AssetDep` now marked stable** – These APIs, introduced in Dagster 1.5, were previously marked experimental. They offer a more straightforward way of defining assets when you don’t want to use I/O managers.
+- **Backfill previews** – When launching a backfill that covers assets with different partitions, can you now click “Preview” to see that partitions for each asset that will be covered by the backfill.
+- **Viewing logs for a sensor or schedule tick is no longer considered experimental** – previously, accessing this functionality required turning on a feature flag in user settings.
+- **Runs triggered by a sensor or schedule link to the tick that triggered them.**
+
+### dagster-pipes
+
+- **AWS Lambda Pipes client** –`PipesLambdaClient` [[guide](https://docs.dagster.io/guides/dagster-pipes/aws-lambda)].
+- **Report arbitrary messages between pipes processes and the orchestrating process** – with `report_custom_message` and `get_custom_messages`.
+- **Termination forwarding** – ensures that external processes are terminated when an orchestration process is.
+
+## **Since 1.5.14 (core) / 0.21.14 (libraries)**
+
+### New
+
+- Default op/asset concurrency limits are now configurable at the deployment level, using the `concurrency` > `default_op_concurrency_limit` configuration in your `dagster.yaml` (OSS) or Deployment Settings page (Dagster Cloud). In OSS, this feature first requires a storage migration (e.g. `dagster instance migrate`).
+- Zero-value op/asset concurrency limits are now supported. In OSS, this feature first requires a storage migration (e.g. `dagster instance migrate`).
+- When a `Nothing`-typed output is returned from an `asset` or `op`, the `handle_output` function of the I/O manager will no longer be called. Users of most Dagster-maintained I/O managers will see no behavioral changes, but users of the In-Memory I/O manager, or custom I/O managers that store `Nothing`-typed outputs should reference the migration guide for more information.
+- [ui] The updated asset graph is no longer behind an experimental flag. The new version features a searchable left sidebar, a horizontal DAG layout, context menus and collapsible groups!
+
+### Bugfixes
+
+- Previously, if a code location was re-deployed with modified assets during an iteration of the asset daemon, empty auto-materialize runs could be produced. This has been fixed.
+- The CLI command `dagster asset materialize` will now return a non-zero exit code upon failure.
+- [ui] The Dagster UI now shows resource descriptions as markdown instead of plain text.
+- [ui] Viewing stdout/stderr logs for steps emitting hundreds of thousands of messages is much more performant and does not render the Run page unusable.
+- [ui] Fixed an issue where sensors with intervals that were less than 30 seconds were shown with an interval of “~30s” in the UI. The correct interval is now shown.
+- [dagster-graphql] Fixed an issue where the GraphQL Python client raised an unclear error if the request failed due to a permissions error.
+
+### Breaking Changes
+
+- A slight change has been made to run status sensors cursor values for Dagster instance using the default SQLite storage implementation. If you are using the default SQLite storage and you are upgrading directly from a version of `dagster<1.5.1`, you may see the first tick of your run status sensor skip runs that completed but were not yet registered by the sensor during your upgrade. This should not be common, but to avoid any chance of that, you may consider an interim upgrade to `dagster>=1.5.1,<1.6.0` first.
+
+### Community Contributions
+
+- Fixed a typo in the docs. Thanks [@tomscholz](https://github.com/tomscholz)!
+- [dagster-pyspark] Added additional file exclude rules to the zip files created by Dagster Pyspark step launchers. Thanks [@maxfirman](https://github.com/maxfirman)!
+
+### Documentation
+
+- Added a high-level overview page for [Logging](https://docs.dagster.io/concepts/logging).
+
+### Dagster Cloud
+
+- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For example, you can route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to another agent running in the cloud. For more information, see [the docs](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
+
 # 1.5.14 / 0.21.14 (libraries)
 
 ### New

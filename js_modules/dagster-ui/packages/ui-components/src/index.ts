@@ -55,9 +55,7 @@ export * from './components/StyledRawCodeMirror';
 export * from './components/useDelayedState';
 export * from './components/ifPlural';
 export * from './theme/color';
-
-// todo dish: Delete this
-export * from './palettes/Colors';
+export * from './theme/theme';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />
