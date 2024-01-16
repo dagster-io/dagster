@@ -888,7 +888,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert instigator_state
             assert isinstance(instigator_state.instigator_data, ScheduleInstigatorData)
 
-            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+            assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
             assert (
                 instigator_state.instigator_data.start_timestamp == pendulum.now("UTC").timestamp()
             )
@@ -1005,7 +1005,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         schedule_state = InstigatorState(
             not_running_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
-            InstigatorStatus.AUTOMATICALLY_RUNNING,
+            InstigatorStatus.DECLARED_IN_CODE,
             ScheduleInstigatorData(
                 not_running_schedule.cron_schedule,
                 freeze_datetime.timestamp(),
@@ -1023,7 +1023,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
             )
             assert len(ticks) == 0
 
-            # AUTOMATICALLY_RUNNING row has been removed from the database
+            # DECLARED_IN_CODE row has been removed from the database
             instigator_state = instance.get_instigator_state(
                 never_running_origin.get_id(), not_running_schedule.selector_id
             )

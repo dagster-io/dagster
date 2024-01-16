@@ -113,6 +113,28 @@ class TestScheduleStorage:
         assert schedule.instigator_data.cron_schedule == "* * * * *"
         assert schedule.instigator_data.start_timestamp is None
 
+    def test_instigator_status_backcompat(self, storage):
+        assert storage
+
+        schedule = self.build_schedule(
+            "my_instigator_status_backcompat",
+            "* * * * *",
+            status=InstigatorStatus.AUTOMATICALLY_RUNNING,
+        )
+        storage.add_instigator_state(schedule)
+        schedules = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+        )
+        assert len(schedules) == 1
+
+        schedule = schedules[0]
+        assert schedule.instigator_name == "my_instigator_status_backcompat"
+        assert schedule.instigator_data.cron_schedule == "* * * * *"
+        assert schedule.instigator_data.start_timestamp is None
+        assert schedule.status == InstigatorStatus.DECLARED_IN_CODE
+
     def test_add_multiple_schedules(self, storage):
         assert storage
 
@@ -121,7 +143,7 @@ class TestScheduleStorage:
             "my_schedule_2", "* * * * *", status=InstigatorStatus.STOPPED
         )
         schedule_3 = self.build_schedule(
-            "my_schedule_3", "* * * * *", status=InstigatorStatus.AUTOMATICALLY_RUNNING
+            "my_schedule_3", "* * * * *", status=InstigatorStatus.DECLARED_IN_CODE
         )
 
         storage.add_instigator_state(schedule)
@@ -143,7 +165,7 @@ class TestScheduleStorage:
             self.fake_repo_target().get_id(),
             self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
-            {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING},
+            {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE},
         )
         assert len(running) == 2
         assert "my_schedule" in [state.instigator_name for state in running]
