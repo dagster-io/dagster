@@ -55,7 +55,11 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.host_representation import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+    ExternalSensor,
+)
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -2621,7 +2625,7 @@ def test_status_in_code_sensor(executor, instance):
             instigator_state = instance.get_instigator_state(
                 always_running_origin.get_id(), running_sensor.selector_id
             )
-            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+            assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
@@ -2644,6 +2648,40 @@ def test_status_in_code_sensor(executor, instance):
                 == 0
             )
 
+            # The instigator state status can be manually updated, as well as reset.
+            instance.stop_sensor(
+                always_running_origin.get_id(), running_sensor.selector_id, running_sensor
+            )
+            stopped_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert stopped_instigator_state
+            assert stopped_instigator_state.status == InstigatorStatus.STOPPED
+
+            instance.reset_sensor(running_sensor)
+            reset_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert reset_instigator_state
+            assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
+            running_to_not_running_sensor = ExternalSensor(
+                external_sensor_data=running_sensor._external_sensor_data._replace(  # noqa: SLF001
+                    default_status=DefaultSensorStatus.STOPPED
+                ),
+                handle=running_sensor.handle.repository_handle,
+            )
+            current_state = running_to_not_running_sensor.get_current_instigator_state(
+                stored_state=reset_instigator_state
+            )
+
+            assert current_state.status == InstigatorStatus.STOPPED
+            assert current_state.instigator_data == reset_instigator_state.instigator_data
+
+            evaluate_sensors(workspace_context, executor)
+
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum.test(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
@@ -2654,7 +2692,7 @@ def test_status_in_code_sensor(executor, instance):
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
             )
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
             expected_datetime = create_pendulum_time(
                 year=2019, month=2, day=28, hour=0, minute=0, second=29

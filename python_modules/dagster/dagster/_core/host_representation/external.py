@@ -775,16 +775,20 @@ class ExternalSchedule:
             return InstigatorState(
                 self.get_external_origin(),
                 InstigatorType.SCHEDULE,
-                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
             )
         else:
-            # Ignore AUTOMATICALLY_RUNNING states in the DB if the default status
+            # Ignore DECLARED_IN_CODE states in the DB if the default status
             # isn't DefaultScheduleStatus.RUNNING - this would indicate that the schedule's
-            # default has been changed in code but there's still a lingering AUTOMATICALLY_RUNNING
+            # default has been changed in code but there's still a lingering DECLARED_IN_CODE
             # row in the database that can be ignored
-            if stored_state and stored_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING:
-                return stored_state
+            if stored_state:
+                return (
+                    stored_state.with_status(InstigatorStatus.STOPPED)
+                    if stored_state.status == InstigatorStatus.DECLARED_IN_CODE
+                    else stored_state
+                )
 
             return InstigatorState(
                 self.get_external_origin(),
@@ -915,7 +919,7 @@ class ExternalSensor:
                 else InstigatorState(
                     self.get_external_origin(),
                     InstigatorType.SENSOR,
-                    InstigatorStatus.AUTOMATICALLY_RUNNING,
+                    InstigatorStatus.DECLARED_IN_CODE,
                     SensorInstigatorData(
                         min_interval=self.min_interval_seconds,
                         sensor_type=self.sensor_type,
@@ -923,11 +927,15 @@ class ExternalSensor:
                 )
             )
         else:
-            # Ignore AUTOMATICALLY_RUNNING states in the DB if the default status
+            # Ignore DECLARED_IN_CODE states in the DB if the default status
             # isn't DefaultSensorStatus.RUNNING - this would indicate that the schedule's
             # default has changed
-            if stored_state and stored_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING:
-                return stored_state
+            if stored_state:
+                return (
+                    stored_state.with_status(InstigatorStatus.STOPPED)
+                    if stored_state.status == InstigatorStatus.DECLARED_IN_CODE
+                    else stored_state
+                )
 
             return InstigatorState(
                 self.get_external_origin(),

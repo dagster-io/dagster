@@ -17,6 +17,7 @@ from dagster_graphql.implementation.utils import (
 
 from ..implementation.fetch_sensors import (
     get_sensor_next_tick,
+    reset_sensor,
     set_sensor_cursor,
     start_sensor,
     stop_sensor,
@@ -195,6 +196,29 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         return stop_sensor(graphene_info, job_origin_id, job_selector_id)
 
 
+class GrapheneResetSensorMutation(graphene.Mutation):
+    """Reset a sensor to its status defined in code, otherwise disable it from launching runs for a job."""
+
+    Output = graphene.NonNull(GrapheneSensorOrError)
+
+    class Arguments:
+        sensor_selector = graphene.NonNull(GrapheneSensorSelector)
+
+    class Meta:
+        name = "ResetSensorMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info: ResolveInfo, sensor_selector):
+        selector = SensorSelector.from_graphql_input(sensor_selector)
+
+        assert_permission_for_location(
+            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
+        )
+
+        return reset_sensor(graphene_info, selector)
+
+
 class GrapheneSetSensorCursorMutation(graphene.Mutation):
     """Set a cursor for a sensor to track state across evaluations."""
 
@@ -226,4 +250,5 @@ types = [
     GrapheneStopSensorMutationResultOrError,
     GrapheneStopSensorMutation,
     GrapheneSetSensorCursorMutation,
+    GrapheneResetSensorMutation,
 ]

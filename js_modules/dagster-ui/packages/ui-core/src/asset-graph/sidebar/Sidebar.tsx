@@ -156,9 +156,10 @@ export const AssetGraphExplorerSidebar = React.memo(
         };
         codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(id);
       });
+      const codeLocationsCount = Object.keys(codeLocationNodes).length;
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName) || groupsCount === 1) {
+        if (openNodes.has(locationName) || codeLocationsCount === 1) {
           Object.entries(locationNode.groups).forEach(([id, groupNode]) => {
             folderNodes.push({groupName: groupNode.groupName, id, level: 2});
             if (openNodes.has(id) || groupsCount === 1) {
