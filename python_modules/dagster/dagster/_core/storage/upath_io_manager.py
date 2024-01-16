@@ -400,7 +400,7 @@ class UPathIOManager(MemoizableIOManager):
             # If the upstream step is an asset and the output value was None, then there will
             # be metadata marking that. If that metadata exists, we want to provide None to the
             # materializing asset.
-            latest_materialization = context.step_context.latest_materialization_event.get(
+            latest_materialization = context.step_context.upstream_asset_materialization_events.get(
                 context.asset_key
             )
             if latest_materialization and latest_materialization.metadata.get(
