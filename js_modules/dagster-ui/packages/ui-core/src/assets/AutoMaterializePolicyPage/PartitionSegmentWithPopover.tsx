@@ -44,7 +44,7 @@ type AssetSusbsetWithoutTypenames = {
 
 interface Props {
   description: string;
-  status: AssetConditionEvaluationStatus;
+  status: AssetConditionEvaluationStatus.TRUE;
   subset: AssetSusbsetWithoutTypenames | null;
   selectPartition: (partitionKey: string | null) => void;
 }
@@ -54,17 +54,6 @@ export const PartitionSegmentWithPopover = ({
   status,
   subset,
 }: Props) => {
-  const intent = React.useMemo(() => {
-    switch (status) {
-      case AssetConditionEvaluationStatus.FALSE:
-        return 'warning' as const;
-      case AssetConditionEvaluationStatus.SKIPPED:
-        return undefined;
-      case AssetConditionEvaluationStatus.TRUE:
-        return 'success' as const;
-    }
-  }, [status]);
-
   if (!subset) {
     return null;
   }
@@ -86,7 +75,7 @@ export const PartitionSegmentWithPopover = ({
         />
       }
     >
-      <Tag intent={intent}>
+      <Tag intent={count > 0 ? 'success' : 'none'} icon={count > 0 ? 'check_circle' : undefined}>
         {numberFormatter.format(count)} {status.charAt(0) + status.toLowerCase().slice(1)}
       </Tag>
     </Popover>

@@ -18,10 +18,12 @@ interface Props {
   label: React.ReactNode;
   type: ConditionType;
   skipped?: boolean;
+  isCollapsed: boolean;
+  hasChildren: boolean;
 }
 
 export const PolicyEvaluationCondition = (props: Props) => {
-  const {depth, icon, label, type, skipped = false} = props;
+  const {depth, icon, label, type, skipped = false, isCollapsed, hasChildren} = props;
   const depthLines = React.useMemo(() => {
     return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
   }, [depth]);
@@ -30,9 +32,15 @@ export const PolicyEvaluationCondition = (props: Props) => {
     <Box
       padding={{vertical: 2, horizontal: 8}}
       flex={{direction: 'row', alignItems: 'center', gap: 8}}
-      style={{height: '48px'}}
+      style={{height: '48px', cursor: 'pointer'}}
     >
       {depthLines}
+      {hasChildren ? (
+        <Icon
+          name="arrow_drop_down"
+          style={{transform: isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+        />
+      ) : null}
       <Icon name={icon} color={colorAccentPrimary()} />
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
