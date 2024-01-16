@@ -413,12 +413,11 @@ const AssetGraphExplorerWithData = ({
       if (!nodeId) {
         return;
       }
-      const modifiedNodeId = '__repository__@' + nodeId;
-      if (isGroupId(modifiedNodeId)) {
-        zoomToGroup(modifiedNodeId);
+      if (isGroupId(nodeId)) {
+        zoomToGroup(nodeId);
 
         if (e.metaKey) {
-          toggleSelectAllGroupNodesById(e, modifiedNodeId);
+          toggleSelectAllGroupNodesById(e, nodeId);
         }
 
         return;
