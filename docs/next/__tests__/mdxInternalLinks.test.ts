@@ -69,7 +69,6 @@ test('No dead page links', async () => {
       const fileContent = await fs.promises.readFile(absolutePath, 'utf-8');
       // separate content and front matter data
       const {content} = matter(fileContent);
-      // console.log(relativeFilePath, remark().use(mdx).parse(content));
       astStore[relativeFilePath] = remark().use(mdx).parse(content); // TODO: mdx -> md??????????
     }),
   );
