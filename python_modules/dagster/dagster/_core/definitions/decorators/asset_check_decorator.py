@@ -174,19 +174,24 @@ def asset_check(
         resolved_name = name or fn.__name__
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        out = Out(dagster_type=None)
+        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
         input_tuples_by_asset_key = _build_asset_check_input(
             resolved_name,
             asset_key,
             fn,
             additional_ins=additional_ins or {},
-            additional_deps={dep.asset_key for dep in make_asset_deps(additional_deps) or set()},
+            additional_deps=additional_dep_keys,
         )
+
+        # additional_deps on AssetCheckSpec holds the keys passed to additional_deps and
+        # additional_ins. We don't want to include the primary asset key in this set.
+        additional_ins_and_deps = input_tuples_by_asset_key.keys() - {asset_key}
 
         spec = AssetCheckSpec(
             name=resolved_name,
             description=description,
             asset=asset_key,
+            additional_deps=additional_ins_and_deps,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -201,6 +206,8 @@ def asset_check(
         decorator_resource_keys = (required_resource_keys or set()) | resource_defs_keys
 
         op_required_resource_keys = decorator_resource_keys - arg_resource_keys
+
+        out = Out(dagster_type=None)
 
         op_def = _Op(
             name=spec.get_python_identifier(),
