@@ -500,7 +500,7 @@ class AndAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={
+            {
                 "operands": [
                     operand.to_serializable_asset_selection(asset_graph)
                     for operand in self.operands
@@ -529,7 +529,7 @@ class OrAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            udpate={
+            {
                 "operands": [
                     operand.to_serializable_asset_selection(asset_graph)
                     for operand in self.operands
@@ -556,7 +556,7 @@ class SubtractAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={
+            {
                 "left": self.left.to_serializable_asset_selection(asset_graph),
                 "right": self.right.to_serializable_asset_selection(asset_graph),
             }
@@ -576,7 +576,7 @@ class SinksAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
 
 
@@ -596,7 +596,7 @@ class RequiredNeighborsAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
 
 
@@ -613,7 +613,7 @@ class RootsAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
 
 
@@ -647,7 +647,7 @@ class DownstreamAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
 
 
@@ -782,7 +782,7 @@ class UpstreamAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
 
 
@@ -802,5 +802,5 @@ class ParentSourcesAssetSelection(AssetSelection, frozen=True):
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            update={"child": self.child.to_serializable_asset_selection(asset_graph)}
+            {"child": self.child.to_serializable_asset_selection(asset_graph)}
         )
