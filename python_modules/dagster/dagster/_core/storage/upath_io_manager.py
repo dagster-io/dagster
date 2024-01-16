@@ -235,17 +235,6 @@ class UPathIOManager(MemoizableIOManager):
         self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
     ) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
-        if context.upstream_output and context.upstream_output.has_asset_key:
-            # If the upstream step is an asset and the output value was None, then there will
-            # be metadata marking that. If that metadata exists, we want to provide None to the
-            # materializing asset.
-            latest_materialization = context.step_context.latest_materialization_event.get(
-                context.asset_key
-            )
-            if latest_materialization and latest_materialization.metadata.get(
-                "output_is_none", False
-            ):
-                return None
         try:
             obj = self.load_from_path(context=context, path=path)
             if asyncio.iscoroutine(obj):
@@ -407,6 +396,17 @@ class UPathIOManager(MemoizableIOManager):
             }
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+        if context.upstream_output and context.upstream_output.has_asset_key:
+            # If the upstream step is an asset and the output value was None, then there will
+            # be metadata marking that. If that metadata exists, we want to provide None to the
+            # materializing asset.
+            latest_materialization = context.step_context.latest_materialization_event.get(
+                context.asset_key
+            )
+            if latest_materialization and latest_materialization.metadata.get(
+                "output_is_none", False
+            ):
+                return None
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
@@ -437,11 +437,10 @@ class UPathIOManager(MemoizableIOManager):
                 return self._load_multiple_inputs(context)  # TODO - make this support Nones
 
     def handle_output(self, context: OutputContext, obj: Any):
-        if obj is None:
-            if context.has_asset_key:
-                # If the step is an asset, mark via metadata so that we can check this metadata
-                # at load time to know to provide None
-                context.add_output_metadata({"output_is_none": True})
+        if obj is None and context.has_asset_key:
+            # If the step returns None and is an asset, mark via metadata so that we can check
+            # this metadata at load time to know to provide None
+            context.add_output_metadata({"output_is_none": True})
             return
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
