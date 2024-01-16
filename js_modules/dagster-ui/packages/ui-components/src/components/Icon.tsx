@@ -47,6 +47,7 @@ import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
+import dot_filled from '../icon-svgs/dot_filled.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
@@ -255,6 +256,7 @@ export const Icons = {
   delete: deleteSVG,
   done,
   dot,
+  dot_filled,
   download_for_offline,
   dynamic_feed,
   drag_handle,

@@ -78,11 +78,26 @@ export class AssetLiveDataThreadManager {
     }
     const thread = _thread;
     thread.subscribe(assetKey);
-    this.onSubscriptionsChanged(this.getAllObservedKeys());
+    this.scheduleOnSubscriptionsChanged();
     return () => {
       thread.unsubscribe(assetKey);
-      this.onSubscriptionsChanged(this.getAllObservedKeys());
+      this.scheduleOnSubscriptionsChanged();
     };
+  }
+
+  /**
+   * Schedule calling onSubscriptionsChanged instead of calling it synchronously in case we're unsubscribing from 1,000+ assets synchronously
+   */
+  private scheduledOnSubscriptionsChanged: boolean = false;
+  private scheduleOnSubscriptionsChanged() {
+    if (this.scheduledOnSubscriptionsChanged) {
+      return;
+    }
+    this.scheduledOnSubscriptionsChanged = true;
+    requestAnimationFrame(() => {
+      this.onSubscriptionsChanged(this.getAllObservedKeys());
+      this.scheduledOnSubscriptionsChanged = false;
+    });
   }
 
   /**

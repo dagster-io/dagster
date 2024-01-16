@@ -11,7 +11,7 @@ import {
 } from './types/AssetLiveDataThread.types';
 import {BATCHING_INTERVAL} from './util';
 
-export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph';
+export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph' | 'group-node';
 
 export class AssetLiveDataThread {
   private isFetching: boolean = false;

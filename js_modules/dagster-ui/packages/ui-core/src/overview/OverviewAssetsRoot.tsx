@@ -25,7 +25,8 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
-import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {groupAssetsByStatus} from '../asset-graph/util';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -230,72 +231,7 @@ function VirtualRow({height, start, group}: RowProps) {
   const {liveDataByNode} = useAssetsLiveData(assetKeys);
 
   const statuses = React.useMemo(() => {
-    type assetType = (typeof group)['assets'][0];
-    type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
-    const statuses = {
-      successful: [] as StatusesType[],
-      failed: [] as StatusesType[],
-      inprogress: [] as StatusesType[],
-      missing: [] as StatusesType[],
-      loading: false,
-    };
-    if (!Object.keys(liveDataByNode).length) {
-      statuses.loading = true;
-      return statuses;
-    }
-    Object.keys(liveDataByNode).forEach((key) => {
-      const assetLiveData = liveDataByNode[key];
-      const asset = group.assets.find((asset) => tokenForAssetKey(asset.key) === key);
-      if (!asset?.definition) {
-        console.warn('Expected a definition for asset with key', key);
-        return;
-      }
-      const status = buildAssetNodeStatusContent({
-        assetKey: asset.key,
-        definition: asset.definition,
-        liveData: assetLiveData,
-        expanded: true,
-      });
-      switch (status.case) {
-        case StatusCase.LOADING:
-          statuses.loading = true;
-          break;
-        case StatusCase.SOURCE_OBSERVING:
-          statuses.inprogress.push({asset, status});
-          break;
-        case StatusCase.SOURCE_OBSERVED:
-          statuses.successful.push({asset, status});
-          break;
-        case StatusCase.SOURCE_NEVER_OBSERVED:
-          statuses.missing.push({asset, status});
-          break;
-        case StatusCase.SOURCE_NO_STATE:
-          statuses.missing.push({asset, status});
-          break;
-        case StatusCase.MATERIALIZING:
-          statuses.inprogress.push({asset, status});
-          break;
-        case StatusCase.LATE_OR_FAILED:
-          statuses.failed.push({asset, status});
-          break;
-        case StatusCase.NEVER_MATERIALIZED:
-          statuses.missing.push({asset, status});
-          break;
-        case StatusCase.MATERIALIZED:
-          statuses.successful.push({asset, status});
-          break;
-        case StatusCase.PARTITIONS_FAILED:
-          statuses.failed.push({asset, status});
-          break;
-        case StatusCase.PARTITIONS_MISSING:
-          statuses.missing.push({asset, status});
-          break;
-        case StatusCase.PARTITIONS_MATERIALIZED:
-          statuses.successful.push({asset, status});
-          break;
-      }
-    });
-    return statuses;
+    return groupAssetsByStatus(group.assets, liveDataByNode);
   }, [liveDataByNode, group.assets]);
 
   const repo = group.assets.find((asset) => asset.definition?.repository)?.definition?.repository;
