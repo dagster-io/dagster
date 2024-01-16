@@ -107,11 +107,9 @@ describe('AssetLiveDataProvider', () => {
     });
 
     // We make a request this time so resultFn2 is called
-    console.log('advancing');
     act(() => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
-    console.log('advanced');
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
