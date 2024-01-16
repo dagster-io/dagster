@@ -1629,6 +1629,10 @@ type StopRunningScheduleMutation {
   Output: ScheduleMutationResult!
 }
 
+type ResetScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
 type AssetKey {
   path: [String!]!
 }
@@ -2916,6 +2920,10 @@ type SetSensorCursorMutation {
   Output: SensorOrError!
 }
 
+type ResetSensorMutation {
+  Output: SensorOrError!
+}
+
 type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   name: String!
   description: String
@@ -3406,9 +3414,11 @@ type Mutation {
     scheduleOriginId: String!
     scheduleSelectorId: String!
   ): ScheduleMutationResult!
+  resetSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  resetSensor(sensorSelector: SensorSelector!): SensorOrError!
   sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!
   terminatePipelineExecution(

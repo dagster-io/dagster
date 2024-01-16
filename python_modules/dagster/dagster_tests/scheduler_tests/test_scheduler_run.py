@@ -905,6 +905,25 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
                 == 0
             )
 
+            # The instigator state status can be manually updated, as well as reset.
+            instance.stop_schedule(
+                always_running_origin.get_id(), running_schedule.selector_id, running_schedule
+            )
+            stopped_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_schedule.selector_id
+            )
+
+            assert stopped_instigator_state
+            assert stopped_instigator_state.status == InstigatorStatus.STOPPED
+
+            instance.reset_schedule(running_schedule)
+            reset_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_schedule.selector_id
+            )
+
+            assert reset_instigator_state
+            assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
