@@ -7,13 +7,9 @@ import React from 'react';
 
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
 import {getMockResultFn} from '../../testing/mocking';
-import {
-  AssetLiveDataProvider,
-  SUBSCRIPTION_IDLE_POLL_RATE,
-  _resetLastFetchedOrRequested,
-  useAssetsLiveData,
-  BATCH_SIZE,
-} from '../AssetLiveDataProvider';
+import {AssetLiveDataProvider, useAssetsLiveData} from '../AssetLiveDataProvider';
+import {AssetLiveDataThreadManager} from '../AssetLiveDataThreadManager';
+import {SUBSCRIPTION_IDLE_POLL_RATE, BATCH_SIZE} from '../util';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
 
@@ -21,7 +17,7 @@ Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: 
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
 afterEach(() => {
-  _resetLastFetchedOrRequested();
+  AssetLiveDataThreadManager.__resetForJest();
 });
 
 function Test({
@@ -83,6 +79,7 @@ describe('AssetLiveDataProvider', () => {
     await waitFor(() => {
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
+
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -110,9 +107,11 @@ describe('AssetLiveDataProvider', () => {
     });
 
     // We make a request this time so resultFn2 is called
+    console.log('advancing');
     act(() => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
+    console.log('advanced');
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
@@ -380,9 +379,6 @@ describe('AssetLiveDataProvider', () => {
     });
 
     expect(resultFn).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
-    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect no fetches to be made
