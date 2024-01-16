@@ -36,7 +36,6 @@ export class AssetLiveDataThreadManager {
 
   static getInstance(client: ApolloClient<any>) {
     if (!this._instance) {
-      console.log('new instance');
       this._instance = new AssetLiveDataThreadManager(client);
     }
     return this._instance;
