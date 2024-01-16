@@ -8,7 +8,6 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -91,31 +90,20 @@ class AssetCheckSpec(
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
     ):
-        from dagster._core.definitions.asset_dep import AssetDep
+        from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        additional_dep_set = {}
-        if additional_deps:
-            for dep in additional_deps:
-                asset_dep = AssetDep.from_coercible(dep)
-
-                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-                # for existing keys.
-                if asset_dep.asset_key in additional_dep_set.keys():
-                    raise DagsterInvariantViolationError(
-                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetCheckSpec {name} on asset {asset_key}"
-                    )
-                additional_dep_set[asset_dep.asset_key] = asset_dep
+        additional_asset_deps = coerce_to_deps_and_check_duplicates(
+            additional_deps, AssetCheckKey(asset_key, name)
+        )
 
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            additional_deps=list(additional_dep_set.values()),
+            additional_deps=additional_asset_deps,
         )
 
     def get_python_identifier(self) -> str:
