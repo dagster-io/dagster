@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
@@ -13,8 +14,14 @@ from dagster import (
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import (
+    GLOBAL_CONCURRENCY_TAG,
+    RUN_OP_CONCURRENCY_KEYS,
+    RUN_OP_ROOT_CONCURRENCY_KEYS,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -247,6 +254,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
                 job_name=dagster_run.job_name,
             )
+            self._attach_op_concurrency_info(context)
             self._instance.report_dagster_event(enqueued_event, run_id=dagster_run.run_id)
         else:
             # the run was already submitted, this is a no-op
@@ -259,6 +267,45 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         if run is None:
             check.failed(f"Failed to reload run {dagster_run.run_id}")
         return run
+
+    def _attach_op_concurrency_info(self, context: SubmitRunContext) -> None:
+        run = context.dagster_run
+        if not run.external_job_origin:
+            return
+        workspace = context.workspace
+        location = workspace.get_code_location(run.external_job_origin.location_name)
+        subset_result = location.get_subset_external_job_result(
+            JobSubsetSelector(
+                location_name=run.external_job_origin.location_name,
+                repository_name=run.external_job_origin.external_repository_origin.repository_name,
+                job_name=run.external_job_origin.job_name,
+                op_selection=None,
+                asset_selection=run.asset_selection,
+            )
+        )
+        if not subset_result.external_job_data:
+            return
+        job_snapshot = subset_result.external_job_data.job_snapshot
+        concurrency_keys_by_node_name = {
+            node.node_name: node.tags.get(GLOBAL_CONCURRENCY_TAG)
+            for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps
+            if node.tags.get(GLOBAL_CONCURRENCY_TAG)
+        }
+        root_nodes = [
+            node.node_name
+            for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps
+            if not node.input_dep_snaps
+        ]
+        root_concurrency_keys = [
+            concurrency_keys_by_node_name.get(node_name) for node_name in root_nodes
+        ]
+        self._instance.add_run_tags(
+            run.run_id,
+            {
+                RUN_OP_ROOT_CONCURRENCY_KEYS: json.dumps(root_concurrency_keys),
+                RUN_OP_CONCURRENCY_KEYS: json.dumps(concurrency_keys_by_node_name),
+            },
+        )
 
     def cancel_run(self, run_id: str) -> bool:
         run = self._instance.get_run_by_id(run_id)

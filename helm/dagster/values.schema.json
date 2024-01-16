@@ -2595,6 +2595,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "blockOpConcurrencyLimitedRuns": {
+                    "title": "Blockopconcurrencylimitedruns",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "additionalProperties": false

@@ -70,5 +70,5 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
         assert returned_run.status == DagsterRunStatus.QUEUED
 
         fetched_run = instance.get_run_by_id(run_id)
-        assert len(fetched_run.tags) == 1
+        assert len(fetched_run.tags) > 1
         assert fetched_run.tags["user"] == expected_email

@@ -5,8 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence
 
-import pendulum
-
 from dagster import (
     DagsterEvent,
     DagsterEventType,
@@ -269,7 +267,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
             if instance.run_coordinator.block_op_concurrency_limited_runs:
                 global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
-                    instance, batch
+                    instance, batch, in_progress_runs
                 )
             else:
                 global_concurrency_limits_counter = None
@@ -286,8 +284,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
                     to_remove.append(run)
-                    blocked_keys = global_concurrency_limits_counter.concurrency_keys(run)
-                    self._notify_concurrency_blocked(instance, run, blocked_keys)
+                elif global_concurrency_limits_counter:
+                    global_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 location_name = (
                     run.external_job_origin.location_name if run.external_job_origin else None
@@ -302,25 +300,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 batch = batch[:max_runs_to_launch]
 
         return batch
-
-    def _notify_concurrency_blocked(
-        self, instance: DagsterInstance, run: DagsterRun, blocked_keys: Sequence[str]
-    ):
-        engine_events = instance.event_log_storage.get_logs_for_run(
-            run.run_id, of_type=DagsterEventType.ENGINE_EVENT, limit=1, ascending=False
-        )
-        last_event = engine_events[0] if engine_events else None
-        if (
-            not last_event
-            or "blocked waiting for op concurrency slots" not in last_event.message
-            or last_event.timestamp
-            < pendulum.now("UTC").timestamp() - CONCURRENCY_BLOCKED_MESSAGE_INTERVAL
-        ):
-            blocked_key_str = ", ".join(blocked_keys)
-            message = (
-                f"Run dequeue blocked waiting for op concurrency slots for keys: {blocked_key_str}"
-            )
-            instance.report_engine_event(message, run)
 
     def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
