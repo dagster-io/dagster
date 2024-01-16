@@ -335,23 +335,20 @@ def _define_log_analytics_info() -> Field:
             fields={
                 "log_analytics_workspace_id": Field(
                     String,
-                    description=(
-                        "Log Analytics agent workspace id."
-                    ),
+                    description=("Log Analytics agent workspace id."),
                     is_required=True,
                 ),
                 "log_analytics_primary_key": Field(
                     String,
-                    description=(
-                        "Log Analytics agent primary key."
-                    ),
+                    description=("Log Analytics agent primary key."),
                     is_required=True,
-                )
+                ),
             }
         ),
         is_required=False,
         description="Defines values necessary to configure and run Azure Log Analytics agent",
     )
+
 
 def _define_cluster_log_conf() -> Field:
     return Field(
