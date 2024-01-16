@@ -171,3 +171,16 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     </AssetLiveDataRefreshContext.Provider>
   );
 };
+
+export function AssetLiveDataRefresh() {
+  const {isGloballyRefreshing, oldestDataTimestamp, refresh} = React.useContext(
+    AssetLiveDataRefreshContext,
+  );
+  return (
+    <AssetDataRefreshButton
+      isRefreshing={isGloballyRefreshing}
+      oldestDataTimestamp={oldestDataTimestamp}
+      onRefresh={refresh}
+    />
+  );
+}
