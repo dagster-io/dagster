@@ -130,6 +130,8 @@ query getScheduleState($scheduleSelector: ScheduleSelector!) {
   scheduleOrError(scheduleSelector: $scheduleSelector) {
     __typename
     ... on Schedule {
+      defaultStatus
+      canReset
       scheduleState {
         id
         selectorId
@@ -507,6 +509,14 @@ def test_get_filtered_schedule_definitions(graphql_context):
 def test_start_and_stop_schedule(graphql_context):
     schedule_selector = infer_schedule_selector(graphql_context, "no_config_job_hourly_schedule")
 
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["defaultStatus"] == "STOPPED"
+
     # Start a single schedule
     start_result = execute_dagster_graphql(
         graphql_context,
@@ -539,6 +549,15 @@ def test_start_and_stop_schedule(graphql_context):
 def test_start_and_reset_schedule(graphql_context):
     schedule_selector = infer_schedule_selector(graphql_context, "no_config_job_hourly_schedule")
 
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["defaultStatus"] == "STOPPED"
+    assert result.data["scheduleOrError"]["canReset"] is False
+
     # Start a single schedule
     start_result = execute_dagster_graphql(
         graphql_context,
@@ -558,6 +577,14 @@ def test_start_and_reset_schedule(graphql_context):
         == InstigatorStatus.RUNNING.value
     )
 
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["canReset"] is True
+
     # Reset a single schedule
     stop_result = execute_dagster_graphql(
         graphql_context,
@@ -568,11 +595,19 @@ def test_start_and_reset_schedule(graphql_context):
         schedule_origin_id, schedule_selector_id
     )
 
-    assert reset_instigator_state.status == InstigatorStatus.STOPPED
+    assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
     assert (
         stop_result.data["resetSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.STOPPED.value
     )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["canReset"] is False
 
 
 def test_get_single_schedule_definition(graphql_context):
@@ -875,6 +910,8 @@ def test_start_schedule_with_default_status(graphql_context):
     schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
     schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
 
+    assert result.data["scheduleOrError"]["defaultStatus"] == "RUNNING"
+    assert result.data["scheduleOrError"]["canReset"] is False
     assert result.data["scheduleOrError"]["scheduleState"]["status"] == "RUNNING"
 
     assert result.data["scheduleOrError"]["scheduleState"]["hasStartPermission"] is True
@@ -906,6 +943,14 @@ def test_start_schedule_with_default_status(graphql_context):
         == InstigatorStatus.STOPPED.value
     )
 
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["canReset"] is True
+
     # Start a single schedule
     start_result = execute_dagster_graphql(
         graphql_context,
@@ -933,6 +978,14 @@ def test_start_schedule_with_default_status(graphql_context):
         reset_result.data["resetSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.RUNNING.value
     )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert result.data["scheduleOrError"]["canReset"] is False
 
 
 class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
