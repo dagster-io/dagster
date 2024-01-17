@@ -1,5 +1,35 @@
 # Changelog
 
+# 1.6.1 (core) / 0.22.1 (libraries)
+
+### New
+
+- Added experimental functionality which hides user code errors from the Dagster UI. You may enable this functionality by setting the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to `1`.
+- [dagster-dbt] `@dbt_assets` now accepts a `required_resource_keys` argument.
+
+### Bugfixes
+
+- Fixed a bug where a run that targets no steps is launched by an asset backfill when code updates are pushed after backfill launch time.
+- Previously a graphQL error would be thrown on the asset backfill page if certain unpartitioned assets were changed to a partitioned assets. This has been fixed.
+- [ui] Show run log timestamps in the user’s preferred hour cycle (12/24h) format.
+- [ui] The “Export to SVG” option now works as expected in the improved asset graph UI.
+- [ui] On the asset graph, hovering over a collapsed group or the title bar of an expanded group highlights all edges in/out of the group.
+- Fixed occasional CI/CD errors when building documentation on a feature branch
+
+### Community Contributions
+
+- fix: add missing volumes and volumeMounts in job-instance-migrate.yaml. Thanks [@nhuray](https://github.com/nhuray)!
+
+
+### Documentation
+
+- Fixed typos in the docs.
+
+### Dagster Cloud
+
+- [ui] Fix dark theme colors for billing components.
+- [ui] Show the number of users for each grant type (admin, editor, etc.) on the Users page.
+
 # 1.6.0 (core) / 0.22.0 (libraries)
 
 ## Major Changes since 1.5.0 (core) / 0.21.0 (libraries)
