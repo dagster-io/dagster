@@ -437,7 +437,7 @@ def test_upstream_metadata():
 
     @asset
     def downstream(context: AssetExecutionContext, upstream):
-        mat = context.latest_materialization_event("upstream")
+        mat = context.latest_materialization_for_upstream_asset("upstream")
         assert mat is not None
         assert mat.metadata["foo"].value == "bar"
 
@@ -452,7 +452,7 @@ def test_upstream_metadata_materialize_result():
 
     @asset
     def downstream(context: AssetExecutionContext, upstream):
-        mat = context.latest_materialization_event("upstream")
+        mat = context.latest_materialization_for_upstream_asset("upstream")
         assert mat is not None
         assert mat.metadata["foo"].value == "bar"
 
