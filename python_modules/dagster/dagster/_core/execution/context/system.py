@@ -700,8 +700,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
-            self.asset_partitions_subset_for_upstream(asset_key)
-            if asset_key and self.has_asset_partitions_for_upstream(asset_key)
+            self.asset_partitions_subset_for_upstream_asset(asset_key)
+            if asset_key and self.has_asset_partitions_for_upstream_asset(asset_key)
             else None
         )
 
@@ -1002,13 +1002,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._upstream_asset_materialization_events[key] = None
         else:
             storage_id = event.storage_id
-            # Input name will be none if this is an internal dep
-            input_name = self.job_def.asset_layer.input_for_asset_key(
-                self.node_handle, key
-            )  # TODO - see if we can check for internal dep another way
+            # Input name will be none if this is an internal dep. Dependencies specified via `deps`
+            # will be coerced into Nothing inputs and will not be considered "internal"
+            not_internal_dep = (
+                self.job_def.asset_layer.input_for_asset_key(self.node_handle, key) is not None
+            )
             # Exclude AllPartitionMapping for now to avoid huge queries
-            if input_name and self.has_asset_partitions_for_upstream(key):
-                subset = self.asset_partitions_subset_for_upstream(
+            if not_internal_dep and self.has_asset_partitions_for_upstream_asset(key):
+                subset = self.asset_partitions_subset_for_upstream_asset(
                     key, require_valid_partitions=False
                 )
                 input_keys = list(subset.get_partition_keys())
@@ -1039,7 +1040,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 storage_id, data_version, event.run_id, event.timestamp
             )
 
-    # TODO - here
     def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
@@ -1115,14 +1115,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_keys.add(asset_info.key)
         return output_keys
 
-    def has_asset_partitions_for_upstream(self, upstream_asset_key: AssetKey) -> bool:
+    def has_asset_partitions_for_upstream_asset(self, upstream_asset_key: AssetKey) -> bool:
         asset_layer = self.job_def.asset_layer
         return asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
 
-    def asset_partition_key_range_for_upstream(
+    def asset_partition_key_range_for_upstream_asset(
         self, upstream_asset_key: AssetKey
     ) -> PartitionKeyRange:
-        subset = self.asset_partitions_subset_for_upstream(upstream_asset_key)
+        subset = self.asset_partitions_subset_for_upstream_asset(upstream_asset_key)
 
         asset_layer = self.job_def.asset_layer
         upstream_asset_partitions_def = check.not_none(
@@ -1142,7 +1142,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return partition_key_ranges[0]
 
-    def asset_partitions_subset_for_upstream(
+    def asset_partitions_subset_for_upstream_asset(
         self, upstream_asset_key: AssetKey, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
@@ -1190,8 +1190,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         check.failed(f"The asset {upstream_asset_key.to_user_string()} has no asset partitions")
 
-    def asset_partition_key_for_upstream(self, upstream_asset_key: AssetKey) -> str:
-        start, end = self.asset_partition_key_range_for_upstream(upstream_asset_key)
+    def asset_partition_key_for_upstream_asset(self, upstream_asset_key: AssetKey) -> str:
+        start, end = self.asset_partition_key_range_for_upstream_asset(upstream_asset_key)
         if start == end:
             return start
         else:
@@ -1264,7 +1264,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def asset_partitions_time_window_for_upstream(self, upstream_asset_key: AssetKey) -> TimeWindow:
+    def asset_partitions_time_window_for_upstream_asset(
+        self, upstream_asset_key: AssetKey
+    ) -> TimeWindow:
         """The time window for the partitions of the asset corresponding to the given input.
 
         Raises an error if either of the following are true:
@@ -1292,7 +1294,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
             upstream_asset_partitions_def,
         )
-        partition_key_range = self.asset_partition_key_range_for_upstream(upstream_asset_key)
+        partition_key_range = self.asset_partition_key_range_for_upstream_asset(upstream_asset_key)
 
         return TimeWindow(
             upstream_asset_partitions_def.time_window_for_partition_key(

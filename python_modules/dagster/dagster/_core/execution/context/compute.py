@@ -950,7 +950,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         """
         upstream_asset_key = self.asset_key_for_input(input_name)
-        return self._step_execution_context.asset_partition_key_range_for_upstream(
+        return self._step_execution_context.asset_partition_key_range_for_upstream_asset(
             upstream_asset_key
         )
 
@@ -996,7 +996,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         """
         upstream_asset_key = self.asset_key_for_input(input_name)
-        return self._step_execution_context.asset_partition_key_for_upstream(upstream_asset_key)
+        return self._step_execution_context.asset_partition_key_for_upstream_asset(
+            upstream_asset_key
+        )
 
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
@@ -1214,7 +1216,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         upstream_asset_key = self.asset_key_for_input(input_name)
         return list(
-            self._step_execution_context.asset_partitions_subset_for_upstream(
+            self._step_execution_context.asset_partitions_subset_for_upstream_asset(
                 upstream_asset_key
             ).get_partition_keys()
         )
@@ -1294,7 +1296,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         """
         upstream_asset_key = self.asset_key_for_input(input_name)
-        return self._step_execution_context.asset_partitions_time_window_for_upstream(
+        return self._step_execution_context.asset_partitions_time_window_for_upstream_asset(
             upstream_asset_key
         )
 
