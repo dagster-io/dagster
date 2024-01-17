@@ -2,7 +2,9 @@ import {
   Box,
   Button,
   Dialog,
+  Icon,
   Table,
+  Tooltip,
   colorBackgroundDefault,
   colorBackgroundDefaultHover,
   colorBackgroundLightHover,
@@ -212,7 +214,9 @@ const PartitionedPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, endTimestamp, startTimestamp, trueSubset, uniqueId} = evaluation;
+          const {description, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
+            evaluation;
+          const consideredPartitions = candidateSubset?.subsetValue.partitionKeys.length;
 
           return (
             <EvaluationRow
@@ -236,7 +240,18 @@ const PartitionedPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              <td></td>
+              <td>
+                {consideredPartitions ? (
+                  consideredPartitions
+                ) : (
+                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                    All{' '}
+                    <Tooltip content="Evaluated against all partitions that existed at the time of evaluation">
+                      <Icon name="info" />
+                    </Tooltip>
+                  </Box>
+                )}
+              </td>
               <td style={{width: 0}}>
                 <Box
                   flex={{direction: 'row', alignItems: 'center', gap: 2}}
