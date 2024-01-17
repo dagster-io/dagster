@@ -386,17 +386,17 @@ def test_multi_operand_selection():
     bar = AssetSelection.keys("bar")
     baz = AssetSelection.keys("baz")
 
-    assert foo & bar & baz == AndAssetSelection([foo, bar, baz])
-    assert (foo & bar) & baz == AndAssetSelection([foo, bar, baz])
-    assert foo & (bar & baz) == AndAssetSelection([foo, bar, baz])
-    assert foo | bar | baz == OrAssetSelection([foo, bar, baz])
-    assert (foo | bar) | baz == OrAssetSelection([foo, bar, baz])
-    assert foo | (bar | baz) == OrAssetSelection([foo, bar, baz])
+    assert foo & bar & baz == AndAssetSelection(operands=[foo, bar, baz])
+    assert (foo & bar) & baz == AndAssetSelection(operands=[foo, bar, baz])
+    assert foo & (bar & baz) == AndAssetSelection(operands=[foo, bar, baz])
+    assert foo | bar | baz == OrAssetSelection(operands=[foo, bar, baz])
+    assert (foo | bar) | baz == OrAssetSelection(operands=[foo, bar, baz])
+    assert foo | (bar | baz) == OrAssetSelection(operands=[foo, bar, baz])
 
-    assert (foo & bar) | baz == OrAssetSelection([AndAssetSelection([foo, bar]), baz])
-    assert foo & (bar | baz) == AndAssetSelection([foo, OrAssetSelection([bar, baz])])
-    assert (foo | bar) & baz == AndAssetSelection([OrAssetSelection([foo, bar]), baz])
-    assert foo | (bar & baz) == OrAssetSelection([foo, AndAssetSelection([bar, baz])])
+    assert (foo & bar) | baz == OrAssetSelection(operands=[AndAssetSelection([foo, bar]), baz])
+    assert foo & (bar | baz) == AndAssetSelection(operands=[foo, OrAssetSelection([bar, baz])])
+    assert (foo | bar) & baz == AndAssetSelection(operands=[OrAssetSelection([foo, bar]), baz])
+    assert foo | (bar & baz) == OrAssetSelection(operands=[foo, AndAssetSelection([bar, baz])])
 
 
 def test_all_asset_selection_subclasses_serializable():
