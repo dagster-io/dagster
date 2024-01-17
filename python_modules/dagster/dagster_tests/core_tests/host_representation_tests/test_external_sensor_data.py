@@ -27,7 +27,7 @@ def test_unserializable_asset_selection():
     def asset2():
         ...
 
-    class MySpecialAssetSelection(AssetSelection):
+    class MySpecialAssetSelection(AssetSelection, frozen=True):
         def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 

@@ -424,7 +424,7 @@ def test_all_asset_selection_subclasses_serializable():
 
 
 def test_to_serializable_asset_selection():
-    class UnserializableAssetSelection(AssetSelection):
+    class UnserializableAssetSelection(AssetSelection, frozen=True):
         def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
