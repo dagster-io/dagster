@@ -403,7 +403,7 @@ class AssetSelection(ABC):
         return AssetSelection.keys(*self.resolve(asset_graph))
 
 
-class AssetSelectionPydanticBaseModel(BaseModel):
+class AssetSelectionPydanticBaseModel(BaseModel, frozen=True):
     def replace(self, update: dict):
         if pydantic.__version__ >= "2":
             func = getattr(BaseModel, "model_copy")
@@ -413,7 +413,7 @@ class AssetSelectionPydanticBaseModel(BaseModel):
 
 
 @whitelist_for_serdes
-class AllSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class AllSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
 
@@ -425,7 +425,7 @@ class AllSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True)
 
 
 @whitelist_for_serdes
-class AllAssetCheckSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class AllAssetCheckSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
@@ -440,9 +440,7 @@ class AllAssetCheckSelection(AssetSelection, AssetSelectionPydanticBaseModel, fr
 
 
 @whitelist_for_serdes
-class AssetChecksForAssetKeysSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True
-):
+class AssetChecksForAssetKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     selected_asset_keys: Sequence[AssetKey]
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -460,7 +458,7 @@ class AssetChecksForAssetKeysSelection(
 
 
 @whitelist_for_serdes
-class AssetCheckKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class AssetCheckKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     selected_asset_check_keys: Sequence[AssetCheckKey]
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -479,7 +477,7 @@ class AssetCheckKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel, f
 
 @whitelist_for_serdes
 class AndAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     operands: Sequence[AssetSelection]
 
@@ -507,7 +505,7 @@ class AndAssetSelection(
 
 @whitelist_for_serdes
 class OrAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     operands: Sequence[AssetSelection]
 
@@ -535,7 +533,7 @@ class OrAssetSelection(
 
 @whitelist_for_serdes
 class SubtractAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     left: AssetSelection
     right: AssetSelection
@@ -559,7 +557,7 @@ class SubtractAssetSelection(
 
 @whitelist_for_serdes
 class SinksAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
 
@@ -573,7 +571,7 @@ class SinksAssetSelection(
 
 @whitelist_for_serdes
 class RequiredNeighborsAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
 
@@ -590,7 +588,7 @@ class RequiredNeighborsAssetSelection(
 
 @whitelist_for_serdes
 class RootsAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
 
@@ -604,7 +602,7 @@ class RootsAssetSelection(
 
 @whitelist_for_serdes
 class DownstreamAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
     depth: Optional[int]
@@ -634,7 +632,7 @@ class DownstreamAssetSelection(
 
 
 @whitelist_for_serdes
-class GroupsAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class GroupsAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     selected_groups: Sequence[str]
     include_sources: bool
 
@@ -661,7 +659,7 @@ class GroupsAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, froz
 
 
 @whitelist_for_serdes
-class KeysAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class KeysAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     selected_keys: Sequence[AssetKey]
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -683,7 +681,7 @@ class KeysAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, frozen=True):
+class KeyPrefixesAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel):
     selected_key_prefixes: Sequence[Sequence[str]]
     include_sources: bool
 
@@ -737,7 +735,7 @@ def _fetch_all_upstream(
 
 @whitelist_for_serdes
 class UpstreamAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
     depth: Optional[int]
@@ -756,7 +754,7 @@ class UpstreamAssetSelection(
 
 @whitelist_for_serdes
 class ParentSourcesAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, frozen=True, arbitrary_types_allowed=True
+    AssetSelection, AssetSelectionPydanticBaseModel, arbitrary_types_allowed=True
 ):
     child: AssetSelection
 
