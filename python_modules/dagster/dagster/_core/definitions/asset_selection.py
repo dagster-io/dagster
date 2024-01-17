@@ -440,7 +440,9 @@ class AllAssetCheckSelection(AssetSelection, AssetSelectionPydanticBaseModel, al
 
 
 @whitelist_for_serdes
-class AssetChecksForAssetKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False):
+class AssetChecksForAssetKeysSelection(
+    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False
+):
     selected_asset_keys: Sequence[AssetKey]
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -458,7 +460,9 @@ class AssetChecksForAssetKeysSelection(AssetSelection, AssetSelectionPydanticBas
 
 
 @whitelist_for_serdes
-class AssetCheckKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False):
+class AssetCheckKeysSelection(
+    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False
+):
     selected_asset_check_keys: Sequence[AssetCheckKey]
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -477,7 +481,10 @@ class AssetCheckKeysSelection(AssetSelection, AssetSelectionPydanticBaseModel, a
 
 @whitelist_for_serdes
 class AndAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     operands: Sequence[AssetSelection]
 
@@ -505,7 +512,10 @@ class AndAssetSelection(
 
 @whitelist_for_serdes
 class OrAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     operands: Sequence[AssetSelection]
 
@@ -533,7 +543,10 @@ class OrAssetSelection(
 
 @whitelist_for_serdes
 class SubtractAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     left: AssetSelection
     right: AssetSelection
@@ -557,7 +570,10 @@ class SubtractAssetSelection(
 
 @whitelist_for_serdes
 class SinksAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
 
@@ -571,7 +587,10 @@ class SinksAssetSelection(
 
 @whitelist_for_serdes
 class RequiredNeighborsAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
 
@@ -588,7 +607,10 @@ class RequiredNeighborsAssetSelection(
 
 @whitelist_for_serdes
 class RootsAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
 
@@ -602,7 +624,10 @@ class RootsAssetSelection(
 
 @whitelist_for_serdes
 class DownstreamAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
     depth: Optional[int]
@@ -681,7 +706,9 @@ class KeysAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, allow_
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False):
+class KeyPrefixesAssetSelection(
+    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False
+):
     selected_key_prefixes: Sequence[Sequence[str]]
     include_sources: bool
 
@@ -735,7 +762,10 @@ def _fetch_all_upstream(
 
 @whitelist_for_serdes
 class UpstreamAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
     depth: Optional[int]
@@ -754,7 +784,10 @@ class UpstreamAssetSelection(
 
 @whitelist_for_serdes
 class ParentSourcesAssetSelection(
-    AssetSelection, AssetSelectionPydanticBaseModel, allow_mutation=False, arbitrary_types_allowed=True
+    AssetSelection,
+    AssetSelectionPydanticBaseModel,
+    allow_mutation=False,
+    arbitrary_types_allowed=True,
 ):
     child: AssetSelection
 
