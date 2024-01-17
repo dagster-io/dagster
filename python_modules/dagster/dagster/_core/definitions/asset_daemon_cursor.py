@@ -194,6 +194,8 @@ class AssetDaemonCursor(NamedTuple):
             serialized_last_observe_request_timestamp_by_asset_key = {}
             serialized_latest_evaluation_by_asset_key = {}
             latest_evaluation_timestamp = 0
+        elif "__class__" in data:  # forwardscompat
+            return AssetDaemonCursor.empty()
         else:
             latest_storage_id = data["latest_storage_id"]
             serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
