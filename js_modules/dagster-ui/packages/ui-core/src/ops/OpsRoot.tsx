@@ -8,12 +8,12 @@ import {
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-  FontFamily,
   colorKeylineDefault,
-  colorBackgroundLight,
   colorBackgroundDefault,
   colorAccentLime,
   colorTextLight,
+  colorTextDefault,
+  colorBackgroundLighter,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -306,11 +306,13 @@ const OpList = (props: OpListProps) => {
             <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
               <OpListItem
                 style={style}
-                selected={solid === props.selected}
+                $selected={solid === props.selected}
                 onClick={() => props.onClickOp(solid.definition.name)}
               >
                 <OpName>{solid.definition.name}</OpName>
-                <OpTypeSignature definition={solid.definition} />
+                <div>
+                  <OpTypeSignature definition={solid.definition} />
+                </div>
               </OpListItem>
             </CellMeasurer>
           );
@@ -356,25 +358,20 @@ const OPS_ROOT_QUERY = gql`
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
-const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
+const OpListItem = styled.div<{$selected: boolean}>`
+  align-items: flex-start;
+  background: ${({$selected}) => ($selected ? colorBackgroundLighter() : colorBackgroundDefault())};
   box-shadow:
-    ${({selected}) => (selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
+    ${({$selected}) => ($selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
     ${colorKeylineDefault()} 0 -1px 0 inset;
-  color: ${colorTextLight()};
+  color: ${({$selected}) => ($selected ? colorTextDefault() : colorTextLight())};
   cursor: pointer;
   font-size: 14px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
   padding: 12px 24px;
   user-select: none;
-
-  & > code.bp4-code {
-    color: ${colorTextLight()};
-    background: transparent;
-    font-family: ${FontFamily.monospace};
-    padding: 5px 0 0 0;
-  }
 `;
 
 const OpName = styled.div`
