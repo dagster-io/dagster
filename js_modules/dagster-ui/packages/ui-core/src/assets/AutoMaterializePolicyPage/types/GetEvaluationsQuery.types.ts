@@ -258,8 +258,8 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
   startTimestamp: number | null;
   endTimestamp: number | null;
   numTrue: number;
-  numFalse: number;
-  numSkipped: number;
+  numFalse: number | null;
+  numSkipped: number | null;
   uniqueId: string;
   childUniqueIds: Array<string>;
   trueSubset: {
@@ -310,8 +310,8 @@ export type AssetConditionEvaluationRecordFragment = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number;
-          numSkipped: number;
+          numFalse: number | null;
+          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
           trueSubset: {
@@ -670,8 +670,8 @@ export type GetEvaluationsQuery = {
                   startTimestamp: number | null;
                   endTimestamp: number | null;
                   numTrue: number;
-                  numFalse: number;
-                  numSkipped: number;
+                  numFalse: number | null;
+                  numSkipped: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   trueSubset: {
@@ -1017,8 +1017,8 @@ export type GetEvaluationsSpecificPartitionQuery = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number;
-          numSkipped: number;
+          numFalse: number | null;
+          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
           trueSubset: {
