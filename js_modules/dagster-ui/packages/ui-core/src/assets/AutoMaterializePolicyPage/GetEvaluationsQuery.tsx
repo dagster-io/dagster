@@ -53,9 +53,6 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     trueSubset {
       ...AssetSubsetFragment
     }
-    falseSubset {
-      ...AssetSubsetFragment
-    }
     candidateSubset {
       ...AssetSubsetFragment
     }

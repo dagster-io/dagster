@@ -275,19 +275,6 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
       }> | null;
     };
   };
-  falseSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  };
   candidateSubset: {
     __typename: 'AssetSubset';
     subsetValue: {
@@ -328,19 +315,6 @@ export type AssetConditionEvaluationRecordFragment = {
           uniqueId: string;
           childUniqueIds: Array<string>;
           trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          falseSubset: {
             __typename: 'AssetSubset';
             subsetValue: {
               __typename: 'AssetSubsetValue';
@@ -713,19 +687,6 @@ export type GetEvaluationsQuery = {
                       }> | null;
                     };
                   };
-                  falseSubset: {
-                    __typename: 'AssetSubset';
-                    subsetValue: {
-                      __typename: 'AssetSubsetValue';
-                      isPartitioned: boolean;
-                      partitionKeys: Array<string> | null;
-                      partitionKeyRanges: Array<{
-                        __typename: 'PartitionKeyRange';
-                        start: string;
-                        end: string;
-                      }> | null;
-                    };
-                  };
                   candidateSubset: {
                     __typename: 'AssetSubset';
                     subsetValue: {
@@ -1061,19 +1022,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
           uniqueId: string;
           childUniqueIds: Array<string>;
           trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          falseSubset: {
             __typename: 'AssetSubset';
             subsetValue: {
               __typename: 'AssetSubsetValue';
