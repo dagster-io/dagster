@@ -29,6 +29,8 @@ import {DimensionPartitionKeys} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {numberFormatter} from '../../ui/formatters';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetKey} from '../types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
@@ -101,6 +103,16 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     skip: !selectedEvaluationId || !selectedPartition,
   });
 
+  const sensorName = React.useMemo(
+    () =>
+      definition?.targetingInstigators.find(
+        (instigator) =>
+          instigator.__typename === 'Sensor' &&
+          instigator.sensorType === SensorType.AUTOMATION_POLICY,
+      )?.name,
+    [definition],
+  );
+
   if (!_selectedEvaluation && loading && !data) {
     return (
       <Box flex={{direction: 'column', grow: 1}}>
@@ -149,6 +161,10 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
 
   if (!selectedEvaluationId && !evaluations.length) {
+    const repoAddress = definition
+      ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+      : null;
+
     return (
       <Box flex={{direction: 'column', grow: 1}}>
         <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
@@ -162,7 +178,15 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
                     This asset’s automation policy has not been evaluated yet. Make sure your
                     automation sensor is running.
                   </Body2>
-                  <AnchorButton to="/asset-groups">Manage sensor</AnchorButton>
+                  <AnchorButton
+                    to={
+                      repoAddress && sensorName
+                        ? workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)
+                        : '/overview/automation'
+                    }
+                  >
+                    Manage sensor
+                  </AnchorButton>
                   <a href="https://docs.dagster.io/concepts/assets/asset-auto-execution">
                     Learn more about automation policies
                   </a>
