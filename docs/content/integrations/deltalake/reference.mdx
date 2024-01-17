@@ -396,7 +396,7 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 ```
 
 <Note>
-  The delta-rs community is actively working on extending the awailable options
+  The delta-rs community is actively working on extending the available options
   for locking backends. This includes locking backends compatible with
   Databricks to allow concurrent writes from Databrticks and external
   environments.
@@ -406,7 +406,7 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 
 <TabItem name="Cloudflare R2 storage">
 
-Couldflare R2 storage has build in support for atomic copy operations. This can be leveraged by sending additional headers with the copy requrests.
+Clouddflare R2 storage has built-in support for atomic copy operations. This can be leveraged by sending additional headers with the copy requests.
 
 ```py
 from dagster_deltalake import S3Config
@@ -418,7 +418,7 @@ config = S3Config(copy_if_not_exists="header: cf-copy-destination-if-none-match:
 
 </TabGroup>
 
-In caeses where now-AWS S3 implementations are used, the endpoint URL or the S§ service needs to be provided.
+In caeses where non-AWS S3 implementations are used, the endpoint URL or the S3 service needs to be provided.
 
 ```py
 config = S3Config(endpoint="https://<my-s3-endpoint-url>")
@@ -426,7 +426,7 @@ config = S3Config(endpoint="https://<my-s3-endpoint-url>")
 
 ### Working with locally running storage (emulators)
 
-A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configures to use TLS, we need to configure the http client, to allow for http traffic.
+A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configured to use TLS, we need to configure the http client, to allow for http traffic.
 
 ```py
 config = AzureConfig(use_emulator=True, client=ClientConfig(allow_http=True))
