@@ -130,9 +130,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
                     <Caption>{numberFormatter.format(evaluation.numRequested)} Requested</Caption>
                   );
                 }
-                return <Caption>Requested</Caption>;
+                return <Caption>requested</Caption>;
               }
-              return <Caption>Not Requested</Caption>;
+              return <Caption>not requested</Caption>;
             }
 
             return (
