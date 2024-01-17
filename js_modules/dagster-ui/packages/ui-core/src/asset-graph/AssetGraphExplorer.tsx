@@ -386,6 +386,28 @@ const AssetGraphExplorerWithData = ({
     selectNodeById(e, nextId);
   };
 
+  const toggleSelectAllGroupNodesById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+      const assets = groupedAssets[groupId] || [];
+      const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
+
+      const existing = explorerPath.opNames[0]!.split(',');
+
+      const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
+        ? uniq(without(existing, ...childNodeTokens)).join(',')
+        : uniq([...existing, ...childNodeTokens]).join(',');
+
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opNames: [nextOpsNameSelection],
+        },
+        'replace',
+      );
+    },
+    [groupedAssets, explorerPath, onChangeExplorerPath],
+  );
+
   const selectNodeById = React.useCallback(
     (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
       if (!nodeId) {
@@ -393,6 +415,11 @@ const AssetGraphExplorerWithData = ({
       }
       if (isGroupId(nodeId)) {
         zoomToGroup(nodeId);
+
+        if (e.metaKey) {
+          toggleSelectAllGroupNodesById(e, nodeId);
+        }
+
         return;
       }
       const node = assetGraphData.nodes[nodeId];
@@ -409,7 +436,15 @@ const AssetGraphExplorerWithData = ({
         setExpandedGroups([...expandedGroups, groupIdForNode(node)]);
       }
     },
-    [assetGraphData.nodes, layout, onSelectNode, zoomToGroup, expandedGroups, setExpandedGroups],
+    [
+      assetGraphData.nodes,
+      onSelectNode,
+      layout,
+      zoomToGroup,
+      toggleSelectAllGroupNodesById,
+      setExpandedGroups,
+      expandedGroups,
+    ],
   );
 
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
@@ -518,6 +553,9 @@ const AssetGraphExplorerWithData = ({
                     focusGroupIdAfterLayoutRef.current = group.id;
                     setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
                   }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
+                  }}
                 />
               </foreignObject>
             ))}
@@ -565,6 +603,9 @@ const AssetGraphExplorerWithData = ({
                   onExpand={() => {
                     focusGroupIdAfterLayoutRef.current = group.id;
                     setExpandedGroups([...expandedGroups, group.id]);
+                  }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
                   }}
                 />
               </foreignObject>

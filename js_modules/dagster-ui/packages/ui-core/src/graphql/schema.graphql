@@ -1629,6 +1629,10 @@ type StopRunningScheduleMutation {
   Output: ScheduleMutationResult!
 }
 
+type ResetScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
 type AssetKey {
   path: [String!]!
 }
@@ -2029,7 +2033,7 @@ type LocationStateChangeSubscription {
   event: LocationStateChangeEvent!
 }
 
-union RepositoriesOrError = RepositoryConnection | PythonError
+union RepositoriesOrError = RepositoryConnection | RepositoryNotFoundError | PythonError
 
 type Repository {
   id: ID!
@@ -2872,6 +2876,7 @@ type Sensor {
   nextTick: DryRunInstigationTick
   metadata: SensorMetadata!
   sensorType: SensorType!
+  assetSelection: AssetSelection
 }
 
 type Target {
@@ -2894,6 +2899,10 @@ enum SensorType {
   UNKNOWN
 }
 
+type AssetSelection {
+  assetSelectionString: String
+}
+
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
 
 type Sensors {
@@ -2913,6 +2922,10 @@ type StopSensorMutation {
 }
 
 type SetSensorCursorMutation {
+  Output: SensorOrError!
+}
+
+type ResetSensorMutation {
   Output: SensorOrError!
 }
 
@@ -3406,9 +3419,11 @@ type Mutation {
     scheduleOriginId: String!
     scheduleSelectorId: String!
   ): ScheduleMutationResult!
+  resetSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  resetSensor(sensorSelector: SensorSelector!): SensorOrError!
   sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!
   terminatePipelineExecution(

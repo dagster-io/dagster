@@ -81,6 +81,24 @@ def stop_schedule(
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
+def reset_schedule(
+    graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
+) -> "GrapheneScheduleStateResult":
+    from ..schema.instigation import GrapheneInstigationState
+    from ..schema.schedules import GrapheneScheduleStateResult
+
+    check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
+
+    location = graphene_info.context.get_code_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
+
+    schedule_state = graphene_info.context.instance.reset_schedule(
+        repository.get_external_schedule(schedule_selector.schedule_name)
+    )
+
+    return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
+
+
 def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
     from ..schema.errors import GrapheneSchedulerNotDefinedError
     from ..schema.schedules import GrapheneScheduler

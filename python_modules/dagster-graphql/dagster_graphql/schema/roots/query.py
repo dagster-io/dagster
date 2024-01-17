@@ -620,7 +620,7 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -665,7 +665,7 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:

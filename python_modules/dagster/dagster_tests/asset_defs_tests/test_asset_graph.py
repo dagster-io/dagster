@@ -808,5 +808,5 @@ def test_required_assets_and_checks_by_key_multi_asset_single_asset(
 
     asset_graph = asset_graph_from_assets([asset_fn])
 
-    for key in [AssetKey(["asset0"]), foo_check, bar_check]:
+    for key in [AssetKey(["asset0"]), foo_check.key, bar_check.key]:
         assert asset_graph.get_required_asset_and_check_keys(key) == set()

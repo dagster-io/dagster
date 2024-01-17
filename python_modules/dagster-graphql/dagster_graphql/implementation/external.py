@@ -138,8 +138,11 @@ def fetch_repository(
                 repository_location=repo_loc,
             )
 
-    return GrapheneRepositoryNotFoundError(
-        repository_selector.location_name, repository_selector.repository_name
+    raise UserFacingGraphQLError(
+        GrapheneRepositoryNotFoundError(
+            repository_selector.location_name,
+            repository_selector.repository_name,
+        )
     )
 
 

@@ -231,3 +231,35 @@ def test_params_from_graphql():
             "runConfigData": "",
         }
     )
+
+
+def test_repo_not_found(graphql_context: WorkspaceRequestContext):
+    selector = {
+        "repositoryLocationName": "junk",
+        "repositoryName": "junk",
+    }
+    result = execute_dagster_graphql(
+        graphql_context,
+        """
+        query repo($selector: RepositorySelector!) {
+          repositoryOrError(repositorySelector: $selector) {
+            __typename
+          }
+        }""",
+        {"selector": selector},
+    )
+    assert not result.errors
+    assert result.data["repositoryOrError"]["__typename"] == "RepositoryNotFoundError"
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        """
+        query repos($selector: RepositorySelector!) {
+          repositoriesOrError(repositorySelector: $selector) {
+            __typename
+          }
+        }""",
+        {"selector": selector},
+    )
+    assert not result.errors
+    assert result.data["repositoriesOrError"]["__typename"] == "RepositoryNotFoundError"

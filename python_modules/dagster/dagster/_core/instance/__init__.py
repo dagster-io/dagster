@@ -2640,6 +2640,9 @@ class DagsterInstance(DynamicPartitionsStore):
             self, schedule_origin_id, schedule_selector_id, external_schedule
         )
 
+    def reset_schedule(self, external_schedule: "ExternalSchedule") -> "InstigatorState":
+        return self._scheduler.reset_schedule(self, external_schedule)  # type: ignore
+
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler import SchedulerDebugInfo
@@ -2743,6 +2746,51 @@ class DagsterInstance(DynamicPartitionsStore):
             )
         else:
             return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
+
+    def reset_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
+        """If the given sensor has a default sensor status, then update the status to
+        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage. Otherwise, update the status to
+        `InstigatorStatus.STOPPED`.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_sensor (ExternalSensor): The sensor to reset.
+        """
+        from dagster._core.definitions.run_request import InstigatorType
+        from dagster._core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            SensorInstigatorData,
+        )
+
+        stored_state = self.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        new_instigator_data = SensorInstigatorData(
+            min_interval=external_sensor.min_interval_seconds,
+            sensor_type=external_sensor.sensor_type,
+        )
+        new_status = (
+            InstigatorStatus.DECLARED_IN_CODE
+            if external_sensor._external_sensor_data.default_status  # noqa: SLF001
+            else InstigatorStatus.STOPPED
+        )
+
+        if not stored_state:
+            reset_state = self.add_instigator_state(
+                state=InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    new_status,
+                    new_instigator_data,
+                )
+            )
+        else:
+            reset_state = self.update_instigator_state(
+                state=stored_state.with_status(new_status).with_data(new_instigator_data)
+            )
+
+        return reset_state
 
     @traced
     def all_instigator_state(
