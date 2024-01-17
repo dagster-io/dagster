@@ -1,0 +1,85 @@
+---
+title: "Automation | Dagster Docs"
+description: "Learn to automatically run your Dagster pipelines."
+---
+
+# Automation
+
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. Automating your Dagster pipelines can boost efficiency and ensure that data is produced consistently and reliably.
+
+When one of Dagster's automation methods is triggered, a **tick** is created, which indicates that a **run** should occur. The tick will kick off a run, which is a single instance of a pipeline being executed.
+
+In this guide, we'll cover the available automation methods Dagser provides and when to use each one.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Software-defined Assets][assets]
+- [Jobs][jobs] (_optional_)
+- [Ops][ops] (_optional; advanced_)
+
+---
+
+## Available methods
+
+In this section, we'll touch on each of the automation methods currently supported by Dagster. After that we'll discuss what to think about when [selecting a method](#selecting-a-method). 
+
+### Schedules
+
+Schedules kick off [jobs][jobs] at fixed time intervals. Using schedules, you can start jobs at specific times, such as Mondays at 9:00 AM. Jobs triggered by schedules can contain a subset of [assets][assets] or [ops][ops]. Refer to the [Schedules documentation][schedules] to learn more.
+
+### Sensors
+
+To run a job or materialize an asset in response to specific events, you can use sensors. Sensors continuously check and execute logic to know whether to kick off a run. They are commonly used for situations where you want to materialize an asset after something else happens, such as:
+
+- A new file arrives in a specific location, such as Amazon S3
+- Another asset elsewhere has materialized
+- An external system frees up a worker slot
+
+You can also use sensors to act on the status of a job run. Refer to the [Sensors documentation][sensors] to learn more.
+
+### Auto-materialize Policies <Experimental />
+
+Unlike schedules, Auto-materialize Policies (AMP) don't run at a specific time. Instead, an AMP allows you to describe the conditions under which assets should be materialized or skipped. An AMP, for example, could kick off a run for a downstream asset immediately after upstream changes occur.
+
+AMPs are declared on an asset-by-asset basis, but can be applied to multiple assets at once. Refer to the [Auto-materializing Assets documentation][auto-materialize-policies] to learn more.
+
+### Asset Sensors <Experimental />
+
+Asset sensors trigger jobs when a specified asset is materialized. Using asset sensors, you can instigate runs across jobs and code locations and keep downstream assets up-to-date with ease.
+
+Refer to the [Asset Sensor documentation][asset-sensors] to learn more.
+
+---
+
+## Selecting a method
+
+Before you dive into automating your pipelines, you should think about:
+
+- Is my pipeline made up of assets, ops, graphs, or some of everything?
+- How often does the data need to be refreshed?
+- Is the data partitioned, and do old records require updates?
+- Should updates occur in batches? Or should updates start when specific events occur?
+
+The following cheatsheet contains high-level details about each of the automation methods we covered, along with an example of when each one would be used.
+
+
+| Name                                                   | How it works                                    | Works with          | Example |
+| ------------------------------------------------------ | ----------------------------------------------- | --------------------|---------|
+| [Schedules][schedules]                   | Starts a [job][jobs] at a specified time                    | Assets, ops, graphs | Start a job every day at 9:00 AM |
+| [Sensors][sensors]                                     | Starts a [job][jobs] or materializes a selection of assets when a specific event occurs                  | Assets, ops, graphs | Materialize `customers_asset` when a new file in S3 is created |
+| [Auto-materialize policies][auto-materialize-policies] (Experimental) | Automatically materializes an asset or selection of assets when specified criteria (ex: upstream changes) are met | Assets              | Materialize `dailiy_sales_asset` when `orders_asset` is materialized |
+| [Asset Sensors][asset-sensors] (Experimental)                          | Starts a [job][jobs] when a materialization occurs for a specific asset or selection of assets                  | Assets              | TODO? |
+
+
+[assets]: /concepts/assets/software-defined-assets
+[ops]: /concepts/ops-jobs-graphs/ops
+[jobs]: /concepts/ops-jobs-graphs/jobs
+[op-jobs]: /concepts/ops-jobs-graphs/op-jobs
+[schedules]: /concepts/partitions-schedules-sensors/schedules
+[sensors]: /concepts/partitions-schedules-sensors/sensors
+[asset-sensors]: /concepts/partitions-schedules-sensors/asset-sensors
+[auto-materialize-policies]: /concepts/assets/auto-materializing-assets
