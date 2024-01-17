@@ -4467,6 +4467,10 @@ class TestEventLogStorage:
         assert info.pending_step_count == 1
         assert info.assigned_step_count == 0
 
+        # delete the concurrency slot
+        storage.delete_concurrency_limit("foo")
+        assert storage.get_concurrency_keys() == set()
+
     def test_default_concurrency(
         self,
         storage: EventLogStorage,

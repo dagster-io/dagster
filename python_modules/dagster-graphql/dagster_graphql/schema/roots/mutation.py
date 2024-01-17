@@ -836,6 +836,24 @@ class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
         return True
 
 
+class GrapheneDeleteConcurrencyLimitMutation(graphene.Mutation):
+    """Sets the concurrency limit for a given concurrency key."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "DeleteConcurrencyLimitMutation"
+
+    class Arguments:
+        concurrencyKey = graphene.Argument(graphene.NonNull(graphene.String))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, concurrencyKey: str):
+        graphene_info.context.instance.event_log_storage.delete_concurrency_limit(concurrencyKey)
+        return True
+
+
 class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
     """Frees concurrency slots."""
 
@@ -914,5 +932,6 @@ class GrapheneMutation(graphene.ObjectType):
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
+    deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()
     freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
     freeConcurrencySlots = GrapheneFreeConcurrencySlotsMutation.Field()
