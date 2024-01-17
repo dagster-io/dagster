@@ -76,9 +76,7 @@ export const AssetAutomaterializePolicyPage = ({
       style={{flex: 1, minHeight: 0, color: colorTextLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
-      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
-        <AutoMaterializeExperimentalBanner />
-      </Box>
+      <AutoMaterializeExperimentalBanner />
       <Box flex={{direction: 'row'}} style={{minHeight: 0, flex: 1}}>
         <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
           <Box border="right" flex={{grow: 0, direction: 'column'}} style={{flex: '0 0 296px'}}>
