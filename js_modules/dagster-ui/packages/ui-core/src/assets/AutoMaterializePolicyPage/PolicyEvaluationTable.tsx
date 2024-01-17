@@ -216,7 +216,7 @@ const PartitionedPolicyEvaluationTable = ({
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {description, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
             evaluation;
-          const consideredPartitions = candidateSubset?.subsetValue.partitionKeys.length;
+          const consideredPartitions = candidateSubset?.subsetValue.partitionKeys?.length;
 
           return (
             <EvaluationRow

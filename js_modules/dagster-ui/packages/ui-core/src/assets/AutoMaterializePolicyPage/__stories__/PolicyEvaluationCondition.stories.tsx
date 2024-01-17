@@ -20,6 +20,8 @@ export const Default = () => {
               icon="resource"
               label="All are true:"
               type="group"
+              isCollapsed={false}
+              hasChildren
             />
           </td>
         </tr>
@@ -30,6 +32,8 @@ export const Default = () => {
               icon="resource"
               label="Any are true:"
               type="group"
+              isCollapsed={false}
+              hasChildren
             />
           </td>
         </tr>
@@ -40,6 +44,8 @@ export const Default = () => {
               icon="wysiwyg"
               label="parent_updated"
               type="leaf"
+              isCollapsed={false}
+              hasChildren={false}
             />
           </td>
         </tr>
@@ -51,12 +57,21 @@ export const Default = () => {
               label="is_missing"
               type="leaf"
               skipped
+              isCollapsed={false}
+              hasChildren={false}
             />
           </td>
         </tr>
         <tr>
           <td>
-            <PolicyEvaluationCondition depth={1} icon="resource" label="Not:" type="group" />
+            <PolicyEvaluationCondition
+              depth={1}
+              icon="resource"
+              label="Not:"
+              type="group"
+              isCollapsed={false}
+              hasChildren={true}
+            />
           </td>
         </tr>
         <tr>
@@ -66,6 +81,8 @@ export const Default = () => {
               icon="wysiwyg"
               label="parent_updated"
               type="leaf"
+              isCollapsed={false}
+              hasChildren={false}
             />
           </td>
         </tr>

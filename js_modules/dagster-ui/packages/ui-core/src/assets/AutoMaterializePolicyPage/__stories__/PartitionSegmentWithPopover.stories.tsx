@@ -41,62 +41,6 @@ export const TruePartitions = () => {
   );
 };
 
-export const FalsePartitions = () => {
-  const subset = React.useMemo(() => {
-    const partitionKeys = new Array(PARTITION_COUNT)
-      .fill(null)
-      .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
-    return {
-      assetKey: {path: ['foo', 'bar']},
-      subsetValue: {
-        boolValue: false,
-        partitionKeys,
-        partitionKeyRanges: null,
-        isPartitioned: true,
-      },
-    };
-  }, []);
-
-  return (
-    <Box flex={{direction: 'row'}}>
-      <PartitionSegmentWithPopover
-        description="is_missing"
-        status={AssetConditionEvaluationStatus.FALSE}
-        subset={subset}
-        selectPartition={() => {}}
-      />
-    </Box>
-  );
-};
-
-export const SkippedPartitions = () => {
-  const subset = React.useMemo(() => {
-    const partitionKeys = new Array(PARTITION_COUNT)
-      .fill(null)
-      .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
-    return {
-      assetKey: {path: ['foo', 'bar']},
-      subsetValue: {
-        boolValue: null,
-        partitionKeys,
-        partitionKeyRanges: null,
-        isPartitioned: true,
-      },
-    };
-  }, []);
-
-  return (
-    <Box flex={{direction: 'row'}}>
-      <PartitionSegmentWithPopover
-        description="is_missing"
-        status={AssetConditionEvaluationStatus.SKIPPED}
-        subset={subset}
-        selectPartition={() => {}}
-      />
-    </Box>
-  );
-};
-
 export const FewPartitions = () => {
   const subset = React.useMemo(() => {
     const partitionKeys = new Array(2)
