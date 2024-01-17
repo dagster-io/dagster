@@ -7,7 +7,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ActivatableButton} from '../runs/RunListTabs';
 
-import {OverviewAssetsRoot} from './OverviewAssetsRoot';
+import {OverviewAssetsRoot} from './assets/OverviewAssetsRoot';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 
@@ -38,7 +38,7 @@ export const OverviewActivityRoot = () => {
       return (
         <JoinedButtons>
           <ActivatableButton $active={selected === 'timeline'} to="/overview/activity/timeline">
-            Timeline
+            Jobs
           </ActivatableButton>
           <ActivatableButton $active={selected === 'assets'} to="/overview/activity/assets">
             Assets
