@@ -92,7 +92,7 @@ interface ListProps {
 const ITEM_HEIGHT = 32;
 const MAX_ITEMS_BEFORE_TRUNCATION = 4;
 
-const PartitionSubsetList = ({description, status, subset, selectPartition}: ListProps) => {
+export const PartitionSubsetList = ({description, status, subset, selectPartition}: ListProps) => {
   const container = React.useRef<HTMLDivElement | null>(null);
   const [searchValue, setSearchValue] = React.useState('');
 

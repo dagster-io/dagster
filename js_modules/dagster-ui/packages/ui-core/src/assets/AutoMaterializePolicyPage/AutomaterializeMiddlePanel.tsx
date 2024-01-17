@@ -7,6 +7,7 @@ import {
   MenuItem,
   MiddleTruncate,
   NonIdealState,
+  Popover,
   Subheading,
   Subtitle2,
   Tag,
@@ -37,7 +38,9 @@ import {
   GET_EVALUATIONS_QUERY,
   GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY,
 } from './GetEvaluationsQuery';
+import {PartitionSubsetList} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
+import {AssetConditionEvaluationStatus} from './types';
 import {
   FullPartitionsQuery,
   FullPartitionsQueryVariables,
@@ -196,16 +199,41 @@ export const AutomaterializeMiddlePanelWithData = ({
   specificPartitionData?: GetEvaluationsSpecificPartitionQuery;
   selectedPartition: string | null;
 }) => {
+  const evaluation = selectedEvaluation?.evaluation;
+  const rootEvaluationNode = React.useMemo(
+    () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
+    [evaluation],
+  );
+  const rootPartitionedEvaluationNode =
+    rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode'
+      ? rootEvaluationNode
+      : null;
+
   const statusTag = React.useMemo(() => {
     if (selectedEvaluation?.numRequested) {
       if (definition?.partitionDefinition) {
         return (
-          <Tag intent="success">
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              <StatusDot $color={colorAccentGreen()} />
-              {selectedEvaluation.numRequested} Requested
-            </Box>
-          </Tag>
+          <Popover
+            interactionKind="hover"
+            placement="bottom"
+            hoverOpenDelay={50}
+            hoverCloseDelay={50}
+            content={
+              <PartitionSubsetList
+                description={rootPartitionedEvaluationNode!.description}
+                status={AssetConditionEvaluationStatus.TRUE}
+                subset={rootPartitionedEvaluationNode!.trueSubset}
+                selectPartition={selectPartition}
+              />
+            }
+          >
+            <Tag intent="success">
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                <StatusDot $color={colorAccentGreen()} />
+                {selectedEvaluation.numRequested} Requested
+              </Box>
+            </Tag>
+          </Popover>
         );
       }
       return (
@@ -227,12 +255,8 @@ export const AutomaterializeMiddlePanelWithData = ({
     );
   }, [definition, selectedEvaluation]);
 
-  const evaluation = selectedEvaluation?.evaluation;
   const partitionsEvaluated = React.useMemo(() => {
     if (evaluation) {
-      const rootEvaluationNode = evaluation.evaluationNodes.find(
-        (node) => node.uniqueId === evaluation.rootUniqueId,
-      );
       if (rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode') {
         return (
           rootEvaluationNode.numTrue + rootEvaluationNode.numFalse + rootEvaluationNode.numSkipped
