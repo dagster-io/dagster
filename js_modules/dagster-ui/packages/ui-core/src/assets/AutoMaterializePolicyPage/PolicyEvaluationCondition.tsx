@@ -32,7 +32,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
     <Box
       padding={{vertical: 2, horizontal: 8}}
       flex={{direction: 'row', alignItems: 'center', gap: 8}}
-      style={{height: '48px', cursor: 'pointer'}}
+      style={{height: '48px'}}
     >
       {depthLines}
       {hasChildren ? (

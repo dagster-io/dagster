@@ -302,6 +302,7 @@ const VeryCompactTable = styled(Table)`
 type RowHighlightType = 'hovered' | 'highlighted' | 'none';
 
 const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
+  cursor: pointer;
   background-color: ${({$highlight}) => {
     switch ($highlight) {
       case 'hovered':
