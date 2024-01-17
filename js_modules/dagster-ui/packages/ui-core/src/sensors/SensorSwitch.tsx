@@ -110,5 +110,6 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
       selectorId
       status
     }
+    sensorType
   }
 `;

@@ -155,11 +155,15 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
             description={
               <Body2>
                 <Box flex={{direction: 'column', gap: 6}}>
-                  This asset’s automation policy has not been evaluated yet. Make sure your
-                  automation sensor is running.
+                  <Body2>
+                    This asset’s automation policy has not been evaluated yet. Make sure your
+                    automation sensor is running.
+                  </Body2>
+                  <AnchorButton to="/asset-groups">Manage sensor</AnchorButton>
+                  <a href="https://docs.dagster.io/concepts/assets/asset-auto-execution">
+                    Learn more about automation policies
+                  </a>
                 </Box>
-                <AnchorButton to="/asset-groups">Manage sensor</AnchorButton>
-                <a href="">Learn more about automation policies</a>
               </Body2>
             }
           />

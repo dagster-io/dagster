@@ -4,6 +4,7 @@ import {
   Caption,
   CursorPaginationControls,
   Icon,
+  MiddleTruncate,
   Subtitle1,
   colorAccentBlue,
   colorAccentGreen,
@@ -23,8 +24,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {SensorType} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {numberFormatter} from '../../ui/formatters';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
@@ -69,6 +73,20 @@ interface ListProps {
 export const AutomaterializeLeftList = (props: ListProps) => {
   const {evaluations, onSelectEvaluation, selectedEvaluation, definition} = props;
 
+  const sensorName = React.useMemo(
+    () =>
+      definition?.targetingInstigators.find(
+        (instigator) =>
+          instigator.__typename === 'Sensor' &&
+          instigator.sensorType === SensorType.AUTOMATION_POLICY,
+      )?.name,
+    [definition],
+  );
+
+  const repoAddress = definition
+    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+    : null;
+
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
@@ -80,10 +98,21 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         flex={{grow: 1, direction: 'column'}}
       >
         <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
-          <Link to="/overview/automaterialze">
+          <Link to="/overview/automation">
             <Box flex={{alignItems: 'center', gap: 4}}>
               <Icon name="sensors" color={colorAccentBlue()} />
-              <Body2>{definition?.automationPolicySensor?.name ?? 'Automation'}</Body2>
+              <Body2>
+                {repoAddress && sensorName ? (
+                  <Link
+                    to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}
+                    style={{maxWidth: 200, overflow: 'hidden'}}
+                  >
+                    <MiddleTruncate text={sensorName} />
+                  </Link>
+                ) : (
+                  <Link to="/overview/automation">{sensorName ?? 'Automation'}</Link>
+                )}
+              </Body2>
             </Box>
           </Link>
         </Box>

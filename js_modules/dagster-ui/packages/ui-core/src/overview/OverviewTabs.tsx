@@ -47,7 +47,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
                 )}
               </Box>
             }
-            to="/overview/automaterialize"
+            to="/overview/automation"
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
