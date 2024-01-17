@@ -25,7 +25,7 @@ import styled from 'styled-components';
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {DimensionPartitionKeys} from '../../graphql/types';
+import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {numberFormatter} from '../../ui/formatters';
