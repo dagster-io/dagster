@@ -1,7 +1,9 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {render, waitFor, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
-import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
-import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
+import {MemoryRouter} from 'react-router';
+
 import {
   buildAssetNode,
   buildDimensionPartitionKeys,
@@ -10,22 +12,19 @@ import {
   buildAssetKey,
   buildAddDynamicPartitionSuccess,
 } from '../../graphql/types';
-import {
-  PartitionHealthQuery,
-  PartitionHealthQueryVariables,
-} from '../types/usePartitionHealthData.types';
-import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
-import {MockedProvider} from '@apollo/client/testing';
-import {RepoAddress} from '../../workspace/types';
-import {LaunchAssetsChoosePartitionsTarget} from '../LaunchAssetExecutionButton';
-import userEvent from '@testing-library/user-event';
-import {MemoryRouter} from 'react-router';
-import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
-import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
+import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
+import {
+  PartitionHealthQuery,
+  PartitionHealthQueryVariables,
+} from '../types/usePartitionHealthData.types';
+import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
 describe('launchAssetChoosePartitionsDialog', () => {
   it('Adding a dynamic partition when multiple assets selected', async () => {
