@@ -134,8 +134,6 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
       }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 export const AssetGroupTags = ({
