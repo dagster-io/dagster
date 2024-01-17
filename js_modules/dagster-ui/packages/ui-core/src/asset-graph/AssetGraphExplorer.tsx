@@ -786,13 +786,6 @@ const AssetGraphExplorerWithData = ({
                     popoverPosition="bottom-left"
                   />
                 </GraphQueryInputFlexWrap>
-                <Button
-                  onClick={() => {
-                    onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
-                  }}
-                >
-                  Clear query
-                </Button>
                 <AssetLiveDataRefresh />
                 <LaunchAssetObservationButton
                   preferredJobName={explorerPath.pipelineName}
