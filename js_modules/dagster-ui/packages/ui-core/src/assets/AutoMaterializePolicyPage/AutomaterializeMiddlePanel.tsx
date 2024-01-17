@@ -42,7 +42,6 @@ import {
 } from './GetEvaluationsQuery';
 import {PartitionSubsetList} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
-import {AssetConditionEvaluationStatus} from './types';
 import {
   FullPartitionsQuery,
   FullPartitionsQueryVariables,
@@ -244,8 +243,7 @@ export const AutomaterializeMiddlePanelWithData = ({
             hoverCloseDelay={50}
             content={
               <PartitionSubsetList
-                description={rootPartitionedEvaluationNode!.description}
-                status={AssetConditionEvaluationStatus.TRUE}
+                description="Requested assets"
                 subset={rootPartitionedEvaluationNode!.trueSubset}
                 selectPartition={selectPartition}
               />

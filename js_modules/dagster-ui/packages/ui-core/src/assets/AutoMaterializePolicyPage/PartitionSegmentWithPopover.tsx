@@ -84,7 +84,7 @@ export const PartitionSegmentWithPopover = ({
 
 interface ListProps {
   description: string;
-  status: AssetConditionEvaluationStatus;
+  status?: AssetConditionEvaluationStatus;
   subset: AssetSusbsetWithoutTypenames;
   selectPartition: (partitionKey: string | null) => void;
 }
@@ -96,7 +96,10 @@ export const PartitionSubsetList = ({description, status, subset, selectPartitio
   const container = React.useRef<HTMLDivElement | null>(null);
   const [searchValue, setSearchValue] = React.useState('');
 
-  const {color, hoverColor} = React.useMemo(() => statusToColors(status), [status]);
+  const {color, hoverColor} = React.useMemo(
+    () => statusToColors(status ?? AssetConditionEvaluationStatus.TRUE),
+    [status],
+  );
 
   const partitionKeys = React.useMemo(() => subset.subsetValue.partitionKeys || [], [subset]);
 
@@ -128,7 +131,7 @@ export const PartitionSubsetList = ({description, status, subset, selectPartitio
         <strong>
           <MiddleTruncate text={description} />
         </strong>
-        <PolicyEvaluationStatusTag status={status} />
+        {status ? <PolicyEvaluationStatusTag status={status} /> : null}
       </Box>
       {partitionKeys.length > MAX_ITEMS_BEFORE_TRUNCATION ? (
         <SearchContainer padding={{vertical: 4, horizontal: 8}}>
