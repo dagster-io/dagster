@@ -11,6 +11,7 @@ import {
   Spinner,
   TextInput,
   colorAccentRed,
+  colorBackgroundDefault,
   colorTextLight,
   colorTextRed,
 } from '@dagster-io/ui-components';
@@ -94,7 +95,7 @@ const Form = ({dismiss, submit}: FormProps) => {
   return (
     <Box
       flex={{direction: 'column', gap: 16}}
-      style={{padding: '36px', width: '680px', background: 'white'}}
+      style={{padding: '36px', width: '680px', background: colorBackgroundDefault()}}
     >
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}

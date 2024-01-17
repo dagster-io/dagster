@@ -1305,6 +1305,12 @@ class PipesContext:
         )
 
     def report_custom_message(self, payload: Any):
+        """Send a JSON serializable payload back to the orchestration process. Can be retrieved there
+        using `get_custom_messages`.
+
+        Args:
+            payload (Any): JSON serializable data.
+        """
         self._write_message("report_custom_message", {"payload": payload})
 
     @property

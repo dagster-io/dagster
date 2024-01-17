@@ -1,6 +1,7 @@
 # name: TestSensors.test_get_sensor[0]
   dict({
     '__typename': 'Sensor',
+    'assetSelection': None,
     'minIntervalSeconds': 30,
     'name': 'always_no_config_sensor',
     'nextTick': None,

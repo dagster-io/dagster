@@ -14,7 +14,9 @@ import {useRouter} from 'next/router';
 import React from 'react';
 import GitHubButton from 'react-github-btn';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
+const searchProvider: React.ReactNode = SearchIndexContext.Provider as any;
 
 export type MDXData = {
   mdxSource: MdxRemote.Source;
@@ -242,7 +244,7 @@ export function UnversionedMDXRenderer({
   const content = hydrate(mdxSource, {
     components,
     provider: {
-      component: SearchIndexContext.Provider,
+      component: searchProvider,
       props: {value: searchIndex},
     },
   });
@@ -295,7 +297,7 @@ function VersionedMDXRenderer({data, toggleFeedback}: {data: MDXData; toggleFeed
   const content = hydrate(mdxSource, {
     components,
     provider: {
-      component: SearchIndexContext.Provider,
+      component: searchProvider,
       props: {value: searchIndex},
     },
   });

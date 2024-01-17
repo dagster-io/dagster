@@ -1,5 +1,34 @@
 # Changelog
 
+# 1.6.1 (core) / 0.22.1 (libraries)
+
+### New
+
+- Added experimental functionality which hides user code errors from the Dagster UI. You may enable this functionality by setting the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to `1`.
+- [dagster-dbt] `@dbt_assets` now accepts a `required_resource_keys` argument.
+
+### Bugfixes
+
+- Fixed a bug where a run that targets no steps is launched by an asset backfill when code updates are pushed after backfill launch time.
+- Previously a graphQL error would be thrown on the asset backfill page if certain unpartitioned assets were changed to a partitioned assets. This has been fixed.
+- [ui] Show run log timestamps in the user’s preferred hour cycle (12/24h) format.
+- [ui] The “Export to SVG” option now works as expected in the improved asset graph UI.
+- [ui] On the asset graph, hovering over a collapsed group or the title bar of an expanded group highlights all edges in/out of the group.
+- Fixed occasional CI/CD errors when building documentation on a feature branch
+
+### Community Contributions
+
+- fix: add missing volumes and volumeMounts in job-instance-migrate.yaml. Thanks [@nhuray](https://github.com/nhuray)!
+
+### Documentation
+
+- Fixed typos in the docs.
+
+### Dagster Cloud
+
+- [ui] Fix dark theme colors for billing components.
+- [ui] Show the number of users for each grant type (admin, editor, etc.) on the Users page.
+
 # 1.6.0 (core) / 0.22.0 (libraries)
 
 ## Major Changes since 1.5.0 (core) / 0.21.0 (libraries)
@@ -24,10 +53,6 @@
 - **AWS Lambda Pipes client** –`PipesLambdaClient` [[guide](https://docs.dagster.io/guides/dagster-pipes/aws-lambda)].
 - **Report arbitrary messages between pipes processes and the orchestrating process** – with `report_custom_message` and `get_custom_messages`.
 - **Termination forwarding** – ensures that external processes are terminated when an orchestration process is.
-
-### Dagster Cloud
-
-- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For example, you can route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to another agent running in the cloud. For more information, see [https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
 
 ## **Since 1.5.14 (core) / 0.21.14 (libraries)**
 
@@ -62,7 +87,7 @@
 
 ### Dagster Cloud
 
-- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For more information, see [https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
+- Added the ability to annotate code locations with custom agent queues, allowing you to route requests for code locations in a single deployment to different agents. For example, you can route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to another agent running in the cloud. For more information, see [the docs](https://docs.dagster.io/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
 
 # 1.5.14 / 0.21.14 (libraries)
 

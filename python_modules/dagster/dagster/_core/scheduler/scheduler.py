@@ -153,6 +153,51 @@ class Scheduler(abc.ABC):
 
         return stopped_state
 
+    def reset_schedule(
+        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+    ) -> InstigatorState:
+        """If the given schedule has a default schedule status, then update the status to
+        `InstigatorStatus.DECLARED_IN_CODE` in schedule storage. Otherwise, update the status to
+        `InstigatorStatus.STOPPED`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_schedule (ExternalSchedule): The schedule to reset.
+        """
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+
+        stored_state = instance.get_instigator_state(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
+        new_instigator_data = ScheduleInstigatorData(
+            external_schedule.cron_schedule,
+            start_timestamp=None,
+        )
+        new_status = (
+            InstigatorStatus.DECLARED_IN_CODE
+            if external_schedule._external_schedule_data.default_status  # noqa: SLF001
+            else InstigatorStatus.STOPPED
+        )
+
+        if not stored_state:
+            reset_state = instance.add_instigator_state(
+                state=InstigatorState(
+                    external_schedule.get_external_origin(),
+                    InstigatorType.SCHEDULE,
+                    new_status,
+                    new_instigator_data,
+                )
+            )
+        else:
+            reset_state = instance.update_instigator_state(
+                state=stored_state.with_status(new_status).with_data(new_instigator_data)
+            )
+
+        return reset_state
+
     @abc.abstractmethod
     def debug_info(self) -> str:
         """Returns debug information about the scheduler."""

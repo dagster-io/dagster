@@ -108,7 +108,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const ticksToDisplay = React.useMemo(() => {
     return ticksReversed.map((tick, i) => {
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
-      const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i)
+      const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
         ? tick.timestamp
         : tick.endTimestamp
         ? tick.endTimestamp * 1000

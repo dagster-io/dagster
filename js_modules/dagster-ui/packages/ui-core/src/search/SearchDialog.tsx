@@ -10,12 +10,12 @@ import {
   colorTextLighter,
   colorBackgroundDefault,
   colorKeylineDefault,
-  CoreColors,
   colorDialogBackground,
   colorNavButton,
   colorNavButtonHover,
-  colorNavText,
   colorShadowDefault,
+  colorNavTextHover,
+  colorFocusRing,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
@@ -206,8 +206,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
             <Box flex={{alignItems: 'center', gap: 4}}>
               <div
                 style={{
-                  background: CoreColors.Gray900,
-                  borderRadius: '12px',
                   height: '24px',
                   width: '24px',
                   display: 'flex',
@@ -215,7 +213,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
                   justifyContent: 'center',
                 }}
               >
-                <Icon name="search" color={CoreColors.Gray50} />
+                <Icon name="search" color={colorNavTextHover()} />
               </div>
               <div>{searchPlaceholder}</div>
             </Box>
@@ -259,7 +257,7 @@ const SearchTrigger = styled.button`
   background-color: ${colorNavButton()};
   border-radius: 24px;
   border: none;
-  color: ${CoreColors.Gray50};
+  color: ${colorNavTextHover()};
   font-size: 14px;
   cursor: pointer;
   padding: 4px 16px 4px 8px;
@@ -273,8 +271,8 @@ const SearchTrigger = styled.button`
     background-color: ${colorNavButtonHover()};
   }
 
-  :focus {
-    border-color: ${colorNavText()};
+  :focus-visible {
+    outline: ${colorFocusRing()} auto 1px;
   }
 `;
 
@@ -322,7 +320,7 @@ const SearchInput = styled.input`
 const SlashShortcut = styled.div`
   background-color: transparent;
   border-radius: 3px;
-  color: ${CoreColors.White};
+  color: ${colorNavTextHover()};
   font-size: 14px;
   padding: 2px;
 `;

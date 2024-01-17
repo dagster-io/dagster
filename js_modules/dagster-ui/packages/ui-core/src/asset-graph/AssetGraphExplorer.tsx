@@ -10,8 +10,11 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
+  colorAccentWhite,
   colorBackgroundDefault,
+  colorBackgroundGray,
   colorKeylineDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -383,6 +386,28 @@ const AssetGraphExplorerWithData = ({
     selectNodeById(e, nextId);
   };
 
+  const toggleSelectAllGroupNodesById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+      const assets = groupedAssets[groupId] || [];
+      const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
+
+      const existing = explorerPath.opNames[0]!.split(',');
+
+      const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
+        ? uniq(without(existing, ...childNodeTokens)).join(',')
+        : uniq([...existing, ...childNodeTokens]).join(',');
+
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opNames: [nextOpsNameSelection],
+        },
+        'replace',
+      );
+    },
+    [groupedAssets, explorerPath, onChangeExplorerPath],
+  );
+
   const selectNodeById = React.useCallback(
     (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
       if (!nodeId) {
@@ -390,6 +415,11 @@ const AssetGraphExplorerWithData = ({
       }
       if (isGroupId(nodeId)) {
         zoomToGroup(nodeId);
+
+        if (e.metaKey) {
+          toggleSelectAllGroupNodesById(e, nodeId);
+        }
+
         return;
       }
       const node = assetGraphData.nodes[nodeId];
@@ -406,7 +436,15 @@ const AssetGraphExplorerWithData = ({
         setExpandedGroups([...expandedGroups, groupIdForNode(node)]);
       }
     },
-    [assetGraphData.nodes, layout, onSelectNode, zoomToGroup, expandedGroups, setExpandedGroups],
+    [
+      assetGraphData.nodes,
+      onSelectNode,
+      layout,
+      zoomToGroup,
+      toggleSelectAllGroupNodesById,
+      setExpandedGroups,
+      expandedGroups,
+    ],
   );
 
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
@@ -419,17 +457,35 @@ const AssetGraphExplorerWithData = ({
       shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
     >
       {expandedGroups.length === 0 ? (
-        <Button
-          title="Expand all groups"
-          icon={<Icon name="unfold_more" />}
-          onClick={() => setExpandedGroups(allGroups)}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Expand all groups"
+            icon={<Icon name="unfold_more" />}
+            onClick={() => setExpandedGroups(allGroups)}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       ) : (
-        <Button
-          title="Collapse all groups"
-          icon={<Icon name="unfold_less" />}
-          onClick={() => setExpandedGroups([])}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Collapse all groups"
+            icon={<Icon name="unfold_less" />}
+            onClick={() => setExpandedGroups([])}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       )}
     </ShortcutHandler>
   );
@@ -497,6 +553,9 @@ const AssetGraphExplorerWithData = ({
                     focusGroupIdAfterLayoutRef.current = group.id;
                     setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
                   }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
+                  }}
                 />
               </foreignObject>
             ))}
@@ -544,6 +603,9 @@ const AssetGraphExplorerWithData = ({
                   onExpand={() => {
                     focusGroupIdAfterLayoutRef.current = group.id;
                     setExpandedGroups([...expandedGroups, group.id]);
+                  }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
                   }}
                 />
               </foreignObject>
@@ -630,7 +692,11 @@ const AssetGraphExplorerWithData = ({
                 <Menu>
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
-                      text="Collapse all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Collapse all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_less" />}
                       onClick={() => {
                         setExpandedGroups([]);
@@ -639,7 +705,11 @@ const AssetGraphExplorerWithData = ({
                   )}
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
-                      text="Expand all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_more" />}
                       onClick={() => {
                         setExpandedGroups(allGroups);
@@ -788,6 +858,21 @@ const AssetGraphExplorerWithData = ({
   }
   return explorer;
 };
+
+interface KeyboardTagProps {
+  $withinTooltip?: boolean;
+}
+
+const KeyboardTag = styled.div<KeyboardTagProps>`
+  ${(props) => {
+    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+  }};
+  background: ${colorBackgroundGray()};
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  font-size: 12px;
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;
