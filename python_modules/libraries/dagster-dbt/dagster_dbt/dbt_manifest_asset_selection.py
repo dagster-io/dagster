@@ -1,4 +1,4 @@
-from typing import AbstractSet, Optional, Any, Mapping
+from typing import AbstractSet, Any, Mapping, Optional
 
 from dagster import (
     AssetKey,
@@ -18,7 +18,11 @@ from .utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection, frozen=True, arbitrary_types_allowed=True,):
+class DbtManifestAssetSelection(
+    AssetSelection,
+    frozen=True,
+    arbitrary_types_allowed=True,
+):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
