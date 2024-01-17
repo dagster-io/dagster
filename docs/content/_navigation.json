@@ -99,10 +99,6 @@
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Auto-materializing assets",
-            "path": "/concepts/assets/asset-auto-execution"
-          },
-          {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
           },

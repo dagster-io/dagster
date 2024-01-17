@@ -25,7 +25,7 @@ Before continuing, you should be familiar with:
 
 ## Available methods
 
-In this section, we'll touch on each of the automation methods currently supported by Dagster. After that we'll discuss what to think about when [selecting a method](#selecting-a-method).
+In this section, we'll touch on each of the automation methods currently supported by Dagster. After that we'll discuss what to think about when [selecting a method](#selecting-a-method). 
 
 ### Schedules
 
@@ -73,18 +73,12 @@ The following cheatsheet contains high-level details about each of the automatio
 | [Auto-materialize policies][auto-materialize-policies] (Experimental) | Automatically materializes an asset or selection of assets when specified criteria (ex: upstream changes) are met | Assets              | Materialize `dailiy_sales_asset` when `orders_asset` is materialized |
 | [Asset Sensors][asset-sensors] (Experimental)                         | Starts a [job][jobs] when a materialization occurs for a specific asset or selection of assets                    | Assets              | TODO?                                                                |
 
+
 [assets]: /concepts/assets/software-defined-assets
-
 [ops]: /concepts/ops-jobs-graphs/ops
-
 [jobs]: /concepts/ops-jobs-graphs/jobs
-
 [op-jobs]: /concepts/ops-jobs-graphs/op-jobs
-
 [schedules]: /concepts/partitions-schedules-sensors/schedules
-
 [sensors]: /concepts/partitions-schedules-sensors/sensors
-
 [asset-sensors]: /concepts/partitions-schedules-sensors/asset-sensors
-
 [auto-materialize-policies]: /concepts/assets/auto-materializing-assets
