@@ -1,4 +1,4 @@
-import {Alert, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
+import {Alert, Box, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
