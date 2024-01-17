@@ -169,7 +169,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 assert metadata["my_custom_metadata"] == "my_custom_value"
     """
 
-    extension: str = ".parquet"  # type: ignore
+    extension: str = ".parquet"
     use_legacy_reader: bool = False
 
     def dump_df_to_path(
@@ -222,7 +222,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 **(pyarrow_options or {}),
             )
 
-    def scan_df_from_path(  # type: ignore
+    def scan_df_from_path(
         self,
         path: "UPath",
         context: InputContext,

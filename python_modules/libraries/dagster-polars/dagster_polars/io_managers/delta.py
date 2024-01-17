@@ -104,7 +104,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 ...
     """
 
-    extension: str = ".delta"  # type: ignore
+    extension: str = ".delta"
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
@@ -154,7 +154,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             metadata_path.parent.mkdir(parents=True, exist_ok=True)
             metadata_path.write_text(json.dumps(metadata))
 
-    def scan_df_from_path(  # type: ignore
+    def scan_df_from_path(
         self,
         path: "UPath",
         context: InputContext,
