@@ -406,9 +406,10 @@ class AssetSelection(ABC):
 class AssetSelectionPydanticBaseModel(BaseModel):
     def replace(self, update: dict):
         if pydantic.__version__ >= "2":
-            return self.model_copy(update=update)
+            func = getattr(BaseModel, "model_copy")
         else:
-            return self.copy(update=update)
+            func = getattr(BaseModel, "copy")
+        return func(self, update=update)
 
 
 @whitelist_for_serdes
