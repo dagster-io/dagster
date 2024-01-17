@@ -319,6 +319,21 @@ class AssetConditionEvaluation(NamedTuple):
     ...
 
 
+@whitelist_for_serdes(serializer=ForwardsCompatAssetConditionEvaluationSerializer)
+class AssetConditionEvaluationWithRunIds(NamedTuple):
+    ...
+
+
+@whitelist_for_serdes(serializer=ForwardsCompatAssetConditionEvaluationSerializer)
+class HistoricalAllPartitionsSubsetSentinel(NamedTuple):
+    ...
+
+
+@whitelist_for_serdes(serializer=ForwardsCompatAssetConditionEvaluationSerializer)
+class AssetSubsetWithMetadata(NamedTuple):
+    ...
+
+
 # BACKCOMPAT GRAVEYARD
 
 
