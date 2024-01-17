@@ -30,15 +30,15 @@ argon2-cffi-bindings==21.2.0
 arrow==1.3.0
 asgiref==3.7.2
 asn1crypto==1.5.1
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=assets_dynamic_partitions&subdirectory=examples/assets_dynamic_partitions
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=assets_pandas_pyspark&subdirectory=examples/assets_pandas_pyspark
+-e examples/assets_dynamic_partitions
+-e examples/assets_pandas_pyspark
 asttokens==2.4.1
 async-lru==2.0.4
 async-timeout==4.0.3
 attrs==23.2.0
 autodocsumm==0.2.12
 autoflake==2.2.1
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=automation&subdirectory=python_modules/automation
+-e python_modules/automation
 avro==1.11.3
 avro-gen3==0.7.11
 aws-sam-translator==1.83.0
@@ -95,67 +95,67 @@ croniter==2.0.1
 cryptography==41.0.7
 cssutils==2.9.0
 cycler==0.12.1
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagit&subdirectory=python_modules/dagit
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster&subdirectory=python_modules/dagster
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_airbyte&subdirectory=python_modules/libraries/dagster-airbyte
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_airflow&subdirectory=python_modules/libraries/dagster-airflow
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_aws&subdirectory=python_modules/libraries/dagster-aws
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_azure&subdirectory=python_modules/libraries/dagster-azure
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_celery&subdirectory=python_modules/libraries/dagster-celery
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_celery_docker&subdirectory=python_modules/libraries/dagster-celery-docker
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_celery_k8s&subdirectory=python_modules/libraries/dagster-celery-k8s
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_census&subdirectory=python_modules/libraries/dagster-census
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_dask&subdirectory=python_modules/libraries/dagster-dask
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_databricks&subdirectory=python_modules/libraries/dagster-databricks
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_datadog&subdirectory=python_modules/libraries/dagster-datadog
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_datahub&subdirectory=python_modules/libraries/dagster-datahub
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_dbt&subdirectory=python_modules/libraries/dagster-dbt
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_deltalake&subdirectory=python_modules/libraries/dagster-deltalake
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_deltalake_pandas&subdirectory=python_modules/libraries/dagster-deltalake-pandas
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_deltalake_polars&subdirectory=python_modules/libraries/dagster-deltalake-polars
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_docker&subdirectory=python_modules/libraries/dagster-docker
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_duckdb&subdirectory=python_modules/libraries/dagster-duckdb
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_duckdb_pandas&subdirectory=python_modules/libraries/dagster-duckdb-pandas
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_duckdb_polars&subdirectory=python_modules/libraries/dagster-duckdb-polars
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_duckdb_pyspark&subdirectory=python_modules/libraries/dagster-duckdb-pyspark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_embedded_elt&subdirectory=python_modules/libraries/dagster-embedded-elt
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_fivetran&subdirectory=python_modules/libraries/dagster-fivetran
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_gcp&subdirectory=python_modules/libraries/dagster-gcp
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_gcp_pandas&subdirectory=python_modules/libraries/dagster-gcp-pandas
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_gcp_pyspark&subdirectory=python_modules/libraries/dagster-gcp-pyspark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_ge&subdirectory=python_modules/libraries/dagster-ge
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_github&subdirectory=python_modules/libraries/dagster-github
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_graphql&subdirectory=python_modules/dagster-graphql
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_helm&subdirectory=helm/dagster/schema
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_k8s&subdirectory=python_modules/libraries/dagster-k8s
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_k8s_test_infra&subdirectory=integration_tests/python_modules/dagster-k8s-test-infra
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_managed_elements&subdirectory=python_modules/libraries/dagster-managed-elements
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_mlflow&subdirectory=python_modules/libraries/dagster-mlflow
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_msteams&subdirectory=python_modules/libraries/dagster-msteams
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_mysql&subdirectory=python_modules/libraries/dagster-mysql
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_pagerduty&subdirectory=python_modules/libraries/dagster-pagerduty
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_pandas&subdirectory=python_modules/libraries/dagster-pandas
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_pandera&subdirectory=python_modules/libraries/dagster-pandera
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_papertrail&subdirectory=python_modules/libraries/dagster-papertrail
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_pipes&subdirectory=python_modules/dagster-pipes
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_polars&subdirectory=python_modules/libraries/dagster-polars
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_postgres&subdirectory=python_modules/libraries/dagster-postgres
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_prometheus&subdirectory=python_modules/libraries/dagster-prometheus
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_pyspark&subdirectory=python_modules/libraries/dagster-pyspark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_shell&subdirectory=python_modules/libraries/dagster-shell
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_slack&subdirectory=python_modules/libraries/dagster-slack
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_snowflake&subdirectory=python_modules/libraries/dagster-snowflake
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_snowflake_pandas&subdirectory=python_modules/libraries/dagster-snowflake-pandas
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_snowflake_pyspark&subdirectory=python_modules/libraries/dagster-snowflake-pyspark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_spark&subdirectory=python_modules/libraries/dagster-spark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_sphinx&subdirectory=docs/sphinx/_ext/dagster-sphinx
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_ssh&subdirectory=python_modules/libraries/dagster-ssh
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_test&subdirectory=python_modules/dagster-test
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_twilio&subdirectory=python_modules/libraries/dagster-twilio
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_ui_screenshot&subdirectory=docs/dagster-ui-screenshot
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_wandb&subdirectory=python_modules/libraries/dagster-wandb
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagster_webserver&subdirectory=python_modules/dagster-webserver
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=dagstermill&subdirectory=python_modules/libraries/dagstermill
+-e python_modules/dagit
+-e python_modules/dagster
+-e python_modules/libraries/dagster-airbyte
+-e python_modules/libraries/dagster-airflow
+-e python_modules/libraries/dagster-aws
+-e python_modules/libraries/dagster-azure
+-e python_modules/libraries/dagster-celery
+-e python_modules/libraries/dagster-celery-docker
+-e python_modules/libraries/dagster-celery-k8s
+-e python_modules/libraries/dagster-census
+-e python_modules/libraries/dagster-dask
+-e python_modules/libraries/dagster-databricks
+-e python_modules/libraries/dagster-datadog
+-e python_modules/libraries/dagster-datahub
+-e python_modules/libraries/dagster-dbt
+-e python_modules/libraries/dagster-deltalake
+-e python_modules/libraries/dagster-deltalake-pandas
+-e python_modules/libraries/dagster-deltalake-polars
+-e python_modules/libraries/dagster-docker
+-e python_modules/libraries/dagster-duckdb
+-e python_modules/libraries/dagster-duckdb-pandas
+-e python_modules/libraries/dagster-duckdb-polars
+-e python_modules/libraries/dagster-duckdb-pyspark
+-e python_modules/libraries/dagster-embedded-elt
+-e python_modules/libraries/dagster-fivetran
+-e python_modules/libraries/dagster-gcp
+-e python_modules/libraries/dagster-gcp-pandas
+-e python_modules/libraries/dagster-gcp-pyspark
+-e python_modules/libraries/dagster-ge
+-e python_modules/libraries/dagster-github
+-e python_modules/dagster-graphql
+-e helm/dagster/schema
+-e python_modules/libraries/dagster-k8s
+-e integration_tests/python_modules/dagster-k8s-test-infra
+-e python_modules/libraries/dagster-managed-elements
+-e python_modules/libraries/dagster-mlflow
+-e python_modules/libraries/dagster-msteams
+-e python_modules/libraries/dagster-mysql
+-e python_modules/libraries/dagster-pagerduty
+-e python_modules/libraries/dagster-pandas
+-e python_modules/libraries/dagster-pandera
+-e python_modules/libraries/dagster-papertrail
+-e python_modules/dagster-pipes
+-e python_modules/libraries/dagster-polars
+-e python_modules/libraries/dagster-postgres
+-e python_modules/libraries/dagster-prometheus
+-e python_modules/libraries/dagster-pyspark
+-e python_modules/libraries/dagster-shell
+-e python_modules/libraries/dagster-slack
+-e python_modules/libraries/dagster-snowflake
+-e python_modules/libraries/dagster-snowflake-pandas
+-e python_modules/libraries/dagster-snowflake-pyspark
+-e python_modules/libraries/dagster-spark
+-e docs/sphinx/_ext/dagster-sphinx
+-e python_modules/libraries/dagster-ssh
+-e python_modules/dagster-test
+-e python_modules/libraries/dagster-twilio
+-e docs/dagster-ui-screenshot
+-e python_modules/libraries/dagster-wandb
+-e python_modules/dagster-webserver
+-e python_modules/libraries/dagstermill
 dask==2024.1.0
 dask-jobqueue==0.8.2
 dask-kubernetes==2022.9.0
@@ -176,7 +176,7 @@ deepdiff==6.7.1
 defusedxml==0.7.1
 deltalake==0.15.1
 Deprecated==1.2.14
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=development_to_production&subdirectory=examples/development_to_production
+-e examples/development_to_production
 dict2css==0.3.0.post1
 diff-match-patch==20200713
 dill==0.3.7
@@ -186,7 +186,7 @@ dnspython==2.4.2
 docker==5.0.3
 docker-image-py==0.1.12
 docker-pycreds==0.4.0
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=docs_snippets&subdirectory=examples/docs_snippets
+-e examples/docs_snippets
 docstring-parser==0.15
 docutils==0.18.1
 domdf-python-tools==3.8.0.post2
@@ -200,7 +200,7 @@ executing==2.0.1
 expandvars==0.12.0
 fastavro==1.9.3
 fastjsonschema==2.19.1
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=feature_graph_backed_assets&subdirectory=examples/feature_graph_backed_assets
+-e examples/feature_graph_backed_assets
 filelock==3.13.1
 Flask==2.2.5
 Flask-AppBuilder==4.3.6
@@ -219,7 +219,7 @@ fqdn==1.5.1
 frozenlist==1.4.1
 fsspec==2023.12.2
 future==0.18.3
-gitdb==4.0.11
+4.0.11
 GitPython==3.1.41
 google-api-core==2.15.0
 google-api-python-client==2.114.0
@@ -548,7 +548,7 @@ traitlets==5.14.1
 trio==0.24.0
 trio-websocket==0.11.1
 triton==2.1.0
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=tutorial_notebook_assets&subdirectory=examples/tutorial_notebook_assets
+-e examples/tutorial_notebook_assets
 twilio==8.11.1
 twine==1.15.0
 typeguard==4.0.0
@@ -600,9 +600,9 @@ websockets==12.0
 Werkzeug==2.2.3
 widgetsnbextension==4.0.9
 with_airflow==0.0.0
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=with_great_expectations&subdirectory=examples/with_great_expectations
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=with_pyspark&subdirectory=examples/with_pyspark
--e git+ssh://git@github.com/danielgafni/dagster.git@84ec04cb8ae8905e9feca62b347404d01c890a89#egg=with_wandb&subdirectory=examples/with_wandb
+-e examples/with_great_expectations
+-e examples/with_pyspark
+-e examples/with_wandb
 wordcloud==1.9.3
 wrapt==1.16.0
 wsproto==1.2.0
