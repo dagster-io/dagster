@@ -49,7 +49,6 @@ export const DimensionRangeWizard = ({
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
-  console.log('isDynamic', isDynamic);
   return (
     <>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{vertical: 4}}>

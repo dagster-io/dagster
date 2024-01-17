@@ -1,16 +1,17 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter} from 'react-router';
 
 import {
+  PartitionDefinitionType,
+  buildAddDynamicPartitionSuccess,
+  buildAssetKey,
   buildAssetNode,
   buildDimensionPartitionKeys,
-  PartitionDefinitionType,
   buildMultiPartitionStatuses,
-  buildAssetKey,
-  buildAddDynamicPartitionSuccess,
+  buildPartitionDefinition,
 } from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
@@ -28,9 +29,6 @@ import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
 describe('launchAssetChoosePartitionsDialog', () => {
   it('Adding a dynamic partition when multiple assets selected', async () => {
-    const errorMock = jest.fn();
-    // jest.spyOn(console, 'error').mockImplementation(() => errorMock);
-
     const assetA = buildAsset('asset_a', ['test']);
     const assetB = buildAsset('asset_b', ['test']);
 
@@ -69,7 +67,7 @@ describe('launchAssetChoosePartitionsDialog', () => {
       query: CREATE_PARTITION_MUTATION,
       variables: {
         repositorySelector: {repositoryName: 'test', repositoryLocationName: 'test'},
-        partitionsDefName: 'facilis',
+        partitionsDefName: 'foo',
         partitionKey: 'test2',
       },
       data: {
@@ -125,8 +123,6 @@ describe('launchAssetChoosePartitionsDialog', () => {
     await waitFor(() => {
       expect(assetASecondQueryMockResult).toHaveBeenCalled();
     });
-
-    expect(errorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -146,6 +142,9 @@ function buildAsset(name: string, dynamicPartitionKeys: string[]) {
         partitionKeys: ['2024-01-01'],
       }),
     ],
+    partitionDefinition: buildPartitionDefinition({
+      name: 'foo',
+    }),
     assetPartitionStatuses: buildMultiPartitionStatuses({
       primaryDimensionName: 'b',
       ranges: [],
