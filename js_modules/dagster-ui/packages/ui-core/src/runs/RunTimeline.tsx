@@ -529,8 +529,8 @@ const NowMarker = styled.div`
   user-select: none;
 `;
 
-const MIN_CHUNK_WIDTH = 4;
-const MIN_WIDTH_FOR_MULTIPLE = 12;
+export const MIN_CHUNK_WIDTH = 4;
+export const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
   job,
@@ -703,7 +703,7 @@ const JobName = styled.div`
   width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
-const RunChunks = styled.div`
+export const RunChunks = styled.div`
   flex: 1;
   position: relative;
   height: ${ROW_HEIGHT}px;
@@ -714,7 +714,7 @@ interface ChunkProps {
   $multiple: boolean;
 }
 
-const RunChunk = styled.div<ChunkProps>`
+export const RunChunk = styled.div<ChunkProps>`
   align-items: center;
   background: ${({$background}) => $background};
   border-radius: 1px;

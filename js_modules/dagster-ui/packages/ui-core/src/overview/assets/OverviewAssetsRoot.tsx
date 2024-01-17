@@ -1,6 +1,7 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
+  Popover,
   Spinner,
   TextInput,
   colorBackgroundDefault,
@@ -23,6 +24,10 @@ import {
 } from '../../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {RunChunks, RunChunk, MIN_CHUNK_WIDTH, MIN_WIDTH_FOR_MULTIPLE} from '../../runs/RunTimeline';
+import {batchRunsForTimeline} from '../../runs/batchRunsForTimeline';
+import {mergeStatusToBackground} from '../../runs/mergeStatusToBackground';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
@@ -96,6 +101,19 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
 
   const [openNodes, setOpenNodes] = React.useState<Set<string>>(() => new Set());
 
+  const [sidebarWidth, setSidebarWidth] = useStateWithStorage(
+    'assets-timeline-sidebar-width',
+    (json) => {
+      try {
+        const int = parseInt(json);
+        if (!isNaN(int)) {
+          return int;
+        }
+      } catch (e) {}
+      return 306;
+    },
+  );
+
   const renderedNodes = React.useMemo(() => {
     const nodes: NodeType[] = [];
 
@@ -159,15 +177,6 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           });
         }
       });
-
-      if (groupsCount === 1) {
-        return nodes
-          .filter((node) => node.level === 3)
-          .map((node) => ({
-            ...node,
-            level: 1,
-          }));
-      }
     });
     return nodes;
   }, [openNodes, groupedAssetsFiltered]);
@@ -212,11 +221,23 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     return (
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
-          <VirtualHeaderRow />
+          <VirtualHeaderRow
+            sidebarWidth={sidebarWidth}
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+          />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const node = renderedNodes[index]!;
-              return <VirtualRow key={key} start={start} height={size} node={node} />;
+              return (
+                <VirtualRow
+                  key={key}
+                  start={start}
+                  height={size}
+                  node={node}
+                  sidebarWidth={sidebarWidth}
+                />
+              );
             })}
           </Inner>
         </Container>
@@ -283,16 +304,21 @@ function groupAssets(assets: Assets) {
   return Object.values(groups);
 }
 
-const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
-
-function VirtualHeaderRow() {
+function VirtualHeaderRow({
+  sidebarWidth,
+  searchValue,
+  setSearchValue,
+}: {
+  sidebarWidth: number;
+  searchValue: string;
+  setSearchValue: (value: string) => void;
+}) {
   return (
     <Box
-      border="top-and-bottom"
+      border="top"
       style={{
         display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
+        gridTemplateColumns: `${sidebarWidth}px 1fr`,
         fontSize: '12px',
         color: colorTextLight(),
         position: 'sticky',
@@ -301,11 +327,21 @@ function VirtualHeaderRow() {
         background: colorBackgroundDefault(),
       }}
     >
-      <HeaderCell>Group name</HeaderCell>
-      <HeaderCell>Missing</HeaderCell>
-      <HeaderCell>Failed/Overdue</HeaderCell>
-      <HeaderCell>In progress</HeaderCell>
-      <HeaderCell>Materialized</HeaderCell>
+      <HeaderCell>
+        <div style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)'}}>
+          <TextInput
+            value={searchValue}
+            icon="search"
+            placeholder="Filter assets"
+            onChange={(e: React.ChangeEvent<any>) => {
+              setSearchValue(e.target.value);
+            }}
+          />
+        </div>
+      </HeaderCell>
+      <Box border="bottom">
+        <HeaderCell></HeaderCell>
+      </Box>
     </Box>
   );
 }
@@ -319,7 +355,19 @@ type RowProps = {
   node: NodeType;
 };
 function VirtualRow({height, start, sidebarWidth, node}: RowProps) {
-  console.log({node});
+  const batched = React.useMemo(() => {
+    const batches: RunBatch<TimelineRun>[] = batchRunsForTimeline({
+      runs,
+      start,
+      end,
+      width,
+      minChunkWidth: MIN_CHUNK_WIDTH,
+      minMultipleWidth: MIN_WIDTH_FOR_MULTIPLE,
+    });
+
+    return batches;
+  }, [runs, start, end, width]);
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid $sidebarWidth={sidebarWidth}>
@@ -327,7 +375,37 @@ function VirtualRow({height, start, sidebarWidth, node}: RowProps) {
           <div />
         </Cell>
         <Cell>
-          <div />
+          <RunChunks>
+            {batched.map((batch) => {
+              const {left, width, runs} = batch;
+              const runCount = runs.length;
+              return (
+                <RunChunk
+                  key={batch.runs[0]!.id}
+                  $background={mergeStatusToBackground(batch.runs)}
+                  $multiple={runCount > 1}
+                  style={{
+                    left: `${left}px`,
+                    width: `${width}px`,
+                  }}
+                >
+                  <Popover
+                    content={<RunHoverContent job={job} batch={batch} />}
+                    position="top"
+                    interactionKind="hover"
+                    className="chunk-popover-target"
+                  >
+                    <Box
+                      flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+                      style={{height: '100%'}}
+                    >
+                      {runCount > 1 ? <BatchCount>{batch.runs.length}</BatchCount> : null}
+                    </Box>
+                  </Popover>
+                </RunChunk>
+              );
+            })}
+          </RunChunks>
         </Cell>
       </RowGrid>
     </Row>
