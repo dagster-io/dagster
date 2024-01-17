@@ -393,10 +393,10 @@ def test_multi_operand_selection():
     assert (foo | bar) | baz == OrAssetSelection(operands=[foo, bar, baz])
     assert foo | (bar | baz) == OrAssetSelection(operands=[foo, bar, baz])
 
-    assert (foo & bar) | baz == OrAssetSelection(operands=[AndAssetSelection([foo, bar]), baz])
-    assert foo & (bar | baz) == AndAssetSelection(operands=[foo, OrAssetSelection([bar, baz])])
-    assert (foo | bar) & baz == AndAssetSelection(operands=[OrAssetSelection([foo, bar]), baz])
-    assert foo | (bar & baz) == OrAssetSelection(operands=[foo, AndAssetSelection([bar, baz])])
+    assert (foo & bar) | baz == OrAssetSelection(operands=[AndAssetSelection(operands=[foo, bar]), baz])
+    assert foo & (bar | baz) == AndAssetSelection(operands=[foo, OrAssetSelection(operands=[bar, baz])])
+    assert (foo | bar) & baz == AndAssetSelection(operands=[OrAssetSelection(operands=[foo, bar]), baz])
+    assert foo | (bar & baz) == OrAssetSelection(operands=[foo, AndAssetSelection(operands=[bar, baz])])
 
 
 def test_all_asset_selection_subclasses_serializable():
