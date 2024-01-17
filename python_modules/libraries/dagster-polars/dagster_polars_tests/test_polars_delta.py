@@ -209,23 +209,36 @@ def test_polars_delta_native_partitioning(
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
+    lenghts = {}
+
     @asset(io_manager_def=manager)
     def downstream_load_multiple_partitions(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
-        for _df in upstream_partitioned.values():
-            assert isinstance(_df, pl.LazyFrame), type(_df)
+        for partition, _ldf in upstream_partitioned.items():
+            assert isinstance(_ldf, pl.LazyFrame), type(_ldf)
+            _df = _ldf.collect()
+            assert (_df.select(pl.col("partition").eq(partition).alias("eq")))["eq"].all()
+            lenghts[partition] = len(_df)
+
         assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
+
+    saved_path = None
 
     for partition_key in ["a", "b"]:
         result = materialize(
             [upstream_partitioned],
             partition_key=partition_key,
         )
-
         saved_path = get_saved_path(result, "upstream_partitioned")
         assert saved_path.endswith(
             "upstream_partitioned.delta"
         ), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
+
+    assert saved_path is not None
+    written_df = pl.read_delta(saved_path)
+
+    assert len(written_df) == len(df) * 2
+    assert set(written_df["partition"].unique()) == {"a", "b"}
 
     materialize(
         [
