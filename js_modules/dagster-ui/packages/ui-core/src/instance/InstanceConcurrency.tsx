@@ -55,6 +55,8 @@ import {
   RunsForConcurrencyKeyQuery,
   RunsForConcurrencyKeyQueryVariables,
   RunQueueConfigFragment,
+  DeleteConcurrencyLimitMutation,
+  DeleteConcurrencyLimitMutationVariables,
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
@@ -634,16 +636,14 @@ const DeleteConcurrencyLimitDialog = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const [setConcurrencyLimit] = useMutation<
-    SetConcurrencyLimitMutation,
-    SetConcurrencyLimitMutationVariables
-  >(SET_CONCURRENCY_LIMIT_MUTATION);
+  const [deleteConcurrencyLimit] = useMutation<
+    DeleteConcurrencyLimitMutation,
+    DeleteConcurrencyLimitMutationVariables
+  >(DELETE_CONCURRENCY_LIMIT_MUTATION);
 
   const save = async () => {
     setIsSubmitting(true);
-    await setConcurrencyLimit({
-      variables: {concurrencyKey, limit: 0},
-    });
+    await deleteConcurrencyLimit({variables: {concurrencyKey}});
     setIsSubmitting(false);
     onComplete();
     onClose();
@@ -1013,6 +1013,12 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
 const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   mutation SetConcurrencyLimit($concurrencyKey: String!, $limit: Int!) {
     setConcurrencyLimit(concurrencyKey: $concurrencyKey, limit: $limit)
+  }
+`;
+
+const DELETE_CONCURRENCY_LIMIT_MUTATION = gql`
+  mutation DeleteConcurrencyLimit($concurrencyKey: String!) {
+    deleteConcurrencyLimit(concurrencyKey: $concurrencyKey)
   }
 `;
 

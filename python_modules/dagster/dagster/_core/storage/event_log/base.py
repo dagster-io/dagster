@@ -414,6 +414,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
+    def delete_concurrency_limit(self, concurrency_key: str) -> None:
+        """Delete concurrency limits and slots for the given concurrency key."""
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_concurrency_keys(self) -> Set[str]:
         """Get the set of concurrency limited keys."""
         raise NotImplementedError()
