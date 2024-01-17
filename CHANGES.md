@@ -20,7 +20,6 @@
 
 - fix: add missing volumes and volumeMounts in job-instance-migrate.yaml. Thanks [@nhuray](https://github.com/nhuray)!
 
-
 ### Documentation
 
 - Fixed typos in the docs.
