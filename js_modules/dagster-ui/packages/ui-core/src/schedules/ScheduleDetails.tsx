@@ -11,6 +11,7 @@ import {
 import {useState} from 'react';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleResetButton} from './ScheduleResetButton';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
@@ -46,12 +47,7 @@ export const ScheduleDetails = (props: {
   return (
     <>
       <PageHeader
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{name}</Heading>
-            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-          </Box>
-        }
+        title={<Heading>{name}</Heading>}
         tags={
           <Tag icon="schedule">
             Schedule in <RepositoryLink repoAddress={repoAddress} />
@@ -125,6 +121,21 @@ export const ScheduleDetails = (props: {
                 pipelineHrefContext={repoAddress}
                 isJob={isJob}
               />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Running
+              </Box>
+            </td>
+            <td>
+              <Box flex={{direction: 'row', alignItems: 'center'}}>
+                <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                {schedule.canReset && (
+                  <ScheduleResetButton repoAddress={repoAddress} schedule={schedule} />
+                )}
+              </Box>
             </td>
           </tr>
           <tr>
