@@ -184,21 +184,21 @@ export const AssetView = ({assetKey, trace}: Props) => {
     );
   };
 
-  const {flagUseOldAutomationPage} = useFeatureFlags();
+  const {flagUseNewAutomationPage} = useFeatureFlags();
 
   const renderAutomaterializeHistoryTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
-    if (flagUseOldAutomationPage) {
-      return (
-        <AssetAutomaterializePolicyPageOld
-          assetKey={assetKey}
-          assetHasDefinedPartitions={!!definition?.partitionDefinition}
-        />
-      );
+    if (flagUseNewAutomationPage) {
+      return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
     }
-    return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
+    return (
+      <AssetAutomaterializePolicyPageOld
+        assetKey={assetKey}
+        assetHasDefinedPartitions={!!definition?.partitionDefinition}
+      />
+    );
   };
 
   const renderChecksTab = () => {
