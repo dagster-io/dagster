@@ -30,7 +30,7 @@ def build_dagster_ui_steps() -> List[CommandStep]:
         CommandStepBuilder(":typescript: dagster-ui")
         .run(
             "cd js_modules/dagster-ui",
-            "tox -vv -e py310",
+            f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_dagster_ui_changes())
