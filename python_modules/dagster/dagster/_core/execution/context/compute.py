@@ -1378,13 +1378,13 @@ ALTERNATE_METHODS = {
     "asset_partition_key_for_output": "partition_key",
     "asset_partitions_time_window_for_output": "partition_time_window",
     "asset_partition_key_range_for_output": "partition_key_range",
-    "asset_partition_key_range_for_input": "upstream_partition_key_range",
-    "asset_partition_key_for_input": "upstream_partition_key",
+    "asset_partition_key_range_for_input": "partition_key_range_for_upstream_asset",
+    "asset_partition_key_for_input": "partition_key_for_upstream_asset",
     "asset_partitions_def_for_output": "assets_def.partitions_def",
-    "asset_partitions_def_for_input": "upstream_partitions_def",
+    "asset_partitions_def_for_input": "partitions_def_for_upstream_asset",
     "asset_partition_keys_for_output": "partition_keys",
-    "asset_partition_keys_for_input": "upstream_partition_keys",
-    "asset_partitions_time_window_for_input": "upstream_partitions_time_window",
+    "asset_partition_keys_for_input": "partition_keys_for_upstream_asset",
+    "asset_partitions_time_window_for_input": "partition_time_window_for_upstream_asset",
 }
 
 ALTERNATE_EXPRESSIONS = {
@@ -1531,13 +1531,13 @@ class AssetExecutionContext(OpExecutionContext):
         return self.op_execution_context.partition_time_window
 
     @public
-    def upstream_partition_key(self, key: CoercibleToAssetKey) -> str:
+    def partition_key_for_upstream_asset(self, key: CoercibleToAssetKey) -> str:
         return self._step_execution_context.asset_partition_key_for_upstream(
             AssetKey.from_coercible(key)
         )
 
     @public
-    def upstream_partition_keys(self, key: CoercibleToAssetKey) -> Sequence[str]:
+    def partition_keys_for_upstream_asset(self, key: CoercibleToAssetKey) -> Sequence[str]:
         return list(
             self._step_execution_context.asset_partitions_subset_for_upstream(
                 AssetKey.from_coercible(key)
@@ -1545,13 +1545,13 @@ class AssetExecutionContext(OpExecutionContext):
         )
 
     @public
-    def upstream_partition_key_range(self, key: CoercibleToAssetKey) -> PartitionKeyRange:
+    def partition_key_range_for_upstream_asset(self, key: CoercibleToAssetKey) -> PartitionKeyRange:
         return self._step_execution_context.asset_partition_key_range_for_upstream(
             AssetKey.from_coercible(key)
         )
 
     @public
-    def upstream_partitions_time_window(
+    def partition_time_window_for_upstream_asset(
         self, key: CoercibleToAssetKey
     ) -> TimeWindow:  # TODO align on plurality of partition(s)
         return self._step_execution_context.asset_partitions_time_window_for_upstream(
@@ -1559,7 +1559,7 @@ class AssetExecutionContext(OpExecutionContext):
         )
 
     @public
-    def upstream_partitions_def(self, key: CoercibleToAssetKey) -> PartitionsDefinition:
+    def partitions_def_for_upstream_asset(self, key: CoercibleToAssetKey) -> PartitionsDefinition:
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             AssetKey.from_coercible(key)
         )
