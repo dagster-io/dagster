@@ -112,10 +112,14 @@
           }
         ]
       },
-
       {
-        "title": "Schedules & Sensors",
+        "title": "Automation",
+        "path": "/concepts/automation",
         "children": [
+          {
+            "title": "Overview",
+            "path": "/concepts/automation"
+          },
           {
             "title": "Schedules",
             "path": "/concepts/partitions-schedules-sensors/schedules"
@@ -125,8 +129,12 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
+            "title": "Auto-materialization policies",
+            "path": "/concepts/assets/auto-executing-assets"
+          },
+          {
             "title": "Asset Sensors",
-            "path": "/concepts/partitions-schedules-sensors/asset-sensors"
+            "path": "/concepts/partitions-schedules-sensors/sensors"
           }
         ]
       },
