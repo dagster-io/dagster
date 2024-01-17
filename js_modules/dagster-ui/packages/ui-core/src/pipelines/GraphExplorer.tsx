@@ -91,7 +91,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
         if (arg.path[0] !== '..') {
           opNames.length = 0;
         }
-        if (arg.path[0] === '..' && opNames[opNames.length - 1] !== '') {
+        if (arg.path[0] === '..') {
           opNames.pop(); // remove the last path component indicating selection
         }
         while (arg.path[0] === '..') {

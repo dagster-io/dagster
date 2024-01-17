@@ -457,7 +457,7 @@ async def gen_location_state_changes(graphene_info: ResolveInfo):
 
 class GrapheneRepositoriesOrError(graphene.Union):
     class Meta:
-        types = (GrapheneRepositoryConnection, GraphenePythonError)
+        types = (GrapheneRepositoryConnection, GrapheneRepositoryNotFoundError, GraphenePythonError)
         name = "RepositoriesOrError"
 
 

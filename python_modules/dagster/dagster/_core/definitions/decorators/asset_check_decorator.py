@@ -1,8 +1,7 @@
-from typing import Any, Callable, Mapping, Optional, Set, Tuple, Union, cast
+from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Set, Tuple, Union
 
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -10,20 +9,22 @@ from dagster._core.definitions.asset_checks import (
     AssetChecksDefinition,
     AssetChecksDefinitionInputOutputProps,
 )
+from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 
 from ..input import In
 from .asset_decorator import (
+    build_asset_ins,
     get_function_params_without_context_or_config_or_resources,
-    stringify_asset_key_to_input_name,
+    make_asset_deps,
 )
 from .op_decorator import _Op
 
@@ -32,35 +33,66 @@ AssetCheckFunction = Callable[..., AssetCheckFunctionReturn]
 
 
 def _build_asset_check_input(
-    name: str, asset_key: AssetKey, fn: Callable
+    name: str,
+    asset_key: AssetKey,
+    fn: Callable,
+    additional_ins: Mapping[str, AssetIn],
+    additional_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
-    asset_params = get_function_params_without_context_or_config_or_resources(fn)
+    fn_params = get_function_params_without_context_or_config_or_resources(fn)
 
-    if len(asset_params) == 0:
-        input_name = stringify_asset_key_to_input_name(asset_key)
-        in_def = In(cast(type, Nothing))
-    elif len(asset_params) == 1:
-        input_name = asset_params[0].name
-        in_def = In(metadata={}, input_manager_key=None, dagster_type=NoValueSentinel)
-    else:
+    if asset_key in (additional_deps or []):
         raise DagsterInvalidDefinitionError(
-            f"When defining check '{name}', multiple target assets provided as parameters:"
-            f" {[param.name for param in asset_params]}. Only one"
-            " is allowed."
+            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_deps`."
+            " It can only be passed to one of these parameters."
+        )
+    if asset_key in [asset_in.key for asset_in in additional_ins.values()]:
+        raise DagsterInvalidDefinitionError(
+            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_ins`."
+            " It can only be passed to one of these parameters."
         )
 
-    return {
-        asset_key: (
-            input_name,
-            in_def,
+    fn_param_names = {param.name for param in fn_params}
+    for in_name in additional_ins.keys():
+        if in_name not in fn_param_names:
+            raise DagsterInvalidDefinitionError(
+                f"'{in_name}' is specified in 'additional_ins' but isn't a parameter."
+            )
+
+    # if all the fn_params are in additional_ins, then we add the prmary asset as a dep
+    if len(fn_params) == len(additional_ins):
+        all_deps = {*(additional_deps if additional_deps else set()), asset_key}
+        all_ins = additional_ins
+    # otherwise there should be one extra fn_param, which is the primary asset. Add that as an input
+    elif len(fn_params) == len(additional_ins) + 1:
+        primary_asset_param_name = next(
+            param.name for param in fn_params if param.name not in additional_ins.keys()
         )
-    }
+        all_ins = {**additional_ins, primary_asset_param_name: AssetIn(asset_key)}
+        all_deps = additional_deps
+    else:
+        param_names_not_in_additional_ins = sorted(
+            [f"'{name}'" for name in (fn_param_names - set(additional_ins.keys()))]
+        )
+        raise DagsterInvalidDefinitionError(
+            f"When defining check '{name}', multiple assets provided as parameters:"
+            f" [{', '.join(param_names_not_in_additional_ins)}]. These should either match"
+            " the target asset or be specified in 'additional_ins'."
+        )
+
+    return build_asset_ins(
+        fn=fn,
+        asset_ins=all_ins,
+        deps=all_deps,
+    )
 
 
 @experimental
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
+    additional_ins: Optional[Mapping[str, AssetIn]] = None,
+    additional_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -75,6 +107,14 @@ def asset_check(
     Args:
         asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The
             asset that the check applies to.
+        additional_ins (Optional[Mapping[str, AssetIn]]): A mapping from input name to
+            information about the input. These inputs will apply to the underlying op that
+            executes the check. These should not include the `asset` parameter, which is
+            always included as a dependency.
+        additional_deps (Optional[Iterable[CoercibleToAssetDep]]): Assets that are upstream
+            dependencies, but do not correspond to a parameter of the decorated function. These
+            dependencies will apply to the underlying op that executes the check. These should not
+            include the `asset` parameter, which is always included as a dependency.
         name (Optional[str]): The name of the check. If not specified, the name of the decorated
             function will be used. Checks for the same asset must have unique names.
         description (Optional[str]): The description of the check.
@@ -134,25 +174,24 @@ def asset_check(
         resolved_name = name or fn.__name__
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        out = Out(dagster_type=None)
-        input_tuples_by_asset_key = _build_asset_check_input(resolved_name, asset_key, fn)
-        if len(input_tuples_by_asset_key) == 0:
-            raise DagsterInvalidDefinitionError(
-                f"No target asset provided when defining check '{resolved_name}'"
-            )
+        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
+        input_tuples_by_asset_key = _build_asset_check_input(
+            resolved_name,
+            asset_key,
+            fn,
+            additional_ins=additional_ins or {},
+            additional_deps=additional_dep_keys,
+        )
 
-        if len(input_tuples_by_asset_key) > 1:
-            raise DagsterInvalidDefinitionError(
-                f"When defining check '{resolved_name}', Multiple target assets provided:"
-                f" {[key.to_user_string() for key in input_tuples_by_asset_key.keys()]}. Only one"
-                " is allowed."
-            )
+        # additional_deps on AssetCheckSpec holds the keys passed to additional_deps and
+        # additional_ins. We don't want to include the primary asset key in this set.
+        additional_ins_and_deps = input_tuples_by_asset_key.keys() - {asset_key}
 
-        resolved_asset_key = next(iter(input_tuples_by_asset_key.keys()))
         spec = AssetCheckSpec(
             name=resolved_name,
             description=description,
-            asset=resolved_asset_key,
+            asset=asset_key,
+            additional_deps=additional_ins_and_deps,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -167,6 +206,8 @@ def asset_check(
         decorator_resource_keys = (required_resource_keys or set()) | resource_defs_keys
 
         op_required_resource_keys = decorator_resource_keys - arg_resource_keys
+
+        out = Out(dagster_type=None)
 
         op_def = _Op(
             name=spec.get_python_identifier(),
@@ -189,7 +230,8 @@ def asset_check(
             specs=[spec],
             input_output_props=AssetChecksDefinitionInputOutputProps(
                 asset_keys_by_input_name={
-                    input_tuples_by_asset_key[resolved_asset_key][0]: resolved_asset_key
+                    input_tuple[0]: asset_key
+                    for asset_key, input_tuple in input_tuples_by_asset_key.items()
                 },
                 asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
             ),

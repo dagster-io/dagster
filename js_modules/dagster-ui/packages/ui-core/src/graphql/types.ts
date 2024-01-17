@@ -476,6 +476,11 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsTargeted: Scalars['Int'];
 };
 
+export type AssetSelection = {
+  __typename: 'AssetSelection';
+  assetSelectionString: Maybe<Scalars['String']>;
+};
+
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -2094,6 +2099,8 @@ export type Mutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
+  resetSchedule: ScheduleMutationResult;
+  resetSensor: SensorOrError;
   resumePartitionBackfill: ResumeBackfillResult;
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
@@ -2174,6 +2181,14 @@ export type MutationReloadRepositoryLocationArgs = {
 
 export type MutationReportRunlessAssetEventsArgs = {
   eventParams: ReportRunlessAssetEventsParams;
+};
+
+export type MutationResetScheduleArgs = {
+  scheduleSelector: ScheduleSelector;
+};
+
+export type MutationResetSensorArgs = {
+  sensorSelector: SensorSelector;
 };
 
 export type MutationResumePartitionBackfillArgs = {
@@ -3279,7 +3294,7 @@ export type ReportRunlessAssetEventsSuccess = {
   assetKey: AssetKey;
 };
 
-export type RepositoriesOrError = PythonError | RepositoryConnection;
+export type RepositoriesOrError = PythonError | RepositoryConnection | RepositoryNotFoundError;
 
 export type Repository = {
   __typename: 'Repository';
@@ -3364,6 +3379,16 @@ export type RequestedMaterializationsForAsset = {
   __typename: 'RequestedMaterializationsForAsset';
   assetKey: AssetKey;
   partitionKeys: Array<Scalars['String']>;
+};
+
+export type ResetScheduleMutation = {
+  __typename: 'ResetScheduleMutation';
+  Output: ScheduleMutationResult;
+};
+
+export type ResetSensorMutation = {
+  __typename: 'ResetSensorMutation';
+  Output: SensorOrError;
 };
 
 export type Resource = {
@@ -3950,6 +3975,7 @@ export type SelectorTypeConfigError = PipelineConfigValidationError & {
 
 export type Sensor = {
   __typename: 'Sensor';
+  assetSelection: Maybe<AssetSelection>;
   description: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   jobOriginId: Scalars['String'];
@@ -5410,6 +5436,21 @@ export const buildAssetPartitionsStatusCounts = (
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
         : 5211,
+  };
+};
+
+export const buildAssetSelection = (
+  overrides?: Partial<AssetSelection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSelection'} & AssetSelection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSelection');
+  return {
+    __typename: 'AssetSelection',
+    assetSelectionString:
+      overrides && overrides.hasOwnProperty('assetSelectionString')
+        ? overrides.assetSelectionString!
+        : 'dolores',
   };
 };
 
@@ -8609,6 +8650,18 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    resetSchedule:
+      overrides && overrides.hasOwnProperty('resetSchedule')
+        ? overrides.resetSchedule!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    resetSensor:
+      overrides && overrides.hasOwnProperty('resetSensor')
+        ? overrides.resetSensor!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     resumePartitionBackfill:
       overrides && overrides.hasOwnProperty('resumePartitionBackfill')
         ? overrides.resumePartitionBackfill!
@@ -10789,6 +10842,40 @@ export const buildRequestedMaterializationsForAsset = (
   };
 };
 
+export const buildResetScheduleMutation = (
+  overrides?: Partial<ResetScheduleMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ResetScheduleMutation'} & ResetScheduleMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResetScheduleMutation');
+  return {
+    __typename: 'ResetScheduleMutation',
+    Output:
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
+export const buildResetSensorMutation = (
+  overrides?: Partial<ResetSensorMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ResetSensorMutation'} & ResetSensorMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResetSensorMutation');
+  return {
+    __typename: 'ResetSensorMutation',
+    Output:
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
 export const buildResource = (
   overrides?: Partial<Resource>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11965,6 +12052,12 @@ export const buildSensor = (
   relationshipsToOmit.add('Sensor');
   return {
     __typename: 'Sensor',
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection')
+        ? overrides.assetSelection!
+        : relationshipsToOmit.has('AssetSelection')
+        ? ({} as AssetSelection)
+        : buildAssetSelection({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
     id:
