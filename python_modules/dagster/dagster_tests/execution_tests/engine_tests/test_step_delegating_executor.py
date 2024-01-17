@@ -1,6 +1,8 @@
 import subprocess
+import tempfile
 import time
 
+import mock
 import pytest
 from dagster import (
     AssetKey,
@@ -23,13 +25,14 @@ from dagster._core.definitions.reconstruct import (
 )
 from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import ReexecutionOptions, execute_job
+from dagster._core.execution.api import ReexecutionOptions, execute_job, execute_run_iterator
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
     StepDelegatingExecutor,
     StepHandler,
 )
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
 
@@ -456,3 +459,48 @@ def get_dynamic_op_failure_job():
 def test_dynamic_failure_retry(job_fn, config_fn):
     TestStepHandler.reset()
     assert_expected_failure_behavior(job_fn, config_fn)
+
+
+@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+def simple_op(context):
+    time.sleep(0.1)
+    foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
+    return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
+
+
+@job(executor_def=test_step_delegating_executor)
+def simple_job():
+    simple_op()
+
+
+def test_blocked_concurrency_limits():
+    TestStepHandler.reset()
+    with mock.patch("dagster._core.execution.plan.active.CONCURRENCY_CLAIM_MESSAGE_INTERVAL", 10):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with instance_for_test(
+                temp_dir=temp_dir,
+                overrides={
+                    "event_log_storage": {
+                        "module": "dagster.utils.test",
+                        "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                        "config": {"base_dir": temp_dir},
+                    }
+                },
+            ) as instance:
+                instance.event_log_storage.set_concurrency_slots("foo", 0)
+                run = instance.create_run_for_job(simple_job)
+                run_iter = execute_run_iterator(
+                    job=reconstructable(simple_job), dagster_run=run, instance=instance
+                )
+                blocked_message_count = 0
+                while True:
+                    event = next(run_iter)
+
+                    if "blocked by concurrency limit for key foo" in event.message:
+                        blocked_message_count += 1
+                        assert (
+                            instance.event_log_storage.get_records_for_run_calls(run.run_id)
+                            == blocked_message_count
+                        )
+                        if blocked_message_count == 2:
+                            break
