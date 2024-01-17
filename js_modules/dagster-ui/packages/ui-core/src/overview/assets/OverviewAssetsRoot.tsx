@@ -216,7 +216,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const node = renderedNodes[index]!;
-              return <VirtualRow key={key} start={start} height={size} group={node} />;
+              return <VirtualRow key={key} start={start} height={size} node={node} />;
             })}
           </Inner>
         </Container>
