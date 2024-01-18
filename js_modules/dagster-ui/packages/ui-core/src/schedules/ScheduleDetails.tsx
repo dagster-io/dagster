@@ -1,22 +1,16 @@
 import {
   Box,
-  ButtonLink,
   Group,
   MetadataTableWIP,
   PageHeader,
   Tag,
   Code,
   Heading,
-  Mono,
-  Tooltip,
   Button,
-  colorTextLight,
-  colorTextDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {useCopyToClipboard} from '../app/browser';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -40,36 +34,13 @@ export const ScheduleDetails = (props: {
 }) => {
   const {repoAddress, schedule, refreshState} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
-  const copyToClipboard = useCopyToClipboard();
+  const {scheduleState} = schedule;
+  const {status, ticks} = scheduleState;
+  const latestTick = ticks.length > 0 ? ticks[0] : null;
+  const running = status === InstigationStatus.RUNNING;
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-
-  const [copyText, setCopyText] = React.useState('Click to copy');
-
-  // Restore the tooltip text after a delay.
-  React.useEffect(() => {
-    let token: any;
-    if (copyText === 'Copied!') {
-      token = setTimeout(() => {
-        setCopyText('Click to copy');
-      }, 2000);
-    }
-    return () => {
-      token && clearTimeout(token);
-    };
-  }, [copyText]);
-
-  const {scheduleState} = schedule;
-  const {status, id, ticks} = scheduleState;
-  const latestTick = ticks.length > 0 ? ticks[0] : null;
-
-  const copyId = () => {
-    copyToClipboard(id);
-    setCopyText('Copied!');
-  };
-
-  const running = status === InstigationStatus.RUNNING;
 
   const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
 
@@ -83,21 +54,9 @@ export const ScheduleDetails = (props: {
           </Box>
         }
         tags={
-          <>
-            <Tag icon="schedule">
-              Schedule in <RepositoryLink repoAddress={repoAddress} />
-            </Tag>
-            <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
-              <Tooltip content={copyText}>
-                <ButtonLink
-                  color={{link: colorTextLight(), hover: colorTextDefault()}}
-                  onClick={copyId}
-                >
-                  <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
-                </ButtonLink>
-              </Tooltip>
-            </Box>
-          </>
+          <Tag icon="schedule">
+            Schedule in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
         }
         right={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
