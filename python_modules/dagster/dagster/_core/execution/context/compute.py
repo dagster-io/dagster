@@ -4,6 +4,7 @@ from contextvars import ContextVar
 from inspect import (
     _empty as EmptyAnnotation,
 )
+import pstats
 from typing import (
     AbstractSet,
     Any,
@@ -1485,13 +1486,17 @@ class AssetExecutionContext(OpExecutionContext):
         materialization_events = (
             self.op_execution_context._step_execution_context.upstream_asset_materialization_events  # noqa: SLF001
         )
-        if AssetKey.from_coercible(key) in materialization_events.keys():
-            return materialization_events.get(AssetKey.from_coercible(key))
+        if self.has_partition_key:
+            # if the asset is par
+            pass
+        else:
+            if AssetKey.from_coercible(key) in materialization_events.keys():
+                return materialization_events.get(AssetKey.from_coercible(key))
 
-        raise DagsterInvariantViolationError(
-            f"Cannot fetch AssetMaterialization for asset {key}. {key} must be an upstream dependency"
-            "in order to call latest_materialization_for_upstream_asset."
-        )
+            raise DagsterInvariantViolationError(
+                f"Cannot fetch AssetMaterialization for asset {key}. {key} must be an upstream dependency"
+                "in order to call latest_materialization_for_upstream_asset."
+            )
 
     ######## Deprecated methods
 
