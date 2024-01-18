@@ -15,6 +15,19 @@ _IS_PENDULUM_3 = (
     and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") == 3
 )
 
+POST_TRANSITION = pendulum.tz.POST_TRANSITION if _IS_PENDULUM_3 else pendulum.POST_TRANSITION
+PRE_TRANSITION = pendulum.tz.PRE_TRANSITION if _IS_PENDULUM_3 else pendulum.PRE_TRANSITION
+TRANSITION_ERROR = pendulum.tz.TRANSITION_ERROR if _IS_PENDULUM_3 else pendulum.TRANSITION_ERROR
+
+
+def pendulum_create_timezone(tz_name: str):
+    if _IS_PENDULUM_3:
+        from pendulum.tz.timezone import Timezone
+
+        return Timezone(tz_name)
+    else:
+        return pendulum.tz.timezone(tz_name)  # type: ignore
+
 
 @contextmanager
 def mock_pendulum_timezone(override_timezone):
@@ -44,6 +57,28 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
             )
         )
 
+    if "dst_rule" in kwargs and _IS_PENDULUM_3:
+        dst_rule = kwargs.pop("dst_rule")
+        if dst_rule == PRE_TRANSITION:
+            kwargs["fold"] = 0
+        elif dst_rule == POST_TRANSITION:
+            kwargs["fold"] = 1
+        elif dst_rule == TRANSITION_ERROR:
+            tz_name = kwargs.pop("tz")
+            assert tz_name
+            return pendulum.instance(
+                pendulum_create_timezone(tz_name).convert(
+                    datetime.datetime(
+                        year,
+                        month,
+                        day,
+                        *args,
+                        **kwargs,
+                    ),
+                    raise_on_unknown_times=True,
+                )
+            )
+
     return (
         pendulum.create(year, month, day, *args, **kwargs)
         if _IS_PENDULUM_1
@@ -58,6 +93,15 @@ PendulumDateTime: TypeAlias = (
 PendulumInterval: TypeAlias = (
     pendulum.Interval if _IS_PENDULUM_3 else pendulum.Period  # type: ignore[attr-defined]
 )
+
+
+@contextmanager
+def pendulum_freeze_time(t):
+    if _IS_PENDULUM_3:
+        yield from pendulum.travel_to(t, freeze=True)
+    else:
+        with pendulum.test(t) as frozen_time:
+            yield frozen_time
 
 
 # Workaround for issue with .in_tz() in pendulum:

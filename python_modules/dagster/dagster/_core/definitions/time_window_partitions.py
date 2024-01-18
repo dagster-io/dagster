@@ -43,6 +43,7 @@ from dagster._serdes.serdes import (
 )
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_1,
+    PRE_TRANSITION,
     PendulumDateTime,
     create_pendulum_time,
     to_timezone,
@@ -156,7 +157,7 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
             dt.second,
             dt_microsecond,
             tz=tz,
-            dst_rule=pendulum.PRE_TRANSITION,
+            dst_rule=PRE_TRANSITION,
         )
         if _IS_PENDULUM_1:
             dt = dt.add(microseconds=-1)

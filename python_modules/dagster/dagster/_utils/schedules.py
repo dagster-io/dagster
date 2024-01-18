@@ -9,7 +9,13 @@ from croniter import croniter as _croniter
 
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
-from dagster._seven.compat.pendulum import PendulumDateTime, create_pendulum_time
+from dagster._seven.compat.pendulum import (
+    POST_TRANSITION,
+    PRE_TRANSITION,
+    TRANSITION_ERROR,
+    PendulumDateTime,
+    create_pendulum_time,
+)
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -99,7 +105,7 @@ def _replace_date_fields(
             0,
             0,
             tz=pendulum_date.timezone_name,
-            dst_rule=pendulum.TRANSITION_ERROR,
+            dst_rule=TRANSITION_ERROR,
         )
     except pendulum.tz.exceptions.NonExistingTime:  # type: ignore
         # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
@@ -114,7 +120,7 @@ def _replace_date_fields(
             0,
             0,
             tz=pendulum_date.timezone_name,
-            dst_rule=pendulum.TRANSITION_ERROR,
+            dst_rule=TRANSITION_ERROR,
         )
     except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
         # For consistency, always choose the latter of the two possible times during a fall DST
@@ -129,7 +135,7 @@ def _replace_date_fields(
             0,
             0,
             tz=pendulum_date.timezone_name,
-            dst_rule=pendulum.POST_TRANSITION,
+            dst_rule=POST_TRANSITION,
         )
 
     return new_time
@@ -436,7 +442,7 @@ def _get_dates_to_consider_after_ambigious_time(
         next_date.second,
         next_date.microsecond,
         tz=timezone_str,
-        dst_rule=pendulum.POST_TRANSITION,
+        dst_rule=POST_TRANSITION,
     )
 
     dates_to_consider = [post_transition_time]
@@ -458,7 +464,7 @@ def _get_dates_to_consider_after_ambigious_time(
         next_date.second,
         next_date.microsecond,
         tz=timezone_str,
-        dst_rule=pendulum.PRE_TRANSITION,
+        dst_rule=PRE_TRANSITION,
     )
     dates_to_consider.append(pre_transition_time)
 
@@ -493,7 +499,7 @@ def _get_dates_to_consider_after_ambigious_time(
             next_date.second,
             next_date.microsecond,
             tz=timezone_str,
-            dst_rule=pendulum.PRE_TRANSITION,
+            dst_rule=PRE_TRANSITION,
         )
         dates_to_consider.append(curr_pre_transition_time)
 
@@ -506,7 +512,7 @@ def _get_dates_to_consider_after_ambigious_time(
             next_date.second,
             next_date.microsecond,
             tz=timezone_str,
-            dst_rule=pendulum.POST_TRANSITION,
+            dst_rule=POST_TRANSITION,
         )
         dates_to_consider.append(curr_post_transition_time)
 
@@ -590,7 +596,7 @@ def _timezone_aware_cron_iter(
                     next_date.second,
                     next_date.microsecond,
                     tz=timezone_str,
-                    dst_rule=pendulum.TRANSITION_ERROR,
+                    dst_rule=TRANSITION_ERROR,
                 )
             ]
         except pendulum.tz.exceptions.NonExistingTime:  # type:ignore
@@ -610,7 +616,7 @@ def _timezone_aware_cron_iter(
                         0,
                         0,
                         tz=timezone_str,
-                        dst_rule=pendulum.TRANSITION_ERROR,
+                        dst_rule=TRANSITION_ERROR,
                     )
                 ]
         except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
