@@ -350,7 +350,7 @@ const UnloadableSensorsAlert = ({count}: {count: number}) => {
       </Box>
       <Dialog
         isOpen={isOpen}
-        title="Unloadable schedules"
+        title="Unloadable sensors"
         style={{width: '90vw', maxWidth: '1200px'}}
       >
         <Box padding={{bottom: 8}}>
