@@ -472,15 +472,13 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
 
     @asset(partitions_def=abc_def)
     def upstream(context):
-        assert context.asset_partition_keys_for_output("result") == ["a"]
+        assert context.partition_keys == ["a"]
         return 1
 
     @asset(partitions_def=composite)
     def downstream(context, upstream):
-        assert context.asset_partition_keys_for_input("upstream") == ["a"]
-        assert context.asset_partition_keys_for_output("result") == [
-            MultiPartitionKey({"abc": "a", "123": "1"})
-        ]
+        assert context.dep_context("upstream").partition_keys == ["a"]
+        assert context.partition_keys == [MultiPartitionKey({"abc": "a", "123": "1"})]
         return 1
 
     asset_graph = AssetGraph.from_assets([upstream, downstream])
@@ -534,8 +532,8 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
 
     @asset(partitions_def=abc_def)
     def downstream(context, upstream):
-        assert set(context.asset_partition_keys_for_input("upstream")) == a_multipartition_keys
-        assert context.asset_partition_keys_for_output("result") == ["a"]
+        assert set(context.dep_context("upstream").partition_keys) == a_multipartition_keys
+        assert context.partition_keys == ["a"]
         return 1
 
     asset_graph = AssetGraph.from_assets([upstream, downstream])
@@ -600,9 +598,7 @@ def test_partition_mapping_with_asset_deps():
         ],
     )
     def downstream(context: AssetExecutionContext):
-        upstream_key = datetime.strptime(
-            context.asset_partition_key_for_input("upstream"), "%Y-%m-%d"
-        )
+        upstream_key = datetime.strptime(context.dep_context("upstream").partition_key, "%Y-%m-%d")
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
 
@@ -653,12 +649,8 @@ def test_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
     def multi_asset_2(context: AssetExecutionContext):
-        asset_1_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_1"), "%Y-%m-%d"
-        )
-        asset_2_key = datetime.strptime(
-            context.asset_partition_key_for_input("asset_2"), "%Y-%m-%d"
-        )
+        asset_1_key = datetime.strptime(context.dep_context("asset_1").partition_key, "%Y-%m-%d")
+        asset_2_key = datetime.strptime(context.dep_context("asset_2").partition_key, "%Y-%m-%d")
 
         current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
 

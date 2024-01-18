@@ -1375,6 +1375,17 @@ ALTERNATE_METHODS = {
     "run_config": "run.run_config",
     "run_tags": "run.tags",
     "get_op_execution_context": "op_execution_context",
+    "asset_partition_key_for_output": "partition_key",
+    "asset_partitions_time_window_for_output": "partition_time_window",
+    "asset_partition_key_range_for_output": "partition_key_range",
+    "asset_partition_key_range_for_input": "dep_context(asset_key).partition_key_range",
+    "asset_partition_key_for_input": "dep_context(asset_key).partition_key",
+    "asset_partitions_def_for_output": "assets_def.partitions_def",
+    "asset_partitions_def_for_input": "dep_context(asset_key).partitions_def",
+    "asset_partition_keys_for_output": "partition_keys",
+    "asset_partition_keys_for_input": "dep_context(asset_key).partition_keys",
+    "asset_partitions_time_window_for_input": "dep_context(asset_key).partition_time_window",
+    "has_partition_key": "is_partitioned_materialization",
 }
 
 ALTERNATE_EXPRESSIONS = {
@@ -1399,6 +1410,61 @@ def _get_deprecation_kwargs(attr: str):
         )
 
     return deprecation_kwargs
+
+
+class DepContext:
+    def __init__(
+        self, asset_key: CoercibleToAssetKey, step_execution_context: StepExecutionContext
+    ):
+        self._key = AssetKey.from_coercible(asset_key)
+        self._step_execution_context = step_execution_context
+
+    @property
+    def key(self) -> AssetKey:
+        return self._key
+
+    @property
+    def latest_materialization(self) -> Optional[AssetMaterialization]:
+        materialization_events = self._step_execution_context.upstream_asset_materialization_events
+        if self.key in materialization_events.keys():
+            return materialization_events.get(self.key)
+
+        raise DagsterInvariantViolationError(
+            f"Cannot fetch AssetMaterialization for asset {self.key}. {self.key} must be an upstream dependency"
+            "in order to call latest_materialization."
+        )
+
+    @property
+    def partition_key(self) -> str:
+        return self._step_execution_context.asset_partition_key_for_upstream_asset(self.key)
+
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        return list(
+            self._step_execution_context.asset_partitions_subset_for_upstream_asset(
+                self.key
+            ).get_partition_keys()
+        )
+
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        return self._step_execution_context.asset_partitions_time_window_for_upstream_asset(
+            self.key
+        )
+
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self._step_execution_context.asset_partition_key_range_for_upstream_asset(self.key)
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition:
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(self.key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {self.key}, but it is not partitioned"
+            )
+
+        return result
 
 
 class AssetExecutionContext(OpExecutionContext):
@@ -1471,29 +1537,54 @@ class AssetExecutionContext(OpExecutionContext):
         return self.op_execution_context.job_def
 
     @public
-    def latest_materialization_for_upstream_asset(
-        self, key: CoercibleToAssetKey
-    ) -> Optional[AssetMaterialization]:
-        """Get the most recent AssetMaterialization event for the key. The key must be an upstream
-        asset for the currently materializing asset. Information like metadata and tags can be found
-        on the AssetMaterialization. If the key is not an upstream asset of the currently
-        materializing asset, an error will be raised. If no AssetMaterialization exists for key, None
-        will be returned.
+    def dep_context(self, asset_key: CoercibleToAssetKey):
+        if (
+            self.job_def.asset_layer.input_for_asset_key(
+                self.op_execution_context.node_handle, AssetKey.from_coercible(asset_key)
+            )
+            is not None
+        ):
+            return DepContext(
+                asset_key=asset_key, step_execution_context=self._step_execution_context
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                f"Cannot access DepContext for asset {asset_key} since it is not an upstream dependency of {self.asset_key}."
+            )
 
-        Returns: Optional[AssetMaterialization]
-        """
-        materialization_events = (
-            self.op_execution_context._step_execution_context.upstream_asset_materialization_events  # noqa: SLF001
-        )
-        if AssetKey.from_coercible(key) in materialization_events.keys():
-            return materialization_events.get(AssetKey.from_coercible(key))
+    @public
+    @property
+    def is_partitioned_materialization(self) -> bool:
+        return self.op_execution_context.has_partition_key
 
-        raise DagsterInvariantViolationError(
-            f"Cannot fetch AssetMaterialization for asset {key}. {key} must be an upstream dependency"
-            "in order to call latest_materialization_for_upstream_asset."
-        )
+    @public
+    @property
+    def partition_key(self) -> str:
+        return self.op_execution_context.partition_key
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        return self.op_execution_context.partition_keys
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.partition_key_range
+
+    @public
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        return self.op_execution_context.partition_time_window
 
     ######## Deprecated methods
+
+    @deprecated(**_get_deprecation_kwargs("has_partition_key"))
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key(self) -> bool:
+        return self.op_execution_context.has_partition_key
 
     @deprecated(**_get_deprecation_kwargs("dagster_run"))
     @property
@@ -1534,6 +1625,74 @@ class AssetExecutionContext(OpExecutionContext):
     @deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
     def get_op_execution_context(self) -> "OpExecutionContext":
         return self.op_execution_context
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_input"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_input(input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_input"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        return self.op_execution_context.asset_partition_key_for_input(input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_input"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_input"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_input"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_input(input_name)
 
     ########## pass-through to op context
 
@@ -1651,97 +1810,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def get_step_execution_context(self) -> StepExecutionContext:
         return self.op_execution_context.get_step_execution_context()
-
-    #### partition_related
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def has_partition_key(self) -> bool:
-        return self.op_execution_context.has_partition_key
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def partition_key(self) -> str:
-        return self.op_execution_context.partition_key
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def partition_keys(self) -> Sequence[str]:
-        return self.op_execution_context.partition_keys
-
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def partition_key_range(self) -> PartitionKeyRange:
-        return self.op_execution_context.partition_key_range
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def partition_time_window(self) -> TimeWindow:
-        return self.op_execution_context.partition_time_window
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_range_for_output(
-        self, output_name: str = "result"
-    ) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range_for_input(input_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_for_input(self, input_name: str) -> str:
-        return self.op_execution_context.asset_partition_key_for_input(input_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
-        return self.op_execution_context.asset_partitions_time_window_for_input(input_name)
 
     #### Event log related
 
