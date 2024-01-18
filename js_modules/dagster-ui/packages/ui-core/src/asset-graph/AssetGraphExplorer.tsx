@@ -15,7 +15,7 @@ import {
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';

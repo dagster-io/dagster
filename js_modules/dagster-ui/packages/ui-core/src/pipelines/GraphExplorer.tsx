@@ -10,7 +10,7 @@ import {
 } from '@dagster-io/ui-components';
 import ColorLib from 'color';
 import qs from 'qs';
-import * as React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -58,13 +58,13 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     repoAddress,
     isGraph,
   } = props;
-  const [nameMatch, setNameMatch] = React.useState('');
+  const [nameMatch, setNameMatch] = useState('');
 
   const handleQueryChange = (opsQuery: string) => {
     onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
   };
 
-  const handleAdjustPath = React.useMemo(
+  const handleAdjustPath = useMemo(
     () => (fn: (opNames: string[]) => void) => {
       const opNames = [...explorerPath.opNames];
       const retValue = fn(opNames);
@@ -140,7 +140,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
   const invalidParent =
     parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (invalidSelection || invalidParent) {
       handleAdjustPath((opNames) => {
         opNames.pop();
@@ -148,7 +148,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     }
   }, [handleAdjustPath, invalidSelection, invalidParent]);
 
-  const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
+  const solids = useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
   const showAssetRenderingOption =
     !isGraph && solids.some((s) => s.definition.assetNodes.length > 0);
@@ -157,12 +157,12 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultOps = React.useMemo(
+  const queryResultOps = useMemo(
     () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
     [opsQuery, solids, solidsQueryEnabled],
   );
 
-  const highlightedOps = React.useMemo(
+  const highlightedOps = useMemo(
     () => queryResultOps.all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
     [nameMatch, queryResultOps.all],
   );
@@ -170,7 +170,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
   const parentOp = parentHandle && parentHandle.solid;
   const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
 
-  const breadcrumbs = React.useMemo(() => {
+  const breadcrumbs = useMemo(() => {
     const opNames = explorerPath.opNames;
     const breadcrumbs = opNames.map((name, idx) => ({
       text: name,

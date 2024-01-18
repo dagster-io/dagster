@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useRef, useState} from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
@@ -32,11 +32,9 @@ export const ConfigEditorWithSchema = ({
   onConfigChange,
   configSchema,
 }: Props) => {
-  const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
-  const [editorHelpContext, setEditorHelpContext] = React.useState<ConfigEditorHelpContext | null>(
-    null,
-  );
-  const editor = React.useRef<ConfigEditorHandle | null>(null);
+  const editorSplitPanelContainer = useRef<SplitPanelContainer | null>(null);
+  const [editorHelpContext, setEditorHelpContext] = useState<ConfigEditorHelpContext | null>(null);
+  const editor = useRef<ConfigEditorHandle | null>(null);
 
   return (
     <>

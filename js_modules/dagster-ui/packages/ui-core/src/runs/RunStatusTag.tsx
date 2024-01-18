@@ -1,5 +1,4 @@
 import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';

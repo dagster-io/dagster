@@ -1,5 +1,4 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 import {useState} from 'react';
 
 import {Checkbox} from '../Checkbox';

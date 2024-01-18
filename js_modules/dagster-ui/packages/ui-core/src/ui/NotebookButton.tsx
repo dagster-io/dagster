@@ -6,7 +6,7 @@ import {
   ExternalAnchorButton,
   Icon,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useEffect, useMemo, useState} from 'react';
 
 import {AppContext} from '../app/AppContext';
 
@@ -19,17 +19,17 @@ export const NotebookButton = ({
   repoLocation: string;
   label?: string;
 }) => {
-  const {rootServerURI} = React.useContext(AppContext);
-  const [open, setOpen] = React.useState(false);
+  const {rootServerURI} = useContext(AppContext);
+  const [open, setOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onOpen = () => setOpen(true);
     document.addEventListener('show-kind-info', onOpen);
     return () => document.removeEventListener('show-kind-info', onOpen);
   }, []);
 
   const value = path || '';
-  const url = React.useMemo(() => {
+  const url = useMemo(() => {
     try {
       const url = new URL(value);
       return url.toString();

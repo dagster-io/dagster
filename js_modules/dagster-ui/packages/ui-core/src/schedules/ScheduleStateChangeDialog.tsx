@@ -10,7 +10,7 @@ import {
   Group,
   Icon,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect} from 'react';
 
 import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from './ScheduleMutations';
 import {
@@ -47,7 +47,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   const [state, dispatch] = useInstigationStateReducer();
 
   // If the dialog is newly closed, reset state.
-  React.useEffect(() => {
+  useEffect(() => {
     if (openWithIntent === 'not-open') {
       dispatch({type: 'reset'});
     }

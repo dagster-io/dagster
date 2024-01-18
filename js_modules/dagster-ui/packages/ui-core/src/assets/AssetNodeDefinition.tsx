@@ -9,7 +9,6 @@ import {
   Mono,
   Subheading,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';

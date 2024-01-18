@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -44,7 +44,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const graphs = React.useMemo(() => {
+  const graphs = useMemo(() => {
     const repo = data?.repositoryOrError;
     if (!repo || repo.__typename !== 'Repository') {
       return [];
@@ -78,7 +78,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     return items.sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return graphs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [graphs, sanitizedSearch]);

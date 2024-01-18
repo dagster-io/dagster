@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import * as React from 'react';
 
 import {StartSensorMutation, StopRunningSensorMutation} from './types/SensorMutations.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';

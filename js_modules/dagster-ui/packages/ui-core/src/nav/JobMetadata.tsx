@@ -9,7 +9,7 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {LatestRunTag} from './LatestRunTag';
@@ -56,7 +56,7 @@ function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
     },
   });
 
-  return React.useMemo<JobMetadata>(() => {
+  return useMemo<JobMetadata>(() => {
     return {
       assetNodes: data?.assetNodes || null,
       job:
@@ -103,14 +103,14 @@ const JobScheduleOrSensorTag = ({
   job: JobMetadataFragment;
   repoAddress: RepoAddress;
 }) => {
-  const matchingSchedules = React.useMemo(() => {
+  const matchingSchedules = useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
     }
     return [];
   }, [job]);
 
-  const matchingSensors = React.useMemo(() => {
+  const matchingSensors = useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
       return job.sensors;
     }
@@ -137,7 +137,7 @@ function getRelatedAssets(metadata: JobMetadata) {
 }
 
 const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   if (relatedAssets.length === 0) {
     return null;

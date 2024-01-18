@@ -7,7 +7,7 @@ import {
   JoinedButtons,
   TextInput,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
@@ -32,7 +32,7 @@ export const AssetNodeLineage = ({
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
 }) => {
-  const maxDistances = React.useMemo(
+  const maxDistances = useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
   );
@@ -114,8 +114,8 @@ const LineageDepthControl = ({
   max: number;
   onChange: (v: number) => void;
 }) => {
-  const [text, setText] = React.useState(`${value}`);
-  React.useEffect(() => {
+  const [text, setText] = useState(`${value}`);
+  useEffect(() => {
     setText(`${value}`);
   }, [value]);
 

@@ -1,15 +1,15 @@
 import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useContext} from 'react';
 
 import {WarningTooltip} from './WarningTooltip';
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
-export const DeploymentStatusIcon = React.memo(() => {
+export const DeploymentStatusIcon = memo(() => {
   return <CombinedStatusIcon />;
 });
 
-const CombinedStatusIcon = React.memo(() => {
-  const {codeLocations, daemons} = React.useContext(DeploymentStatusContext);
+const CombinedStatusIcon = memo(() => {
+  const {codeLocations, daemons} = useContext(DeploymentStatusContext);
 
   if (codeLocations?.type === 'spinner') {
     return (

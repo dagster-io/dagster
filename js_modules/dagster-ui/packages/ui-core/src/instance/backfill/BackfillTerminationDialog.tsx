@@ -1,6 +1,6 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
@@ -34,8 +34,8 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       skip: !backfill,
     },
   );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const unfinishedMap = React.useMemo(() => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const unfinishedMap = useMemo(() => {
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }

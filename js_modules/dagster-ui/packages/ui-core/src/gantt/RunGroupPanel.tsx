@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -46,7 +46,7 @@ export const RunGroupPanel = ({
   // the log + gantt chart UI can show that the run is "completed" for up to 15s before
   // it's reflected in the sidebar. Observing this single timestamp from our parent
   // allows us to refetch data immediately when the run's exitedAt / startedAt, etc. is set.
-  React.useEffect(() => {
+  useEffect(() => {
     if (runStatusLastChangedAt) {
       refetch();
     }

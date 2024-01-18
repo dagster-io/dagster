@@ -8,7 +8,7 @@ import {
 } from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {
@@ -98,7 +98,7 @@ const RUN_PROVIDERS_EMPTY = [
  */
 export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
   return useQueryPersistedState<RunFilterToken[]>(
-    React.useMemo(
+    useMemo(
       () => ({
         encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
         decode: ({q = []}) =>
@@ -173,7 +173,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const client = useApolloClient();
   const {UserDisplay} = useLaunchPadHooks();
 
-  const fetchTagValues = React.useCallback(
+  const fetchTagValues = useCallback(
     async (tagKey: string) => {
       const {data} = await client.query<RunTagValuesQuery, RunTagValuesQueryVariables>({
         query: RUN_TAG_VALUES_QUERY,
@@ -195,7 +195,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const tagSuggestions: SuggestionFilterSuggestion<{
     value: string;
     key?: string;
-  }>[] = React.useMemo(() => {
+  }>[] = useMemo(() => {
     if (tagKeyData?.runTagKeysOrError?.__typename === 'RunTagKeys') {
       return (
         tagKeyData?.runTagKeysOrError.keys
@@ -223,7 +223,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
   const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
-  const onFocus = React.useCallback(() => {
+  const onFocus = useCallback(() => {
     fetchTagKeys();
     fetchSensorValues();
     fetchScheduleValues();
@@ -242,7 +242,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     isBackfillsFilterEnabled,
   ]);
 
-  const createdByValues = React.useMemo(
+  const createdByValues = useMemo(
     () => [
       tagToFilterValue(DagsterTag.Automaterialize, 'true'),
       ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
@@ -252,7 +252,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     [sensorValues, scheduleValues, userValues],
   );
 
-  const {pipelines, jobs} = React.useMemo(() => {
+  const {pipelines, jobs} = useMemo(() => {
     const pipelineNames = [];
     const jobNames = [];
 
@@ -298,7 +298,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: React.useMemo(
+    initialState: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -319,7 +319,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     allValues: StatusFilterValues,
     renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
     getStringValue: (x) => capitalizeFirstLetter(x),
-    initialState: React.useMemo(
+    initialState: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'status').map((x) => x.value)),
       [tokens],
     ),
@@ -346,7 +346,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: React.useMemo(
+    initialState: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -366,7 +366,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'backfill',
     allValues: backfillValues,
     allowMultipleSelections: false,
-    initialState: React.useMemo(() => {
+    initialState: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -403,7 +403,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'partition',
     allValues: partitionValues,
     allowMultipleSelections: false,
-    initialState: React.useMemo(() => {
+    initialState: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -466,7 +466,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       }
       return x.value!;
     },
-    initialState: React.useMemo(() => {
+    initialState: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -495,7 +495,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const createdDateFilter = useTimeRangeFilter({
     name: 'Created date',
     icon: 'date',
-    initialState: React.useMemo(() => {
+    initialState: useMemo(() => {
       const before = tokens.find((token) => token.token === 'created_date_before');
       const after = tokens.find((token) => token.token === 'created_date_after');
       return [
@@ -521,7 +521,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'tag',
     initialSuggestions: tagSuggestions,
 
-    freeformSearchResult: React.useCallback(
+    freeformSearchResult: useCallback(
       (
         query: string,
         path: {
@@ -537,7 +537,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       [],
     ),
 
-    state: React.useMemo(() => {
+    state: useMemo(() => {
       return tokens
         .filter(({token, value}) => {
           if (token !== 'tag') {
@@ -597,7 +597,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'id',
     initialSuggestions: [],
     getNoSuggestionsPlaceholder: (query) => (!query ? ID_EMPTY : ID_TOO_SHORT),
-    state: React.useMemo(() => {
+    state: useMemo(() => {
       return tokens.filter(({token}) => token === 'id').map((token) => token.value);
     }, [tokens]),
     freeformSearchResult: (query) => {
@@ -658,7 +658,7 @@ export function useTagDataFilterValues(tagKey?: DagsterTag) {
     },
   );
 
-  const values = React.useMemo(() => {
+  const values = useMemo(() => {
     if (!tagKey || data?.runTagsOrError?.__typename !== 'RunTags') {
       return [];
     }

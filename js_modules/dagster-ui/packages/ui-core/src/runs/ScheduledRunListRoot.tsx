@@ -9,7 +9,6 @@ import {
   Page,
   PageHeader,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {useRunListTabs} from './RunListTabs';
 import {

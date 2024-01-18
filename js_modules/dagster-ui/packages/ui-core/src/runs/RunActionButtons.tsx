@@ -1,5 +1,5 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -26,10 +26,10 @@ interface RunActionButtonsProps {
 
 export const CancelRunButton = ({run}: {run: RunFragment}) => {
   const {id: runId, canTerminate} = run;
-  const [showDialog, setShowDialog] = React.useState<boolean>(false);
-  const closeDialog = React.useCallback(() => setShowDialog(false), []);
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const closeDialog = useCallback(() => setShowDialog(false), []);
 
-  const onComplete = React.useCallback(
+  const onComplete = useCallback(
     async (result: TerminationDialogResult) => {
       const {errors} = result;
       const error = runId && errors[runId];

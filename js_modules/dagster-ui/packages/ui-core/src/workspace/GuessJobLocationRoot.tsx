@@ -7,7 +7,6 @@ import {
   PageHeader,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 
 import {isThisThingAJob, optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';

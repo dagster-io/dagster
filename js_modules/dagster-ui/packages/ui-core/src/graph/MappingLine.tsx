@@ -1,5 +1,4 @@
 import {Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {Edge} from './OpEdges';
 import {IPoint, isHighlighted} from './common';

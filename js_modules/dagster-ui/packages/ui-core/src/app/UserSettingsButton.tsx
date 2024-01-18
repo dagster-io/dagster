@@ -1,5 +1,5 @@
 import {Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import styled from 'styled-components';
 
 import {UserSettingsDialog} from './UserSettingsDialog';
@@ -33,7 +33,7 @@ const SettingsButton = styled.button`
 `;
 
 export const UserSettingsButton = () => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <SettingsButton onClick={() => setIsOpen(true)} title="User settings">

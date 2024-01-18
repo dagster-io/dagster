@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import {useStaticSetFilter} from './useStaticSetFilter';
 import {InstigationStatus} from '../../graphql/types';
 

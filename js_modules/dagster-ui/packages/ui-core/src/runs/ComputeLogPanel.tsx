@@ -1,5 +1,5 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useContext, useEffect} from 'react';
 
 import {RawLogContent} from './RawLogContent';
 import {useComputeLogs} from './useComputeLogs';
@@ -51,9 +51,9 @@ const resolveDownloadUrl = (rootServerURI: string, downloadUrl: string | null) =
   return isRelativeUrl(downloadUrl) ? rootServerURI + downloadUrl : downloadUrl;
 };
 
-const ComputeLogsPanelWithKey = React.memo((props: ComputeLogPanelWithKeyProps) => {
+const ComputeLogsPanelWithKey = memo((props: ComputeLogPanelWithKeyProps) => {
   const {runId, computeLogFileKey, ioType, setComputeLogUrl} = props;
-  const {rootServerURI} = React.useContext(AppContext);
+  const {rootServerURI} = useContext(AppContext);
 
   const {isLoading, stdout, stderr} = useComputeLogs(runId, computeLogFileKey);
   const stdoutDownloadUrl = resolveDownloadUrl(rootServerURI, stdout?.downloadUrl || null);
@@ -96,7 +96,7 @@ const ContentWrapper = ({
   downloadUrl: string | null;
   setComputeLogUrl: (url: string | null) => void;
 }) => {
-  React.useEffect(() => {
+  useEffect(() => {
     setComputeLogUrl(downloadUrl);
   }, [setComputeLogUrl, downloadUrl]);
   return (

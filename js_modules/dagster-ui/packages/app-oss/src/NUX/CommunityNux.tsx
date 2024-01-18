@@ -13,7 +13,7 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
-import React from 'react';
+import * as React from 'react';
 import isEmail from 'validator/lib/isEmail';
 
 export const CommunityNux = () => {

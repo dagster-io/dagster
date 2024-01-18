@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {RepoAddress} from './types';
@@ -60,7 +60,7 @@ const GraphExplorerRoot = (props: Props) => {
 
   const explorerPath = explorerPathFromString((params as any)['0']);
   const history = useHistory();
-  const [options, setOptions] = React.useState<GraphExplorerOptions>({
+  const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: false,
     preferAssetRendering: true,
   });

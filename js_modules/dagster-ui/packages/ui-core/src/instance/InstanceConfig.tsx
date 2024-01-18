@@ -12,7 +12,7 @@ import {
   Subheading,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
-import * as React from 'react';
+import {memo, useContext, useMemo} from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {InstancePageContext} from './InstancePageContext';
@@ -36,11 +36,11 @@ const InstanceConfigStyle = createGlobalStyle`
     }
 `;
 
-export const InstanceConfig = React.memo(() => {
+export const InstanceConfig = memo(() => {
   useTrackPageView();
   useDocumentTitle('Configuration');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const {pageTitle} = useContext(InstancePageContext);
   const queryResult = useQuery<InstanceConfigQuery, InstanceConfigQueryVariables>(
     INSTANCE_CONFIG_QUERY,
     {
@@ -52,7 +52,7 @@ export const InstanceConfig = React.memo(() => {
   const {data} = queryResult;
   const config = data?.instance.info;
 
-  const handlers = React.useMemo(() => {
+  const handlers = useMemo(() => {
     return {
       onReady: (editor: CodeMirror.Editor) => {
         const documentHash = document.location.hash;

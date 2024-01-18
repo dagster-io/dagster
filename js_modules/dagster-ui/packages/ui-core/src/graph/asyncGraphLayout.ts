@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import React from 'react';
+import {useEffect, useMemo, useReducer} from 'react';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
@@ -146,11 +146,11 @@ const initialState: State = {
  */
 
 export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const cacheKey = _opLayoutCacheKey(ops, {parentOp});
   const runAsync = ops.length >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       const layout = await asyncGetFullOpLayout(ops, {parentOp});
@@ -176,20 +176,17 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
 }
 
 export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
-  const graphData = React.useMemo(
-    () => ({..._graphData, expandedGroups}),
-    [expandedGroups, _graphData],
-  );
+  const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
-  const opts = React.useMemo(() => ({horizontalDAGs: true}), []);
+  const opts = useMemo(() => ({horizontalDAGs: true}), []);
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;

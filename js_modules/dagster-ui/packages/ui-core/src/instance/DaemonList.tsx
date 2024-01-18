@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {DaemonHealth} from './DaemonHealth';
 import {DaemonStatusForListFragment} from './types/DaemonList.types';

@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
-import React from 'react';
+import {useRef} from 'react';
 
 import {
   PartitionMatrixSolidHandleFragment,
@@ -195,7 +195,7 @@ export type MatrixData = ReturnType<typeof buildMatrixData>;
  * @param inputs
  */
 export const useMatrixData = (inputs: MatrixDataInputs) => {
-  const cachedMatrixData = React.useRef<{
+  const cachedMatrixData = useRef<{
     result: MatrixData;
     inputs: MatrixDataInputs;
   }>();

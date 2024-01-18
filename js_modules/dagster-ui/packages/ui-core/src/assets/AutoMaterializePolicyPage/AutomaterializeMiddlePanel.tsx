@@ -1,6 +1,5 @@
 import {useQuery} from '@apollo/client';
 import {Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {AutomaterializeRunTag} from './AutomaterializeRunTag';

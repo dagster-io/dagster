@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box, Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';

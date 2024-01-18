@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';

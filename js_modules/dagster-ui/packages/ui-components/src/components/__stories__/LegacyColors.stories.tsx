@@ -2,7 +2,6 @@
 import {Colors as BlueprintColors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
 import nearestColor from 'nearest-color';
-import * as React from 'react';
 import rgbHex from 'rgb-hex';
 
 import {Box} from '../Box';

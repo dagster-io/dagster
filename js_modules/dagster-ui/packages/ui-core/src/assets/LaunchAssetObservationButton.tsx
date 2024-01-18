@@ -1,6 +1,6 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 
 import {
   AssetsInScope,

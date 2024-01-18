@@ -1,5 +1,5 @@
 import groupBy from 'lodash/groupBy';
-import React from 'react';
+import {useMemo} from 'react';
 
 import {
   AssetMaterializationFragment,
@@ -53,7 +53,7 @@ export function useGroupedEvents(
   observations: Event[],
   loadedPartitionKeys: string[] | undefined,
 ) {
-  return React.useMemo<AssetEventGroup[]>(() => {
+  return useMemo<AssetEventGroup[]>(() => {
     const events = [...materializations, ...observations].sort(
       (b, a) => Number(a.timestamp) - Number(b.timestamp),
     );

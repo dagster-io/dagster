@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 import {
   ExecuteChecksButtonAssetNodeFragment,

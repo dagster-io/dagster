@@ -1,6 +1,6 @@
 import {useLazyQuery} from '@apollo/client';
 import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
@@ -37,15 +37,15 @@ interface Props {
 export const SensorPageAutomaterialize = (props: Props) => {
   const {repoAddress, sensor, loading, daemonStatus} = props;
 
-  const [isPaused, setIsPaused] = React.useState(false);
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
+  const [isPaused, setIsPaused] = useState(false);
+  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
 
   const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
     ASSET_SENSOR_TICKS_QUERY,
   );
 
-  const variables: AssetSensorTicksQueryVariables = React.useMemo(() => {
+  const variables: AssetSensorTicksQueryVariables = useMemo(() => {
     if (timeRange || statuses) {
       return {
         sensorSelector: {
@@ -75,13 +75,13 @@ export const SensorPageAutomaterialize = (props: Props) => {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  React.useLayoutEffect(fetchData, [variables]);
+  useLayoutEffect(fetchData, [variables]);
   useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
-  const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
+  const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
   const [tableView, setTableView] = useQueryPersistedState<'evaluations' | 'runs'>(
-    React.useMemo(
+    useMemo(
       () => ({
         queryKey: 'view',
         decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
@@ -95,14 +95,14 @@ export const SensorPageAutomaterialize = (props: Props) => {
 
   const data = queryResult.data ?? queryResult.previousData;
 
-  const allTicks = React.useMemo(() => {
+  const allTicks = useMemo(() => {
     if (data?.sensorOrError.__typename === 'Sensor') {
       return data.sensorOrError.sensorState.ticks;
     }
     return [];
   }, [data]);
 
-  const ids = React.useMemo(() => allTicks.map((tick) => `${tick.id}:${tick.status}`), [allTicks]);
+  const ids = useMemo(() => allTicks.map((tick) => `${tick.id}:${tick.status}`), [allTicks]);
 
   while (ids.length < 100) {
     // Super hacky but we need to keep the memo args length the same...
@@ -111,7 +111,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
     ids.push('');
   }
 
-  const ticks = React.useMemo(
+  const ticks = useMemo(
     () => {
       return (
         allTicks.map((tick, index) => {
@@ -131,14 +131,14 @@ export const SensorPageAutomaterialize = (props: Props) => {
     [...ids.slice(0, 100)],
   );
 
-  const onHoverTick = React.useCallback(
+  const onHoverTick = useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
       setIsPaused(!!tick);
     },
     [setIsPaused],
   );
 
-  const runTableFilterTags = React.useMemo(() => {
+  const runTableFilterTags = useMemo(() => {
     return [
       {
         key: DagsterTag.RepositoryLabelTag,

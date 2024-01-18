@@ -1,15 +1,15 @@
-import React from 'react';
+import {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
 
 export const CustomTooltipProvider = () => {
-  const [state, setState] = React.useState<null | {
+  const [state, setState] = useState<null | {
     title: string;
     style: React.CSSProperties;
   }>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     document.addEventListener('mouseover', (ev) => {
       const el = ev.target;
       if (!(el instanceof Element)) {

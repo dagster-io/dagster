@@ -12,7 +12,7 @@ import {
   Subheading,
   Tag,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
@@ -50,7 +50,7 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     ASSET_PARTITION_STALE_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
-  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
+  const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
@@ -75,7 +75,7 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     };
   }, [result.data]);
 
-  const {staleStatus, staleCauses} = React.useMemo(() => {
+  const {staleStatus, staleCauses} = useMemo(() => {
     if (stale.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         staleCauses: [],

@@ -1,11 +1,11 @@
 import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
 import {ASSET_LINK_NAME_MAX_LENGTH} from './layout';
 import {withMiddleTruncation} from '../app/Util';
 
-export const AssetNodeLink = React.memo(({assetKey}: {assetKey: {path: string[]}}) => {
+export const AssetNodeLink = memo(({assetKey}: {assetKey: {path: string[]}}) => {
   const label = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetNodeLinkContainer>

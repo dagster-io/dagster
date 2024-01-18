@@ -1,6 +1,6 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -48,7 +48,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   const pipeline =
     data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError : undefined;
 
-  const {schedules, sensors} = React.useMemo(() => {
+  const {schedules, sensors} = useMemo(() => {
     if (pipeline) {
       const {schedules, sensors} = pipeline;
       return {schedules, sensors};
@@ -56,7 +56,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
     return {schedules: [], sensors: []};
   }, [pipeline]);
 
-  const latestRuns = React.useMemo(() => {
+  const latestRuns = useMemo(() => {
     if (pipeline) {
       const {runs} = pipeline;
       if (runs.length) {

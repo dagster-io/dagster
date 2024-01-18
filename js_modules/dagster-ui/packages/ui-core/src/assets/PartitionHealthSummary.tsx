@@ -1,5 +1,5 @@
 import {Box, Caption, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
+import {memo} from 'react';
 
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
@@ -15,7 +15,7 @@ interface Props {
   selections?: PartitionDimensionSelection[];
 }
 
-export const PartitionHealthSummary = React.memo((props: Props) => {
+export const PartitionHealthSummary = memo((props: Props) => {
   const {showAssetKey, assetKey, data, selections} = props;
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 

@@ -1,6 +1,6 @@
 import {gql, useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {
@@ -75,8 +75,8 @@ export const BackfillActionsMenu = ({
     },
   ]);
 
-  const [showTerminateDialog, setShowTerminateDialog] = React.useState(false);
-  const [showStepStatus, setShowStepStatus] = React.useState(false);
+  const [showTerminateDialog, setShowTerminateDialog] = useState(false);
+  const [showStepStatus, setShowStepStatus] = useState(false);
   const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
     RESUME_BACKFILL_MUTATION,
   );

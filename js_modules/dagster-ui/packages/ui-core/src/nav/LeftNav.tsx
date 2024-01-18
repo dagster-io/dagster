@@ -1,12 +1,12 @@
 import {Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 import styled from 'styled-components';
 
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
 import {LayoutContext} from '../app/LayoutProvider';
 
 export const LeftNav = () => {
-  const {nav} = React.useContext(LayoutContext);
+  const {nav} = useContext(LayoutContext);
 
   return (
     <LeftNavContainer $open={nav.isOpen} $smallScreen={nav.isSmallScreen}>

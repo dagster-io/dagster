@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useContext} from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {JobFeatureContext} from './JobFeatureContext';
@@ -17,7 +17,7 @@ interface Props {
 
 export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
-  const {FallthroughRoute} = React.useContext(JobFeatureContext);
+  const {FallthroughRoute} = useContext(JobFeatureContext);
 
   return (
     <div

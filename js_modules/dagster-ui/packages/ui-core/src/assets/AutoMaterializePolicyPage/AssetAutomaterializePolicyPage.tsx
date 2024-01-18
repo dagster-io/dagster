@@ -1,5 +1,5 @@
 import {Box, Colors, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 import styled from 'styled-components';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
@@ -22,7 +22,7 @@ export const AssetAutomaterializePolicyPage = ({
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations} = React.useMemo(() => {
+  const {evaluations} = useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
         'AutoMaterializeAssetEvaluationRecords' &&
@@ -52,7 +52,7 @@ export const AssetAutomaterializePolicyPage = ({
     },
   });
 
-  const selectedEvaluation = React.useMemo(() => {
+  const selectedEvaluation = useMemo(() => {
     // If we're looking at the most recent slice and have not selected an evaluation ID,
     // default to the first item in the list. Otherwise, don't assume that we should
     // automatically select the first item -- an evaluation on another page might be our

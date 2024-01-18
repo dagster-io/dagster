@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink} from './AssetPageHeader';
@@ -49,7 +49,7 @@ export const AssetGroupRoot = ({
   useDocumentTitle(`Asset Group: ${groupName}`);
 
   const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
-  const groupSelector = React.useMemo(
+  const groupSelector = useMemo(
     () => ({
       groupName,
       repositoryLocationName: repoAddress.location,
@@ -58,14 +58,14 @@ export const AssetGroupRoot = ({
     [groupName, repoAddress],
   );
 
-  const onChangeExplorerPath = React.useCallback(
+  const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
       history[mode](`${groupPath}/${explorerPathToString(path)}`);
     },
     [groupPath, history],
   );
 
-  const onNavigateToSourceAssetNode = React.useCallback(
+  const onNavigateToSourceAssetNode = useCallback(
     (node: AssetLocation) => {
       if (node.groupName && node.repoAddress) {
         history.push(

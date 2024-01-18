@@ -1,5 +1,4 @@
 import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 

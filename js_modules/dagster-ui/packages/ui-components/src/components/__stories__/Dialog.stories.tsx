@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Button} from '../Button';
 import {Dialog, DialogBody, DialogFooter, DialogHeader, GlobalDialogStyle} from '../Dialog';
@@ -12,7 +12,7 @@ export default {
 } as Meta;
 
 export const Simple = () => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   return (
     <>
       <GlobalDialogStyle />

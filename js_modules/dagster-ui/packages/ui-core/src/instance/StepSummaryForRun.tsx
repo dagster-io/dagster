@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
@@ -27,7 +27,7 @@ export const StepSummaryForRun = (props: Props) => {
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;
 
-  const relevantSteps = React.useMemo(() => {
+  const relevantSteps = useMemo(() => {
     if (run?.__typename !== 'Run') {
       return [];
     }

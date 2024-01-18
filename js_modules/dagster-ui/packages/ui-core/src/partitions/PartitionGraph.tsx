@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
@@ -27,12 +27,10 @@ export const PartitionGraph = ({
   isJob,
   hiddenStepKeys,
 }: PartitionGraphProps) => {
-  const [hiddenPartitions, setHiddenPartitions] = React.useState<{[name: string]: boolean}>(
-    () => ({}),
-  );
-  const chart = React.useRef<any>(null);
+  const [hiddenPartitions, setHiddenPartitions] = useState<{[name: string]: boolean}>(() => ({}));
+  const chart = useRef<any>(null);
 
-  const onGraphClick = React.useCallback((event: MouseEvent) => {
+  const onGraphClick = useCallback((event: MouseEvent) => {
     const instance = chart.current;
     if (!instance) {
       return;
@@ -63,7 +61,7 @@ export const PartitionGraph = ({
     }));
   }, []);
 
-  const defaultOptions = React.useMemo(() => {
+  const defaultOptions = useMemo(() => {
     const titleOptions = title ? {display: true, text: title} : undefined;
     const scales = yLabel
       ? {

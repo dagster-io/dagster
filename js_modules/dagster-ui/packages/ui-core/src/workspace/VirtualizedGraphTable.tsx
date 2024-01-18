@@ -1,7 +1,7 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: graphs.length,
@@ -97,7 +97,7 @@ const GraphRow = (props: GraphRowProps) => {
   useDelayedRowQuery(queryGraph);
   const {data} = queryResult;
 
-  const displayedDescription = React.useMemo(() => {
+  const displayedDescription = useMemo(() => {
     if (description) {
       return description;
     }

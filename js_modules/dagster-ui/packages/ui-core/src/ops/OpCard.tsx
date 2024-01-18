@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 import styled from 'styled-components';
 
 import {OpCardSolidDefinitionFragment} from './types/OpCard.types';

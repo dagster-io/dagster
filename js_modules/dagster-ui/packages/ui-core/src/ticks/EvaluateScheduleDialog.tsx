@@ -17,7 +17,7 @@ import {
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
@@ -64,7 +64,7 @@ export const EvaluateScheduleDialog = (props: Props) => {
 };
 
 const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
-  const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
+  const [_selectedTimestamp, setSelectedTimestamp] = useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
       scheduleSelector: {
@@ -76,12 +76,12 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   });
   const {
     timezone: [userTimezone],
-  } = React.useContext(TimeContext);
-  const [isTickSelectionOpen, setIsTickSelectionOpen] = React.useState<boolean>(false);
-  const selectedTimestampRef = React.useRef<{ts: number; label: string} | null>(null);
+  } = useContext(TimeContext);
+  const [isTickSelectionOpen, setIsTickSelectionOpen] = useState<boolean>(false);
+  const selectedTimestampRef = useRef<{ts: number; label: string} | null>(null);
   const {viewport, containerProps} = useViewport();
-  const [shouldEvaluate, setShouldEvaluate] = React.useState(false);
-  const content = React.useMemo(() => {
+  const [shouldEvaluate, setShouldEvaluate] = useState(false);
+  const content = useMemo(() => {
     if (shouldEvaluate) {
       return (
         <EvaluateScheduleContent
@@ -165,7 +165,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
     viewport.width,
   ]);
 
-  const buttons = React.useMemo(() => {
+  const buttons = useMemo(() => {
     if (!shouldEvaluate) {
       return (
         <>
@@ -234,13 +234,13 @@ const EvaluateScheduleContent = ({
 }) => {
   const {
     timezone: [userTimezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
   const [scheduleDryRunMutation] = useMutation<
     ScheduleDryRunMutation,
     ScheduleDryRunMutationVariables
   >(
     SCHEDULE_DRY_RUN_MUTATION,
-    React.useMemo(() => {
+    useMemo(() => {
       const repositorySelector = repoAddressToSelector(repoAddress);
       return {
         variables: {
@@ -253,10 +253,10 @@ const EvaluateScheduleContent = ({
       };
     }, [name, repoAddress, timestamp]),
   );
-  const [result, setResult] = React.useState<Awaited<
-    ReturnType<typeof scheduleDryRunMutation>
-  > | null>(null);
-  React.useEffect(() => {
+  const [result, setResult] = useState<Awaited<ReturnType<typeof scheduleDryRunMutation>> | null>(
+    null,
+  );
+  useEffect(() => {
     scheduleDryRunMutation().then((result) => {
       setResult(() => result);
     });

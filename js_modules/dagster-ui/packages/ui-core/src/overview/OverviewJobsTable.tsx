@@ -1,6 +1,6 @@
 import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
@@ -28,8 +28,8 @@ type RowType =
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
 export const OverviewJobsTable = ({repos}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const allKeys = React.useMemo(
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const allKeys = useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
     [repos],
   );
@@ -39,7 +39,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
     allKeys,
   );
 
-  const flattened: RowType[] = React.useMemo(() => {
+  const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     repos.forEach(({repoAddress, jobs}) => {
       flat.push({type: 'header', repoAddress, jobCount: jobs.length});

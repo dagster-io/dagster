@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {useLocation} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 
@@ -41,7 +41,7 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
   );
 
   const {data: countData} = queryResult;
-  const {queuedCount, inProgressCount} = React.useMemo(() => {
+  const {queuedCount, inProgressCount} = useMemo(() => {
     return {
       queuedCount:
         countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,

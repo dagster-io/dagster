@@ -1,5 +1,5 @@
 import {gql, useSubscription} from '@apollo/client';
-import * as React from 'react';
+import {useReducer} from 'react';
 
 import {
   ComputeLogForSubscriptionFragment,
@@ -69,7 +69,7 @@ const initialState: State = {
 };
 
 export const useComputeLogs = (runId: string, stepKey: string) => {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
     COMPUTE_LOGS_SUBSCRIPTION,

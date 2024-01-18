@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useEffect, useMemo} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import {AssetEvents} from './AssetEvents';
@@ -53,15 +53,12 @@ interface Props {
 
 export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
+  const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
-  const tabList = React.useMemo(
-    () => tabBuilder({definition, params}),
-    [definition, params, tabBuilder],
-  );
+  const tabList = useMemo(() => tabBuilder({definition, params}), [definition, params, tabBuilder]);
 
   const defaultTab = tabList.some((t) => t.id === 'partitions') ? 'partitions' : 'events';
   const selectedTab = params.view || defaultTab;
@@ -91,7 +88,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!definitionQueryResult.loading && liveData) {
       trace?.endTrace();
     }
@@ -346,7 +343,7 @@ function getQueryForVisibleAssets(assetKey: AssetKey, params: AssetViewParams) {
 function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {
   const graphId = toGraphId(assetKey);
 
-  return React.useMemo(() => {
+  return useMemo(() => {
     if (!graphData) {
       return {upstream: null, downstream: null};
     }

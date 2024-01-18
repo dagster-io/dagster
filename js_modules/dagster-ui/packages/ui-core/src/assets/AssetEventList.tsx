@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
 import {RunlessEventTag} from './RunlessEventTag';
@@ -28,8 +28,8 @@ export const AssetEventList = ({
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
 }) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const focusedRowRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: groups.length,
@@ -40,7 +40,7 @@ export const AssetEventList = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusedRowRef.current) {
       const el = focusedRowRef.current;
       if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {

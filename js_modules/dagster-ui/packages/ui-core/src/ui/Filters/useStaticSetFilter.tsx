@@ -1,5 +1,5 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
-import React from 'react';
+import {Fragment, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
@@ -47,9 +47,9 @@ export function useStaticSetFilter<TValue>({
   matchType = 'any-of',
   closeOnSelect = false,
 }: Args<TValue>): StaticSetFilter<TValue> {
-  const {StaticFilterSorter} = React.useContext(LaunchpadHooksContext);
+  const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
-  const allValues = React.useMemo(() => {
+  const allValues = useMemo(() => {
     const sorter = StaticFilterSorter?.[name];
     if (sorter) {
       return _unsortedValues.sort(sorter);
@@ -57,18 +57,18 @@ export function useStaticSetFilter<TValue>({
     return _unsortedValues;
   }, [StaticFilterSorter, name, _unsortedValues]);
 
-  const [state, setState] = React.useState(() => new Set(initialState || []));
+  const [state, setState] = useState(() => new Set(initialState || []));
 
-  React.useEffect(() => {
+  useEffect(() => {
     onStateChanged?.(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setState(initialState ? new Set(initialState) : new Set());
   }, [initialState]);
 
-  const filterObj: StaticSetFilter<TValue> = React.useMemo(
+  const filterObj: StaticSetFilter<TValue> = useMemo(
     () => ({
       name,
       icon,
@@ -181,8 +181,8 @@ export function SetFilterActiveState({
   matchType: 'any-of' | 'all-of';
 }) {
   const isAnyOf = matchType === 'any-of';
-  const arr = React.useMemo(() => Array.from(state), [state]);
-  const label = React.useMemo(() => {
+  const arr = useMemo(() => Array.from(state), [state]);
+  const label = useMemo(() => {
     if (arr.length === 0) {
       return null;
     } else if (arr.length <= MAX_VALUES_TO_SHOW) {
@@ -191,12 +191,12 @@ export function SetFilterActiveState({
           is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
           {arr.map((value, index) => {
             return (
-              <React.Fragment key={index}>
+              <Fragment key={index}>
                 <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
                   {getStringValue(value)}
                 </FilterTagHighlightedText>
                 {index < arr.length - 1 ? <>,&nbsp;</> : ''}
-              </React.Fragment>
+              </Fragment>
             );
           })}
         </>
@@ -263,7 +263,7 @@ export function SetFilterLabel(props: SetFilterLabelProps) {
   const {value, filter, renderLabel, allowMultipleSelections} = props;
   const isActive = filter.state.has(value);
 
-  const labelRef = React.useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   return (
     // 2px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual

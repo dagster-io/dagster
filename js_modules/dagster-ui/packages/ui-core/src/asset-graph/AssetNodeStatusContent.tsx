@@ -1,5 +1,4 @@
 import {Body, Colors, Icon, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';

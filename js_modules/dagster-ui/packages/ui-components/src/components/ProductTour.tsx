@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Placement} from '@blueprintjs/popover2';
-import React from 'react';
+import * as React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
 import {Box} from './Box';

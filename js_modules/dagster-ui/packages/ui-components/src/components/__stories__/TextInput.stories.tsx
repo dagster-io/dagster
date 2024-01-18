@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
@@ -12,7 +12,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       placeholder="Type anything…"
@@ -23,7 +23,7 @@ export const Default = () => {
 };
 
 export const WithIcon = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
@@ -35,7 +35,7 @@ export const WithIcon = () => {
 };
 
 export const StrokeColor = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
@@ -48,7 +48,7 @@ export const StrokeColor = () => {
 };
 
 export const RightElement = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"

@@ -8,7 +8,7 @@ import {
   PageHeader,
   Tag,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
@@ -64,7 +64,7 @@ export const SensorDetails = ({
     metadata,
   } = sensor;
 
-  const [isCursorEditing, setCursorEditing] = React.useState(false);
+  const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
     sensorName: sensor.name,
     repositoryName: repoAddress.name,
@@ -77,7 +77,7 @@ export const SensorDetails = ({
     sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
     sensor.sensorState.typeSpecificData.lastCursor;
 
-  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
 
   return (

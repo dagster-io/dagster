@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {ButtonGroup} from '../ButtonGroup';
 import {ProductTourPosition as Position, ProductTour} from '../ProductTour';
@@ -11,8 +11,8 @@ export default {
 } as Meta;
 
 export const Positions = () => {
-  const [activeItem, setActiveItem] = React.useState(Position.TOP_LEFT);
-  const active = React.useMemo(() => new Set([activeItem]), [activeItem]);
+  const [activeItem, setActiveItem] = useState(Position.TOP_LEFT);
+  const active = useMemo(() => new Set([activeItem]), [activeItem]);
   return (
     <>
       <ButtonGroup

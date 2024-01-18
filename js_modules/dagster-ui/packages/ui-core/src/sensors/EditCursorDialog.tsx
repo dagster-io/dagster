@@ -9,7 +9,7 @@ import {
   Group,
   TextArea,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import 'chartjs-adapter-date-fns';
 
@@ -34,8 +34,8 @@ export const EditCursorDialog = ({
   sensorSelector: SensorSelector;
   onClose: () => void;
 }) => {
-  const [cursorValue, setCursorValue] = React.useState(cursor);
-  const [isSaving, setIsSaving] = React.useState(false);
+  const [cursorValue, setCursorValue] = useState(cursor);
+  const [isSaving, setIsSaving] = useState(false);
   const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
     SET_CURSOR_MUTATION,
   );

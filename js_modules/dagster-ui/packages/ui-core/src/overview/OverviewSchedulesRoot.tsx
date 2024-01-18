@@ -9,7 +9,7 @@ import {
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useMemo} from 'react';
 
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
@@ -46,7 +46,7 @@ export const OverviewSchedulesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Schedules');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -56,7 +56,7 @@ export const OverviewSchedulesRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(
+  const filters = useMemo(
     () => [codeLocationFilter, runningStateFilter],
     [codeLocationFilter, runningStateFilter],
   );
@@ -73,7 +73,7 @@ export const OverviewSchedulesRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = React.useMemo(() => {
+  const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
@@ -81,7 +81,7 @@ export const OverviewSchedulesRoot = () => {
   }, [data, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
-  const filteredBuckets = React.useMemo(() => {
+  const filteredBuckets = useMemo(() => {
     return repoBuckets.map(({schedules, ...rest}) => {
       return {
         ...rest,
@@ -95,7 +95,7 @@ export const OverviewSchedulesRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredBuckets
       .map(({repoAddress, schedules}) => ({
@@ -105,14 +105,14 @@ export const OverviewSchedulesRoot = () => {
       .filter(({schedules}) => schedules.length > 0);
   }, [filteredBuckets, sanitizedSearch]);
 
-  const anySchedulesVisible = React.useMemo(
+  const anySchedulesVisible = useMemo(
     () => filteredBySearch.some(({schedules}) => schedules.length > 0),
     [filteredBySearch],
   );
 
   // Collect all schedules across visible code locations that the viewer has permission
   // to start or stop.
-  const allPermissionedSchedules = React.useMemo(() => {
+  const allPermissionedSchedules = useMemo(() => {
     return repoBuckets
       .map(({repoAddress, schedules}) => {
         return schedules
@@ -128,7 +128,7 @@ export const OverviewSchedulesRoot = () => {
 
   // Build a list of keys from the permissioned schedules for use in checkbox state.
   // This includes collapsed code locations.
-  const allPermissionedScheduleKeys = React.useMemo(() => {
+  const allPermissionedScheduleKeys = useMemo(() => {
     return allPermissionedSchedules.map(({repoAddress, scheduleName}) =>
       makeScheduleKey(repoAddress, scheduleName),
     );
@@ -139,7 +139,7 @@ export const OverviewSchedulesRoot = () => {
   );
 
   // Filter to find keys that are visible given any text search.
-  const permissionedKeysOnScreen = React.useMemo(() => {
+  const permissionedKeysOnScreen = useMemo(() => {
     const filteredKeys = new Set(
       filteredBySearch
         .map(({repoAddress, schedules}) => {
@@ -152,7 +152,7 @@ export const OverviewSchedulesRoot = () => {
 
   // Determine the list of schedule objects that have been checked by the viewer.
   // These are the schedules that will be operated on by the bulk start/stop action.
-  const checkedSchedules = React.useMemo(() => {
+  const checkedSchedules = useMemo(() => {
     const checkedKeysOnScreen = new Set(
       permissionedKeysOnScreen.filter((key: string) => checkedKeys.has(key)),
     );

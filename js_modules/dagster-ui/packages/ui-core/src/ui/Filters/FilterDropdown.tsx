@@ -11,7 +11,8 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useRef, useState} from 'react';
+import {useRef, useState} from 'react';
+import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 

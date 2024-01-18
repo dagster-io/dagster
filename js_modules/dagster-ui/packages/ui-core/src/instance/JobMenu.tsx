@@ -1,6 +1,6 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback} from 'react';
 
 import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {usePermissionsForLocation} from '../app/Permissions';
@@ -46,7 +46,7 @@ export const JobMenu = (props: Props) => {
     RunReExecutionQueryVariables
   >(RUN_RE_EXECUTION_QUERY);
 
-  const fetchIfPossible = React.useCallback(() => {
+  const fetchIfPossible = useCallback(() => {
     if (lastRun?.id) {
       fetchHasExecutionPlan({variables: {runId: lastRun.id}});
     }

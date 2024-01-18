@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 import {
   AssetConditionEvaluationStatus,

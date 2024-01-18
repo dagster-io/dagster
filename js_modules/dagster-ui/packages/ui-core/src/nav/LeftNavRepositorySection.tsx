@@ -1,5 +1,5 @@
 import {Body, Box, Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useContext} from 'react';
 import styled from 'styled-components';
 
 import {RepoNavItem} from './RepoNavItem';
@@ -78,8 +78,8 @@ const EmptyState = styled.div`
   padding: 6px 24px 0;
 `;
 
-export const LeftNavRepositorySection = React.memo(() => {
-  const {allRepos, loading, visibleRepos, toggleVisible} = React.useContext(WorkspaceContext);
+export const LeftNavRepositorySection = memo(() => {
+  const {allRepos, loading, visibleRepos, toggleVisible} = useContext(WorkspaceContext);
 
   if (loading) {
     return <div style={{flex: 1}} />;

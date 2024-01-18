@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
+import {Suspense, lazy, useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -11,7 +11,7 @@ import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
-const DateRangePicker = React.lazy(() => import('./DateRangePickerWrapper'));
+const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -80,19 +80,19 @@ export function useTimeRangeFilter({
 }: Args): TimeRangeFilter {
   const {
     timezone: [_timezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
   const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-  const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
-  React.useEffect(() => {
+  const [state, setState] = useState<TimeRangeState>(initialState || [null, null]);
+  useEffect(() => {
     onStateChanged?.(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state[0], state[1]]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setState(initialState || [null, null]);
   }, [initialState]);
 
-  const {timeRanges, timeRangesArray} = React.useMemo(
+  const {timeRanges, timeRangesArray} = useMemo(
     () => calculateTimeRanges(timezone),
     [
       timezone,
@@ -106,7 +106,7 @@ export function useTimeRangeFilter({
     setState([null, null]);
   };
 
-  const filterObj = React.useMemo(
+  const filterObj = useMemo(
     () => ({
       name,
       icon,
@@ -186,7 +186,7 @@ export function ActiveFilterState({
   timezone: string;
   timeRanges: ReturnType<typeof calculateTimeRanges>['timeRanges'];
 }) {
-  const L_FORMAT = React.useMemo(
+  const L_FORMAT = useMemo(
     () =>
       new Intl.DateTimeFormat(navigator.language, {
         year: 'numeric',
@@ -196,7 +196,7 @@ export function ActiveFilterState({
       }),
     [timezone],
   );
-  const dateLabel = React.useMemo(() => {
+  const dateLabel = useMemo(() => {
     if (isEqual(state, timeRanges.TODAY.range)) {
       return (
         <>
@@ -267,11 +267,11 @@ export function CustomTimeRangeFilterDialog({
   filter: TimeRangeFilter;
   closeRef: {current: () => void};
 }) {
-  const [startDate, setStartDate] = React.useState<moment.Moment | null>(null);
-  const [endDate, setEndDate] = React.useState<moment.Moment | null>(null);
-  const [focusedInput, setFocusedInput] = React.useState<'startDate' | 'endDate'>('startDate');
+  const [startDate, setStartDate] = useState<moment.Moment | null>(null);
+  const [endDate, setEndDate] = useState<moment.Moment | null>(null);
+  const [focusedInput, setFocusedInput] = useState<'startDate' | 'endDate'>('startDate');
 
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <Dialog
@@ -285,7 +285,7 @@ export function CustomTimeRangeFilterDialog({
     >
       <Container>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <React.Suspense fallback={<div />}>
+          <Suspense fallback={<div />}>
             <DateRangePicker
               onDatesChange={({startDate, endDate}) => {
                 setStartDate(startDate);
@@ -303,7 +303,7 @@ export function CustomTimeRangeFilterDialog({
               keepOpenOnDateSelect
               isOutsideRange={() => false}
             />
-          </React.Suspense>
+          </Suspense>
         </Box>
       </Container>
       <DialogFooter topBorder>

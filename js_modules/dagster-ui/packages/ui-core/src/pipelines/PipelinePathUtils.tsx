@@ -1,5 +1,5 @@
 import {Mono} from '@dagster-io/ui-components';
-import React from 'react';
+import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
 export interface ExplorerPath {
@@ -53,7 +53,7 @@ export function useStripSnapshotFromPath(params: {pipelinePath: string}) {
   const history = useHistory();
   const {pipelinePath} = params;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const {snapshotId, ...rest} = explorerPathFromString(pipelinePath);
     if (!snapshotId) {
       return;

@@ -1,6 +1,6 @@
 import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
 import {
@@ -32,8 +32,8 @@ interface Resource extends ResourceEntryFragment {
 type RowType = {type: 'header'; repoAddress: RepoAddress; resourceCount: number} | Resource;
 
 export const OverviewResourcesTable = ({repos}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const allKeys = React.useMemo(
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const allKeys = useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
     [repos],
   );
@@ -43,7 +43,7 @@ export const OverviewResourcesTable = ({repos}: Props) => {
     allKeys,
   );
 
-  const flattened: RowType[] = React.useMemo(() => {
+  const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     repos.forEach(({repoAddress, resources}) => {
       flat.push({type: 'header', repoAddress, resourceCount: resources.length});

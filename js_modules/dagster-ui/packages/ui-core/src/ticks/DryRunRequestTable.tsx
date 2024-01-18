@@ -1,6 +1,5 @@
 import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
 import qs from 'qs';
-import React from 'react';
 
 import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';

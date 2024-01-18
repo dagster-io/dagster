@@ -1,6 +1,6 @@
 import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 
 import {AssetListContainer, AssetListRow} from './AssetEventList';
 import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
@@ -18,7 +18,7 @@ export const AssetPartitionList = ({
   statusForPartition,
   partitions,
 }: AssetPartitionListProps) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
@@ -30,7 +30,7 @@ export const AssetPartitionList = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusedDimensionKey && partitions.indexOf(focusedDimensionKey) !== -1) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
         behavior: 'auto',

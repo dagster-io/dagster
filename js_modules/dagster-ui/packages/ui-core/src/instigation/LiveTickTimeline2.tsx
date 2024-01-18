@@ -2,7 +2,7 @@ import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-co
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {memo, useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {HistoryTickFragment} from './types/InstigationUtils.types';
@@ -61,10 +61,10 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   tickGrid?: number;
   timeAfter?: number;
 }) => {
-  const [now, setNow] = React.useState<number>(Date.now());
-  const [isPaused, setPaused] = React.useState<boolean>(false);
+  const [now, setNow] = useState<number>(Date.now());
+  const [isPaused, setPaused] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isPaused && !exactRange) {
       const interval = setInterval(() => {
         setNow(Date.now());
@@ -81,12 +81,12 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const {viewport, containerProps} = useViewport();
 
-  const ticksReversed = React.useMemo(() => {
+  const ticksReversed = useMemo(() => {
     // Reverse ticks to make tab order correct
     return ticks.filter((tick) => !tick.endTimestamp || tick.endTimestamp * 1000 > minX).reverse();
   }, [ticks, minX]);
 
-  const ticksToDisplay = React.useMemo(() => {
+  const ticksToDisplay = useMemo(() => {
     return ticksReversed.map((tick, i) => {
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
       const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
@@ -107,7 +107,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
   const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
-  const gridTicks = React.useMemo(() => {
+  const gridTicks = useMemo(() => {
     const ticks = [];
     for (let i = startTickGridX; i <= maxX; i += tickGridDelta) {
       ticks.push({
@@ -121,7 +121,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const {
     timezone: [timezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
 
   return (
     <div style={{marginRight: '8px'}}>
@@ -187,8 +187,8 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   );
 };
 
-const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
-  const status = React.useMemo(() => {
+const TickTooltip = memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
+  const status = useMemo(() => {
     if (tick.status === InstigationTickStatus.FAILURE) {
       return 'Evaluation failed';
     }

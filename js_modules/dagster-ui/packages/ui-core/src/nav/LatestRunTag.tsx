@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, StyledTable, Tag, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTag.types';
@@ -43,7 +43,7 @@ export const LatestRunTag = ({
 
   useQueryRefreshAtInterval(lastRunQuery, FIFTEEN_SECONDS);
 
-  const run = React.useMemo(() => {
+  const run = useMemo(() => {
     const runsOrError = lastRunQuery.data?.pipelineRunsOrError;
     if (runsOrError && runsOrError.__typename === 'Runs') {
       return runsOrError.results[0] || null;

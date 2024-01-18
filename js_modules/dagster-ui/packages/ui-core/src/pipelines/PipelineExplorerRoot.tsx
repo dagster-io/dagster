@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
@@ -63,7 +63,7 @@ export const PipelineExplorerContainer = ({
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }) => {
-  const [options, setOptions] = React.useState<GraphExplorerOptions>({
+  const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });

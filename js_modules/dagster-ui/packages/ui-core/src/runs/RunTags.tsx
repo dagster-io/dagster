@@ -1,5 +1,5 @@
 import {Box} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useMemo} from 'react';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -27,11 +27,11 @@ interface Props {
   onToggleTagPin?: (key: string) => void;
 }
 
-export const RunTags = React.memo((props: Props) => {
+export const RunTags = memo((props: Props) => {
   const {tags, onAddTag, onToggleTagPin, mode} = props;
   const copy = useCopyToClipboard();
 
-  const copyAction = React.useMemo(
+  const copyAction = useMemo(
     () => ({
       label: 'Copy tag',
       onClick: async (tag: TagType) => {
@@ -42,7 +42,7 @@ export const RunTags = React.memo((props: Props) => {
     [copy],
   );
 
-  const addToFilterAction = React.useMemo(
+  const addToFilterAction = useMemo(
     () =>
       onAddTag
         ? {
@@ -71,7 +71,7 @@ export const RunTags = React.memo((props: Props) => {
     return list.filter((item) => !!item);
   };
 
-  const displayedTags = React.useMemo(() => {
+  const displayedTags = useMemo(() => {
     const priority = [];
     const others = [];
     const copiedTags: TagType[] = tags.map(({key, value, pinned, link}) => ({

@@ -1,6 +1,6 @@
 import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 
 import {InstancePageContext} from './InstancePageContext';
 import {useCanSeeConfig} from './useCanSeeConfig';
@@ -18,7 +18,7 @@ interface Props<TData> {
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {healthTitle} = React.useContext(InstancePageContext);
+  const {healthTitle} = useContext(InstancePageContext);
   const canSeeConfig = useCanSeeConfig();
 
   return (

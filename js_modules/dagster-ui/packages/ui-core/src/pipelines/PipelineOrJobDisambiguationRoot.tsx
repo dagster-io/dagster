@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {Redirect, useLocation, useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';

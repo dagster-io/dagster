@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Tooltip2, Tooltip2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
-import React from 'react';
+import * as React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {Colors} from './Color';

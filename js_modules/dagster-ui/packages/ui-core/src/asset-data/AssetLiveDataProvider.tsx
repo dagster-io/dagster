@@ -1,6 +1,6 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import uniq from 'lodash/uniq';
-import React from 'react';
+import * as React from 'react';
 
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
 import {

@@ -1,5 +1,5 @@
 import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {ScheduleInfo, ScheduleStateChangeDialog} from './ScheduleStateChangeDialog';
 import {instigationStateSummary} from '../instigation/instigationStateSummary';
@@ -14,9 +14,9 @@ export const ScheduleBulkActionMenu = (props: Props) => {
   const {schedules, onDone} = props;
   const count = schedules.length;
 
-  const [openWithIntent, setOpenWithIntent] = React.useState<OpenWithIntent>('not-open');
+  const [openWithIntent, setOpenWithIntent] = useState<OpenWithIntent>('not-open');
 
-  const {anyOff, anyOn} = React.useMemo(() => {
+  const {anyOff, anyOn} = useMemo(() => {
     return instigationStateSummary(schedules.map(({scheduleState}) => scheduleState));
   }, [schedules]);
 

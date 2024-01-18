@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
 import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
@@ -11,7 +11,7 @@ interface ConfigEditorHelpProps {
   allInnerTypes: TypeData[];
 }
 
-export const ConfigEditorHelp = React.memo(
+export const ConfigEditorHelp = memo(
   ({context, allInnerTypes}: ConfigEditorHelpProps) => {
     if (!context) {
       return <Container />;

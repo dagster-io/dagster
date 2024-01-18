@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {RunStatusOnlyQuery, RunStatusOnlyQueryVariables} from './types/AutomaterializeRunTag.types';

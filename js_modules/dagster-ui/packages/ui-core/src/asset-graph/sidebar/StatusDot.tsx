@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {StatusCaseDot} from './util';
 import {useAssetLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../AssetNodeStatusContent';

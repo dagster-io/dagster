@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {VirtualizedResourceTable} from './VirtualizedResourceTable';
 import {
@@ -22,7 +22,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Resources: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = useState('');
 
   const selector = repoAddressToSelector(repoAddress);
 
@@ -40,14 +40,14 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const resources = React.useMemo(() => {
+  const resources = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.allTopLevelResourceDetails;
     }
     return [];
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return resources.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [resources, sanitizedSearch]);

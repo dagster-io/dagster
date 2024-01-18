@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -15,7 +15,7 @@ export const InstanceHealthPage = () => {
   useTrackPageView();
   useDocumentTitle('Daemons');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const {pageTitle} = useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthQuery, InstanceHealthQueryVariables>(
     INSTANCE_HEALTH_QUERY,
     {

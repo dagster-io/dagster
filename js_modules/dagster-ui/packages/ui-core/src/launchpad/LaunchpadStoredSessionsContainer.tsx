@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadTabs} from './LaunchpadTabs';
 import {LaunchpadType} from './types';

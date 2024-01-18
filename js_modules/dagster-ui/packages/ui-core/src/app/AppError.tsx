@@ -4,7 +4,6 @@ import {Observable} from '@apollo/client/utilities';
 import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from './HTTPErrorCodes';

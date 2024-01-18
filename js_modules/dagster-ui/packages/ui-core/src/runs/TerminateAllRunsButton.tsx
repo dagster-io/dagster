@@ -1,7 +1,7 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Button} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
+import {useState} from 'react';
 
 import {queuedStatuses} from './RunStatuses';
 import {TerminationDialog} from './TerminationDialog';
@@ -20,7 +20,7 @@ export const TerminateAllRunsButton = ({
   filter: RunsFilter;
   disabled: boolean;
 }) => {
-  const [terminating, setTerminating] = React.useState<{[runId: string]: boolean} | null>(null);
+  const [terminating, setTerminating] = useState<{[runId: string]: boolean} | null>(null);
   const client = useApolloClient();
 
   const onTerminateAll = async () => {

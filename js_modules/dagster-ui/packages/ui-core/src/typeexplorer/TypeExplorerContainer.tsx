@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
 
 import {TYPE_EXPLORER_FRAGMENT, TypeExplorer} from './TypeExplorer';
 import {

@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import * as React from 'react';
 
 import {StartThisScheduleMutation, StopScheduleMutation} from './types/ScheduleMutations.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';

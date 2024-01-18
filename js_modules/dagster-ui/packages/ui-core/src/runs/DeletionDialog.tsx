@@ -11,7 +11,7 @@ import {
   Icon,
   Mono,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useReducer, useRef} from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
@@ -93,20 +93,16 @@ const deletionDialogReducer = (
 
 export const DeletionDialog = (props: Props) => {
   const {isOpen, onClose, onComplete, onTerminateInstead, selectedRuns} = props;
-  const frozenRuns = React.useRef<SelectedRuns>(selectedRuns);
+  const frozenRuns = useRef<SelectedRuns>(selectedRuns);
 
-  const [state, dispatch] = React.useReducer(
-    deletionDialogReducer,
-    frozenRuns.current,
-    initializeState,
-  );
+  const [state, dispatch] = useReducer(deletionDialogReducer, frozenRuns.current, initializeState);
 
   const runIDs = Object.keys(state.frozenRuns);
   const count = runIDs.length;
   const terminatableCount = runIDs.filter((id) => state.frozenRuns[id]).length;
 
   // If the dialog is newly open, update state to match the frozen list.
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       dispatch({type: 'reset', frozenRuns: frozenRuns.current});
     }
@@ -114,7 +110,7 @@ export const DeletionDialog = (props: Props) => {
 
   // If the dialog is not open, update the ref so that the frozen list will be entered
   // into state the next time the dialog opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       frozenRuns.current = selectedRuns;
     }

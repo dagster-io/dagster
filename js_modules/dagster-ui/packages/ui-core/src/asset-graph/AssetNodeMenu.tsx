@@ -1,5 +1,5 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 
 import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';

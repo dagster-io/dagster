@@ -1,5 +1,5 @@
 import {Box, Colors, FontFamily, Icon, Menu, MenuItem} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';

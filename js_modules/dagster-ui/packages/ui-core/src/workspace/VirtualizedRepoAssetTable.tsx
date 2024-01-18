@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useCallback, useContext, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -30,13 +30,13 @@ const UNGROUPED_NAME = 'UNGROUPED';
 const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
 
 export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
   const repoKey = repoAddressAsHumanString(repoAddress);
   const {expandedKeys, onToggle} = useAssetGroupExpansionState(
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );
 
-  const grouped: Record<string, Asset[]> = React.useMemo(() => {
+  const grouped: Record<string, Asset[]> = useMemo(() => {
     const groups: Record<string, Asset[]> = {};
     for (const asset of assets) {
       const groupName = asset.groupName || UNGROUPED_NAME;
@@ -46,7 +46,7 @@ export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
     return groups;
   }, [assets]);
 
-  const flattened: RowType[] = React.useMemo(() => {
+  const flattened: RowType[] = useMemo(() => {
     const flat: RowType[] = [];
     Object.entries(grouped).forEach(([groupName, assetsForGroup]) => {
       flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
@@ -203,13 +203,13 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
  * Use localStorage to persist the expanded/collapsed visual state of asset groups.
  */
 const useAssetGroupExpansionState = (storageKey: string) => {
-  const {basePath} = React.useContext(AppContext);
+  const {basePath} = useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     `${basePath}:dagster.${storageKey}`,
     validateExpandedKeys,
   );
 
-  const onToggle = React.useCallback(
+  const onToggle = useCallback(
     (groupName: string) => {
       setExpandedKeys((current) => {
         const nextExpandedKeys = new Set(current || []);
@@ -224,7 +224,7 @@ const useAssetGroupExpansionState = (storageKey: string) => {
     [setExpandedKeys],
   );
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       expandedKeys,
       onToggle,

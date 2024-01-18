@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo, useState} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {
@@ -43,9 +43,9 @@ type Asset = {
 };
 
 export function useReportEventsModal(asset: Asset | null, onEventReported: () => void) {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const dropdownOptions = React.useMemo(
+  const dropdownOptions = useMemo(
     () => [
       {
         label: asset?.isPartitioned
@@ -87,7 +87,7 @@ const ReportEventDialogBody = ({
   setIsOpen: (open: boolean) => void;
   onEventReported: () => void;
 }) => {
-  const [description, setDescription] = React.useState('');
+  const [description, setDescription] = useState('');
   const {
     permissions: {canReportRunlessAssetEvents},
     disabledReasons,
@@ -97,7 +97,7 @@ const ReportEventDialogBody = ({
     REPORT_EVENT_MUTATION,
   );
 
-  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
   const assetHealth = mergedAssetHealth(
     usePartitionHealthData(
       asset.isPartitioned ? [asset.assetKey] : [],
@@ -113,7 +113,7 @@ const ReportEventDialogBody = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
-  const keysFiltered = React.useMemo(() => {
+  const keysFiltered = useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, () => true);
   }, [selections]);
 

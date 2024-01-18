@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useLayoutEffect, useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -39,7 +39,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   );
   const {data, loading} = queryResultOverview;
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!loading) {
       trace.endTrace();
     }
@@ -50,14 +50,14 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const jobs = React.useMemo(() => {
+  const jobs = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
     }
     return [];
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return jobs.filter(
       ({name}) => !isHiddenAssetGroupJob(name) && name.toLocaleLowerCase().includes(searchToLower),

@@ -1,4 +1,4 @@
-import React from 'react';
+import {useCallback} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -13,7 +13,7 @@ export function useTagPinning() {
   // All user tags are pinned by default so we track unpinned.
   const [unpinnedTags, setUnpinnedTags] = useStateWithStorage('unpinned-tags', validateIsArray);
 
-  const onToggleTagPin = React.useCallback(
+  const onToggleTagPin = useCallback(
     (tagKey: string) => {
       if (isUnpinnedByDefaultSystemTag(tagKey)) {
         setPinnedSystemTags((pinnedSystemTags) => toggleTag(pinnedSystemTags, tagKey));
@@ -24,7 +24,7 @@ export function useTagPinning() {
     [setUnpinnedTags, setPinnedSystemTags],
   );
 
-  const isTagPinned = React.useCallback(
+  const isTagPinned = useCallback(
     (tag: {key: string}) => {
       return isUnpinnedByDefaultSystemTag(tag.key)
         ? pinnedSystemTags.indexOf(tag.key) !== -1

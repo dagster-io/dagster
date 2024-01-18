@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 import ReactDOM from 'react-dom';
 
 const CONTEXT_MENU_EVENT = 'context-menu-event';

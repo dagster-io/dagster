@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import {useMemo, useRef} from 'react';
 import styled from 'styled-components';
 
 import {AssetLink} from './AssetLink';
@@ -38,8 +38,8 @@ export const BackfillPreviewModal = ({
   assets,
   keysFiltered,
 }: BackfillPreviewModalProps) => {
-  const assetKeys = React.useMemo(() => assets.map(asAssetKeyInput), [assets]);
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const assetKeys = useMemo(() => assets.map(asAssetKeyInput), [assets]);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: assets.length,
@@ -58,7 +58,7 @@ export const BackfillPreviewModal = ({
     },
   );
 
-  const partitionsByAssetToken = React.useMemo(() => {
+  const partitionsByAssetToken = useMemo(() => {
     return Object.fromEntries(
       (data?.assetBackfillPreview || []).map((d) => [tokenForAssetKey(d.assetKey), d.partitions]),
     );

@@ -1,5 +1,5 @@
 import {ButtonLink, MiddleTruncate, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {InstigationSelector} from '../graphql/types';
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const TickTagForRun = ({instigationSelector, instigationType, tickId}: Props) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const icon = instigationType === DagsterTag.ScheduleName ? 'schedule' : 'sensors';
   const {name} = instigationSelector;
 

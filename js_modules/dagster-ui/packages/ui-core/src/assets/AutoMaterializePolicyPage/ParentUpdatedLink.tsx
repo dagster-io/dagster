@@ -1,5 +1,5 @@
 import {Box, ButtonLink} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {AssetDetailType, detailTypeToLabel} from './assetDetailUtils';
@@ -17,15 +17,15 @@ interface Props {
 }
 
 export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [queryString, setQueryString] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [queryString, setQueryString] = useState('');
   const count = updatedAssetKeys.length + willUpdateAssetKeys.length;
 
   const filteredUpdatedAssetKeys = useFilterAssetKeys(updatedAssetKeys, queryString);
   const filteredWillUpdateAssetKeys = useFilterAssetKeys(willUpdateAssetKeys, queryString);
   const filteredCount = filteredUpdatedAssetKeys.length + filteredWillUpdateAssetKeys.length;
 
-  const filteredAssetKeys: AssetKeyDetail[] = React.useMemo(() => {
+  const filteredAssetKeys: AssetKeyDetail[] = useMemo(() => {
     return [
       ...[...filteredUpdatedAssetKeys].sort(sortAssetKeys).map((assetKey) => ({
         assetKey,

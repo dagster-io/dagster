@@ -1,7 +1,6 @@
 import {IconName} from '@dagster-io/ui-components';
 import {render} from '@testing-library/react';
 import {act, renderHook} from '@testing-library/react-hooks';
-import React from 'react';
 
 import {useStaticSetFilter} from '../useStaticSetFilter';
 

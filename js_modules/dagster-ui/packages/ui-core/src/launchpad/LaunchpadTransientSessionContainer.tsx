@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useState} from 'react';
 
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadType} from './types';
@@ -43,7 +43,7 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     ...(initialData.runConfigYaml ? {runConfigYaml: initialData.runConfigYaml} : {}),
   });
 
-  const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);
+  const [session, setSession] = useState<IExecutionSession>(initialSessionComplete);
 
   const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
     session,

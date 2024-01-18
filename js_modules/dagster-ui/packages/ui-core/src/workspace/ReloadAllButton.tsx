@@ -1,5 +1,5 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 
 import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 import {useUnscopedPermissions} from '../app/Permissions';
@@ -19,8 +19,8 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
     reloadFn: reloadFnForWorkspace,
   });
 
-  const [isOpen, setIsOpen] = React.useState(!!error);
-  React.useEffect(() => setIsOpen(!!error), [error]);
+  const [isOpen, setIsOpen] = useState(!!error);
+  useEffect(() => setIsOpen(!!error), [error]);
 
   if (!canReloadWorkspace) {
     return (

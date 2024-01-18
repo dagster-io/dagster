@@ -8,7 +8,7 @@ import {
   Spinner,
   TextInput,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useMemo} from 'react';
 
 import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
@@ -32,7 +32,7 @@ export const OverviewJobsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Jobs');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -52,7 +52,7 @@ export const OverviewJobsRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
-  const repoBuckets = React.useMemo(() => {
+  const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
@@ -62,7 +62,7 @@ export const OverviewJobsRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return repoBuckets
       .map(({repoAddress, jobs}) => ({

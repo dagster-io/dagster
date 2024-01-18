@@ -1,5 +1,4 @@
 import {Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {AssetConditionEvaluationStatus} from './types';
 import {assertUnreachable} from '../../app/Util';

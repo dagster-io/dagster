@@ -3,7 +3,6 @@ jest.useFakeTimers();
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
 import {GraphQLError} from 'graphql/error';
-import React from 'react';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';

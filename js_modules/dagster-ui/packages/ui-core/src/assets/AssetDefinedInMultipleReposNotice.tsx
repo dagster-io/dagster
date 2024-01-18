@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {AssetKey} from './types';
 import {

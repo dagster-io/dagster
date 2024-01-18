@@ -9,7 +9,7 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -112,7 +112,7 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
-  const onClick = React.useCallback(async () => {
+  const onClick = useCallback(async () => {
     copy(value);
     await showSharedToaster({
       intent: 'success',
@@ -189,9 +189,9 @@ export const LocationStatus = (props: {
   locationOrError: WorkspaceRepositoryLocationNode;
 }) => {
   const {location, locationOrError} = props;
-  const [showDialog, setShowDialog] = React.useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,

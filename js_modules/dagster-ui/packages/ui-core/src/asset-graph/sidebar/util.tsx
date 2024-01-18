@@ -1,5 +1,5 @@
 import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
 import {StatusCase} from '../AssetNodeStatusContent';
@@ -22,7 +22,7 @@ export function getDisplayName(node: GraphNode) {
 }
 
 export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
-  const type = React.useMemo(() => {
+  const type = useMemo(() => {
     switch (statusCase) {
       case StatusCase.LOADING:
         return 'loading' as const;

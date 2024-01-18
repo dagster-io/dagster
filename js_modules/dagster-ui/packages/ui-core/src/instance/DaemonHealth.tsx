@@ -9,7 +9,7 @@ import {
   Tag,
   Trace,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useReducer} from 'react';
 
 import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
@@ -55,7 +55,7 @@ const initialState = {shown: false, page: 0};
 
 export const DaemonHealth = (props: Props) => {
   const {daemon} = props;
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const {shown, page} = state;
 
   const errors = daemon.lastHeartbeatErrors;

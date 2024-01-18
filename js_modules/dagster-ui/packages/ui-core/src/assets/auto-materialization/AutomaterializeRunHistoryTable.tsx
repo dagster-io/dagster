@@ -1,5 +1,4 @@
 import {Box, ButtonGroup, CursorHistoryControls} from '@dagster-io/ui-components';
-import React from 'react';
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';

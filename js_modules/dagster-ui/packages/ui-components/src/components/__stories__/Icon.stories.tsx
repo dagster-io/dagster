@@ -1,5 +1,4 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';

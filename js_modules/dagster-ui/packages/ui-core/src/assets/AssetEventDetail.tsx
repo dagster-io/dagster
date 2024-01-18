@@ -1,5 +1,4 @@
 import {Box, Colors, Group, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
-import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';

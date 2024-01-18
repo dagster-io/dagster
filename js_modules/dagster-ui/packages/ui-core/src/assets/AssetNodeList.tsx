@@ -1,5 +1,4 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 

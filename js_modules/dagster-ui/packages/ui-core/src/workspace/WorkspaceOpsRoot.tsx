@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';

@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {REPO_ASSET_TABLE_FRAGMENT, VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -44,7 +44,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const assetNodes = React.useMemo(() => {
+  const assetNodes = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.assetNodes;
     }

@@ -1,5 +1,4 @@
 import {Alert, Colors, Icon} from '@dagster-io/ui-components';
-import React from 'react';
 
 export const AssetChecksBanner = () => {
   return (

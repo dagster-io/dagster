@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {IToasterProps, ToastProps, ToasterInstance} from '@blueprintjs/core';
-import React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {Colors} from './Color';

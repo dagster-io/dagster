@@ -15,7 +15,7 @@ import {
   Tag,
   TextInput,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
@@ -73,14 +73,15 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     EVALUATE_SENSOR_MUTATION,
   );
 
-  const [cursor, setCursor] = React.useState(currentCursor);
+  const [cursor, setCursor] = useState(currentCursor);
 
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<PythonErrorFragment | null>(null);
-  const [sensorExecutionData, setSensorExecutionData] =
-    React.useState<DryRunInstigationTick | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<PythonErrorFragment | null>(null);
+  const [sensorExecutionData, setSensorExecutionData] = useState<DryRunInstigationTick | null>(
+    null,
+  );
 
-  const sensorSelector = React.useMemo(
+  const sensorSelector = useMemo(
     () => ({
       sensorName: name,
       repositoryLocationName: repoAddress.location,
@@ -89,7 +90,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     [repoAddress, name],
   );
 
-  const submitTest = React.useCallback(async () => {
+  const submitTest = useCallback(async () => {
     setSubmitting(true);
     const result = await sensorDryRun({
       variables: {
@@ -119,7 +120,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
-  const buttons = React.useMemo(() => {
+  const buttons = useMemo(() => {
     if (sensorExecutionData || error) {
       return (
         <Box flex={{direction: 'row', gap: 8}}>
@@ -156,7 +157,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }
   }, [sensorExecutionData, error, submitting, onClose, submitTest]);
 
-  const [cursorState, setCursorState] = React.useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
+  const [cursorState, setCursorState] = useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
     'Unpersisted',
   );
   const [setCursorMutation] = useMutation<
@@ -164,7 +165,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
 
-  const onPersistCursorValue = React.useCallback(async () => {
+  const onPersistCursorValue = useCallback(async () => {
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
       assertUnreachable('Did not expect to get here' as never);
@@ -206,7 +207,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
 
-  const content = React.useMemo(() => {
+  const content = useMemo(() => {
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;

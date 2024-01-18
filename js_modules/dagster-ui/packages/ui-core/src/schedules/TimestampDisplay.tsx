@@ -1,5 +1,5 @@
 import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 import styled from 'styled-components';
 
 import {TimeContext} from '../app/time/TimeContext';
@@ -18,7 +18,7 @@ export const TimestampDisplay = (props: Props) => {
   const {
     timezone: [userTimezone],
     hourCycle: [hourCycle],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
 
   const locale = navigator.language;
   const mainString = timestampToString({
