@@ -379,6 +379,39 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(
     assert result.output_for_node("daily_asset").endswith("2022-01-01")
 
 
+def test_partitioned_io_manager_load_single_partition_called(
+    tmp_path: Path,
+):
+    partitions_def = StaticPartitionsDefinition(["A"])
+
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            pass
+
+        def load_from_path(self, context: InputContext, path: UPath):
+            pass
+
+        def _load_single_input(
+            self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
+        ) -> Any:
+            assert context.partition_key is None
+
+    io_manager_def = MyIOManager(base_path=tmp_path)
+
+    @asset(partitions_def=partitions_def, io_manager_def=io_manager_def)
+    def upstream_asset():
+        return 42
+
+    @asset(partitions_def=partitions_def, io_manager_def=io_manager_def)
+    def daily_asset(upstream_asset):
+        return upstream_asset
+
+    materialize(
+        [upstream_asset, daily_asset],
+        partition_key="A",
+    )
+
+
 def test_user_forgot_dict_type_annotation_for_multiple_partitions(
     start: datetime,
     daily: DailyPartitionsDefinition,
