@@ -27,6 +27,7 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -390,7 +391,7 @@ def test_empty_partitions():
 
 
 def test_future_tick():
-    with pendulum.test(pendulum.parse("2022-02-28")):
+    with pendulum_freeze_time(pendulum.parse("2022-02-28")):
 
         @daily_partitioned_config(start_date="2021-05-05")
         def my_partitioned_config(start, end):

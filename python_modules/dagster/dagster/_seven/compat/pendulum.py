@@ -60,6 +60,23 @@ PendulumInterval: TypeAlias = (
 )
 
 
+@contextmanager
+def pendulum_freeze_time(t):
+    if _IS_PENDULUM_3:
+        yield from pendulum.travel_to(t, freeze=True)
+    else:
+        yield from pendulum.time(t)
+
+
+def pendulum_create_timezone(tz_name: str):
+    if _IS_PENDULUM_3:
+        from pendulum.tz.timezone import Timezone
+
+        return Timezone(tz_name)
+    else:
+        return pendulum.tz.timezone(tz_name)  # type: ignore
+
+
 # Workaround for issue with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535
 def to_timezone(dt: PendulumDateTime, tz: str):

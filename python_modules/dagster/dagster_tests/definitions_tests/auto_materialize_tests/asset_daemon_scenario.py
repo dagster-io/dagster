@@ -92,6 +92,7 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
 )
 from dagster._serdes.serdes import serialize_value
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -348,7 +349,7 @@ class AssetDaemonScenarioState(NamedTuple):
             # fake current_time on the scenario state
             return (self.current_time + (datetime.datetime.now() - start)).timestamp()
 
-        with pendulum.test(self.current_time), mock.patch("time.time", new=test_time_fn):
+        with pendulum_freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.assets,
@@ -541,7 +542,8 @@ class AssetDaemonScenarioState(NamedTuple):
         self.logger.critical("********************************")
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
-        with pendulum.test(self.current_time):
+
+        with pendulum_freeze_time(self.current_time):
             if self.is_daemon:
                 (
                     new_run_requests,
