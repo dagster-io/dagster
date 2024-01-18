@@ -33,7 +33,7 @@ Schedules kick off [jobs][jobs] at fixed time intervals. Using schedules, you ca
 
 ### Sensors
 
-To run a job or materialize an asset in response to specific events, you can use sensors. Sensors continuously check and execute logic to know whether to kick off a run. They are commonly used for situations where you want to materialize an asset after something else happens, such as:
+You can use sensors to run a job or materialize an asset in response to specific events. Sensors periodically check and execute logic to know whether to kick off a run. They are commonly used for situations where you want to materialize an asset after some externally observable event happens, such as:
 
 - A new file arrives in a specific location, such as Amazon S3
 - Another asset elsewhere has materialized
