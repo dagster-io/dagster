@@ -126,7 +126,7 @@
           },
           {
             "title": "Auto-materialization policies",
-            "path": "/concepts/assets/auto-executing-assets"
+            "path": "/concepts/assets/asset-auto-execution"
           },
           {
             "title": "Asset Sensors",
