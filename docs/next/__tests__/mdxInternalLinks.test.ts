@@ -11,7 +11,7 @@ import mdx from 'remark-mdx';
 import visit from 'unist-util-visit';
 
 import masterNavigation from '../../content/_navigation.json';
-import {getItems, getIds} from '../components/mdx/SidebarNavigation';
+import {getMDXItems, getIds} from '../components/SidebarNavigation';
 import {flatten} from '../util/navigation';
 
 // remark
@@ -162,7 +162,6 @@ function collectInternalLinks(tree: Node, currentFilePath: string): Array<string
     }
 
     const {url} = linkNode;
-    // console.log(linkNode, url);
     if (url.match(externalLinkRegex)) {
       return;
     }
@@ -194,6 +193,6 @@ function fileExists(filePath: string): boolean {
 
 function collectHeadingsAsAnchors(tree: Node): string[] {
   const node = generateToc(tree, {});
-  const tableOfContents = getItems(node.map, {});
+  const tableOfContents = getMDXItems(node.map, {});
   return getIds(tableOfContents.items[0].items);
 }
