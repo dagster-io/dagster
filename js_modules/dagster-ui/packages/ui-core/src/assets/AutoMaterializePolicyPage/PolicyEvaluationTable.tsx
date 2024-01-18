@@ -1,9 +1,6 @@
-import {Box, Table, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
-
-import {assertUnreachable} from '../../app/Util';
-import {TimeElapsed} from '../../runs/TimeElapsed';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
@@ -16,6 +13,8 @@ import {
   SpecificPartitionAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from './types';
+import {assertUnreachable} from '../../app/Util';
+import {TimeElapsed} from '../../runs/TimeElapsed';
 
 interface Props<T> {
   rootEvaluation: T;

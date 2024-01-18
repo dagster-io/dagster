@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -13,11 +14,17 @@ import {
   Subheading,
   Tag,
   TextInput,
-  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
+import {RunRequestTable} from './DryRunRequestTable';
+import {DynamicPartitionRequests} from './DynamicPartitionRequests';
+import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
+import {
+  SensorDryRunMutation,
+  SensorDryRunMutationVariables,
+} from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -31,14 +38,6 @@ import {
 } from '../sensors/types/EditCursorDialog.types';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
-
-import {RunRequestTable} from './DryRunRequestTable';
-import {DynamicPartitionRequests} from './DynamicPartitionRequests';
-import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
-import {
-  SensorDryRunMutation,
-  SensorDryRunMutationVariables,
-} from './types/SensorDryRunDialog.types';
 
 type DryRunInstigationTick = Extract<
   SensorDryRunMutation['sensorDryRun'],

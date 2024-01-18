@@ -1,13 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Page, Spinner, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-
-import {useTrackPageView} from '../app/analytics';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useStartTrace} from '../performance';
-import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
@@ -17,6 +11,11 @@ import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
 } from './types/AssetsCatalogRoot.types';
+import {useTrackPageView} from '../app/analytics';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useStartTrace} from '../performance';
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsCatalogRoot = () => {
   useTrackPageView();

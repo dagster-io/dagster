@@ -2,6 +2,15 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
+import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {repoAddressToSelector} from './repoAddressToSelector';
+import {RepoAddress} from './types';
+import {
+  WorkspaceSchedulesQuery,
+  WorkspaceSchedulesQueryVariables,
+} from './types/WorkspaceSchedulesRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -15,16 +24,6 @@ import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
-
-import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
-import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {repoAddressToSelector} from './repoAddressToSelector';
-import {RepoAddress} from './types';
-import {
-  WorkspaceSchedulesQuery,
-  WorkspaceSchedulesQueryVariables,
-} from './types/WorkspaceSchedulesRoot.types';
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();

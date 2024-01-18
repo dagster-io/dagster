@@ -1,19 +1,16 @@
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogFooter,
   Icon,
   Mono,
   Spinner,
-  Colors,
 } from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {DagsterEventType} from '../graphql/types';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
@@ -24,6 +21,8 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
+import {DagsterEventType} from '../graphql/types';
+import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
   const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(

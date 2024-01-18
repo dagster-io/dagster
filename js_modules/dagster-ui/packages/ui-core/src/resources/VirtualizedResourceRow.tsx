@@ -1,14 +1,13 @@
-import {Box, Caption, Icon, MiddleTruncate, Mono, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {succinctType} from './ResourceRoot';
+import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {succinctType} from './ResourceRoot';
-import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 1fr';
 

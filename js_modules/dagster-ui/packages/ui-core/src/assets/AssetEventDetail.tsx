@@ -1,16 +1,6 @@
-import {Box, Group, Heading, Icon, Mono, Subheading, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Group, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {AssetKeyInput} from '../graphql/types';
-import {Description} from '../pipelines/Description';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
@@ -22,6 +12,15 @@ import {
   AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
+import {Timestamp} from '../app/time/Timestamp';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
+import {Description} from '../pipelines/Description';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetEventDetail = ({
   event,

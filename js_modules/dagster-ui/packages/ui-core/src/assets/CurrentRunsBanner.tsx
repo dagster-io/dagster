@@ -1,5 +1,5 @@
 import {Alert, Box, Spinner} from '@dagster-io/ui-components';
-import {BorderSide, BorderSetting} from '@dagster-io/ui-components/src/components/types';
+import {BorderSetting, BorderSide} from '@dagster-io/ui-components/src/components/types';
 import React from 'react';
 import {Link} from 'react-router-dom';
 

@@ -2,6 +2,12 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {LaunchpadSessionError} from './LaunchpadSessionError';
+import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {
+  ConfigForRunQuery,
+  ConfigForRunQueryVariables,
+} from './types/LaunchpadSetupFromRunRoot.types';
 import {
   IExecutionSession,
   applyCreateSession,
@@ -14,13 +20,6 @@ import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {LaunchpadSessionError} from './LaunchpadSessionError';
-import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {
-  ConfigForRunQuery,
-  ConfigForRunQueryVariables,
-} from './types/LaunchpadSetupFromRunRoot.types';
 
 export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;

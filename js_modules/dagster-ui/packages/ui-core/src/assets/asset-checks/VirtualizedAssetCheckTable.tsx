@@ -5,17 +5,16 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {linkToRunEvent} from '../../runs/RunUtils';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {testId} from '../../testing/testId';
-import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
-import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
-
 import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {linkToRunEvent} from '../../runs/RunUtils';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {testId} from '../../testing/testId';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 type Props = {
   assetNode: ExecuteChecksButtonAssetNodeFragment;

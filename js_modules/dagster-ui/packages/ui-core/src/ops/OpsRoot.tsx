@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -8,29 +9,27 @@ import {
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-  Colors,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 import {
+  CellMeasurerCache,
   AutoSizer as _AutoSizer,
   CellMeasurer as _CellMeasurerer,
-  CellMeasurerCache,
   List as _List,
 } from 'react-virtualized';
 import styled from 'styled-components';
 
+import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
+import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from './OpTypeSignature';
+import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 
 const AutoSizer: any = _AutoSizer;
 const CellMeasurer: any = _CellMeasurerer;

@@ -7,8 +7,8 @@ import {MemoryRouter} from 'react-router-dom';
 import * as Alerting from '../../../app/CustomAlertProvider';
 import {BackfillTable} from '../BackfillTable';
 import {
-  BackfillTableFragmentFailedErrorStatus,
   BackfillTableFragmentFailedError,
+  BackfillTableFragmentFailedErrorStatus,
 } from '../__fixtures__/BackfillTable.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.

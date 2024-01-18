@@ -2,6 +2,13 @@ import {useLazyQuery} from '@apollo/client';
 import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
+import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
+import {
+  AssetSensorTicksQuery,
+  AssetSensorTicksQueryVariables,
+} from './types/AssetSensorTicksQuery.types';
+import {SensorFragment} from './types/SensorFragment.types';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
@@ -14,14 +21,6 @@ import {isStuckStartedTick} from '../instigation/util';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
-import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
-import {
-  AssetSensorTicksQuery,
-  AssetSensorTicksQueryVariables,
-} from './types/AssetSensorTicksQuery.types';
-import {SensorFragment} from './types/SensorFragment.types';
 
 const MINUTE = 60 * 1000;
 const THREE_MINUTES = 3 * MINUTE;

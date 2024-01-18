@@ -2,9 +2,6 @@ import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {titleOfIO} from '../app/titleOfIO';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
 import {OpIOBox, PARENT_IN, PARENT_OUT, metadataForCompositeParentIO} from './OpIOBox';
@@ -12,6 +9,8 @@ import {SVGMonospaceText} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {titleOfIO} from '../app/titleOfIO';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;

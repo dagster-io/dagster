@@ -3,11 +3,10 @@ import {Box, Icon, Mono} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {UnderlyingOpsAssetNodeFragment} from './types/UnderlyingOpsOrGraph.types';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {UnderlyingOpsAssetNodeFragment} from './types/UnderlyingOpsOrGraph.types';
 
 export const UnderlyingOpsOrGraph = ({
   assetNode,

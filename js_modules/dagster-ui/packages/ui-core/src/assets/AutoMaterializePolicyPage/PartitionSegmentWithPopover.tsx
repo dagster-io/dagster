@@ -1,20 +1,19 @@
 import {
   Box,
+  Colors,
   MiddleTruncate,
   Popover,
   TextInput,
   TextInputContainer,
-  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {assertUnreachable} from '../../app/Util';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {AssetConditionEvaluationStatus, AssetSubset} from './types';
+import {assertUnreachable} from '../../app/Util';
+import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 const statusToColors = (status: AssetConditionEvaluationStatus) => {
   switch (status) {

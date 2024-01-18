@@ -1,14 +1,13 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
-import {ButtonLink, Group, Icon, Caption, Colors} from '@dagster-io/ui-components';
+import {ButtonLink, Caption, Colors, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {LocationStateChangeEventType} from '../graphql/types';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {
   LocationStateChangeSubscription,
   LocationStateChangeSubscriptionVariables,
 } from './types/RepositoryLocationStateObserver.types';
+import {LocationStateChangeEventType} from '../graphql/types';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {

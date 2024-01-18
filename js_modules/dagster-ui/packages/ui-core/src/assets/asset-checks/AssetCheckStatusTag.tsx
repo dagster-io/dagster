@@ -1,4 +1,4 @@
-import {BaseTag, Box, Icon, Spinner, Tag, Colors} from '@dagster-io/ui-components';
+import {BaseTag, Box, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {assertUnreachable} from '../../app/Util';

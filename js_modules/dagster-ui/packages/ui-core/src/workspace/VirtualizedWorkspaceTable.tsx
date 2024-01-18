@@ -3,10 +3,9 @@ import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {RepoAddress} from './types';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';
-
-import {RepoAddress} from './types';
 
 export const RepoRow = ({
   repoAddress,

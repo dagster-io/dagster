@@ -9,12 +9,11 @@ import {
 import React from 'react';
 import styled from 'styled-components';
 
+import {StatusDot} from './StatusDot';
+import {FolderNodeNonAssetType, getDisplayName} from './util';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {useAssetNodeMenu} from '../AssetNodeMenu';
 import {GraphData, GraphNode} from '../Utils';
-
-import {StatusDot} from './StatusDot';
-import {FolderNodeNonAssetType, getDisplayName} from './util';
 
 export const AssetSidebarNode = ({
   node,

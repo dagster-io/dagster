@@ -1,4 +1,4 @@
-import {Box, Button, DialogFooter, DialogHeader, Dialog, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, DialogHeader, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {RepoSelector} from '../nav/RepoSelector';

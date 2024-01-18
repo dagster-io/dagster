@@ -1,18 +1,17 @@
-import {Menu, MenuItem, Spinner, MenuDivider, Box} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
+import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
+import {StatusDot} from './sidebar/StatusDot';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   AssetKeysDialog,
-  AssetKeysDialogHeader,
   AssetKeysDialogEmptyState,
+  AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
-
-import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
-import {StatusDot} from './sidebar/StatusDot';
 
 type Props = {
   graphData: GraphData;

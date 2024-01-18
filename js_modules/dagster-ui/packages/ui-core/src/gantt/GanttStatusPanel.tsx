@@ -1,17 +1,16 @@
-import {Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {formatElapsedTimeWithoutMsec} from '../app/Util';
-import {SidebarSection} from '../pipelines/SidebarComponents';
-import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
-import {StepSelection} from '../runs/StepSelection';
 
 import {GanttChartMode} from './Constants';
 import {isPlannedDynamicStep} from './DynamicStepSupport';
 import {boxStyleFor} from './GanttChartLayout';
 import {RunGroupPanel} from './RunGroupPanel';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
+import {SidebarSection} from '../pipelines/SidebarComponents';
+import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
+import {StepSelection} from '../runs/StepSelection';
 
 interface GanttStatusPanelProps {
   graph: GraphQueryItem[];

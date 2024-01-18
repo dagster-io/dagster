@@ -1,17 +1,16 @@
-import {Box, FontFamily, Icon, Menu, MenuItem, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Menu, MenuItem} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
-
-import {withMiddleTruncation} from '../app/Util';
-import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
-import {AssetKey} from '../assets/types';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {withMiddleTruncation} from '../app/Util';
+import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
+import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
+import {AssetKey} from '../assets/types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
   const name = `${group.groupName} `;

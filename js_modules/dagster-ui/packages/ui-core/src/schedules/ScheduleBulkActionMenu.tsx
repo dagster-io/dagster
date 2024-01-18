@@ -1,10 +1,9 @@
 import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {ScheduleInfo, ScheduleStateChangeDialog} from './ScheduleStateChangeDialog';
 import {instigationStateSummary} from '../instigation/instigationStateSummary';
 import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
-
-import {ScheduleInfo, ScheduleStateChangeDialog} from './ScheduleStateChangeDialog';
 
 interface Props {
   schedules: ScheduleInfo[];

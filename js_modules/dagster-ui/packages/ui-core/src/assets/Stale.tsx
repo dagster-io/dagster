@@ -5,20 +5,19 @@ import {
   ButtonLink,
   Caption,
   CaptionMono,
+  Colors,
   Icon,
   Popover,
-  Colors,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey, LiveDataForNode} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;
 

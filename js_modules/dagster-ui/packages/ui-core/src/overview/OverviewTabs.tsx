@@ -1,5 +1,5 @@
 import {QueryResult} from '@apollo/client';
-import {Box, Spinner, Tabs, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';

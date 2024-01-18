@@ -1,10 +1,9 @@
 import {ButtonLink, MiddleTruncate, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {DagsterTag} from './RunTag';
 import {InstigationSelector} from '../graphql/types';
 import {TickDetailsDialog} from '../instigation/TickDetailsDialog';
-
-import {DagsterTag} from './RunTag';
 
 interface Props {
   instigationSelector: InstigationSelector;

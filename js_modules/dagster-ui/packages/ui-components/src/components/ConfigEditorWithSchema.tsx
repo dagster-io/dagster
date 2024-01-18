@@ -2,7 +2,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
-import {ConfigSchema, ConfigEditorHandle, NewConfigEditor} from './NewConfigEditor';
+import {ConfigEditorHandle, ConfigSchema, NewConfigEditor} from './NewConfigEditor';
 import {Spinner} from './Spinner';
 import {SplitPanelContainer} from './SplitPanelContainer';
 import {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';

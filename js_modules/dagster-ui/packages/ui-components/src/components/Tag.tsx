@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {BaseTag} from './BaseTag';
 import {Colors} from './Color';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {

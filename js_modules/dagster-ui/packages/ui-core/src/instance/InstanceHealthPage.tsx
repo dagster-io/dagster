@@ -1,16 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, PageHeader, Heading, Subheading, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();

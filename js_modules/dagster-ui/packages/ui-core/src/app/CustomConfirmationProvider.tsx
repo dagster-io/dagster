@@ -1,4 +1,4 @@
-import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 interface ConfirmationOptions {

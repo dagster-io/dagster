@@ -5,12 +5,12 @@ import * as React from 'react';
 
 import {SensorStateChangeDialog} from '../SensorStateChangeDialog';
 import {
-  buildStopMinnesotaSuccess,
-  buildStopOregonError,
-  buildStopOregonSuccess,
   buildStartKansasSuccess,
   buildStartLouisianaError,
   buildStartLouisianaSuccess,
+  buildStopMinnesotaSuccess,
+  buildStopOregonError,
+  buildStopOregonSuccess,
   sensorKansasCurrentlyStopped,
   sensorLouisianaCurrentlyStopped,
   sensorMinnesotaCurrentlyRunning,

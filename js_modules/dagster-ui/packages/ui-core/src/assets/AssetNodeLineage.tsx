@@ -2,21 +2,20 @@ import {
   Box,
   Button,
   ButtonGroup,
+  Colors,
   Icon,
   JoinedButtons,
   TextInput,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphData} from '../asset-graph/Utils';
-import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
-import {AssetKeyInput} from '../graphql/types';
-
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetLineageScope, AssetViewParams} from './types';
+import {GraphData} from '../asset-graph/Utils';
+import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetKeyInput} from '../graphql/types';
 
 export const AssetNodeLineage = ({
   params,

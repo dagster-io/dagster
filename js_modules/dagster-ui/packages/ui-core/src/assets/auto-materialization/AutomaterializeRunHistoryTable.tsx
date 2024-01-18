@@ -1,4 +1,4 @@
-import {ButtonGroup, Box, CursorHistoryControls} from '@dagster-io/ui-components';
+import {Box, ButtonGroup, CursorHistoryControls} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

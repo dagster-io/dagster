@@ -1,4 +1,4 @@
-import {Icon, Box, Tooltip, IconName, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

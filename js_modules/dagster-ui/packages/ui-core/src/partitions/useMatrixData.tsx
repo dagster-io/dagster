@@ -2,6 +2,10 @@ import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
+import {
+  PartitionMatrixSolidHandleFragment,
+  PartitionMatrixStepRunFragment,
+} from './types/useMatrixData.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
@@ -9,11 +13,6 @@ import {buildLayout} from '../gantt/GanttChartLayout';
 import {StepEventStatus} from '../graphql/types';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-
-import {
-  PartitionMatrixStepRunFragment,
-  PartitionMatrixSolidHandleFragment,
-} from './types/useMatrixData.types';
 
 export type StatusSquareColor =
   | 'SUCCESS'

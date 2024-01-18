@@ -1,13 +1,12 @@
 import {gql, useSubscription} from '@apollo/client';
 import * as React from 'react';
 
-import {ComputeIoType} from '../graphql/types';
-
 import {
   ComputeLogForSubscriptionFragment,
   ComputeLogsSubscription,
   ComputeLogsSubscriptionVariables,
 } from './types/useComputeLogs.types';
+import {ComputeIoType} from '../graphql/types';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 

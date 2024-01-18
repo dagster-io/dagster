@@ -21,9 +21,9 @@ import {StyledRawCodeMirror} from './StyledRawCodeMirror';
 import {patchLint} from './configeditor/codemirror-yaml/lint';
 import {
   YamlModeValidateFunction,
+  YamlModeValidationResult,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-  YamlModeValidationResult,
 } from './configeditor/codemirror-yaml/mode';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 import {ConfigSchema} from './configeditor/types/ConfigSchema';

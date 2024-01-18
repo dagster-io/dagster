@@ -1,15 +1,15 @@
 import {
-  Tag,
+  BaseTag,
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Button,
-  BaseTag,
-  Box,
-  ButtonLink,
+  Tag,
   Tooltip,
   ifPlural,
-  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 

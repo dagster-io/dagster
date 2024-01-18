@@ -1,4 +1,4 @@
-import {Box, Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

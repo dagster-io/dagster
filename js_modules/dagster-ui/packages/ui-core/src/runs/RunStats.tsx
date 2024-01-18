@@ -4,10 +4,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-
-import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {

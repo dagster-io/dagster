@@ -4,6 +4,7 @@ import {
   Box,
   ButtonLink,
   CaptionMono,
+  Colors,
   Group,
   Heading,
   Icon,
@@ -17,11 +18,16 @@ import {
   Table,
   Tag,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
 
+import {ResourceTabs} from './ResourceTabs';
+import {
+  ResourceDetailsFragment,
+  ResourceRootQuery,
+  ResourceRootQueryVariables,
+} from './types/ResourceRoot.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
@@ -33,13 +39,6 @@ import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ResourceTabs} from './ResourceTabs';
-import {
-  ResourceRootQuery,
-  ResourceRootQueryVariables,
-  ResourceDetailsFragment,
-} from './types/ResourceRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;

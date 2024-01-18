@@ -1,28 +1,27 @@
 import {gql, useMutation} from '@apollo/client';
 import {
-  ButtonLink,
   Button,
+  ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   TextArea,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
 
+import {
+  SetSensorCursorMutation,
+  SetSensorCursorMutationVariables,
+} from './types/EditCursorDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../graphql/types';
-
-import {
-  SetSensorCursorMutation,
-  SetSensorCursorMutationVariables,
-} from './types/EditCursorDialog.types';
 
 export const EditCursorDialog = ({
   isOpen,

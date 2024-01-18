@@ -1,11 +1,18 @@
 import {gql} from '@apollo/client';
-import {Box, FontFamily, Icon, Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
+import {useAssetNodeMenu} from './AssetNodeMenu';
+import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {AssetLatestRunSpinner} from './AssetRunLinking';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {GraphData, GraphNode, LiveDataForNode} from './Utils';
+import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
+import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
@@ -15,14 +22,6 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-
-import {useAssetNodeMenu} from './AssetNodeMenu';
-import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {AssetLatestRunSpinner} from './AssetRunLinking';
-import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
-import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props {
   definition: AssetNodeFragment;

@@ -11,9 +11,9 @@ import {
   AssetPartitionDetailLoader,
 } from '../AssetPartitionDetail';
 import {
+  MaterializationUpstreamDataFullMock,
   buildAssetPartitionDetailMock,
   buildAssetPartitionStaleMock,
-  MaterializationUpstreamDataFullMock,
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export

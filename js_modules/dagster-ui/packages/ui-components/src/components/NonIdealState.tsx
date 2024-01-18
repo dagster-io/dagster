@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 import {Subheading} from './Text';
 

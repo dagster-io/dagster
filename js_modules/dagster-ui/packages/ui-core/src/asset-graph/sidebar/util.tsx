@@ -1,4 +1,4 @@
-import {Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import styled, {keyframes} from 'styled-components';
 

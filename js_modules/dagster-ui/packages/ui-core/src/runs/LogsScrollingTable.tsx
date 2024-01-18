@@ -1,13 +1,13 @@
 import {gql} from '@apollo/client';
-import {NonIdealState, Colors} from '@dagster-io/ui-components';
+import {Colors, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {
-  CellMeasurer as _CellMeasurer,
   CellMeasurerCache,
-  List as _List,
   ListRowProps,
   ScrollParams,
+  CellMeasurer as _CellMeasurer,
+  List as _List,
 } from 'react-virtualized';
 import styled from 'styled-components';
 

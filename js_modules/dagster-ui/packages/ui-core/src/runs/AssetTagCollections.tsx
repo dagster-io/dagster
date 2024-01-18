@@ -2,12 +2,12 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
   Dialog,
   DialogFooter,
   Icon,
   MiddleTruncate,
   Tag,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

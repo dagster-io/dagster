@@ -1,16 +1,15 @@
-import {Box, FontFamily, Mono, Popover, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {RunStatus} from '../graphql/types';
-import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
+import {RunStatus} from '../graphql/types';
+import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;

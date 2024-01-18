@@ -1,10 +1,9 @@
 import {Box, IconName} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-
 import {FilterObject} from './useFilter';
 import {SetFilterActiveState} from './useStaticSetFilter';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 export type SuggestionFilterSuggestion<TValue> = {final?: boolean; value: TValue};
 

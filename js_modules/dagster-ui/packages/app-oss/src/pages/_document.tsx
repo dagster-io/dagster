@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {Html, Head, Main, NextScript} from 'next/document';
+import {Head, Html, Main, NextScript} from 'next/document';
 import React from 'react';
 
 function getSecurityPolicy() {

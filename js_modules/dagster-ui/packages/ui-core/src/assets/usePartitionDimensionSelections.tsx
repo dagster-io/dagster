@@ -1,17 +1,16 @@
 import React from 'react';
 
+import {placeholderDimensionSelection} from './MultipartitioningSupport';
+import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
+  allPartitionsRange,
   allPartitionsSpan,
   partitionsToText,
-  allPartitionsRange,
   spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
-
-import {placeholderDimensionSelection} from './MultipartitioningSupport';
-import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 type DimensionQueryState = {
   name: string;

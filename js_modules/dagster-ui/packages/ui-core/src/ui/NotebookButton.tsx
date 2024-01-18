@@ -1,10 +1,10 @@
 import {
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
-  Icon,
   ExternalAnchorButton,
+  Icon,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 

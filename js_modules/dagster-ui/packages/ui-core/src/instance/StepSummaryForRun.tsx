@@ -4,13 +4,12 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {StepEventStatus} from '../graphql/types';
-import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
-
 import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
+import {StepEventStatus} from '../graphql/types';
+import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
 interface Props {
   runId: string;

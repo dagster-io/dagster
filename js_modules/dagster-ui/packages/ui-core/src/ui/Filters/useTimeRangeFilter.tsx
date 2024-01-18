@@ -1,4 +1,4 @@
-import {IconName, Box, Icon, Dialog, Button, DialogFooter, Colors} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, DialogFooter, Icon, IconName} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -6,11 +6,10 @@ import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components';
 
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-
-import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 const DateRangePicker = React.lazy(() => import('./DateRangePickerWrapper'));
 

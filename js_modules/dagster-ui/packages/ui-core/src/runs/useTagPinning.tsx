@@ -1,8 +1,7 @@
 import React from 'react';
 
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {DagsterTag} from './RunTag';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 export function useTagPinning() {
   // Most system tags are unpinned by default so we track pinned for these.

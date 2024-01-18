@@ -1,4 +1,4 @@
-import {MenuItem, useViewport, Suggest, Colors} from '@dagster-io/ui-components';
+import {Colors, MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

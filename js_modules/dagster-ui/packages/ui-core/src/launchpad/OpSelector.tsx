@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Popover, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -12,8 +13,6 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 
 interface IOpSelectorProps {
   pipelineName: string;

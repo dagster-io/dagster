@@ -3,6 +3,12 @@ import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {DeletionDialog} from './DeletionDialog';
+import {RunConfigDialog} from './RunConfigDialog';
+import {doneStatuses} from './RunStatuses';
+import {RunsQueryRefetchContext} from './RunUtils';
+import {TerminationDialog} from './TerminationDialog';
+import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
@@ -13,13 +19,6 @@ import {
 } from '../instance/types/InstanceConcurrency.types';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
-
-import {DeletionDialog} from './DeletionDialog';
-import {RunConfigDialog} from './RunConfigDialog';
-import {doneStatuses} from './RunStatuses';
-import {RunsQueryRefetchContext} from './RunUtils';
-import {TerminationDialog} from './TerminationDialog';
-import {RunFragment} from './types/RunFragments.types';
 
 type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 

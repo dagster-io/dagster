@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {useGroupedEvents} from './groupByPartition';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {

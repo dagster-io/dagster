@@ -1,9 +1,8 @@
 import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {DynamicPartitionsRequestType} from '../graphql/types';
-
 import {DynamicPartitionRequestFragment} from './types/SensorDryRunDialog.types';
+import {DynamicPartitionsRequestType} from '../graphql/types';
 
 export function DynamicPartitionRequests({
   includeTitle = true,

@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import {Colors} from '../Color';
 import {Group} from '../Group';
-import {Slider, MultiSlider} from '../Slider';
+import {MultiSlider, Slider} from '../Slider';
 
 // eslint-disable-next-line import/no-default-export
 export default {

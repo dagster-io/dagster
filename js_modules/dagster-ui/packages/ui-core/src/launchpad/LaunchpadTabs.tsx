@@ -4,10 +4,10 @@ import styled, {css} from 'styled-components';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
+  IStorageData,
   applyChangesToSession,
   applyRemoveSession,
   applySelectSession,
-  IStorageData,
 } from '../app/ExecutionSessionStorage';
 
 interface ExecutationTabProps {

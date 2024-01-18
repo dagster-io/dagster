@@ -1,9 +1,8 @@
 import styled, {css} from 'styled-components';
 
-import {assertUnreachable} from '../util/assertUnreachable';
-
 import {Colors} from './Color';
 import {BorderSetting, BorderSide, DirectionalSpacing, FlexProperties} from './types';
+import {assertUnreachable} from '../util/assertUnreachable';
 
 interface Props {
   background?: string | null;

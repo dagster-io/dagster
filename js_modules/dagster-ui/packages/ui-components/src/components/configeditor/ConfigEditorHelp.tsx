@@ -1,11 +1,10 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 import {Colors} from '../Color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
-
-import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

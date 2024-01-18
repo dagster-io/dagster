@@ -56,7 +56,9 @@ const textDecoration = (underline: Underline) => {
   }
 };
 
-export const ButtonLink = styled(({color, underline, ...rest}) => <button {...rest} />)<Props>`
+export const ButtonLink = styled(({color: _color, underline: _underline, ...rest}) => (
+  <button {...rest} />
+))<Props>`
   background: transparent;
   border: 0;
   cursor: pointer;

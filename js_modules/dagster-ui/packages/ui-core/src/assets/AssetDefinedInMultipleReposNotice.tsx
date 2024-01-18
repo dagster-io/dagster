@@ -2,17 +2,16 @@ import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-
 import {AssetKey} from './types';
 import {
   AssetDefinitionCollisionQuery,
   AssetDefinitionCollisionQueryVariables,
 } from './types/AssetDefinedInMultipleReposNotice.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
 

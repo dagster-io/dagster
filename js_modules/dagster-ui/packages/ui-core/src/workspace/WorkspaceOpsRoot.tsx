@@ -1,13 +1,12 @@
 import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {OpsRoot} from '../ops/OpsRoot';
-
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {OpsRoot} from '../ops/OpsRoot';
 
 export const WorkspaceOpsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();

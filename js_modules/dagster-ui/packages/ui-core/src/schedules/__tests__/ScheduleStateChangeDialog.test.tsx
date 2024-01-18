@@ -5,12 +5,12 @@ import * as React from 'react';
 
 import {ScheduleStateChangeDialog} from '../ScheduleStateChangeDialog';
 import {
-  buildStopDelawareSuccess,
-  buildStopHawaiiError,
-  buildStopHawaiiSuccess,
   buildStartAlaskaSuccess,
   buildStartColoradoError,
   buildStartColoradoSuccess,
+  buildStopDelawareSuccess,
+  buildStopHawaiiError,
+  buildStopHawaiiSuccess,
   scheduleAlaskaCurrentlyStopped,
   scheduleColoradoCurrentlyStopped,
   scheduleDelawareCurrentlyRunning,

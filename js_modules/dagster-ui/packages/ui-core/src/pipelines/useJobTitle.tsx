@@ -1,8 +1,7 @@
 import * as React from 'react';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-
 import {ExplorerPath} from './PipelinePathUtils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 export const useJobTitle = (explorerPath: ExplorerPath, isJob: boolean) => {
   const {pipelineName} = explorerPath;

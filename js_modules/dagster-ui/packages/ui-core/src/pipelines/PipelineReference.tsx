@@ -1,11 +1,10 @@
-import {Box, Icon, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {PipelineSnapshotLink} from './PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
-
-import {PipelineSnapshotLink} from './PipelinePathUtils';
 
 export interface Props {
   pipelineName: string;

@@ -7,7 +7,7 @@ import {Box} from './Box';
 import {Colors} from './Color';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 interface Props
   extends Omit<

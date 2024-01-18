@@ -1,13 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -18,6 +11,12 @@ import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
 } from './types/WorkspaceGraphsRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();

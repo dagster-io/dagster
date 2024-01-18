@@ -3,10 +3,8 @@ import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-
 import {OpEdges} from './OpEdges';
-import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
+import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
 import {ParentOpNode} from './ParentOpNode';
 import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
@@ -19,6 +17,7 @@ import {
   isOpHighlighted,
 } from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 const NoOp = () => {};
 

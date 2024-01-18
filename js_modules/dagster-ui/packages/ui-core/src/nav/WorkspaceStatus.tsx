@@ -1,9 +1,8 @@
-import {Icon, Tooltip, Spinner, Colors} from '@dagster-io/ui-components';
+import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
-
 import {WarningTooltip} from './WarningTooltip';
+import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
 export const WorkspaceStatus = React.memo(({placeholder}: {placeholder: boolean}) => {
   const {codeLocations} = React.useContext(DeploymentStatusContext);

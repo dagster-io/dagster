@@ -1,17 +1,16 @@
-import {Caption, Tooltip, Colors, ifPlural, useViewport} from '@dagster-io/ui-components';
+import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {isStuckStartedTick} from './util';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
-
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {isStuckStartedTick} from './util';
 
 dayjs.extend(relativeTime);
 

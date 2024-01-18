@@ -2,14 +2,13 @@ import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
 import qs from 'qs';
 import React from 'react';
 
+import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {AnchorButton} from '../ui/AnchorButton';
 import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {RunRequestFragment} from './types/RunRequestFragment.types';
 
 type Props = {
   name: string;

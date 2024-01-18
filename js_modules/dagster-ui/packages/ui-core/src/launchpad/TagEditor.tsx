@@ -1,9 +1,9 @@
 import {
   Box,
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   TextInput,

@@ -1,31 +1,30 @@
 import {
   Box,
   Button,
+  Colors,
+  Dialog,
   DialogFooter,
   DialogHeader,
-  Dialog,
   Group,
   Icon,
   IconWrapper,
   Spinner,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
 import {RepoSelector, RepoSelectorOption} from './RepoSelector';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   allRepos: RepoSelectorOption[];

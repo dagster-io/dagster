@@ -2,18 +2,27 @@ import {useLazyQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Page,
   Checkbox,
+  Colors,
+  Heading,
+  Page,
+  PageHeader,
   Spinner,
   Subtitle2,
-  Heading,
-  PageHeader,
   Table,
-  Colors,
 } from '@dagster-io/ui-components';
 import React, {useLayoutEffect} from 'react';
 import {Redirect} from 'react-router-dom';
 
+import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
+import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
+import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
+import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
+import {
+  AssetDaemonTickFragment,
+  AssetDaemonTicksQuery,
+  AssetDaemonTicksQueryVariables,
+} from './types/AssetDaemonTicksQuery.types';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -26,16 +35,6 @@ import {isStuckStartedTick} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
-
-import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
-import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
-import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
-import {
-  AssetDaemonTicksQuery,
-  AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
-} from './types/AssetDaemonTicksQuery.types';
 
 const MINUTE = 60 * 1000;
 const THREE_MINUTES = 3 * MINUTE;

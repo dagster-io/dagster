@@ -1,13 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RepoAddress} from '../workspace/types';
-
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/usePartitionNameForPipeline.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RepoAddress} from '../workspace/types';
 
 export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineName: string) {
   const {data: partitionSetsData} = useQuery<

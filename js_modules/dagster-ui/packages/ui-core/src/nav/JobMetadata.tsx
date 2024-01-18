@@ -3,23 +3,14 @@ import {
   Box,
   Button,
   ButtonLink,
-  DialogFooter,
-  Dialog,
-  Tag,
   Colors,
+  Dialog,
+  DialogFooter,
+  Tag,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {tokenForAssetKey} from '../asset-graph/Utils';
-import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
-import {DagsterTag} from '../runs/RunTag';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {repoAddressAsTag} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
@@ -30,6 +21,14 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
+import {DagsterTag} from '../runs/RunTag';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 type JobMetadata = {
   assetNodes: JobMetadataAssetNodeFragment[] | null;

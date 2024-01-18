@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
 import {
   Box,
+  Colors,
   CommonMenuItemProps,
   IconWrapper,
-  iconWithColor,
   MenuItem,
-  Colors,
+  iconWithColor,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';

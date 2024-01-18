@@ -2,7 +2,7 @@ import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
-import {featureEnabled, FeatureFlag} from './Flags';
+import {FeatureFlag, featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';
 
 function twoDigit(v: number) {

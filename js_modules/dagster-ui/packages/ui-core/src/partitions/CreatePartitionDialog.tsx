@@ -2,6 +2,7 @@ import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -10,22 +11,20 @@ import {
   Spinner,
   TextInput,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {
+  AddDynamicPartitionMutation,
+  AddDynamicPartitionMutationVariables,
+} from './types/CreatePartitionDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  AddDynamicPartitionMutation,
-  AddDynamicPartitionMutationVariables,
-} from './types/CreatePartitionDialog.types';
 
 // Keep in sync with the backend which currently has 2 definitions:
 // INVALID_PARTITION_SUBSTRINGS and INVALID_STATIC_PARTITIONS_KEY_CHARACTERS

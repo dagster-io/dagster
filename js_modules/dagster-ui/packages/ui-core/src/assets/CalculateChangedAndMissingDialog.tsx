@@ -1,26 +1,22 @@
-import {useQuery, gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
-  Spinner,
+  Box,
+  Button,
+  Checkbox,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Button,
-  Box,
   Icon,
-  Checkbox,
   MiddleTruncate,
-  Colors,
+  Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
-import {isAssetStale, isAssetMissing} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
@@ -28,6 +24,9 @@ import {
   AssetStaleStatusQuery,
   AssetStaleStatusQueryVariables,
 } from './types/CalculateChangedAndMissingDialog.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 export const CalculateChangedAndMissingDialog = React.memo(
   ({

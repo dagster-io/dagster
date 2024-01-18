@@ -1,7 +1,7 @@
 import {Alert, Box} from '@dagster-io/ui-components';
 import {
-  BorderSide,
   BorderSetting,
+  BorderSide,
   DirectionalSpacing,
 } from '@dagster-io/ui-components/src/components/types';
 import React from 'react';

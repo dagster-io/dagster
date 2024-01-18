@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
+  Colors,
   Group,
   Heading,
   Icon,
@@ -10,19 +11,9 @@ import {
   Spinner,
   Subheading,
   Tag,
-  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
-import {RunStatus, StaleStatus} from '../graphql/types';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
@@ -33,13 +24,21 @@ import {StaleReasonsTags} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
-  AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
+  AssetPartitionLatestRunFragment,
   AssetPartitionStaleQuery,
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
+import {Timestamp} from '../app/time/Timestamp';
+import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {RunStatus, StaleStatus} from '../graphql/types';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(

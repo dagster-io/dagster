@@ -1,15 +1,8 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonLink, Group, Caption, Colors} from '@dagster-io/ui-components';
+import {ButtonLink, Caption, Colors, Group} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {assertUnreachable} from '../app/Util';
-import {RunStatus} from '../graphql/types';
-import {StatusTable} from '../instigation/InstigationUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   SchedulePartitionStatusFragment,
@@ -18,6 +11,12 @@ import {
   SchedulePartitionStatusResultFragment,
 } from './types/SchedulePartitionStatus.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {assertUnreachable} from '../app/Util';
+import {RunStatus} from '../graphql/types';
+import {StatusTable} from '../instigation/InstigationUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 

@@ -1,4 +1,4 @@
-import {Box, Icon, MiddleTruncate, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 

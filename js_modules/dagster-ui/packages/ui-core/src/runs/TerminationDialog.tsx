@@ -5,24 +5,23 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  Colors,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
 import * as React from 'react';
 
-import {getSharedToaster} from '../app/DomUtils';
-import {TerminateRunPolicy} from '../graphql/types';
-import {testId} from '../testing/testId';
-
 import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
+import {getSharedToaster} from '../app/DomUtils';
+import {TerminateRunPolicy} from '../graphql/types';
+import {testId} from '../testing/testId';
 
 export interface Props {
   isOpen: boolean;

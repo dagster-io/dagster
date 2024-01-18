@@ -1,10 +1,10 @@
 import {
-  Popover,
-  TextInput,
-  SuggestionProvider,
-  useSuggestionsForString,
-  Icon,
   Colors,
+  Icon,
+  Popover,
+  SuggestionProvider,
+  TextInput,
+  useSuggestionsForString,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';

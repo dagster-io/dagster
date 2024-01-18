@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
-import {Tabs, Tab} from '../Tabs';
+import {Tab, Tabs} from '../Tabs';
 
 // eslint-disable-next-line import/no-default-export
 export default {

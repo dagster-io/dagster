@@ -1,4 +1,4 @@
-import {Box, Spinner, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 

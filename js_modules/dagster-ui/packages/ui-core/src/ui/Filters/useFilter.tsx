@@ -1,4 +1,4 @@
-import {BaseTag, Icon, IconName, Colors} from '@dagster-io/ui-components';
+import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

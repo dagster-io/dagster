@@ -1,17 +1,16 @@
 import {QueryResult} from '@apollo/client';
-import {PageHeader, Box, Heading, Button, Icon, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Heading, Icon, PageHeader, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {WorkspaceTabs} from './WorkspaceTabs';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {RepoAddress} from './types';
 import {QueryRefreshState} from '../app/QueryRefresh';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from '../nav/ReloadRepositoryLocationButton';
-
-import {WorkspaceTabs} from './WorkspaceTabs';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {RepoAddress} from './types';
 
 interface Props<TData> {
   repoAddress: RepoAddress;

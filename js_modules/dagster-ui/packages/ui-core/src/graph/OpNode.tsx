@@ -1,18 +1,17 @@
 import {gql} from '@apollo/client';
-import {Icon, FontFamily, Colors} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {OpIOBox, metadataForIO} from './OpIOBox';
+import {IOpTag, OpTags} from './OpTags';
+import {OpLayout} from './asyncGraphLayout';
+import {Edge, position} from './common';
+import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {testId} from '../testing/testId';
-
-import {OpIOBox, metadataForIO} from './OpIOBox';
-import {OpTags, IOpTag} from './OpTags';
-import {OpLayout} from './asyncGraphLayout';
-import {Edge, position} from './common';
-import {OpNodeInvocationFragment, OpNodeDefinitionFragment} from './types/OpNode.types';
 
 interface IOpNodeProps {
   layout: OpLayout;

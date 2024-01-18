@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Colors,
   Icon,
   IconWrapper,
   Menu,
@@ -8,19 +9,17 @@ import {
   Popover,
   Spinner,
   TextInput,
-  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useState, useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
+import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
-import {FilterObject} from './useFilter';
 
 interface FilterDropdownProps {
   filters: FilterObject[];

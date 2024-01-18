@@ -1,18 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
-
-import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
-import {StepStatusDot} from '../gantt/GanttStatusPanel';
-import {linkToRunEvent} from '../runs/RunUtils';
-import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';
 import {
   SidebarOpGraphsQuery,
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
+import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
+import {StepStatusDot} from '../gantt/GanttStatusPanel';
+import {linkToRunEvent} from '../runs/RunUtils';
+import {RepoAddress} from '../workspace/types';
 
 const StateColors = {
   SUCCESS: Colors.accentGreen(),

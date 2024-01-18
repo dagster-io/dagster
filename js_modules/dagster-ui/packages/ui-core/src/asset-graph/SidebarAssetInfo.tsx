@@ -1,16 +1,19 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ConfigTypeSchema, Icon, Spinner, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
-  AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
@@ -37,10 +40,6 @@ import {pluginForMetadata} from '../plugins';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {displayNameForAssetKey, GraphNode, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
-import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;

@@ -3,15 +3,32 @@ import {
   Body,
   Box,
   Caption,
+  Colors,
   ConfigTypeSchema,
   Icon,
   Mono,
   Subheading,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
+  metadataForAssetNode,
+} from './AssetMetadata';
+import {AssetNodeList} from './AssetNodeList';
+import {
+  AutomaterializePolicyTag,
+  automaterializePolicyDescription,
+} from './AutomaterializePolicyTag';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
+import {Version} from './Version';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -23,24 +40,6 @@ import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
-import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
-import {
-  AssetMetadataTable,
-  ASSET_NODE_OP_METADATA_FRAGMENT,
-  metadataForAssetNode,
-} from './AssetMetadata';
-import {AssetNodeList} from './AssetNodeList';
-import {
-  automaterializePolicyDescription,
-  AutomaterializePolicyTag,
-} from './AutomaterializePolicyTag';
-import {DependsOnSelfBanner} from './DependsOnSelfBanner';
-import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
-import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
-import {Version} from './Version';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition = ({
   assetNode,

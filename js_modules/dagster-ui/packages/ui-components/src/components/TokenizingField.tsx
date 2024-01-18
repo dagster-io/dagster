@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {MenuItem, Menu} from './Menu';
+import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
