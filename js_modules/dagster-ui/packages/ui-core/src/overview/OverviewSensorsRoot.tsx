@@ -1,10 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
-  Button,
-  Dialog,
-  DialogFooter,
   Heading,
   NonIdealState,
   PageHeader,
@@ -16,15 +12,12 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
-import {UnloadableSensors} from '../instigation/Unloadable';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
@@ -47,8 +40,6 @@ import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragme
 import {
   OverviewSensorsQuery,
   OverviewSensorsQueryVariables,
-  UnloadableSensorsQuery,
-  UnloadableSensorsQueryVariables,
 } from './types/OverviewSensorsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
@@ -302,11 +293,6 @@ export const OverviewSensorsRoot = () => {
         </Box>
       ) : (
         <>
-          {data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates' ? (
-            <UnloadableSensorsAlert
-              count={data.unloadableInstigationStatesOrError.results.length}
-            />
-          ) : null}
           <SensorInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
@@ -317,73 +303,6 @@ export const OverviewSensorsRoot = () => {
       )}
     </Box>
   );
-};
-
-const UnloadableSensorsAlert = ({count}: {count: number}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  if (!count) {
-    return null;
-  }
-
-  const title = count === 1 ? '1 unloadable sensor' : `${count} unloadable sensors`;
-
-  return (
-    <>
-      <Box padding={{vertical: 16, horizontal: 24}} border="top">
-        <Alert
-          intent="warning"
-          title={title}
-          description={
-            <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
-              <div>
-                Sensors were previously started but now cannot be loaded. They may be part of a code
-                location that no longer exists. You can turn them off, but you cannot turn them back
-                on.
-              </div>
-              <Button onClick={() => setIsOpen(true)}>
-                {count === 1 ? 'View unloadable sensor' : 'View unloadable sensors'}
-              </Button>
-            </Box>
-          }
-        />
-      </Box>
-      <Dialog
-        isOpen={isOpen}
-        title="Unloadable schedules"
-        style={{width: '90vw', maxWidth: '1200px'}}
-      >
-        <Box padding={{bottom: 8}}>
-          <UnloadableSensorDialog />
-        </Box>
-        <DialogFooter>
-          <Button intent="primary" onClick={() => setIsOpen(false)}>
-            Done
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </>
-  );
-};
-
-const UnloadableSensorDialog = () => {
-  const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
-    UNLOADABLE_SENSORS_QUERY,
-  );
-  if (!data) {
-    return <Spinner purpose="section" />;
-  }
-
-  if (data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates') {
-    return (
-      <UnloadableSensors
-        sensorStates={data.unloadableInstigationStatesOrError.results}
-        showSubheading={false}
-      />
-    );
-  }
-
-  return <PythonErrorInfo error={data?.unloadableInstigationStatesOrError} />;
 };
 
 type RepoBucket = {
@@ -453,13 +372,6 @@ const OVERVIEW_SENSORS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    unloadableInstigationStatesOrError(instigationType: SENSOR) {
-      ... on InstigationStates {
-        results {
-          id
-        }
-      }
-    }
     instance {
       id
       ...InstanceHealthFragment
@@ -469,21 +381,4 @@ const OVERVIEW_SENSORS_QUERY = gql`
   ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SENSORS_QUERY = gql`
-  query UnloadableSensorsQuery {
-    unloadableInstigationStatesOrError(instigationType: SENSOR) {
-      ... on InstigationStates {
-        results {
-          id
-          ...InstigationStateFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -1,10 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
-  Button,
-  Dialog,
-  DialogFooter,
   Heading,
   NonIdealState,
   PageHeader,
@@ -16,15 +12,12 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
-import {UnloadableSchedules} from '../instigation/Unloadable';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
@@ -47,8 +40,6 @@ import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragme
 import {
   OverviewSchedulesQuery,
   OverviewSchedulesQueryVariables,
-  UnloadableSchedulesQuery,
-  UnloadableSchedulesQueryVariables,
 } from './types/OverviewSchedulesRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
@@ -303,11 +294,6 @@ export const OverviewSchedulesRoot = () => {
         </Box>
       ) : (
         <>
-          {data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates' ? (
-            <UnloadableSchedulesAlert
-              count={data.unloadableInstigationStatesOrError.results.length}
-            />
-          ) : null}
           <SchedulerInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
@@ -318,73 +304,6 @@ export const OverviewSchedulesRoot = () => {
       )}
     </Box>
   );
-};
-
-const UnloadableSchedulesAlert = ({count}: {count: number}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  if (!count) {
-    return null;
-  }
-
-  const title = count === 1 ? '1 unloadable schedule' : `${count} unloadable schedules`;
-
-  return (
-    <>
-      <Box padding={{vertical: 16, horizontal: 24}} border="top">
-        <Alert
-          intent="warning"
-          title={title}
-          description={
-            <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
-              <div>
-                Schedules were previously started but now cannot be loaded. They may be part of a
-                code locations that no longer exist. You can turn them off, but you cannot turn them
-                back on.
-              </div>
-              <Button onClick={() => setIsOpen(true)}>
-                {count === 1 ? 'View unloadable schedule' : 'View unloadable schedules'}
-              </Button>
-            </Box>
-          }
-        />
-      </Box>
-      <Dialog
-        isOpen={isOpen}
-        title="Unloadable schedules"
-        style={{width: '90vw', maxWidth: '1200px'}}
-      >
-        <Box padding={{bottom: 8}}>
-          <UnloadableScheduleDialog />
-        </Box>
-        <DialogFooter>
-          <Button intent="primary" onClick={() => setIsOpen(false)}>
-            Done
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </>
-  );
-};
-
-const UnloadableScheduleDialog = () => {
-  const {data} = useQuery<UnloadableSchedulesQuery, UnloadableSchedulesQueryVariables>(
-    UNLOADABLE_SCHEDULES_QUERY,
-  );
-  if (!data) {
-    return <Spinner purpose="section" />;
-  }
-
-  if (data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates') {
-    return (
-      <UnloadableSchedules
-        scheduleStates={data.unloadableInstigationStatesOrError.results}
-        showSubheading={false}
-      />
-    );
-  }
-
-  return <PythonErrorInfo error={data?.unloadableInstigationStatesOrError} />;
 };
 
 type RepoBucket = {
@@ -454,13 +373,6 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
-      ... on InstigationStates {
-        results {
-          id
-        }
-      }
-    }
     instance {
       id
       ...InstanceHealthFragment
@@ -470,21 +382,4 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
   ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SCHEDULES_QUERY = gql`
-  query UnloadableSchedulesQuery {
-    unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
-      ... on InstigationStates {
-        results {
-          id
-          ...InstigationStateFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
 `;
