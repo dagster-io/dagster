@@ -6,9 +6,7 @@ import {
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildCompositeConfigType,
-  buildConfigType,
   buildConfigTypeField,
-  buildDagsterType,
   buildFreshnessPolicy,
   buildIntMetadataEntry,
   buildPathMetadataEntry,
@@ -35,8 +33,6 @@ export const MinimalAsset = () => {
             description: null,
             freshnessPolicy: null,
             autoMaterializePolicy: null,
-            configField: buildConfigTypeField({configType: buildConfigType({key: 'Any'})}),
-            type: buildDagsterType({displayName: 'Any'}),
             metadataEntries: [],
           }) as any
         }
@@ -91,7 +87,6 @@ export const FullUseAsset = () => {
                 fields: [],
               }),
             }),
-            type: buildDagsterType(),
             metadataEntries: [buildIntMetadataEntry({}), buildPathMetadataEntry()],
           }) as any
         }
