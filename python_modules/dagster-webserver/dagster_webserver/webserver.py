@@ -229,9 +229,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             with open(index_path, encoding="utf8") as f:
                 rendered_template = f.read()
                 nonce = uuid.uuid4().hex
-                mimetypes.add_type('application/javascript', '.js')
-                mimetypes.add_type('text/css', '.css')
-                mimetypes.add_type('image/svg+xml', '.svg')
                 headers = {
                     **{"Content-Security-Policy": self.make_csp_header(nonce)},
                     **self.make_security_headers(),
@@ -268,7 +265,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 path,
                 lambda _: FileResponse(path=file_path),
                 name="root_static",
-            )
+            )            
+                
+        mimetypes.add_type('application/javascript', '.js')
+        mimetypes.add_type('text/css', '.css')
+        mimetypes.add_type('image/svg+xml', '.svg')
 
         routes = []
         base_dir = self.relative_path("webapp/build/")
