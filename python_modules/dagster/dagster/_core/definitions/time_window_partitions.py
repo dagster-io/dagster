@@ -42,7 +42,8 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._seven.compat.pendulum import (
-    _IS_PENDULUM_2,
+    _IS_PENDULUM_1,
+    PRE_TRANSITION,
     PendulumDateTime,
     create_pendulum_time,
     to_timezone,
@@ -146,7 +147,7 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         # Pendulum 1.x erroneously believes that there are two instances of the *second* hour after
         # a datetime transition, so to work around this we calculate the timestamp of the next
         # microsecond of the given datetime.
-        dt_microsecond = dt.microsecond + 1 if not _IS_PENDULUM_2 else dt.microsecond
+        dt_microsecond = dt.microsecond + 1 if _IS_PENDULUM_1 else dt.microsecond
         dt = create_pendulum_time(
             dt.year,
             dt.month,
@@ -156,9 +157,9 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
             dt.second,
             dt_microsecond,
             tz=tz,
-            dst_rule=pendulum.PRE_TRANSITION,
+            dst_rule=PRE_TRANSITION,
         )
-        if not _IS_PENDULUM_2:
+        if _IS_PENDULUM_1:
             dt = dt.add(microseconds=-1)
         return dt
 
