@@ -1,12 +1,11 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
+import {gql, useLazyQuery} from '@apollo/client';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
-
 import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
 import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';

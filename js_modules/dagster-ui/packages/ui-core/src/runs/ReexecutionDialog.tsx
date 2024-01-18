@@ -1,21 +1,21 @@
+import * as React from 'react';
 import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
+
 import {
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
   colorAccentGreen,
   colorAccentYellow,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {ReexecutionStrategy} from '../graphql/types';
-
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
 import {

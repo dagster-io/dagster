@@ -2,26 +2,25 @@ import {createGlobalStyle} from 'styled-components';
 
 import {
   colorAccentRed,
-  colorBorderDefault,
-  colorBackgroundDefault,
   colorBackgroundBlue,
+  colorBackgroundBlueHover,
   colorBackgroundCyan,
+  colorBackgroundDefault,
   colorBackgroundGray,
   colorBackgroundGreen,
+  colorBackgroundLight,
   colorBackgroundOlive,
   colorBackgroundRed,
   colorBackgroundYellow,
-  colorTextLight,
+  colorBorderDefault,
   colorTextBlue,
   colorTextCyan,
+  colorTextDefault,
   colorTextGreen,
+  colorTextLight,
   colorTextRed,
   colorTextYellow,
-  colorTextDefault,
-  colorBackgroundLight,
-  colorBackgroundBlueHover,
 } from '../theme/color';
-
 import {Icons} from './Icon';
 import {FontFamily} from './styles';
 

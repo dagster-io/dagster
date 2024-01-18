@@ -1,8 +1,8 @@
 // eslint-disable-next-line no-restricted-imports
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 
-import {buildPythonError, buildErrorChainLink} from '../../graphql/types';
+import {buildErrorChainLink, buildPythonError} from '../../graphql/types';
 import {PythonErrorInfo} from '../PythonErrorInfo';
 
 // eslint-disable-next-line import/no-default-export

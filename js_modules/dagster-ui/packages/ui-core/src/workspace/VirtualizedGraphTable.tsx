@@ -1,12 +1,12 @@
-import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, colorTextLight} from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {gql, useLazyQuery} from '@apollo/client';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Box, Caption, colorTextLight} from '@dagster-io/ui-components';
 
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';

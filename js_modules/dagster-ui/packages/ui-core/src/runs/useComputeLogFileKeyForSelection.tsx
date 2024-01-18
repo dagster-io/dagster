@@ -1,8 +1,7 @@
 import React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-
-import {IRunMetadataDict, ILogCaptureInfo} from './RunMetadataProvider';
+import {ILogCaptureInfo, IRunMetadataDict} from './RunMetadataProvider';
 
 export const matchingComputeLogKeyFromStepKey = (
   logCaptureSteps: {[fileKey: string]: ILogCaptureInfo} | undefined,

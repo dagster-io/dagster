@@ -1,11 +1,11 @@
-import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
-import {Caption, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
 import styled from 'styled-components';
+
+import {Caption, colorTextLight} from '@dagster-io/ui-components';
 
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';
-
 import {RepoAddress} from './types';
 
 export const RepoRow = ({

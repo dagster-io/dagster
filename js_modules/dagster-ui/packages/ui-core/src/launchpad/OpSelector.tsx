@@ -1,4 +1,7 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import styled from 'styled-components';
+
 import {
   Box,
   Popover,
@@ -6,8 +9,6 @@ import {
   colorBackgroundRed,
   colorTextRed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -18,7 +19,6 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 
 interface IOpSelectorProps {

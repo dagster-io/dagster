@@ -1,6 +1,7 @@
-import {IconName, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+
+import {IconName, Tag} from '@dagster-io/ui-components';
 
 import {TagAction, TagActionsPopover} from '../ui/TagActions';
 

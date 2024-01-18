@@ -1,7 +1,8 @@
-import {Box} from '@dagster-io/ui-components';
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+
+import {Box} from '@dagster-io/ui-components';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {RepoAddress} from '../../workspace/types';

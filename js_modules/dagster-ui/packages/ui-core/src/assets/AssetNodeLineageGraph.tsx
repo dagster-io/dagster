@@ -1,11 +1,12 @@
-import {Box, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {Box, Spinner} from '@dagster-io/ui-components';
+
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
-import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
+import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
@@ -14,7 +15,6 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
-
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
 

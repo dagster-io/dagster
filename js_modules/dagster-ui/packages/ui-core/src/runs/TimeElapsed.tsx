@@ -1,5 +1,6 @@
-import {Group, Icon, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Group, Icon, colorTextLight} from '@dagster-io/ui-components';
 
 import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Util';
 

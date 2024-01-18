@@ -1,26 +1,26 @@
+import * as React from 'react';
 import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
+import chunk from 'lodash/chunk';
+
 import {
   Box,
   Button,
   Checkbox,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  colorAccentYellow,
   colorAccentGreen,
+  colorAccentYellow,
 } from '@dagster-io/ui-components';
-import chunk from 'lodash/chunk';
-import * as React from 'react';
 
 import {getSharedToaster} from '../app/DomUtils';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';
-
 import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';

@@ -1,16 +1,17 @@
+import * as React from 'react';
+
 import {
   Button,
   ButtonLink,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Tag,
   Trace,
   colorLinkDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {DaemonStatusForListFragment} from './types/DaemonList.types';
 

@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
-import * as React from 'react';
 
 import {InstigationStatus} from '../../graphql/types';
 import {useDaemonStatus} from '../../instance/useDaemonStatus';

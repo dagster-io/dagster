@@ -9,7 +9,6 @@ import {
 } from '../../theme/color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
-
 import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 
 interface ConfigEditorHelpProps {

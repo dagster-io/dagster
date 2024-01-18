@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {colorAccentGray, colorKeylineDefault} from '../theme/color';
-
 import {Button} from './Button';
 import {Icon} from './Icon';
 

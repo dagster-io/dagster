@@ -1,10 +1,10 @@
-import {Box, ButtonLink, Caption, Icon, Mono, colorKeylineDefault} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
+import {Box, ButtonLink, Caption, Icon, Mono, colorKeylineDefault} from '@dagster-io/ui-components';
+
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';
-
 import {AssetEventGroup} from './groupByPartition';
 
 // There can be other keys in the event tags, but we want to show data and code version

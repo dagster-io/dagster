@@ -1,7 +1,6 @@
 import React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {DagsterTag} from './RunTag';
 
 export function useTagPinning() {

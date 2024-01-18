@@ -1,6 +1,7 @@
-import {Box} from '@dagster-io/ui-components';
-import faker from 'faker';
 import * as React from 'react';
+import faker from 'faker';
+
+import {Box} from '@dagster-io/ui-components';
 
 import {PartitionSegmentWithPopover} from '../PartitionSegmentWithPopover';
 import {AssetConditionEvaluationStatus, AssetSubset} from '../types';

@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Button,
   Icon,
@@ -10,8 +13,6 @@ import {
   colorAccentReversed,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';

@@ -1,8 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
-import {AnchorButton as BlueprintAnchorButton} from '@blueprintjs/core';
-import {buildColorSet, StyledButton, StyledButtonText} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {AnchorButton as BlueprintAnchorButton} from '@blueprintjs/core';
 import {Link, LinkProps} from 'react-router-dom';
+
+import {StyledButton, StyledButtonText, buildColorSet} from '@dagster-io/ui-components';
 
 type AnchorButtonProps = Omit<
   React.ComponentProps<typeof BlueprintAnchorButton>,

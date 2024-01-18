@@ -1,9 +1,9 @@
-import {Box, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Popover, Tag} from '@dagster-io/ui-components';
 
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-
 import {RunTimingDetails} from './RunTimingDetails';
 import {RunTimingFragment} from './types/RunTimingDetails.types';
 

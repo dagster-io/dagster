@@ -1,7 +1,8 @@
-import {gql} from '@apollo/client';
-import {Box, ConfigTypeSchema} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 import {Link} from 'react-router-dom';
+
+import {Box, ConfigTypeSchema} from '@dagster-io/ui-components';
 
 import {gqlTypePredicate} from '../app/Util';
 import {dagsterTypeKind} from '../dagstertype/DagsterType';
@@ -9,7 +10,6 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
-
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorer.types';
 

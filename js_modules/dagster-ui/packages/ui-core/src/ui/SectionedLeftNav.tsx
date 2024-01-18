@@ -1,3 +1,8 @@
+import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import {useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   BaseTag,
   Box,
@@ -14,10 +19,6 @@ import {
   colorTextDisabled,
   colorTextLighter,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-import {useRouteMatch} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';
@@ -32,11 +33,10 @@ import {
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
-
 import {Inner, Row} from './VirtualizedTable';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);

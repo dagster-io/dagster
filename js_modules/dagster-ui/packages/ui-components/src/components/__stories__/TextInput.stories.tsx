@@ -1,5 +1,5 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 
 import {colorAccentPrimary, colorAccentRed} from '../../theme/color';
 import {Icon} from '../Icon';

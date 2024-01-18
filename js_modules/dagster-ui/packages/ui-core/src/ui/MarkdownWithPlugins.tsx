@@ -1,10 +1,9 @@
 import * as React from 'react';
+import 'highlight.js/styles/github.css';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
 import gfm from 'remark-gfm';
-
-import 'highlight.js/styles/github.css';
 
 const sanitizeConfig = {
   ...defaultSchema,

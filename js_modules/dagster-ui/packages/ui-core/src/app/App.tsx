@@ -1,8 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {LeftNav, LEFT_NAV_WIDTH} from '../nav/LeftNav';
-
+import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
 import {LayoutContext} from './LayoutProvider';
 
 interface Props {

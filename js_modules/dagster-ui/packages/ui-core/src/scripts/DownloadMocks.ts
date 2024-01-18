@@ -1,9 +1,8 @@
+import {addTypenameToDocument} from '@apollo/client/utilities';
 import {execSync} from 'child_process';
 import fs from 'fs';
-import path from 'path';
-
-import {addTypenameToDocument} from '@apollo/client/utilities';
 import {print} from 'graphql/language/printer';
+import path from 'path';
 
 /**
  * Why is this script structured as a Jest test? Jest goes to great lengths to
@@ -12,7 +11,6 @@ import {print} from 'graphql/language/printer';
  * the query objects), etc. We could set all this up (new tsconfig, jsdom, etc.) but
  * leveraging Jest is easiest.
  */
-
 // collect mocks from various tests in the codebase
 import {MOCKS as SVGMocks} from '../testing/SVGMocks';
 

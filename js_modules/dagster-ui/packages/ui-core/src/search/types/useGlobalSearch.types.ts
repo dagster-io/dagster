@@ -1,5 +1,4 @@
 // Generated GraphQL types, do not edit manually.
-
 import * as Types from '../../graphql/types';
 
 export type SearchPrimaryQueryVariables = Types.Exact<{[key: string]: never}>;

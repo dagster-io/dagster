@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import {
   Box,
   Button,
@@ -5,14 +7,12 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Subheading,
   Icon,
+  Subheading,
 } from '@dagster-io/ui-components';
 import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
-import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {HourCycleSelect} from './time/HourCycleSelect';

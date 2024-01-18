@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
 
 import {RunStatus} from '../../graphql/types';
 import {RunTimeline, TimelineJob} from '../../runs/RunTimeline';

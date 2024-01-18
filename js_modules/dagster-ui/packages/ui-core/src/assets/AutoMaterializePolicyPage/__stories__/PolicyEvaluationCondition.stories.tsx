@@ -1,5 +1,6 @@
-import {Table} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Table} from '@dagster-io/ui-components';
 
 import {PolicyEvaluationCondition} from '../PolicyEvaluationCondition';
 

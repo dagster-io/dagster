@@ -1,3 +1,6 @@
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   colorBackgroundBlue,
   colorBackgroundLighter,
@@ -5,8 +8,6 @@ import {
   colorTextBlue,
   colorTextDefault,
 } from '@dagster-io/ui-components';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 export const Item = styled(Link)<{$active: boolean}>`
   background-color: ${({$active}) => ($active ? colorBackgroundBlue() : 'transparent')};

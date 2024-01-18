@@ -1,3 +1,6 @@
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Body2,
   Box,
@@ -9,14 +12,11 @@ import {
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled from 'styled-components';
 
 import {Timestamp} from '../../app/time/Timestamp';
 import {InstigationTickStatus} from '../../graphql/types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TickStatusTag} from '../../ticks/TickStatusTag';
-
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 
 interface Props {

@@ -4,16 +4,16 @@ import styled, {css} from 'styled-components';
 
 import {
   colorAccentBlue,
+  colorAccentBlueHover,
   colorAccentGray,
-  colorAccentWhite,
   colorAccentReversed,
+  colorAccentWhite,
   colorBackgroundDefault,
   colorBackgroundGray,
+  colorFocusRing,
   colorTextDefault,
   colorTextDisabled,
   colorTextLighter,
-  colorFocusRing,
-  colorAccentBlueHover,
 } from '../theme/color';
 
 type Format = 'check' | 'star' | 'switch';

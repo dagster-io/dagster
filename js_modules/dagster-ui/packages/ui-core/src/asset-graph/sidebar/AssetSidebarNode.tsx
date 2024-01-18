@@ -1,3 +1,6 @@
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -9,13 +12,10 @@ import {
   colorBackgroundLightHover,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled from 'styled-components';
 
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {useAssetNodeMenu} from '../AssetNodeMenu';
 import {GraphData, GraphNode} from '../Utils';
-
 import {StatusDot} from './StatusDot';
 import {FolderNodeNonAssetType, getDisplayName} from './util';
 

@@ -1,5 +1,5 @@
-import {Story, Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta, Story} from '@storybook/react';
 
 import {colorLinkDefault, colorLinkHover} from '../../theme/color';
 import {ButtonLink} from '../ButtonLink';

@@ -1,3 +1,9 @@
+import * as React from 'react';
+import {DateRangePicker} from 'react-dates';
+import 'react-dates/initialize';
+import 'react-dates/lib/css/_datepicker.css';
+import styled from 'styled-components';
+
 import {
   colorAccentBlue,
   colorBackgroundBlue,
@@ -11,12 +17,6 @@ import {
   colorTextLight,
   colorTextLighter,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {DateRangePicker} from 'react-dates';
-import styled from 'styled-components';
-
-import 'react-dates/initialize';
-import 'react-dates/lib/css/_datepicker.css';
 
 export const DateRangePickerWrapper = (props: React.ComponentProps<typeof DateRangePicker>) => {
   return (

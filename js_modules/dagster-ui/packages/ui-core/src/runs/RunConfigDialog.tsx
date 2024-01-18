@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -6,8 +9,6 @@ import {
   StyledRawCodeMirror,
   Subheading,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {RunTags} from './RunTags';
 import {RunTagsFragment} from './types/RunTable.types';

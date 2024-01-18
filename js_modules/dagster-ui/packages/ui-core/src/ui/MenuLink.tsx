@@ -1,16 +1,17 @@
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
+import {Link, LinkProps} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   CommonMenuItemProps,
   IconWrapper,
-  iconWithColor,
   MenuItem,
-  colorTextDefault,
   colorBackgroundLighter,
+  colorTextDefault,
+  iconWithColor,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link, LinkProps} from 'react-router-dom';
-import styled from 'styled-components';
 
 interface MenuLinkProps
   extends CommonMenuItemProps,

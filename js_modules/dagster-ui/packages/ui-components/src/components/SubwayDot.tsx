@@ -1,9 +1,8 @@
-import memoize from 'lodash/memoize';
 import * as React from 'react';
+import memoize from 'lodash/memoize';
 import styled from 'styled-components';
 
 import {colorAccentReversed} from '../theme/color';
-
 import {Icon, IconName} from './Icon';
 
 const SECONDARY_COLORS = {

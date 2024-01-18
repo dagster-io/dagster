@@ -1,6 +1,5 @@
 import {execSync} from 'child_process';
 import {writeFileSync} from 'fs';
-
 import {buildClientSchema, getIntrospectionQuery, printSchema} from 'graphql';
 
 console.log('Downloading schema…');

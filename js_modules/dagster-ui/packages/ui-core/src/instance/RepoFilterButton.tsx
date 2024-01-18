@@ -1,5 +1,6 @@
-import {Box, Button, DialogFooter, DialogHeader, Dialog, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Button, Dialog, DialogFooter, DialogHeader, Icon} from '@dagster-io/ui-components';
 
 import {RepoSelector} from '../nav/RepoSelector';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';

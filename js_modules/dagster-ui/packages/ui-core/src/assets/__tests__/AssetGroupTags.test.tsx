@@ -1,12 +1,12 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
+import * as AutomationPolicySensorFlag from '../AutomationPolicySensorFlag';
 import {AssetGroupSelector} from '../../graphql/types';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetGroupTags} from '../AssetGroupRoot';
-import * as AutomationPolicySensorFlag from '../AutomationPolicySensorFlag';
 import {
   GROUP_NAME,
   LOCATION_NAME,

@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -7,8 +10,6 @@ import {
   colorTextDefault,
   colorTextDisabled,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 export type ConditionType = 'group' | 'leaf';
 

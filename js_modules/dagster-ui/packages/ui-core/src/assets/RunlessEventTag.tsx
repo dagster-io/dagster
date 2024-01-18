@@ -1,5 +1,6 @@
-import {Tag} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Tag} from '@dagster-io/ui-components';
 
 import {DagsterTag} from '../runs/RunTag';
 

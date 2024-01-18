@@ -1,14 +1,15 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   Box,
   ButtonLink,
-  Tag,
-  Tooltip,
   FontFamily,
   MiddleTruncate,
+  Tag,
+  Tooltip,
   colorLinkDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
@@ -17,7 +18,6 @@ import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 export const ScheduleOrSensorTag = ({

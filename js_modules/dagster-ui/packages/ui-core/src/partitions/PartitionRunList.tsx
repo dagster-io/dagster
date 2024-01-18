@@ -1,11 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {DagsterTag} from '../runs/RunTag';
+import {NonIdealState, Spinner} from '@dagster-io/ui-components';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {DagsterTag} from '../runs/RunTag';
 import {
   PartitionRunListQuery,
   PartitionRunListQueryVariables,

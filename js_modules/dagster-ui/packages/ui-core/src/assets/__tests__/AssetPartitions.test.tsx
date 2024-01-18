@@ -9,9 +9,9 @@ import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
 import {
+  MultiDimensionTimeFirstPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-  MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
 import {AssetViewParams} from '../types';
 

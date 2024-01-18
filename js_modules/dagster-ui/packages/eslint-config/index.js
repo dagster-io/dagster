@@ -29,16 +29,6 @@ module.exports = {
     'import/no-cycle': ['error', {ignoreExternal: true}],
     'import/no-default-export': 'error',
     'import/no-duplicates': 'error',
-    'import/order': [
-      'error',
-      {
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: false,
-        },
-        'newlines-between': 'always',
-      },
-    ],
     'no-alert': 'error',
     'no-restricted-imports': [
       'error',

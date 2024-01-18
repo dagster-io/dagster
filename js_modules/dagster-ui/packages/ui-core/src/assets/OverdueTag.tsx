@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip, Tag, Popover, Box} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
+
+import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
@@ -12,7 +13,6 @@ import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';
-
 import {
   ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT,
   AssetMaterializationUpstreamTable,

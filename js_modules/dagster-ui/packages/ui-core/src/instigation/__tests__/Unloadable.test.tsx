@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 
 import {InstigationStatus} from '../../graphql/types';
 import {UnloadableSensors} from '../Unloadable';

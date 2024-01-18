@@ -1,16 +1,16 @@
-import {Box, Caption, Mono, colorKeylineDefault, colorTextLight} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {Box, Caption, Mono, colorKeylineDefault, colorTextLight} from '@dagster-io/ui-components';
+
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
-
 import {
-  AssetObservationFragment,
   AssetMaterializationFragment,
+  AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
 /**

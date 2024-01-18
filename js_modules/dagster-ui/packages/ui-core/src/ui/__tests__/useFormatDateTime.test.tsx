@@ -1,5 +1,5 @@
-import {render, screen} from '@testing-library/react';
 import * as React from 'react';
+import {render, screen} from '@testing-library/react';
 
 import {HourCycleKey, TimeProvider, TimezoneStorageKey} from '../../app/time/TimeContext';
 import {useFormatDateTime} from '../useFormatDateTime';

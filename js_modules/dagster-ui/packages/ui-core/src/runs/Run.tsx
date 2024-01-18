@@ -1,15 +1,16 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
+  Button,
+  ErrorBoundary,
+  Icon,
   NonIdealState,
   SplitPanelContainer,
-  ErrorBoundary,
-  Button,
-  Icon,
   Tooltip,
   colorBackgroundDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
@@ -22,20 +23,19 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogsToolbar, LogType} from './LogsToolbar';
+import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {RunRootTrace} from './RunRootTrace';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
-  useComputeLogFileKeyForSelection,
   matchingComputeLogKeyFromStepKey,
+  useComputeLogFileKeyForSelection,
 } from './useComputeLogFileKeyForSelection';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 

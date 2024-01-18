@@ -1,10 +1,10 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Button} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
-import {RunsFilter} from '../graphql/types';
+import {Button} from '@dagster-io/ui-components';
 
+import {RunsFilter} from '../graphql/types';
 import {queuedStatuses} from './RunStatuses';
 import {TerminationDialog} from './TerminationDialog';
 import {

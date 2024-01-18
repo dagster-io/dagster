@@ -1,9 +1,9 @@
-import {colorBackgroundDefault, colorKeylineDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {LayoutContext} from '../app/LayoutProvider';
+import {colorBackgroundDefault, colorKeylineDefault} from '@dagster-io/ui-components';
 
+import {LayoutContext} from '../app/LayoutProvider';
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
 
 export const LeftNav = () => {

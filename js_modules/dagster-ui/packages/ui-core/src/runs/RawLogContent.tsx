@@ -1,33 +1,34 @@
+import * as React from 'react';
+import Ansi from 'ansi-to-react';
+import styled, {createGlobalStyle} from 'styled-components';
+
 import {
+  FontFamily,
   Group,
   Icon,
   Spinner,
-  FontFamily,
-  colorAccentYellow,
-  colorBackgroundLight,
-  colorBackgroundLighter,
-  colorKeylineDefault,
-  colorBackgroundLightHover,
-  colorTextDefault,
-  colorTextLight,
-  colorBackgroundYellow,
-  colorTextLighter,
   colorAccentBlue,
-  colorTextBlue,
-  colorAccentGreen,
-  colorAccentRed,
   colorAccentCyan,
   colorAccentGray,
+  colorAccentGreen,
   colorAccentOlive,
-  colorBackgroundDefault,
-  colorBackgroundLighterHover,
   colorAccentPrimary,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorBackgroundLighter,
+  colorBackgroundLighterHover,
+  colorBackgroundYellow,
   colorBorderDefault,
   colorBorderHover,
+  colorKeylineDefault,
+  colorTextBlue,
+  colorTextDefault,
+  colorTextLight,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
-import Ansi from 'ansi-to-react';
-import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';

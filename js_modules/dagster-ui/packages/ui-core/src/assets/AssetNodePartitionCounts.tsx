@@ -1,25 +1,26 @@
-import {
-  Icon,
-  Box,
-  Tooltip,
-  IconName,
-  colorBackgroundRed,
-  colorTextRed,
-  colorAccentRed,
-  colorBackgroundGreen,
-  colorTextGreen,
-  colorAccentGreen,
-  colorAccentBlue,
-  colorAccentGray,
-  colorBackgroundBlue,
-  colorBackgroundGray,
-  colorTextBlue,
-  colorTextLight,
-  colorTextDefault,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
+
+import {
+  Box,
+  Icon,
+  IconName,
+  Tooltip,
+  colorAccentBlue,
+  colorAccentGray,
+  colorAccentGreen,
+  colorAccentRed,
+  colorBackgroundBlue,
+  colorBackgroundGray,
+  colorBackgroundGreen,
+  colorBackgroundRed,
+  colorTextBlue,
+  colorTextDefault,
+  colorTextGreen,
+  colorTextLight,
+  colorTextLighter,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetNodeFragment} from '../asset-graph/types/AssetNode.types';

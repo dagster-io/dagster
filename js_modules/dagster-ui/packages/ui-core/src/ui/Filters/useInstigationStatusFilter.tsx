@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {InstigationStatus} from '../../graphql/types';
-
 import {useStaticSetFilter} from './useStaticSetFilter';
 
 export const useInstigationStatusFilter = () => {

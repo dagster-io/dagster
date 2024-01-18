@@ -1,22 +1,21 @@
+import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
+import {createGlobalStyle} from 'styled-components/macro';
+
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
   GlobalDialogStyle,
+  GlobalInconsolata,
+  GlobalInter,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
   browserColorScheme,
   colorBackgroundDefault,
-  colorTextDefault,
   colorLinkDefault,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
-
-import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
-
-import {createGlobalStyle} from 'styled-components/macro';
 
 import '../src/app/blueprint.css';
 

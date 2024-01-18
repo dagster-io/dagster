@@ -1,5 +1,6 @@
-import {BaseTag, Box, SubwayDot} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {BaseTag, Box, SubwayDot} from '@dagster-io/ui-components';
 
 type Props = {
   email: string;

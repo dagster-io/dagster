@@ -3,6 +3,7 @@ import memoize from 'lodash/memoize';
 
 import {COMMON_COLLATOR} from '../app/Util';
 import {
+  AssetCheckLiveFragment,
   AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
@@ -10,10 +11,8 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-  AssetCheckLiveFragment,
 } from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
-
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 

@@ -1,6 +1,7 @@
-import {NetworkStatus, ObservableQuery, QueryResult} from '@apollo/client';
-import {useCountdown, RefreshableCountdown} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {NetworkStatus, ObservableQuery, QueryResult} from '@apollo/client';
+
+import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
 
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 

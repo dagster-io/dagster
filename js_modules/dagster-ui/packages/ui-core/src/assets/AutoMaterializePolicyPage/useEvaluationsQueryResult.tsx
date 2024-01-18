@@ -1,6 +1,5 @@
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {AssetKey} from '../types';
-
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
 

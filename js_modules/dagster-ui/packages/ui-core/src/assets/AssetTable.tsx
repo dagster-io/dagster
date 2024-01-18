@@ -1,4 +1,7 @@
+import * as React from 'react';
 import {RefetchQueriesFunction} from '@apollo/client';
+import groupBy from 'lodash/groupBy';
+
 import {
   Box,
   Button,
@@ -13,8 +16,6 @@ import {
   colorBackgroundDefault,
   colorTextDisabled,
 } from '@dagster-io/ui-components';
-import groupBy from 'lodash/groupBy';
-import * as React from 'react';
 
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
@@ -22,7 +23,6 @@ import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
-
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';

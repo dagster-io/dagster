@@ -1,5 +1,6 @@
-import {Box, Checkbox} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Checkbox} from '@dagster-io/ui-components';
 
 import {RunStatus} from '../graphql/types';
 import {runStatusToBackfillStateString} from '../runs/RunStatusTag';

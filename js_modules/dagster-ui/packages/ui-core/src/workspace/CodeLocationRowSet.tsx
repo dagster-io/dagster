@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -10,9 +14,6 @@ import {
   colorBackgroundDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
@@ -25,7 +26,6 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 import {TimeFromNow} from '../ui/TimeFromNow';
-
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {RepositoryCountTags} from './RepositoryCountTags';
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';

@@ -1,36 +1,36 @@
+import * as React from 'react';
 import {useMutation} from '@apollo/client';
+
 import {
   Alert,
   Box,
   Checkbox,
   Group,
-  Table,
   Subheading,
+  Table,
   Tooltip,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
 import {
-  displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
+  displayScheduleMutationErrors,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
 import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from '../schedules/types/ScheduleMutations.types';
-import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
+import {STOP_SENSOR_MUTATION, displaySensorMutationErrors} from '../sensors/SensorMutations';
 import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from '../sensors/types/SensorMutations.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
-
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationUtils.types';
 

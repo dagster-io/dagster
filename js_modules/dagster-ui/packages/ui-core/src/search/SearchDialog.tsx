@@ -1,31 +1,31 @@
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
 import {Overlay} from '@blueprintjs/core';
-import {
-  Box,
-  Icon,
-  Spinner,
-  FontFamily,
-  colorAccentGray,
-  colorTextLight,
-  colorTextLighter,
-  colorBackgroundDefault,
-  colorKeylineDefault,
-  colorDialogBackground,
-  colorNavButton,
-  colorNavButtonHover,
-  colorShadowDefault,
-  colorNavTextHover,
-  colorFocusRing,
-} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
-import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Spinner,
+  colorAccentGray,
+  colorBackgroundDefault,
+  colorDialogBackground,
+  colorFocusRing,
+  colorKeylineDefault,
+  colorNavButton,
+  colorNavButtonHover,
+  colorNavTextHover,
+  colorShadowDefault,
+  colorTextLight,
+  colorTextLighter,
+} from '@dagster-io/ui-components';
+
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';
-
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';

@@ -1,4 +1,10 @@
+import * as React from 'react';
+import * as yaml from 'yaml';
 import {gql, useApolloClient, useQuery} from '@apollo/client';
+import merge from 'deepmerge';
+import uniqBy from 'lodash/uniqBy';
+import styled from 'styled-components';
+
 import {
   Body,
   Box,
@@ -21,11 +27,6 @@ import {
   colorTextDefault,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
-import merge from 'deepmerge';
-import uniqBy from 'lodash/uniqBy';
-import * as React from 'react';
-import styled from 'styled-components';
-import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
@@ -38,7 +39,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
-import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
+import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
@@ -55,7 +56,6 @@ import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {
   CONFIG_PARTITION_SELECTION_QUERY,
   ConfigEditorConfigPicker,

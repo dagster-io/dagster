@@ -1,6 +1,7 @@
+import * as React from 'react';
 import {
-  ApolloLink,
   ApolloClient,
+  ApolloLink,
   ApolloProvider,
   HttpLink,
   InMemoryCache,
@@ -8,27 +9,27 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
-import {
-  GlobalDialogStyle,
-  GlobalPopoverStyle,
-  GlobalSuggestStyle,
-  GlobalToasterStyle,
-  GlobalTooltipStyle,
-  FontFamily,
-  CustomTooltipProvider,
-  GlobalInter,
-  GlobalInconsolata,
-  colorLinkDefault,
-  colorBackgroundDefault,
-  colorTextDefault,
-  browserColorScheme,
-  colorFocusRing,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {
+  CustomTooltipProvider,
+  FontFamily,
+  GlobalDialogStyle,
+  GlobalInconsolata,
+  GlobalInter,
+  GlobalPopoverStyle,
+  GlobalSuggestStyle,
+  GlobalToasterStyle,
+  GlobalTooltipStyle,
+  browserColorScheme,
+  colorBackgroundDefault,
+  colorFocusRing,
+  colorLinkDefault,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
@@ -36,7 +37,6 @@ import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/Deploy
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
@@ -45,10 +45,9 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
+import './blueprint.css';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
-
-import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these

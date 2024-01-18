@@ -1,4 +1,6 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
+
 import {
   Box,
   Checkbox,
@@ -8,13 +10,11 @@ import {
   ProductTourPosition,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {AnchorButton} from '../ui/AnchorButton';
-
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunRow} from './RunRow';
 import {RUN_TIME_FRAGMENT} from './RunUtils';

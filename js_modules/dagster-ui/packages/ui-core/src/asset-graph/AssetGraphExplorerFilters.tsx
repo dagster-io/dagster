@@ -1,5 +1,6 @@
-import {Box, Icon} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Box, Icon} from '@dagster-io/ui-components';
 
 import {AssetGroupSelector} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -8,7 +9,6 @@ import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/u
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-
 import {GraphNode} from './Utils';
 
 const emptySet = new Set<any>();

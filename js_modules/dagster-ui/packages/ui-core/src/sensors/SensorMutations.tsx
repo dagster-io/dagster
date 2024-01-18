@@ -1,10 +1,9 @@
-import {gql} from '@apollo/client';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-
 import {StartSensorMutation, StopRunningSensorMutation} from './types/SensorMutations.types';
 
 export const START_SENSOR_MUTATION = gql`

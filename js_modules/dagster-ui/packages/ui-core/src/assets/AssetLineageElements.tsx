@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
-import {Box, ButtonLink, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Timestamp} from '../app/time/Timestamp';
+import {Box, ButtonLink, Tooltip} from '@dagster-io/ui-components';
 
+import {Timestamp} from '../app/time/Timestamp';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetLineageFragment} from './types/AssetLineageElements.types';
 

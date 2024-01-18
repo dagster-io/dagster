@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled, {css} from 'styled-components';
+
 import {
   Box,
   Table,
@@ -6,11 +9,8 @@ import {
   colorBackgroundLightHover,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled, {css} from 'styled-components';
 
 import {TimeElapsed} from '../../runs/TimeElapsed';
-
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';

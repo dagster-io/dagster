@@ -1,12 +1,12 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {Box, Spinner} from '@dagster-io/ui-components';
+
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-
 import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 
 export const RunStats = ({runId}: {runId: string}) => {

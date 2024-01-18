@@ -1,3 +1,9 @@
+import pickBy from 'lodash/pickBy';
+import uniq from 'lodash/uniq';
+import without from 'lodash/without';
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -16,11 +22,6 @@ import {
   colorKeylineDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import pickBy from 'lodash/pickBy';
-import uniq from 'lodash/uniq';
-import without from 'lodash/without';
-import React from 'react';
-import styled from 'styled-components';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
@@ -44,7 +45,6 @@ import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-
 import {AssetEdges} from './AssetEdges';
 import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';

@@ -1,4 +1,6 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+
 import {
   Box,
   Heading,
@@ -8,7 +10,6 @@ import {
   TextInput,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -23,7 +24,6 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
 import {OverviewResourcesTable} from './OverviewResourcesTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';

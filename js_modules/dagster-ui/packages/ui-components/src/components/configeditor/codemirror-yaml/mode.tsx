@@ -1,14 +1,14 @@
 import * as CodeMirror from 'codemirror';
+import * as yaml from 'yaml';
+import 'codemirror/addon/dialog/dialog';
+import 'codemirror/addon/dialog/dialog.css';
 import 'codemirror/addon/hint/show-hint';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
-import 'codemirror/addon/dialog/dialog';
-import 'codemirror/addon/dialog/dialog.css';
-import * as yaml from 'yaml';
 
 import {
-  ConfigSchema,
   ConfigSchema_allConfigTypes_CompositeConfigType as CompositeConfigType,
+  ConfigSchema,
   ConfigSchema_allConfigTypes_MapConfigType as MapConfigType,
 } from '../types/ConfigSchema';
 

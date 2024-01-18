@@ -1,10 +1,10 @@
-import {colorBackgroundYellow, colorKeylineDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorBackgroundYellow, colorKeylineDefault} from '@dagster-io/ui-components';
+
 import {titleOfIO} from '../app/titleOfIO';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
 import {OpIOBox, PARENT_IN, PARENT_OUT, metadataForCompositeParentIO} from './OpIOBox';

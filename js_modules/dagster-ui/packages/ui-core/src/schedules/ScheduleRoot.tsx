@@ -1,7 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 import {useParams} from 'react-router-dom';
+
+import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -9,13 +10,12 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';

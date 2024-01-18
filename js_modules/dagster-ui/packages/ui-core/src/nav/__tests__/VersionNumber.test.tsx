@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {screen} from '@testing-library/dom';
 import {render} from '@testing-library/react';
-import * as React from 'react';
 
 import {VERSION_NUMBER_QUERY, VersionNumber} from '../VersionNumber';
 import {VersionNumberQuery} from '../types/VersionNumber.types';

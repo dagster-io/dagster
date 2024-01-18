@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Box} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Box} from '@dagster-io/ui-components';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {VirtualizedRepoAssetTable} from '../../workspace/VirtualizedRepoAssetTable';

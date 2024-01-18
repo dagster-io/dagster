@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Icon,
   Tooltip,
@@ -6,14 +10,10 @@ import {
   colorAccentGreen,
   colorTextDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {InstigationStatus} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';

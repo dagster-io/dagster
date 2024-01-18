@@ -1,6 +1,7 @@
-import {Box, MainContent, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
+
+import {Box, MainContent, NonIdealState} from '@dagster-io/ui-components';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -8,7 +9,6 @@ import {ResourceRoot} from '../resources/ResourceRoot';
 import {WorkspaceResourcesRoot} from '../resources/WorkspaceResourcesRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
-
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext';

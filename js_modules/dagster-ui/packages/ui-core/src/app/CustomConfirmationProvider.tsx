@@ -1,5 +1,6 @@
-import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 
 interface ConfirmationOptions {
   catchOnCancel?: boolean;

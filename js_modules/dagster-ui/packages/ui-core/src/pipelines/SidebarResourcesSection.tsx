@@ -1,10 +1,10 @@
-import {gql} from '@apollo/client';
-import {ConfigTypeSchema, Icon, IconWrapper, Box, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 import styled from 'styled-components';
 
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {Box, ConfigTypeSchema, Icon, IconWrapper, colorAccentGray} from '@dagster-io/ui-components';
 
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
 import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';

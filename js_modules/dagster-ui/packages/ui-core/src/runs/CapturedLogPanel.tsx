@@ -1,10 +1,10 @@
-import {gql, useQuery, useSubscription} from '@apollo/client';
-import {Box, Icon, colorTooltipBackground, colorTooltipText} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery, useSubscription} from '@apollo/client';
+
+import {Box, Icon, colorTooltipBackground, colorTooltipText} from '@dagster-io/ui-components';
 
 import {AppContext} from '../app/AppContext';
 import {WebSocketContext} from '../app/WebSocketProvider';
-
 import {RawLogContent} from './RawLogContent';
 import {ILogCaptureInfo} from './RunMetadataProvider';
 import {

@@ -1,5 +1,6 @@
-import {Box, Spinner, Tooltip, useDelayedState} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Spinner, Tooltip, useDelayedState} from '@dagster-io/ui-components';
 
 interface Props {
   tooltipContent: string | React.ReactElement | null;

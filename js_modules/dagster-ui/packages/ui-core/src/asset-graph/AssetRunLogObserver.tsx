@@ -2,7 +2,6 @@ import {gql, useSubscription} from '@apollo/client';
 import React from 'react';
 
 import {AssetKey} from '../graphql/types';
-
 import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,

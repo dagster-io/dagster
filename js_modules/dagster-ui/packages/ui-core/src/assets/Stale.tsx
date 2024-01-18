@@ -1,3 +1,8 @@
+import groupBy from 'lodash/groupBy';
+import isEqual from 'lodash/isEqual';
+import React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   BaseTag,
   Body,
@@ -10,15 +15,10 @@ import {
   colorBackgroundYellow,
   colorTextYellow,
 } from '@dagster-io/ui-components';
-import groupBy from 'lodash/groupBy';
-import isEqual from 'lodash/isEqual';
-import React from 'react';
-import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey, LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
-
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;

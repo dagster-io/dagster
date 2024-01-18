@@ -4,13 +4,12 @@ import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {
+  AssetDaemonTickFragment,
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
 } from './types/AssetDaemonTicksQuery.types';
 
 const PAGE_SIZE = 15;

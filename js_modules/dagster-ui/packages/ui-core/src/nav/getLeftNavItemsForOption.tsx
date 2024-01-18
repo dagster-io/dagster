@@ -1,13 +1,13 @@
-import {colorBackgroundLight, colorTextDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {colorBackgroundLight, colorTextDefault} from '@dagster-io/ui-components';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {LeftNavItemType} from './LeftNavItemType';
 
 export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {

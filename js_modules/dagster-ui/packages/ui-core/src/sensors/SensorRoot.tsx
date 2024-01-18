@@ -1,14 +1,15 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import {Redirect, useParams} from 'react-router-dom';
+
 import {
   Box,
-  Page,
-  NonIdealState,
   ButtonGroup,
-  colorTextLight,
+  NonIdealState,
+  Page,
   Spinner,
+  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Redirect, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -18,10 +19,9 @@ import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
+import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';

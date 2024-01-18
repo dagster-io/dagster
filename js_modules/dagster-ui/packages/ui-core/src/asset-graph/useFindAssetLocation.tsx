@@ -5,7 +5,6 @@ import {AssetKey} from '../assets/types';
 import {AssetKeyInput} from '../graphql/types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-
 import {isHiddenAssetGroupJob} from './Utils';
 import {
   AssetForNavigationQuery,

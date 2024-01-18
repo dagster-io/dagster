@@ -5,7 +5,6 @@ import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {colorTooltipBackground, colorTooltipText} from '../theme/color';
-
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`

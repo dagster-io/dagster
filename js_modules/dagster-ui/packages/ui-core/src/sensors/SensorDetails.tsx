@@ -1,14 +1,15 @@
+import * as React from 'react';
+
 import {
   Box,
   Button,
+  FontFamily,
+  Heading,
+  Icon,
   MetadataTableWIP,
   PageHeader,
   Tag,
-  Heading,
-  FontFamily,
-  Icon,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus, SensorType} from '../graphql/types';
@@ -17,7 +18,6 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
-
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorSwitch} from './SensorSwitch';

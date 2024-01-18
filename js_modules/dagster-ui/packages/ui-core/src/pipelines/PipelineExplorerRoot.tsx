@@ -1,5 +1,5 @@
-import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -12,14 +12,13 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
 import {
-  GraphExplorer,
-  GraphExplorerOptions,
   GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
+  GraphExplorer,
+  GraphExplorerOptions,
 } from './GraphExplorer';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';

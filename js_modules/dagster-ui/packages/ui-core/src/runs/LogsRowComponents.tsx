@@ -1,28 +1,28 @@
+import * as React from 'react';
+import memoize from 'lodash/memoize';
+import qs from 'qs';
+import {Link, useLocation} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   FontFamily,
   MetadataTable,
   Tooltip,
   colorBackgroundDefault,
+  colorBackgroundLightHover,
   colorBackgroundRed,
   colorBackgroundYellow,
-  colorBackgroundLightHover,
   colorKeylineDefault,
   colorTextDefault,
   colorTextLight,
   colorTextRed,
   colorTextYellow,
 } from '@dagster-io/ui-components';
-import memoize from 'lodash/memoize';
-import qs from 'qs';
-import * as React from 'react';
-import {Link, useLocation} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
-
 import {LogLevel} from './LogLevel';
 import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 

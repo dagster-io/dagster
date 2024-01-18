@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
-import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '@blueprintjs/core';
 import * as React from 'react';
+import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '@blueprintjs/core';
 import styled from 'styled-components';
 
 import {CoreColors} from '../palettes/Colors';
@@ -17,13 +17,12 @@ import {
   colorAccentYellowHover,
   colorBackgroundGray,
   colorBackgroundGreen,
+  colorBackgroundLightHover,
   colorBackgroundRed,
   colorBackgroundYellow,
   colorBorderDefault,
   colorBorderHover,
-  colorBackgroundLightHover,
 } from '../theme/color';
-
 import {BaseButton} from './BaseButton';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';

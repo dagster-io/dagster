@@ -2,14 +2,13 @@ import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 
 import {PartitionDefinitionType} from '../graphql/types';
-
 import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {
-  PartitionHealthData,
-  PartitionHealthDimension,
   PartitionDimensionSelection,
-  Range,
+  PartitionHealthData,
   PartitionHealthDataMerged,
+  PartitionHealthDimension,
+  Range,
 } from './usePartitionHealthData';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {

@@ -1,7 +1,6 @@
 import * as dagre from 'dagre';
 
 import {titleOfIO} from '../app/titleOfIO';
-
 import {IBounds, IPoint} from './common';
 
 export type OpLayoutEdgeSide = {

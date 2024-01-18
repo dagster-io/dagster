@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import {colorFocusRing, colorShadowDefault} from '../theme/color';
-
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';

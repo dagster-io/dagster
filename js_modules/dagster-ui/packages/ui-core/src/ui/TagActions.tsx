@@ -1,14 +1,15 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Caption,
   Popover,
+  colorBorderHover,
   colorTooltipBackground,
   colorTooltipText,
-  colorBorderHover,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {TagType} from '../runs/RunTag';
 

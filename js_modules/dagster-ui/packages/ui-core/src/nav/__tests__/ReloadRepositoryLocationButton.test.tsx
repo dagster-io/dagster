@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 
 import {PermissionsProvider, usePermissionsForLocation} from '../../app/Permissions';
 import {ChildProps, ReloadRepositoryLocationButton} from '../ReloadRepositoryLocationButton';

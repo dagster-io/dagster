@@ -1,5 +1,6 @@
-import {MenuItem, Menu, Select, Button, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Button, Icon, Menu, MenuItem, Select} from '@dagster-io/ui-components';
 
 import {HourCycle} from './HourCycle';
 import {TimeContext} from './TimeContext';

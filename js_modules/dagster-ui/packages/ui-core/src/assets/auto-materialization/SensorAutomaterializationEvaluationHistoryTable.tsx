@@ -11,7 +11,6 @@ import {
 } from '../../sensors/types/AssetSensorTicksQuery.types';
 import {SensorFragment} from '../../sensors/types/SensorFragment.types';
 import {RepoAddress} from '../../workspace/types';
-
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 

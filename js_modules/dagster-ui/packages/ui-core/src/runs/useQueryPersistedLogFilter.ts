@@ -1,9 +1,9 @@
-import {tokenizedValueFromString} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {tokenizedValueFromString} from '@dagster-io/ui-components';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {DefaultLogLevels, LogLevel} from './LogLevel';
 import {LogFilter} from './LogsProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';

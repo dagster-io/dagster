@@ -1,16 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PipelineSelector} from '../graphql/types';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
 import {
-  SidebarContainerOverview,
   SIDEBAR_ROOT_CONTAINER_FRAGMENT,
+  SidebarContainerOverview,
 } from '../pipelines/SidebarContainerOverview';
 import {Loading} from '../ui/Loading';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
 import {
   AssetGraphSidebarQuery,
   AssetGraphSidebarQueryVariables,

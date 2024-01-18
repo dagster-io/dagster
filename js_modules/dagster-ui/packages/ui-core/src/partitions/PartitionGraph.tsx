@@ -1,7 +1,8 @@
-import {colorAccentPrimary, colorBorderDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
+
+import {colorAccentPrimary, colorBorderDefault, colorTextLight} from '@dagster-io/ui-components';
 
 import {colorHash} from '../app/Util';
 

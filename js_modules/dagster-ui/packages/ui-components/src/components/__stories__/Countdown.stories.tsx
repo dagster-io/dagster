@@ -1,5 +1,5 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 
 import {Button} from '../Button';
 import {Countdown, useCountdown} from '../Countdown';

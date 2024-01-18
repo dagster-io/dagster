@@ -1,12 +1,13 @@
-import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
+import {Box} from '@dagster-io/ui-components';
+
+import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNodeLink} from '../ForeignNode';
-import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export

@@ -1,14 +1,15 @@
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
   colorLineageGroupBackground,
-  colorLineageGroupNodeBorder,
   colorLineageGroupNodeBackground,
   colorLineageGroupNodeBackgroundHover,
+  colorLineageGroupNodeBorder,
   colorLineageGroupNodeBorderHover,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled from 'styled-components';
 
 import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';

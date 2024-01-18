@@ -1,5 +1,4 @@
 /* eslint-disable import/no-default-export */
-
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import image from '@rollup/plugin-image';

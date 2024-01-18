@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Group,
@@ -8,12 +12,9 @@ import {
   colorAccentGray,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNode, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
@@ -22,13 +23,12 @@ import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
 import {AssetLineageElements} from './AssetLineageElements';
 import {StaleReasonsTags} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
 import {
-  AssetObservationFragment,
   AssetMaterializationFragment,
+  AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
 export const LatestMaterializationMetadata = ({

@@ -9,7 +9,6 @@ import {
   colorTextDisabled,
   colorTextLight,
 } from '../theme/color';
-
 import {IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 

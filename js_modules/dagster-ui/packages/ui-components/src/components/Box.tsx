@@ -2,7 +2,6 @@ import styled, {css} from 'styled-components';
 
 import {colorKeylineDefault} from '../theme/color';
 import {assertUnreachable} from '../util/assertUnreachable';
-
 import {BorderSetting, BorderSide, DirectionalSpacing, FlexProperties} from './types';
 
 interface Props {

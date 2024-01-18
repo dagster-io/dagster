@@ -5,8 +5,7 @@ import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
-
-import {ILayoutOp, layoutOpGraph, LayoutOpGraphOptions, OpGraphLayout} from './layout';
+import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 

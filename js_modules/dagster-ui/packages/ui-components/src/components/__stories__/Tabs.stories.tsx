@@ -1,10 +1,10 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 
 import {colorAccentYellow} from '../../theme/color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
-import {Tabs, Tab} from '../Tabs';
+import {Tab, Tabs} from '../Tabs';
 
 // eslint-disable-next-line import/no-default-export
 export default {

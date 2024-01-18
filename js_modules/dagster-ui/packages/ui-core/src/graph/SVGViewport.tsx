@@ -1,3 +1,7 @@
+import * as React from 'react';
+import animate from 'amator';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -9,9 +13,6 @@ import {
   colorBorderDefault,
   colorLineageDots,
 } from '@dagster-io/ui-components';
-import animate from 'amator';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {IBounds} from './common';
 import {makeSVGPortable} from './makeSVGPortable';

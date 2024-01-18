@@ -1,5 +1,6 @@
-import {Box, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Popover, Tag} from '@dagster-io/ui-components';
 
 import {RunStatus} from '../graphql/types';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
@@ -8,7 +9,6 @@ import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 import {RunStateSummary, RunTime} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {AnchorButton} from '../ui/AnchorButton';
-
 import {StepSummaryForRun} from './StepSummaryForRun';
 
 interface Props {

@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import {colorBackgroundBlue} from '../theme/color';
-
 import {FontFamily} from './styles';
 
 interface TextProps {

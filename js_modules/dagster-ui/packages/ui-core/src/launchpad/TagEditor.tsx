@@ -1,16 +1,17 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';

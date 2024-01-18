@@ -1,8 +1,7 @@
-import {gql, useSubscription} from '@apollo/client';
 import * as React from 'react';
+import {gql, useSubscription} from '@apollo/client';
 
 import {ComputeIoType} from '../graphql/types';
-
 import {
   ComputeLogForSubscriptionFragment,
   ComputeLogsSubscription,

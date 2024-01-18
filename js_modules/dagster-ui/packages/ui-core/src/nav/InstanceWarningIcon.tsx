@@ -1,8 +1,8 @@
-import {Icon, colorAccentYellow} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
+import {Icon, colorAccentYellow} from '@dagster-io/ui-components';
 
+import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 import {WarningTooltip} from './WarningTooltip';
 
 export const InstanceWarningIcon = React.memo(() => {

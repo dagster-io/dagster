@@ -4,11 +4,11 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
+import * as WorkspaceContext from '../../workspace/WorkspaceContext';
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
-import * as WorkspaceContext from '../../workspace/WorkspaceContext';
 import {
   AssetsInScope,
   ERROR_INVALID_ASSET_SELECTION,

@@ -5,20 +5,19 @@ import {
   colorAccentGray,
   colorAccentPrimary,
   colorBackgroundDefault,
+  colorBackgroundDefaultHover,
   colorBackgroundDisabled,
   colorBorderDefault,
-  colorBorderHover,
   colorBorderDisabled,
+  colorBorderHover,
   colorFocusRing,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
   colorTextLight,
   colorTextLighter,
-  colorBackgroundDefaultHover,
 } from '../theme/color';
-
-import {IconName, Icon, IconWrapper} from './Icon';
+import {Icon, IconName, IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
 interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {

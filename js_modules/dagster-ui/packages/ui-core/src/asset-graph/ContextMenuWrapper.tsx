@@ -1,6 +1,7 @@
-import {colorPopoverBackground} from '@dagster-io/ui-components';
 import React from 'react';
 import ReactDOM from 'react-dom';
+
+import {colorPopoverBackground} from '@dagster-io/ui-components';
 
 const CONTEXT_MENU_EVENT = 'context-menu-event';
 

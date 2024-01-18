@@ -1,13 +1,12 @@
+import * as React from 'react';
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
-import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';

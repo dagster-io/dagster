@@ -1,6 +1,7 @@
 import {render, screen} from '@testing-library/react';
 import React from 'react';
 
+import * as Common from '../common';
 import {OpGraph} from '../OpGraph';
 import {SVGViewport} from '../SVGViewport';
 import {
@@ -11,7 +12,6 @@ import {
   buildTaggedDAG,
 } from '../__fixtures__/OpGraph.fixtures';
 import {getFullOpLayout} from '../asyncGraphLayout';
-import * as Common from '../common';
 
 describe('OpGraph', () => {
   beforeEach(() => {

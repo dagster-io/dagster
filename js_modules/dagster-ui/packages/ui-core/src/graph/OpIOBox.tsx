@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   FontFamily,
   colorAccentBlue,
@@ -7,18 +10,15 @@ import {
   colorTextBlue,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
-
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
 import {
-  OpNodeInputDefinitionFragment,
-  OpNodeOutputDefinitionFragment,
   OpNodeDefinitionFragment,
+  OpNodeInputDefinitionFragment,
   OpNodeInvocationFragment,
+  OpNodeOutputDefinitionFragment,
 } from './types/OpNode.types';
 
 export const PARENT_IN = 'PARENT_IN';

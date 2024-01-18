@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {LinkVertical as Link} from '@vx/shape';
+import styled from 'styled-components';
+
 import {
   colorBackgroundDefault,
   colorBackgroundLightHover,
@@ -5,9 +9,6 @@ import {
   colorLineageEdgeHighlighted,
   colorTextDefault,
 } from '@dagster-io/ui-components';
-import {LinkVertical as Link} from '@vx/shape';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {Edge} from './OpEdges';
 import {SVGMonospaceText} from './SVGComponents';

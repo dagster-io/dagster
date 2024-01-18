@@ -1,6 +1,7 @@
-import {Mono} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
+
+import {Mono} from '@dagster-io/ui-components';
 
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 

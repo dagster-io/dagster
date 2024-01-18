@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
-import {YamlModeValidationResult} from '@dagster-io/ui-components';
 import yaml from 'yaml';
+
+import {YamlModeValidationResult} from '@dagster-io/ui-components';
 
 import {ConfigEditorValidationFragment} from './types/ConfigEditorUtils.types';
 

@@ -1,16 +1,16 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {AssetKeyInput} from '../../graphql/types';
 import {AssetView} from '../AssetView';
 import {
-  AssetViewDefinitionSourceAsset,
-  AssetViewDefinitionNonSDA,
-  LatestMaterializationTimestamp,
-  AssetViewDefinitionSDA,
   AssetGraphEmpty,
+  AssetViewDefinitionNonSDA,
+  AssetViewDefinitionSDA,
+  AssetViewDefinitionSourceAsset,
+  LatestMaterializationTimestamp,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.

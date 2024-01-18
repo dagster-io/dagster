@@ -1,13 +1,13 @@
 import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
   RunStatus,
-  StaleStatus,
   StaleCause,
   StaleCauseCategory,
-  AssetCheckSeverity,
-  AssetCheckExecutionResolvedStatus,
-  buildAssetCheckExecution,
-  buildAssetCheckEvaluation,
+  StaleStatus,
   buildAssetCheck,
+  buildAssetCheckEvaluation,
+  buildAssetCheckExecution,
   buildAssetKey,
 } from '../../graphql/types';
 import {LiveDataForNode} from '../Utils';

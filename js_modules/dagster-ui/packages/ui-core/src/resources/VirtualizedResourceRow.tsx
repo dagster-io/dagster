@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Caption,
@@ -8,14 +12,10 @@ import {
   colorAccentGray,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {succinctType} from './ResourceRoot';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 

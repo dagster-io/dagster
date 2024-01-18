@@ -1,31 +1,31 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
+  Dialog,
   DialogFooter,
   DialogHeader,
-  Dialog,
   Group,
   Icon,
   IconWrapper,
   Spinner,
   Tooltip,
-  colorTextLighter,
+  colorAccentBlue,
   colorBackgroundLighter,
+  colorTextDefault,
   colorTextDisabled,
   colorTextLight,
-  colorTextDefault,
-  colorAccentBlue,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,

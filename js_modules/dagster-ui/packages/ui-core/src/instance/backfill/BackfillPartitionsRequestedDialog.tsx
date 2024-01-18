@@ -1,9 +1,9 @@
-import {Button, DialogFooter, Dialog, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Button, Dialog, DialogFooter, FontFamily} from '@dagster-io/ui-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
-
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});

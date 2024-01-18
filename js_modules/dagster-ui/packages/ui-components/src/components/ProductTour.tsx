@@ -4,7 +4,6 @@ import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
 import {colorShadowDefault, colorTooltipBackground, colorTooltipText} from '../theme/color';
-
 import {Box} from './Box';
 import {Button} from './Button';
 import {Popover} from './Popover';

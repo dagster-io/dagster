@@ -1,5 +1,4 @@
 import {AssetCheckHandleInput} from '../graphql/types';
-
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionButton.types';
 
 export function getAssetCheckHandleInputs(

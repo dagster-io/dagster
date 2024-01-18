@@ -1,14 +1,13 @@
 // eslint-disable-next-line no-restricted-imports
-import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
-// eslint-disable-next-line no-restricted-imports
-import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';
-import deepmerge from 'deepmerge';
 import * as React from 'react';
+import {IPopoverProps, InputGroupProps2} from '@blueprintjs/core';
+// eslint-disable-next-line no-restricted-imports
+import {Suggest as BlueprintSuggest, SuggestProps, isCreateNewItem} from '@blueprintjs/select';
+import deepmerge from 'deepmerge';
 import {List as _List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components';
 
 import {colorAccentGray, colorTextDisabled} from '../theme/color';
-
 import {Box} from './Box';
 import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';

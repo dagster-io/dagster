@@ -1,5 +1,6 @@
-import {Alert, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Alert, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
 
 const LearnMoreLink =
   'https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materializing-assets-';

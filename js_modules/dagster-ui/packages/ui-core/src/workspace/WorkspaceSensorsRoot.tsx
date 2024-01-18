@@ -1,4 +1,6 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+
 import {
   Box,
   NonIdealState,
@@ -7,7 +9,6 @@ import {
   Tooltip,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -22,7 +23,6 @@ import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
-
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';

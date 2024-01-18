@@ -1,8 +1,9 @@
-import {gql} from '@apollo/client';
-import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
 
 interface ITypeWithTooltipProps {
   type: {

@@ -1,10 +1,9 @@
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
-
 import {VirtualizedScheduleHeader, VirtualizedScheduleRow} from './VirtualizedScheduleRow';
 import {RepoAddress} from './types';
 

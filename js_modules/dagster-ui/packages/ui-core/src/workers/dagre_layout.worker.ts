@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-globals */
-
 import {layoutAssetGraph} from '../asset-graph/layout';
 import {layoutOpGraph} from '../graph/layout';
 

@@ -1,5 +1,6 @@
-import {colorBackgroundDefault, colorKeylineDefault} from '@dagster-io/ui-components';
 import styled from 'styled-components';
+
+import {colorBackgroundDefault, colorKeylineDefault} from '@dagster-io/ui-components';
 
 interface Props {
   $top?: number;

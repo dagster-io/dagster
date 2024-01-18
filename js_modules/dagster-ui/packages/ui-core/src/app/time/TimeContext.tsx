@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
-
 import {HourCycle} from './HourCycle';
 
 export const TimezoneStorageKey = 'TimezonePreference';

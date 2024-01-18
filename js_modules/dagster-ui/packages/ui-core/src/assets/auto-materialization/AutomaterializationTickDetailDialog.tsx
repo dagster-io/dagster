@@ -1,17 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Subtitle2,
-  Caption,
-  Icon,
-  Spinner,
-  colorTextLight,
-  colorBackgroundDefault,
-} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {
+  Box,
+  Caption,
+  Icon,
+  Spinner,
+  Subtitle2,
+  colorBackgroundDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 
 import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
@@ -23,16 +24,16 @@ import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetLink} from '../AssetLink';
 import {
   AssetKeysDialog,
-  AssetKeysDialogHeader,
   AssetKeysDialogEmptyState,
+  AssetKeysDialogHeader,
 } from '../AutoMaterializePolicyPage/AssetKeysDialog';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
-
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/AutomaterializationTickDetailDialog.types';
+
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
 export const AutomaterializationTickDetailDialog = React.memo(

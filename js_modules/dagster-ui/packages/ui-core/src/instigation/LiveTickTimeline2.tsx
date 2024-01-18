@@ -1,3 +1,9 @@
+import * as React from 'react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import memoize from 'lodash/memoize';
+import styled from 'styled-components';
+
 import {
   Caption,
   Tooltip,
@@ -17,17 +23,11 @@ import {
   ifPlural,
   useViewport,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import memoize from 'lodash/memoize';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
-
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {isStuckStartedTick} from './util';
 

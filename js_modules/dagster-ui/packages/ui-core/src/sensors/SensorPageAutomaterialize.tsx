@@ -1,6 +1,7 @@
-import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Spinner, Subtitle2, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useLazyQuery} from '@apollo/client';
+
+import {Alert, Box, Spinner, Subtitle2, colorTextLight} from '@dagster-io/ui-components';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
@@ -14,7 +15,6 @@ import {isStuckStartedTick} from '../instigation/util';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
 import {

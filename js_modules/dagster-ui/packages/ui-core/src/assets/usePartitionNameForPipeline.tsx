@@ -3,7 +3,6 @@ import React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RepoAddress} from '../workspace/types';
-
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,

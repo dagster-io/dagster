@@ -1,27 +1,26 @@
-import 'codemirror/addon/search/searchcursor';
-
-import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  PageHeader,
-  Spinner,
-  Code,
-  Heading,
-  StyledRawCodeMirror,
-  Subheading,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorTextDefault,
-  colorBackgroundLime,
-} from '@dagster-io/ui-components';
-import CodeMirror from 'codemirror';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
+import CodeMirror from 'codemirror';
+import 'codemirror/addon/search/searchcursor';
 import {createGlobalStyle} from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {
+  Box,
+  Code,
+  Heading,
+  PageHeader,
+  Spinner,
+  StyledRawCodeMirror,
+  Subheading,
+  colorBackgroundDefault,
+  colorBackgroundLime,
+  colorKeylineDefault,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
+
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';

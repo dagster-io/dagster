@@ -1,5 +1,6 @@
-import {MenuDivider, MenuItem, Menu, Select} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Menu, MenuDivider, MenuItem, Select} from '@dagster-io/ui-components';
 
 import {TimeContext} from './TimeContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';

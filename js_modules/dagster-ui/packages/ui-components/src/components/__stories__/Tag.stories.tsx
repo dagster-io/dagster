@@ -1,5 +1,5 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 
 import {Group} from '../Group';
 import {Tag} from '../Tag';

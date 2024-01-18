@@ -1,11 +1,10 @@
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKeyInput} from '../graphql/types';
 import {Container, Inner} from '../ui/VirtualizedTable';
-
 import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {buildRepoAddress} from './buildRepoAddress';
 

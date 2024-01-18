@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -9,8 +12,6 @@ import {
   colorTextLight,
   colorTextLighter,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
 

@@ -1,7 +1,8 @@
-import {Box, NonIdealState, Spinner, colorBackgroundDefault} from '@dagster-io/ui-components';
-import capitalize from 'lodash/capitalize';
 import * as React from 'react';
+import capitalize from 'lodash/capitalize';
 import styled from 'styled-components';
+
+import {Box, NonIdealState, Spinner, colorBackgroundDefault} from '@dagster-io/ui-components';
 
 export const EmptyDAGNotice = ({
   isGraph,

@@ -1,16 +1,17 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import uniq from 'lodash/uniq';
+import {Link} from 'react-router-dom';
+
 import {
   Box,
   Button,
   ButtonLink,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Tag,
   colorLinkDefault,
 } from '@dagster-io/ui-components';
-import uniq from 'lodash/uniq';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
@@ -20,7 +21,6 @@ import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
 import {

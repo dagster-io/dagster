@@ -14,7 +14,6 @@ import {
   colorTooltipBackground,
   colorTooltipText,
 } from '../theme/color';
-
 import {Popover} from './Popover';
 import {ConfigSchema_allConfigTypes as TypeData} from './configeditor/types/ConfigSchema';
 import {FontFamily} from './styles';

@@ -1,7 +1,6 @@
 import memoize from 'lodash/memoize';
 
 import {ColorName} from '../palettes/ColorName';
-
 import {getPaletteForTheme} from './theme';
 
 const color = memoize((semanticName: ColorName): string => {

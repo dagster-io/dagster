@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import {colorBackgroundLight, colorTextLight} from '../theme/color';
-
 import {FontFamily} from './styles';
 
 export const Trace = styled.div`

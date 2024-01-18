@@ -1,15 +1,14 @@
 import * as React from 'react';
 
 import {
-  createSingleSession,
   IExecutionSession,
   IExecutionSessionChanges,
+  createSingleSession,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
 import {useFeatureFlags} from '../app/Flags';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
-
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadType} from './types';
 import {

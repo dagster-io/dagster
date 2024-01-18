@@ -1,4 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -8,15 +12,11 @@ import {
   colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
-import styled from 'styled-components';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
 import {testId} from '../testing/testId';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-
 import {AssetLink} from './AssetLink';
 import {asAssetKeyInput} from './asInput';
 import {AssetKey} from './types';

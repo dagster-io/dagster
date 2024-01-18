@@ -3,7 +3,6 @@ import {Redirect, useLocation, useParams} from 'react-router-dom';
 
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
 import {explorerPathFromString} from './PipelinePathUtils';
 
 interface Props {

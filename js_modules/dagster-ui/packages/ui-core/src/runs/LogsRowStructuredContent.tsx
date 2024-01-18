@@ -1,9 +1,10 @@
 // eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
-import {Box, Tag, colorTextRed} from '@dagster-io/ui-components';
-import qs from 'qs';
 import * as React from 'react';
+import {Intent} from '@blueprintjs/core';
+import qs from 'qs';
 import {Link, useLocation} from 'react-router-dom';
+
+import {Box, Tag, colorTextRed} from '@dagster-io/ui-components';
 
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
@@ -13,14 +14,13 @@ import {
   assetDetailsPathForKey,
 } from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
-import {ErrorSource, DagsterEventType} from '../graphql/types';
+import {DagsterEventType, ErrorSource} from '../graphql/types';
 import {
   LogRowStructuredContentTable,
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
-
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';

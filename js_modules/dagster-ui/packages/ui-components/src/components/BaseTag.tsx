@@ -7,7 +7,6 @@ import {
   colorTooltipBackground,
   colorTooltipText,
 } from '../theme/color';
-
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 

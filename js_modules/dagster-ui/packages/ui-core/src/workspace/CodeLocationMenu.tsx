@@ -1,3 +1,6 @@
+import * as React from 'react';
+import * as yaml from 'yaml';
+
 import {
   Button,
   Dialog,
@@ -9,8 +12,6 @@ import {
   StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import * as yaml from 'yaml';
 
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 

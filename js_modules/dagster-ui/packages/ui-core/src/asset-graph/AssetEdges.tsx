@@ -1,5 +1,6 @@
-import {colorLineageEdgeHighlighted, colorLineageEdge} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {colorLineageEdge, colorLineageEdgeHighlighted} from '@dagster-io/ui-components';
 
 import {buildSVGPath} from './Utils';
 import {AssetLayoutEdge} from './layout';

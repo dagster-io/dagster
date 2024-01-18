@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
-import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
-import {layoutOp} from '../graph/asyncGraphLayout';
+import {Box} from '@dagster-io/ui-components';
 
+import {OP_NODE_DEFINITION_FRAGMENT, OpNode} from '../graph/OpNode';
+import {layoutOp} from '../graph/asyncGraphLayout';
 import {OpCardSolidDefinitionFragment} from './types/OpCard.types';
 
 interface OpCardProps {

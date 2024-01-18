@@ -1,11 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, PageHeader, Heading, Subheading, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
+
+import {Box, Heading, PageHeader, Subheading, colorTextLight} from '@dagster-io/ui-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';

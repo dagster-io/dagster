@@ -7,7 +7,6 @@ import {
   colorBackgroundRed,
   colorKeylineDefault,
 } from '../theme/color';
-
 import {Icon} from './Icon';
 
 interface Props {

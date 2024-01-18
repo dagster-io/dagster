@@ -1,6 +1,7 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
+
+import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -10,7 +11,6 @@ import {WorkspaceHeader} from '../workspace/WorkspaceHeader';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {VirtualizedResourceTable} from './VirtualizedResourceTable';
 import {
   WorkspaceResourcesQuery,

@@ -1,16 +1,17 @@
-import {
-  IconName,
-  Icon,
-  colorTextLight,
-  colorTextDefault,
-  colorBackgroundLight,
-  colorAccentLime,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
-import Fuse from 'fuse.js';
 import * as React from 'react';
+import Fuse from 'fuse.js';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {
+  Icon,
+  IconName,
+  colorAccentLime,
+  colorBackgroundLight,
+  colorTextDefault,
+  colorTextLight,
+  colorTextLighter,
+} from '@dagster-io/ui-components';
 
 import {SearchResult, SearchResultType} from './types';
 

@@ -1,4 +1,7 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
+import React from 'react';
+import isEmail from 'validator/lib/isEmail';
+
 import {
   Body,
   Box,
@@ -16,8 +19,6 @@ import {
   colorTextRed,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
-import React from 'react';
-import isEmail from 'validator/lib/isEmail';
 
 export const CommunityNux = () => {
   const [didDismissCommunityNux, dissmissInBrowser] = useStateWithStorage(

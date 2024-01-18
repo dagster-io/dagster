@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
 
 import {FilterOption, LogFilterSelect} from '../LogFilterSelect';
 import {LogLevel} from '../LogLevel';

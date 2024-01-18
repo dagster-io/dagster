@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
 import {print} from 'graphql';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
 import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';

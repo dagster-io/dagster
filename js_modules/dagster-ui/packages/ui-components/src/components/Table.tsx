@@ -3,7 +3,6 @@ import {HTMLTable, HTMLTableProps} from '@blueprintjs/core';
 import styled from 'styled-components';
 
 import {colorKeylineDefault, colorTextDefault, colorTextLight} from '../theme/color';
-
 import {StyledTag} from './BaseTag';
 import {FontFamily} from './styles';
 

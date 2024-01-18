@@ -1,6 +1,7 @@
-import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
+
+import {Box, Button, Icon, Tooltip} from '@dagster-io/ui-components';
 
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
@@ -10,7 +11,6 @@ import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
-
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 

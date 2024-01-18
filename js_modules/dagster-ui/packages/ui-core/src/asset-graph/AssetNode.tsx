@@ -1,4 +1,10 @@
 import {gql} from '@apollo/client';
+import countBy from 'lodash/countBy';
+import isEqual from 'lodash/isEqual';
+import React from 'react';
+import {Link} from 'react-router-dom';
+import styled, {CSSObject} from 'styled-components';
+
 import {
   Box,
   FontFamily,
@@ -13,20 +19,15 @@ import {
   colorBackgroundDefault,
   colorBackgroundGray,
   colorBackgroundLight,
+  colorLineageNodeBackground,
+  colorLineageNodeBorder,
+  colorLineageNodeBorderHover,
+  colorLineageNodeBorderSelected,
+  colorShadowDefault,
   colorTextDefault,
   colorTextLight,
   colorTextLighter,
-  colorLineageNodeBorder,
-  colorLineageNodeBorderSelected,
-  colorLineageNodeBorderHover,
-  colorLineageNodeBackground,
-  colorShadowDefault,
 } from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
-import isEqual from 'lodash/isEqual';
-import React from 'react';
-import {Link} from 'react-router-dom';
-import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -37,7 +38,6 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-
 import {useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';

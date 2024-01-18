@@ -1,9 +1,8 @@
 import * as React from 'react';
 
 import {colorAccentGray, colorBackgroundLight, colorTextDefault} from '../theme/color';
-
 import {Box} from './Box';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 import {Subheading} from './Text';
 

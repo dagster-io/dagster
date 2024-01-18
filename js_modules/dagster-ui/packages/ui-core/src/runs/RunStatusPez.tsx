@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   FontFamily,
@@ -6,13 +10,9 @@ import {
   colorKeylineDefault,
   colorTextDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
-
 import {RunStatusIndicator} from './RunStatusDots';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';

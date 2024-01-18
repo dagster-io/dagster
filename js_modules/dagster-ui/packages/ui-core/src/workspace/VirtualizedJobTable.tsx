@@ -1,8 +1,7 @@
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 
 import {Container, Inner} from '../ui/VirtualizedTable';
-
 import {VirtualizedJobHeader, VirtualizedJobRow} from './VirtualizedJobRow';
 import {RepoAddress} from './types';
 

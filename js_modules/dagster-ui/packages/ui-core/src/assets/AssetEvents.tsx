@@ -1,23 +1,23 @@
+import * as React from 'react';
+
 import {
   Box,
+  Button,
   ButtonGroup,
-  Spinner,
-  Subheading,
-  ErrorBoundary,
   Checkbox,
-  Popover,
+  ErrorBoundary,
+  Icon,
   Menu,
   MenuItem,
-  Button,
-  Icon,
+  Popover,
+  Spinner,
+  Subheading,
   colorBackgroundLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
 import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';

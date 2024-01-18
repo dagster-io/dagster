@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   colorAccentBlue,
   colorAccentBlueHover,
@@ -16,8 +19,6 @@ import {
   colorBorderDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 export const BOX_SIZE = 32;
 

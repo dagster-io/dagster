@@ -1,9 +1,9 @@
-import {Icon, FontFamily, colorLinkDefault} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
-import {withMiddleTruncation} from '../app/Util';
+import {FontFamily, Icon, colorLinkDefault} from '@dagster-io/ui-components';
 
+import {withMiddleTruncation} from '../app/Util';
 import {ASSET_LINK_NAME_MAX_LENGTH} from './layout';
 
 export const AssetNodeLink = React.memo(({assetKey}: {assetKey: {path: string[]}}) => {

@@ -1,6 +1,7 @@
-import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import React from 'react';
+
+import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
 import {FilterDropdown} from '../FilterDropdown';

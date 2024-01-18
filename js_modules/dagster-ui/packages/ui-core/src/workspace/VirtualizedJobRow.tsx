@@ -1,10 +1,11 @@
-import {gql, useLazyQuery} from '@apollo/client';
-import {Box, MiddleTruncate, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {Box, MiddleTruncate, colorTextLight} from '@dagster-io/ui-components';
+
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -13,7 +14,6 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
 import {RepoAddress} from './types';

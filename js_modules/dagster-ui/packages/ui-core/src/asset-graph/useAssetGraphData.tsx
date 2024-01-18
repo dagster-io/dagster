@@ -4,12 +4,11 @@ import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import React from 'react';
 
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
-
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,

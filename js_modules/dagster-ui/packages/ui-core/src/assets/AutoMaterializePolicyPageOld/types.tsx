@@ -1,6 +1,5 @@
 import {PartitionKeyRange} from '../../graphql/types';
 import {AssetKey} from '../types';
-
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 
 export type NoConditionsMetEvaluation = {

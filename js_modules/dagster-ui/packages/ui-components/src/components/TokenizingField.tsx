@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
-import {TagInput} from '@blueprintjs/core';
 import * as React from 'react';
+import {TagInput} from '@blueprintjs/core';
 import styled from 'styled-components';
 
 import {
@@ -16,9 +16,8 @@ import {
   colorTextRed,
   colorTextYellow,
 } from '../theme/color';
-
 import {Box} from './Box';
-import {MenuItem, Menu} from './Menu';
+import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 

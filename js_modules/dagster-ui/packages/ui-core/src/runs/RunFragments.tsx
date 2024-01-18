@@ -1,7 +1,6 @@
 import {gql} from '@apollo/client';
 
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
-
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 import {RUN_TIMING_FRAGMENT} from './RunTimingDetails';

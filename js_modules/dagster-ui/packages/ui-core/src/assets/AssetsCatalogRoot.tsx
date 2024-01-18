@@ -1,14 +1,14 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Page, Spinner, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 import {useHistory, useParams} from 'react-router-dom';
+
+import {Box, Page, Spinner, colorTextLight} from '@dagster-io/ui-components';
 
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStartTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
-
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';

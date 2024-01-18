@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {act, render, screen} from '@testing-library/react';
 import faker from 'faker';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../../asset-graph/Utils';

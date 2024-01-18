@@ -1,5 +1,5 @@
-import {useQuery, useMutation, gql} from '@apollo/client';
 import * as React from 'react';
+import {gql, useMutation, useQuery} from '@apollo/client';
 
 import {
   GetAutoMaterializePausedQuery,

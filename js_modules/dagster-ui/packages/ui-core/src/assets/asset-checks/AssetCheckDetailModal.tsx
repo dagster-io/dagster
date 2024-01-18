@@ -1,4 +1,7 @@
 import {gql} from '@apollo/client';
+import React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   Body2,
   Box,
@@ -13,8 +16,6 @@ import {
   Table,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import {Link} from 'react-router-dom';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
@@ -25,7 +26,6 @@ import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   AssetCheckDetailsQuery,

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
 import {Popover2, Popover2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
-import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import searchSVG from '../icon-svgs/search.svg';
@@ -10,13 +10,12 @@ import {
   colorAccentGray,
   colorBorderDefault,
   colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
   colorPopoverBackground,
   colorShadowDefault,
+  colorTextDefault,
+  colorTextDisabled,
   colorTooltipBackground,
 } from '../theme/color';
-
 import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`

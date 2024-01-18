@@ -1,24 +1,25 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
   Icon,
   IconWrapper,
+  Menu,
   MenuDivider,
   MenuItem,
-  Menu,
   Select,
   Spinner,
   Suggest,
   colorAccentGray,
+  colorBackgroundLight,
   colorBackgroundLighter,
   colorBackgroundLighterHover,
-  colorBackgroundLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -32,14 +33,13 @@ import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorPipelinePresetFragment,
-  PartitionSetForConfigEditorFragment,
   ConfigPartitionResultFragment,
   ConfigPartitionsQuery,
   ConfigPartitionsQueryVariables,
+  PartitionSetForConfigEditorFragment,
 } from './types/ConfigEditorConfigPicker.types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;

@@ -40,7 +40,6 @@ import {
 } from '../types/LaunchAssetExecutionButton.types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
-
 import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 
 export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {

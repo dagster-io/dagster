@@ -7,7 +7,6 @@ import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
-
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag = ({

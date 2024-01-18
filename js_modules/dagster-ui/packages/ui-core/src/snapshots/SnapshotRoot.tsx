@@ -4,7 +4,6 @@ import {Route, Switch, useParams} from 'react-router-dom';
 import {PipelineExplorerSnapshotRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {PipelineRunsRoot} from '../pipelines/PipelineRunsRoot';
-
 import {SnapshotNav} from './SnapshotNav';
 
 export const SnapshotRoot = () => {

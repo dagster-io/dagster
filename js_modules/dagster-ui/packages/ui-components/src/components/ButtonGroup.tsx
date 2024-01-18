@@ -1,10 +1,9 @@
 import * as React from 'react';
 
-import {colorBackgroundLighterHover, colorTextLight, colorTextDefault} from '../theme/color';
-
+import {colorBackgroundLighterHover, colorTextDefault, colorTextLight} from '../theme/color';
 import {BaseButton} from './BaseButton';
 import {JoinedButtons, buildColorSet} from './Button';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Tooltip} from './Tooltip';
 
 export type ButtonGroupItem<T> = {

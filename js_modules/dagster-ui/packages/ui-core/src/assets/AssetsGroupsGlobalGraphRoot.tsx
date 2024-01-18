@@ -1,7 +1,8 @@
-import {Page, PageHeader, Heading} from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
 import * as React from 'react';
+import isEqual from 'lodash/isEqual';
 import {useHistory, useParams} from 'react-router-dom';
+
+import {Heading, Page, PageHeader} from '@dagster-io/ui-components';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
@@ -13,7 +14,6 @@ import {useStartTrace} from '../performance';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-
 import {buildAssetGroupSelector} from './AssetGroupSuggest';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {

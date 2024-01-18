@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   FontFamily,
   colorAccentPrimary,
@@ -8,11 +11,8 @@ import {
   colorShadowDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
-
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
 const ONE_MIN = 60 * 1000;

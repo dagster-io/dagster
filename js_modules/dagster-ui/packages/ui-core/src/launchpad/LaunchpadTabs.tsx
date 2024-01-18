@@ -1,6 +1,11 @@
+import * as React from 'react';
+import styled, {css} from 'styled-components';
+
 import {
   Box,
   ButtonLink,
+  Icon,
+  IconWrapper,
   colorAccentGray,
   colorAccentPrimary,
   colorAccentPrimaryHover,
@@ -10,18 +15,14 @@ import {
   colorTextLight,
   colorTextLighter,
   colorTextRed,
-  Icon,
-  IconWrapper,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled, {css} from 'styled-components';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
+  IStorageData,
   applyChangesToSession,
   applyRemoveSession,
   applySelectSession,
-  IStorageData,
 } from '../app/ExecutionSessionStorage';
 
 interface ExecutationTabProps {

@@ -1,26 +1,24 @@
+import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
+import {createGlobalStyle} from 'styled-components/macro';
+
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
   GlobalDialogStyle,
+  GlobalInconsolata,
+  GlobalInter,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
 } from '../src';
-
-import {MemoryRouter} from 'react-router-dom';
-import * as React from 'react';
-
-import {createGlobalStyle} from 'styled-components/macro';
-
-import './blueprint.css';
 import {
   colorBackgroundDefault,
   colorLinkDefault,
   colorTextDefault,
   colorTextLight,
 } from '../src/theme/color';
+import './blueprint.css';
 
 const GlobalStyle = createGlobalStyle`
   * {

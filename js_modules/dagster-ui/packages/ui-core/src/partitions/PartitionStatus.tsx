@@ -1,18 +1,19 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Tooltip,
-  useViewport,
-  colorKeylineDefault,
-  colorTextLight,
+  colorAccentBlue,
   colorAccentGray,
   colorAccentGrayHover,
-  colorAccentBlue,
-  colorBackgroundLighter,
   colorBackgroundDefault,
+  colorBackgroundLighter,
   colorBorderDefault,
+  colorKeylineDefault,
+  colorTextLight,
+  useViewport,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {
   assetPartitionStatusToText,
@@ -20,8 +21,7 @@ import {
 } from '../assets/AssetPartitionStatus';
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
-import {runStatusToBackfillStateString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
-
+import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
 import {assembleIntoSpans} from './SpanRepresentation';
 
 type SelectionRange = {

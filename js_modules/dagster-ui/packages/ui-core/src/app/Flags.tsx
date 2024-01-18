@@ -1,5 +1,5 @@
-import memoize from 'lodash/memoize';
 import * as React from 'react';
+import memoize from 'lodash/memoize';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 

@@ -1,27 +1,28 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
-  DialogFooter,
+  CaptionMono,
   Dialog,
+  DialogBody,
+  DialogFooter,
+  FontFamily,
   Group,
   Icon,
-  Tooltip,
-  FontFamily,
-  tryPrettyPrintJSON,
   Table,
-  DialogBody,
-  CaptionMono,
-  colorKeylineDefault,
+  Tooltip,
   colorAccentGray,
-  colorBackgroundLight,
   colorBackgroundDefault,
-  colorTextLight,
+  colorBackgroundLight,
   colorBackgroundLighter,
+  colorKeylineDefault,
+  colorTextLight,
+  tryPrettyPrintJSON,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
@@ -32,8 +33,7 @@ import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
+import {TABLE_SCHEMA_FRAGMENT, TableSchema} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntry.types';
 
 export const LogRowStructuredContentTable = ({

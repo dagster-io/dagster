@@ -1,13 +1,13 @@
-import {render} from '@testing-library/react';
 import * as React from 'react';
+import {render} from '@testing-library/react';
 
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {
   DefaultQuerystring,
+  EnabledRunLogLevelsKey,
   decodeRunPageFilters,
   encodeRunPageFilters,
   useQueryPersistedLogFilter,
-  EnabledRunLogLevelsKey,
 } from '../useQueryPersistedLogFilter';
 
 jest.mock('../../hooks/useQueryPersistedState', () => ({

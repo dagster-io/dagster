@@ -1,3 +1,6 @@
+import React from 'react';
+import styled, {keyframes} from 'styled-components';
+
 import {
   Spinner,
   Tooltip,
@@ -6,8 +9,6 @@ import {
   colorAccentGreen,
   colorAccentRed,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled, {keyframes} from 'styled-components';
 
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';

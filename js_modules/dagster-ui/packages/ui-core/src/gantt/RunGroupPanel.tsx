@@ -1,25 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  ButtonLink,
-  Group,
-  Icon,
-  FontFamily,
-  colorAccentYellow,
-  colorLinkDefault,
-  colorTextLight,
-  colorBackgroundLight,
-  colorBackgroundDefault,
-  colorBackgroundLightHover,
-  colorBackgroundDefaultHover,
-  colorBorderDefault,
-  colorTextDefault,
-  colorAccentReversed,
-  colorAccentPrimary,
-} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {
+  Box,
+  ButtonLink,
+  FontFamily,
+  Group,
+  Icon,
+  colorAccentPrimary,
+  colorAccentReversed,
+  colorAccentYellow,
+  colorBackgroundDefault,
+  colorBackgroundDefaultHover,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorBorderDefault,
+  colorLinkDefault,
+  colorTextDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -27,8 +28,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-
+import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime} from '../runs/RunUtils';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQueryVariables,

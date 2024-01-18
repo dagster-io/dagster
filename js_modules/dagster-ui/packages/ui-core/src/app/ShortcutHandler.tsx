@@ -1,12 +1,13 @@
+import * as React from 'react';
+import ReactDOM from 'react-dom';
+import styled from 'styled-components';
+
 import {
   colorBorderHover,
   colorShadowDefault,
   colorTooltipBackground,
   colorTooltipText,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 

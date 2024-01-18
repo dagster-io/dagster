@@ -1,7 +1,8 @@
-import {Box, Checkbox, Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
+import * as React from 'react';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
-import * as React from 'react';
+
+import {Box, Checkbox, Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
 
 import {AssetGroupSelector} from '../graphql/types';
 import {ClearButton} from '../ui/ClearButton';

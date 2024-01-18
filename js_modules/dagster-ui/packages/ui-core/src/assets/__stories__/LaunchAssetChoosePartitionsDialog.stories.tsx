@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {ReleasesJobProps} from '../__fixtures__/LaunchAssetChoosePartitionsDialog.fixtures';

@@ -1,9 +1,9 @@
-import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
+
+import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
 
 import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
-
 import {
   CodeLocationRowType,
   VirtualizedCodeLocationErrorRow,

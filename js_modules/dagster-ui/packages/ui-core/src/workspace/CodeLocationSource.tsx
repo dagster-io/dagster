@@ -1,5 +1,6 @@
-import {Box, Icon, colorLinkDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Icon, colorLinkDefault, colorTextLight} from '@dagster-io/ui-components';
 
 interface Metadata {
   key: string;

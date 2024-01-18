@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {Button} from '../Button';
 import {Group} from '../Group';

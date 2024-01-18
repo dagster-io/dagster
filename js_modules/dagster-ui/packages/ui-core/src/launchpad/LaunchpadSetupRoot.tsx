@@ -1,5 +1,5 @@
-import qs from 'qs';
 import * as React from 'react';
+import qs from 'qs';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {

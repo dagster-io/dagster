@@ -1,38 +1,39 @@
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
 import {Intent, PopoverPosition} from '@blueprintjs/core';
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
   Checkbox,
-  Icon,
-  MenuItem,
-  Menu,
-  Popover,
-  TextInput,
-  Tooltip,
   Dialog,
-  DialogFooter,
   DialogBody,
+  DialogFooter,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
   Table,
   Tag,
-  colorKeylineDefault,
-  colorLinkDefault,
+  TextInput,
+  Tooltip,
+  colorAccentGray,
   colorAccentGreen,
   colorAccentRed,
   colorAccentYellow,
   colorBackgroundDefault,
-  colorTextLight,
   colorBorderDefault,
-  colorAccentGray,
+  colorKeylineDefault,
+  colorLinkDefault,
   colorShadowDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
-import uniq from 'lodash/uniq';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';

@@ -1,3 +1,6 @@
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   BaseTag,
   Icon,
@@ -8,8 +11,6 @@ import {
   colorTooltipBackground,
   colorTooltipText,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled from 'styled-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 

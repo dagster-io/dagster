@@ -1,6 +1,7 @@
-import {QueryResult} from '@apollo/client';
-import {Box, Spinner, Tabs, colorAccentBlue, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {QueryResult} from '@apollo/client';
+
+import {Box, Spinner, Tabs, colorAccentBlue, colorAccentGray} from '@dagster-io/ui-components';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useAutomationPolicySensorFlag} from '../assets/AutomationPolicySensorFlag';

@@ -1,8 +1,9 @@
-import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
+import * as React from 'react';
 import {ActiveElement, ChartEvent} from 'chart.js';
 import 'chartjs-adapter-date-fns';
-import * as React from 'react';
 import {Line} from 'react-chartjs-2';
+
+import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
 
 export interface AssetValueGraphData {
   minY: number;

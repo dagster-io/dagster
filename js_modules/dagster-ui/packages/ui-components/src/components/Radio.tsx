@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import {colorAccentBlue, colorBackgroundDisabled} from '../theme/color';
-
 import {IconWrapper} from './Icon';
 
 export const RadioContainer = styled.div`

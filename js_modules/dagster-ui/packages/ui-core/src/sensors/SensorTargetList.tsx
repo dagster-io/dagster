@@ -1,5 +1,6 @@
-import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box} from '@dagster-io/ui-components';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineReference} from '../pipelines/PipelineReference';

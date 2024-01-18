@@ -1,5 +1,6 @@
-import {FontFamily} from '@dagster-io/ui-components';
 import styled from 'styled-components';
+
+import {FontFamily} from '@dagster-io/ui-components';
 
 export const Version = styled.div`
   font-family: ${FontFamily.monospace};

@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   FontFamily,
@@ -6,8 +9,6 @@ import {
   colorBackgroundGray,
   colorLineageNodeBackground,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import airbyte from './optag-images/airbyte.svg';
 import airflow from './optag-images/airflow.svg';

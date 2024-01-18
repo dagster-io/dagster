@@ -1,7 +1,8 @@
-import {Box, TextInput} from '@dagster-io/ui-components';
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+
+import {Box, TextInput} from '@dagster-io/ui-components';
 
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {StorybookProvider} from '../../testing/StorybookProvider';

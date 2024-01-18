@@ -1,7 +1,8 @@
-import {Tooltip} from '@dagster-io/ui-components';
+import * as React from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import * as React from 'react';
+
+import {Tooltip} from '@dagster-io/ui-components';
 
 import {Timestamp} from '../app/time/Timestamp';
 

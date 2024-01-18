@@ -1,5 +1,6 @@
-import {Alert, Box, Icon, colorAccentBlue} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Alert, Box, Icon, colorAccentBlue} from '@dagster-io/ui-components';
 
 export const DependsOnSelfBanner = () => {
   return (

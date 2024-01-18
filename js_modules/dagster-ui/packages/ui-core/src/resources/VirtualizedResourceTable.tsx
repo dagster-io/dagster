@@ -1,9 +1,8 @@
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 
 import {Container, Inner} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
-
 import {VirtualizedResourceHeader, VirtualizedResourceRow} from './VirtualizedResourceRow';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 

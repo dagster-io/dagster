@@ -1,14 +1,13 @@
-import {loader} from 'graphql.macro';
 import * as React from 'react';
+import {loader} from 'graphql.macro';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {AppContext, AppContextValue} from '../app/AppContext';
-import {extractPermissions, PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
+import {PermissionsContext, PermissionsFromJSON, extractPermissions} from '../app/Permissions';
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
 import {PermissionFragment} from '../app/types/Permissions.types';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 
 const typeDefs = loader('../graphql/schema.graphql');

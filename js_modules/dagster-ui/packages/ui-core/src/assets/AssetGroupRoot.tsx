@@ -1,7 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
 import {useHistory, useParams} from 'react-router-dom';
+
+import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
@@ -19,7 +20,6 @@ import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';

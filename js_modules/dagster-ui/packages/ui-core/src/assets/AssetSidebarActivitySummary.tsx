@@ -1,3 +1,6 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   Body,
   Box,
@@ -8,13 +11,10 @@ import {
   colorLinkDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {

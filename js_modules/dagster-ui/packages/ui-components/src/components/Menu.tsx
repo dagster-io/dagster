@@ -1,11 +1,11 @@
 /* eslint-disable no-restricted-imports */
+import * as React from 'react';
 import {
-  Intent,
   Menu as BlueprintMenu,
   MenuDivider as BlueprintMenuDivider,
   MenuItem as BlueprintMenuItem,
+  Intent,
 } from '@blueprintjs/core';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {
@@ -14,15 +14,14 @@ import {
   colorAccentGreen,
   colorAccentRed,
   colorAccentYellow,
+  colorBackgroundBlue,
   colorKeylineDefault,
-  colorTextDefault,
-  colorTextLight,
   colorPopoverBackground,
   colorPopoverBackgroundHover,
-  colorBackgroundBlue,
+  colorTextDefault,
+  colorTextLight,
 } from '../theme/color';
-
-import {IconName, Icon, IconWrapper} from './Icon';
+import {Icon, IconName, IconWrapper} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 

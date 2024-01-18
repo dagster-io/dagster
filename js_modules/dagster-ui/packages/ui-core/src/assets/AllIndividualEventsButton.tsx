@@ -1,23 +1,24 @@
+import * as React from 'react';
+import dayjs from 'dayjs';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Group,
   Icon,
   IconWrapper,
-  Table,
   Mono,
-  colorTextLight,
-  colorBackgroundLight,
+  Table,
   colorAccentLime,
+  colorBackgroundLight,
   colorBackgroundLightHover,
   colorTextDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -27,7 +28,6 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
 import {

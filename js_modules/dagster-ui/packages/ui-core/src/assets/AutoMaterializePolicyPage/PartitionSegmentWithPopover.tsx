@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import styled from 'styled-components';
+
 import {
   Box,
   MiddleTruncate,
@@ -11,13 +15,9 @@ import {
   colorAccentYellow,
   colorAccentYellowHover,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {assertUnreachable} from '../../app/Util';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {AssetConditionEvaluationStatus, AssetSubset} from './types';
 

@@ -1,17 +1,18 @@
+import * as React from 'react';
+import {Link, NavLink, useHistory} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
   IconWrapper,
   Tooltip,
   colorNavBackground,
-  colorNavText,
-  colorNavTextSelected,
-  colorNavTextHover,
   colorNavButton,
+  colorNavText,
+  colorNavTextHover,
+  colorNavTextSelected,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link, NavLink, useHistory} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
@@ -20,7 +21,6 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../search/SearchDialog';
-
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
 import {WebSocketStatus} from './WebSocketProvider';

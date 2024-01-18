@@ -8,12 +8,11 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {PipelineExplorerContainer} from './PipelineExplorerRoot';
 import {
+  ExplorerPath,
   explorerPathFromString,
   explorerPathToString,
-  ExplorerPath,
   useStripSnapshotFromPath,
 } from './PipelinePathUtils';
 import {useJobTitle} from './useJobTitle';

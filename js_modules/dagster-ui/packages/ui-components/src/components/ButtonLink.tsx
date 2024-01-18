@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {colorLinkDefault} from '../theme/color';
-
 import {Box} from './Box';
 
 type Color =

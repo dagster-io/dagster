@@ -1,11 +1,11 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {Meta} from '@storybook/react';
 import styled from 'styled-components';
 
 import {
-  colorAccentRed,
-  colorAccentGreen,
   colorAccentBlue,
+  colorAccentGreen,
+  colorAccentRed,
   colorAccentYellow,
 } from '../../theme/color';
 import {Group} from '../Group';

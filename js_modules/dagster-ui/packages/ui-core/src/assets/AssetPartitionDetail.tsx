@@ -1,4 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
+import React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   Alert,
   Box,
@@ -16,18 +19,15 @@ import {
   colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
 import {RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
@@ -37,9 +37,9 @@ import {StaleReasonsTags} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
-  AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
+  AssetPartitionLatestRunFragment,
   AssetPartitionStaleQuery,
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';

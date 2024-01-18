@@ -1,7 +1,8 @@
-import {MockedProvider} from '@apollo/client/testing';
-import {Button} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import * as React from 'react';
+import {MockedProvider} from '@apollo/client/testing';
+import {Meta} from '@storybook/react';
+
+import {Button} from '@dagster-io/ui-components';
 
 import {OpenWithIntent} from '../../instigation/useInstigationStateReducer';
 import {SensorStateChangeDialog} from '../SensorStateChangeDialog';

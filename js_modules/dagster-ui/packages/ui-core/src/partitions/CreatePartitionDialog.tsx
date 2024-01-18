@@ -1,4 +1,7 @@
+import * as React from 'react';
 import {gql, useMutation} from '@apollo/client';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -12,8 +15,6 @@ import {
   Tooltip,
   colorAccentRed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -21,7 +22,6 @@ import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,

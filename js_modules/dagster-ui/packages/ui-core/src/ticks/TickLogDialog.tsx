@@ -1,33 +1,33 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+
 import {
   Box,
   Button,
-  DialogFooter,
   Dialog,
   DialogBody,
-  colorTextLight,
-  NonIdealState,
+  DialogFooter,
   ExternalAnchorButton,
   Icon,
+  NonIdealState,
+  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {InstigationSelector} from '../graphql/types';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
-import {EventTypeColumn, TimestampColumn, Row} from '../runs/LogsRowComponents';
+import {EventTypeColumn, Row, TimestampColumn} from '../runs/LogsRowComponents';
 import {
-  ColumnWidthsProvider,
   ColumnWidthsContext,
-  HeadersContainer,
-  HeaderContainer,
+  ColumnWidthsProvider,
   Header,
+  HeaderContainer,
+  HeadersContainer,
 } from '../runs/LogsScrollingTableHeader';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-
 import {
+  TickLogEventFragment,
   TickLogEventsQuery,
   TickLogEventsQueryVariables,
-  TickLogEventFragment,
 } from './types/TickLogDialog.types';
 
 export const TickLogDialog = ({

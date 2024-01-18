@@ -1,6 +1,7 @@
-import {FontFamily, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {FontFamily, colorTextLight} from '@dagster-io/ui-components';
 
 const MarkdownWithPlugins = React.lazy(() => import('./MarkdownWithPlugins'));
 

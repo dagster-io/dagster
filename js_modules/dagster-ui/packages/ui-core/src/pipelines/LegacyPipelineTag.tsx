@@ -1,6 +1,7 @@
-import {Tooltip, FontFamily, colorBackgroundLight, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {FontFamily, Tooltip, colorBackgroundLight, colorTextLight} from '@dagster-io/ui-components';
 
 export const LegacyPipelineTag = () => (
   <Tooltip content="Legacy pipeline" placement="top">

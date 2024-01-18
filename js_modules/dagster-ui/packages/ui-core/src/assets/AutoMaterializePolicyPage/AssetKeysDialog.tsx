@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import {
   Box,
   Button,
@@ -6,7 +8,6 @@ import {
   NonIdealState,
   TextInput,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 interface Props {
   isOpen: boolean;

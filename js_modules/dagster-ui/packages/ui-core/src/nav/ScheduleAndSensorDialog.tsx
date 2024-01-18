@@ -1,6 +1,7 @@
-import {Box, Button, Dialog, DialogFooter, Subheading, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+
+import {Box, Button, Dialog, DialogFooter, Subheading, Table} from '@dagster-io/ui-components';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';

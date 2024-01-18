@@ -1,3 +1,7 @@
+import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import styled from 'styled-components';
+
 import {
   Box,
   Caption,
@@ -9,9 +13,6 @@ import {
   colorTextBlue,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
@@ -19,7 +20,6 @@ import {AssetKeyInput} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
 import {RunlessEventTag} from './RunlessEventTag';
 import {AssetEventGroup} from './groupByPartition';
 import {isRunlessEvent} from './isRunlessEvent';

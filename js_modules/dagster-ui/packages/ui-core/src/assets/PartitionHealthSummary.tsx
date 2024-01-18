@@ -1,13 +1,13 @@
-import {Spinner, Box, Caption} from '@dagster-io/ui-components';
 import React from 'react';
+
+import {Box, Caption, Spinner} from '@dagster-io/ui-components';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
-
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
+import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
 
 interface Props {
   assetKey: AssetKey;

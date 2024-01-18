@@ -1,7 +1,8 @@
-import {Box, Icon} from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import styled from 'styled-components';
+
+import {Box, Icon} from '@dagster-io/ui-components';
 
 import {COMMON_COLLATOR} from '../../app/Util';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';

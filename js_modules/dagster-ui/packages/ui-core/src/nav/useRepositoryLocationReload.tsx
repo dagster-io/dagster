@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import * as React from 'react';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
@@ -9,14 +9,13 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
-
 import {
+  ReloadRepositoryLocationMutation,
+  ReloadRepositoryLocationMutationVariables,
+  ReloadWorkspaceMutation,
+  ReloadWorkspaceMutationVariables,
   RepositoryLocationStatusQuery,
   RepositoryLocationStatusQueryVariables,
-  ReloadRepositoryLocationMutationVariables,
-  ReloadWorkspaceMutationVariables,
-  ReloadWorkspaceMutation,
-  ReloadRepositoryLocationMutation,
 } from './types/useRepositoryLocationReload.types';
 
 type State = {

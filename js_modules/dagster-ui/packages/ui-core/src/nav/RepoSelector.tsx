@@ -1,28 +1,28 @@
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
+  Caption,
   Checkbox,
   Icon,
   IconWrapper,
   Spinner,
   Table,
-  Caption,
   Tooltip,
-  colorLinkDefault,
-  colorTextLight,
-  colorTextLighter,
   colorAccentGray,
   colorAccentGrayHover,
+  colorLinkDefault,
   colorTextDisabled,
+  colorTextLight,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,

@@ -3,7 +3,6 @@ import * as React from 'react';
 import {AppContext} from '../app/AppContext';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
-
 import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 
 export type ChildProps = {

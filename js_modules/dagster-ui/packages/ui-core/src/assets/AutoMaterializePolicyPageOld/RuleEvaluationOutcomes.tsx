@@ -1,3 +1,6 @@
+import * as React from 'react';
+import groupBy from 'lodash/groupBy';
+
 import {
   Box,
   Icon,
@@ -6,8 +9,6 @@ import {
   colorTextLight,
   colorTextLighter,
 } from '@dagster-io/ui-components';
-import groupBy from 'lodash/groupBy';
-import * as React from 'react';
 
 import {assertUnreachable} from '../../app/Util';
 import {
@@ -15,7 +16,6 @@ import {
   AutoMaterializeRule,
   AutoMaterializeRuleEvaluation,
 } from '../../graphql/types';
-
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
 import {ParentUpdatedLink} from './ParentUpdatedLink';

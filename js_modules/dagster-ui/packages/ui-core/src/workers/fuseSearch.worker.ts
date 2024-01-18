@@ -1,7 +1,6 @@
 /**
  * A Web Worker that creates and queries a Fuse object.
  */
-
 import {Fuse} from '../search/fuse';
 
 let fuseObject: any = null;

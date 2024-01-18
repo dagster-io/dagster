@@ -1,5 +1,6 @@
-import {DToasterShowProps, Toaster} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
+
+import {DToasterShowProps, Toaster} from '@dagster-io/ui-components';
 
 export const getSharedToaster = memoize(async () => {
   return await Toaster.asyncCreate({position: 'top'}, document.body);

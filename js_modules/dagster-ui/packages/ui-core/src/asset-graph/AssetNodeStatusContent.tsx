@@ -1,3 +1,6 @@
+import React from 'react';
+import {Link} from 'react-router-dom';
+
 import {
   Body,
   Icon,
@@ -19,8 +22,6 @@ import {
   colorTextRed,
   colorTextYellow,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import {Link} from 'react-router-dom';
 
 import {
   StyleForAssetPartitionStatus,
@@ -36,7 +37,6 @@ import {
   AssetKeyInput,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode, stepKeyForAsset} from './Utils';
 

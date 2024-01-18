@@ -1,18 +1,17 @@
-import {useMutation} from '@apollo/client';
 import * as React from 'react';
+import {useMutation} from '@apollo/client';
 import {useHistory} from 'react-router-dom';
 
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  handleLaunchResult,
   LaunchBehavior,
+  handleLaunchResult,
 } from '../runs/RunUtils';
 import {
   LaunchPipelineExecutionMutation,
   LaunchPipelineExecutionMutationVariables,
 } from '../runs/types/RunUtils.types';
-
 import {showLaunchError} from './showLaunchError';
 
 export function useLaunchWithTelemetry() {

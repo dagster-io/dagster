@@ -1,5 +1,5 @@
-import 'regenerator-runtime/runtime';
 import '@testing-library/jest-dom';
+import 'regenerator-runtime/runtime';
 
 const ignoredErrors = ['ReactDOM.render is no longer supported in React 18'];
 

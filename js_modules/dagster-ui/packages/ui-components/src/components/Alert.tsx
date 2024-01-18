@@ -15,10 +15,9 @@ import {
   colorTextRed,
   colorTextYellow,
 } from '../theme/color';
-
 import {Box} from './Box';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 

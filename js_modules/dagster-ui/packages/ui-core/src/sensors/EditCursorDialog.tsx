@@ -1,24 +1,23 @@
+import * as React from 'react';
 import {gql, useMutation} from '@apollo/client';
+import 'chartjs-adapter-date-fns';
+
 import {
-  ButtonLink,
   Button,
+  ButtonLink,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   TextArea,
   colorAccentReversed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import 'chartjs-adapter-date-fns';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../graphql/types';
-
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,

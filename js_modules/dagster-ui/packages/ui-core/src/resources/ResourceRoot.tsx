@@ -1,4 +1,7 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import {Link, useParams, useRouteMatch} from 'react-router-dom';
+
 import {
   Alert,
   Box,
@@ -23,8 +26,6 @@ import {
   colorLinkDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link, useParams, useRouteMatch} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -37,12 +38,11 @@ import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {ResourceTabs} from './ResourceTabs';
 import {
+  ResourceDetailsFragment,
   ResourceRootQuery,
   ResourceRootQueryVariables,
-  ResourceDetailsFragment,
 } from './types/ResourceRoot.types';
 
 interface Props {

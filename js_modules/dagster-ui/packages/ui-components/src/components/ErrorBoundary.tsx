@@ -2,7 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {colorAccentRed, colorTextLight} from '../theme/color';
-
 import {Box} from './Box';
 import {Body, Subheading} from './Text';
 import {FontFamily} from './styles';

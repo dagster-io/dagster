@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {colorBackgroundLight} from '../theme/color';
-
 import {Box} from './Box';
 import {IconName} from './Icon';
 

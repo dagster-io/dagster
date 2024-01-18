@@ -1,20 +1,21 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
-  DialogFooter,
   Dialog,
+  DialogFooter,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
   Popover,
-  useViewport,
-  colorKeylineDefault,
   colorBackgroundDefault,
   colorBackgroundDefaultHover,
+  colorKeylineDefault,
+  useViewport,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -22,8 +23,8 @@ import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStatusAtIndex,
   Range,
+  partitionStatusAtIndex,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -33,7 +34,6 @@ import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {PartitionRunList} from './PartitionRunList';
 import {
   BOX_SIZE,
@@ -41,8 +41,8 @@ import {
   GridFloatingContainer,
   LeftLabel,
   TopLabel,
-  topLabelHeightForLabels,
   TopLabelTilted,
+  topLabelHeightForLabels,
 } from './RunMatrixUtils';
 import {
   PartitionStepStatusPipelineQuery,
@@ -50,12 +50,12 @@ import {
 } from './types/PartitionStepStatus.types';
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
   MatrixData,
+  MatrixStep,
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  PartitionRuns,
   StatusSquareColor,
+  useMatrixData,
 } from './useMatrixData';
 
 const BUFFER = 3;

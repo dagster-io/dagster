@@ -1,6 +1,7 @@
-import {Box, Tabs, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
+
+import {Box, Tabs, Tag} from '@dagster-io/ui-components';
 
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';

@@ -1,11 +1,11 @@
-import {Body, Box, colorBackgroundLight, colorTextLighter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {Body, Box, colorBackgroundLight, colorTextLighter} from '@dagster-io/ui-components';
 
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 

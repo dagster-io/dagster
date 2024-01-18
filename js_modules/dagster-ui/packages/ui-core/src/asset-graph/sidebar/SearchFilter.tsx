@@ -1,6 +1,7 @@
-import {MenuItem, useViewport, Suggest, colorTextLighter} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
+
+import {MenuItem, Suggest, colorTextLighter, useViewport} from '@dagster-io/ui-components';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 

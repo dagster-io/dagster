@@ -1,3 +1,5 @@
+import * as React from 'react';
+import * as yaml from 'yaml';
 import 'codemirror/addon/comment/comment';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
@@ -10,21 +12,17 @@ import 'codemirror/addon/search/jump-to-line';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
-
 import debounce from 'lodash/debounce';
-import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
-import * as yaml from 'yaml';
 
 import {colorBackgroundLight} from '../theme/color';
-
 import {StyledRawCodeMirror} from './StyledRawCodeMirror';
 import {patchLint} from './configeditor/codemirror-yaml/lint';
 import {
   YamlModeValidateFunction,
+  YamlModeValidationResult,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-  YamlModeValidationResult,
 } from './configeditor/codemirror-yaml/mode';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 import {ConfigSchema} from './configeditor/types/ConfigSchema';

@@ -1,18 +1,19 @@
-import {gql, useLazyQuery, useApolloClient} from '@apollo/client';
-import {
-  TokenizingFieldValue,
-  tokensAsStringArray,
-  tokenizedValuesFromStringArray,
-  Box,
-  Icon,
-} from '@dagster-io/ui-components';
+import * as React from 'react';
+import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
-import * as React from 'react';
+
+import {
+  Box,
+  Icon,
+  TokenizingFieldValue,
+  tokenizedValuesFromStringArray,
+  tokensAsStringArray,
+} from '@dagster-io/ui-components';
 
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {RunsFilter, RunStatus} from '../graphql/types';
+import {RunStatus, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -22,7 +23,6 @@ import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStatic
 import {SuggestionFilterSuggestion, useSuggestionFilter} from '../ui/Filters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/Filters/useTimeRangeFilter';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
-
 import {DagsterTag} from './RunTag';
 import {
   RunTagKeysQuery,

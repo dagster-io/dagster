@@ -1,6 +1,7 @@
-import {SliderStyles, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {SliderStyles, colorAccentGray} from '@dagster-io/ui-components';
 
 /**
  * Renders a horizontal slider that lets you adjust the graph's relative zoom from 1-100.

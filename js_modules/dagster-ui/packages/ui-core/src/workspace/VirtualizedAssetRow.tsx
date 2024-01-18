@@ -1,4 +1,8 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Caption,
@@ -8,9 +12,6 @@ import {
   colorBackgroundDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
@@ -29,7 +30,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
 import {RepoAddress} from './types';
 import {
   SingleNonSdaAssetQuery,

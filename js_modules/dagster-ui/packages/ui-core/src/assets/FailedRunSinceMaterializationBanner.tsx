@@ -1,11 +1,12 @@
-import {Alert, Box} from '@dagster-io/ui-components';
-import {
-  BorderSide,
-  BorderSetting,
-  DirectionalSpacing,
-} from '@dagster-io/ui-components/src/components/types';
 import React from 'react';
 import {Link} from 'react-router-dom';
+
+import {Alert, Box} from '@dagster-io/ui-components';
+import {
+  BorderSetting,
+  BorderSide,
+  DirectionalSpacing,
+} from '@dagster-io/ui-components/src/components/types';
 
 import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetLiveDataProvider.types';
 import {titleForRun} from '../runs/RunUtils';

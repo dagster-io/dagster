@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
 
 import * as CustomAlertProvider from '../../app/CustomAlertProvider';
 import {buildUnauthorizedError} from '../../graphql/types';

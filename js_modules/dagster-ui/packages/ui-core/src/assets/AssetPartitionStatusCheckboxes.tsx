@@ -1,8 +1,8 @@
-import {Box, Checkbox} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {testId} from '../testing/testId';
+import {Box, Checkbox} from '@dagster-io/ui-components';
 
+import {testId} from '../testing/testId';
 import {AssetPartitionStatus, assetPartitionStatusToText} from './AssetPartitionStatus';
 
 export const AssetPartitionStatusCheckboxes = ({

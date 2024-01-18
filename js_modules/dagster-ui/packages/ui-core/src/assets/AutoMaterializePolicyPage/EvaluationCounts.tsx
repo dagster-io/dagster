@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import {
   Box,
   Caption,
@@ -8,7 +10,6 @@ import {
   colorTextRed,
   colorTextYellow,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {compactNumber} from '../../ui/formatters';
 

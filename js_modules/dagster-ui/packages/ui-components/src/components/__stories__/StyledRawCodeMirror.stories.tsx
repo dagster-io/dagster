@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import CodeMirror from 'codemirror';
-import * as React from 'react';
 
 import {StyledRawCodeMirror} from '../StyledRawCodeMirror';
 

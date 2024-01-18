@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
-import {Tag as BlueprintTag} from '@blueprintjs/core';
 import * as React from 'react';
+import {Tag as BlueprintTag} from '@blueprintjs/core';
 
 import {
   colorAccentBlue,
@@ -19,9 +19,8 @@ import {
   colorTextRed,
   colorTextYellow,
 } from '../theme/color';
-
 import {BaseTag} from './BaseTag';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {

@@ -1,20 +1,20 @@
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+
 import {
+  Body,
   Box,
   Group,
   Icon,
   NonIdealState,
   Spinner,
-  Body,
   Tooltip,
-  colorTextLighter,
   colorTextLight,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {

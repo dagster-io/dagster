@@ -1,3 +1,5 @@
+import styled from 'styled-components';
+
 import {
   colorAccentGray,
   colorAccentGrayHover,
@@ -8,7 +10,6 @@ import {
   colorAccentYellow,
   colorAccentYellowHover,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {IStepState} from './RunMetadataProvider';
 

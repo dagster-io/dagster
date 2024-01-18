@@ -1,15 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql, useQuery} from '@apollo/client';
+
+import {Box, NonIdealState, colorTextLight} from '@dagster-io/ui-components';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
-
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
+import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
 import {
   SidebarGraphOpQuery,
   SidebarGraphOpQueryVariables,

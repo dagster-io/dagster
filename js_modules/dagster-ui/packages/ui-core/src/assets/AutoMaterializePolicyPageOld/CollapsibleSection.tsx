@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -6,8 +9,6 @@ import {
   colorAccentGray,
   colorBackgroundLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 interface Props {
   header: React.ReactNode;

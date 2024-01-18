@@ -1,3 +1,6 @@
+import * as React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   Button,
@@ -8,8 +11,6 @@ import {
   Popover,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {LogLevel} from '../graphql/types';
 import {compactNumber} from '../ui/formatters';

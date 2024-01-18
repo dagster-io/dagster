@@ -1,28 +1,28 @@
-import 'chartjs-adapter-date-fns';
-
+import * as React from 'react';
 import {gql, useQuery} from '@apollo/client';
+import {Chart} from 'chart.js';
+import 'chartjs-adapter-date-fns';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import styled from 'styled-components';
+
 import {
   Box,
+  ButtonLink,
+  Caption,
   Checkbox,
   CursorHistoryControls,
-  NonIdealState,
-  Spinner,
-  Table,
-  Subheading,
   FontFamily,
   Icon,
   IconWrapper,
-  ButtonLink,
-  ifPlural,
-  Caption,
-  colorLinkDefault,
+  NonIdealState,
+  Spinner,
+  Subheading,
+  Table,
   colorAccentGray,
   colorAccentGrayHover,
+  colorLinkDefault,
+  ifPlural,
 } from '@dagster-io/ui-components';
-import {Chart} from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -43,9 +43,8 @@ import {TickLogDialog} from '../ticks/TickLogDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {RunStatusLink, RUN_STATUS_FRAGMENT, HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';

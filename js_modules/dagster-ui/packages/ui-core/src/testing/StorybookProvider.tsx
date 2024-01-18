@@ -1,10 +1,9 @@
-import {loader} from 'graphql.macro';
 import * as React from 'react';
+import {loader} from 'graphql.macro';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {CustomAlertProvider} from '../app/CustomAlertProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 
 const typeDefs = loader('../graphql/schema.graphql');

@@ -1,11 +1,12 @@
-import {
-  IconWrapper,
-  Icon,
-  colorNavTextSelected,
-  colorNavTextHover,
-} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {
+  Icon,
+  IconWrapper,
+  colorNavTextHover,
+  colorNavTextSelected,
+} from '@dagster-io/ui-components';
 
 import {UserSettingsDialog} from './UserSettingsDialog';
 import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';

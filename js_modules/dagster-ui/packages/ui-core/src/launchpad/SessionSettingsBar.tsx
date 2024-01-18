@@ -1,9 +1,10 @@
+import styled from 'styled-components';
+
 import {
   colorAccentReversed,
   colorBackgroundDefault,
   colorBorderDefault,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 export const SessionSettingsBar = styled.div`
   color: ${colorAccentReversed()};

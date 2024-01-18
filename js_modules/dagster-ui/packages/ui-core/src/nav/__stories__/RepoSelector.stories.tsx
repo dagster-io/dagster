@@ -1,7 +1,8 @@
-import {Box, colorAccentPrimary} from '@dagster-io/ui-components';
+import * as React from 'react';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+
+import {Box, colorAccentPrimary} from '@dagster-io/ui-components';
 
 import {RepoAddress} from '../../workspace/types';
 import {RepoSelector, RepoSelectorOption} from '../RepoSelector';

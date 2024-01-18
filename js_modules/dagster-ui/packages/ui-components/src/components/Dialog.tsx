@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
-import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
+import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import styled, {createGlobalStyle} from 'styled-components';
 
 import {
@@ -9,11 +9,10 @@ import {
   colorDialogBackground,
   colorShadowDefault,
 } from '../theme/color';
-
 import {Box} from './Box';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 interface Props
   extends Omit<

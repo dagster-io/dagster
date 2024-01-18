@@ -1,5 +1,5 @@
-import animate from 'amator';
 import * as React from 'react';
+import animate from 'amator';
 
 export interface Viewport {
   left: number; // Note: pixel values

@@ -1,4 +1,9 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Icon,
@@ -7,16 +12,11 @@ import {
   colorBackgroundLight,
   colorLinkDefault,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
 import {VirtualizedAssetHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';

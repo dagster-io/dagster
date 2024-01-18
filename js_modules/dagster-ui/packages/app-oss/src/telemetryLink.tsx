@@ -1,4 +1,5 @@
 import {ApolloLink} from '@apollo/client';
+
 import {TelemetryAction, logTelemetry} from '@dagster-io/ui-core/app/Telemetry';
 
 const TELEMETRY_WHITELIST = new Set([

@@ -1,6 +1,18 @@
+import * as React from 'react';
+import isEqual from 'lodash/isEqual';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Checkbox,
+  FontFamily,
+  Group,
+  Icon,
+  NonIdealState,
+  Spinner,
+  SpinnerWrapper,
+  SplitPanelContainer,
   colorAccentCyan,
   colorAccentGray,
   colorAccentGrayHover,
@@ -12,22 +24,11 @@ import {
   colorBackgroundYellow,
   colorFocusRing,
   colorTextYellow,
-  FontFamily,
-  Group,
-  Icon,
-  NonIdealState,
-  Spinner,
-  SpinnerWrapper,
-  SplitPanelContainer,
   useViewport,
 } from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {CancelRunButton} from '../runs/RunActionButtons';
@@ -41,7 +42,6 @@ import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
 import {RunFragment} from '../runs/types/RunFragments.types';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-
 import {
   BOTTOM_INSET,
   BOX_DOT_MARGIN_Y,
@@ -66,10 +66,10 @@ import {
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
+  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';

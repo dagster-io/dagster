@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {colorAccentGray, colorAccentGrayHover, colorTextLight} from '../theme/color';
-
 import {Group} from './Group';
 import {Icon, IconWrapper} from './Icon';
 import {Tooltip} from './Tooltip';

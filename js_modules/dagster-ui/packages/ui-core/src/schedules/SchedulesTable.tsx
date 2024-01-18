@@ -1,5 +1,6 @@
-import {Box, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Popover, Tag} from '@dagster-io/ui-components';
 
 import {InstigationStatus} from '../graphql/types';
 

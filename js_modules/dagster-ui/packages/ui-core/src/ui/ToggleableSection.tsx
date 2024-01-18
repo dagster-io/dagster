@@ -1,6 +1,7 @@
-import {Box, Icon, colorBackgroundLight} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
+
+import {Box, Icon, colorBackgroundLight} from '@dagster-io/ui-components';
 
 export const ToggleableSection = ({
   isInitiallyOpen,

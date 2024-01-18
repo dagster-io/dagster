@@ -1,7 +1,8 @@
-import {gql, QueryResult, useQuery} from '@apollo/client';
-import {Box, TextInput, ButtonGroup} from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
 import * as React from 'react';
+import {QueryResult, gql, useQuery} from '@apollo/client';
+import isEqual from 'lodash/isEqual';
+
+import {Box, ButtonGroup, TextInput} from '@dagster-io/ui-components';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -11,7 +12,6 @@ import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useStartTrace} from '../performance';
 import {LoadingSpinner} from '../ui/Loading';
-
 import {
   AssetGroupSuggest,
   buildAssetGroupSelector,
@@ -22,11 +22,11 @@ import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTabl
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {
+  AssetCatalogGroupTableNodeFragment,
+  AssetCatalogGroupTableQuery,
+  AssetCatalogGroupTableQueryVariables,
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
-  AssetCatalogGroupTableQuery,
-  AssetCatalogGroupTableNodeFragment,
-  AssetCatalogGroupTableQueryVariables,
 } from './types/AssetsCatalogTable.types';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';

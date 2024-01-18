@@ -1,6 +1,7 @@
-import {Box, Icon, MiddleTruncate, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+
+import {Box, Icon, MiddleTruncate, colorAccentGray} from '@dagster-io/ui-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 

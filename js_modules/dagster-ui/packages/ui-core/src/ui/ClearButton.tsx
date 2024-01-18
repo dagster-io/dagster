@@ -1,10 +1,11 @@
+import styled from 'styled-components';
+
 import {
   IconWrapper,
   colorAccentGray,
   colorAccentGrayHover,
   colorTextDefault,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 export const ClearButton = styled.button`
   background: transparent;

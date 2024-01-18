@@ -1,11 +1,11 @@
-import {gql} from '@apollo/client';
-import {Code} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 import styled from 'styled-components';
+
+import {Code} from '@dagster-io/ui-components';
 
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-
 import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 
 interface IOpTypeSignature {

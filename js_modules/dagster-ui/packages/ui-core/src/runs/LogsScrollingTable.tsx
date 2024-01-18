@@ -1,19 +1,20 @@
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import {gql} from '@apollo/client';
+import {
+  CellMeasurerCache,
+  ListRowProps,
+  ScrollParams,
+  CellMeasurer as _CellMeasurer,
+  List as _List,
+} from 'react-virtualized';
+import styled from 'styled-components';
+
 import {
   NonIdealState,
   colorBackgroundDefault,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import {
-  CellMeasurer as _CellMeasurer,
-  CellMeasurerCache,
-  List as _List,
-  ListRowProps,
-  ScrollParams,
-} from 'react-virtualized';
-import styled from 'styled-components';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {

@@ -7,7 +7,6 @@ import {
   colorBackgroundDefaultHover,
   colorTextDefault,
 } from '../theme/color';
-
 import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {

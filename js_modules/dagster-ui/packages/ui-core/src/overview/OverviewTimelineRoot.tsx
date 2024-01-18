@@ -1,5 +1,6 @@
-import {Box, TextInput, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
+
+import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -8,10 +9,11 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {useStartTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
-import {useHourWindow, HourWindow} from '../runs/useHourWindow';
+import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 60 * 1000;

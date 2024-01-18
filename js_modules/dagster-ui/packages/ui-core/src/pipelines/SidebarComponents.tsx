@@ -1,15 +1,16 @@
 // eslint-disable-next-line no-restricted-imports
-import {Collapse} from '@blueprintjs/core';
-import {
-  Icon,
-  FontFamily,
-  colorKeylineDefault,
-  colorTextLight,
-  colorTextDefault,
-  colorBackgroundLight,
-} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {Collapse} from '@blueprintjs/core';
 import styled from 'styled-components';
+
+import {
+  FontFamily,
+  Icon,
+  colorBackgroundLight,
+  colorKeylineDefault,
+  colorTextDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 

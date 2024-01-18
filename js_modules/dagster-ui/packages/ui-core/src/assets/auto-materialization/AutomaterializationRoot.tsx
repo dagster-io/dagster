@@ -1,18 +1,19 @@
 import {useLazyQuery} from '@apollo/client';
+import React, {useLayoutEffect} from 'react';
+import {Redirect} from 'react-router-dom';
+
 import {
   Alert,
   Box,
-  Page,
   Checkbox,
+  Heading,
+  Page,
+  PageHeader,
   Spinner,
   Subtitle2,
-  Heading,
-  PageHeader,
   Table,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import React, {useLayoutEffect} from 'react';
-import {Redirect} from 'react-router-dom';
 
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
@@ -26,15 +27,14 @@ import {isStuckStartedTick} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
-
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
 import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
+  AssetDaemonTickFragment,
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
 } from './types/AssetDaemonTicksQuery.types';
 
 const MINUTE = 60 * 1000;

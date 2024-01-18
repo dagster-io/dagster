@@ -1,6 +1,7 @@
-import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {gql} from '@apollo/client';
+
+import {Box} from '@dagster-io/ui-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -9,12 +10,11 @@ import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
 import {LogLevel} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {autolinkTextContent} from '../ui/autolinking';
-
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
   EventTypeColumn,
-  Row,
   OpColumn,
+  Row,
   StructuredContent,
   TimestampColumn,
 } from './LogsRowComponents';

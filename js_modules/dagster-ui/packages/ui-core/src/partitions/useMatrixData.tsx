@@ -9,10 +9,9 @@ import {buildLayout} from '../gantt/GanttChartLayout';
 import {StepEventStatus} from '../graphql/types';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-
 import {
-  PartitionMatrixStepRunFragment,
   PartitionMatrixSolidHandleFragment,
+  PartitionMatrixStepRunFragment,
 } from './types/useMatrixData.types';
 
 export type StatusSquareColor =

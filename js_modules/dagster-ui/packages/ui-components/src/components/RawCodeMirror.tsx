@@ -1,7 +1,6 @@
-import 'codemirror/lib/codemirror.css';
-
-import CodeMirror from 'codemirror';
 import * as React from 'react';
+import CodeMirror from 'codemirror';
+import 'codemirror/lib/codemirror.css';
 
 type CodeMirrorHandlers = {
   onReady?: (instance: CodeMirror.Editor) => void;

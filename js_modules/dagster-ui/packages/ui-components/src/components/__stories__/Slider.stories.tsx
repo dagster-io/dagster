@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
+import * as React from 'react';
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {colorAccentBlue} from '../../theme/color';
 import {Group} from '../Group';
-import {Slider, MultiSlider} from '../Slider';
+import {MultiSlider, Slider} from '../Slider';
 
 // eslint-disable-next-line import/no-default-export
 export default {

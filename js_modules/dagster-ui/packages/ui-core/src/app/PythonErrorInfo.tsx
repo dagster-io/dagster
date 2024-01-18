@@ -1,22 +1,22 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
+import styled from 'styled-components';
+
 import {
   Button,
-  Icon,
   FontFamily,
-  colorKeylineDefault,
+  Icon,
   colorAccentRed,
   colorBackgroundRed,
+  colorKeylineDefault,
   colorTextLight,
   colorTextRed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {ErrorSource} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
-
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';

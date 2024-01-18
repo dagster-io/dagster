@@ -1,17 +1,18 @@
+import * as React from 'react';
 import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
+
 import {
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   colorAccentGreen,
   colorAccentYellow,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {
   OpenWithIntent,
@@ -20,7 +21,6 @@ import {
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {RepoAddress} from '../workspace/types';
-
 import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from './ScheduleMutations';
 import {
   StartThisScheduleMutation,

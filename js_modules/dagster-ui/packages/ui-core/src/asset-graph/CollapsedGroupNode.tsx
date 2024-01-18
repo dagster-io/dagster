@@ -1,3 +1,6 @@
+import React from 'react';
+import styled from 'styled-components';
+
 import {
   Box,
   FontFamily,
@@ -10,15 +13,12 @@ import {
   colorTextLight,
   colorTextLighter,
 } from '@dagster-io/ui-components';
-import React from 'react';
-import styled from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
 import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';

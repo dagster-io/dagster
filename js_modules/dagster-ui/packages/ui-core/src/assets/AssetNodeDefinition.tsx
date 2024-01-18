@@ -1,4 +1,7 @@
+import * as React from 'react';
 import {gql} from '@apollo/client';
+import {Link} from 'react-router-dom';
+
 import {
   Body,
   Box,
@@ -10,8 +13,6 @@ import {
   colorAccentGray,
   colorLinkDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
@@ -24,18 +25,17 @@ import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {
-  AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {
-  automaterializePolicyDescription,
   AutomaterializePolicyTag,
+  automaterializePolicyDescription,
 } from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';

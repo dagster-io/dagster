@@ -1,17 +1,18 @@
+import * as React from 'react';
+import Fuse from 'fuse.js';
+import styled from 'styled-components';
+
 import {
-  Popover,
-  TextInput,
-  SuggestionProvider,
-  useSuggestionsForString,
   Icon,
-  colorBackgroundDefault,
+  Popover,
+  SuggestionProvider,
+  TextInput,
   colorAccentPrimary,
   colorBackgroundBlue,
+  colorBackgroundDefault,
   colorBackgroundGray,
+  useSuggestionsForString,
 } from '@dagster-io/ui-components';
-import Fuse from 'fuse.js';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {ClearButton} from '../ui/ClearButton';
 

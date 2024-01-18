@@ -1,5 +1,4 @@
 // Generated GraphQL types, do not edit manually.
-
 import * as Types from '../../graphql/types';
 
 export type RunStatusFragment = {__typename: 'Run'; id: string; status: Types.RunStatus};

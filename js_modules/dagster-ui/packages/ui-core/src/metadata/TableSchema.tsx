@@ -1,10 +1,11 @@
-import {gql} from '@apollo/client';
-import {Box, Tag, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
-import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import * as React from 'react';
+import {gql} from '@apollo/client';
 import styled from 'styled-components';
 
-import {TableSchemaFragment, ConstraintsForTableColumnFragment} from './types/TableSchema.types';
+import {Box, Tag, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
+import {Spacing} from '@dagster-io/ui-components/src/components/types';
+
+import {ConstraintsForTableColumnFragment, TableSchemaFragment} from './types/TableSchema.types';
 
 // export type ITableSchemaMetadataEntry = TableSchemaForMetadataEntryFragment;
 type ITableSchema = TableSchemaFragment;

@@ -1,4 +1,9 @@
+import * as React from 'react';
 import {useQuery} from '@apollo/client';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {
   Box,
   Caption,
@@ -15,10 +20,6 @@ import {
   colorTextLight,
   useViewport,
 } from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';

@@ -1,11 +1,11 @@
-import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AssetKey} from '../types';
-
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';

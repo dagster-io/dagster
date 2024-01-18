@@ -1,8 +1,7 @@
 import * as dagre from 'dagre';
 
 import {IBounds, IPoint} from '../graph/common';
-
-import {GraphData, GraphNode, GraphId, groupIdForNode, isGroupId} from './Utils';
+import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;

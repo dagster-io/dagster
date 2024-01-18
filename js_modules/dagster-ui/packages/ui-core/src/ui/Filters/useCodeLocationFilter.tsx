@@ -5,7 +5,6 @@ import {WorkspaceContext} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
-
 import {useStaticSetFilter} from './useStaticSetFilter';
 
 export const useCodeLocationFilter = () => {
