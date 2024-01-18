@@ -14,7 +14,6 @@ import {
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
@@ -134,8 +133,6 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
       }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 export const AssetGroupTags = ({
