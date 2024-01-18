@@ -28,14 +28,14 @@ export function isStuckStartedTick(
   );
 }
 
-export function countPartitionsAddedOrDeleted(
+export function getPartitionsAddedOrDeleted(
   requests: Pick<DynamicPartitionsRequestResult, 'partitionKeys' | 'type'>[],
   type: DynamicPartitionsRequestType,
 ) {
-  return requests.reduce((sum, request) => {
+  return requests.flatMap((request) => {
     if (request.type === type) {
-      return sum + (request.partitionKeys?.length || 0);
+      return request.partitionKeys || [];
     }
-    return sum;
-  }, 0);
+    return [];
+  });
 }

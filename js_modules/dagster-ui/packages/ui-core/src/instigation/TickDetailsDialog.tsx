@@ -36,7 +36,7 @@ import {FailedRunList, RunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
-import {countPartitionsAddedOrDeleted} from './util';
+import {getPartitionsAddedOrDeleted} from './util';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;
@@ -82,11 +82,11 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
 
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
     const requests = tick?.dynamicPartitionsRequestResults || [];
-    const added = countPartitionsAddedOrDeleted(
+    const added = getPartitionsAddedOrDeleted(
       requests,
       DynamicPartitionsRequestType.ADD_PARTITIONS,
     );
-    const deleted = countPartitionsAddedOrDeleted(
+    const deleted = getPartitionsAddedOrDeleted(
       requests,
       DynamicPartitionsRequestType.DELETE_PARTITIONS,
     );
