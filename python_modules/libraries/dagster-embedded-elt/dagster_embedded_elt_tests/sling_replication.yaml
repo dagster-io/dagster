@@ -16,7 +16,11 @@ streams:
     object: "departments" # overwrite default object
     source_options:
       empty_as_null: false
-
+    meta:
+      dagster:
+        deps:
+          - foo_one
+          - foo_two
   public."Transactions":
     mode: incremental # overwrite default mode
     primary_key: id

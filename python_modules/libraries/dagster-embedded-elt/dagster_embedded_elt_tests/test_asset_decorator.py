@@ -27,7 +27,7 @@ def test_replication_argument(replication: SlingReplicationParam):
         AssetKey.from_user_string(key)
         for key in [
             "target/public/accounts",
-            "target/public/foo_users",
+            "public/foo_users",
             "target/public/Transactions",
             "target/public/all_users",
             "target/public/finance_departments_old",
@@ -37,10 +37,29 @@ def test_replication_argument(replication: SlingReplicationParam):
 
 def test_streams_from_replication():
     streams = get_streams_from_replication(replication)
-    assert set(streams) == {
-        "public.accounts",
-        "public.foo_users",
-        'public."Transactions"',
-        "public.all_users",
-        "public.finance_departments_old",
-    }
+    assert streams == [
+        {"name": "public.accounts", "config": None},
+        {
+            "name": "public.users",
+            "config": {"disabled": True, "meta": {"dagster": {"asset_key": "public.foo_users"}}},
+        },
+        {
+            "name": "public.finance_departments_old",
+            "config": {
+                "object": "departments",
+                "source_options": {"empty_as_null": False},
+                "meta": {"dagster": {"deps": ["foo_one", "foo_two"]}},
+            },
+        },
+        {
+            "name": 'public."Transactions"',
+            "config": {"mode": "incremental", "primary_key": "id", "update_key": "last_updated_at"},
+        },
+        {
+            "name": "public.all_users",
+            "config": {
+                "sql": 'select all_user_id, name \nfrom public."all_Users"\n',
+                "object": "public.all_users",
+            },
+        },
+    ]
