@@ -36,7 +36,6 @@ import {FailedRunList, RunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
-import {getPartitionsAddedOrDeleted} from './util';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;
@@ -80,15 +79,16 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       ? data?.instigationStateOrError.tick
       : undefined;
 
-  const [addedPartitions, deletedPartitions] = React.useMemo(() => {
-    const requests = tick?.dynamicPartitionsRequestResults || [];
-    const added = getPartitionsAddedOrDeleted(
-      requests,
-      DynamicPartitionsRequestType.ADD_PARTITIONS,
+  const [addedPartitionRequests, deletedPartitionRequests] = React.useMemo(() => {
+    const added = tick?.dynamicPartitionsRequestResults.filter(
+      (request) =>
+        request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
+        request.partitionKeys?.length,
     );
-    const deleted = getPartitionsAddedOrDeleted(
-      requests,
-      DynamicPartitionsRequestType.DELETE_PARTITIONS,
+    const deleted = tick?.dynamicPartitionsRequestResults.filter(
+      (request) =>
+        request.type === DynamicPartitionsRequestType.DELETE_PARTITIONS &&
+        request.partitionKeys?.length,
     );
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
@@ -134,20 +134,20 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
               )}
             </>
           ) : null}
-          {addedPartitions?.length ? (
+          {addedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Added partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={addedPartitions} />
+              <PartitionsTable partitions={addedPartitionRequests} />
             </>
           ) : null}
-          {deletedPartitions?.length ? (
+          {deletedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Deleted partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={deletedPartitions} />
+              <PartitionsTable partitions={deletedPartitionRequests} />
             </>
           ) : null}
           {tick.error ? (
