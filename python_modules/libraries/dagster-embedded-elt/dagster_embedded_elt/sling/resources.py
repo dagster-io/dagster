@@ -17,7 +17,8 @@ from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Extra, Field
 from sling import Sling
-from sling.translator import DagsterSlingTranslator
+
+from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 
 logger = get_dagster_logger()
 
@@ -131,7 +132,7 @@ class _SlingSyncBase:
         self,
         *,
         dagster_sling_translator: DagsterSlingTranslator,
-        source_stream: str,
+        stream_definition: Dict[str, Any],
         target_object: str,
         mode: SlingMode,
         primary_key: Optional[List[str]] = None,
@@ -140,6 +141,7 @@ class _SlingSyncBase:
         target_options: Optional[Dict[str, Any]] = None,
     ):
         logs = ""
+        """
         for line in self.sync(
             source_stream,
             target_object,
@@ -152,8 +154,9 @@ class _SlingSyncBase:
             logger.info(line)
             logs += line
             # TODO: capture actual metadata here
+        """
 
-        output_name = dagster_sling_translator.get_asset_key_for_target(target_object)
+        output_name = dagster_sling_translator.get_asset_key(stream_definition)
         yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
 
     def sync(
