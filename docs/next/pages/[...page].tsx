@@ -3,9 +3,8 @@ import path from 'path';
 import {latestAllDynamicPaths} from 'util/navigation';
 import zlib from 'zlib';
 
-import FeedbackModal from 'components/FeedbackModal';
 import {Shimmer} from 'components/Shimmer';
-import {getItems} from 'components/mdx/SidebarNavigation';
+import {getMDXItems} from 'components/SidebarNavigation';
 import rehypePlugins from 'components/mdx/rehypePlugins';
 import matter from 'gray-matter';
 import generateToc from 'mdast-util-toc';
@@ -13,7 +12,7 @@ import {GetStaticProps} from 'next';
 import renderToString from 'next-mdx-remote/render-to-string';
 import {MdxRemote} from 'next-mdx-remote/types';
 import {useRouter} from 'next/router';
-import React, {useState} from 'react';
+import React from 'react';
 import remark from 'remark';
 import mdx from 'remark-mdx';
 
@@ -21,7 +20,9 @@ import MDXComponents, {SearchIndexContext} from '../components/mdx/MDXComponents
 import MDXRenderer, {MDXData, VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import {SphinxPrefix, sphinxPrefixFromPage} from '../util/useSphinx';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
+const searchProvider: React.ReactNode = SearchIndexContext.Provider as any;
 
 type HTMLData = {
   body: string;
@@ -55,7 +56,7 @@ function HTMLRenderer({data}: {data: HTMLData}) {
         />
       </VersionedContentLayout>
 
-      <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+      <aside className="relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
         <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
           <div className="mb-8 px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
@@ -70,16 +71,6 @@ function HTMLRenderer({data}: {data: HTMLData}) {
 }
 
 export default function MdxPage(props: Props) {
-  const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
-
-  const closeFeedback = () => {
-    setOpenFeedback(false);
-  };
-
-  const toggleFeedback = () => {
-    setOpenFeedback(!isFeedbackOpen);
-  };
-
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -90,9 +81,8 @@ export default function MdxPage(props: Props) {
 
   return (
     <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
       {props.type === PageType.MDX ? (
-        <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
+        <MDXRenderer data={props.data} />
       ) : (
         <HTMLRenderer data={props.data} />
       )}
@@ -186,13 +176,13 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
     const node = generateToc(tree, {maxDepth: 4});
-    const tableOfContents = getItems(node.map, {});
+    const tableOfContents = getMDXItems(node.map, {});
 
     // 4. Render MDX
     const mdxSource = await renderToString(content, {
       components,
       provider: {
-        component: SearchIndexContext.Provider,
+        component: searchProvider,
         props: {value: searchIndex},
       },
       mdxOptions: {
@@ -225,7 +215,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllDynamicPaths(),
+    paths: latestAllDynamicPaths({excludeNonMdx: true}),
     fallback: true,
   };
 }

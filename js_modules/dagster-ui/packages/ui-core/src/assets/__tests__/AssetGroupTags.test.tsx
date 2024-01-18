@@ -8,12 +8,9 @@ import {DUNDER_REPO_NAME, buildRepoAddress} from '../../workspace/buildRepoAddre
 import {AssetGroupTags} from '../AssetGroupRoot';
 import * as AutomationPolicySensorFlag from '../AutomationPolicySensorFlag';
 import {
-  AMP_SENSOR_ID,
   GROUP_NAME,
   LOCATION_NAME,
   assetGroupWithAMP,
-  assetGroupWithAMPSensor,
-  assetGroupWithManyAMPSensors,
   assetGroupWithoutAMP,
 } from '../__fixtures__/AssetGroupTags.fixtures';
 
@@ -73,14 +70,14 @@ describe('AssetGroupTags', () => {
     expect(await screen.findByRole('link', {name: /auto\-materialize on/i})).toBeVisible();
   });
 
-  it('renders AMP sensor tag', async () => {
+  it('does not render global AMP tag when sensors are turned on', async () => {
     jest
       .spyOn(AutomationPolicySensorFlag, 'useAutomationPolicySensorFlag')
       .mockReturnValue('has-sensor-amp');
 
     render(
       <MemoryRouter>
-        <MockedProvider mocks={[assetGroupWithAMPSensor]}>
+        <MockedProvider mocks={[assetGroupWithAMP]}>
           <AssetGroupTags repoAddress={repoAddress} groupSelector={groupSelector} />
         </MockedProvider>
       </MemoryRouter>,
@@ -88,28 +85,6 @@ describe('AssetGroupTags', () => {
 
     expect(await screen.findByText(/asset group in/i)).toBeVisible();
     expect(await screen.findByRole('link', {name: /my_location/i})).toBeVisible();
-    expect(
-      await screen.findByRole('link', {name: new RegExp(`${AMP_SENSOR_ID}`, 'i')}),
-    ).toBeVisible();
-  });
-
-  it('renders link for many AMP sensors', async () => {
-    jest
-      .spyOn(AutomationPolicySensorFlag, 'useAutomationPolicySensorFlag')
-      .mockReturnValue('has-sensor-amp');
-
-    render(
-      <MemoryRouter>
-        <MockedProvider mocks={[assetGroupWithManyAMPSensors]}>
-          <AssetGroupTags repoAddress={repoAddress} groupSelector={groupSelector} />
-        </MockedProvider>
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByText(/asset group in/i)).toBeVisible();
-    expect(await screen.findByRole('link', {name: /my_location/i})).toBeVisible();
-
-    // Renders a ButtonLink that opens a dialog
-    expect(await screen.findByRole('button', {name: /3 sensors/i})).toBeVisible();
+    expect(await screen.queryByRole('link', {name: /auto\-materialize on/i})).toBeNull();
   });
 });

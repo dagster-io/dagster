@@ -344,12 +344,18 @@ class PipesSession:
     def get_reported_results(self) -> Sequence[PipesExecutionResult]:
         """:py:class:`PipesExecutionResult` objects only explicitly received from the external process.
 
-        Yields:
-            PipesExecutionResult: Result reported by external process.
+        Returns:
+            Sequence[PipesExecutionResult]: Result reported by external process.
         """
         return self.message_handler.get_reported_results()
 
+    @public
     def get_custom_messages(self) -> Sequence[Any]:
+        """Get the sequence of deserialized JSON data that was reported from the external process using
+        `report_custom_message`.
+
+        Returns: Sequence[Any]
+        """
         return self.message_handler.get_custom_messages()
 
 

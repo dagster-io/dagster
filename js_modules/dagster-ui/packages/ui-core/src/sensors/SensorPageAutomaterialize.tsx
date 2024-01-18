@@ -10,7 +10,7 @@ import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/Asse
 import {InstigationTickStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
-import {isOldTickWithoutEndtimestamp} from '../instigation/util';
+import {isStuckStartedTick} from '../instigation/util';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -116,10 +116,11 @@ export const SensorPageAutomaterialize = (props: Props) => {
     () => {
       return (
         allTicks.map((tick, index) => {
+          const nextTick = allTicks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
-          if (index !== 0 && !isOldTickWithoutEndtimestamp(tick) && !tick.endTimestamp) {
+          if (nextTick && isStuckStartedTick(tick, index)) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index - 1]!.timestamp;
+            copy.endTimestamp = nextTick.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }

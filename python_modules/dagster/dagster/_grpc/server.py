@@ -9,13 +9,14 @@ import threading
 import time
 import uuid
 import warnings
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
+from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -24,6 +25,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     cast,
 )
 
@@ -35,7 +37,11 @@ import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterUserCodeLoadError,
+    DagsterUserCodeUnreachableError,
+    user_code_error_boundary,
+)
 from dagster._core.host_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionExecutionErrorData,
@@ -50,6 +56,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
@@ -58,7 +65,12 @@ from dagster._utils import (
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
+from dagster._utils.container import (
+    ContainerUtilizationMetrics,
+    retrieve_containerized_utilization_metrics,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.typed_dict import init_optional_typeddict
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -113,9 +125,93 @@ CLEANUP_TICK = 0.5
 
 STREAMING_CHUNK_SIZE = 4000000
 
+UTILIZATION_METRICS_RETRIEVAL_INTERVAL = 30
+
+_METRICS_LOCK = threading.Lock()
+METRICS_RETRIEVAL_FUNCTIONS = set()
+
+
+class GrpcApiMetrics(TypedDict):
+    current_request_count: Optional[int]
+
+
+class DagsterCodeServerUtilizationMetrics(TypedDict):
+    container_utilization: ContainerUtilizationMetrics
+    request_utilization: RequestUtilizationMetrics
+    per_api_metrics: Dict[str, GrpcApiMetrics]
+
+
+_UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
+
+
+def _update_threadpool_metrics(executor: FuturesAwareThreadPoolExecutor) -> None:
+    with _METRICS_LOCK:
+        _UTILIZATION_METRICS.update(
+            {
+                "request_utilization": executor.get_current_utilization_metrics(),
+            }
+        )
+
+
+def _record_utilization_metrics(logger: logging.Logger) -> None:
+    with _METRICS_LOCK:
+        last_cpu_measurement_time = _UTILIZATION_METRICS["container_utilization"][
+            "measurement_timestamp"
+        ]
+        last_cpu_measurement = _UTILIZATION_METRICS["container_utilization"]["cpu_usage"]
+        utilization_metrics = retrieve_containerized_utilization_metrics(
+            logger, last_cpu_measurement_time, last_cpu_measurement
+        )
+        for key, val in utilization_metrics.items():
+            _UTILIZATION_METRICS["container_utilization"][key] = val
+
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
+
+
+def _get_request_count(api_name: str) -> Optional[int]:
+    if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
+        return None
+    return _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"]
+
+
+def _set_request_count(api_name: str, value: Any) -> None:
+    if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
+        _UTILIZATION_METRICS["per_api_metrics"][api_name] = init_optional_typeddict(GrpcApiMetrics)
+    _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"] = value
+
+
+def retrieve_metrics():
+    class _MetricsRetriever:
+        def __call__(self, fn: Callable) -> Callable:
+            api_call = fn.__name__
+            METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
+
+            def wrapper(self: "DagsterApiServer", request: Any, context: grpc.ServicerContext):
+                if not self._enable_metrics:
+                    # If metrics retrieval is disabled, short circuit to just calling the underlying function.
+                    return fn(self, request, context)
+                # Only record utilization metrics on ping, so as to not over-burden with IO.
+                if fn.__name__ == "Ping":
+                    _update_threadpool_metrics(self._server_threadpool_executor)
+                    _record_utilization_metrics(self._logger)
+                with _METRICS_LOCK:
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count + 1 if cur_request_count else 1)
+
+                res = fn(self, request, context)
+
+                with _METRICS_LOCK:
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count - 1 if cur_request_count else 0)
+
+                return res
+
+            update_wrapper(wrapper, fn)
+            return wrapper
+
+    return _MetricsRetriever()
 
 
 class LoadedRepositories:
@@ -136,13 +232,20 @@ class LoadedRepositories:
             # empty workspace
             return
 
-        loadable_targets = get_loadable_targets(
-            loadable_target_origin.python_file,
-            loadable_target_origin.module_name,
-            loadable_target_origin.package_name,
-            loadable_target_origin.working_directory,
-            loadable_target_origin.attribute,
-        )
+        with user_code_error_boundary(
+            DagsterUserCodeLoadError,
+            lambda: "Error occurred during the loading of Dagster definitions in\n"
+            + ", ".join(
+                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
+            ),
+        ):
+            loadable_targets = get_loadable_targets(
+                loadable_target_origin.python_file,
+                loadable_target_origin.module_name,
+                loadable_target_origin.package_name,
+                loadable_target_origin.working_directory,
+                loadable_target_origin.attribute,
+            )
         for loadable_target in loadable_targets:
             pointer = _get_code_pointer(loadable_target_origin, loadable_target)
             recon_repo = ReconstructableRepository(
@@ -151,11 +254,16 @@ class LoadedRepositories:
                 sys.executable,
                 entry_point=entry_point,
             )
-            repo_def = recon_repo.get_definition()
-            # force load of all lazy constructed code artifacts to prevent
-            # any thread-safety issues loading them later on when serving
-            # definitions from multiple threads
-            repo_def.load_all_definitions()
+            with user_code_error_boundary(
+                DagsterUserCodeLoadError,
+                lambda: "Error occurred during the loading of Dagster definitions in "
+                + pointer.describe(),
+            ):
+                repo_def = recon_repo.get_definition()
+                # force load of all lazy constructed code artifacts to prevent
+                # any thread-safety issues loading them later on when serving
+                # definitions from multiple threads
+                repo_def.load_all_definitions()
 
             self._code_pointers_by_repo_name[repo_def.name] = pointer
             self._recon_repos_by_name[repo_def.name] = recon_repo
@@ -218,6 +326,7 @@ class DagsterApiServer(DagsterApiServicer):
         self,
         server_termination_event: ThreadingEventType,
         logger: logging.Logger,
+        server_threadpool_executor: FuturesAwareThreadPoolExecutor,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
@@ -229,6 +338,7 @@ class DagsterApiServer(DagsterApiServicer):
         inject_env_vars_from_instance: Optional[bool] = False,
         instance_ref: Optional[InstanceRef] = None,
         location_name: Optional[str] = None,
+        enable_metrics: bool = False,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -281,6 +391,9 @@ class DagsterApiServer(DagsterApiServicer):
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._exit_stack = ExitStack()
 
+        self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
+        self._server_threadpool_executor = server_threadpool_executor
+
         try:
             if inject_env_vars_from_instance:
                 from dagster._cli.utils import get_instance_for_cli
@@ -310,16 +423,18 @@ class DagsterApiServer(DagsterApiServicer):
                 target=self._heartbeat_thread,
                 args=(heartbeat_timeout,),
                 name="grpc-server-heartbeat",
+                daemon=True,
             )
-            self.__heartbeat_thread.daemon = True
             self.__heartbeat_thread.start()
         else:
             self.__heartbeat_thread = None
 
         self.__cleanup_thread = threading.Thread(
-            target=self._cleanup_thread, args=(), name="grpc-server-cleanup"
+            target=self._cleanup_thread,
+            args=(),
+            name="grpc-server-cleanup",
+            daemon=True,
         )
-        self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()
 
@@ -407,9 +522,16 @@ class DagsterApiServer(DagsterApiServicer):
 
         return api_pb2.ReloadCodeReply()
 
+    @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+
+        return api_pb2.PingReply(
+            echo=echo,
+            serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
+            if self._enable_metrics
+            else "",
+        )
 
     def StreamingPing(
         self, request: api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
@@ -655,6 +777,7 @@ class DagsterApiServer(DagsterApiServicer):
         self, request: api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
+
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
@@ -780,6 +903,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
+    @retrieve_metrics()
     def SyncExternalSensorExecution(
         self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
     ) -> api_pb2.ExternalSensorExecutionReply:
@@ -787,6 +911,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_sensor_result=self._external_sensor_execution(request)
         )
 
+    @retrieve_metrics()
     def ExternalSensorExecution(
         self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
     ) -> Iterable[api_pb2.StreamingChunkEvent]:
@@ -1026,10 +1151,11 @@ class DagsterGrpcServer:
         server_termination_event: threading.Event,
         dagster_api_servicer: DagsterApiServicer,
         logger: logging.Logger,
+        threadpool_executor: FuturesAwareThreadPoolExecutor,
         host="localhost",
         port: Optional[int] = None,
         socket: Optional[str] = None,
-        max_workers: Optional[int] = None,
+        enable_metrics: bool = False,
     ):
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -1046,11 +1172,14 @@ class DagsterGrpcServer:
 
         self._logger = logger
 
+        self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
+
+        self._threadpool_executor = threadpool_executor
+        if self._enable_metrics:
+            _update_threadpool_metrics(self._threadpool_executor)
+
         self.server = grpc.server(
-            ThreadPoolExecutor(
-                max_workers=max_workers,
-                thread_name_prefix="grpc-server-rpc-handler",
-            ),
+            self._threadpool_executor,
             compression=grpc.Compression.Gzip,
             options=[
                 ("grpc.max_send_message_length", max_send_bytes()),
@@ -1114,9 +1243,9 @@ class DagsterGrpcServer:
             target=server_termination_target,
             args=[self._server_termination_event, self.server, self._logger],
             name="grpc-server-termination",
+            daemon=True,
         )
 
-        server_termination_thread.daemon = True
         server_termination_thread.start()
 
         try:
@@ -1178,6 +1307,7 @@ def open_server_process(
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
     container_context: Optional[Dict[str, Any]] = None,
+    enable_metrics: bool = False,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1203,6 +1333,7 @@ def open_server_process(
         *(["--location-name", location_name] if location_name else []),
         *(["--container-image", container_image] if container_image else []),
         *(["--container-context", json.dumps(container_context)] if container_context else []),
+        *(["--enable-metrics"] if enable_metrics else []),
     ]
 
     if loadable_target_origin:

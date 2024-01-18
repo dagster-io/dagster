@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
-import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -10,14 +9,11 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {
   ExplorerPath,
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
@@ -135,14 +131,8 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
       autoMaterializePolicy {
         policyType
       }
-      automationPolicySensor {
-        id
-        ...SensorSwitchFragment
-      }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 export const AssetGroupTags = ({
@@ -169,17 +159,6 @@ export const AssetGroupTags = ({
       assetNodes.some((a) => !!a.autoMaterializePolicy)
     ) {
       return <AutomaterializeDaemonStatusTag />;
-    }
-
-    if (automaterializeSensorsFlagState === 'has-sensor-amp') {
-      const sensors = assetNodes
-        .map((node) => node.automationPolicySensor)
-        .filter((sensor): sensor is SensorSwitchFragment => !!sensor);
-      const uniqueSensors = uniqBy(sensors, 'id');
-
-      if (sensors.length) {
-        return <ScheduleOrSensorTag repoAddress={repoAddress} sensors={uniqueSensors} />;
-      }
     }
 
     return null;

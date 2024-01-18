@@ -29,7 +29,7 @@ import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/Asse
 import {InstigationTickStatus} from '../graphql/types';
 
 import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {isOldTickWithoutEndtimestamp} from './util';
+import {isStuckStartedTick} from './util';
 
 dayjs.extend(relativeTime);
 
@@ -106,9 +106,9 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   }, [ticks, minX]);
 
   const ticksToDisplay = React.useMemo(() => {
-    return ticksReversed.map((tick) => {
+    return ticksReversed.map((tick, i) => {
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
-      const endTimestamp = isOldTickWithoutEndtimestamp(tick)
+      const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
         ? tick.timestamp
         : tick.endTimestamp
         ? tick.endTimestamp * 1000

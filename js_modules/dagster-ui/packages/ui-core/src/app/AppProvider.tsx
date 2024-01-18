@@ -22,6 +22,7 @@ import {
   colorBackgroundDefault,
   colorTextDefault,
   browserColorScheme,
+  colorFocusRing,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -101,6 +102,19 @@ const GlobalStyle = createGlobalStyle`
   code, pre {
     font-family: ${FontFamily.monospace};
     font-size: 16px;
+  }
+
+  :focus-visible {
+    outline: ${colorFocusRing()} auto 1px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  :not(a):focus,
+  :not(a):focus-visible {
+    outline-offset: 1px;
   }
 `;
 

@@ -620,8 +620,16 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             run_id, cursor, of_type, limit, ascending
         )
 
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
+        return self._storage.event_log_storage.initialize_concurrency_limit_to_default(
+            concurrency_key
+        )
+
     def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         return self._storage.event_log_storage.set_concurrency_slots(concurrency_key, num)
+
+    def delete_concurrency_limit(self, concurrency_key: str) -> None:
+        return self._storage.event_log_storage.delete_concurrency_limit(concurrency_key)
 
     def get_concurrency_keys(self) -> Set[str]:
         return self._storage.event_log_storage.get_concurrency_keys()

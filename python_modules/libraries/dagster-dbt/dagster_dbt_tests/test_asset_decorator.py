@@ -17,8 +17,10 @@ from dagster import (
     NodeInvocation,
     PartitionMapping,
     PartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
+    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -217,18 +219,58 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
         assert output_def.io_manager_key == expected_io_manager_key
 
 
-def test_backfill_policy():
-    backfill_policy = BackfillPolicy.single_run()
+@pytest.mark.parametrize(
+    ["partitions_def", "backfill_policy", "expected_backfill_policy"],
+    [
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            BackfillPolicy.multi_run(),
+            BackfillPolicy.multi_run(),
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            None,
+            BackfillPolicy.single_run(),
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            None,
+            None,
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            BackfillPolicy.single_run(),
+            BackfillPolicy.single_run(),
+        ),
+    ],
+    ids=[
+        "use explicit backfill policy for time window",
+        "time window defaults to single run",
+        "non time window has no default backfill policy",
+        "non time window backfill policy is respected",
+    ],
+)
+def test_backfill_policy(
+    partitions_def: PartitionsDefinition,
+    backfill_policy: BackfillPolicy,
+    expected_backfill_policy: BackfillPolicy,
+) -> None:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_freshness_policy(cls, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+            # Disable freshness policies when using static partitions
+            return None
 
     @dbt_assets(
         manifest=manifest,
-        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+        partitions_def=partitions_def,
         backfill_policy=backfill_policy,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets():
         ...
 
-    assert my_dbt_assets.backfill_policy == backfill_policy
+    assert my_dbt_assets.backfill_policy == expected_backfill_policy
 
 
 def test_op_tags():
@@ -573,6 +615,26 @@ def test_dbt_with_downstream_asset():
     assert len(downstream_of_dbt.input_names) == 2
     assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
     assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
+
+
+def test_dbt_with_custom_resource_key() -> None:
+    dbt_resource_key = "my_custom_dbt_resource_key"
+
+    @dbt_assets(manifest=test_dagster_metadata_manifest, required_resource_keys={dbt_resource_key})
+    def my_dbt_assets(context: AssetExecutionContext):
+        dbt = getattr(context.resources, dbt_resource_key)
+
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            dbt_resource_key: DbtCliResource(
+                project_dir=os.fspath(test_dagster_metadata_manifest_path.joinpath("..").resolve())
+            )
+        },
+    )
+    assert result.success
 
 
 def test_dbt_with_python_interleaving() -> None:

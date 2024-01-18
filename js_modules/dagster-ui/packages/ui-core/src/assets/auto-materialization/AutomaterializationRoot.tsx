@@ -22,7 +22,7 @@ import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
-import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
+import {isStuckStartedTick} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
@@ -123,10 +123,11 @@ const GlobalAutomaterializationRoot = () => {
       const ticks = data?.autoMaterializeTicks;
       return (
         ticks?.map((tick, index) => {
+          const nextTick = ticks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
-          if (index !== 0 && !isOldTickWithoutEndtimestamp(tick) && !tick.endTimestamp) {
+          if (nextTick && isStuckStartedTick(tick, index)) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index - 1]!.timestamp;
+            copy.endTimestamp = nextTick.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }

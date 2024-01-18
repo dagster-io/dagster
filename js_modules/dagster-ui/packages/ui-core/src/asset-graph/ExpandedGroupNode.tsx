@@ -19,14 +19,18 @@ export const ExpandedGroupNode = ({
   group,
   minimal,
   onCollapse,
+  toggleSelectAllNodes,
   preferredJobName,
   onFilterToGroup,
+  setHighlighted,
 }: {
   group: GroupLayout & {assets: GraphNode[]};
   minimal: boolean;
   onCollapse?: () => void;
+  toggleSelectAllNodes?: (e: React.MouseEvent) => void;
   preferredJobName?: string;
   onFilterToGroup?: () => void;
+  setHighlighted: (ids: string[] | null) => void;
 }) => {
   const {menu, dialog} = useGroupNodeContextMenu({
     onFilterToGroup,
@@ -38,8 +42,14 @@ export const ExpandedGroupNode = ({
       <ContextMenuWrapper menu={menu} stopPropagation>
         <GroupNodeHeaderBox
           $minimal={minimal}
+          onMouseEnter={() => setHighlighted(group.assets.map((a) => a.id))}
+          onMouseLeave={() => setHighlighted(null)}
           onClick={(e) => {
-            onCollapse?.();
+            if (e.metaKey && toggleSelectAllNodes) {
+              toggleSelectAllNodes(e);
+            } else {
+              onCollapse?.();
+            }
             e.stopPropagation();
           }}
         >

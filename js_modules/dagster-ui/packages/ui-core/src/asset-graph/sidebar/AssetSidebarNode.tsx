@@ -75,16 +75,11 @@ export const AssetSidebarNode = ({
 
   return (
     <>
-      <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
+      <Box ref={elementRef} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <Box
-            padding={{right: 12}}
-            flex={{direction: 'row', alignItems: 'center'}}
-            style={{height: '32px'}}
-          >
+          <ItemContainer padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
             {showArrow ? (
               <UnstyledButton
-                $showFocusOutline
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
@@ -111,13 +106,13 @@ export const AssetSidebarNode = ({
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
-              onDoubleClick={toggleOpen}
+              onClick={selectThisNode}
+              onDoubleClick={(e) => !e.metaKey && toggleOpen()}
               style={{
                 width: '100%',
                 borderRadius: '8px',
                 ...(isSelected ? {background: colorBackgroundBlue()} : {}),
               }}
-              $showFocusOutline={true}
               ref={ref}
             >
               <div
@@ -133,7 +128,9 @@ export const AssetSidebarNode = ({
                 {isLocationNode ? <Icon name="folder_open" /> : null}
                 <MiddleTruncate text={displayName} />
               </div>
-              {isAssetNode ? (
+            </GrayOnHoverBox>
+            {isAssetNode ? (
+              <ExpandMore>
                 <AssetNodePopoverMenu
                   graphData={fullAssetGraphData}
                   node={node}
@@ -141,9 +138,9 @@ export const AssetSidebarNode = ({
                   explorerPath={explorerPath}
                   onChangeExplorerPath={onChangeExplorerPath}
                 />
-              ) : null}
-            </GrayOnHoverBox>
-          </Box>
+              </ExpandMore>
+            ) : null}
+          </ItemContainer>
         </BoxWrapper>
       </Box>
     </>
@@ -153,32 +150,20 @@ export const AssetSidebarNode = ({
 const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => {
   const {menu, dialog} = useAssetNodeMenu(props);
   return (
-    <div
-      onClick={(e) => {
-        // stop propagation outside of the popover to prevent parent onClick from being selected
-        e.stopPropagation();
-      }}
-      onKeyDown={(e) => {
-        if (e.code === 'Space') {
-          // Prevent the default scrolling behavior
-          e.preventDefault();
-        }
-      }}
-    >
+    <>
       {dialog}
       <Popover
         content={menu}
-        hoverOpenDelay={100}
-        hoverCloseDelay={100}
         placement="right"
         shouldReturnFocusOnClose
         canEscapeKeyClose
+        modifiers={{offset: {enabled: true, options: {offset: [0, 12]}}}}
       >
-        <ExpandMore tabIndex={0} role="button">
+        <UnstyledButton>
           <Icon name="more_horiz" color={colorAccentGray()} />
-        </ExpandMore>
+        </UnstyledButton>
       </Popover>
-    </div>
+    </>
   );
 };
 
@@ -205,7 +190,12 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
   return <>{wrapper}</>;
 };
 
-const ExpandMore = styled.div``;
+const ExpandMore = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 20px;
+  visibility: hidden;
+`;
 
 const GrayOnHoverBox = styled(UnstyledButton)`
   border-radius: 8px;
@@ -220,17 +210,22 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   gap: 6;
   flex-grow: 1;
   flex-shrink: 1;
+  transition: background 100ms linear;
+`;
+
+const ItemContainer = styled(Box)`
+  height: 32px;
+  position: relative;
+
   &:hover,
   &:focus-within {
-    background: ${colorBackgroundLightHover()};
-    transition: background 100ms linear;
-    box-shadow: none;
+    ${GrayOnHoverBox} {
+      background: ${colorBackgroundLightHover()};
+    }
+
     ${ExpandMore} {
       visibility: visible;
     }
-  }
-  ${ExpandMore} {
-    visibility: hidden;
   }
 `;
 

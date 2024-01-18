@@ -1,3 +1,4 @@
+import threading
 import time
 
 import pytest
@@ -15,7 +16,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_job
+from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
@@ -86,6 +87,11 @@ def retry_job():
     simple_op()
 
 
+@job
+def simple_job():
+    simple_op()
+
+
 error_job_multiprocess = error_graph.to_job(name="error_job")
 error_job_inprocess = error_graph.to_job(
     name="error_job_in_process", executor_def=in_process_executor
@@ -122,6 +128,7 @@ def concurrency_repo():
         two_tier_job_multiprocess,
         two_tier_job_inprocess,
         two_tier_job_step_delegating,
+        simple_job,
     ]
 
 
@@ -153,6 +160,10 @@ def define_retry_job():
     return retry_job
 
 
+def define_simple_job():
+    return simple_job
+
+
 recon_error_inprocess = reconstructable(define_error_inprocess_job)
 recon_error_multiprocess = reconstructable(define_error_multiprocess_job)
 recon_error_stepdelegating = reconstructable(define_error_stepdelegating_job)
@@ -160,6 +171,7 @@ recon_parallel_inprocess = reconstructable(define_parallel_inprocess_job)
 recon_parallel_multiprocess = reconstructable(define_parallel_multiprocess_job)
 recon_parallel_stepdelegating = reconstructable(define_parallel_stepdelegating_job)
 recon_retry_job = reconstructable(define_retry_job)
+recon_simple_job = reconstructable(define_simple_job)
 
 
 @pytest.fixture(
@@ -381,3 +393,32 @@ def test_retry_concurrency_release(instance):
         ("retry_op", "STEP_RESTARTED"),
         ("retry_op", "STEP_FAILURE"),
     ]
+
+
+def test_multiprocess_simple_job_has_blocked_message(instance):
+    instance.event_log_storage.set_concurrency_slots("foo", 0)
+    foo_info = instance.event_log_storage.get_concurrency_info("foo")
+    assert foo_info.slot_count == 0
+    run = instance.create_run_for_job(define_simple_job())
+
+    def _unblock_concurrency_key(instance, timeout):
+        time.sleep(timeout)
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+    start = time.time()
+    has_blocked_message = False
+    timed_out = False
+
+    TIMEOUT = 5
+    threading.Thread(target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True).start()
+
+    for event in execute_run_iterator(recon_simple_job, run, instance=instance):
+        if "blocked by concurrency limit for key foo" in event.message:
+            has_blocked_message = True
+            break
+        if time.time() - start > TIMEOUT:
+            timed_out = True
+            break
+
+    assert not timed_out
+    assert has_blocked_message

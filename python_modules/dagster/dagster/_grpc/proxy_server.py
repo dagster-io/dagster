@@ -99,9 +99,11 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
         self.__cleanup_thread = threading.Thread(
-            target=self._cleanup_thread, args=(), name="code-server-cleanup"
+            target=self._cleanup_thread,
+            args=(),
+            name="code-server-cleanup",
+            daemon=True,
         )
-        self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()
 
@@ -132,8 +134,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                     self._heartbeat_shutdown_event,
                 ),
                 name="grpc-client-heartbeat",
+                daemon=True,
             )
-            self._heartbeat_thread.daemon = True
             self._heartbeat_thread.start()
 
     def ReloadCode(self, request, context):
@@ -207,8 +209,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("ListRepositories", request, context)
 
     def Ping(self, request, context):
-        echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+        return self._query("Ping", request, context)
 
     def GetServerId(self, request, context):
         return self._fixed_server_id or self._query("GetServerId", request, context)

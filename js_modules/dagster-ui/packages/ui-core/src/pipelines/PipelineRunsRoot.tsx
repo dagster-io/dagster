@@ -20,6 +20,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useStartTrace} from '../performance';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
@@ -71,6 +72,8 @@ export const PipelineRunsRoot = (props: Props) => {
   const isJob = isThisThingAJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
+
+  const trace = useStartTrace('PipelineRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = React.useMemo(() => {
@@ -129,6 +132,12 @@ export const PipelineRunsRoot = (props: Props) => {
     onChange: setFilterTokens,
     loading: queryResult.loading,
   });
+
+  React.useEffect(() => {
+    if (!queryResult.loading) {
+      trace.endTrace();
+    }
+  }, [queryResult.loading, trace]);
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>

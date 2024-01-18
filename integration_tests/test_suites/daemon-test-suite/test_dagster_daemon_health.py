@@ -208,7 +208,7 @@ def test_error_daemon(monkeypatch):
 
         heartbeat_interval_seconds = 1
 
-        gen_daemons = lambda instance: [SensorDaemon()]
+        gen_daemons = lambda instance: [SensorDaemon(instance.get_sensor_settings())]
 
         init_time = pendulum.now("UTC")
         with daemon_controller_from_instance(

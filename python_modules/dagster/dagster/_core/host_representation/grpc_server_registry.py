@@ -131,8 +131,8 @@ class GrpcServerRegistry(AbstractContextManager):
             target=self._clear_old_processes,
             name="grpc-server-registry-cleanup",
             args=(self._cleanup_thread_shutdown_event, self._reload_interval),
+            daemon=True,
         )
-        self._cleanup_thread.daemon = True
         self._cleanup_thread.start()
 
     def supports_origin(

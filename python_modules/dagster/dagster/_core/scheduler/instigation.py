@@ -17,9 +17,11 @@ from dagster._core.definitions.run_request import (
     SkipReason as SkipReason,
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
+    EnumSerializer,
     deserialize_value,
     whitelist_for_serdes,
 )
@@ -30,15 +32,28 @@ from dagster._utils.merger import merge_dicts
 InstigatorData: TypeAlias = Union["ScheduleInstigatorData", "SensorInstigatorData"]
 
 
-@whitelist_for_serdes(old_storage_names={"JobStatus"})
+class InstigatorStatusBackcompatSerializer(EnumSerializer):
+    def unpack(self, value: str):
+        if value == InstigatorStatus.AUTOMATICALLY_RUNNING.name:
+            value = InstigatorStatus.DECLARED_IN_CODE.name
+
+        return super().unpack(value)
+
+
+@whitelist_for_serdes(
+    serializer=InstigatorStatusBackcompatSerializer,
+    old_storage_names={"JobStatus"},
+)
 class InstigatorStatus(Enum):
-    # User has taken some action to start the run instigator
+    # User has taken some manual action to change the status of the run instigator
     RUNNING = "RUNNING"
-
-    # The run instigator is running, but only because of its default setting
-    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"
-
     STOPPED = "STOPPED"
+
+    # The run instigator status is controlled by its default setting in code
+    DECLARED_IN_CODE = "DECLARED_IN_CODE"
+
+    # DEPRECATED: use InstigatorStatus.DECLARED_IN_CODE
+    AUTOMATICALLY_RUNNING = "AUTOMATICALLY_RUNNING"
 
 
 @whitelist_for_serdes
@@ -91,6 +106,7 @@ class SensorInstigatorData(
             ("last_tick_start_timestamp", Optional[float]),
             # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -102,6 +118,7 @@ class SensorInstigatorData(
         cursor: Optional[str] = None,
         last_tick_start_timestamp: Optional[float] = None,
         last_sensor_start_timestamp: Optional[float] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -111,6 +128,7 @@ class SensorInstigatorData(
             check.opt_str_param(cursor, "cursor"),
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
+            check.opt_inst_param(sensor_type, "sensor_type", SensorType),
         )
 
     def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
@@ -122,6 +140,7 @@ class SensorInstigatorData(
             self.cursor,
             self.last_tick_start_timestamp,
             start_timestamp,
+            self.sensor_type,
         )
 
 

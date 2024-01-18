@@ -339,11 +339,11 @@ const NavButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background: ${colorNavText()};
+    background: ${colorNavTextHover()};
   }
 
   :active ${IconWrapper} {
-    background: ${colorNavText()};
+    background: ${colorNavTextHover()};
   }
 
   :focus {

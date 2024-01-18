@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import sys
+import threading
 from typing import (
     AbstractSet,
     Iterable,
@@ -44,6 +45,7 @@ from dagster import (
     observable_source_asset,
     repository,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
@@ -161,6 +163,7 @@ class AssetReconciliationScenario(
         [
             ("unevaluated_runs", Sequence[RunSpec]),
             ("assets", Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]),
+            ("asset_checks", Optional[Sequence[AssetChecksDefinition]]),
             ("between_runs_delta", Optional[datetime.timedelta]),
             ("evaluation_delta", Optional[datetime.timedelta]),
             ("cursor_from", Optional["AssetReconciliationScenario"]),
@@ -188,6 +191,7 @@ class AssetReconciliationScenario(
         cls,
         unevaluated_runs: Sequence[RunSpec],
         assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]],
+        asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
         between_runs_delta: Optional[datetime.timedelta] = None,
         evaluation_delta: Optional[datetime.timedelta] = None,
         cursor_from: Optional["AssetReconciliationScenario"] = None,
@@ -215,10 +219,10 @@ class AssetReconciliationScenario(
             or isinstance(a, SourceAsset)
             for a in assets
         ):
-            asset_graph = AssetGraph.from_assets(assets)
+            asset_graph = AssetGraph.from_assets(assets, asset_checks=asset_checks)
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
-                if asset_selection
+                if asset_selection is not None
                 else asset_graph.materializable_asset_keys
             )
             assets_with_implicit_policies = with_implicit_auto_materialize_policies(
@@ -229,6 +233,7 @@ class AssetReconciliationScenario(
             cls,
             unevaluated_runs=unevaluated_runs,
             assets=assets_with_implicit_policies,
+            asset_checks=asset_checks,
             between_runs_delta=between_runs_delta,
             evaluation_delta=evaluation_delta,
             cursor_from=cursor_from,
@@ -529,8 +534,13 @@ class AssetReconciliationScenario(
 
                 try:
                     list(
-                        AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
-                            workspace_context, debug_crash_flags or {}
+                        AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                            workspace_context,
+                            threadpool_executor=None,
+                            amp_tick_futures={},
+                            last_submit_times={},
+                            debug_crash_flags=(debug_crash_flags or {}),
+                            sensor_state_lock=threading.Lock(),
                         )
                     )
 

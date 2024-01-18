@@ -1,12 +1,13 @@
-from typing import NamedTuple, Optional, Union
+from typing import Iterable, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .events import (
     AssetKey,
@@ -18,7 +19,6 @@ CoercibleToAssetDep = Union[
 ]
 
 
-@experimental
 class AssetDep(
     NamedTuple(
         "_AssetDep",
@@ -98,3 +98,25 @@ def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
         return arg.asset_key
     else:
         return AssetKey.from_coercible(arg)
+
+
+def coerce_to_deps_and_check_duplicates(
+    coercible_to_asset_deps: Optional[Iterable["CoercibleToAssetDep"]],
+    key: Union[AssetKey, AssetCheckKey],
+) -> Sequence[AssetDep]:
+    dep_set = {}
+    if coercible_to_asset_deps:
+        for dep in coercible_to_asset_deps:
+            asset_dep = AssetDep.from_coercible(dep)
+
+            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+            # for existing keys.
+            if asset_dep.asset_key in dep_set.keys():
+                raise DagsterInvariantViolationError(
+                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
+                    f" spec {key}"
+                )
+            dep_set[asset_dep.asset_key] = asset_dep
+
+    return list(dep_set.values())

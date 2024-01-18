@@ -4,9 +4,9 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, ExitStack
 from threading import Event
-from typing import TYPE_CHECKING, Generator, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generator, Generic, Mapping, Optional, TypeVar, Union
 
 import pendulum
 from typing_extensions import TypeAlias
@@ -17,6 +17,7 @@ from dagster import (
 )
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.monitoring import (
@@ -260,9 +261,35 @@ class SchedulerDaemon(DagsterDaemon):
 
 
 class SensorDaemon(DagsterDaemon):
+    def __init__(self, settings: Mapping[str, Any]) -> None:
+        super().__init__()
+        self._exit_stack = ExitStack()
+        self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+        self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+
+        if settings.get("use_threads"):
+            self._threadpool_executor = self._exit_stack.enter_context(
+                InheritContextThreadPoolExecutor(
+                    max_workers=settings.get("num_workers"),
+                    thread_name_prefix="sensor_daemon_worker",
+                )
+            )
+            num_submit_workers = settings.get("num_submit_workers")
+            if num_submit_workers:
+                self._submit_threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_submit_workers"),
+                        thread_name_prefix="sensor_submit_worker",
+                    )
+                )
+
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+        super().__exit__(_exception_type, _exception_value, _traceback)
 
     def core_loop(
         self,
@@ -273,6 +300,8 @@ class SensorDaemon(DagsterDaemon):
             workspace_process_context,
             self._logger,
             shutdown_event,
+            threadpool_executor=self._threadpool_executor,
+            submit_threadpool_executor=self._submit_threadpool_executor,
         )
 
 

@@ -1,14 +1,13 @@
 import {gql} from '@apollo/client';
-import flatMap from 'lodash/flatMap';
-import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag = ({
@@ -18,26 +17,17 @@ export const AssetNodeInstigatorTag = ({
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
 }) => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
   const {schedules, sensors} = React.useMemo(() => {
-    const schedules = uniqBy(
-      flatMap(assetNode.jobs, (j) => j.schedules),
-      'id',
+    const instigators = assetNode.targetingInstigators;
+    const schedules = instigators.filter(
+      (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
     );
-    const sensors = uniqBy(
-      flatMap(assetNode.jobs, (j) => j.sensors),
-      'id',
+    const sensors = instigators.filter(
+      (instigator): instigator is SensorSwitchFragment => instigator.__typename === 'Sensor',
     );
-
-    if (automaterializeSensorsFlagState === 'has-sensor-amp') {
-      const ampSensor = assetNode.automationPolicySensor;
-      if (ampSensor) {
-        sensors.push(ampSensor);
-      }
-    }
 
     return {schedules, sensors};
-  }, [assetNode, automaterializeSensorsFlagState]);
+  }, [assetNode]);
 
   return (
     <ScheduleOrSensorTag
@@ -52,24 +42,15 @@ export const AssetNodeInstigatorTag = ({
 export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
   fragment AssetNodeInstigatorsFragment on AssetNode {
     id
-    jobs {
-      id
-      name
-      schedules {
-        id
+    targetingInstigators {
+      ... on Schedule {
         ...ScheduleSwitchFragment
       }
-      sensors {
-        id
+      ... on Sensor {
         ...SensorSwitchFragment
       }
     }
-    automationPolicySensor {
-      id
-      ...SensorSwitchFragment
-    }
   }
-
   ${SCHEDULE_SWITCH_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
 `;

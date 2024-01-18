@@ -7,7 +7,6 @@ import {
   MenuItem,
   colorTextDefault,
   colorBackgroundLighter,
-  colorFocusRing,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
@@ -72,10 +71,5 @@ const StyledMenuLink = styled(Link)`
 
   &&&:hover {
     background: ${colorBackgroundLighter()};
-  }
-
-  &:focus {
-    box-shadow: ${colorFocusRing()} 0 0 0 2px;
-    outline: none;
   }
 `;

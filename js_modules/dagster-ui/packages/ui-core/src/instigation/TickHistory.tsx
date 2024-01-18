@@ -25,7 +25,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -51,7 +50,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {isOldTickWithoutEndtimestamp, truncate} from './util';
+import {isStuckStartedTick, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -74,7 +73,7 @@ const DEFAULT_SHOWN_STATUS_STATE = {
 const STATUS_TEXT_MAP = {
   [InstigationTickStatus.SUCCESS]: 'Requested',
   [InstigationTickStatus.FAILURE]: 'Failed',
-  [InstigationTickStatus.STARTED]: 'Started',
+  [InstigationTickStatus.STARTED]: 'In progress',
   [InstigationTickStatus.SKIPPED]: 'Skipped',
 };
 
@@ -110,7 +109,7 @@ export const TicksTable = ({
       return status;
     },
   });
-  const {flagSensorScheduleLogging} = useFeatureFlags();
+
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = React.useMemo(
     () =>
@@ -252,16 +251,15 @@ export const TicksTable = ({
                 <th style={{width: 120}}>Cursor</th>
               ) : null}
               <th style={{width: 180}}>Result</th>
-              {flagSensorScheduleLogging ? <th style={{width: 180}}>Logs</th> : null}
             </tr>
           </thead>
           <tbody>
-            {ticks.map((tick) => (
+            {ticks.map((tick, index) => (
               <TickRow
                 key={tick.id}
                 tick={tick}
-                setLogTick={setLogTick}
                 instigationSelector={instigationSelector}
+                index={index}
               />
             ))}
           </tbody>
@@ -388,15 +386,14 @@ export const TickHistoryTimeline = ({
 
 function TickRow({
   tick,
-  setLogTick,
   instigationSelector,
+  index,
 }: {
   tick: HistoryTickFragment;
-  setLogTick: (tick: InstigationTick) => void;
   instigationSelector: InstigationSelector;
+  index: number;
 }) {
   const copyToClipboard = useCopyToClipboard();
-  const {flagSensorScheduleLogging} = useFeatureFlags();
   const [showResults, setShowResults] = React.useState(false);
 
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
@@ -413,6 +410,8 @@ function TickRow({
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
+  const isStuckStarted = isStuckStartedTick(tick, index);
+
   return (
     <tr>
       <td>
@@ -422,10 +421,10 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} />
+        <TickStatusTag tick={tick} isStuckStarted={isStuckStarted} />
       </td>
       <td>
-        {isOldTickWithoutEndtimestamp(tick) ? (
+        {isStuckStarted ? (
           '- '
         ) : (
           <TimeElapsed
@@ -459,57 +458,52 @@ function TickRow({
         </td>
       ) : null}
       <td>
-        {tick.runIds.length ? (
-          <Box flex={{direction: 'column', gap: 6}}>
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <ButtonLink
-                onClick={() => {
-                  setShowResults(true);
-                }}
-              >
-                {tick.runIds.length} run{ifPlural(tick.runIds.length, '', 's')} requested
-              </ButtonLink>
-              {tick.runs.length === 1
-                ? tick.runs.map((run) => (
-                    <React.Fragment key={run.id}>
-                      <RunStatusLink run={run} />
-                    </React.Fragment>
-                  ))
-                : null}
-            </Box>
-            {addedPartitions || deletedPartitions ? (
-              <Caption>
-                (
-                {addedPartitions ? (
-                  <span>
-                    {addedPartitions} partition{ifPlural(addedPartitions, '', 's')} created
-                    {deletedPartitions ? ',' : ''}
-                  </span>
-                ) : null}
-                {deletedPartitions ? (
-                  <span>
-                    {deletedPartitions} partition{ifPlural(deletedPartitions, '', 's')} deleted,
-                  </span>
-                ) : null}
-                )
-              </Caption>
-            ) : null}
-            <TickDetailsDialog
-              isOpen={showResults}
-              tickId={Number(tick.tickId)}
-              instigationSelector={instigationSelector}
-              onClose={() => {
-                setShowResults(false);
+        <Box flex={{direction: 'column', gap: 6}}>
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            <ButtonLink
+              onClick={() => {
+                setShowResults(true);
               }}
-            />
+            >
+              {tick.runIds.length === 1
+                ? '1 run requested'
+                : `${tick.runIds.length} runs requested`}
+            </ButtonLink>
+            {tick.runs.length === 1
+              ? tick.runs.map((run) => (
+                  <React.Fragment key={run.id}>
+                    <RunStatusLink run={run} />
+                  </React.Fragment>
+                ))
+              : null}
           </Box>
-        ) : (
-          <>&mdash;</>
-        )}
+          {addedPartitions || deletedPartitions ? (
+            <Caption>
+              (
+              {addedPartitions ? (
+                <span>
+                  {addedPartitions} partition{ifPlural(addedPartitions, '', 's')} created
+                  {deletedPartitions ? ',' : ''}
+                </span>
+              ) : null}
+              {deletedPartitions ? (
+                <span>
+                  {deletedPartitions} partition{ifPlural(deletedPartitions, '', 's')} deleted,
+                </span>
+              ) : null}
+              )
+            </Caption>
+          ) : null}
+          <TickDetailsDialog
+            isOpen={showResults}
+            tickId={Number(tick.tickId)}
+            instigationSelector={instigationSelector}
+            onClose={() => {
+              setShowResults(false);
+            }}
+          />
+        </Box>
       </td>
-      {flagSensorScheduleLogging ? (
-        <td>{tick.logKey ? <a onClick={() => setLogTick(tick)}>View logs</a> : <>&mdash;</>}</td>
-      ) : null}
     </tr>
   );
 }

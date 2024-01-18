@@ -30,7 +30,8 @@ export enum AssetConditionEvaluationStatus {
 
 export type AssetConditionEvaluation =
   | UnpartitionedAssetConditionEvaluation
-  | PartitionedAssetConditionEvaluation;
+  | PartitionedAssetConditionEvaluation
+  | SpecificPartitionAssetConditionEvaluation;
 
 export type AssetSubset = {
   assetKey: AssetKey;
@@ -68,4 +69,12 @@ export type PartitionedAssetConditionEvaluation = {
   trueSubset: AssetSubset;
   falseSubset: AssetSubset;
   candidateSubset: AssetSubset | null;
+};
+
+export type SpecificPartitionAssetConditionEvaluation = {
+  __typename: 'SpecificPartitionAssetConditionEvaluation';
+  description: string;
+  // metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus;
+  childEvaluations: UnpartitionedAssetConditionEvaluation[] | null;
 };

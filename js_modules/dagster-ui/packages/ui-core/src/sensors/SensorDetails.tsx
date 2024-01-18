@@ -24,11 +24,12 @@ import {SensorSwitch} from './SensorSwitch';
 import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
 
+const TIME_FORMAT = {showSeconds: true, showTimezone: false};
+
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {
     minIntervalSeconds = 30; // should query sensor interval config when available
   }
-  minIntervalSeconds = Math.max(30, minIntervalSeconds);
   if (minIntervalSeconds < 60 || minIntervalSeconds % 60) {
     return `~${minIntervalSeconds} sec`;
   }
@@ -95,11 +96,6 @@ export const SensorDetails = ({
             <Tag icon="sensors">
               Sensor in <RepositoryLink repoAddress={repoAddress} />
             </Tag>
-            {sensor.nextTick && daemonHealth && running ? (
-              <Tag icon="timer">
-                Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp!} />
-              </Tag>
-            ) : null}
           </>
         }
         right={
@@ -144,7 +140,7 @@ export const SensorDetails = ({
                     flex={{direction: 'row', gap: 8, alignItems: 'center'}}
                     style={{marginTop: '-2px'}}
                   >
-                    <TimestampDisplay timestamp={latestTick.timestamp} />
+                    <TimestampDisplay timestamp={latestTick.timestamp} timeFormat={TIME_FORMAT} />
                     <TickStatusTag tick={latestTick} />
                   </Box>
                 </>
@@ -153,6 +149,14 @@ export const SensorDetails = ({
               )}
             </td>
           </tr>
+          {sensor.nextTick && daemonHealth && running && (
+            <tr>
+              <td>Next tick</td>
+              <td>
+                <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
+              </td>
+            </tr>
+          )}
           {sensor.targets && sensor.targets.length ? (
             <tr>
               <td>Target</td>

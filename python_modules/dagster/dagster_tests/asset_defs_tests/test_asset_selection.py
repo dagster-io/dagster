@@ -20,6 +20,7 @@ from dagster import (
 )
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AndAssetSelection, OrAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import _WHITELIST_MAP
@@ -380,6 +381,24 @@ def test_from_coercible_tuple():
     }
 
 
+def test_multi_operand_selection():
+    foo = AssetSelection.keys("foo")
+    bar = AssetSelection.keys("bar")
+    baz = AssetSelection.keys("baz")
+
+    assert foo & bar & baz == AndAssetSelection([foo, bar, baz])
+    assert (foo & bar) & baz == AndAssetSelection([foo, bar, baz])
+    assert foo & (bar & baz) == AndAssetSelection([foo, bar, baz])
+    assert foo | bar | baz == OrAssetSelection([foo, bar, baz])
+    assert (foo | bar) | baz == OrAssetSelection([foo, bar, baz])
+    assert foo | (bar | baz) == OrAssetSelection([foo, bar, baz])
+
+    assert (foo & bar) | baz == OrAssetSelection([AndAssetSelection([foo, bar]), baz])
+    assert foo & (bar | baz) == AndAssetSelection([foo, OrAssetSelection([bar, baz])])
+    assert (foo | bar) & baz == AndAssetSelection([OrAssetSelection([foo, bar]), baz])
+    assert foo | (bar & baz) == OrAssetSelection([foo, AndAssetSelection([bar, baz])])
+
+
 def test_all_asset_selection_subclasses_serializable():
     from dagster._core.definitions import asset_selection as asset_selection_module
 
@@ -491,3 +510,28 @@ def test_to_serializable_asset_selection():
     ).to_serializable_asset_selection(asset_graph) == (
         asset1_selection - AssetSelection.groups("b")
     )
+
+
+def test_to_string_basic():
+    assert str(AssetSelection.keys("foo")) == "foo"
+    assert str(AssetSelection.keys(AssetKey(["foo", "bar"]))) == "foo/bar"
+    assert str(AssetSelection.keys("foo", "bar")) == "foo or bar"
+    assert str(AssetSelection.keys(AssetKey(["foo", "bar"]), AssetKey("baz"))) == "foo/bar or baz"
+
+    assert str(AssetSelection.all()) == "all materializable assets"
+    assert str(AssetSelection.all_asset_checks()) == "all asset checks"
+
+    assert str(AssetSelection.groups("marketing")) == "group:marketing"
+    assert str(AssetSelection.groups("marketing", "finance")) == "group:(marketing or finance)"
+
+    assert str(AssetSelection.key_prefixes("marketing")) == "key_prefix:marketing"
+    assert str(AssetSelection.key_prefixes(["foo", "bar"])) == "key_prefix:foo/bar"
+    assert (
+        str(AssetSelection.key_prefixes("marketing", ["foo", "bar"]))
+        == "key_prefix:(marketing or foo/bar)"
+    )
+
+
+def test_empty_namedtuple_truthy():
+    # namedtuples with no fields are still truthy
+    assert bool(AssetSelection.all())

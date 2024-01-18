@@ -52,7 +52,6 @@ from ...implementation.fetch_assets import (
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
-    get_unloadable_instigator_states_or_error,
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
@@ -128,11 +127,9 @@ from ..inputs import (
 from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
-    GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
     GrapheneInstigationTick,
     GrapheneInstigationTickStatus,
-    GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
     GrapheneCapturedLogs,
@@ -280,14 +277,6 @@ class GrapheneQuery(graphene.ObjectType):
         description=(
             "Retrieve the state for a schedule or sensor by its location name, repository name, and"
             " schedule/sensor name."
-        ),
-    )
-
-    unloadableInstigationStatesOrError = graphene.Field(
-        graphene.NonNull(GrapheneInstigationStatesOrError),
-        instigationType=graphene.Argument(GrapheneInstigationType),
-        description=(
-            "Retrieve the running schedules and sensors that are missing from the workspace."
         ),
     )
 
@@ -620,7 +609,7 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -665,7 +654,7 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -683,15 +672,6 @@ class GrapheneQuery(graphene.ObjectType):
         return get_instigator_state_or_error(
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
-
-    @capture_error
-    def resolve_unloadableInstigationStatesOrError(
-        self,
-        graphene_info: ResolveInfo,
-        instigationType: Optional[GrapheneInstigationType] = None,  # type: ignore (idk)
-    ):
-        instigation_type = InstigatorType(instigationType) if instigationType else None
-        return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
@@ -1103,16 +1083,18 @@ class GrapheneQuery(graphene.ObjectType):
         beforeTimestamp=None,
         afterTimestamp=None,
     ):
+        # Only valid for ticks from before auto-materialize was moved to be powered by multiple
+        # sensors
         from dagster._daemon.asset_daemon import (
-            FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         return get_instigation_ticks(
             graphene_info=graphene_info,
             instigator_type=InstigatorType.AUTO_MATERIALIZE,
-            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             batch_loader=None,
             dayRange=dayRange,
             dayOffset=dayOffset,

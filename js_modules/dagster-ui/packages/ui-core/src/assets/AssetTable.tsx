@@ -2,16 +2,16 @@ import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
+  Checkbox,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
+  NonIdealState,
   Popover,
   Tooltip,
-  Checkbox,
-  NonIdealState,
+  colorAccentRed,
   colorBackgroundDefault,
   colorTextDisabled,
-  colorAccentRed,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';

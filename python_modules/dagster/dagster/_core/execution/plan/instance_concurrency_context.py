@@ -76,9 +76,24 @@ class InstanceConcurrencyContext:
 
         return self._global_concurrency_keys
 
+    def _sync_global_concurrency_keys(self) -> None:
+        self._global_concurrency_keys = self._instance.event_log_storage.get_concurrency_keys()
+
     def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
-        if concurrency_key not in self.global_concurrency_keys:
+        if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
+
+        if concurrency_key not in self.global_concurrency_keys:
+            # The initialization call will be a no-op if the limit is set by another process,
+            # mitigating any race condition concerns
+            if not self._instance.event_log_storage.initialize_concurrency_limit_to_default(
+                concurrency_key
+            ):
+                # still default open if the limit table has not been initialized
+                return True
+            else:
+                # sync the global concurrency keys to ensure we have the latest
+                self._sync_global_concurrency_keys()
 
         if step_key in self._pending_claims:
             if time.time() > self._pending_timeouts[step_key]:

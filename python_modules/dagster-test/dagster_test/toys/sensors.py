@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     AssetKey,
+    DefaultSensorStatus,
     RunFailureSensorContext,
     RunRequest,
     SkipReason,
@@ -149,6 +150,31 @@ def get_toys_sensors():
                 tags={"fee": "fifofum"},
             )
 
+    @sensor(
+        job=simple_config_job,
+        minimum_interval_seconds=2,
+        default_status=DefaultSensorStatus.STOPPED,
+    )
+    def tick_logging_sensor(context):
+        cursor = int(context.cursor) if context.cursor else 1
+        context.update_cursor(str(cursor + 1))
+
+        context.log.debug("debug")
+        context.log.info("info")
+        context.log.warning("warning")
+        context.log.error("error")
+        context.log.critical("critical")
+
+        if cursor % 3 == 0:
+            raise Exception("Sensor error! All subsequent ticks will fail.")
+        elif cursor % 3 == 1:
+            yield SkipReason("A skip reason.")
+        elif cursor % 3 == 2:
+            yield RunRequest(
+                run_key=str(cursor),
+                run_config={"ops": {"requires_config": {"config": {"num": cursor}}}},
+            )
+
     return [
         toy_file_sensor,
         toy_asset_sensor,
@@ -156,4 +182,5 @@ def get_toys_sensors():
         custom_slack_on_job_failure,
         built_in_slack_on_run_failure_sensor,
         math_sensor,
+        tick_logging_sensor,
     ]

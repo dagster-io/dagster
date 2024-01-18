@@ -1,17 +1,20 @@
 import {
-  Checkbox,
-  NonIdealState,
-  SplitPanelContainer,
-  ErrorBoundary,
-  Button,
-  Icon,
-  Tooltip,
-  TextInputContainer,
   Box,
-  colorKeylineDefault,
-  colorBackgroundDefault,
+  Button,
+  Checkbox,
+  ErrorBoundary,
+  Icon,
   Menu,
   MenuItem,
+  NonIdealState,
+  SplitPanelContainer,
+  TextInputContainer,
+  Tooltip,
+  colorAccentWhite,
+  colorBackgroundDefault,
+  colorBackgroundGray,
+  colorKeylineDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -19,7 +22,6 @@ import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -29,7 +31,8 @@ import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useStartTrace} from '../performance';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -45,24 +48,22 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {AssetEdges} from './AssetEdges';
 import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
-import {AssetGroupNode} from './AssetGroupNode';
-import {AssetNode, AssetNodeMinimal, AssetNodeContextMenuWrapper} from './AssetNode';
+import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {ExpandedGroupNode} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {TryTheFeatureFlagNotice} from './TryTheFeatureFlagNotice';
 import {
   GraphData,
-  graphHasCycles,
   GraphNode,
-  isGroupId,
+  graphHasCycles,
   groupIdForNode,
+  isGroupId,
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
-import {AssetGraphLayout, AssetLayoutEdge, GroupLayout} from './layout';
+import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -89,6 +90,8 @@ type Props = {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  isGlobalGraph?: boolean;
+  trace?: ReturnType<typeof useStartTrace>;
 } & OptionalFilters;
 
 export const MINIMAL_SCALE = 0.6;
@@ -115,6 +118,8 @@ export const AssetGraphExplorer = (props: Props) => {
     );
   }, [visibleRepos]);
 
+  const {explorerPath, onChangeExplorerPath} = props;
+
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
@@ -135,6 +140,16 @@ export const AssetGraphExplorer = (props: Props) => {
         }),
       [props],
     ),
+    explorerPath: explorerPath.opsQuery,
+    clearExplorerPath: React.useCallback(() => {
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opsQuery: '',
+        },
+        'push',
+      );
+    }, [explorerPath, onChangeExplorerPath]),
   });
 
   return (
@@ -180,6 +195,8 @@ type WithDataProps = Props & {
 
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
+  isGlobalGraph?: boolean;
+  trace?: ReturnType<typeof useStartTrace>;
 };
 
 const AssetGraphExplorerWithData = ({
@@ -197,11 +214,11 @@ const AssetGraphExplorerWithData = ({
   filterBar,
   filters,
   setFilters,
+  isGlobalGraph = false,
+  trace,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
-  const {flagDAGSidebar} = useFeatureFlags();
-
-  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+  const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
 
   const {allGroups, allGroupCounts, groupedAssets} = React.useMemo(() => {
     const groupedAssets: Record<string, GraphNode[]> = {};
@@ -215,16 +232,22 @@ const AssetGraphExplorerWithData = ({
     return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
 
-  const [expandedGroups, setExpandedGroups] = useQueryPersistedState<string[]>({
+  const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
+    localStorageKey: `asset-graph-open-graph-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
     decode: (qs) => (qs.expanded || '').split(',').filter(Boolean),
+    isEmptyState: (val) => val.length === 0,
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
-  const {layout, loading, async} = useAssetLayout(
-    assetGraphData,
-    flagDAGSidebar ? expandedGroups : allGroups,
-  );
+  const {layout, loading, async} = useAssetLayout(assetGraphData, expandedGroups);
+
+  React.useEffect(() => {
+    if (!loading) {
+      trace?.endTrace();
+    }
+  }, [loading, trace]);
+
   const viewportEl = React.useRef<SVGViewport>();
 
   const selectedTokens = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
@@ -375,6 +398,28 @@ const AssetGraphExplorerWithData = ({
     selectNodeById(e, nextId);
   };
 
+  const toggleSelectAllGroupNodesById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+      const assets = groupedAssets[groupId] || [];
+      const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
+
+      const existing = explorerPath.opNames[0]!.split(',');
+
+      const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
+        ? uniq(without(existing, ...childNodeTokens)).join(',')
+        : uniq([...existing, ...childNodeTokens]).join(',');
+
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opNames: [nextOpsNameSelection],
+        },
+        'replace',
+      );
+    },
+    [groupedAssets, explorerPath, onChangeExplorerPath],
+  );
+
   const selectNodeById = React.useCallback(
     (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
       if (!nodeId) {
@@ -382,6 +427,11 @@ const AssetGraphExplorerWithData = ({
       }
       if (isGroupId(nodeId)) {
         zoomToGroup(nodeId);
+
+        if (e.metaKey) {
+          toggleSelectAllGroupNodesById(e, nodeId);
+        }
+
         return;
       }
       const node = assetGraphData.nodes[nodeId];
@@ -398,15 +448,20 @@ const AssetGraphExplorerWithData = ({
         setExpandedGroups([...expandedGroups, groupIdForNode(node)]);
       }
     },
-    [assetGraphData.nodes, layout, onSelectNode, zoomToGroup, expandedGroups, setExpandedGroups],
+    [
+      assetGraphData.nodes,
+      onSelectNode,
+      layout,
+      zoomToGroup,
+      toggleSelectAllGroupNodesById,
+      setExpandedGroups,
+      expandedGroups,
+    ],
   );
 
-  const allowGroupsOnlyZoomLevel =
-    !flagDAGSidebar && !!(layout && Object.keys(layout.groups).length);
+  const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
 
-  const [showSidebar, setShowSidebar] = React.useState(true);
-
-  const toggleGroupsButton = flagDAGSidebar && allGroups.length > 1 && (
+  const toggleGroupsButton = allGroups.length > 1 && (
     <ShortcutHandler
       key="toggle-groups"
       shortcutLabel="⌥E"
@@ -414,17 +469,35 @@ const AssetGraphExplorerWithData = ({
       shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
     >
       {expandedGroups.length === 0 ? (
-        <Button
-          title="Expand all groups"
-          icon={<Icon name="unfold_more" />}
-          onClick={() => setExpandedGroups(allGroups)}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Expand all groups"
+            icon={<Icon name="unfold_more" />}
+            onClick={() => setExpandedGroups(allGroups)}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       ) : (
-        <Button
-          title="Collapse all groups"
-          icon={<Icon name="unfold_less" />}
-          onClick={() => setExpandedGroups([])}
-        />
+        <Tooltip
+          content={
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+            </Box>
+          }
+        >
+          <Button
+            title="Collapse all groups"
+            icon={<Icon name="unfold_less" />}
+            onClick={() => setExpandedGroups([])}
+            style={{background: colorBackgroundDefault()}}
+          />
+        </Tooltip>
       )}
     </ShortcutHandler>
   );
@@ -448,11 +521,11 @@ const AssetGraphExplorerWithData = ({
   const svgViewport = layout ? (
     <SVGViewport
       ref={(r) => (viewportEl.current = r || undefined)}
-      defaultZoom={flagDAGSidebar ? 'zoom-to-fit-width' : 'zoom-to-fit'}
+      defaultZoom="zoom-to-fit-width"
       interactor={SVGViewport.Interactors.PanAndZoom}
       graphWidth={layout.width}
       graphHeight={layout.height}
-      graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel || flagDAGSidebar}
+      graphHasNoMinimumZoom={false}
       additionalToolbarElements={toggleGroupsButton}
       onClick={onClickBackground}
       onArrowKeyDown={onArrowKeyDown}
@@ -465,58 +538,59 @@ const AssetGraphExplorerWithData = ({
     >
       {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
-          {flagDAGSidebar &&
-            Object.values(layout.groups)
-              .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-              .filter((group) => group.expanded)
-              .sort((a, b) => a.id.length - b.id.length)
-              .map((group) => (
-                <foreignObject
-                  key={group.id}
-                  {...group.bounds}
-                  className="group"
-                  onDoubleClick={(e) => {
-                    zoomToGroup(group.id);
-                    e.stopPropagation();
-                  }}
-                >
-                  <ExpandedGroupNode
-                    preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={() => onFilterToGroup(group)}
-                    group={{
-                      ...group,
-                      assets: groupedAssets[group.id] || [],
-                    }}
-                    minimal={scale < MINIMAL_SCALE}
-                    onCollapse={() => {
-                      focusGroupIdAfterLayoutRef.current = group.id;
-                      setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
-                    }}
-                  />
-                </foreignObject>
-              ))}
-
-          <AssetEdges
-            viewportRect={viewportRect}
-            selected={selectedGraphNodes.map((n) => n.id)}
-            highlighted={highlighted}
-            edges={
-              flagDAGSidebar
-                ? layout.edges
-                : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
-            }
-            strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-          />
-
           {Object.values(layout.groups)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-            .filter((group) => !flagDAGSidebar || !group.expanded)
+            .filter((group) => group.expanded)
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject
                 key={group.id}
                 {...group.bounds}
                 className="group"
+                onDoubleClick={(e) => {
+                  zoomToGroup(group.id);
+                  e.stopPropagation();
+                }}
+              >
+                <ExpandedGroupNode
+                  setHighlighted={setHighlighted}
+                  preferredJobName={explorerPath.pipelineName}
+                  onFilterToGroup={() => onFilterToGroup(group)}
+                  group={{
+                    ...group,
+                    assets: groupedAssets[group.id] || [],
+                  }}
+                  minimal={scale < MINIMAL_SCALE}
+                  onCollapse={() => {
+                    focusGroupIdAfterLayoutRef.current = group.id;
+                    setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
+                  }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
+                  }}
+                />
+              </foreignObject>
+            ))}
+
+          <AssetEdges
+            viewportRect={viewportRect}
+            selected={selectedGraphNodes.map((n) => n.id)}
+            highlighted={highlighted}
+            edges={layout.edges}
+            strokeWidth={4}
+          />
+
+          {Object.values(layout.groups)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .filter((group) => !group.expanded)
+            .sort((a, b) => a.id.length - b.id.length)
+            .map((group) => (
+              <foreignObject
+                key={group.id}
+                {...group.bounds}
+                className="group"
+                onMouseEnter={() => setHighlighted([group.id])}
+                onMouseLeave={() => setHighlighted(null)}
                 onDoubleClick={(e) => {
                   if (!viewportEl.current) {
                     return;
@@ -529,24 +603,23 @@ const AssetGraphExplorerWithData = ({
                   e.stopPropagation();
                 }}
               >
-                {flagDAGSidebar ? (
-                  <CollapsedGroupNode
-                    preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={() => onFilterToGroup(group)}
-                    minimal={scale < MINIMAL_SCALE}
-                    group={{
-                      ...group,
-                      assetCount: allGroupCounts[group.id] || 0,
-                      assets: groupedAssets[group.id] || [],
-                    }}
-                    onExpand={() => {
-                      focusGroupIdAfterLayoutRef.current = group.id;
-                      setExpandedGroups([...expandedGroups, group.id]);
-                    }}
-                  />
-                ) : (
-                  <AssetGroupNode group={group} scale={scale} />
-                )}
+                <CollapsedGroupNode
+                  preferredJobName={explorerPath.pipelineName}
+                  onFilterToGroup={() => onFilterToGroup(group)}
+                  minimal={scale < MINIMAL_SCALE}
+                  group={{
+                    ...group,
+                    assetCount: allGroupCounts[group.id] || 0,
+                    assets: groupedAssets[group.id] || [],
+                  }}
+                  onExpand={() => {
+                    focusGroupIdAfterLayoutRef.current = group.id;
+                    setExpandedGroups([...expandedGroups, group.id]);
+                  }}
+                  toggleSelectAllNodes={(e: React.MouseEvent) => {
+                    toggleSelectAllGroupNodesById(e, group.id);
+                  }}
+                />
               </foreignObject>
             ))}
 
@@ -555,7 +628,7 @@ const AssetGraphExplorerWithData = ({
             .map(({id, bounds}) => {
               const graphNode = assetGraphData.nodes[id]!;
               const path = JSON.parse(id);
-              if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+              if (scale < GROUPS_ONLY_SCALE) {
                 return;
               }
               if (bounds.width === 1) {
@@ -573,7 +646,7 @@ const AssetGraphExplorerWithData = ({
                 <foreignObject
                   {...bounds}
                   key={id}
-                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
                   onClick={(e) => onSelectNode(e, {path}, graphNode)}
                   onDoubleClick={(e) => {
@@ -616,7 +689,6 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       first={
         <ErrorBoundary region="graph">
-          {!flagDAGSidebar ? <TryTheFeatureFlagNotice /> : undefined}
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
@@ -632,7 +704,11 @@ const AssetGraphExplorerWithData = ({
                 <Menu>
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
-                      text="Collapse all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Collapse all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_less" />}
                       onClick={() => {
                         setExpandedGroups([]);
@@ -641,7 +717,11 @@ const AssetGraphExplorerWithData = ({
                   )}
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
-                      text="Expand all groups"
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                        </Box>
+                      }
                       icon={<Icon name="unfold_more" />}
                       onClick={() => {
                         setExpandedGroups(allGroups);
@@ -681,9 +761,9 @@ const AssetGraphExplorerWithData = ({
               <Box
                 border={filterBar ? 'bottom' : undefined}
                 flex={{gap: 12, alignItems: 'center'}}
-                padding={{left: showSidebar || !flagDAGSidebar ? 12 : 24, vertical: 12, right: 12}}
+                padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
               >
-                {showSidebar || !flagDAGSidebar ? undefined : (
+                {showSidebar ? undefined : (
                   <Tooltip content="Show sidebar">
                     <Button
                       icon={<Icon name="panel_show_left" />}
@@ -706,13 +786,6 @@ const AssetGraphExplorerWithData = ({
                     popoverPosition="bottom-left"
                   />
                 </GraphQueryInputFlexWrap>
-                <Button
-                  onClick={() => {
-                    onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
-                  }}
-                >
-                  Clear query
-                </Button>
                 <AssetLiveDataRefresh />
                 <LaunchAssetObservationButton
                   preferredJobName={explorerPath.pipelineName}
@@ -729,7 +802,6 @@ const AssetGraphExplorerWithData = ({
                       ? {selected: selectedDefinitions}
                       : {all: allDefinitionsForMaterialize}
                   }
-                  showChangedAndMissingOption
                 />
               </Box>
               {filterBar}
@@ -759,7 +831,7 @@ const AssetGraphExplorerWithData = ({
     />
   );
 
-  if (showSidebar && flagDAGSidebar) {
+  if (showSidebar) {
     return (
       <SplitPanelContainer
         key="explorer-wrapper"
@@ -769,6 +841,7 @@ const AssetGraphExplorerWithData = ({
         first={
           showSidebar ? (
             <AssetGraphExplorerSidebar
+              isGlobalGraph={isGlobalGraph}
               allAssetKeys={allAssetKeys}
               assetGraphData={assetGraphData}
               fullAssetGraphData={fullAssetGraphData}
@@ -790,6 +863,21 @@ const AssetGraphExplorerWithData = ({
   }
   return explorer;
 };
+
+interface KeyboardTagProps {
+  $withinTooltip?: boolean;
+}
+
+const KeyboardTag = styled.div<KeyboardTagProps>`
+  ${(props) => {
+    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+  }};
+  background: ${colorBackgroundGray()};
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  font-size: 12px;
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;
@@ -825,24 +913,3 @@ const GraphQueryInputFlexWrap = styled.div`
     }
   }
 `;
-
-function filterEdges(
-  edges: AssetLayoutEdge[],
-  allowGroupsOnlyZoomLevel: boolean,
-  scale: number,
-  graphData: GraphData,
-) {
-  if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
-    return edges.filter((e) => {
-      const fromAsset = graphData.nodes[e.fromId];
-      const toAsset = graphData.nodes[e.toId];
-      // If the assets are in the same asset group then filter out the edge
-      return (
-        fromAsset?.definition.groupName !== toAsset?.definition.groupName ||
-        fromAsset?.definition.repository.id !== toAsset?.definition.repository.id ||
-        fromAsset?.definition.repository.location.id !== toAsset?.definition.repository.location.id
-      );
-    });
-  }
-  return edges;
-}

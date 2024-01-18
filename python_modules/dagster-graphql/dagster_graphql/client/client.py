@@ -211,7 +211,7 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # a PipelineNotFoundError, a RunConflict, or a PythonError
+            # a PipelineNotFoundError, a RunConflict, an UnauthorizedError or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     @public

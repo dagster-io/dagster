@@ -49,7 +49,9 @@ export const StyledButton = styled.button<StyledButtonProps>`
     text-decoration: none;
   }
 
-  :focus {
+  :focus,
+  :focus-visible,
+  :focus:hover:not(:disabled) {
     box-shadow: ${colorFocusRing()} 0 0 0 2px;
     outline: none;
   }

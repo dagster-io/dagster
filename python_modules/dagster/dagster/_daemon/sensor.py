@@ -3,7 +3,7 @@ import sys
 import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import AbstractContextManager, ExitStack
+from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -32,7 +32,10 @@ from dagster._core.definitions.run_request import (
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorType,
+)
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation.code_location import CodeLocation
@@ -51,7 +54,6 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
@@ -207,6 +209,7 @@ class SensorLaunchContext(AbstractContextManager):
                         cursor=cursor,
                         last_tick_start_timestamp=marked_timestamp,
                         last_sensor_start_timestamp=last_sensor_start_timestamp,
+                        sensor_type=self._external_sensor.sensor_type,
                     )
                 )
             )
@@ -249,6 +252,8 @@ def execute_sensor_iteration_loop(
     logger: logging.Logger,
     shutdown_event: threading.Event,
     until: Optional[float] = None,
+    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> TDaemonGenerator:
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -257,67 +262,47 @@ def execute_sensor_iteration_loop(
     """
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
-    submit_threadpool_executor = None
-    threadpool_executor = None
-    with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_sensor_settings()
-        if settings.get("use_threads"):
-            threadpool_executor = stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=settings.get("num_workers"),
-                    thread_name_prefix="sensor_daemon_worker",
-                )
-            )
-            num_submit_workers = settings.get("num_submit_workers")
-            if num_submit_workers:
-                submit_threadpool_executor = stack.enter_context(
-                    InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_submit_workers"),
-                        thread_name_prefix="sensor_submit_worker",
-                    )
-                )
+    last_verbose_time = None
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if until and start_time >= until:
+            # provide a way of organically ending the loop to support test environment
+            break
 
-        last_verbose_time = None
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            if until and start_time >= until:
-                # provide a way of organically ending the loop to support test environment
-                break
+        # occasionally enable verbose logging (doing it always would be too much)
+        verbose_logs_iteration = (
+            last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+        )
+        yield from execute_sensor_iteration(
+            workspace_process_context,
+            logger,
+            threadpool_executor=threadpool_executor,
+            submit_threadpool_executor=submit_threadpool_executor,
+            sensor_tick_futures=sensor_tick_futures,
+            sensor_state_lock=sensor_state_lock,
+            log_verbose_checks=verbose_logs_iteration,
+        )
+        # Yield to check for heartbeats in case there were no yields within
+        # execute_sensor_iteration
+        yield None
 
-            # occasionally enable verbose logging (doing it always would be too much)
-            verbose_logs_iteration = (
-                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-            )
-            yield from execute_sensor_iteration(
-                workspace_process_context,
-                logger,
-                threadpool_executor=threadpool_executor,
-                submit_threadpool_executor=submit_threadpool_executor,
-                sensor_tick_futures=sensor_tick_futures,
-                sensor_state_lock=sensor_state_lock,
-                log_verbose_checks=verbose_logs_iteration,
-            )
-            # Yield to check for heartbeats in case there were no yields within
-            # execute_sensor_iteration
-            yield None
+        end_time = pendulum.now("UTC").timestamp()
 
-            end_time = pendulum.now("UTC").timestamp()
+        if verbose_logs_iteration:
+            last_verbose_time = end_time
 
-            if verbose_logs_iteration:
-                last_verbose_time = end_time
+        loop_duration = end_time - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        shutdown_event.wait(sleep_time)
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            shutdown_event.wait(sleep_time)
-
-            yield None
+        yield None
 
 
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
@@ -338,6 +323,10 @@ def execute_sensor_iteration(
     all_sensor_states = {
         sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+        if (
+            not sensor_state.instigator_data
+            or sensor_state.instigator_data.sensor_type != SensorType.AUTOMATION_POLICY
+        )
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
@@ -348,6 +337,9 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
+                    if sensor.sensor_type == SensorType.AUTOMATION_POLICY:
+                        continue
+
                     selector_id = sensor.selector_id
                     if sensor.get_current_instigator_state(
                         all_sensor_states.get(selector_id)
@@ -413,14 +405,15 @@ def execute_sensor_iteration(
             sensor_state = InstigatorState(
                 external_sensor.get_external_origin(),
                 InstigatorType.SENSOR,
-                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
                 SensorInstigatorData(
                     min_interval=external_sensor.min_interval_seconds,
                     last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    sensor_type=external_sensor.sensor_type,
                 ),
             )
             instance.add_instigator_state(sensor_state)
-        elif _is_under_min_interval(sensor_state, external_sensor):
+        elif is_under_min_interval(sensor_state, external_sensor):
             continue
 
         if threadpool_executor:
@@ -511,11 +504,11 @@ def _process_tick_generator(
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
         )
-        if _is_under_min_interval(sensor_state, external_sensor):
+        if is_under_min_interval(sensor_state, external_sensor):
             # check the since we might have been queued before processing
             return
         else:
-            _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
+            mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
 
     try:
         tick = instance.create_tick(
@@ -561,7 +554,7 @@ def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigator
         check.failed(f"Expected SensorInstigatorData, got {instigator_data}")
 
 
-def _mark_sensor_state_for_tick(
+def mark_sensor_state_for_tick(
     instance: DagsterInstance,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
@@ -578,6 +571,7 @@ def _mark_sensor_state_for_tick(
                 min_interval=external_sensor.min_interval_seconds,
                 cursor=instigator_data.cursor if instigator_data else None,
                 last_tick_start_timestamp=now.timestamp(),
+                sensor_type=external_sensor.sensor_type,
             )
         )
     )
@@ -933,7 +927,7 @@ def _handle_run_requests(
     yield
 
 
-def _is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
+def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
     instigator_data = _sensor_instigator_data(state)
     if not instigator_data:
         return False
@@ -1093,4 +1087,5 @@ def _create_sensor_run(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
         asset_check_selection=None,
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )

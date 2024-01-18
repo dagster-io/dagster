@@ -51,11 +51,21 @@ spec:
             - name: dagster-instance
               mountPath: "{{ .Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
+            {{- if .Values.dagsterWebserver.volumeMounts }}
+            {{- range $volumeMount := .Values.dagsterWebserver.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+            {{- end }}
+            {{- end }}
           resources: {{ $_.Values.dagsterWebserver.resources | toYaml | nindent 12 }}
       volumes:
         - name: dagster-instance
           configMap:
             name: {{ template "dagster.fullname" . }}-instance
+        {{- if .Values.dagsterWebserver.volumes }}
+        {{- range $volume := .Values.dagsterWebserver.volumes }}
+        - {{- $volume | toYaml | nindent 10 }}
+        {{- end }}
+        {{- end }}
       nodeSelector: {{ $_.Values.dagsterWebserver.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $_.Values.dagsterWebserver.affinity | toYaml | nindent 8 }}
       tolerations: {{ $_.Values.dagsterWebserver.tolerations | toYaml | nindent 8 }}

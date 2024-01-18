@@ -16,6 +16,7 @@ import Zoom from 'react-medium-image-zoom';
 
 import Icons from '../Icons';
 import Link from '../Link';
+import {Note, Warning} from '../markdoc/Callouts';
 
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
@@ -31,6 +32,8 @@ import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEn
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
 import DagsterDevTabs from './includes/dagster/DagsterDevTabs.mdx';
 import DagsterVersion from './includes/dagster/DagsterVersion.mdx';
+import RawComputeLogs from './includes/dagster/concepts/logging/RawComputeLogs.mdx';
+import StructuredEventLogs from './includes/dagster/concepts/logging/StructuredEventLogs.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
@@ -257,57 +260,6 @@ const LinkGridItem = ({title, href, children, tags = []}) => {
       </div>
     </div>
   );
-};
-
-const ADMONITION_STYLES = {
-  note: {
-    colors: {
-      bg: 'primary-100',
-      borderIcon: 'primary-500',
-      text: 'gray-900',
-    },
-    icon: Icons.About,
-  },
-  warning: {
-    colors: {bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'},
-    icon: Icons.About,
-  },
-};
-
-//////////////////////
-//    CALLOUTS      //
-//////////////////////
-
-const Admonition = ({style, children}) => {
-  const {colors, icon} = ADMONITION_STYLES[style];
-  return (
-    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <svg
-            className={`h-5 w-5 text-${colors.borderIcon}`}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 25 25"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            {icon && icon}
-          </svg>
-        </div>
-        <div className="ml-3">
-          <p className={`text-sm text-${colors.text}`}>{children}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Note = ({children}) => {
-  return <Admonition style="note">{children}</Admonition>;
-};
-
-const Warning = ({children}) => {
-  return <Admonition style="warning">{children}</Admonition>;
 };
 
 //////////////////////
@@ -850,6 +802,8 @@ export default {
   ReferenceTableItem,
   DagsterVersion,
   DagsterDevTabs,
+  StructuredEventLogs,
+  RawComputeLogs,
   AddGitlabVariable,
   AddGitubRepositorySecret,
   GenerateAgentToken,

@@ -15,7 +15,8 @@
       },
       {
         "title": "Installation",
-        "path": "/getting-started/install"
+        "path": "/getting-started/install",
+        "nonMdx": true
       },
       {
         "title": "Creating a new project",
@@ -194,6 +195,10 @@
       {
         "title": "Logging",
         "children": [
+          {
+            "title": "Overview",
+            "path": "/concepts/logging"
+          },
           {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"

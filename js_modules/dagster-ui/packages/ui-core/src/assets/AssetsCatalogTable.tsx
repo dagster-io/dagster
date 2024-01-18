@@ -9,6 +9,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStartTrace} from '../performance';
 import {LoadingSpinner} from '../ui/Loading';
 
 import {
@@ -76,12 +77,14 @@ interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
+  trace?: ReturnType<typeof useStartTrace>;
 }
 
 export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
+  trace,
 }: AssetCatalogTableProps) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
@@ -115,6 +118,13 @@ export const AssetsCatalogTable = ({
       : buildNamespaceProps(filtered, prefixPath);
 
   const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
+
+  const loaded = !!assets;
+  React.useEffect(() => {
+    if (loaded) {
+      trace?.endTrace();
+    }
+  }, [loaded, trace]);
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {

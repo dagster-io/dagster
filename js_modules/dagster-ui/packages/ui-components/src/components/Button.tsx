@@ -261,6 +261,11 @@ export const JoinedButtons = styled.div`
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
+
+  ${StyledButton}:focus-visible {
+    z-index: 1;
+    position: relative;
+  }
 `;
 
 export const ExternalAnchorButton = React.forwardRef(

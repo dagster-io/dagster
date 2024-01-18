@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 
@@ -12,7 +12,6 @@ from .events import (
 from .metadata import MetadataUserInput
 
 
-@experimental
 class MaterializeResult(
     NamedTuple(
         "_MaterializeResult",

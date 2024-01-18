@@ -26,6 +26,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -121,33 +122,34 @@ class DbIOManager(IOManager):
             self._default_load_type = default_load_type
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
+        # If the output type is set to Nothing, handle_output will not be
+        # called. We still need to raise an error when the return value
+        # is None, but the typing type is not Nothing
+        if obj is None:
+            raise DagsterInvariantViolationError(
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the output"
+                " type to None by adding return type annotation '-> None'.",
+            )
+
+        obj_type = type(obj)
+        self._check_supported_type(obj_type)
+
         table_slice = self._get_table_slice(context, context)
 
-        if obj is not None:
-            obj_type = type(obj)
-            self._check_supported_type(obj_type)
+        with self._db_client.connect(context, table_slice) as conn:
+            self._db_client.ensure_schema_exists(context, table_slice, conn)
+            self._db_client.delete_table_slice(context, table_slice, conn)
 
-            with self._db_client.connect(context, table_slice) as conn:
-                self._db_client.ensure_schema_exists(context, table_slice, conn)
-                self._db_client.delete_table_slice(context, table_slice, conn)
-
-                handler_metadata = self._handlers_by_type[obj_type].handle_output(
-                    context, table_slice, obj, conn
-                )
-
-            context.add_output_metadata(
-                {
-                    **(handler_metadata or {}),
-                    "Query": self._db_client.get_select_statement(table_slice),
-                }
+            handler_metadata = self._handlers_by_type[obj_type].handle_output(
+                context, table_slice, obj, conn
             )
 
-        else:
-            check.invariant(
-                context.dagster_type.is_nothing,
-                "Unexpected 'None' output value. If a 'None' value is intentional, set the"
-                " output type to None.",
-            )
+        context.add_output_metadata(
+            {
+                **(handler_metadata or {}),
+                "Query": self._db_client.get_select_statement(table_slice),
+            }
+        )
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type

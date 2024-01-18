@@ -2,8 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._annotations import PublicAttr
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -46,7 +45,6 @@ class AssetExecutionType(Enum):
         )
 
 
-@experimental
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -100,27 +98,15 @@ class AssetSpec(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
-        from dagster._core.definitions.asset_dep import AssetDep
+        from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
-        dep_set = {}
-        if deps:
-            for dep in deps:
-                asset_dep = AssetDep.from_coercible(dep)
-
-                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-                # for existing keys.
-                if asset_dep.asset_key in dep_set.keys():
-                    raise DagsterInvariantViolationError(
-                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetSpec {key}"
-                    )
-                dep_set[asset_dep.asset_key] = asset_dep
+        key = AssetKey.from_coercible(key)
+        asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
 
         return super().__new__(
             cls,
-            key=AssetKey.from_coercible(key),
-            deps=list(dep_set.values()),
+            key=key,
+            deps=asset_deps,
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             skippable=check.bool_param(skippable, "skippable"),

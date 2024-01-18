@@ -14,6 +14,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     AssetSelection,
+    AutoMaterializePolicy,
     CodeLocationSelector,
     DagsterRunStatus,
     DailyPartitionsDefinition,
@@ -37,6 +38,9 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
@@ -47,10 +51,15 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RunRequest,
     SensorEvaluationContext,
+    SensorType,
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.host_representation import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+    ExternalSensor,
+)
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -61,6 +70,7 @@ from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorStatus,
+    SensorInstigatorData,
     TickStatus,
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
@@ -695,6 +705,17 @@ def partitioned_pipeline_success_sensor(_context):
     assert _context.partition_key == "2022-08-01"
 
 
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+def auto_materialize_asset():
+    pass
+
+
+automation_policy_sensor = AutomationPolicySensorDefinition(
+    "my_automation_policy_sensor",
+    asset_selection=[auto_materialize_asset],
+)
+
+
 @repository
 def the_repo():
     return [
@@ -758,6 +779,7 @@ def the_repo():
         success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         multipartitions_with_static_time_dimensions_run_requests_sensor,
+        automation_policy_sensor,
     ]
 
 
@@ -983,6 +1005,33 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
 
         if len(not_finished_runs) == 0:
             break
+
+
+def test_ignore_automation_policy_sensor(instance, workspace_context, external_repo, executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("my_automation_policy_sensor")
+        assert external_sensor
+        instance.add_instigator_state(
+            InstigatorState(
+                external_sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+                instigator_data=SensorInstigatorData(
+                    sensor_type=SensorType.AUTOMATION_POLICY,
+                ),
+            )
+        )
+        evaluate_sensors(workspace_context, executor)
+        # No ticks because of the sensor type
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 0
 
 
 def test_simple_sensor(instance, workspace_context, external_repo, executor):
@@ -1224,6 +1273,7 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         state = instance.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
+        assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
@@ -2575,7 +2625,7 @@ def test_status_in_code_sensor(executor, instance):
             instigator_state = instance.get_instigator_state(
                 always_running_origin.get_id(), running_sensor.selector_id
             )
-            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+            assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
@@ -2598,6 +2648,40 @@ def test_status_in_code_sensor(executor, instance):
                 == 0
             )
 
+            # The instigator state status can be manually updated, as well as reset.
+            instance.stop_sensor(
+                always_running_origin.get_id(), running_sensor.selector_id, running_sensor
+            )
+            stopped_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert stopped_instigator_state
+            assert stopped_instigator_state.status == InstigatorStatus.STOPPED
+
+            instance.reset_sensor(running_sensor)
+            reset_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_sensor.selector_id
+            )
+
+            assert reset_instigator_state
+            assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
+            running_to_not_running_sensor = ExternalSensor(
+                external_sensor_data=running_sensor._external_sensor_data._replace(  # noqa: SLF001
+                    default_status=DefaultSensorStatus.STOPPED
+                ),
+                handle=running_sensor.handle.repository_handle,
+            )
+            current_state = running_to_not_running_sensor.get_current_instigator_state(
+                stored_state=reset_instigator_state
+            )
+
+            assert current_state.status == InstigatorStatus.STOPPED
+            assert current_state.instigator_data == reset_instigator_state.instigator_data
+
+            evaluate_sensors(workspace_context, executor)
+
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum.test(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
@@ -2608,7 +2692,7 @@ def test_status_in_code_sensor(executor, instance):
             ticks = instance.get_ticks(
                 running_sensor.get_external_origin_id(), running_sensor.selector_id
             )
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
             expected_datetime = create_pendulum_time(
                 year=2019, month=2, day=28, hour=0, minute=0, second=29
@@ -3234,6 +3318,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
                 workspace_context,
                 get_default_daemon_logger("SensorDaemon"),
                 threadpool_executor=executor,
+                submit_threadpool_executor=None,
                 sensor_tick_futures=futures,
             )
         )

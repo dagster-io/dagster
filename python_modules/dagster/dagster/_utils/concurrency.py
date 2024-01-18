@@ -1,8 +1,13 @@
+import os
 from datetime import datetime
 from enum import Enum
 from typing import List, NamedTuple, Optional, Set
 
 from dagster import _check as check
+
+
+def get_max_concurrency_limit_value() -> int:
+    return int(os.getenv("DAGSTER_MAX_GLOBAL_OP_CONCURRENCY_LIMIT", "1000"))
 
 
 class ConcurrencySlotStatus(Enum):

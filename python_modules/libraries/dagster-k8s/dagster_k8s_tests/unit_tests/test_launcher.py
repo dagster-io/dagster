@@ -1,6 +1,7 @@
 import json
 from unittest import mock
 
+import pytest
 from dagster import DagsterRunStatus, job, reconstructable
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
@@ -52,6 +53,8 @@ def test_launcher_from_config(kubeconfig_file):
         assert run_launcher.fail_pod_on_run_failure is None
         assert run_launcher.resources == resources
         assert run_launcher.scheduler_name is None
+        assert run_launcher.only_allow_user_defined_k8s_config_fields is None
+        assert run_launcher.only_allow_user_defined_env_vars is None
 
     with instance_for_test(
         overrides={
@@ -65,6 +68,50 @@ def test_launcher_from_config(kubeconfig_file):
         run_launcher = instance.run_launcher
         assert isinstance(run_launcher, K8sRunLauncher)
         assert run_launcher.fail_pod_on_run_failure
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": merge_dicts(
+                    default_config,
+                    {
+                        "only_allow_user_defined_k8s_config_fields": {},
+                        "only_allow_user_defined_env_vars": [],
+                    },
+                ),
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, K8sRunLauncher)
+        assert run_launcher.only_allow_user_defined_k8s_config_fields == {}
+        assert run_launcher.only_allow_user_defined_env_vars == []
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": merge_dicts(
+                    default_config,
+                    {
+                        "only_allow_user_defined_k8s_config_fields": {
+                            "pod_spec_config": {"image_pull_secrets": True}
+                        },
+                        "only_allow_user_defined_env_vars": ["FOO_ENV_VAR"],
+                    },
+                ),
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, K8sRunLauncher)
+        assert run_launcher.only_allow_user_defined_k8s_config_fields == {
+            "pod_spec_config": {"image_pull_secrets": True}
+        }
+        assert run_launcher.only_allow_user_defined_env_vars == ["FOO_ENV_VAR"]
 
 
 def test_launcher_with_container_context(kubeconfig_file):
@@ -89,7 +136,7 @@ def test_launcher_with_container_context(kubeconfig_file):
 
     container_context_config = {
         "k8s": {
-            "env_vars": ["BAR_TEST=bar"],
+            "env_vars": ["BAR_TEST=bar", "BAZ_TEST=baz"],
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
                 "requests": {"memory": "32Mi", "cpu": "125m"},
@@ -139,39 +186,94 @@ def test_launcher_with_container_context(kubeconfig_file):
             updated_run = instance.get_run_by_id(run.run_id)
             assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"
 
-        # Check that user defined k8s config was passed down to the k8s job.
-        mock_method_calls = mock_k8s_client_batch_api.method_calls
-        assert len(mock_method_calls) > 0
-        method_name, _args, kwargs = mock_method_calls[0]
-        assert method_name == "create_namespaced_job"
+            # Check that user defined k8s config was passed down to the k8s job.
+            mock_method_calls = mock_k8s_client_batch_api.method_calls
+            assert len(mock_method_calls) > 0
+            method_name, _args, kwargs = mock_method_calls[-1]
+            assert method_name == "create_namespaced_job"
 
-        container = kwargs["body"].spec.template.spec.containers[0]
+            container = kwargs["body"].spec.template.spec.containers[0]
 
-        resources = container.resources.to_dict()
-        resources.pop("claims", None)
-        assert resources == {
-            "limits": {"memory": "64Mi", "cpu": "250m"},
-            "requests": {"memory": "32Mi", "cpu": "125m"},
-        }
-        assert container.security_context.capabilities.add == ["SYS_PTRACE"]
+            resources = container.resources.to_dict()
+            resources.pop("claims", None)
+            assert resources == {
+                "limits": {"memory": "64Mi", "cpu": "250m"},
+                "requests": {"memory": "32Mi", "cpu": "125m"},
+            }
+            assert container.security_context.capabilities.add == ["SYS_PTRACE"]
 
-        assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
+            assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 
-        env_names = [env.name for env in container.env]
+            env_names = [env.name for env in container.env]
 
-        assert "BAR_TEST" in env_names
-        assert "FOO_TEST" in env_names
+            assert "BAR_TEST" in env_names
+            assert "BAZ_TEST" in env_names
+            assert "FOO_TEST" in env_names
 
-        args = container.args
-        assert (
-            args
-            == ExecuteRunArgs(
-                job_origin=run.job_code_origin,
-                run_id=run.run_id,
-                instance_ref=instance.get_ref(),
-                set_exit_code_on_failure=None,
-            ).get_command_args()
-        )
+            args = container.args
+            assert (
+                args
+                == ExecuteRunArgs(
+                    job_origin=run.job_code_origin,
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                    set_exit_code_on_failure=None,
+                ).get_command_args()
+            )
+
+            k8s_run_launcher._only_allow_user_defined_k8s_config_fields = {}  # noqa
+            with pytest.raises(
+                Exception,
+                match="Attempted to create a pod with fields that violated the allowed list",
+            ):
+                k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            k8s_run_launcher._only_allow_user_defined_k8s_config_fields = {  # noqa
+                "container_config": {
+                    "resources": True,
+                    "security_context": True,
+                    "env": True,
+                },
+                "pod_spec_config": {"scheduler_name": True},
+            }
+            k8s_run_launcher._only_allow_user_defined_env_vars = ["BAR_TEST"]  # noqa
+
+            run = create_run_for_test(
+                instance,
+                job_name=job_name,
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=python_origin,
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+            mock_method_calls = mock_k8s_client_batch_api.method_calls
+            method_name, _args, kwargs = mock_method_calls[-1]
+            assert method_name == "create_namespaced_job"
+
+            container = kwargs["body"].spec.template.spec.containers[0]
+            env_names = [env.name for env in container.env]
+
+            assert "BAR_TEST" in env_names
+            assert "FOO_TEST" in env_names  # instance-level env vars still set
+            assert "BAZ_TEST" not in env_names  # excluded by only_allow_user_defined_env_vars
+
+            k8s_run_launcher._only_allow_user_defined_env_vars = []  # noqa
+            run = create_run_for_test(
+                instance,
+                job_name=job_name,
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=python_origin,
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+            mock_method_calls = mock_k8s_client_batch_api.method_calls
+            method_name, _args, kwargs = mock_method_calls[-1]
+            assert method_name == "create_namespaced_job"
+
+            container = kwargs["body"].spec.template.spec.containers[0]
+            env_names = [env.name for env in container.env]
+
+            assert "FOO_TEST" in env_names
+            assert "BAR_TEST" not in env_names  # all user-defined env vars excluded
+            assert "BAZ_TEST" not in env_names
 
 
 def test_launcher_with_k8s_config(kubeconfig_file):

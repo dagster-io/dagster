@@ -117,10 +117,10 @@ export const LatestRunTag = ({
   );
 };
 
-const LATEST_RUN_TAG_QUERY = gql`
+export const LATEST_RUN_TAG_QUERY = gql`
   query LatestRunTagQuery($runsFilter: RunsFilter) {
     pipelineRunsOrError(filter: $runsFilter, limit: 1) {
-      ... on PipelineRuns {
+      ... on Runs {
         results {
           id
           status

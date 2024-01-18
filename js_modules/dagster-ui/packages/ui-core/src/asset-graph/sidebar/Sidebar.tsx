@@ -2,11 +2,13 @@ import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
+import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
+import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
-import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
+import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
@@ -24,6 +26,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    isGlobalGraph,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -35,6 +38,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
+    isGlobalGraph: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -77,7 +81,18 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
+    const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
+      // include pathname so that theres separate storage entries for graphs at different URLs
+      // eg. independent group graph should persist open nodes separately
+      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      encode: (val) => {
+        return {'open-nodes': Array.from(val)};
+      },
+      decode: (qs) => {
+        return new Set(qs['open-nodes']);
+      },
+      isEmptyState: (val) => val.size === 0,
+    });
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
@@ -124,34 +139,36 @@ export const AssetGraphExplorerSidebar = React.memo(
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
+        const groupId = groupIdForNode(node);
         const codeLocation = buildRepoPathForHuman(repositoryName, locationName);
         codeLocationNodes[codeLocation] = codeLocationNodes[codeLocation] || {
           locationName: codeLocation,
           groups: {},
         };
-        if (!codeLocationNodes[codeLocation]!.groups[groupName]!) {
+        if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
           groupsCount += 1;
         }
-        codeLocationNodes[codeLocation]!.groups[groupName] = codeLocationNodes[codeLocation]!
-          .groups[groupName] || {
+        codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
+          groupName
+        ] || {
           groupName,
           assets: [],
         };
-        codeLocationNodes[codeLocation]!.groups[groupName]!.assets.push(id);
+        codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(id);
       });
+      const codeLocationsCount = Object.keys(codeLocationNodes).length;
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName) || groupsCount === 1) {
-          Object.entries(locationNode.groups).forEach(([groupName, groupNode]) => {
-            const groupId = locationName + ':' + groupName;
-            folderNodes.push({groupName, id: groupId, level: 2});
-            if (openNodes.has(groupId) || groupsCount === 1) {
+        if (openNodes.has(locationName) || codeLocationsCount === 1) {
+          Object.entries(locationNode.groups).forEach(([id, groupNode]) => {
+            folderNodes.push({groupName: groupNode.groupName, id, level: 2});
+            if (openNodes.has(id) || groupsCount === 1) {
               groupNode.assets
                 .sort((a, b) => COLLATOR.compare(a, b))
                 .forEach((assetKey) => {
                   folderNodes.push({
                     id: assetKey,
-                    path: locationName + ':' + groupName + ':' + assetKey,
+                    path: locationName + ':' + groupNode.groupName + ':' + assetKey,
                     level: 3,
                   });
                 });
@@ -171,6 +188,15 @@ export const AssetGraphExplorerSidebar = React.memo(
 
       return folderNodes;
     }, [graphData.nodes, openNodes]);
+
+    const {nav} = React.useContext(LayoutContext);
+
+    React.useEffect(() => {
+      if (isGlobalGraph) {
+        nav.close();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isGlobalGraph]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -312,6 +338,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const isCodelocationNode = 'locationName' in node;
                 const isGroupNode = 'groupName' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                const isSelected =
+                  selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                 return (
                   <Row $height={size} $start={start} key={key} data-key={key}>
                     <AssetSidebarNode
@@ -320,9 +348,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                       node={row!}
                       level={node.level}
                       isLastSelected={lastSelectedNode?.id === node.id}
-                      isSelected={
-                        selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
-                      }
+                      isSelected={isSelected}
                       toggleOpen={() => {
                         setOpenNodes((nodes) => {
                           const openNodes = new Set(nodes);

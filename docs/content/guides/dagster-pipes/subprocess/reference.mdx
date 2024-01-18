@@ -1,6 +1,6 @@
 ---
 title: "Dagster Pipes subprocess reference | Dagster Docs"
-description: "This page shows ways to execute external code with Dagster Pipes with different entities in the Dagster systen."
+description: "This page shows ways to execute external code with Dagster Pipes with different entities in the Dagster system."
 ---
 
 # Dagster Pipes subprocess reference
@@ -11,7 +11,7 @@ This reference shows usage of Dagster Pipes with other entities in the Dagster s
 
 ## Specifying environment variables and extras
 
-When launching the subprocess, you may want to make environment variables or additoional parameters available in the external process. Extras are arbitrary, user-defined parameters made available on the context object in the external process.
+When launching the subprocess, you may want to make environment variables or additional parameters available in the external process. Extras are arbitrary, user-defined parameters made available on the context object in the external process.
 
 <TabGroup>
 <TabItem name="External code in external_code.py">
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
 <TabItem name="Dagster code in dagster_code.py">
 
-In the Dagster code, you can use <PyObject object="multi_asset" decorator /> to define a single asset that reprensents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject object="AssetMaterialization" pluralize /> and <PyObject object="AssetCheckResult" pluralize />, reported by the subprocess:
+In the Dagster code, you can use <PyObject object="multi_asset" decorator /> to define a single asset that represents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject object="AssetMaterialization" pluralize /> and <PyObject object="AssetCheckResult" pluralize />, reported by the subprocess:
 
 ```python file=/guides/dagster/dagster_pipes/subprocess/with_multi_asset/dagster_code.py
 import shutil
@@ -246,6 +246,106 @@ def subprocess_asset(
         file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(command=cmd, context=context).get_results()
+
+
+defs = Definitions(
+    assets=[subprocess_asset],
+    resources={"pipes_subprocess_client": PipesSubprocessClient()},
+)
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Passing custom data
+
+Sometimes, you may want to pass data back from the external process for use in the orchestration code for purposes other than reporting directly to Dagster such as use in creating an output. In this example we use custom messages to create an I/O managed output that is returned from the asset.
+
+<TabGroup>
+<TabItem name="External code in external_code.py">
+
+In the external code, we send messages using `report_custom_message`. The message can be any data that is JSON serializable.
+
+```python file=/guides/dagster/dagster_pipes/subprocess/custom_messages/external_code.py
+import pandas as pd
+from dagster_pipes import PipesContext, open_dagster_pipes
+
+
+def main():
+    # get the Dagster Pipes context
+    context = PipesContext.get()
+
+    # compute the full orders data
+    orders = pd.DataFrame(
+        {
+            "order_id": [1, 2, 3],
+            "item_id": [321, 654, 987],
+            "order_details": [..., ..., ...],  # imagine large data,
+            # and more columns
+        }
+    )
+
+    # send a smaller table to be I/O managed by Dagster and passed to downstream assets
+    summary_table = pd.DataFrame(orders[["order_id", "item_id"]])
+    context.report_custom_message(summary_table.to_dict())
+
+    context.report_asset_materialization(metadata={"total_orders": len(orders)})
+
+
+if __name__ == "__main__":
+    # connect to Dagster Pipes
+    with open_dagster_pipes():
+        main()
+```
+
+</TabItem>
+<TabItem name="Dagster code in dagster_code.py">
+
+In the Dagster code we receive custom messages using `get_custom_messages`.
+
+```python file=/guides/dagster/dagster_pipes/subprocess/custom_messages/dagster_code.py
+import shutil
+
+import pandas as pd
+
+from dagster import (
+    AssetExecutionContext,
+    Definitions,
+    Output,
+    PipesSubprocessClient,
+    asset,
+    file_relative_path,
+)
+
+
+@asset
+def subprocess_asset(
+    context: AssetExecutionContext,
+    pipes_subprocess_client: PipesSubprocessClient,
+) -> Output[pd.DataFrame]:
+    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
+    result = pipes_subprocess_client.run(
+        command=cmd,
+        context=context,
+    )
+
+    # a small summary table gets reported as a custom message
+    messages = result.get_custom_messages()
+    if len(messages) != 1:
+        raise Exception("summary not reported")
+
+    summary_df = pd.DataFrame(messages[0])
+
+    # grab any reported metadata off of the materialize result
+    metadata = result.get_materialize_result().metadata
+
+    # return the summary table to be loaded by Dagster for downstream assets
+    return Output(
+        value=summary_df,
+        metadata=metadata,
+    )
 
 
 defs = Definitions(

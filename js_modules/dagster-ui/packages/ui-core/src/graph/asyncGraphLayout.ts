@@ -10,6 +10,9 @@ import {ILayoutOp, layoutOpGraph, LayoutOpGraphOptions, OpGraphLayout} from './l
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
+// If you're working on the layout logic, set to false so hot-reloading re-computes the layout
+const CACHING_ENABLED = true;
+
 // Op Graph
 
 const _opLayoutCacheKey = (ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
@@ -182,13 +185,7 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
     [expandedGroups, _graphData],
   );
 
-  const opts = React.useMemo(
-    () => ({
-      horizontalDAGs: flags.flagDAGSidebar,
-    }),
-    [flags],
-  );
-
+  const opts = React.useMemo(() => ({horizontalDAGs: true}), []);
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
@@ -197,7 +194,7 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (!flags.flagDisableDAGCache) {
+      if (CACHING_ENABLED) {
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);

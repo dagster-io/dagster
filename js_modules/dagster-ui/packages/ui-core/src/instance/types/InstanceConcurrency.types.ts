@@ -42,6 +42,8 @@ export type InstanceConcurrencyLimitsQuery = {
     info: string | null;
     supportsConcurrencyLimits: boolean;
     runQueuingSupported: boolean;
+    minConcurrencyLimitValue: number;
+    maxConcurrencyLimitValue: number;
     runQueueConfig: {
       __typename: 'RunQueueConfig';
       maxConcurrentRuns: number;
@@ -70,6 +72,15 @@ export type SetConcurrencyLimitMutationVariables = Types.Exact<{
 }>;
 
 export type SetConcurrencyLimitMutation = {__typename: 'Mutation'; setConcurrencyLimit: boolean};
+
+export type DeleteConcurrencyLimitMutationVariables = Types.Exact<{
+  concurrencyKey: Types.Scalars['String'];
+}>;
+
+export type DeleteConcurrencyLimitMutation = {
+  __typename: 'Mutation';
+  deleteConcurrencyLimit: boolean;
+};
 
 export type FreeConcurrencySlotsMutationVariables = Types.Exact<{
   runId: Types.Scalars['String'];
