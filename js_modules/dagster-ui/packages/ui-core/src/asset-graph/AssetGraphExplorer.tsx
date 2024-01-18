@@ -118,6 +118,8 @@ export const AssetGraphExplorer = (props: Props) => {
     );
   }, [visibleRepos]);
 
+  const {explorerPath, onChangeExplorerPath} = props;
+
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
@@ -138,6 +140,16 @@ export const AssetGraphExplorer = (props: Props) => {
         }),
       [props],
     ),
+    explorerPath: explorerPath.opsQuery,
+    clearExplorerPath: React.useCallback(() => {
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opsQuery: '',
+        },
+        'push',
+      );
+    }, [explorerPath, onChangeExplorerPath]),
   });
 
   return (
@@ -774,13 +786,6 @@ const AssetGraphExplorerWithData = ({
                     popoverPosition="bottom-left"
                   />
                 </GraphQueryInputFlexWrap>
-                <Button
-                  onClick={() => {
-                    onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
-                  }}
-                >
-                  Clear query
-                </Button>
                 <AssetLiveDataRefresh />
                 <LaunchAssetObservationButton
                   preferredJobName={explorerPath.pipelineName}

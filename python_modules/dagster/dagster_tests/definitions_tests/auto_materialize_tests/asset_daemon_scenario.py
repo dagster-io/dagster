@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -73,6 +74,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
@@ -211,6 +213,7 @@ class AssetDaemonScenarioState(NamedTuple):
     is_daemon: bool = False
     sensor_name: Optional[str] = None
     automation_policy_sensors: Optional[Sequence[AutomationPolicySensorDefinition]] = None
+    threadpool_executor: Optional[ThreadPoolExecutor] = None
 
     @property
     def instance(self) -> DagsterInstance:
@@ -434,15 +437,22 @@ class AssetDaemonScenarioState(NamedTuple):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
+            amp_tick_futures = {}
+
             list(
                 AssetDaemon(  # noqa: SLF001
                     pre_sensor_interval_seconds=42
                 )._run_iteration_impl(
                     workspace_context,
+                    threadpool_executor=self.threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    last_submit_times={},
                     debug_crash_flags={},
                     sensor_state_lock=threading.Lock(),
                 )
             )
+
+            wait_for_futures(amp_tick_futures)
 
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
@@ -455,7 +465,7 @@ class AssetDaemonScenarioState(NamedTuple):
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
                     ).cursor
-                    or AssetDaemonCursor.empty().serialize()
+                    or None
                 )
                 new_cursor = (
                     LegacyAssetDaemonCursorWrapper.from_compressed(
@@ -491,7 +501,7 @@ class AssetDaemonScenarioState(NamedTuple):
                     self.instance.schedule_storage
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
             ]
-        return new_run_requests, new_cursor, new_evaluations
+            return new_run_requests, new_cursor, new_evaluations
 
     def evaluate_tick(self) -> "AssetDaemonScenarioState":
         with pendulum.test(self.current_time):
@@ -701,11 +711,14 @@ class AssetDaemonScenario(NamedTuple):
         )
 
     def evaluate_daemon(
-        self, instance: DagsterInstance, sensor_name: Optional[str] = None
+        self, instance: DagsterInstance, sensor_name: Optional[str] = None, threadpool_executor=None
     ) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
         return self.execution_fn(
             self.initial_state._replace(
-                scenario_instance=instance, is_daemon=True, sensor_name=sensor_name
+                scenario_instance=instance,
+                is_daemon=True,
+                sensor_name=sensor_name,
+                threadpool_executor=threadpool_executor,
             )
         )

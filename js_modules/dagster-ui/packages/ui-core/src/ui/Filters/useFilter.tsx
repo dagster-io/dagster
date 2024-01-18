@@ -37,12 +37,12 @@ export const FilterTag = ({
   onRemove,
 }: {
   label: JSX.Element;
-  iconName: IconName;
+  iconName?: IconName;
   onRemove: () => void;
 }) => (
   <div>
     <BaseTag
-      icon={<Icon name={iconName} color={colorLinkDefault()} />}
+      icon={iconName ? <Icon name={iconName} color={colorLinkDefault()} /> : undefined}
       rightIcon={
         <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
           <Icon name="close" color={colorLinkDefault()} />

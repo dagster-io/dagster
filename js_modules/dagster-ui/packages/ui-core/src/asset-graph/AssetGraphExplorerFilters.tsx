@@ -4,7 +4,7 @@ import React from 'react';
 import {AssetGroupSelector} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
-import {FilterObject} from '../ui/Filters/useFilter';
+import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -31,6 +31,8 @@ type OptionalFilters =
 
 type Props = {
   nodes: GraphNode[];
+  clearExplorerPath: () => void;
+  explorerPath: string;
 } & OptionalFilters;
 
 const emptyArray: any[] = [];
@@ -42,6 +44,8 @@ export function useAssetGraphExplorerFilters({
   setGroupFilters,
   computeKindTags,
   setComputeKindTags,
+  explorerPath,
+  clearExplorerPath,
 }: Props) {
   const {allRepos, visibleRepos, toggleVisible, setVisible} = React.useContext(WorkspaceContext);
 
@@ -179,11 +183,25 @@ export function useAssetGraphExplorerFilters({
   }
   return {
     button,
-    filterBar: activeFiltersJsx.length ? (
-      <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
-        {' '}
-        {activeFiltersJsx}
-      </Box>
-    ) : null,
+    filterBar:
+      activeFiltersJsx.length || explorerPath ? (
+        <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
+          {' '}
+          {activeFiltersJsx}
+          {explorerPath ? (
+            <FilterTag
+              label={
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  Asset selection is&nbsp;
+                  <FilterTagHighlightedText tooltipText={explorerPath}>
+                    {explorerPath}
+                  </FilterTagHighlightedText>
+                </Box>
+              }
+              onRemove={clearExplorerPath}
+            />
+          ) : null}
+        </Box>
+      ) : null,
   };
 }
