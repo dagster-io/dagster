@@ -17,8 +17,6 @@ from dagster._utils.env import environ
 from pydantic import Field
 from sling import Sling
 
-from dagster_embedded_elt.sling.asset_decorator import DagsterSlingTranslator
-
 logger = get_dagster_logger()
 
 
