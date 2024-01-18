@@ -142,25 +142,6 @@ query getScheduleState($scheduleSelector: ScheduleSelector!) {
 }
 """
 
-GET_UNLOADABLE_QUERY = """
-query getUnloadableSchedules {
-  unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
-    ... on InstigationStates {
-      results {
-        id
-        name
-        status
-      }
-    }
-    ... on PythonError {
-      message
-      stack
-    }
-  }
-}
-"""
-
-
 START_SCHEDULES_QUERY = """
 mutation(
   $scheduleSelector: ScheduleSelector!
@@ -795,13 +776,6 @@ def test_unloadable_schedule(graphql_context):
                 ),
             )
         )
-
-    result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
-    assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
-    assert (
-        result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
-        == "unloadable_running"
-    )
 
     # Verify that we can stop the unloadable schedule
     stop_result = execute_dagster_graphql(

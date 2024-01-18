@@ -3503,7 +3503,6 @@ export type Query = {
   shouldShowNux: Scalars['Boolean'];
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
-  unloadableInstigationStatesOrError: InstigationStatesOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
@@ -3707,10 +3706,6 @@ export type QuerySensorsOrErrorArgs = {
 
 export type QueryTopLevelResourceDetailsOrErrorArgs = {
   resourceSelector: ResourceSelector;
-};
-
-export type QueryUnloadableInstigationStatesOrErrorArgs = {
-  instigationType?: InputMaybe<InstigationType>;
 };
 
 export type QueryUtilizedEnvVarsOrErrorArgs = {
@@ -11381,12 +11376,6 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    unloadableInstigationStatesOrError:
-      overrides && overrides.hasOwnProperty('unloadableInstigationStatesOrError')
-        ? overrides.unloadableInstigationStatesOrError!
-        : relationshipsToOmit.has('InstigationStates')
-        ? ({} as InstigationStates)
-        : buildInstigationStates({}, relationshipsToOmit),
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!

@@ -3116,7 +3116,6 @@ type Query {
     sensorStatus: InstigationStatus
   ): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
-  unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(
     repositorySelector: RepositorySelector!
     pipelineName: String!
