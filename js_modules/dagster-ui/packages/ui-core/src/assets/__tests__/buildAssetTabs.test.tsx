@@ -1,6 +1,7 @@
 import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
+  buildAssetNode,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
 } from '../../graphql/types';
@@ -22,7 +23,7 @@ const autoMaterializePolicy = buildAutoMaterializePolicy({
 });
 
 describe('buildAssetTabs', () => {
-  const definitionWithPartition: AssetViewDefinitionNodeFragment = {
+  const definitionWithPartition: AssetViewDefinitionNodeFragment = buildAssetNode({
     id: 'dagster_test.toys.repo.auto_materialize_repo_2.["eager_downstream_3_partitioned"]',
     hasAssetChecks: false,
     groupName: 'default',
@@ -164,7 +165,7 @@ describe('buildAssetTabs', () => {
       outputSchemaType: null,
       innerTypes: [],
     },
-  };
+  });
 
   // Copied from browser
   const definitionWithoutPartition: AssetViewDefinitionNodeFragment = {
