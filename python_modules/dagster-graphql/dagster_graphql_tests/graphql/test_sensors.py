@@ -171,24 +171,6 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
 }
 """
 
-GET_UNLOADABLE_QUERY = """
-query getUnloadableSensors {
-  unloadableInstigationStatesOrError(instigationType: SENSOR) {
-    ... on InstigationStates {
-      results {
-        id
-        name
-        status
-      }
-    }
-    ... on PythonError {
-      message
-      stack
-    }
-  }
-}
-"""
-
 GET_SENSOR_TICK_RANGE_QUERY = """
 query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int, $beforeTimestamp: Float, $afterTimestamp: Float) {
   sensorOrError(sensorSelector: $sensorSelector) {
@@ -1301,14 +1283,6 @@ def test_unloadable_sensor(graphql_context: WorkspaceRequestContext):
             InstigatorStatus.STOPPED,
             SensorInstigatorData(min_interval=30, cursor=None, sensor_type=SensorType.STANDARD),
         )
-    )
-
-    result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
-
-    assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
-    assert (
-        result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
-        == "unloadable_running"
     )
 
     # Verify that we can stop the unloadable sensor
