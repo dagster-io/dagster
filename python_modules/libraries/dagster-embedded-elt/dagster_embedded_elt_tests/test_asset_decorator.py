@@ -26,7 +26,7 @@ def test_replication_argument(replication: SlingReplicationParam):
         AssetKey.from_user_string(key)
         for key in [
             "target/public/accounts",
-            "target/public/foo_users",
+            "public/foo_users",
             "target/public/Transactions",
             "target/public/all_users",
             "target/public/finance_departments_old",
