@@ -85,7 +85,7 @@ def test_asset_out():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         asset_key=asset_key,
-        has_asset_partitions=False,
+        has_partitions=False,
         metadata=None,
     )
     assert manager.load_input(input_context) == 7
@@ -118,7 +118,7 @@ def test_asset_out_columns():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        has_asset_partitions=False,
+        has_partitions=False,
         metadata={"columns": ["apple", "banana"]},
     )
     assert manager.load_input(input_context) == 7
@@ -157,9 +157,9 @@ def test_asset_out_partitioned():
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+        partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata={"partition_expr": "abc"},
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -167,9 +167,9 @@ def test_asset_out_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+        partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata=None,
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
 
@@ -206,9 +206,9 @@ def test_asset_out_static_partitioned():
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partition_keys=["red"],
+        partition_keys=["red"],
         metadata={"partition_expr": "abc"},
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -216,9 +216,9 @@ def test_asset_out_static_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partition_keys=["red"],
+        partition_keys=["red"],
         metadata=None,
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
 
@@ -255,9 +255,9 @@ def test_asset_out_multiple_static_partitions():
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partition_keys=["red", "yellow"],
+        partition_keys=["red", "yellow"],
         metadata={"partition_expr": "abc"},
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -265,9 +265,9 @@ def test_asset_out_multiple_static_partitions():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partition_keys=["red", "yellow"],
+        partition_keys=["red", "yellow"],
         metadata=None,
-        asset_partitions_def=partitions_def,
+        partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
 
@@ -318,7 +318,7 @@ def test_different_output_and_input_types():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(str),
-        has_asset_partitions=False,
+        has_partitions=False,
         metadata=None,
     )
     assert manager.load_input(input_context) == "8"
@@ -344,7 +344,7 @@ def test_non_asset_out():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         has_asset_key=False,
-        has_asset_partitions=False,
+        has_partitions=False,
         metadata=None,
     )
     assert manager.load_input(input_context) == 7
@@ -534,7 +534,7 @@ def test_default_load_type():
         resource_config=resource_config,
         dagster_type=asset1.op.outs["result"].dagster_type,
         asset_key=asset_key,
-        has_asset_partitions=False,
+        has_partitions=False,
         metadata=None,
     )
 
