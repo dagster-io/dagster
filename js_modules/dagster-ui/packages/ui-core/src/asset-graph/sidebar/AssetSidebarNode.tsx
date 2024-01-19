@@ -1,13 +1,10 @@
 import {
   Box,
+  Colors,
   Icon,
   MiddleTruncate,
   Popover,
   UnstyledButton,
-  colorAccentGray,
-  colorBackgroundBlue,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -111,7 +108,7 @@ export const AssetSidebarNode = ({
               style={{
                 width: '100%',
                 borderRadius: '8px',
-                ...(isSelected ? {background: colorBackgroundBlue()} : {}),
+                ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
               }}
               ref={ref}
             >
@@ -160,7 +157,7 @@ const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => 
         modifiers={{offset: {enabled: true, options: {offset: [0, 12]}}}}
       >
         <UnstyledButton>
-          <Icon name="more_horiz" color={colorAccentGray()} />
+          <Icon name="more_horiz" color={Colors.accentGray()} />
         </UnstyledButton>
       </Popover>
     </>
@@ -176,7 +173,7 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
           padding={{left: 8}}
           margin={{left: 8}}
           border={
-            i < level - 1 ? {side: 'left', width: 1, color: colorKeylineDefault()} : undefined
+            i < level - 1 ? {side: 'left', width: 1, color: Colors.keylineDefault()} : undefined
           }
           style={{position: 'relative'}}
         >
@@ -220,7 +217,7 @@ const ItemContainer = styled(Box)`
   &:hover,
   &:focus-within {
     ${GrayOnHoverBox} {
-      background: ${colorBackgroundLightHover()};
+      background: ${Colors.backgroundLightHover()};
     }
 
     ${ExpandMore} {

@@ -1,25 +1,8 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {
-  colorAccentBlue,
-  colorAccentCyan,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentLime,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundBlue,
-  colorBackgroundCyan,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundLime,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorTextCyan,
-  colorTextDefault,
-} from '../../theme/color';
 import {BaseTag} from '../BaseTag';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 
@@ -30,17 +13,37 @@ export default {
 } as Meta;
 
 const COLORS = [
-  {fillColor: colorBackgroundGray(), textColor: colorTextDefault(), iconColor: colorAccentGray()},
-  {fillColor: colorBackgroundBlue(), textColor: colorAccentBlue(), iconColor: colorAccentBlue()},
-  {fillColor: colorBackgroundCyan(), textColor: colorTextCyan(), iconColor: colorAccentCyan()},
-  {fillColor: colorBackgroundGreen(), textColor: colorAccentGreen(), iconColor: colorAccentGreen()},
-  {fillColor: colorBackgroundLime(), textColor: colorAccentLime(), iconColor: colorAccentLime()},
   {
-    fillColor: colorBackgroundYellow(),
-    textColor: colorAccentYellow(),
-    iconColor: colorAccentYellow(),
+    fillColor: Colors.backgroundGray(),
+    textColor: Colors.textDefault(),
+    iconColor: Colors.accentGray(),
   },
-  {fillColor: colorBackgroundRed(), textColor: colorAccentRed(), iconColor: colorAccentRed()},
+  {
+    fillColor: Colors.backgroundBlue(),
+    textColor: Colors.accentBlue(),
+    iconColor: Colors.accentBlue(),
+  },
+  {
+    fillColor: Colors.backgroundCyan(),
+    textColor: Colors.textCyan(),
+    iconColor: Colors.accentCyan(),
+  },
+  {
+    fillColor: Colors.backgroundGreen(),
+    textColor: Colors.accentGreen(),
+    iconColor: Colors.accentGreen(),
+  },
+  {
+    fillColor: Colors.backgroundLime(),
+    textColor: Colors.accentLime(),
+    iconColor: Colors.accentLime(),
+  },
+  {
+    fillColor: Colors.backgroundYellow(),
+    textColor: Colors.accentYellow(),
+    iconColor: Colors.accentYellow(),
+  },
+  {fillColor: Colors.backgroundRed(), textColor: Colors.accentRed(), iconColor: Colors.accentRed()},
 ];
 
 export const Basic = () => {

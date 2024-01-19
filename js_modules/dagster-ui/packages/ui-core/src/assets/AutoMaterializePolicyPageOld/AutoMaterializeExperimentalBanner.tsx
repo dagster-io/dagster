@@ -1,4 +1,4 @@
-import {Alert, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
+import {Alert, Icon, Tag, Tooltip, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
 const LearnMoreLink =
@@ -9,7 +9,7 @@ export const AutoMaterializeExperimentalBanner = () => {
     <Alert
       intent="info"
       title="Auto-materialize policies are experimental"
-      icon={<Icon name="info" color={colorAccentBlue()} />}
+      icon={<Icon name="info" color={Colors.accentBlue()} />}
       description={
         <span>
           You can learn more about this new feature and provide feedback{' '}

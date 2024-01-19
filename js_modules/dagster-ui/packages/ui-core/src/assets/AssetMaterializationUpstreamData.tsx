@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Caption,
-  Icon,
-  MiddleTruncate,
-  colorKeylineDefault,
-  colorTextLight,
-  colorTextRed,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Icon, MiddleTruncate, Colors} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
@@ -164,7 +156,7 @@ export const AssetMaterializationUpstreamData = ({
   });
 
   if (!timestamp) {
-    return <Caption color={colorTextLight()}>None</Caption>;
+    return <Caption color={Colors.textLight()}>None</Caption>;
   }
 
   const data =
@@ -194,11 +186,11 @@ export const TimeSinceWithOverdueColor = ({
   const isOverdue = maximumLagMinutes && lagMinutes > maximumLagMinutes;
 
   return relativeTo === 'now' ? (
-    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
+    <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
       ({dayjs(timestamp).fromNow()})
     </span>
   ) : (
-    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
+    <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
       ({dayjs(Number(timestamp)).from(relativeTo, true)} earlier)
     </span>
   );
@@ -222,7 +214,7 @@ const TableContainer = styled.table`
   border-collapse: collapse;
 
   tr td {
-    border: 1px solid ${colorKeylineDefault()};
+    border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

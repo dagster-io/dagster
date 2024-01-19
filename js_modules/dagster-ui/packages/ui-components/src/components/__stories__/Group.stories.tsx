@@ -2,9 +2,9 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorAccentYellow, colorBackgroundLight, colorLinkDefault} from '../../theme/color';
 import {Box} from '../Box';
 import {ButtonLink} from '../ButtonLink';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Body, Code, Heading, Subheading} from '../Text';
 import {AlignItems, FlexWrap, Spacing} from '../types';
@@ -20,7 +20,7 @@ export const Row = () => {
   return (
     <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
-        <Box background={colorBackgroundLight()} padding={8} key={`${spacing}`}>
+        <Box background={Colors.backgroundLight()} padding={8} key={`${spacing}`}>
           <Group direction="row" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
@@ -42,7 +42,7 @@ export const Column = () => {
   return (
     <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
-        <Box background={colorBackgroundLight()} padding={12} key={`${spacing}`}>
+        <Box background={Colors.backgroundLight()} padding={12} key={`${spacing}`}>
           <Group direction="column" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
@@ -64,7 +64,7 @@ export const AlignItemsColumn = () => {
   return (
     <Group spacing={12} direction="column">
       {alignments.map((alignment) => (
-        <Box background={colorBackgroundLight()} padding={12} key={alignment}>
+        <Box background={Colors.backgroundLight()} padding={12} key={alignment}>
           <Group direction="column" alignItems={alignment} spacing={8}>
             <ExampleText>
               <strong>{alignment}</strong>
@@ -92,7 +92,7 @@ export const EmptyChildren = () => {
         that renders to <Code>null</Code>. Upon inspection of the DOM, note that both are given{' '}
         <Code>display: none</Code>.
       </Body>
-      <Group background={colorBackgroundLight()} padding={12} direction="column" spacing={8}>
+      <Group background={Colors.backgroundLight()} padding={12} direction="column" spacing={8}>
         <ExampleText>China</ExampleText>
         <ExampleText>France</ExampleText>
         {null}
@@ -108,7 +108,7 @@ export const EmptyChildren = () => {
 export const PointerEventsTest = () => {
   return (
     <div>
-      <ButtonLink color={{link: colorLinkDefault(), hover: colorAccentYellow()}}>
+      <ButtonLink color={{link: Colors.linkDefault(), hover: Colors.accentYellow()}}>
         <strong>Try to click me!</strong>
       </ButtonLink>
       <Group direction="column" spacing={32}>
@@ -131,7 +131,7 @@ export const Wrap = () => {
   return (
     <Group spacing={12} direction="column">
       {wraps.map((wrap) => (
-        <Box background={colorBackgroundLight()} padding={12} key={wrap} style={{width: '400px'}}>
+        <Box background={Colors.backgroundLight()} padding={12} key={wrap} style={{width: '400px'}}>
           <Group direction="row" spacing={8} wrap={wrap}>
             <ExampleText>
               <strong>{wrap}</strong>

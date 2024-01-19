@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, MiddleTruncate, colorTextLight} from '@dagster-io/ui-components';
+import {Box, MiddleTruncate, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -138,7 +138,7 @@ export const VirtualizedJobHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Name</HeaderCell>

@@ -1,14 +1,5 @@
 import {QueryResult} from '@apollo/client';
-import {
-  PageHeader,
-  Box,
-  Heading,
-  Button,
-  Icon,
-  Tooltip,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {PageHeader, Box, Heading, Button, Icon, Tooltip, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -37,12 +28,12 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
       title={
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Heading>
-            <Link to="/locations" style={{color: colorTextDefault()}}>
+            <Link to="/locations" style={{color: Colors.textDefault()}}>
               Deployment
             </Link>
           </Heading>
           <Heading>/</Heading>
-          <Heading style={{color: colorTextLight()}}>
+          <Heading style={{color: Colors.textLight()}}>
             {repoAddressAsHumanString(repoAddress)}
           </Heading>
         </Box>

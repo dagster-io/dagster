@@ -1,13 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  Box,
-  Caption,
-  Checkbox,
-  MiddleTruncate,
-  Tooltip,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, MiddleTruncate, Tooltip, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -133,7 +125,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             >
               <Caption
                 style={{
-                  color: colorTextLight(),
+                  color: Colors.textLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -157,7 +149,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           {sensorData ? (
-            <div style={{color: colorTextDefault()}}>
+            <div style={{color: Colors.textDefault()}}>
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
@@ -201,7 +193,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       {checkbox ? (

@@ -10,11 +10,7 @@ import {
   TagSelectorWithSearch,
   TagSelectorDropdownItemProps,
   MiddleTruncate,
-  colorLinkDefault,
-  colorTextLight,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -250,7 +246,7 @@ const OrdinalPartitionSelector = ({
                       {dropdown}
                     </>
                   ) : (
-                    <div style={{padding: '6px 6px 0px 6px', color: colorTextLight()}}>
+                    <div style={{padding: '6px 6px 0px 6px', color: Colors.textLight()}}>
                       No matching partitions found
                     </div>
                   )}
@@ -277,7 +273,7 @@ const StyledIcon = styled(Icon)`
 `;
 
 const LinkText = styled(Box)`
-  color: ${colorLinkDefault()};
+  color: ${Colors.linkDefault()};
   cursor: pointer;
   &:hover {
     text-decoration: underline;
@@ -290,8 +286,8 @@ const LinkText = styled(Box)`
 `;
 
 const DropdownItemTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
   fontSize: '14px',
 });

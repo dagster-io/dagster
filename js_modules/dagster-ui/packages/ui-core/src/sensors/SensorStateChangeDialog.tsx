@@ -8,8 +8,7 @@ import {
   Dialog,
   Group,
   Icon,
-  colorAccentGreen,
-  colorAccentYellow,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -231,7 +230,7 @@ export const SensorStateChangeDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={colorAccentGreen()} />
+            <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
                 ? `Successfully started ${
@@ -246,7 +245,7 @@ export const SensorStateChangeDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={colorAccentYellow()} />
+              <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
                   ? `Could not start ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`

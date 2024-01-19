@@ -4,8 +4,7 @@ import deepmerge from 'deepmerge';
 import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
-import {colorTooltipBackground, colorTooltipText} from '../theme/color';
-
+import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
@@ -13,8 +12,8 @@ export const GlobalTooltipStyle = createGlobalStyle`
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
-      background: ${colorTooltipBackground()};
-      color: ${colorTooltipText()};
+      background: ${Colors.tooltipBackground()};
+      color: ${Colors.tooltipText()};
       padding: 8px 16px;
   }
 

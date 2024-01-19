@@ -7,8 +7,7 @@ import {
   Group,
   Tag,
   Trace,
-  colorLinkDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -71,7 +70,7 @@ export const DaemonHealth = (props: Props) => {
     if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={colorLinkDefault()} underline="hover" onClick={show}>
+          <ButtonLink color={Colors.linkDefault()} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
           <Dialog
@@ -122,7 +121,7 @@ export const DaemonHealth = (props: Props) => {
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: colorTextLight()}}>No recent heartbeat</div>;
+      return <div style={{color: Colors.textLight()}}>No recent heartbeat</div>;
     }
 
     return null;

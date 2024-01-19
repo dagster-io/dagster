@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Tag, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
+import {Box, Tag, Tooltip, Colors} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -86,7 +86,7 @@ const ColumnItem = styled(_ColumnItem)`
   flex-direction: column;
   gap: 4px;
   padding: 12px ${(props) => props.horizontalPadding}px;
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
   :first-child {
     border-top: none;
   }

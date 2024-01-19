@@ -1,30 +1,4 @@
-import {
-  Group,
-  Icon,
-  Spinner,
-  FontFamily,
-  colorAccentYellow,
-  colorBackgroundLight,
-  colorBackgroundLighter,
-  colorKeylineDefault,
-  colorBackgroundLightHover,
-  colorTextDefault,
-  colorTextLight,
-  colorBackgroundYellow,
-  colorTextLighter,
-  colorAccentBlue,
-  colorTextBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentCyan,
-  colorAccentGray,
-  colorAccentOlive,
-  colorBackgroundDefault,
-  colorBackgroundLighterHover,
-  colorAccentPrimary,
-  colorBorderDefault,
-  colorBorderHover,
-} from '@dagster-io/ui-components';
+import {Group, Icon, Spinner, FontFamily, Colors} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
@@ -83,7 +57,7 @@ export const RawLogContent = React.memo((props: Props) => {
   const warning = isTruncated ? (
     <FileWarning>
       <Group direction="row" spacing={8} alignItems="center">
-        <Icon name="warning" color={colorAccentYellow()} />
+        <Icon name="warning" color={Colors.accentYellow()} />
         <div>
           This log has exceeded the 5MB limit.{' '}
           {downloadUrl ? (
@@ -107,7 +81,7 @@ export const RawLogContent = React.memo((props: Props) => {
               onMouseOut={scheduleHideWarning}
             >
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="arrow_upward" color={colorAccentPrimary()} />
+                <Icon name="arrow_upward" color={Colors.accentPrimary()} />
                 Scroll to top
               </Group>
             </ScrollToTop>
@@ -316,16 +290,16 @@ const LineNumbers = (props: IScrollContainerProps) => {
 
 const Content = styled.div`
   padding: 10px;
-  background-color: ${colorBackgroundLight()};
+  background-color: ${Colors.backgroundLight()};
 `;
 
 const LineNumberContainer = styled.div`
-  border-right: 1px solid ${colorKeylineDefault()};
+  border-right: 1px solid ${Colors.keylineDefault()};
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: ${colorBackgroundLightHover()};
+  background-color: ${Colors.backgroundLightHover()};
   opacity: 0.8;
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   min-height: 100%;
   user-select: none;
 
@@ -336,28 +310,28 @@ const LineNumberContainer = styled.div`
 
 const SolarizedColors = createGlobalStyle`
   .ansi-black {
-    color: ${colorAccentOlive()};
+    color: ${Colors.accentOlive()};
   }
   .ansi-red {
-    color: ${colorAccentRed()};
+    color: ${Colors.accentRed()};
   }
   .ansi-green {
-    color: ${colorAccentGreen()};
+    color: ${Colors.accentGreen()};
   }
   .ansi-yellow {
-    color: ${colorAccentYellow()};
+    color: ${Colors.accentYellow()};
   }
   .ansi-blue {
-    color: ${colorAccentBlue()};
+    color: ${Colors.accentBlue()};
   }
   .ansi-magenta {
-    color: ${colorTextBlue()};
+    color: ${Colors.textBlue()};
   }
   .ansi-cyan {
-    color: ${colorAccentCyan()};
+    color: ${Colors.accentCyan()};
   }
   .ansi-white {
-    color: ${colorAccentGray()};
+    color: ${Colors.accentGray()};
   }
 `;
 
@@ -365,7 +339,7 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
-  background-color: ${colorBackgroundLight()};
+  background-color: ${Colors.backgroundLight()};
 `;
 
 const FileContainer = styled.div`
@@ -382,9 +356,9 @@ const FileFooter = styled.div`
   flex-direction: row;
   align-items: center;
   height: 30px;
-  background-color: ${colorBackgroundLight()};
-  border-top: 0.5px solid ${colorKeylineDefault()};
-  color: ${colorTextLight()};
+  background-color: ${Colors.backgroundLight()};
+  border-top: 0.5px solid ${Colors.keylineDefault()};
+  color: ${Colors.textLight()};
   padding: 2px 5px;
   font-size: 0.85em;
   ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
@@ -402,7 +376,7 @@ const RelativeContainer = styled.div`
 `;
 
 const LogContent = styled(ScrollContainer)`
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   white-space: pre;
@@ -423,7 +397,7 @@ const LoadingContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${Colors.backgroundDefault()};
   opacity: 0.3;
 `;
 
@@ -441,24 +415,24 @@ const ScrollToast = styled.div`
 `;
 
 const ScrollToTop = styled.button`
-  background-color: ${colorBackgroundLighter()};
+  background-color: ${Colors.backgroundLighter()};
   padding: 12px 20px 12px 14px;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
-  color: ${colorTextDefault()};
-  border: 1px solid ${colorBorderDefault()};
+  color: ${Colors.textDefault()};
+  border: 1px solid ${Colors.borderDefault()};
   border-width: 0 1px 1px 1px;
   cursor: pointer;
   transition: background-color 100ms linear;
 
   :hover {
-    background-color: ${colorBackgroundLighterHover()};
-    border-color: ${colorBorderHover()};
+    background-color: ${Colors.backgroundLighterHover()};
+    border-color: ${Colors.borderHover()};
   }
 `;
 
 const FileWarning = styled.div`
-  background-color: ${colorBackgroundYellow()};
+  background-color: ${Colors.backgroundYellow()};
   padding: 10px 20px;
   margin: 20px 70px;
   border-radius: 5px;

@@ -6,7 +6,7 @@ import {
   DialogFooter,
   Dialog,
   Tag,
-  colorLinkDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -157,7 +157,7 @@ const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
     <>
       <Tag icon="asset">
         <ButtonLink
-          color={colorLinkDefault()}
+          color={Colors.linkDefault()}
           onClick={() => setOpen(true)}
         >{`View ${relatedAssets.length} assets`}</ButtonLink>
       </Tag>

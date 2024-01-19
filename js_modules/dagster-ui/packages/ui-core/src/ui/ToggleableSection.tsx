@@ -1,4 +1,4 @@
-import {Box, Icon, colorBackgroundLight} from '@dagster-io/ui-components';
+import {Box, Icon, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -18,7 +18,7 @@ export const ToggleableSection = ({
     <Box>
       <Box
         onClick={() => setIsOpen(!isOpen)}
-        background={background ?? colorBackgroundLight()}
+        background={background ?? Colors.backgroundLight()}
         border="bottom"
         flex={{alignItems: 'center', direction: 'row'}}
         padding={{vertical: 12, right: 20, left: 16}}

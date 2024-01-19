@@ -4,12 +4,7 @@ import {
   Popover,
   TextInput,
   TextInputContainer,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentYellow,
-  colorAccentYellowHover,
+  Colors,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -24,11 +19,11 @@ import {AssetConditionEvaluationStatus, AssetSubset} from './types';
 const statusToColors = (status: AssetConditionEvaluationStatus) => {
   switch (status) {
     case AssetConditionEvaluationStatus.TRUE:
-      return {color: colorAccentGreen(), hoverColor: colorAccentGreenHover()};
+      return {color: Colors.accentGreen(), hoverColor: Colors.accentGreenHover()};
     case AssetConditionEvaluationStatus.FALSE:
-      return {color: colorAccentYellow(), hoverColor: colorAccentYellowHover()};
+      return {color: Colors.accentYellow(), hoverColor: Colors.accentYellowHover()};
     case AssetConditionEvaluationStatus.SKIPPED:
-      return {color: colorAccentGray(), hoverColor: colorAccentGrayHover()};
+      return {color: Colors.accentGray(), hoverColor: Colors.accentGrayHover()};
     default:
       return assertUnreachable(status);
   }

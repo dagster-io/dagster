@@ -1,12 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  JoinedButtons,
-  TokenizingFieldValue,
-  colorBackgroundLighterHover,
-  colorTextDefault,
-  colorBackgroundDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {JoinedButtons, TokenizingFieldValue, Colors} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
@@ -110,25 +103,25 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
 };
 
 export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
 
   &&:hover {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 
   ${({$active}) =>
     $active
       ? css`
-          background-color: ${colorBackgroundLighterHover()};
-          color: ${colorTextDefault()};
+          background-color: ${Colors.backgroundLighterHover()};
+          color: ${Colors.textDefault()};
 
           &&:hover {
-            background-color: ${colorBackgroundLighterHover()};
-            color: ${colorTextDefault()};
+            background-color: ${Colors.backgroundLighterHover()};
+            color: ${Colors.textDefault()};
           }
         `
       : css`
-          background-color: ${colorBackgroundDefault()};
+          background-color: ${Colors.backgroundDefault()};
         `}
 `;
 

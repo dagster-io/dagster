@@ -7,9 +7,8 @@ import * as React from 'react';
 import {List as _List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components';
 
-import {colorAccentGray, colorTextDisabled} from '../theme/color';
-
 import {Box} from './Box';
+import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
@@ -21,7 +20,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
-      background-color: ${colorAccentGray()};
+      background-color: ${Colors.accentGray()};
     }
 
     .bp4-input {
@@ -30,7 +29,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
       height: auto;
 
       ::placeholder {
-        color: ${colorTextDisabled()};
+        color: ${Colors.textDisabled()};
       }
     }
 

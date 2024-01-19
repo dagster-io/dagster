@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Subtitle2,
-  Caption,
-  Icon,
-  Spinner,
-  colorTextLight,
-  colorBackgroundDefault,
-} from '@dagster-io/ui-components';
+import {Box, Subtitle2, Caption, Icon, Spinner, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -93,7 +85,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
       if (!tick?.requestedAssetKeys.length) {
         return (
           <Box padding={{vertical: 12, horizontal: 24}}>
-            <Caption color={colorTextLight()}>None</Caption>
+            <Caption color={Colors.textLight()}>None</Caption>
           </Box>
         );
       }
@@ -106,11 +98,11 @@ export const AutomaterializationTickDetailDialog = React.memo(
               gridTemplateColumns: TEMPLATE_COLUMNS,
               height: '32px',
               fontSize: '12px',
-              color: colorTextLight(),
+              color: Colors.textLight(),
               position: 'sticky',
               top: 0,
               zIndex: 1,
-              background: colorBackgroundDefault(),
+              background: Colors.backgroundDefault(),
             }}
           >
             <HeaderCell>Asset</HeaderCell>
@@ -228,12 +220,12 @@ const AssetDetailRow = ({
                 to={workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)}
               >
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                  <Icon color={colorTextLight()} name="asset_group" />
+                  <Icon color={Colors.textLight()} name="asset_group" />
                   {definition.groupName}
                 </Box>
               </Link>
             ) : (
-              <Caption color={colorTextLight()}>Asset not found</Caption>
+              <Caption color={Colors.textLight()}>Asset not found</Caption>
             )
           ) : (
             <Spinner purpose="body-text" />

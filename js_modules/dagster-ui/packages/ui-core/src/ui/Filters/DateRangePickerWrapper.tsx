@@ -1,16 +1,4 @@
-import {
-  colorAccentBlue,
-  colorBackgroundBlue,
-  colorBackgroundBlueHover,
-  colorBackgroundDefault,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorBorderHover,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextLight,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components';
@@ -28,104 +16,104 @@ export const DateRangePickerWrapper = (props: React.ComponentProps<typeof DateRa
 
 const DatePickerContainer = styled.div`
   .DateRangePickerInput {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${Colors.backgroundDefault()};
   }
 
   .DateRangePickerInput__withBorder {
-    border-color: ${colorBorderDefault()};
+    border-color: ${Colors.borderDefault()};
   }
 
   .DateInput {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${Colors.backgroundDefault()};
   }
 
   .DateRangePickerInput_arrow_svg {
-    fill: ${colorTextLighter()};
+    fill: ${Colors.textLighter()};
   }
 
   .DateInput_input {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
   }
 
   .DateInput_input::placeholder {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 
   .DateInput_input__focused {
-    border-color: ${colorAccentBlue()};
+    border-color: ${Colors.accentBlue()};
     outline: none;
   }
 
   .DateInput_fangShape {
-    fill: ${colorBackgroundLight()};
+    fill: ${Colors.backgroundLight()};
   }
 
   .DateInput_fangStroke {
-    stroke: ${colorKeylineDefault()};
+    stroke: ${Colors.keylineDefault()};
   }
 
   .DateRangePicker_picker {
-    background-color: ${colorBackgroundLight()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDefault()};
   }
 
   .DayPicker {
-    background-color: ${colorBackgroundLight()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDefault()};
   }
 
   .DayPickerNavigation_button__default {
-    background-color: ${colorBackgroundLight()};
-    border-color: ${colorBorderDefault()};
+    background-color: ${Colors.backgroundLight()};
+    border-color: ${Colors.borderDefault()};
 
     :hover {
-      border-color: ${colorBorderHover()};
+      border-color: ${Colors.borderHover()};
     }
   }
 
   .DayPickerNavigation_svg__horizontal {
-    fill: ${colorTextLight()};
+    fill: ${Colors.textLight()};
   }
 
   .DayPicker_weekHeader {
-    color: ${colorTextLighter()};
+    color: ${Colors.textLighter()};
   }
 
   .CalendarMonthGrid,
   .CalendarMonth {
-    background-color: ${colorBackgroundLight()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDefault()};
   }
 
   .CalendarMonth_caption {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 
   .CalendarDay__default {
-    background-color: ${colorBackgroundLight()};
-    border-color: ${colorKeylineDefault()};
-    color: ${colorTextLight()};
+    background-color: ${Colors.backgroundLight()};
+    border-color: ${Colors.keylineDefault()};
+    color: ${Colors.textLight()};
 
     :hover {
-      background-color: ${colorBackgroundBlue()};
-      border-color: ${colorKeylineDefault()};
+      background-color: ${Colors.backgroundBlue()};
+      border-color: ${Colors.keylineDefault()};
     }
   }
 
   .CalendarDay__selected {
-    background-color: ${colorBackgroundBlueHover()};
+    background-color: ${Colors.backgroundBlueHover()};
 
     :active,
     :hover {
-      border-color: ${colorKeylineDefault()};
+      border-color: ${Colors.keylineDefault()};
     }
   }
 
   .CalendarDay__hovered_span,
   .CalendarDay__hovered_span_3 {
-    background-color: ${colorBackgroundBlue()};
-    border-color: ${colorKeylineDefault()};
+    background-color: ${Colors.backgroundBlue()};
+    border-color: ${Colors.keylineDefault()};
   }
 `;
 

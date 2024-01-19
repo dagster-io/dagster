@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Icon, Mono, colorKeylineDefault} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Caption, Icon, Mono, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -86,7 +86,7 @@ const AssetEventSystemTagsTable = styled.table`
     width: 25%;
   }
   tr td {
-    border: 1px solid ${colorKeylineDefault()};
+    border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

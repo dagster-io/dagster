@@ -5,9 +5,7 @@ import {
   Icon,
   JoinedButtons,
   TextInput,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -95,9 +93,9 @@ export const AssetNodeLineage = ({
 };
 
 const DepthHidesAssetsNotice = styled.div`
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   border-radius: 8px;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   align-items: center;
   display: flex;
   padding: 4px 8px;
@@ -152,7 +150,7 @@ const LineageDepthControl = ({
             padding: 6,
             borderRadius: 0,
             boxShadow: 'none',
-            border: `1px solid ${colorBorderDefault()}`,
+            border: `1px solid ${Colors.borderDefault()}`,
           }}
           key={value}
           value={text}

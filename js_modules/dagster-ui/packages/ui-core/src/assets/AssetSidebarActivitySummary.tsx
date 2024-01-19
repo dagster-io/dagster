@@ -1,13 +1,4 @@
-import {
-  Body,
-  Box,
-  Icon,
-  MiddleTruncate,
-  Spinner,
-  colorKeylineDefault,
-  colorLinkDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Body, Box, Icon, MiddleTruncate, Spinner, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -95,7 +86,7 @@ export const AssetSidebarActivitySummary = ({
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'auto-materialize-history'})}>
               View auto-materialize history
             </Link>
-            <Icon name="open_in_new" color={colorLinkDefault()} />
+            <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
           <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1, marginBottom: 12}}>
@@ -140,7 +131,7 @@ export const AssetSidebarActivitySummary = ({
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}
-                style={{color: colorTextLight(), fontSize: '0.8rem'}}
+                style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
                 {!isSourceAsset ? `No materializations found` : `No observations found`}
               </Box>
@@ -161,7 +152,7 @@ export const AssetSidebarActivitySummary = ({
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}
-                style={{color: colorTextLight(), fontSize: '0.8rem'}}
+                style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
                 {!isSourceAsset ? `No materializations found` : `No observations found`}
               </Box>
@@ -197,7 +188,7 @@ export const AssetSidebarActivitySummary = ({
                 <Box
                   key={check.name}
                   style={{minHeight: 40}}
-                  border={{side: 'top', width: 1, color: colorKeylineDefault()}}
+                  border={{side: 'top', width: 1, color: Colors.keylineDefault()}}
                   padding={{vertical: 8, right: 12, left: 24}}
                   flex={{
                     gap: 8,
@@ -218,7 +209,7 @@ export const AssetSidebarActivitySummary = ({
             {asset.assetChecksOrError.checks.length > 10 && (
               <Box
                 padding={{vertical: 12, right: 12, left: 24}}
-                border={{side: 'top', width: 1, color: colorKeylineDefault()}}
+                border={{side: 'top', width: 1, color: Colors.keylineDefault()}}
               >
                 <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
                   View {asset.assetChecksOrError.checks.length - 10} more…

@@ -1,22 +1,4 @@
-import {
-  Caption,
-  Tooltip,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentLavender,
-  colorAccentLavenderHover,
-  colorAccentPrimary,
-  colorAccentRed,
-  colorAccentRedHover,
-  colorAccentReversed,
-  colorBackgroundDefault,
-  colorBackgroundDisabled,
-  colorKeylineDefault,
-  colorTextLight,
-  ifPlural,
-  useViewport,
-} from '@dagster-io/ui-components';
+import {Caption, Tooltip, Colors, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
@@ -34,17 +16,17 @@ import {isStuckStartedTick} from './util';
 dayjs.extend(relativeTime);
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: colorAccentGreen(),
-  [InstigationTickStatus.FAILURE]: colorAccentRed(),
-  [InstigationTickStatus.STARTED]: colorAccentLavender(),
-  [InstigationTickStatus.SKIPPED]: colorBackgroundDisabled(),
+  [InstigationTickStatus.SUCCESS]: Colors.accentGreen(),
+  [InstigationTickStatus.FAILURE]: Colors.accentRed(),
+  [InstigationTickStatus.STARTED]: Colors.accentLavender(),
+  [InstigationTickStatus.SKIPPED]: Colors.backgroundDisabled(),
 };
 
 const HoverColorMap = {
-  [InstigationTickStatus.SUCCESS]: colorAccentGreenHover(),
-  [InstigationTickStatus.FAILURE]: colorAccentRedHover(),
-  [InstigationTickStatus.STARTED]: colorAccentLavenderHover(),
-  [InstigationTickStatus.SKIPPED]: colorAccentGrayHover(),
+  [InstigationTickStatus.SUCCESS]: Colors.accentGreenHover(),
+  [InstigationTickStatus.FAILURE]: Colors.accentRedHover(),
+  [InstigationTickStatus.STARTED]: Colors.accentLavenderHover(),
+  [InstigationTickStatus.SKIPPED]: Colors.accentGrayHover(),
 };
 
 const REFRESH_INTERVAL = 100;
@@ -234,7 +216,7 @@ const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemon
         {status} ({elapsedTime})
       </Caption>
       {tick.status === InstigationTickStatus.STARTED ? null : (
-        <Caption color={colorTextLight()}>Click for details</Caption>
+        <Caption color={Colors.textLight()}>Click for details</Caption>
       )}
     </div>
   );
@@ -244,7 +226,7 @@ const TicksWrapper = styled.div`
   position: relative;
   height: 100px;
   padding: 10px 2px;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const TimeAxisWrapper = styled.div`
@@ -262,7 +244,7 @@ const Tick = styled.div<{status: InstigationTickStatus}>`
     place-content: center;
     display: grid;
   }
-  color: ${colorBackgroundDefault()};
+  color: ${Colors.backgroundDefault()};
   ${({status}) => `
     background: ${COLOR_MAP[status]};
     &:hover {
@@ -282,7 +264,7 @@ const GridTickLine = styled.div`
   top: 0;
   height: 108px;
   width: 1px;
-  background: ${colorKeylineDefault()};
+  background: ${Colors.keylineDefault()};
 `;
 const GridTickTime = styled.div`
   height: 16px;
@@ -297,13 +279,13 @@ const NowIndicator = styled.div`
   top: 0;
   height: 126px;
   width: 2px;
-  background: ${colorAccentPrimary()};
+  background: ${Colors.accentPrimary()};
   &:after {
     content: 'Now';
     position: absolute;
     left: 0;
-    background: ${colorAccentPrimary()};
-    color: ${colorAccentReversed()};
+    background: ${Colors.accentPrimary()};
+    color: ${Colors.accentReversed()};
     bottom: 0;
     font-size: 12px;
     padding: 3px 4px;

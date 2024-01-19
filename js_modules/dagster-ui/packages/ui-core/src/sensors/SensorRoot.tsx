@@ -1,12 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Page,
-  NonIdealState,
-  ButtonGroup,
-  colorTextLight,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Page, NonIdealState, ButtonGroup, Colors, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
@@ -94,7 +87,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 16}}
       >
         <Spinner purpose="body-text" />
-        <div style={{color: colorTextLight()}}>Loading sensor…</div>
+        <div style={{color: Colors.textLight()}}>Loading sensor…</div>
       </Box>
     );
   }

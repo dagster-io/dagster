@@ -6,40 +6,31 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import searchSVG from '../icon-svgs/search.svg';
-import {
-  colorAccentGray,
-  colorBorderDefault,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
-  colorPopoverBackground,
-  colorShadowDefault,
-  colorTooltipBackground,
-} from '../theme/color';
 
+import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagster-popover.bp4-popover2,
   .dagster-popover.bp4-popover {
-    box-shadow: ${colorShadowDefault()} 0px 2px 12px;
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
   }
 
   .dagster-popover .bp4-popover2-content,
   .dagster-popover .bp4-popover-content {
-    background-color: ${colorPopoverBackground()};
+    background-color: ${Colors.popoverBackground()};
     border-radius: 4px;
 
     .bp4-menu {
-      background-color: ${colorPopoverBackground()};
-      color: ${colorTextDefault()};
+      background-color: ${Colors.popoverBackground()};
+      color: ${Colors.textDefault()};
     }
 
     .bp4-input-group {
       .bp4-icon.bp4-icon-search {
         width: 16px;
         height: 16px;
-        background: ${colorAccentGray()};
+        background: ${Colors.accentGray()};
         mask-image: url(${searchSVG.src});
         mask-size: cover;
         &::before { 
@@ -51,14 +42,14 @@ export const GlobalPopoverStyle = createGlobalStyle`
       }
         
       .bp4-input {
-        background-color: ${colorPopoverBackground()};
+        background-color: ${Colors.popoverBackground()};
         border: none;
         border-radius: 8px;
-        box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px, ${colorKeylineDefault()} inset 2px 2px 1.5px;
-        color: ${colorTextDefault()};
+        box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px, ${Colors.keylineDefault()} inset 2px 2px 1.5px;
+        color: ${Colors.textDefault()};
         font-family: ${FontFamily.default};
         ::placeholder {
-          color: ${colorTextDisabled()};
+          color: ${Colors.textDisabled()};
         }
       }
     }
@@ -75,21 +66,21 @@ export const GlobalPopoverStyle = createGlobalStyle`
   }
 
   .dagster-popover .bp4-popover2-arrow-fill {
-    fill: ${colorPopoverBackground()};
+    fill: ${Colors.popoverBackground()};
   }
 
   .dagster-popover.bp4-dark .bp4-popover2-arrow-fill {
-    fill: ${colorTooltipBackground()};
+    fill: ${Colors.tooltipBackground()};
   }
 
   .dagster-popover.bp4-dark .bp4-popover2-arrow-border {
-    fill: ${colorShadowDefault()};
+    fill: ${Colors.shadowDefault()};
     fill-opacity: 0.7;
   }
 
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${colorTooltipBackground()};
+    background-color: ${Colors.tooltipBackground()};
   }
 `;
 

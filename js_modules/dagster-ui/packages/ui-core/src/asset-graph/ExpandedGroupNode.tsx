@@ -1,12 +1,4 @@
-import {
-  Box,
-  Icon,
-  colorLineageGroupBackground,
-  colorLineageGroupNodeBorder,
-  colorLineageGroupNodeBackground,
-  colorLineageGroupNodeBackgroundHover,
-  colorLineageGroupNodeBorderHover,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -71,19 +63,19 @@ const GroupOutline = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
-  background: ${colorLineageGroupBackground()};
+  background: ${Colors.lineageGroupBackground()};
   width: 100%;
   border-radius: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   pointer-events: none;
 
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
-  background: ${colorLineageGroupNodeBackground()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  background: ${Colors.lineageGroupNodeBackground()};
   width: 100%;
   height: 60px;
   display: flex;
@@ -100,7 +92,7 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
     border-color 100ms linear;
 
   &:hover {
-    background: ${colorLineageGroupNodeBackgroundHover()};
-    border-color: ${colorLineageGroupNodeBorderHover()};
+    background: ${Colors.lineageGroupNodeBackgroundHover()};
+    border-color: ${Colors.lineageGroupNodeBorderHover()};
   }
 `;

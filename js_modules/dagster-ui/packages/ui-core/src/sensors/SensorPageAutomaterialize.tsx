@@ -1,5 +1,5 @@
 import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Spinner, Subtitle2, colorTextLight} from '@dagster-io/ui-components';
+import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -182,7 +182,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
           flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
         >
           <Spinner purpose="body-text" />
-          <div style={{color: colorTextLight()}}>Loading evaluations…</div>
+          <div style={{color: Colors.textLight()}}>Loading evaluations…</div>
         </Box>
       ) : (
         <>

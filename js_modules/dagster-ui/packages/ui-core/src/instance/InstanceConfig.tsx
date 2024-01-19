@@ -9,10 +9,7 @@ import {
   Heading,
   StyledRawCodeMirror,
   Subheading,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorTextDefault,
-  colorBackgroundLime,
+  Colors,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
 import * as React from 'react';
@@ -28,15 +25,15 @@ import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/Instanc
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config {
-    background-color: ${colorBackgroundDefault()};
-    box-shadow: 0 1px 0 ${colorKeylineDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    box-shadow: 0 1px 0 ${Colors.keylineDefault()};
+    color: ${Colors.textDefault()};
     height: 100%;
   }
 
   .CodeMirror.cm-s-instance-config {
     .config-highlight {
-      background-color: ${colorBackgroundLime()};
+      background-color: ${Colors.backgroundLime()};
     }
 `;
 

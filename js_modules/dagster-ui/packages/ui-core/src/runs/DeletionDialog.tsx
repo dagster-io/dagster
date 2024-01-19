@@ -9,8 +9,7 @@ import {
   Group,
   Icon,
   Mono,
-  colorAccentGreen,
-  colorAccentYellow,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -240,7 +239,7 @@ export const DeletionDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon name="check_circle" color={colorAccentGreen()} />
+            <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
             }.`}</div>
@@ -249,7 +248,7 @@ export const DeletionDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="center">
-              <Icon name="warning" color={colorAccentYellow()} />
+              <Icon name="warning" color={Colors.accentYellow()} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
             </Group>
             <ul>

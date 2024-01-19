@@ -9,7 +9,7 @@ import {
   Heading,
   PageHeader,
   Table,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import React, {useLayoutEffect} from 'react';
 import {Redirect} from 'react-router-dom';
@@ -212,7 +212,7 @@ const GlobalAutomaterializationRoot = () => {
           flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
         >
           <Spinner purpose="body-text" />
-          <div style={{color: colorTextLight()}}>Loading evaluations…</div>
+          <div style={{color: Colors.textLight()}}>Loading evaluations…</div>
         </Box>
       ) : (
         <>

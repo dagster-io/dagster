@@ -1,4 +1,4 @@
-import {colorLineageEdgeHighlighted, colorLineageEdge} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {buildSVGPath} from './Utils';
@@ -31,13 +31,13 @@ export const AssetEdges = ({
   return (
     <React.Fragment>
       <AssetEdgeSet
-        color={colorLineageEdge()}
+        color={Colors.lineageEdge()}
         edges={intersectedEdges.length > 50 ? visibleToFromEdges : intersectedEdges}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
       />
       <AssetEdgeSet
-        color={colorLineageEdgeHighlighted()}
+        color={Colors.lineageEdgeHighlighted()}
         edges={edges.filter(
           ({fromId, toId}) =>
             selected?.includes(fromId) ||

@@ -1,14 +1,4 @@
-import {
-  Box,
-  Icon,
-  Slider,
-  Tooltip,
-  colorBackgroundDefault,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorBorderDefault,
-  colorLineageDots,
-} from '@dagster-io/ui-components';
+import {Box, Icon, Slider, Tooltip, Colors} from '@dagster-io/ui-components';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -206,10 +196,10 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           <Box
             style={{width: 32, height: 140}}
             padding={{vertical: 12}}
-            background={colorBackgroundDefault()}
+            background={Colors.backgroundDefault()}
             data-zoom-control={true}
             flex={{alignItems: 'center', direction: 'column'}}
-            border={{side: 'left-and-right', color: colorBorderDefault()}}
+            border={{side: 'left-and-right', color: Colors.borderDefault()}}
           >
             <Slider
               vertical
@@ -258,8 +248,8 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 };
 
 const IconButton = styled.button`
-  background: ${colorBackgroundDefault()};
-  border: 1px solid ${colorBorderDefault()};
+  background: ${Colors.backgroundDefault()};
+  border: 1px solid ${Colors.borderDefault()};
   cursor: pointer;
   padding: 3px;
   position: relative;
@@ -267,7 +257,7 @@ const IconButton = styled.button`
   transition: background 200ms ease-in-out;
 }
   :hover {
-    background-color: ${colorBackgroundLightHover()};
+    background-color: ${Colors.backgroundLightHover()};
   }
 
   :focus {
@@ -275,7 +265,7 @@ const IconButton = styled.button`
   }
 
   :active {
-    background-color: ${colorBackgroundLight()};
+    background-color: ${Colors.backgroundLight()};
   }
 `;
 
@@ -639,7 +629,7 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: 'hidden',
   userSelect: 'none',
   outline: 'none',
-  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${colorLineageDots()}' cx='5' cy='5' r='5' /></svg>") repeat`,
+  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${Colors.lineageDots()}' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
 
 const ZoomSliderContainer = styled.div`
@@ -647,7 +637,7 @@ const ZoomSliderContainer = styled.div`
   bottom: 12px;
   right: 12px;
   width: 30px;
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
 `;
 
 const SVGExporter = ({

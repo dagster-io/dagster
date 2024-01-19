@@ -1,13 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  ConfigTypeSchema,
-  FontFamily,
-  Icon,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Box, ConfigTypeSchema, FontFamily, Icon, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -124,7 +116,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
               .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
               .map((requirement) => (
                 <ResourceContainer key={requirement.resourceKey}>
-                  <Icon name="resource" color={colorAccentGray()} />
+                  <Icon name="resource" color={Colors.accentGray()} />
                   {repoAddress ? (
                     <Link
                       to={workspacePathFromAddress(
@@ -306,7 +298,7 @@ const AssetNodeListItem = styled(Link)`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   display: flex;
   gap: 6px;
 
@@ -315,7 +307,7 @@ const AssetNodeListItem = styled(Link)`
   }
 
   &:hover {
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
   }
 
   font-family: ${FontFamily.monospace};

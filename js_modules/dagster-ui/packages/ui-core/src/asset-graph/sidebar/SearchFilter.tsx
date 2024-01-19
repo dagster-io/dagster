@@ -1,4 +1,4 @@
-import {MenuItem, useViewport, Suggest, colorTextLighter} from '@dagster-io/ui-components';
+import {MenuItem, useViewport, Suggest, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -66,7 +66,7 @@ const SuggestWrapper = styled.div`
     width: 100%;
 
     ::placeholder {
-      color: ${colorTextLighter()};
+      color: ${Colors.textLighter()};
     }
   }
 `;

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, colorTextYellow} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -53,7 +53,7 @@ export const AssetDefinedInMultipleReposNotice = ({
             definitions were found in{' '}
             <ButtonLink
               underline="always"
-              color={colorTextYellow()}
+              color={Colors.textYellow()}
               onClick={() =>
                 showCustomAlert({
                   title: MULTIPLE_DEFINITIONS_WARNING,

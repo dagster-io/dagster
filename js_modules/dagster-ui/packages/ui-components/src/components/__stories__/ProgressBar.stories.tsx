@@ -1,8 +1,8 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {colorAccentBlue} from '../../theme/color';
 import {Box} from '../Box';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {ProgressBar} from '../ProgressBar';
 
@@ -23,8 +23,13 @@ export const Sizes = () => {
       </Box>
       <Box padding={20} border="all">
         <Group direction="column" spacing={16}>
-          <ProgressBar intent="primary" value={0.1} animate={true} fillColor={colorAccentBlue()} />
-          <ProgressBar intent="primary" value={0.7} fillColor={colorAccentBlue()} />
+          <ProgressBar
+            intent="primary"
+            value={0.1}
+            animate={true}
+            fillColor={Colors.accentBlue()}
+          />
+          <ProgressBar intent="primary" value={0.7} fillColor={Colors.accentBlue()} />
         </Group>
       </Box>
     </Group>

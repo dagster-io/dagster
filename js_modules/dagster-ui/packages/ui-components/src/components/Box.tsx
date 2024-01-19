@@ -1,8 +1,8 @@
 import styled, {css} from 'styled-components';
 
-import {colorKeylineDefault} from '../theme/color';
 import {assertUnreachable} from '../util/assertUnreachable';
 
+import {Colors} from './Color';
 import {BorderSetting, BorderSide, DirectionalSpacing, FlexProperties} from './types';
 
 interface Props {
@@ -50,8 +50,8 @@ const directionalSpacingToCSS = (property: string, spacing: DirectionalSpacing) 
 
 const borderSettingToCSS = (border: BorderSide | BorderSetting) => {
   const borderValue =
-    typeof border === 'string' ? {side: border, width: 1, color: colorKeylineDefault()} : border;
-  const {side, width = 1, color = colorKeylineDefault()} = borderValue;
+    typeof border === 'string' ? {side: border, width: 1, color: Colors.keylineDefault()} : border;
+  const {side, width = 1, color = Colors.keylineDefault()} = borderValue;
 
   switch (side) {
     case 'all':

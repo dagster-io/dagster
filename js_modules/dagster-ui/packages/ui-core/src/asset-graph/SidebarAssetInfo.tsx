@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  ConfigTypeSchema,
-  Icon,
-  Spinner,
-  colorAccentGray,
-  colorBorderDefault,
-  colorLinkDefault,
-} from '@dagster-io/ui-components';
+import {Box, ConfigTypeSchema, Icon, Spinner, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -114,7 +106,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         liveData={liveData}
       />
 
-      <div style={{borderBottom: `2px solid ${colorBorderDefault()}`}} />
+      <div style={{borderBottom: `2px solid ${Colors.borderDefault()}`}} />
 
       {nodeDependsOnSelf(graphNode) && <DependsOnSelfBanner />}
 
@@ -144,7 +136,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
               .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
               .map((resource) => (
                 <ResourceContainer key={resource.resourceKey}>
-                  <Icon name="resource" color={colorAccentGray()} />
+                  <Icon name="resource" color={Colors.accentGray()} />
                   {repoAddress ? (
                     <Link
                       to={workspacePathFromAddress(
@@ -215,7 +207,7 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
           {'View in Asset Catalog '}
-          <Icon name="open_in_new" color={colorLinkDefault()} />
+          <Icon name="open_in_new" color={Colors.linkDefault()} />
         </AssetCatalogLink>
 
         {repoAddress && (

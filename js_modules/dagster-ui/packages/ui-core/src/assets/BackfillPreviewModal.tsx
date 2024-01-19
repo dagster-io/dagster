@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogFooter,
-  Spinner,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, Spinner, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
@@ -103,20 +95,20 @@ export const BackfillPreviewModal = ({
                     <AssetLink path={assetKey.path} textStyle="middle-truncate" icon="asset" />
                   </RowCell>
                   {backfillPolicy ? (
-                    <RowCell style={{color: colorTextDefault()}}>
+                    <RowCell style={{color: Colors.textDefault()}}>
                       {backfillPolicy?.description}
                     </RowCell>
                   ) : (
                     <RowCell>{'\u2013'}</RowCell>
                   )}
                   {partitionDefinition ? (
-                    <RowCell style={{color: colorTextDefault()}}>
+                    <RowCell style={{color: Colors.textDefault()}}>
                       {partitionDefinition?.description}
                     </RowCell>
                   ) : (
                     <RowCell>{'\u2013'}</RowCell>
                   )}
-                  <RowCell style={{color: colorTextDefault(), alignItems: 'flex-start'}}>
+                  <RowCell style={{color: Colors.textDefault(), alignItems: 'flex-start'}}>
                     {partitions ? (
                       <TargetPartitionsDisplay targetPartitions={partitions} />
                     ) : (
@@ -153,7 +145,7 @@ export const BackfillPreviewTableHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Asset key</HeaderCell>

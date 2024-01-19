@@ -7,11 +7,7 @@ import {
   Icon,
   Tooltip,
   IconWrapper,
-  colorLinkDefault,
-  colorTextLight,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorTextLighter,
+  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -78,7 +74,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
             <CopyButton onClick={performCopy}>
               <Icon
                 name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                color={colorAccentGray()}
+                color={Colors.accentGray()}
               />
             </CopyButton>
           </Tooltip>
@@ -105,14 +101,14 @@ const CopyButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background-color: ${colorAccentGrayHover()};
+    background-color: ${Colors.accentGrayHover()};
   }
 `;
 
 export const AssetGlobalLineageLink = () => (
   <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
-      <Icon color={colorLinkDefault()} name="schema" />
+      <Icon color={Colors.linkDefault()} name="schema" />
       View global asset lineage
     </Box>
   </Link>
@@ -123,7 +119,7 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
     background: none;
     font-size: 20px;
     font-weight: bold;
-    color: ${colorTextLighter()};
+    color: ${Colors.textLighter()};
     content: '/';
     width: 8px;
     line-height: 16px;
@@ -131,10 +127,10 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
 `;
 
 const BreadcrumbLink = styled(Link)`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
 
   :hover,
   :active {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 `;

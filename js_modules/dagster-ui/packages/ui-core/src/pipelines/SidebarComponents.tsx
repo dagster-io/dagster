@@ -1,13 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Collapse} from '@blueprintjs/core';
-import {
-  Icon,
-  FontFamily,
-  colorKeylineDefault,
-  colorTextLight,
-  colorTextDefault,
-  colorBackgroundLight,
-} from '@dagster-io/ui-components';
+import {Icon, FontFamily, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -79,12 +72,12 @@ export const SectionSmallHeader = styled.h4`
 `;
 
 export const SidebarSubhead = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 0.7rem;
 `;
 
 export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
   padding-bottom: 12px;
   font-size: 0.8rem;
@@ -99,10 +92,10 @@ const CollapsingHeaderBar = styled.div`
   height: 32px;
   padding-left: 24px;
   padding-right: 8px;
-  background: ${colorBackgroundLight()};
-  border-top: 1px solid ${colorKeylineDefault()};
-  border-bottom: 1px solid ${colorKeylineDefault()};
-  color: ${colorTextDefault()};
+  background: ${Colors.backgroundLight()};
+  border-top: 1px solid ${Colors.keylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
+  color: ${Colors.textDefault()};
   cursor: pointer;
   display: flex;
   justify-content: space-between;

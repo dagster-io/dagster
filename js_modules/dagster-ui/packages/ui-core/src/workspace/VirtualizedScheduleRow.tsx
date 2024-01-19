@@ -9,8 +9,7 @@ import {
   MiddleTruncate,
   Popover,
   Tooltip,
-  colorTextDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -164,7 +163,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                 <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
                   <div
                     style={{
-                      color: colorTextDefault(),
+                      color: Colors.textDefault(),
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       maxWidth: '100%',
@@ -265,7 +264,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
           ) : (
-            <span style={{color: colorTextLight()}}>{'\u2013'}</span>
+            <span style={{color: Colors.textLight()}}>{'\u2013'}</span>
           )}
         </RowCell>
       </RowGrid>
@@ -283,7 +282,7 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       {checkbox ? (

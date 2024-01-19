@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {colorAccentYellow} from '../../theme/color';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 import {Tabs, Tab} from '../Tabs';
@@ -22,7 +22,7 @@ export const Default = () => {
         <Tab
           id="sensors"
           title="Sensors"
-          icon={<Icon name="warning" color={colorAccentYellow()} />}
+          icon={<Icon name="warning" color={Colors.accentYellow()} />}
         />
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" title={<a href="/?path=/story/box">Box Component</a>} />
@@ -34,7 +34,7 @@ export const Default = () => {
           id="sensors"
           title="Sensors"
           disabled
-          icon={<Icon name="warning" color={colorAccentYellow()} />}
+          icon={<Icon name="warning" color={Colors.accentYellow()} />}
         />
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" disabled title={<a href="/?path=/story/box">Box Component</a>} />

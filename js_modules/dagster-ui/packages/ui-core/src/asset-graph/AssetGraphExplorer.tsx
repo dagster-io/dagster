@@ -10,11 +10,7 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
-  colorAccentWhite,
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorKeylineDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -480,7 +476,7 @@ const AssetGraphExplorerWithData = ({
             title="Expand all groups"
             icon={<Icon name="unfold_more" />}
             onClick={() => setExpandedGroups(allGroups)}
-            style={{background: colorBackgroundDefault()}}
+            style={{background: Colors.backgroundDefault()}}
           />
         </Tooltip>
       ) : (
@@ -495,7 +491,7 @@ const AssetGraphExplorerWithData = ({
             title="Collapse all groups"
             icon={<Icon name="unfold_less" />}
             onClick={() => setExpandedGroups([])}
-            style={{background: colorBackgroundDefault()}}
+            style={{background: Colors.backgroundDefault()}}
           />
         </Tooltip>
       )}
@@ -870,9 +866,9 @@ interface KeyboardTagProps {
 
 const KeyboardTag = styled.div<KeyboardTagProps>`
   ${(props) => {
-    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+    return props.$withinTooltip ? `color: ${Colors.accentWhite()}` : `color: ${Colors.textLight()}`;
   }};
-  background: ${colorBackgroundGray()};
+  background: ${Colors.backgroundGray()};
   border-radius: 4px;
   padding: 2px 4px;
   margin-left: 6px;
@@ -894,10 +890,10 @@ const TopbarWrapper = styled.div`
   left: 0;
   right: 0;
   display: flex;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   gap: 12px;
   align-items: center;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

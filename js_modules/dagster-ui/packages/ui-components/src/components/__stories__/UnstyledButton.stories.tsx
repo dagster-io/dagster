@@ -1,8 +1,8 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {colorAccentBlue} from '../../theme/color';
 import {Box} from '../Box';
+import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {Caption} from '../Text';
 import {UnstyledButton} from '../UnstyledButton';
@@ -28,10 +28,10 @@ export const Default = () => {
       </UnstyledButton>
       <UnstyledButton disabled>Disabled button</UnstyledButton>
       <UnstyledButton>
-        <span style={{color: colorAccentBlue()}}>Button with blue text</span>
+        <span style={{color: Colors.accentBlue()}}>Button with blue text</span>
       </UnstyledButton>
       <UnstyledButton disabled>
-        <span style={{color: colorAccentBlue()}}>Disabled button with blue text</span>
+        <span style={{color: Colors.accentBlue()}}>Disabled button with blue text</span>
       </UnstyledButton>
     </Box>
   );

@@ -16,9 +16,7 @@ import {
   SecondPanelToggle,
   SplitPanelContainer,
   TextInput,
-  colorAccentYellow,
-  colorBorderDefault,
-  colorTextDefault,
+  Colors,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
 import merge from 'deepmerge';
@@ -685,7 +683,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                     }
                   />
                   {includedChecks.length > 0 ? (
-                    <Body color={colorTextDefault()}>
+                    <Body color={Colors.textDefault()}>
                       {`Including `}
                       <ButtonLink onClick={() => setShowChecks(includedChecks)}>
                         {`${includedChecks.length.toLocaleString()} ${
@@ -769,7 +767,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', color: colorBorderDefault()}}
+                border={{side: 'bottom', color: Colors.borderDefault()}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
@@ -781,10 +779,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', color: colorBorderDefault()}}
+                border={{side: 'bottom', color: Colors.borderDefault()}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <Icon name="warning" color={colorAccentYellow()} />
+                  <Icon name="warning" color={Colors.accentYellow()} />
                   <div>
                     {repoAddressAsHumanString(repoAddress)} has been manually refreshed, and this
                     configuration may now be out of date.

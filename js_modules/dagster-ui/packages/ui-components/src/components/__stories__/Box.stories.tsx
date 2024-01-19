@@ -2,15 +2,8 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentCyan,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundGray,
-} from '../../theme/color';
 import {Box} from '../Box';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {
   AlignItems,
@@ -32,7 +25,7 @@ export const Padding = () => {
   return (
     <Group spacing={2} direction="row">
       {spacings.map((spacing) => (
-        <Box key={`${spacing}`} background={colorBackgroundGray()} padding={spacing}>
+        <Box key={`${spacing}`} background={Colors.backgroundGray()} padding={spacing}>
           {spacing}
         </Box>
       ))}
@@ -60,8 +53,8 @@ export const BorderSides = () => {
             {sides.map((side) => (
               <Box
                 key={side}
-                background={colorBackgroundGray()}
-                border={{side, width, color: colorAccentBlue()}}
+                background={Colors.backgroundGray()}
+                border={{side, width, color: Colors.accentBlue()}}
                 padding={24}
                 style={{fontSize: '12px', textTransform: 'uppercase'}}
               >
@@ -86,12 +79,12 @@ export const FlexDirections = () => {
         {directions.map((direction) => (
           <Group key={direction} direction="column" spacing={12}>
             <ExampleText>{direction}</ExampleText>
-            <Box background={colorBackgroundGray()} flex={{direction}} padding={8}>
-              <Box padding={12} background={colorAccentBlue()} />
-              <Box padding={12} background={colorAccentCyan()} />
-              <Box padding={12} background={colorAccentGreen()} />
-              <Box padding={12} background={colorAccentYellow()} />
-              <Box padding={12} background={colorAccentRed()} />
+            <Box background={Colors.backgroundGray()} flex={{direction}} padding={8}>
+              <Box padding={12} background={Colors.accentBlue()} />
+              <Box padding={12} background={Colors.accentCyan()} />
+              <Box padding={12} background={Colors.accentGreen()} />
+              <Box padding={12} background={Colors.accentYellow()} />
+              <Box padding={12} background={Colors.accentRed()} />
             </Box>
           </Group>
         ))}
@@ -102,15 +95,15 @@ export const FlexDirections = () => {
           <Group key={alignment} direction="column" spacing={12}>
             <ExampleText>{alignment}</ExampleText>
             <Box
-              background={colorBackgroundGray()}
+              background={Colors.backgroundGray()}
               flex={{direction: 'row', alignItems: alignment}}
               padding={8}
             >
-              <Box padding={12} background={colorAccentBlue()} />
-              <Box padding={24} background={colorAccentCyan()} />
-              <Box padding={32} background={colorAccentGreen()} />
-              <Box padding={4} background={colorAccentYellow()} />
-              <Box padding={16} background={colorAccentRed()} />
+              <Box padding={12} background={Colors.accentBlue()} />
+              <Box padding={24} background={Colors.accentCyan()} />
+              <Box padding={32} background={Colors.accentGreen()} />
+              <Box padding={4} background={Colors.accentYellow()} />
+              <Box padding={16} background={Colors.accentRed()} />
             </Box>
           </Group>
         ))}
@@ -137,15 +130,15 @@ export const JustifyContent = () => {
           <Group key={option} direction="column" spacing={12}>
             <ExampleText>{option}</ExampleText>
             <Box
-              background={colorBackgroundGray()}
+              background={Colors.backgroundGray()}
               flex={{direction: 'row', justifyContent: option}}
               padding={8}
             >
-              <Box padding={12} background={colorAccentBlue()} />
-              <Box padding={12} background={colorAccentCyan()} />
-              <Box padding={12} background={colorAccentGreen()} />
-              <Box padding={12} background={colorAccentYellow()} />
-              <Box padding={12} background={colorAccentRed()} />
+              <Box padding={12} background={Colors.accentBlue()} />
+              <Box padding={12} background={Colors.accentCyan()} />
+              <Box padding={12} background={Colors.accentGreen()} />
+              <Box padding={12} background={Colors.accentYellow()} />
+              <Box padding={12} background={Colors.accentRed()} />
             </Box>
           </Group>
         ))}

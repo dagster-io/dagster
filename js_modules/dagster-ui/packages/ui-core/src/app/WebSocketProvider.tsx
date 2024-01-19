@@ -1,9 +1,4 @@
-import {
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentLime,
-  colorAccentPrimary,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -135,7 +130,7 @@ const Circle = styled.div`
   height: 12px;
   display: inline-block;
   border-radius: 7px;
-  border: 1px solid ${colorAccentPrimary()};
+  border: 1px solid ${Colors.accentPrimary()};
 `;
 
 export const WebSocketStatus = (props: React.ComponentProps<typeof Circle>) => (
@@ -143,16 +138,16 @@ export const WebSocketStatus = (props: React.ComponentProps<typeof Circle>) => (
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: colorAccentLime()}} title="Connecting..." {...props} />
+          <Circle style={{background: Colors.accentLime()}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: colorAccentGreen()}} title="Connected" {...props} />
+          <Circle style={{background: Colors.accentGreen()}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{background: colorAccentGray()}} title="Closing..." {...props} />
+          <Circle style={{background: Colors.accentGray()}} title="Closing..." {...props} />
         ),
       })[status] || (
-        <Circle style={{background: colorAccentGray()}} title="Disconnected" {...props} />
+        <Circle style={{background: Colors.accentGray()}} title="Disconnected" {...props} />
       )
     }
   </WebSocketContext.Consumer>

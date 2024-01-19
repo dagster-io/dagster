@@ -1,12 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  NonIdealState,
-  Spinner,
-  TextInput,
-  Tooltip,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -118,7 +111,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading schedules…</div>
+            <div style={{color: Colors.textLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );

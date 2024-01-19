@@ -1,4 +1,4 @@
-import {Group, Icon, colorTextLight} from '@dagster-io/ui-components';
+import {Colors, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Util';
@@ -43,7 +43,7 @@ export const TimeElapsed = (props: Props) => {
 
   return (
     <Group direction="row" spacing={4} alignItems="center">
-      <Icon name="timer" color={colorTextLight()} />
+      <Icon name="timer" color={Colors.textLight()} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
         {startTime
           ? showMsec

@@ -1,10 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  colorAccentBlue,
-  colorBackgroundBlue,
-  colorBackgroundBlueHover,
-  colorLineageEdge,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -86,14 +81,14 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
       <OpEdges
         ops={ops}
         layout={layout}
-        color={colorLineageEdge()}
+        color={Colors.lineageEdge()}
         edges={layout.edges}
         onHighlight={setHighlighted}
       />
       <OpEdges
         ops={ops}
         layout={layout}
-        color={colorAccentBlue()}
+        color={Colors.accentBlue()}
         onHighlight={setHighlighted}
         edges={layout.edges.filter(({from, to}) =>
           isHighlighted(highlighted, {a: from.opName, b: to.opName}),
@@ -103,8 +98,8 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
         <rect
           key={idx}
           {...box}
-          stroke={colorBackgroundBlue()}
-          fill={colorBackgroundBlueHover()}
+          stroke={Colors.backgroundBlue()}
+          fill={Colors.backgroundBlueHover()}
           strokeWidth={2}
         />
       ))}

@@ -7,7 +7,7 @@ import {
   Box,
   PageHeader,
   Heading,
-  colorLinkDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -79,7 +79,7 @@ export const ScheduledRunListRoot = () => {
                   <Group direction="row" spacing={4}>
                     <div>Could not load scheduled ticks.</div>
                     <ButtonLink
-                      color={colorLinkDefault()}
+                      color={Colors.linkDefault()}
                       underline="always"
                       onClick={() => {
                         showCustomAlert({

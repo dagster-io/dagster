@@ -10,7 +10,7 @@ import {
   MenuItem,
   Button,
   Icon,
-  colorBackgroundLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -165,7 +165,7 @@ export const AssetEvents = ({
         <Box
           style={{display: 'flex', flex: 1, minWidth: 200}}
           flex={{direction: 'column'}}
-          background={colorBackgroundLight()}
+          background={Colors.backgroundLight()}
         >
           {hideFilters ? undefined : (
             <Box

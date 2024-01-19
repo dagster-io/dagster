@@ -1,14 +1,4 @@
-import {
-  Box,
-  Icon,
-  IconWrapper,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-  colorTextLight,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconWrapper, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -35,7 +25,7 @@ export const RepoSectionHeader = (props: Props) => {
         padding={{horizontal: 24}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="folder" color={colorAccentGray()} />
+          <Icon name="folder" color={Colors.accentGray()} />
           <div>
             <RepoName>{isDunderRepoName ? repoLocation : repoName}</RepoName>
             {showLocation && !isDunderRepoName ? (
@@ -55,12 +45,12 @@ export const RepoSectionHeader = (props: Props) => {
 };
 
 const SectionHeaderButton = styled.button<{$open: boolean}>`
-  background-color: ${colorBackgroundLight()};
+  background-color: ${Colors.backgroundLight()};
   border: 0;
   box-shadow:
-    inset 0px -1px 0 ${colorKeylineDefault()},
-    inset 0px 1px 0 ${colorKeylineDefault()};
-  color: ${colorTextLight()};
+    inset 0px -1px 0 ${Colors.keylineDefault()},
+    inset 0px 1px 0 ${Colors.keylineDefault()};
+  color: ${Colors.textLight()};
   cursor: pointer;
   display: block;
   padding: 0;
@@ -75,7 +65,7 @@ const SectionHeaderButton = styled.button<{$open: boolean}>`
   }
 
   :hover {
-    background-color: ${colorBackgroundLightHover()};
+    background-color: ${Colors.backgroundLightHover()};
   }
 
   ${IconWrapper}[aria-label="arrow_drop_down"] {
@@ -90,5 +80,5 @@ const RepoName = styled.span`
 
 const RepoLocation = styled.span`
   font-weight: 400;
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
 `;

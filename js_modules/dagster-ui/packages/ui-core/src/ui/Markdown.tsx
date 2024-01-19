@@ -1,4 +1,4 @@
-import {FontFamily, colorTextLight} from '@dagster-io/ui-components';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -27,7 +27,7 @@ const Container = styled.div`
 
   &&& table tr th {
     box-shadow: none !important;
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: normal;

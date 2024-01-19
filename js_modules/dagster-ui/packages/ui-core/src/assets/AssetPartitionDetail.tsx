@@ -10,11 +10,7 @@ import {
   Spinner,
   Subheading,
   Tag,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
-  colorTextLight,
+  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -260,7 +256,7 @@ export const AssetPartitionDetail = ({
             ) : undefined}
           </div>
         ) : (
-          <Heading color={colorTextLight()}>No partition selected</Heading>
+          <Heading color={Colors.textLight()}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -342,7 +338,7 @@ export const AssetPartitionDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={colorAccentGray()} />
+                <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
@@ -388,9 +384,9 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
 );
 
 const PartitionHeadingTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
   fontSize: '18px',
   fontWeight: '600',
-  color: colorTextDefault(),
+  color: Colors.textDefault(),
 });

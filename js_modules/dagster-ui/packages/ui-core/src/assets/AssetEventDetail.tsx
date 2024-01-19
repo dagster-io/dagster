@@ -1,13 +1,4 @@
-import {
-  Box,
-  Group,
-  Heading,
-  Icon,
-  Mono,
-  Subheading,
-  colorAccentGray,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Group, Heading, Icon, Mono, Subheading, Colors} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -107,7 +98,7 @@ export const AssetEventDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={colorAccentGray()} />
+                <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(run, event)}>{event.stepKey}</Link>
               </Group>
             </Box>
@@ -158,7 +149,7 @@ export const AssetEventDetailEmpty = () => (
       border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading color={colorTextLight()}>No event selected</Heading>
+      <Heading color={Colors.textLight()}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}

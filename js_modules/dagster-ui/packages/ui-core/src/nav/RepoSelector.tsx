@@ -7,12 +7,7 @@ import {
   Table,
   Caption,
   Tooltip,
-  colorLinkDefault,
-  colorTextLight,
-  colorTextLighter,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorTextDisabled,
+  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -99,7 +94,7 @@ export const RepoSelector = (props: Props) => {
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
-                            style={{color: colorTextLighter()}}
+                            style={{color: Colors.textLighter()}}
                             key={key}
                           >{`${key}: ${value}`}</Caption>
                         ))}
@@ -146,7 +141,7 @@ const RepoLabel = styled.label`
 `;
 
 const RepoLocation = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
 `;
 
 const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
@@ -175,7 +170,7 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
               ) : (
                 <Icon
                   name="refresh"
-                  color={hasReloadPermission ? colorAccentGray() : colorAccentGrayHover()}
+                  color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                 />
               )}
             </ReloadButtonInner>
@@ -199,20 +194,20 @@ const ReloadButtonInner = styled.button`
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${colorTextDisabled};
+    background-color: ${Colors.textDisabled()};
     transition: background-color 100ms;
   }
 
   ${IconWrapper} {
-    background-color: ${colorTextLight()};
+    background-color: ${Colors.textLight()};
     transition: background-color 100ms;
   }
 
   :hover:not(:disabled) ${IconWrapper} {
-    background-color: ${colorTextLighter()};
+    background-color: ${Colors.textLighter()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${colorLinkDefault()};
+    background-color: ${Colors.linkDefault()};
   }
 `;

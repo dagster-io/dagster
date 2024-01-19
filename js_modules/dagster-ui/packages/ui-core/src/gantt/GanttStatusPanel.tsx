@@ -1,11 +1,4 @@
-import {
-  Spinner,
-  Tooltip,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Spinner, Tooltip, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -215,12 +208,12 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   padding: 0 14px 0 6px;
   gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   font-size: 12px;
-  ${({selected}) => selected && `background: ${colorBackgroundLight()};`}
+  ${({selected}) => selected && `background: ${Colors.backgroundLight()};`}
 
   &:hover {
-    background: ${colorBackgroundLightHover()};
+    background: ${Colors.backgroundLightHover()};
   }
 `;
 
@@ -234,7 +227,7 @@ export const StepStatusDot = styled.div`
 `;
 
 const Elapsed = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -242,5 +235,5 @@ const EmptyNotice = styled.div`
   min-height: 32px;
   font-size: 12px;
   padding: 8px 24px;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
 `;

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, colorTextLight} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -117,7 +117,7 @@ export const SidebarOp = ({
 
   if (!solidContainer) {
     return (
-      <Box padding={{vertical: 16, horizontal: 24}} style={{color: colorTextLight()}}>
+      <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.textLight()}}>
         Could not load ops.
       </Box>
     );
