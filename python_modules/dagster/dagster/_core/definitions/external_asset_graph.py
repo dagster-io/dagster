@@ -15,7 +15,6 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
