@@ -295,7 +295,7 @@ class InputContext:
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_def` instead.")
     @public
     @property
-    def asset_tmp_partitions_def(self) -> "PartitionsDefinition":
+    def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         return self.partitions_def
 
@@ -338,7 +338,7 @@ class InputContext:
     @deprecated(breaking_version="2.0", additional_warn_text="Use `has_partitions` instead.")
     @public
     @property
-    def has_asset_tmp_partitions(self) -> bool:
+    def has_asset_partitions(self) -> bool:
         """Returns True if the asset being loaded as input is partitioned."""
         return self.has_partitions
 
@@ -392,7 +392,7 @@ class InputContext:
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
-    def asset_tmp_partition_key_range(self) -> PartitionKeyRange:
+    def asset_partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
 
         Raises an error if the input asset has no partitioning.
@@ -416,7 +416,7 @@ class InputContext:
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     @property
-    def asset_tmp_partition_keys(self) -> Sequence[str]:
+    def asset_partition_keys(self) -> Sequence[str]:
         """The partition keys for input asset.
 
         Raises an error if the input asset has no partitioning.
@@ -447,7 +447,7 @@ class InputContext:
     )
     @public
     @property
-    def asset_tmp_partitions_time_window(self) -> TimeWindow:
+    def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
