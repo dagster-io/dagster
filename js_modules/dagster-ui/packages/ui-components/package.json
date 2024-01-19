@@ -15,6 +15,7 @@
     "prepublish": "yarn lint && yarn ts && yarn jest",
     "build": "rm -rf lib && tsc -p ./tsconfig.build.json && yarn rollup -c rollup.config.js",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "lint:ci": "eslint src/ --ext=.tsx,.ts,.js -c .eslintrc.js",
     "jest": "jest",
     "jest-all-silent": "yarn jest --silent --watchAll=false",
     "ts": "tsc -p .",
