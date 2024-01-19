@@ -96,7 +96,9 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )
 
-    def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
+    def get_run_worker_debug_info(
+        self, run: DagsterRun, skip_logs: Optional[bool] = False
+    ) -> Optional[str]:
         return None
 
     @property
