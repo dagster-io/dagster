@@ -27,6 +27,8 @@ export type SensorRootQuery = {
         description: string | null;
         minIntervalSeconds: number;
         sensorType: Types.SensorType;
+        defaultStatus: Types.InstigationStatus;
+        canReset: boolean;
         nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         sensorState: {
           __typename: 'InstigationState';
