@@ -15,27 +15,27 @@ from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+    from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
 
-    from .asset_automation_evaluator import AutomationCondition, ConditionEvaluation
+    from .asset_condition import AssetCondition, AssetConditionEvaluation
     from .asset_daemon_context import AssetDaemonContext
 
 
 @dataclass(frozen=True)
-class AssetAutomationEvaluationContext:
+class RootAssetConditionEvaluationContext:
     """Context object containing methods and properties used for evaluating the entire state of an
     asset's automation rules.
     """
 
     asset_key: AssetKey
     asset_cursor: Optional[AssetDaemonAssetCursor]
-    root_condition: "AutomationCondition"
+    root_condition: "AssetCondition"
 
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     daemon_context: "AssetDaemonContext"
 
-    evaluation_results_by_key: Mapping[AssetKey, "ConditionEvaluation"]
+    evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     @property
@@ -52,7 +52,7 @@ class AssetAutomationEvaluationContext:
         return self.instance_queryer.evaluation_time
 
     @functools.cached_property
-    def latest_evaluation(self) -> Optional["ConditionEvaluation"]:
+    def latest_evaluation(self) -> Optional["AssetConditionEvaluation"]:
         if not self.asset_cursor:
             return None
         return self.asset_cursor.latest_evaluation
@@ -175,9 +175,9 @@ class AssetAutomationEvaluationContext:
     def empty_subset(self) -> AssetSubset:
         return AssetSubset.empty(self.asset_key, self.partitions_def)
 
-    def get_root_condition_context(self) -> "AssetAutomationConditionEvaluationContext":
-        return AssetAutomationConditionEvaluationContext(
-            asset_context=self,
+    def get_root_condition_context(self) -> "AssetConditionEvaluationContext":
+        return AssetConditionEvaluationContext(
+            root_context=self,
             condition=self.root_condition,
             candidate_subset=AssetSubset.all(
                 asset_key=self.asset_key,
@@ -188,7 +188,9 @@ class AssetAutomationEvaluationContext:
             latest_evaluation=self.latest_evaluation,
         )
 
-    def get_new_asset_cursor(self, evaluation: "ConditionEvaluation") -> AssetDaemonAssetCursor:
+    def get_new_asset_cursor(
+        self, evaluation: "AssetConditionEvaluation"
+    ) -> AssetDaemonAssetCursor:
         """Returns a new AssetDaemonAssetCursor based on the current cursor and the results of
         this tick's evaluation.
         """
@@ -213,33 +215,33 @@ class AssetAutomationEvaluationContext:
 
 
 @dataclass(frozen=True)
-class AssetAutomationConditionEvaluationContext:
-    """Context object containing methods and properties used for evaluating a particular AutomationCondition."""
+class AssetConditionEvaluationContext:
+    """Context object containing methods and properties used for evaluating a particular AssetCondition."""
 
-    asset_context: AssetAutomationEvaluationContext
-    condition: "AutomationCondition"
+    root_context: RootAssetConditionEvaluationContext
+    condition: "AssetCondition"
     candidate_subset: AssetSubset
-    latest_evaluation: Optional["ConditionEvaluation"]
+    latest_evaluation: Optional["AssetConditionEvaluation"]
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.asset_context.asset_key
+        return self.root_context.asset_key
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.asset_context.partitions_def
+        return self.root_context.partitions_def
 
     @property
     def asset_cursor(self) -> Optional[AssetDaemonAssetCursor]:
-        return self.asset_context.asset_cursor
+        return self.root_context.asset_cursor
 
     @property
     def asset_graph(self) -> AssetGraph:
-        return self.asset_context.asset_graph
+        return self.root_context.asset_graph
 
     @property
     def instance_queryer(self) -> CachingInstanceQueryer:
-        return self.asset_context.instance_queryer
+        return self.root_context.instance_queryer
 
     @property
     def max_storage_id(self) -> Optional[int]:
@@ -264,9 +266,9 @@ class AssetAutomationConditionEvaluationContext:
         return AssetSubset.from_asset_partitions_set(
             self.asset_key,
             self.partitions_def,
-            self.asset_context.instance_queryer.asset_partitions_with_newly_updated_parents(
+            self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents(
                 latest_storage_id=self.max_storage_id,
-                child_asset_key=self.asset_context.asset_key,
+                child_asset_key=self.root_context.asset_key,
                 map_old_time_partitions=False,
             ),
         )
@@ -277,7 +279,7 @@ class AssetAutomationConditionEvaluationContext:
         the previous tick, or will update on this tick.
         """
         return self.candidate_subset & (
-            self.parent_has_updated_subset | self.asset_context.parent_will_update_subset
+            self.parent_has_updated_subset | self.root_context.parent_will_update_subset
         )
 
     @property
@@ -292,12 +294,12 @@ class AssetAutomationConditionEvaluationContext:
     @property
     def materialized_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.asset_context.materialized_since_previous_tick_subset
+        return self.root_context.materialized_since_previous_tick_subset
 
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.asset_context.materialized_requested_or_discarded_since_previous_tick_subset
+        return self.root_context.materialized_requested_or_discarded_since_previous_tick_subset
 
     @property
     def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetdata"]:
@@ -305,13 +307,13 @@ class AssetAutomationConditionEvaluationContext:
         return self.latest_evaluation.subsets_with_metadata if self.latest_evaluation else []
 
     def empty_subset(self) -> AssetSubset:
-        return self.asset_context.empty_subset()
+        return self.root_context.empty_subset()
 
     def for_child(
-        self, condition: "AutomationCondition", candidate_subset: AssetSubset
-    ) -> "AssetAutomationConditionEvaluationContext":
-        return AssetAutomationConditionEvaluationContext(
-            asset_context=self.asset_context,
+        self, condition: "AssetCondition", candidate_subset: AssetSubset, child_index: int
+    ) -> "AssetConditionEvaluationContext":
+        return AssetConditionEvaluationContext(
+            root_context=self.root_context,
             condition=condition,
             candidate_subset=candidate_subset,
             latest_evaluation=self.latest_evaluation.for_child(condition)
