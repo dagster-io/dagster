@@ -3,6 +3,7 @@ import {
   Box,
   Colors,
   Heading,
+  IconName,
   NonIdealState,
   PageHeader,
   Spinner,
@@ -41,6 +42,40 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {SensorType} from '../graphql/types';
+import {assertUnreachable} from '../app/Util';
+
+function sensorTypeToName(type: SensorType) {
+  switch(type) {
+    case SensorType.ASSET:
+      return 'Asset';
+      case SensorType.AUTOMATION_POLICY:
+      case SensorType.FRESHNESS_POLICY:
+      case SensorType.MULTI_ASSET:
+      case SensorType.RUN_STATUS:
+      case SensorType.STANDARD:
+
+  }
+}
+
+function sensorTypeToIcon(type: SensorType): IconName {
+  case SensorType.ASSET:
+      return 'Asset';
+      case SensorType.AUTOMATION_POLICY:
+      case SensorType.FRESHNESS_POLICY:
+        return 
+      case SensorType.MULTI_ASSET:
+          return 'asset_group'
+      case SensorType.RUN_STATUS:
+        return 'alternate_email'
+      case SensorType.STANDARD:
+        return 'sensors'
+      case SensorType.UNKNOWN:
+        return 'sensors'
+      default:
+        return assertUnreachable(type); 
+}
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
@@ -55,6 +90,10 @@ export const OverviewSensorsRoot = () => {
 
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
+  const sensorTypeFilter = useStaticSetFilter<string>({
+    name: "Sensor type",
+    'allValues': [SensorType.ASSET]
+  })
 
   const filters = useMemo(
     () => [codeLocationFilter, runningStateFilter],
