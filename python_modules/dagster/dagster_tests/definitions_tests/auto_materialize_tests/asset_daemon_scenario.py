@@ -704,7 +704,9 @@ class AssetDaemonScenarioState(NamedTuple):
         if num_requested is not None:
             assert actual_evaluation.true_subset.size == num_requested
 
-        def get_leaf_evaluations(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
+        def get_leaf_evaluations(
+            e: AssetConditionEvaluation,
+        ) -> Sequence[AssetConditionEvaluation]:
             if len(e.child_evaluations) == 0:
                 return [e]
             leaf_evals = []

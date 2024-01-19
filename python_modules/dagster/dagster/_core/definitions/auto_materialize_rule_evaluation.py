@@ -132,7 +132,7 @@ class WaitingOnAssetsRuleEvaluationData(
         }
 
 
-RuleEvaluationResults = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
+RuleEvaluations = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
 
 
 @whitelist_for_serdes
@@ -278,6 +278,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             start_timestamp=None,
             end_timestamp=None,
             subsets_with_metadata=subsets_with_metadata,
+            child_evaluations=[],
         )
 
     def _get_child_decision_type_evaluation(
