@@ -12,6 +12,7 @@ import {useState} from 'react';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
+import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
@@ -83,19 +84,12 @@ export const SensorDetails = ({
   return (
     <>
       <PageHeader
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{name}</Heading>
-            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-          </Box>
-        }
+        title={<Heading>{name}</Heading>}
         icon="sensors"
         tags={
-          <>
-            <Tag icon="sensors">
-              Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </Tag>
-          </>
+          <Tag icon="sensors">
+            Sensor in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
         }
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -164,6 +158,22 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
+          <tr>
+            <td>
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Running
+              </Box>
+            </td>
+            <td>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
+                <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                {sensor.canReset && <SensorResetButton repoAddress={repoAddress} sensor={sensor} />}
+              </Box>
+            </td>
+          </tr>
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
