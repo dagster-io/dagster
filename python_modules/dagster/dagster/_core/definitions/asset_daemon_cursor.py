@@ -12,9 +12,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
@@ -66,7 +63,7 @@ class AssetDaemonCursor(NamedTuple):
     handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
-    latest_evaluation_by_asset_key: Mapping[AssetKey, AutoMaterializeAssetEvaluation]
+    latest_evaluation_by_asset_key: Mapping[AssetKey, "AssetConditionEvaluation"]
     latest_evaluation_timestamp: Optional[float]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
@@ -75,8 +72,6 @@ class AssetDaemonCursor(NamedTuple):
     def asset_cursor_for_key(
         self, asset_key: AssetKey, asset_graph: AssetGraph
     ) -> AssetDaemonAssetCursor:
-        from .asset_condition import AssetConditionEvaluation
-
         partitions_def = asset_graph.get_partitions_def(asset_key)
         handled_partitions_subset = self.handled_root_partitions_by_asset_key.get(asset_key)
         if handled_partitions_subset is not None:
@@ -85,18 +80,11 @@ class AssetDaemonCursor(NamedTuple):
             handled_subset = AssetSubset(asset_key=asset_key, value=True)
         else:
             handled_subset = AssetSubset.empty(asset_key, partitions_def)
-        condition = check.not_none(
-            asset_graph.get_auto_materialize_policy(asset_key)
-        ).to_asset_condition()
         return AssetDaemonAssetCursor(
             asset_key=asset_key,
             latest_storage_id=self.latest_storage_id,
             latest_evaluation_timestamp=self.latest_evaluation_timestamp,
-            latest_evaluation=AssetConditionEvaluation.from_evaluation(
-                condition=condition,
-                evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
-                asset_graph=asset_graph,
-            ),
+            latest_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
             materialized_requested_or_discarded_subset=handled_subset,
         )
 
@@ -106,7 +94,7 @@ class AssetDaemonCursor(NamedTuple):
         evaluation_id: int,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
-        evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        evaluations: Sequence["AssetConditionEvaluation"],
         evaluation_time: datetime.datetime,
         asset_cursors: Sequence[AssetDaemonAssetCursor],
     ) -> "AssetDaemonCursor":
@@ -128,10 +116,7 @@ class AssetDaemonCursor(NamedTuple):
             )
 
         latest_evaluation_by_asset_key = {
-            evaluation.asset_key: evaluation
-            for evaluation in evaluations
-            # don't bother storing empty evaluations on the cursor
-            if not evaluation.is_empty
+            evaluation.asset_key: evaluation for evaluation in evaluations
         }
 
         return AssetDaemonCursor(
@@ -167,6 +152,8 @@ class AssetDaemonCursor(NamedTuple):
 
     @classmethod
     def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetDaemonCursor":
+        from .asset_condition import AssetConditionEvaluationWithRunIds
+
         data = json.loads(cursor)
 
         if isinstance(data, list):  # backcompat
@@ -232,9 +219,11 @@ class AssetDaemonCursor(NamedTuple):
         latest_evaluation_by_asset_key = {}
         for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
-            evaluation = check.inst(
-                deserialize_value(serialized_evaluation), AutoMaterializeAssetEvaluation
-            )
+            deserialized_evaluation = deserialize_value(serialized_evaluation)
+            if isinstance(deserialized_evaluation, AssetConditionEvaluationWithRunIds):
+                evaluation = deserialized_evaluation.evaluation
+            else:
+                evaluation = deserialized_evaluation
             latest_evaluation_by_asset_key[key] = evaluation
 
         return cls(

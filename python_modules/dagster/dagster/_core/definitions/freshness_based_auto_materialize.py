@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Tuple
 
 import pendulum
 
-from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -161,6 +160,8 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
+    from .asset_condition import AssetSubsetWithMetadata
+
     asset_key = context.asset_key
     current_time = context.evaluation_time
 
@@ -220,7 +221,7 @@ def freshness_evaluation_results_for_asset_key(
     ):
         all_subset = AssetSubset.all(asset_key, None)
         return AssetSubset.all(asset_key, None), [
-            AssetSubsetWithMetdata(all_subset, evaluation_data.metadata)
+            AssetSubsetWithMetadata(all_subset, evaluation_data.metadata)
         ]
     else:
         return context.empty_subset(), []
