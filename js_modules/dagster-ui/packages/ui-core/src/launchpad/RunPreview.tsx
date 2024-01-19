@@ -6,21 +6,22 @@ import {
   Button,
   ButtonLink,
   Checkbox,
+  Code,
+  Colors,
+  FontFamily,
   Icon,
   SplitPanelContainer,
   Tag,
-  Code,
   Tooltip,
-  FontFamily,
-  colorAccentGreen,
-  colorTextLight,
-  colorAccentRed,
-  colorBackgroundLight,
-  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {LaunchpadType} from './types';
+import {
+  RunPreviewValidationErrorsFragment,
+  RunPreviewValidationFragment,
+} from './types/RunPreview.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -30,12 +31,6 @@ import {
   CompositeConfigTypeForSchemaFragment,
   ConfigEditorRunConfigSchemaFragment,
 } from '../configeditor/types/ConfigEditorUtils.types';
-
-import {LaunchpadType} from './types';
-import {
-  RunPreviewValidationErrorsFragment,
-  RunPreviewValidationFragment,
-} from './types/RunPreview.types';
 
 type ValidationError = RunPreviewValidationErrorsFragment;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
@@ -141,7 +136,7 @@ const RemoveExtraConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={colorAccentGreen()} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           No extra config to remove
         </Box>
       ) : null}
@@ -196,7 +191,7 @@ const ScaffoldConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={colorAccentGreen()} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           No missing config
         </Box>
       ) : null}
@@ -233,7 +228,7 @@ const ExpandDefaultButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={colorAccentGreen()} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           All defaults expanded
         </Box>
       ) : null}
@@ -427,7 +422,7 @@ export const RunPreview = (props: RunPreviewProps) => {
               ))
             ) : (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="check_circle" color={colorAccentGreen()} />
+                <Icon name="check_circle" color={Colors.accentGreen()} />
                 No errors
               </Box>
             )}
@@ -492,7 +487,7 @@ export const RunPreview = (props: RunPreviewProps) => {
               top: 0,
               right: 0,
               padding: '12px 15px 0px 10px',
-              background: colorBackgroundDefault(),
+              background: Colors.backgroundDefault(),
             }}
           >
             <Checkbox
@@ -564,7 +559,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   text-transform: uppercase;
   font-size: 12px;
   margin-bottom: 8px;
@@ -614,7 +609,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${colorBackgroundLight()};
+      background: ${Colors.backgroundLight()};
     }
   `}
 `;
@@ -654,7 +649,7 @@ const ErrorRow = ({
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
-        <Icon name="error" color={colorAccentRed()} />
+        <Icon name="error" color={Colors.accentRed()} />
       </div>
       <div>
         {displayed}

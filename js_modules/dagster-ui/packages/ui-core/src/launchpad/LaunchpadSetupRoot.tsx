@@ -1,5 +1,5 @@
 import qs from 'qs';
-import * as React from 'react';
+import {useEffect} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {
@@ -46,7 +46,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       queryString.config ||
       queryString.mode ||

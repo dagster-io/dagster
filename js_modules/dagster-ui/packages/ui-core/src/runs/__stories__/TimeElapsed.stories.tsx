@@ -1,7 +1,6 @@
-import {Story, Meta} from '@storybook/react';
-import * as React from 'react';
+import {Meta, Story} from '@storybook/react';
 
-import {TimeElapsed, Props} from '../TimeElapsed';
+import {Props, TimeElapsed} from '../TimeElapsed';
 
 // eslint-disable-next-line import/no-default-export
 export default {

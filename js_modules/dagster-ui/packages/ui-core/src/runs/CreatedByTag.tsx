@@ -1,15 +1,14 @@
 import {Box, Tag} from '@dagster-io/ui-components';
-import React from 'react';
+import {memo} from 'react';
 import {Link} from 'react-router-dom';
-
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {TagActionsPopover} from '../ui/TagActions';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTagsFragment} from './types/RunTable.types';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {TagActionsPopover} from '../ui/TagActions';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   repoAddress?: RepoAddress | null;
@@ -17,7 +16,7 @@ type Props = {
   onAddTag?: (token: RunFilterToken) => void;
 };
 
-export const CreatedByTagCell = React.memo(({repoAddress, tags, onAddTag}: Props) => {
+export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
       <CreatedByTag repoAddress={repoAddress} tags={tags} onAddTag={onAddTag} />

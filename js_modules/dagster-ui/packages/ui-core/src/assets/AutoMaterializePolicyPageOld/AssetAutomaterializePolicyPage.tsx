@@ -1,16 +1,15 @@
-import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Subheading} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 import styled from 'styled-components';
-
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {AssetKey} from '../types';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
 import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {AssetKey} from '../types';
 
 export const AssetAutomaterializePolicyPageOld = ({
   assetKey,
@@ -23,7 +22,7 @@ export const AssetAutomaterializePolicyPageOld = ({
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations} = React.useMemo(() => {
+  const {evaluations} = useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
         'AutoMaterializeAssetEvaluationRecords' &&
@@ -53,7 +52,7 @@ export const AssetAutomaterializePolicyPageOld = ({
     },
   });
 
-  const selectedEvaluation = React.useMemo(() => {
+  const selectedEvaluation = useMemo(() => {
     // If we're looking at the most recent slice and have not selected an evaluation ID,
     // default to the first item in the list. Otherwise, don't assume that we should
     // automatically select the first item -- an evaluation on another page might be our
@@ -66,7 +65,7 @@ export const AssetAutomaterializePolicyPageOld = ({
 
   return (
     <AutomaterializePage
-      style={{flex: 1, minHeight: 0, color: colorTextLight(), overflow: 'hidden'}}
+      style={{flex: 1, minHeight: 0, color: Colors.textLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
       <AutoMaterializeExperimentalBanner />

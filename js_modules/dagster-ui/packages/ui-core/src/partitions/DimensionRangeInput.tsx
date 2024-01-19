@@ -1,11 +1,10 @@
 import {Icon, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {testId} from '../testing/testId';
 import {ClearButton} from '../ui/ClearButton';
-
-import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
 
 export const DimensionRangeInput = ({
   value,

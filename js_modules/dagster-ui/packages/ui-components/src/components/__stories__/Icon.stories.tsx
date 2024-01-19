@@ -1,9 +1,8 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
-import {CoreColors} from '../../palettes/Colors';
+import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
-import {IconNames as _iconNames, Icon} from '../Icon';
+import {Icon, IconNames as _iconNames} from '../Icon';
 import {Tooltip} from '../Tooltip';
 
 const IconNames = _iconNames.slice().sort();

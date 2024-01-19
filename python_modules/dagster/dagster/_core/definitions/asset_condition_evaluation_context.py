@@ -89,7 +89,7 @@ class AssetConditionEvaluationContext:
             asset_key=asset_key,
             condition=condition,
             previous_evaluation_state=previous_evaluation_state,
-            previous_evaluation=previous_evaluation_state.evaluation
+            previous_evaluation=previous_evaluation_state.previous_evaluation
             if previous_evaluation_state
             else None,
             candidate_subset=AssetSubset.all(
@@ -149,7 +149,7 @@ class AssetConditionEvaluationContext:
     @property
     def previous_evaluation_timestamp(self) -> Optional[float]:
         return (
-            self.previous_evaluation_state.evaluation_timestamp
+            self.previous_evaluation_state.previous_tick_evaluation_timestamp
             if self.previous_evaluation_state
             else None
         )
@@ -204,11 +204,13 @@ class AssetConditionEvaluationContext:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
         if (
             self.previous_evaluation_state is None
-            or self.previous_evaluation_state.evaluation is None
+            or self.previous_evaluation_state.previous_evaluation is None
         ):
             return self.empty_subset()
 
-        return self.previous_evaluation_state.evaluation.get_requested_or_discarded_subset()
+        return (
+            self.previous_evaluation_state.previous_evaluation.get_requested_or_discarded_subset()
+        )
 
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:

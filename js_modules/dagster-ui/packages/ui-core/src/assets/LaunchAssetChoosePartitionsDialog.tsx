@@ -7,6 +7,7 @@ import {
   Button,
   ButtonLink,
   Checkbox,
+  Colors,
   Dialog,
   DialogFooter,
   DialogHeader,
@@ -14,14 +15,35 @@ import {
   RadioContainer,
   Subheading,
   Tooltip,
-  colorAccentGray,
-  colorBackgroundYellow,
-  colorTextYellow,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
-import React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {partitionCountString} from './AssetNodePartitionCounts';
+import {AssetPartitionStatus} from './AssetPartitionStatus';
+import {BackfillPreviewModal} from './BackfillPreviewModal';
+import {
+  LaunchAssetsChoosePartitionsTarget,
+  executionParamsForAssetJob,
+} from './LaunchAssetExecutionButton';
+import {
+  explodePartitionKeysInSelectionMatching,
+  mergedAssetHealth,
+  partitionDefinitionsEqual,
+} from './MultipartitioningSupport';
+import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {asAssetKeyInput} from './asInput';
+import {
+  LaunchAssetWarningsQuery,
+  LaunchAssetWarningsQueryVariables,
+} from './types/LaunchAssetChoosePartitionsDialog.types';
+import {
+  LaunchAssetExecutionAssetNodeFragment,
+  PartitionDefinitionForLaunchAssetFragment,
+} from './types/LaunchAssetExecutionButton.types';
+import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
@@ -60,31 +82,6 @@ import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
 import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {partitionCountString} from './AssetNodePartitionCounts';
-import {AssetPartitionStatus} from './AssetPartitionStatus';
-import {BackfillPreviewModal} from './BackfillPreviewModal';
-import {
-  LaunchAssetsChoosePartitionsTarget,
-  executionParamsForAssetJob,
-} from './LaunchAssetExecutionButton';
-import {
-  explodePartitionKeysInSelectionMatching,
-  mergedAssetHealth,
-  partitionDefinitionsEqual,
-} from './MultipartitioningSupport';
-import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {asAssetKeyInput} from './asInput';
-import {
-  LaunchAssetWarningsQuery,
-  LaunchAssetWarningsQueryVariables,
-} from './types/LaunchAssetChoosePartitionsDialog.types';
-import {
-  LaunchAssetExecutionAssetNodeFragment,
-  PartitionDefinitionForLaunchAssetFragment,
-} from './types/LaunchAssetExecutionButton.types';
-import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
@@ -144,17 +141,17 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
-  const [launching, setLaunching] = React.useState(false);
-  const [tagEditorOpen, setTagEditorOpen] = React.useState(false);
-  const [previewOpen, setPreviewOpen] = React.useState(false);
-  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
+  const [launching, setLaunching] = useState(false);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
     repoAddress.location,
     'SHOW_SINGLE_RUN_BACKFILL_TOGGLE',
   );
 
-  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   const refetch = async () => {
     await _refetch?.();
@@ -169,7 +166,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const assetHealthLoading = assetHealth.length === 0;
 
-  const displayedHealth = React.useMemo(() => {
+  const displayedHealth = useMemo(() => {
     if (target.type === 'pureAll') {
       return mergedAssetHealth([]);
     }
@@ -189,7 +186,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
-  const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
+  const [missingFailedOnly, setMissingFailedOnly] = useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
@@ -200,12 +197,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
-  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
+  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
   const canLaunchWithRangesAsTags =
     selections.every((s) => s.selectedRanges.length === 1) &&
     selections.some((s) => s.selectedKeys.length > 1);
 
-  const keysFiltered = React.useMemo(() => {
+  const keysFiltered = useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, (dIdxs) => {
       if (missingFailedOnly) {
         const state = displayedHealth.stateForKeyIdx(dIdxs);
@@ -228,15 +225,15 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
 
-  React.useEffect(() => {
+  useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
   }, [canLaunchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     launchWithRangesAsTags && setMissingFailedOnly(false);
   }, [launchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
   }, [target]);
 
@@ -623,7 +620,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                           </div>
                         }
                       >
-                        <Icon name="info" color={colorAccentGray()} />
+                        <Icon name="info" color={Colors.accentGray()} />
                       </Tooltip>
                     </Box>
                   </Radio>
@@ -693,9 +690,8 @@ const UpstreamUnavailableWarning = ({
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return (
-        a.dimensions.length && a.stateForKey([singleDimensionKey]) === AssetPartitionStatus.MISSING
-      );
+      const state = a.dimensions.length ? a.stateForKey([singleDimensionKey]) : null;
+      return state === AssetPartitionStatus.FAILED || state === AssetPartitionStatus.MISSING;
     });
 
   const upstreamUnavailableSpans =
@@ -729,7 +725,7 @@ const UpstreamUnavailableWarning = ({
             .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {
-            ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+            ' cannot be materialized because upstream materializations are not available. Consider materializing upstream assets or '
           }
           <ButtonLink underline="always" onClick={onRemoveUpstreamUnavailable}>
             remove these partitions
@@ -789,7 +785,7 @@ const Warnings = ({
 
   const instance = warningsResult.data?.instance;
   const upstreamAssets = warningsResult.data?.assetNodes;
-  const upstreamAssetKeysSamePartitioning = React.useMemo(
+  const upstreamAssetKeysSamePartitioning = useMemo(
     () =>
       (upstreamAssets || [])
         .filter(
@@ -821,15 +817,15 @@ const Warnings = ({
 
   return (
     <ToggleableSection
-      background={colorBackgroundYellow()}
+      background={Colors.backgroundYellow()}
       isInitiallyOpen={false}
       title={
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{color: colorTextYellow()}}
+          style={{color: Colors.textYellow()}}
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
-            <Icon name="warning" color={colorTextYellow()} />
+            <Icon name="warning" color={Colors.textYellow()} />
             <Subheading>Warnings</Subheading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>

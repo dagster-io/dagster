@@ -1,6 +1,5 @@
-import {Story, Meta} from '@storybook/react';
+import {Meta, Story} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {DeletionDialog, Props as DeletionDialogProps} from '../DeletionDialog';

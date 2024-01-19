@@ -1,4 +1,4 @@
-import React from 'react';
+import {useReducer} from 'react';
 
 type State = {
   checkedIds: Set<string>;
@@ -59,7 +59,7 @@ const initialState: State = {
 };
 
 export function useSelectionReducer(allIds: string[]) {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   const onToggleFactory = (id: string) => (values: {checked: boolean; shiftKey: boolean}) => {
     const {checked, shiftKey} = values;

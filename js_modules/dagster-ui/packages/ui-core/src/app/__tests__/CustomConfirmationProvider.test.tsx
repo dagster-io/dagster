@@ -1,14 +1,14 @@
 import {Button} from '@dagster-io/ui-components';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
+import {useState} from 'react';
 import {act} from 'react-dom/test-utils';
 
 import {CustomConfirmationProvider, useConfirmation} from '../CustomConfirmationProvider';
 
 describe('CustomConfirmationProvider', () => {
   const Test = () => {
-    const [confirmed, setConfirmed] = React.useState(false);
+    const [confirmed, setConfirmed] = useState(false);
     const confirm = useConfirmation();
     const onClick = async () => {
       await confirm({title: 'r u sure about this', description: 'it could be a bad idea'});

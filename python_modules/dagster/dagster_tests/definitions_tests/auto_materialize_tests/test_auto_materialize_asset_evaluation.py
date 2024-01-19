@@ -161,18 +161,18 @@ def test_backcompat_partitioned_asset() -> None:
     deserialized = deserialized_with_run_ids.evaluation
 
     assert deserialized.true_subset.size == 1
-    assert len(deserialized.child_evaluations) == 2
+    assert len(deserialized.child_evaluations) == 3
     (
         materialize_evaluation,
         not_skip_evaluation,
+        not_discard_evaluation,
     ) = deserialized.child_evaluations
     assert materialize_evaluation.true_subset.size == 3
-    assert not_skip_evaluation.true_subset.size == 1
+    assert not_skip_evaluation.child_evaluations[0].true_subset.size == 1
+    assert not_discard_evaluation.child_evaluations[0].true_subset.size == 1
 
     skip_evaluation = not_skip_evaluation.child_evaluations[0]
     assert skip_evaluation.true_subset.size == 1
     assert len(skip_evaluation.child_evaluations) == 4
-    assert skip_evaluation.child_evaluations[0].true_subset.size == 0
-    assert skip_evaluation.child_evaluations[1].true_subset.size == 0
-    assert skip_evaluation.child_evaluations[2].true_subset.size == 1
-    assert skip_evaluation.child_evaluations[3].true_subset.size == 0
+    sorted_eval_sizes = sorted([e.true_subset.size for e in skip_evaluation.child_evaluations])
+    assert sorted_eval_sizes == [0, 0, 0, 1]

@@ -110,7 +110,7 @@ class AssetDaemonCursor(NamedTuple):
     def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
         """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
         previous_evaluation_state = self.get_previous_evaluation_state(asset_key)
-        return previous_evaluation_state.evaluation if previous_evaluation_state else None
+        return previous_evaluation_state.previous_evaluation if previous_evaluation_state else None
 
     def with_updates(
         self,
@@ -152,8 +152,8 @@ def get_backcompat_asset_condition_evaluation_state(
     from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
 
     return AssetConditionEvaluationState(
-        evaluation=latest_evaluation,
-        evaluation_timestamp=latest_timestamp,
+        previous_evaluation=latest_evaluation,
+        previous_tick_evaluation_timestamp=latest_timestamp,
         max_storage_id=latest_storage_id,
         # the only information we need to preserve from the previous cursor is the handled subset
         extra_state_by_unique_id={

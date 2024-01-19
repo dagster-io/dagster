@@ -1,5 +1,4 @@
-import {Alert, Box, Icon, Tag, Tooltip, colorAccentBlue} from '@dagster-io/ui-components';
-import React from 'react';
+import {Alert, Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 
@@ -16,7 +15,7 @@ export const AutoMaterializeExperimentalBanner = () => {
       <Alert
         intent="info"
         title="Automation policies are experimental"
-        icon={<Icon name="info" color={colorAccentBlue()} />}
+        icon={<Icon name="info" color={Colors.accentBlue()} />}
         onClose={() => {
           setClosed(true);
         }}

@@ -7,7 +7,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended', // Prettier plugin must be last!
   ],
-  plugins: ['react-hooks', 'import'],
+  plugins: ['unused-imports', 'react-hooks', 'import'],
   parserOptions: {
     ecmaVersion: 2018,
     // Allows for the parsing of modern ECMAScript features
@@ -32,6 +32,14 @@ module.exports = {
     'import/order': [
       'error',
       {
+        groups: [
+          'builtin', // Built-in imports (come from NodeJS native) go first
+          'external', // <- External imports
+          'internal', // <- Absolute imports
+          ['sibling', 'parent'], // <- Relative imports, the sibling and parent types can be mingled together
+          'index', // <- index imports
+          'unknown', // <- unknown
+        ],
         alphabetize: {
           order: 'asc',
           caseInsensitive: false,
@@ -39,7 +47,23 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
+    'sort-imports': [
+      'error',
+      {
+        ignoreCase: false,
+        // Don't sort import lines. The `import/order` rule above does that.
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        allowSeparatedGroups: true,
+      },
+    ],
     'no-alert': 'error',
+    'no-unused-vars': 'off', // or "@typescript-eslint/no-unused-vars": "off",
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'warn',
+      {vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_'},
+    ],
     'no-restricted-imports': [
       'error',
       {
@@ -83,9 +107,11 @@ module.exports = {
     'object-shorthand': ['error', 'always'],
     'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
+    'react/jsx-uses-react': 'off',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
+    'react/react-in-jsx-scope': 'off',
     '@typescript-eslint/ban-types': [
       'error',
       {
@@ -99,14 +125,7 @@ module.exports = {
         },
       },
     ],
-    '@typescript-eslint/no-unused-vars': [
-      'error',
-      {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        ignoreRestSiblings: true,
-      },
-    ],
+    '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-member-accessibility': 'off',

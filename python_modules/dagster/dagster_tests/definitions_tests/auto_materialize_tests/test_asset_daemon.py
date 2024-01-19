@@ -1,5 +1,5 @@
 import datetime
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Any, Generator, Mapping, Optional, Sequence
 
 import pendulum
@@ -28,6 +28,7 @@ from dagster._core.storage.tags import (
     AUTO_MATERIALIZE_TAG,
     SENSOR_NAME_TAG,
 )
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
@@ -35,6 +36,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     set_auto_materialize_paused,
 )
+from dagster._serdes.serdes import serialize_value
 
 from .asset_daemon_scenario import (
     AssetDaemonScenario,
@@ -68,6 +70,16 @@ def get_daemon_instance(
     ) as instance:
         set_auto_materialize_paused(instance, paused)
         yield instance
+
+
+@contextmanager
+def _get_threadpool_executor(instance: DagsterInstance):
+    settings = instance.get_settings("auto_materialize")
+    with InheritContextThreadPoolExecutor(
+        max_workers=settings.get("num_workers"),
+        thread_name_prefix="asset_daemon_worker",
+    ) if settings.get("use_threads") else nullcontext() as executor:
+        yield executor
 
 
 # just run over a subset of the total scenarios
@@ -142,16 +154,44 @@ def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
         scenario.evaluate_daemon(instance)
 
 
+daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    daemon_scenarios_with_threadpool_without_sensor,
+    ids=[scenario.id for scenario in daemon_scenarios_with_threadpool_without_sensor],
+)
+def test_asset_daemon_with_threadpool_without_sensor(scenario: AssetDaemonScenario) -> None:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_threads": True, "num_workers": 4}}
+    ) as instance:
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            scenario.evaluate_daemon(instance, threadpool_executor=threadpool_executor)
+
+
 @pytest.mark.parametrize(
     "scenario",
     automation_policy_sensor_scenarios,
     ids=[scenario.id for scenario in automation_policy_sensor_scenarios],
 )
-def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario) -> None:
+@pytest.mark.parametrize("num_threads", [0, 4])
+def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: int) -> None:
     with get_daemon_instance(
-        extra_overrides={"auto_materialize": {"use_automation_policy_sensors": True}}
+        extra_overrides={
+            "auto_materialize": {
+                "use_automation_policy_sensors": True,
+                "use_threads": num_threads > 0,
+                "num_workers": num_threads,
+            }
+        }
     ) as instance:
-        scenario.evaluate_daemon(instance, sensor_name="default_automation_policy_sensor")
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            scenario.evaluate_daemon(
+                instance,
+                sensor_name="default_automation_policy_sensor",
+                threadpool_executor=threadpool_executor,
+            )
 
 
 def _get_asset_daemon_ticks(instance: DagsterInstance) -> Sequence[InstigatorTick]:
@@ -272,136 +312,147 @@ def _assert_sensor_ran(instance, sensor_name: str, expected_num_ticks: int):
     assert len(ticks) == expected_num_ticks
 
 
-def test_automation_policy_sensor_ticks():
+@pytest.mark.parametrize("num_threads", [4])
+def test_automation_policy_sensor_ticks(num_threads):
     with get_daemon_instance(
-        paused=True, extra_overrides={"auto_materialize": {"use_automation_policy_sensors": True}}
-    ) as instance:
-        pre_sensor_evaluation_id = 12345
-
-        instance.daemon_cursor_storage.set_cursor_values(
-            {
-                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
-                    AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
-                )
+        paused=True,
+        extra_overrides={
+            "auto_materialize": {
+                "use_automation_policy_sensors": True,
+                "use_threads": num_threads > 0,
+                "num_workers": num_threads,
             }
-        )
+        },
+    ) as instance:
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            pre_sensor_evaluation_id = 12345
 
-        # Global pause setting ignored by sensors, but per-sensor status is not ignored
-        result = daemon_sensor_scenario.evaluate_daemon(instance)
+            instance.daemon_cursor_storage.set_cursor_values(
+                {
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                        AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
+                    )
+                }
+            )
 
-        sensor_states = instance.schedule_storage.all_instigator_state(
-            instigator_type=InstigatorType.SENSOR
-        )
+            # Global pause setting ignored by sensors, but per-sensor status is not ignored
+            result = daemon_sensor_scenario.evaluate_daemon(
+                instance, threadpool_executor=threadpool_executor
+            )
 
-        assert len(sensor_states) == 1
-        # Only sensor that was set with default status RUNNING ran
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=1)
-
-        runs = instance.get_runs()
-
-        assert len(runs) == 1
-        run = runs[0]
-        assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
-        assert run.tags["foo_tag"] == "bar_val"
-        assert run.tags[SENSOR_NAME_TAG] == "automation_policy_sensor_a"
-        assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
-
-        # Starting a sensor causes it to make ticks too
-        result = result.start_sensor("automation_policy_sensor_b")
-        result = result.with_current_time_advanced(seconds=15)
-        result = result.evaluate_tick()
-        sensor_states = instance.schedule_storage.all_instigator_state(
-            instigator_type=InstigatorType.SENSOR
-        )
-
-        # No new tick yet for A since only 15 seconds have passed
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=1)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=1)
-
-        result = result.with_current_time_advanced(seconds=15)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=2)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=2)
-
-        # Starting a default sensor causes it to make ticks too
-        result = result.start_sensor("default_automation_policy_sensor")
-        result = result.with_current_time_advanced(seconds=15)
-        result = result.evaluate_tick()
-
-        sensor_states = instance.schedule_storage.all_instigator_state(
-            instigator_type=InstigatorType.SENSOR
-        )
-
-        assert len(sensor_states) == 3
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=2)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=3)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=1)
-
-        result = result.with_current_time_advanced(seconds=15)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=3)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=4)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=1)
-
-        result = result.with_current_time_advanced(seconds=15)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=3)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=2)
-
-        # Stop each sensor, ticks stop too
-        result = result.stop_sensor("automation_policy_sensor_b")
-        result = result.with_current_time_advanced(seconds=30)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=3)
-
-        result = result.stop_sensor("automation_policy_sensor_a")
-        result = result.with_current_time_advanced(seconds=30)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=4)
-
-        result = result.stop_sensor("default_automation_policy_sensor")
-        result = result.with_current_time_advanced(seconds=30)
-        result = result.evaluate_tick()
-
-        _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
-        _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
-        _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=4)
-
-        seen_evaluation_ids = set()
-
-        # Assert every tick has a unique evaluation ID, all are distinct, all are greater
-        # than the pre-sensor evaluation ID and they are increasing for each sensor
-        sensor_states = [
-            sensor_state
-            for sensor_state in instance.schedule_storage.all_instigator_state(
+            sensor_states = instance.schedule_storage.all_instigator_state(
                 instigator_type=InstigatorType.SENSOR
             )
-        ]
 
-        for sensor_state in sensor_states:
-            ticks = instance.get_ticks(
-                sensor_state.instigator_origin_id,
-                sensor_state.selector_id,
+            assert len(sensor_states) == 1
+            # Only sensor that was set with default status RUNNING ran
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=1)
+
+            runs = instance.get_runs()
+
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
+            assert run.tags["foo_tag"] == "bar_val"
+            assert run.tags[SENSOR_NAME_TAG] == "automation_policy_sensor_a"
+            assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
+
+            # Starting a sensor causes it to make ticks too
+            result = result.start_sensor("automation_policy_sensor_b")
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+            sensor_states = instance.schedule_storage.all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
             )
 
-            prev_evaluation_id = None
-            for tick in ticks:
-                evaluation_id = tick.tick_data.auto_materialize_evaluation_id
-                assert evaluation_id > pre_sensor_evaluation_id
-                assert evaluation_id not in seen_evaluation_ids
-                seen_evaluation_ids.add(evaluation_id)
-                assert prev_evaluation_id is None or prev_evaluation_id > evaluation_id
-                prev_evaluation_id = evaluation_id
+            # No new tick yet for A since only 15 seconds have passed
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=1)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=2)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=2)
+
+            # Starting a default sensor causes it to make ticks too
+            result = result.start_sensor("default_automation_policy_sensor")
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            sensor_states = instance.schedule_storage.all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
+            )
+
+            assert len(sensor_states) == 3
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=2)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=3)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=3)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=4)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=3)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=2)
+
+            # Stop each sensor, ticks stop too
+            result = result.stop_sensor("automation_policy_sensor_b")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=3)
+
+            result = result.stop_sensor("automation_policy_sensor_a")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=4)
+
+            result = result.stop_sensor("default_automation_policy_sensor")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=4)
+            _assert_sensor_ran(instance, "automation_policy_sensor_b", expected_num_ticks=5)
+            _assert_sensor_ran(instance, "default_automation_policy_sensor", expected_num_ticks=4)
+
+            seen_evaluation_ids = set()
+
+            # Assert every tick has a unique evaluation ID, all are distinct, all are greater
+            # than the pre-sensor evaluation ID and they are increasing for each sensor
+            sensor_states = [
+                sensor_state
+                for sensor_state in instance.schedule_storage.all_instigator_state(
+                    instigator_type=InstigatorType.SENSOR
+                )
+            ]
+
+            for sensor_state in sensor_states:
+                ticks = instance.get_ticks(
+                    sensor_state.instigator_origin_id,
+                    sensor_state.selector_id,
+                )
+
+                prev_evaluation_id = None
+                for tick in ticks:
+                    evaluation_id = tick.tick_data.auto_materialize_evaluation_id
+                    assert evaluation_id > pre_sensor_evaluation_id
+                    assert evaluation_id not in seen_evaluation_ids
+                    seen_evaluation_ids.add(evaluation_id)
+                    assert prev_evaluation_id is None or prev_evaluation_id > evaluation_id
+                    prev_evaluation_id = evaluation_id
 
 
 def test_default_purge() -> None:

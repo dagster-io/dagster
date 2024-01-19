@@ -10,17 +10,16 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {RunsFilter} from '../graphql/types';
-import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {AnchorButton} from '../ui/AnchorButton';
-
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunRow} from './RunRow';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import ShowAndHideTagsMP4 from './ShowAndHideRunTags.mp4';
 import {RunTableRunFragment} from './types/RunTable.types';
+import {RunsFilter} from '../graphql/types';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {AnchorButton} from '../ui/AnchorButton';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];

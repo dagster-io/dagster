@@ -1,39 +1,25 @@
-import {
-  FontFamily,
-  MetadataTable,
-  Tooltip,
-  colorBackgroundDefault,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextLight,
-  colorTextRed,
-  colorTextYellow,
-} from '@dagster-io/ui-components';
+import {Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {LogLevel} from './LogLevel';
+import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
 
-import {LogLevel} from './LogLevel';
-import {ColumnWidthsContext} from './LogsScrollingTableHeader';
-
 const bgcolorForLevel = (level: LogLevel) =>
   ({
-    [LogLevel.DEBUG]: colorBackgroundDefault(),
-    [LogLevel.INFO]: colorBackgroundDefault(),
-    [LogLevel.EVENT]: colorBackgroundDefault(),
-    [LogLevel.WARNING]: colorBackgroundYellow(),
-    [LogLevel.ERROR]: colorBackgroundRed(),
-    [LogLevel.CRITICAL]: colorBackgroundRed(),
+    [LogLevel.DEBUG]: Colors.backgroundDefault(),
+    [LogLevel.INFO]: Colors.backgroundDefault(),
+    [LogLevel.EVENT]: Colors.backgroundDefault(),
+    [LogLevel.WARNING]: Colors.backgroundYellow(),
+    [LogLevel.ERROR]: Colors.backgroundRed(),
+    [LogLevel.CRITICAL]: Colors.backgroundRed(),
   })[level];
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
@@ -43,30 +29,30 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   max-height: 17em;
   word-break: break-word;
   white-space: pre-wrap;
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.monospace};
   display: flex;
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
   background-color: ${({highlighted, level}) =>
-    highlighted ? colorBackgroundLightHover() : bgcolorForLevel(level)};
+    highlighted ? Colors.backgroundLightHover() : bgcolorForLevel(level)};
 
   color: ${(props) =>
     ({
-      [LogLevel.DEBUG]: colorTextLight(),
-      [LogLevel.INFO]: colorTextDefault(),
-      [LogLevel.EVENT]: colorTextDefault(),
-      [LogLevel.WARNING]: colorTextYellow(),
-      [LogLevel.ERROR]: colorTextRed(),
-      [LogLevel.CRITICAL]: colorTextRed(),
+      [LogLevel.DEBUG]: Colors.textLight(),
+      [LogLevel.INFO]: Colors.textDefault(),
+      [LogLevel.EVENT]: Colors.textDefault(),
+      [LogLevel.WARNING]: Colors.textYellow(),
+      [LogLevel.ERROR]: Colors.textRed(),
+      [LogLevel.CRITICAL]: Colors.textRed(),
     })[props.level]};
 `;
 
 export const StructuredContent = styled.div`
   box-sizing: border-box;
-  border-left: 1px solid ${colorKeylineDefault()};
+  border-left: 1px solid ${Colors.keylineDefault()};
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -119,9 +105,9 @@ export const OpColumnContainer = styled.div`
 const OpColumnTooltipStyle = JSON.stringify({
   fontSize: '0.9em',
   fontFamily: FontFamily.monospace,
-  color: colorTextDefault(),
-  background: colorBackgroundDefault(),
-  border: `1px solid ${colorKeylineDefault()}`,
+  color: Colors.textDefault(),
+  background: Colors.backgroundDefault(),
+  border: `1px solid ${Colors.keylineDefault()}`,
   top: -8,
   left: 1,
 });
@@ -224,7 +210,7 @@ const TimestampColumnContainer = styled.div`
   a:visited,
   a:hover,
   a:active {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 
   a:hover,
@@ -244,6 +230,6 @@ export const EventTypeColumn = (props: {children: React.ReactNode}) => {
 
 const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   padding: 4px;
 `;

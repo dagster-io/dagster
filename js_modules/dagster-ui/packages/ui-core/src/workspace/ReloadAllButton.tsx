@@ -1,14 +1,13 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 
+import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   reloadFnForWorkspace,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
-
-import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 
 export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
   const {
@@ -20,8 +19,8 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
     reloadFn: reloadFnForWorkspace,
   });
 
-  const [isOpen, setIsOpen] = React.useState(!!error);
-  React.useEffect(() => setIsOpen(!!error), [error]);
+  const [isOpen, setIsOpen] = useState(!!error);
+  useEffect(() => setIsOpen(!!error), [error]);
 
   if (!canReloadWorkspace) {
     return (

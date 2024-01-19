@@ -46,7 +46,7 @@ const MyAppRoot = () => (
 ### 3. Import components
 
 ```jsx
-import {Box, Button, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Color, Icon} from '@dagster-io/ui-components';
 ```
 
 The rollup build specifies certain common components to be split into their own bundles to allow consumers to minimize their bundle size and avoid importing the entire library, since it currently contains a lot of complex, heavy components that you may not need.

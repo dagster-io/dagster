@@ -1,6 +1,6 @@
 import {Box} from '@dagster-io/ui-components';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {AssetConditionEvaluationStatus} from '../../../graphql/types';
 import {PartitionSegmentWithPopover} from '../PartitionSegmentWithPopover';
@@ -14,7 +14,7 @@ export default {
 const PARTITION_COUNT = 300;
 
 export const TruePartitions = () => {
-  const subset = React.useMemo(() => {
+  const subset = useMemo(() => {
     const partitionKeys = new Array(PARTITION_COUNT)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
@@ -42,7 +42,7 @@ export const TruePartitions = () => {
 };
 
 export const FewPartitions = () => {
-  const subset = React.useMemo(() => {
+  const subset = useMemo(() => {
     const partitionKeys = new Array(2)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));

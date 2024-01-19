@@ -1,5 +1,6 @@
 import {
   Box,
+  Colors,
   Menu,
   MenuItem,
   MiddleTruncate,
@@ -7,32 +8,25 @@ import {
   Tag,
   TextInput,
   TextInputContainer,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentYellow,
-  colorAccentYellowHover,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
+import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {assertUnreachable} from '../../app/Util';
 import {AssetConditionEvaluationStatus, AssetSubsetValue} from '../../graphql/types';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 
-import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-
 const statusToColors = (status: AssetConditionEvaluationStatus) => {
   switch (status) {
     case AssetConditionEvaluationStatus.TRUE:
-      return {color: colorAccentGreen(), hoverColor: colorAccentGreenHover()};
+      return {color: Colors.accentGreen(), hoverColor: Colors.accentGreenHover()};
     case AssetConditionEvaluationStatus.FALSE:
-      return {color: colorAccentYellow(), hoverColor: colorAccentYellowHover()};
+      return {color: Colors.accentYellow(), hoverColor: Colors.accentYellowHover()};
     case AssetConditionEvaluationStatus.SKIPPED:
-      return {color: colorAccentGray(), hoverColor: colorAccentGrayHover()};
+      return {color: Colors.accentGray(), hoverColor: Colors.accentGrayHover()};
     default:
       return assertUnreachable(status);
   }
@@ -48,6 +42,7 @@ interface Props {
   subset: AssetSusbsetWithoutTypenames | null;
   selectPartition: (partitionKey: string | null) => void;
 }
+
 export const PartitionSegmentWithPopover = ({
   description,
   selectPartition,
@@ -93,17 +88,17 @@ const ITEM_HEIGHT = 32;
 const MAX_ITEMS_BEFORE_TRUNCATION = 4;
 
 export const PartitionSubsetList = ({description, status, subset, selectPartition}: ListProps) => {
-  const container = React.useRef<HTMLDivElement | null>(null);
-  const [searchValue, setSearchValue] = React.useState('');
+  const container = useRef<HTMLDivElement | null>(null);
+  const [searchValue, setSearchValue] = useState('');
 
-  const {color, hoverColor} = React.useMemo(
+  const {color, hoverColor} = useMemo(
     () => statusToColors(status ?? AssetConditionEvaluationStatus.TRUE),
     [status],
   );
 
-  const partitionKeys = React.useMemo(() => subset.subsetValue.partitionKeys || [], [subset]);
+  const partitionKeys = useMemo(() => subset.subsetValue.partitionKeys || [], [subset]);
 
-  const filteredKeys = React.useMemo(() => {
+  const filteredKeys = useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase();
     return partitionKeys.filter((key) => key.toLocaleLowerCase().includes(searchLower));
   }, [partitionKeys, searchValue]);

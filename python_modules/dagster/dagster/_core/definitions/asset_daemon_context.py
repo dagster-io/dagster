@@ -167,11 +167,11 @@ class AssetDaemonContext:
         new parent materializations is calculated, as this can result in materializations being
         ignored if they happen between the two calculations.
         """
-        self._verbose_log_fn(
+        self._logger.info(
             f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
         )
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
-        self._verbose_log_fn("Done prefetching asset records.")
+        self._logger.info("Done prefetching asset records.")
 
     def evaluate_asset(
         self,
@@ -269,12 +269,15 @@ class AssetDaemonContext:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
                     expected_data_time_mapping[neighbor_key] = expected_data_time
 
-                    # make sure that the true_subset of the neighbor is accurate
+                    # make sure that the true_subset of the neighbor is accurate -- when it was
+                    # evaluated it may have had a different requested AssetSubset. however, because
+                    # all these neighbors must be executed as a unit, we need to union together
+                    # the subset of all required neighbors
                     if neighbor_key in evaluation_state_by_key:
-                        neighbor_evaluation = evaluation_state_by_key[neighbor_key]
-                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation._replace(
-                            evaluation=neighbor_evaluation.evaluation._replace(
-                                true_subset=neighbor_evaluation.true_subset._replace(
+                        neighbor_evaluation_state = evaluation_state_by_key[neighbor_key]
+                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation_state._replace(
+                            previous_evaluation=neighbor_evaluation_state.previous_evaluation._replace(
+                                true_subset=neighbor_evaluation_state.true_subset._replace(
                                     asset_key=neighbor_key
                                 )
                             )
@@ -327,9 +330,9 @@ class AssetDaemonContext:
             ),
             # only record evaluation results where something changed
             [
-                es.evaluation
+                es.previous_evaluation
                 for es in evaluation_state
-                if not es.evaluation.equivalent_to_stored_evaluation(
+                if not es.previous_evaluation.equivalent_to_stored_evaluation(
                     self.cursor.get_previous_evaluation(es.asset_key)
                 )
             ],

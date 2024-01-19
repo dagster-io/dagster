@@ -1,12 +1,11 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
+import {VirtualizedSensorHeader, VirtualizedSensorRow} from './VirtualizedSensorRow';
+import {RepoAddress} from './types';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
-
-import {VirtualizedSensorHeader, VirtualizedSensorRow} from './VirtualizedSensorRow';
-import {RepoAddress} from './types';
 
 type SensorInfo = {name: string; sensorState: BasicInstigationStateFragment};
 

@@ -1,7 +1,7 @@
 import {useQuery} from '@apollo/client';
 import {CursorPaginationProps} from '@dagster-io/ui-components';
 import {DocumentNode} from 'graphql';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
@@ -30,7 +30,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
 }) {
-  const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
+  const [cursorStack, setCursorStack] = useState<string[]>(() => []);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
 
   const queryVars: any = {

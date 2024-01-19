@@ -61,7 +61,6 @@ from ...implementation.fetch_assets import (
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
-    get_unloadable_instigator_states_or_error,
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
@@ -137,11 +136,9 @@ from ..inputs import (
 from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
-    GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
     GrapheneInstigationTick,
     GrapheneInstigationTickStatus,
-    GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
     GrapheneCapturedLogs,
@@ -289,14 +286,6 @@ class GrapheneQuery(graphene.ObjectType):
         description=(
             "Retrieve the state for a schedule or sensor by its location name, repository name, and"
             " schedule/sensor name."
-        ),
-    )
-
-    unloadableInstigationStatesOrError = graphene.Field(
-        graphene.NonNull(GrapheneInstigationStatesOrError),
-        instigationType=graphene.Argument(GrapheneInstigationType),
-        description=(
-            "Retrieve the running schedules and sensors that are missing from the workspace."
         ),
     )
 
@@ -714,15 +703,6 @@ class GrapheneQuery(graphene.ObjectType):
         return get_instigator_state_or_error(
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
-
-    @capture_error
-    def resolve_unloadableInstigationStatesOrError(
-        self,
-        graphene_info: ResolveInfo,
-        instigationType: Optional[GrapheneInstigationType] = None,  # type: ignore (idk)
-    ):
-        instigation_type = InstigatorType(instigationType) if instigationType else None
-        return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):

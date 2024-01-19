@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import {buildAssetConditionEvaluationRecord} from '../../../graphql/types';
 import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 

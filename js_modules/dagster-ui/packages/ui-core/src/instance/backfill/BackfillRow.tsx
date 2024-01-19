@@ -1,10 +1,20 @@
-import {gql, QueryResult, useLazyQuery} from '@apollo/client';
-import {Box, colorTextLight, Icon, Mono, Tag} from '@dagster-io/ui-components';
+import {QueryResult, gql, useLazyQuery} from '@apollo/client';
+import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
+import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import {
+  PartitionStatusesForBackfillFragment,
+  SingleBackfillCountsQuery,
+  SingleBackfillCountsQueryVariables,
+  SingleBackfillQuery,
+  SingleBackfillQueryVariables,
+} from './types/BackfillRow.types';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -24,17 +34,6 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
-
-import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
-import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {
-  PartitionStatusesForBackfillFragment,
-  SingleBackfillCountsQuery,
-  SingleBackfillCountsQueryVariables,
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
-} from './types/BackfillRow.types';
-import {BackfillTableFragment} from './types/BackfillTable.types';
 
 interface BackfillRowProps {
   backfill: BackfillTableFragment;
@@ -136,7 +135,7 @@ export const BackfillRowContent = ({
 
   const renderBackfillStatus = () =>
     statusQueryResult?.loading ? (
-      <div style={{color: colorTextLight()}}>Loading</div>
+      <div style={{color: Colors.textLight()}}>Loading</div>
     ) : (
       <BackfillStatusTag backfill={backfill} counts={counts} />
     );
@@ -146,12 +145,12 @@ export const BackfillRowContent = ({
       return <p>A partitions definition has changed since this backfill ran.</p>;
     }
     if (statusQueryResult?.loading) {
-      return <div style={{color: colorTextLight()}}>Loading</div>;
+      return <div style={{color: Colors.textLight()}}>Loading</div>;
     }
     return counts ? (
       <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
     ) : (
-      <div style={{color: colorTextLight()}}>{'\u2013'}</div>
+      <div style={{color: Colors.textLight()}}>{'\u2013'}</div>
     );
   };
 
@@ -296,7 +295,7 @@ const BackfillTarget = ({
   const buildRepoLink = () =>
     repoAddress ? (
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
-        <Icon name="repo" color={colorTextLight()} />
+        <Icon name="repo" color={Colors.textLight()} />
         <Link to={workspacePathFromAddress(repoAddress)}>
           {repoAddressAsHumanString(repoAddress)}
         </Link>
@@ -416,7 +415,7 @@ export const BackfillStatusTag = ({
         return <Tag intent="success">Completed</Tag>;
       }
       if (!counts) {
-        return <div style={{color: colorTextLight()}}>None</div>;
+        return <div style={{color: Colors.textLight()}}>None</div>;
       }
       if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
         return <Tag intent="success">Completed</Tag>;

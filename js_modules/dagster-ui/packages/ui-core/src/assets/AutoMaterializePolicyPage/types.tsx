@@ -1,3 +1,4 @@
+import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 import {PartitionKeyRange} from '../../graphql/types';
 import {AutoMaterializeEvaluationRecordItemFragment} from '../AutoMaterializePolicyPageOld/types/GetEvaluationsQuery.types';
 import {AssetKey} from '../types';

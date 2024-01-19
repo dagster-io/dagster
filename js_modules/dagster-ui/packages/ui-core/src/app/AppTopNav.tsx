@@ -1,18 +1,11 @@
-import {
-  Box,
-  Icon,
-  IconWrapper,
-  Tooltip,
-  colorNavBackground,
-  colorNavText,
-  colorNavTextSelected,
-  colorNavTextHover,
-  colorNavButton,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {LayoutContext} from './LayoutProvider';
+import {ShortcutHandler} from './ShortcutHandler';
+import {WebSocketStatus} from './WebSocketProvider';
 import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {
@@ -20,10 +13,6 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../search/SearchDialog';
-
-import {LayoutContext} from './LayoutProvider';
-import {ShortcutHandler} from './ShortcutHandler';
-import {WebSocketStatus} from './WebSocketProvider';
 
 type AppNavLinkType = {
   title: string;
@@ -197,7 +186,7 @@ export const AppTopNavLogo = () => {
           shortcutFilter={(e) => e.key === '.'}
         >
           <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-            <Icon name="menu" color={colorNavTextSelected()} size={24} />
+            <Icon name="menu" color={Colors.navTextSelected()} size={24} />
           </NavButton>
         </ShortcutHandler>
       ) : null}
@@ -275,31 +264,31 @@ const DaggyTooltip = styled(Tooltip)`
 `;
 
 export const TopNavLink = styled(NavLink)`
-  color: ${colorNavText()};
+  color: ${Colors.navText()};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
   text-decoration: none;
 
   :hover {
-    color: ${colorNavTextHover()};
+    color: ${Colors.navTextHover()};
     text-decoration: none;
   }
 
   :active,
   &.active {
-    color: ${colorNavTextSelected()};
+    color: ${Colors.navTextSelected()};
     text-decoration: none;
   }
 
   :focus {
     outline: none !important;
-    color: ${colorNavTextSelected()};
+    color: ${Colors.navTextSelected()};
   }
 `;
 
 export const AppTopNavContainer = styled.div`
-  background: ${colorNavBackground()};
+  background: ${Colors.navBackground()};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -331,7 +320,7 @@ const NavButton = styled.button`
   outline: none;
   padding: 6px;
   border: none;
-  background: ${colorNavBackground()};
+  background: ${Colors.navBackground()};
   display: block;
 
   ${IconWrapper} {
@@ -339,14 +328,14 @@ const NavButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background: ${colorNavTextHover()};
+    background: ${Colors.navTextHover()};
   }
 
   :active ${IconWrapper} {
-    background: ${colorNavTextHover()};
+    background: ${Colors.navTextHover()};
   }
 
   :focus {
-    background: ${colorNavButton()};
+    background: ${Colors.navButton()};
   }
 `;

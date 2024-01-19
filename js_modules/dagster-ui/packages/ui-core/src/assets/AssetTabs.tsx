@@ -1,11 +1,9 @@
 import {Tab, Tabs} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
-
-import {TabLink} from '../ui/TabLink';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {TabLink} from '../ui/TabLink';
 
 interface Props {
   selectedTab: string;

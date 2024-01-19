@@ -14,25 +14,15 @@ import {
   TagSelectorContainer,
   TagSelectorDefaultTagTooltipStyle,
   TagSelectorWithSearch,
+} from '@dagster-io/ui-components';
+import {
   colorAccentGray,
   colorAccentGreen,
   colorBackgroundGray,
   colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+} from '@dagster-io/ui-components/src/theme/color';
+import React from 'react';
 import styled from 'styled-components';
-
-import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {formatElapsedTimeWithMsec} from '../../app/Util';
-import {Timestamp} from '../../app/time/Timestamp';
-import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {AnchorButton} from '../../ui/AnchorButton';
-import {numberFormatter} from '../../ui/formatters';
-import {buildRepoAddress} from '../../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../../workspace/workspacePath';
-import {AssetKey} from '../types';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
 import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
@@ -53,6 +43,16 @@ import {
   GetEvaluationsSpecificPartitionQuery,
   GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
+import {ErrorWrapper} from '../../app/PythonErrorInfo';
+import {formatElapsedTimeWithMsec} from '../../app/Util';
+import {Timestamp} from '../../app/time/Timestamp';
+import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {AnchorButton} from '../../ui/AnchorButton';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
+import {AssetKey} from '../types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
   assetKey: AssetKey;
@@ -282,15 +282,6 @@ export const AutomaterializeMiddlePanelWithData = ({
     selectedEvaluation?.numRequested,
   ]);
 
-  const partitionsEvaluated = React.useMemo(() => {
-    if (evaluation) {
-      if (rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode') {
-        return rootEvaluationNode.candidateSubset?.subsetValue.partitionKeys.length;
-      }
-    }
-    return 0;
-  }, [evaluation, rootEvaluationNode]);
-
   const {data} = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
     {
@@ -358,68 +349,59 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
-          <Box
-            border="bottom"
-            padding={{vertical: 12}}
-            margin={{top: 12, bottom: partitionsEvaluated ? undefined : 12}}
-          >
+          <Box border="bottom" padding={{vertical: 12}} margin={{top: 12, bottom: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
-          {partitionsEvaluated ? (
-            <Box padding={{vertical: 12}} flex={{justifyContent: 'space-between'}}>
-              {numberFormatter.format(partitionsEvaluated)} partitions evaluated
-              <TagSelectorWrapper>
-                <TagSelectorWithSearch
-                  closeOnSelect
-                  placeholder="Select a partition to view its result"
-                  allTags={allPartitions}
-                  selectedTags={selectedPartition ? [selectedPartition] : []}
-                  setSelectedTags={(tags) => {
-                    selectPartition(tags[tags.length - 1] || null);
-                  }}
-                  renderDropdownItem={(tag, props) => (
-                    <MenuItem text={tag} onClick={props.toggle} />
-                  )}
-                  renderDropdown={(dropdown) => (
-                    <Box padding={{top: 8, horizontal: 4}} style={{width: '370px'}}>
-                      {dropdown}
-                    </Box>
-                  )}
-                  renderTag={(tag, tagProps) => (
-                    <BaseTag
-                      key={tag}
-                      textColor={colorTextLight()}
-                      fillColor={colorBackgroundGray()}
-                      icon={<Icon name="partition" color={colorAccentGray()} />}
-                      label={
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr auto',
-                            gap: 4,
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            maxWidth: '120px',
-                          }}
-                          data-tooltip={tag}
-                          data-tooltip-style={TagSelectorDefaultTagTooltipStyle}
-                        >
-                          <MiddleTruncate text={tag} />
-                          <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
-                            <Icon name="close" />
-                          </Box>
-                        </div>
-                      }
-                    />
-                  )}
-                  usePortal={false}
-                />
-                <SearchIconWrapper>
-                  <Icon name="search" />
-                </SearchIconWrapper>
-              </TagSelectorWrapper>
-            </Box>
-          ) : null}
+          <Box padding={{vertical: 12}} flex={{justifyContent: 'space-between'}}>
+            <TagSelectorWrapper>
+              <TagSelectorWithSearch
+                closeOnSelect
+                placeholder="Select a partition to view its result"
+                allTags={allPartitions}
+                selectedTags={selectedPartition ? [selectedPartition] : []}
+                setSelectedTags={(tags) => {
+                  selectPartition(tags[tags.length - 1] || null);
+                }}
+                renderDropdownItem={(tag, props) => <MenuItem text={tag} onClick={props.toggle} />}
+                renderDropdown={(dropdown) => (
+                  <Box padding={{top: 8, horizontal: 4}} style={{width: '370px'}}>
+                    {dropdown}
+                  </Box>
+                )}
+                renderTag={(tag, tagProps) => (
+                  <BaseTag
+                    key={tag}
+                    textColor={colorTextLight()}
+                    fillColor={colorBackgroundGray()}
+                    icon={<Icon name="partition" color={colorAccentGray()} />}
+                    label={
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          gap: 4,
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          maxWidth: '120px',
+                        }}
+                        data-tooltip={tag}
+                        data-tooltip-style={TagSelectorDefaultTagTooltipStyle}
+                      >
+                        <MiddleTruncate text={tag} />
+                        <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
+                          <Icon name="close" />
+                        </Box>
+                      </div>
+                    }
+                  />
+                )}
+                usePortal={false}
+              />
+              <SearchIconWrapper>
+                <Icon name="search" />
+              </SearchIconWrapper>
+            </TagSelectorWrapper>
+          </Box>
           <PolicyEvaluationTable
             evaluationRecord={
               selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition

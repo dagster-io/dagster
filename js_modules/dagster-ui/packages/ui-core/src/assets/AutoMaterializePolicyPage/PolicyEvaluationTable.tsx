@@ -1,23 +1,6 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  Icon,
-  Table,
-  Tooltip,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, Icon, Table, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
-
-import {AssetConditionEvaluationStatus} from '../../graphql/types';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
-import {TimeElapsed} from '../../runs/TimeElapsed';
-import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
@@ -29,6 +12,11 @@ import {
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+import {TimeElapsed} from '../../runs/TimeElapsed';
+import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
   evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>;
@@ -288,14 +276,14 @@ const VeryCompactTable = styled(Table)`
   & tr th:last-child,
   & tr td:last-child {
     box-shadow:
-      inset 1px 1px 0 ${colorKeylineDefault()},
-      inset -1px 0 0 ${colorKeylineDefault()} !important;
+      inset 1px 1px 0 ${Colors.keylineDefault()},
+      inset -1px 0 0 ${Colors.keylineDefault()} !important;
   }
 
   & tr:last-child td:last-child {
     box-shadow:
-      inset -1px -1px 0 ${colorKeylineDefault()},
-      inset 1px 1px 0 ${colorKeylineDefault()} !important;
+      inset -1px -1px 0 ${Colors.keylineDefault()},
+      inset 1px 1px 0 ${Colors.keylineDefault()} !important;
   }
 `;
 
@@ -306,11 +294,11 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
   background-color: ${({$highlight}) => {
     switch ($highlight) {
       case 'hovered':
-        return colorBackgroundLightHover();
+        return Colors.backgroundLightHover();
       case 'highlighted':
-        return colorBackgroundDefaultHover();
+        return Colors.backgroundDefaultHover();
       case 'none':
-        return colorBackgroundDefault();
+        return Colors.backgroundDefault();
     }
   }};
 
@@ -319,14 +307,14 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
       return css`
         && td {
           box-shadow:
-            inset 0 -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset 0 -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
 
         && td:last-child {
           box-shadow:
-            inset -1px -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset -1px -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
       `;
     }

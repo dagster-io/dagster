@@ -1,30 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Caption,
-  Icon,
-  MiddleTruncate,
-  colorKeylineDefault,
-  colorTextLight,
-  colorTextRed,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetMaterializationUpstreamQuery,
+  AssetMaterializationUpstreamQueryVariables,
+  AssetMaterializationUpstreamTableFragment,
+  MaterializationUpstreamDataVersionFragment,
+} from './types/AssetMaterializationUpstreamData.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetMaterializationUpstreamTableFragment,
-  AssetMaterializationUpstreamQuery,
-  AssetMaterializationUpstreamQueryVariables,
-  MaterializationUpstreamDataVersionFragment,
-} from './types/AssetMaterializationUpstreamData.types';
 
 dayjs.extend(relativeTime);
 
@@ -164,7 +155,7 @@ export const AssetMaterializationUpstreamData = ({
   });
 
   if (!timestamp) {
-    return <Caption color={colorTextLight()}>None</Caption>;
+    return <Caption color={Colors.textLight()}>None</Caption>;
   }
 
   const data =
@@ -194,11 +185,11 @@ export const TimeSinceWithOverdueColor = ({
   const isOverdue = maximumLagMinutes && lagMinutes > maximumLagMinutes;
 
   return relativeTo === 'now' ? (
-    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
+    <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
       ({dayjs(timestamp).fromNow()})
     </span>
   ) : (
-    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
+    <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
       ({dayjs(Number(timestamp)).from(relativeTo, true)} earlier)
     </span>
   );
@@ -222,7 +213,7 @@ const TableContainer = styled.table`
   border-collapse: collapse;
 
   tr td {
-    border: 1px solid ${colorKeylineDefault()};
+    border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

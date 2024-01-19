@@ -163,6 +163,8 @@ class AssetConditionEvaluation(NamedTuple):
     def equivalent_to_stored_evaluation(self, other: Optional["AssetConditionEvaluation"]) -> bool:
         """Returns if this evaluation is functionally equivalent to the given stored evaluation.
         This is used to determine if it is necessary to store this new evaluation in the database.
+        Noteably, the timestamps on successive evaluations will always be different, so a simple
+        equality check would be too strict.
         """
         return (
             other is not None
@@ -232,26 +234,26 @@ class AssetConditionEvaluationState(NamedTuple):
     on the subsequent evaluation to make the computation more efficient.
 
     Attributes:
-        evaluation: The computed AssetConditionEvaluation.
-        evaluation_timestamp: The evaluation_timestamp at which the evaluation was performed.
+        previous_evaluation: The computed AssetConditionEvaluation.
+        previous_tick_evaluation_timestamp: The evaluation_timestamp at which the evaluation was performed.
         max_storage_id: The maximum storage ID over all events used in this computation.
         extra_state_by_unique_id: A mapping from the unique ID of each condition in the evaluation
             tree to the extra state that was calculated for it, if any.
     """
 
-    evaluation: AssetConditionEvaluation
-    evaluation_timestamp: Optional[float]
+    previous_evaluation: AssetConditionEvaluation
+    previous_tick_evaluation_timestamp: Optional[float]
 
     max_storage_id: Optional[int]
     extra_state_by_unique_id: Mapping[str, PackableValue]
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.evaluation.asset_key
+        return self.previous_evaluation.asset_key
 
     @property
     def true_subset(self) -> AssetSubset:
-        return self.evaluation.true_subset
+        return self.previous_evaluation.true_subset
 
     @staticmethod
     def create(
@@ -271,8 +273,8 @@ class AssetConditionEvaluationState(NamedTuple):
             return extra_state
 
         return AssetConditionEvaluationState(
-            evaluation=AssetConditionEvaluation.from_result(root_result),
-            evaluation_timestamp=context.evaluation_time.timestamp(),
+            previous_evaluation=AssetConditionEvaluation.from_result(root_result),
+            previous_tick_evaluation_timestamp=context.evaluation_time.timestamp(),
             max_storage_id=context.new_max_storage_id,
             extra_state_by_unique_id=_flatten_extra_state(root_result),
         )
