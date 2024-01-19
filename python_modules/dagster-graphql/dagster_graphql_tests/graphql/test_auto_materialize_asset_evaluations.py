@@ -6,6 +6,7 @@ from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
@@ -393,7 +394,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
         evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             None,
         )
         evaluation2 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
@@ -411,8 +412,23 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
+        )
+
         assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
-        assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"] == []
+        assert (
+            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"]
+            == expected_rules
+        )
         assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["assetKey"] == {
             "path": ["asset_one"]
         }
@@ -429,7 +445,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     "rules"
                 ]
             )
-            == 0
+            == 1
         )
 
         results_by_evaluation_id = execute_dagster_graphql(
@@ -473,8 +489,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         self, graphql_context: WorkspaceRequestContext
     ):
         evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["blah"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]], "rule_snapshots": null, "run_ids": {"__set__": []}}',
-            StaticPartitionsDefinition(["a", "b"]),
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["blah"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]),
         )
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -493,6 +509,18 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         )
 
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
+        )
+
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
@@ -501,31 +529,45 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 "records": [
                     {
                         "numRequested": 0,
-                        "numSkipped": 0,
+                        "numSkipped": 1,
                         "numDiscarded": 0,
-                        "rulesWithRuleEvaluations": [],
-                        "rules": [],
+                        "rulesWithRuleEvaluations": [
+                            {
+                                "rule": {"decisionType": "SKIP"},
+                                "ruleEvaluations": [
+                                    {
+                                        "evaluationData": {
+                                            "waitingOnAssetKeys": [{"path": ["blah"]}],
+                                        },
+                                        "partitionKeysOrError": {
+                                            "partitionKeys": ["a"],
+                                        },
+                                    }
+                                ],
+                            },
+                        ],
+                        "rules": expected_rules,
                         "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                     }
                 ],
             },
         }
 
-    def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
+    def test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             None,
         )
         evaluation2 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_two"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, null]], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_two"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             None,
         )
         evaluation3 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_three"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}}, null]], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_three"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             None,
         )
         evaluation4 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_four"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "ParentUpdatedRuleEvaluationData", "updated_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}, "will_update_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_three"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}}, null]], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_four"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "ParentUpdatedRuleEvaluationData", "updated_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}, "will_update_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_three"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             None,
         )
         results = execute_dagster_graphql(
@@ -535,6 +577,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
         }
 
         check.not_none(
@@ -548,6 +591,17 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
+        )
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
@@ -555,9 +609,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_one"]},
                         "numRequested": 0,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [],
                     }
                 ],
@@ -576,9 +632,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_two"]},
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "MATERIALIZE"},
@@ -601,15 +659,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_three"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
-            },
+            "assetNodeOrError": {},
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_three"]},
                         "numRequested": 0,
                         "numSkipped": 1,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "SKIP"},
@@ -634,15 +692,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_four"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
-            },
+            "assetNodeOrError": {},
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_four"]},
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "MATERIALIZE"},
@@ -662,9 +720,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         }
 
-    def _test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
+    def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
         evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 2, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\", \\"b\\"]}"}]], "rule_snapshots": null, "run_ids": {"__set__": []}}',
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 2, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\", \\"b\\"]}"}]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
             StaticPartitionsDefinition(["a", "b"]),
         )
         results = execute_dagster_graphql(
