@@ -276,14 +276,12 @@ def test_asset_check_separate_op_downstream_still_executes():
     assert not check_eval.passed
 
 
-def test_error_severity_skip_downstream():
-    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
-
+def test_blocking_check_skip_downstream():
     @asset
     def asset1():
         ...
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1, blocking=True)
     def check1(context: AssetExecutionContext):
         return AssetCheckResult(passed=False)
 
@@ -304,21 +302,19 @@ def test_error_severity_skip_downstream():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
     error = result.failure_data_for_node("asset1_check1").error
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 
 
-def test_error_severity_with_source_asset_fail():
-    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
-
+def test_blocking_check_with_source_asset_fail():
     asset1 = SourceAsset("asset1")
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1, blocking=True)
     def check1(context: AssetExecutionContext):
         return AssetCheckResult(passed=False)
 
@@ -339,11 +335,11 @@ def test_error_severity_with_source_asset_fail():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
     error = result.failure_data_for_node("asset1_check1").error
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 

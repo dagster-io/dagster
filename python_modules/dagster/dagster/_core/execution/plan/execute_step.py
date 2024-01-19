@@ -14,6 +14,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 import dagster._check as check
+from dagster import AssetCheckSeverity
 from dagster._core.definitions import (
     AssetCheckEvaluation,
     AssetKey,
@@ -49,6 +50,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 )
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
+    DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
@@ -138,6 +140,13 @@ def _process_user_event(
         )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+        spec = check.not_none(
+            step_context.job_def.asset_layer.get_spec_for_asset_check(
+                step_context.node_handle.root, asset_check_evaluation.asset_check_key
+            ),
+            "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
+            " there should be a spec for the check",
+        )
 
         output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
             asset_check_evaluation.asset_check_key
@@ -146,6 +155,15 @@ def _process_user_event(
 
         yield asset_check_evaluation
 
+        if (
+            not asset_check_evaluation.passed
+            and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
+            and spec.blocking
+        ):
+            raise DagsterAssetCheckFailedError(
+                f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
+                " ERROR severity."
+            )
         yield output
     else:
         yield user_event
