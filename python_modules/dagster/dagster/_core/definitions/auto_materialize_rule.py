@@ -1,9 +1,10 @@
 import datetime
+import operator
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
+from functools import reduce
 from typing import (
     AbstractSet,
-    Callable,
     Dict,
     Iterable,
     Mapping,
@@ -17,6 +18,7 @@ import pytz
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluationData,
@@ -74,32 +76,53 @@ class AutoMaterializeRule(ABC):
         self,
         context: AssetAutomationConditionEvaluationContext,
         asset_partitions_by_evaluation_data: Mapping[
-            Optional[AutoMaterializeRuleEvaluationData], Set[AssetKeyPartitionKey]
+            AutoMaterializeRuleEvaluationData, Set[AssetKeyPartitionKey]
         ],
-        should_use_past_data_fn: Callable[[AssetKeyPartitionKey], bool],
-    ) -> "RuleEvaluationResults":
-        """Combines a given set of evaluation data with evaluation data from the previous tick. The
-        returned value will include the union of the evaluation data contained within
-        `asset_partitions_by_evaluation_data` and the evaluation data calculated for asset
-        partitions on the previous tick for which `should_use_past_data_fn` evaluates to `True`.
+        ignore_subset: AssetSubset,
+    ) -> RuleEvaluationResults:
+        """Combines evaluation data calculated on this tick with evaluation data calculated on the
+        previous tick.
 
         Args:
             context: The current RuleEvaluationContext.
             asset_partitions_by_evaluation_data: A mapping from evaluation data to the set of asset
                 partitions that the rule applies to.
-            should_use_past_data_fn: A function that returns whether a given asset partition from the
-                previous tick should be included in the results of this tick.
+            ignore_subset: An AssetSubset which represents information that we should *not* carry
+                forward from the previous tick.
         """
-        asset_partitions_by_evaluation_data = defaultdict(set, asset_partitions_by_evaluation_data)
-        evaluated_asset_partitions = set().union(*asset_partitions_by_evaluation_data.values())
-        for evaluation_data, asset_partitions in context.previous_tick_results:
-            for ap in asset_partitions:
-                # evaluated data from this tick takes precedence over data from the previous tick
-                if ap in evaluated_asset_partitions:
-                    continue
-                elif should_use_past_data_fn(ap):
-                    asset_partitions_by_evaluation_data[evaluation_data].add(ap)
-        return list(asset_partitions_by_evaluation_data.items())
+        from .asset_automation_evaluator import AssetSubsetWithMetdata
+
+        mapping = defaultdict(lambda: context.empty_subset())
+        for evaluation_data, asset_partitions in asset_partitions_by_evaluation_data.items():
+            mapping[
+                frozenset(evaluation_data.metadata.items())
+            ] = AssetSubset.from_asset_partitions_set(
+                context.asset_key, context.partitions_def, asset_partitions
+            )
+
+        # get the set of all things we have metadata for
+        has_metadata_subset = context.empty_subset()
+        for evaluation_data, subset in mapping.items():
+            has_metadata_subset |= subset
+
+        # don't use information from the previous tick if we have explicit metadata for it or
+        # we've explicitly said to ignore it
+        ignore_subset = has_metadata_subset | ignore_subset
+
+        for elt in context.previous_tick_subsets_with_metadata:
+            carry_forward_subset = elt.subset - ignore_subset
+            if carry_forward_subset.size > 0:
+                mapping[elt.frozen_metadata] |= carry_forward_subset
+
+        # for now, an asset is in the "true" subset if and only if we have some metadata for it
+        true_subset = reduce(operator.or_, mapping.values(), context.empty_subset())
+        return (
+            true_subset,
+            [
+                AssetSubsetWithMetdata(subset, dict(metadata))
+                for metadata, subset in mapping.items()
+            ],
+        )
 
     @abstractmethod
     def evaluate_for_asset(
@@ -309,7 +332,7 @@ class MaterializeOnCronRule(
             missed_ticks.append(dt)
         return missed_ticks
 
-    def get_asset_partitions_to_request(
+    def get_new_asset_partitions_to_request(
         self, context: AssetAutomationConditionEvaluationContext
     ) -> AbstractSet[AssetKeyPartitionKey]:
         missed_ticks = self.missed_cron_ticks(context)
@@ -375,17 +398,15 @@ class MaterializeOnCronRule(
     def evaluate_for_asset(
         self, context: AssetAutomationConditionEvaluationContext
     ) -> RuleEvaluationResults:
-        asset_partitions_to_request = self.get_asset_partitions_to_request(context)
-        asset_partitions_by_evaluation_data = defaultdict(set)
-        if asset_partitions_to_request:
-            asset_partitions_by_evaluation_data[None].update(asset_partitions_to_request)
-
-        return self.add_evaluation_data_from_previous_tick(
-            context,
-            asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap
-            not in context.materialized_requested_or_discarded_since_previous_tick_subset,
+        new_asset_partitions_to_request = self.get_new_asset_partitions_to_request(context)
+        asset_subset_to_request = AssetSubset.from_asset_partitions_set(
+            context.asset_key, context.partitions_def, new_asset_partitions_to_request
+        ) | (
+            context.previous_tick_true_subset
+            - context.materialized_requested_or_discarded_since_previous_tick_subset
         )
+
+        return asset_subset_to_request, []
 
 
 @whitelist_for_serdes
@@ -579,8 +600,7 @@ class MaterializeOnParentUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap
-            not in context.materialized_requested_or_discarded_since_previous_tick_subset,
+            ignore_subset=context.materialized_requested_or_discarded_since_previous_tick_subset,
         )
 
 
@@ -601,8 +621,6 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         previously discarded. Currently only applies to root asset partitions and asset partitions
         with updated parents.
         """
-        asset_partitions_by_evaluation_data = defaultdict(set)
-
         missing_asset_partitions = set(
             context.asset_context.never_materialized_requested_or_discarded_root_subset.asset_partitions
         )
@@ -614,15 +632,14 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             ):
                 missing_asset_partitions |= {candidate}
 
-        if missing_asset_partitions:
-            asset_partitions_by_evaluation_data[None] = missing_asset_partitions
-
-        return self.add_evaluation_data_from_previous_tick(
-            context,
-            asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in missing_asset_partitions
-            and ap not in context.materialized_requested_or_discarded_since_previous_tick_subset,
+        newly_missing_subset = AssetSubset.from_asset_partitions_set(
+            context.asset_key, context.partitions_def, missing_asset_partitions
         )
+        missing_subset = newly_missing_subset | (
+            context.previous_tick_true_subset
+            - context.materialized_requested_or_discarded_since_previous_tick_subset
+        )
+        return missing_subset, []
 
 
 @whitelist_for_serdes
@@ -668,7 +685,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+            ignore_subset=subset_to_evaluate,
         )
 
 
@@ -717,7 +734,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+            ignore_subset=subset_to_evaluate,
         )
 
 
@@ -803,7 +820,7 @@ class SkipOnNotAllParentsUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+            ignore_subset=subset_to_evaluate,
         )
 
 
@@ -845,7 +862,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+            ignore_subset=subset_to_evaluate,
         )
 
 
@@ -873,14 +890,14 @@ class SkipOnBackfillInProgressRule(
         ).get_asset_subset(context.asset_key, context.asset_context.asset_graph)
 
         if backfilling_subset.size == 0:
-            return []
+            return context.empty_subset(), []
 
         if self.all_partitions:
             true_subset = context.candidate_subset
         else:
             true_subset = context.candidate_subset & backfilling_subset
 
-        return [(None, true_subset.asset_partitions)]
+        return true_subset, []
 
 
 @whitelist_for_serdes
@@ -905,6 +922,7 @@ class DiscardOnMaxMaterializationsExceededRule(
                 key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
             )[self.limit :]
         )
-        if rate_limited_asset_partitions:
-            return [(None, rate_limited_asset_partitions)]
-        return []
+
+        return AssetSubset.from_asset_partitions_set(
+            context.asset_key, context.partitions_def, rate_limited_asset_partitions
+        ), []
