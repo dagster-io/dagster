@@ -233,7 +233,7 @@ const PartitionedPolicyEvaluationTable = ({
                   consideredPartitions
                 ) : (
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    All{' '}
+                    All
                     <Tooltip content="Evaluated against all partitions that existed at the time of evaluation">
                       <Icon name="info" />
                     </Tooltip>
