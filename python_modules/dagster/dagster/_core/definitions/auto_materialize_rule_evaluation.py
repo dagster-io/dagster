@@ -1,3 +1,4 @@
+import hashlib
 import operator
 from abc import ABC, abstractproperty
 from collections import defaultdict
@@ -145,10 +146,13 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     ) -> "AssetConditionSnapshot":
         from .asset_condition import AssetConditionSnapshot, RuleCondition
 
+        unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+
         return AssetConditionSnapshot(
             class_name=RuleCondition.__name__,
             description=rule_snapshot.description,
-            child_hashes=[],
+            unique_id=unique_id,
         )
 
     def _get_child_rule_evaluation(
@@ -162,16 +166,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     ) -> "AssetConditionEvaluation":
         from .asset_condition import (
             AssetConditionEvaluation,
-            AssetConditionSnapshot,
             AssetSubsetWithMetadata,
-            RuleCondition,
         )
 
-        condition_snapshot = AssetConditionSnapshot(
-            class_name=RuleCondition.__name__,
-            description=rule_snapshot.description,
-            child_hashes=[],
-        )
+        condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
 
         if is_partitioned:
             # for partitioned assets, we can't deserialize SerializedPartitionsSubset into an
@@ -235,12 +233,13 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 return None
             evaluation = child_evaluations[0]
         else:
+            unique_id_parts = [
+                OrAssetCondition.__name__,
+                *[e.condition_snapshot.unique_id for e in child_evaluations],
+            ]
+            unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
             decision_type_snapshot = AssetConditionSnapshot(
-                class_name=OrAssetCondition.__name__,
-                description="",
-                child_hashes=[
-                    child_eval.condition_snapshot.hash for child_eval in child_evaluations
-                ],
+                class_name=OrAssetCondition.__name__, description="", unique_id=unique_id
             )
             initial = (
                 AssetSubset(asset_key, DefaultPartitionsSubset(set()))
@@ -261,11 +260,14 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             return evaluation
 
         # non-materialize conditions are inverted
+        unique_id_parts = [
+            NotAssetCondition.__name__,
+            evaluation.condition_snapshot.unique_id,
+        ]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
-                class_name=NotAssetCondition.__name__,
-                description="",
-                child_hashes=[evaluation.condition_snapshot.hash],
+                class_name=NotAssetCondition.__name__, description="", unique_id=unique_id
             ),
             # for partitioned assets, we don't bother calculating the true subset, as we can't
             # properly deserialize the inner results
@@ -329,10 +331,13 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         )
 
         # the top level condition is the AND of all the sub-conditions
+        unique_id_parts = [
+            AndAssetCondition.__name__,
+            *[e.condition_snapshot.unique_id for e in child_evaluations],
+        ]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
         condition_snapshot = AssetConditionSnapshot(
-            class_name=AndAssetCondition.__name__,
-            description="",
-            child_hashes=[evaluation.condition_snapshot.hash for evaluation in child_evaluations],
+            class_name=AndAssetCondition.__name__, description="", unique_id=unique_id
         )
 
         return AssetConditionEvaluation(
