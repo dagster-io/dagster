@@ -275,18 +275,21 @@ export const AutomaterializeMiddlePanelWithData = ({
         </Box>
       </Tag>
     );
-  }, [definition, selectedEvaluation]);
+  }, [
+    definition?.partitionDefinition,
+    rootPartitionedEvaluationNode,
+    selectPartition,
+    selectedEvaluation?.numRequested,
+  ]);
 
   const partitionsEvaluated = React.useMemo(() => {
     if (evaluation) {
       if (rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode') {
-        return (
-          rootEvaluationNode.numTrue + rootEvaluationNode.numFalse + rootEvaluationNode.numSkipped
-        );
+        return rootEvaluationNode.candidateSubset?.subsetValue.partitionKeys.length;
       }
     }
     return 0;
-  }, [evaluation]);
+  }, [evaluation, rootEvaluationNode]);
 
   const {data} = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
