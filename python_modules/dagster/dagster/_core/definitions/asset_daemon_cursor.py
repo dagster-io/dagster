@@ -9,6 +9,8 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
+    TypeVar,
 )
 
 import dagster._check as check
@@ -17,26 +19,121 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import (
+    PackableValue,
+    deserialize_value,
+    serialize_value,
+    whitelist_for_serdes,
+)
 
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
-from .partition import PartitionsSubset
+from .partition import PartitionsDefinition, PartitionsSubset
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetConditionEvaluation
+    from .asset_condition import AssetCondition, AssetConditionEvaluation, AssetConditionSnapshot
+    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+
+ExtrasDict = Mapping[str, PackableValue]
+
+T = TypeVar("T")
 
 
-class AssetDaemonAssetCursor(NamedTuple):
+def _get_placeholder_missing_condition() -> "AssetCondition":
+    """Temporary hard-coding of the hash of the "materialize on missing" condition. This will
+    no longer be necessary once we start serializing the AssetDaemonCursor.
+    """
+    from .asset_condition import RuleCondition
+    from .auto_materialize_rule import MaterializeOnMissingRule
+
+    return RuleCondition(MaterializeOnMissingRule())
+
+
+_PLACEHOLDER_HANDLED_SUBSET_KEY = "handled_subset"
+
+
+class AssetConditionCursorExtras(NamedTuple):
+    """Class to represent additional unstructured information that may be tracked by a particular
+    asset condition.
+    """
+
+    condition_snapshot: "AssetConditionSnapshot"
+    extras: ExtrasDict
+
+
+class AssetConditionCursor(NamedTuple):
     """Convenience class to represent the state of an individual asset being handled by the daemon.
     In the future, this will be serialized as part of the cursor.
     """
 
     asset_key: AssetKey
+    previous_evaluation: Optional["AssetConditionEvaluation"]
     previous_max_storage_id: Optional[int]
     previous_evaluation_timestamp: Optional[float]
-    previous_evaluation: Optional["AssetConditionEvaluation"]
-    materialized_requested_or_discarded_subset: AssetSubset
+
+    extras: Sequence[AssetConditionCursorExtras]
+
+    @staticmethod
+    def empty(asset_key: AssetKey) -> "AssetConditionCursor":
+        return AssetConditionCursor(
+            asset_key=asset_key,
+            previous_evaluation=None,
+            previous_max_storage_id=None,
+            previous_evaluation_timestamp=None,
+            extras=[],
+        )
+
+    def get_extras_value(
+        self, condition: "AssetCondition", key: str, as_type: Type[T]
+    ) -> Optional[T]:
+        """Returns a value from the extras dict for the given condition, if it exists and is of the
+        expected type. Otherwise, returns None.
+        """
+        for condition_extras in self.extras:
+            if condition_extras.condition_snapshot == condition.snapshot:
+                extras_value = condition_extras.extras.get(key)
+                if isinstance(extras_value, as_type):
+                    return extras_value
+                return None
+        return None
+
+    def get_previous_requested_or_discarded_subset(
+        self, condition: "AssetCondition", partitions_def: Optional[PartitionsDefinition]
+    ) -> AssetSubset:
+        if not self.previous_evaluation:
+            return AssetSubset.empty(self.asset_key, partitions_def)
+        return self.previous_evaluation.get_requested_or_discarded_subset(condition)
+
+    @property
+    def handled_subset(self) -> Optional[AssetSubset]:
+        return self.get_extras_value(
+            condition=_get_placeholder_missing_condition(),
+            key=_PLACEHOLDER_HANDLED_SUBSET_KEY,
+            as_type=AssetSubset,
+        )
+
+    def with_updates(
+        self, context: "AssetConditionEvaluationContext", evaluation: "AssetConditionEvaluation"
+    ) -> "AssetConditionCursor":
+        newly_materialized_requested_or_discarded_subset = (
+            context.materialized_since_previous_tick_subset
+            | evaluation.get_requested_or_discarded_subset(context.condition)
+        )
+
+        handled_subset = (
+            self.handled_subset or context.empty_subset()
+        ) | newly_materialized_requested_or_discarded_subset
+
+        # for now, hard-code the materialized_requested_or_discarded_subset location
+        return self._replace(
+            previous_evaluation=evaluation,
+            extras=[
+                AssetConditionCursorExtras(
+                    condition_snapshot=_get_placeholder_missing_condition().snapshot,
+                    extras={_PLACEHOLDER_HANDLED_SUBSET_KEY: handled_subset},
+                )
+            ],
+        )
 
 
 class AssetDaemonCursor(NamedTuple):
@@ -71,7 +168,7 @@ class AssetDaemonCursor(NamedTuple):
 
     def asset_cursor_for_key(
         self, asset_key: AssetKey, asset_graph: AssetGraph
-    ) -> AssetDaemonAssetCursor:
+    ) -> AssetConditionCursor:
         partitions_def = asset_graph.get_partitions_def(asset_key)
         handled_partitions_subset = self.handled_root_partitions_by_asset_key.get(asset_key)
         if handled_partitions_subset is not None:
@@ -80,12 +177,19 @@ class AssetDaemonCursor(NamedTuple):
             handled_subset = AssetSubset(asset_key=asset_key, value=True)
         else:
             handled_subset = AssetSubset.empty(asset_key, partitions_def)
-        return AssetDaemonAssetCursor(
+
+        previous_evaluation = self.latest_evaluation_by_asset_key.get(asset_key)
+        return AssetConditionCursor(
             asset_key=asset_key,
+            previous_evaluation=previous_evaluation,
             previous_max_storage_id=self.latest_storage_id,
             previous_evaluation_timestamp=self.latest_evaluation_timestamp,
-            previous_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
-            materialized_requested_or_discarded_subset=handled_subset,
+            extras=[
+                AssetConditionCursorExtras(
+                    condition_snapshot=_get_placeholder_missing_condition().snapshot,
+                    extras={"handled_subset": handled_subset},
+                )
+            ],
         )
 
     def with_updates(
@@ -96,7 +200,7 @@ class AssetDaemonCursor(NamedTuple):
         observe_request_timestamp: float,
         evaluations: Sequence["AssetConditionEvaluation"],
         evaluation_time: datetime.datetime,
-        asset_cursors: Sequence[AssetDaemonAssetCursor],
+        asset_cursors: Sequence[AssetConditionCursor],
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
@@ -124,13 +228,14 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_asset_keys={
                 cursor.asset_key
                 for cursor in asset_cursors
-                if not cursor.materialized_requested_or_discarded_subset.is_partitioned
-                and cursor.materialized_requested_or_discarded_subset.bool_value
+                if cursor.handled_subset is not None
+                and not cursor.handled_subset.is_partitioned
+                and cursor.handled_subset.bool_value
             },
             handled_root_partitions_by_asset_key={
-                cursor.asset_key: cursor.materialized_requested_or_discarded_subset.subset_value
+                cursor.asset_key: cursor.handled_subset.subset_value
                 for cursor in asset_cursors
-                if cursor.materialized_requested_or_discarded_subset.is_partitioned
+                if cursor.handled_subset is not None and cursor.handled_subset.is_partitioned
             },
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,

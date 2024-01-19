@@ -39,7 +39,7 @@ from .asset_condition import AssetConditionEvaluation
 from .asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
-from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
+from .asset_daemon_cursor import AssetConditionCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -223,7 +223,7 @@ class AssetDaemonContext:
         asset_key: AssetKey,
         evaluation_results_by_key: Mapping[AssetKey, AssetConditionEvaluation],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> Tuple[AssetConditionEvaluation, AssetDaemonAssetCursor, Optional[datetime.datetime]]:
+    ) -> Tuple[AssetConditionEvaluation, AssetConditionCursor, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key.
 
         Params:
@@ -241,9 +241,11 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_asset_condition()
 
+        asset_cursor = self.cursor.asset_cursor_for_key(asset_key, self.asset_graph)
+
         context = AssetConditionEvaluationContext.create(
             asset_key=asset_key,
-            asset_cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
+            cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -252,26 +254,27 @@ class AssetDaemonContext:
             expected_data_time_mapping=expected_data_time_mapping,
         )
 
-        evaluation = asset_condition.evaluate(context)
-        asset_cursor = context.get_new_asset_cursor(evaluation=evaluation)
+        evaluation, condition_cursor = asset_condition.evaluate(context)
+
+        new_asset_cursor = asset_cursor.with_updates(context, evaluation)
 
         expected_data_time = get_expected_data_time_for_asset_key(
             context, will_materialize=evaluation.true_subset.size > 0
         )
-        return evaluation, asset_cursor, expected_data_time
+        return evaluation, new_asset_cursor, expected_data_time
 
     def get_asset_condition_evaluations(
         self,
     ) -> Tuple[
         Sequence[AssetConditionEvaluation],
-        Sequence[AssetDaemonAssetCursor],
+        Sequence[AssetConditionCursor],
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        asset_cursors: List[AssetDaemonAssetCursor] = []
+        asset_cursors: List[AssetConditionCursor] = []
 
         evaluation_results_by_key: Dict[AssetKey, AssetConditionEvaluation] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
