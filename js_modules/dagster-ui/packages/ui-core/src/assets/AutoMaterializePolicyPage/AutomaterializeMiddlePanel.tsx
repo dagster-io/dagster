@@ -3,6 +3,7 @@ import {
   BaseTag,
   Body2,
   Box,
+  Colors,
   Icon,
   MenuItem,
   MiddleTruncate,
@@ -15,12 +16,6 @@ import {
   TagSelectorDefaultTagTooltipStyle,
   TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
-import {
-  colorAccentGray,
-  colorAccentGreen,
-  colorBackgroundGray,
-  colorTextLight,
-} from '@dagster-io/ui-components/src/theme/color';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -253,7 +248,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           >
             <Tag intent="success">
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <StatusDot $color={colorAccentGreen()} />
+                <StatusDot $color={Colors.accentGreen()} />
                 {selectedEvaluation.numRequested} Requested
               </Box>
             </Tag>
@@ -263,7 +258,7 @@ export const AutomaterializeMiddlePanelWithData = ({
       return (
         <Tag intent="success">
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <StatusDot $color={colorAccentGreen()} />
+            <StatusDot $color={Colors.accentGreen()} />
             Requested
           </Box>
         </Tag>
@@ -272,7 +267,7 @@ export const AutomaterializeMiddlePanelWithData = ({
     return (
       <Tag>
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <StatusDot $color={colorAccentGray()} />
+          <StatusDot $color={Colors.accentGray()} />
           Not Requested
         </Box>
       </Tag>
@@ -377,9 +372,9 @@ export const AutomaterializeMiddlePanelWithData = ({
                 renderTag={(tag, tagProps) => (
                   <BaseTag
                     key={tag}
-                    textColor={colorTextLight()}
-                    fillColor={colorBackgroundGray()}
-                    icon={<Icon name="partition" color={colorAccentGray()} />}
+                    textColor={Colors.textLight()}
+                    fillColor={Colors.backgroundGray()}
+                    icon={<Icon name="partition" color={Colors.accentGray()} />}
                     label={
                       <div
                         style={{

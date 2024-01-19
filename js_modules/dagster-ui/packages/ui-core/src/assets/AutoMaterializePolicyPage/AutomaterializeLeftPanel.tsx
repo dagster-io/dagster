@@ -8,13 +8,6 @@ import {
   MiddleTruncate,
   Subtitle1,
 } from '@dagster-io/ui-components';
-import {
-  colorAccentBlue,
-  colorAccentGreen,
-  colorBackgroundDisabled,
-  colorTextGreen,
-  colorTextLight,
-} from '@dagster-io/ui-components/src/theme/color';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -93,7 +86,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
       >
         <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
           <Box flex={{alignItems: 'center', gap: 4}}>
-            <Icon name="sensors" color={colorAccentBlue()} />
+            <Icon name="sensors" color={Colors.accentBlue()} />
             <Body2>
               {repoAddress && sensorName ? (
                 <Link
@@ -111,7 +104,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         <Box flex={{direction: 'column', gap: 8}}>
           {evaluations.length === 0 ? (
             <Box padding={{left: 12, top: 12, right: 8}}>
-              <Caption color={colorTextLight()}>No evaluations</Caption>
+              <Caption color={Colors.textLight()}>No evaluations</Caption>
             </Box>
           ) : null}
           {evaluations.map((evaluation) => {
@@ -143,10 +136,10 @@ export const AutomaterializeLeftList = (props: ListProps) => {
                   <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
                     <StatusDot
                       $color={
-                        evaluation.numRequested ? colorAccentGreen() : colorBackgroundDisabled()
+                        evaluation.numRequested ? Colors.accentGreen() : Colors.backgroundDisabled()
                       }
                     />
-                    <span style={evaluation.numRequested ? {color: colorTextGreen()} : undefined}>
+                    <span style={evaluation.numRequested ? {color: Colors.textGreen()} : undefined}>
                       <TimestampDisplay timestamp={evaluation.timestamp} />
                     </span>
                   </Box>
