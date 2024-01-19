@@ -1,5 +1,5 @@
 import {gql, useSubscription} from '@apollo/client';
-import React from 'react';
+import {memo, useCallback, useEffect, useRef, useState} from 'react';
 
 import {
   AssetLiveRunLogsSubscription,
@@ -47,12 +47,12 @@ export function observeAssetEventsInRuns(runIds: string[], callback: ObservedRun
 }
 
 export const AssetRunLogObserver = () => {
-  const [runIds, setRunIds] = React.useState<string[]>([]);
-  const callback = React.useCallback((runId: string, events: ObservedEvent[]) => {
+  const [runIds, setRunIds] = useState<string[]>([]);
+  const callback = useCallback((runId: string, events: ObservedEvent[]) => {
     (ObservedRuns[runId] || []).forEach((cb) => cb(events));
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const listener = () => setRunIds(Object.keys(ObservedRuns));
     document.addEventListener(OBSERVED_RUNS_CHANGED, listener);
     return () => document.removeEventListener(OBSERVED_RUNS_CHANGED, listener);
@@ -72,8 +72,8 @@ interface SingleRunLogObserverProps {
   callback: (runId: string, events: ObservedEvent[]) => void;
 }
 
-const SingleRunLogObserver = React.memo(({runId, callback}: SingleRunLogObserverProps) => {
-  const counter = React.useRef(0);
+const SingleRunLogObserver = memo(({runId, callback}: SingleRunLogObserverProps) => {
+  const counter = useRef(0);
 
   // Useful for testing this component:
   // React.useEffect(() => {

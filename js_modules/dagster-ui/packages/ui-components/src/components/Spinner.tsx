@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';

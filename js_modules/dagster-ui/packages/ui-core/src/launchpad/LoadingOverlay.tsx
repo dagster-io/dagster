@@ -1,5 +1,4 @@
 import {Colors, Group, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 export const LoadingOverlay = ({isLoading, message}: {isLoading: boolean; message: string}) => (

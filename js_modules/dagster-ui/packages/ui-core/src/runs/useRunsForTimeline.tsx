@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
@@ -48,7 +48,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
   const initialLoading = loading && !data;
   const {unterminated, terminated, workspaceOrError} = data || previousData || {};
 
-  const runsByJobKey = React.useMemo(() => {
+  const runsByJobKey = useMemo(() => {
     const map: {[jobKey: string]: TimelineRun[]} = {};
     const now = Date.now();
 
@@ -98,7 +98,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return map;
   }, [end, unterminated, terminated, start]);
 
-  const jobsWithRuns: TimelineJob[] = React.useMemo(() => {
+  const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
       return [];
     }
@@ -189,7 +189,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       jobs: jobsWithRuns,
       initialLoading,

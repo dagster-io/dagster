@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
@@ -61,7 +61,7 @@ const inputIsDynamicCollect = (
   return inputDef?.isDynamicCollect || false;
 };
 
-export const OpEdges = React.memo(
+export const OpEdges = memo(
   (props: {
     color: string;
     ops: OpGraphOpFragment[];

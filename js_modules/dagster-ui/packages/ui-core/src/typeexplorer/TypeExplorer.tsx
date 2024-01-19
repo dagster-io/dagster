@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box, ConfigTypeSchema} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';

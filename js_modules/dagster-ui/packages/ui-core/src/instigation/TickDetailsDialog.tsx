@@ -15,7 +15,7 @@ import {
   Tabs,
   Tag,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {FailedRunList, RunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
@@ -66,7 +66,7 @@ interface InnerProps {
 }
 
 const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
-  const [activeTab, setActiveTab] = React.useState<'result' | 'logs'>('result');
+  const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
 
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, tickId: tickId || 0},
@@ -78,7 +78,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       ? data?.instigationStateOrError.tick
       : undefined;
 
-  const [addedPartitionRequests, deletedPartitionRequests] = React.useMemo(() => {
+  const [addedPartitionRequests, deletedPartitionRequests] = useMemo(() => {
     const added = tick?.dynamicPartitionsRequestResults.filter(
       (request) =>
         request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
@@ -169,7 +169,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
 };
 
 export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) {
-  const intent = React.useMemo(() => {
+  const intent = useMemo(() => {
     switch (tick?.status) {
       case InstigationTickStatus.FAILURE:
         return 'danger';

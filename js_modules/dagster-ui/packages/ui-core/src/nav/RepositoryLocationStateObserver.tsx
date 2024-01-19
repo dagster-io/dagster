@@ -1,6 +1,6 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
 import {ButtonLink, Caption, Colors, Group, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useState} from 'react';
 
 import {
   LocationStateChangeSubscription,
@@ -24,8 +24,8 @@ const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
 
 export const RepositoryLocationStateObserver = () => {
   const client = useApolloClient();
-  const {locationEntries, refetch} = React.useContext(WorkspaceContext);
-  const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
+  const {locationEntries, refetch} = useContext(WorkspaceContext);
+  const [updatedLocations, setUpdatedLocations] = useState<string[]>([]);
   const totalMessages = updatedLocations.length;
 
   useSubscription<LocationStateChangeSubscription, LocationStateChangeSubscriptionVariables>(

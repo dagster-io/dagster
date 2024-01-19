@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {TYPE_LIST_FRAGMENT, TypeList} from './TypeList';
 import {
@@ -26,7 +26,7 @@ export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContaine
   const {pipelineName, snapshotId} = explorerPath;
   const {options} = useRepositoryOptions();
 
-  const pipelineSelector = React.useMemo(() => {
+  const pipelineSelector = useMemo(() => {
     if (!repoAddress) {
       const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
       return reposWithMatch[0]

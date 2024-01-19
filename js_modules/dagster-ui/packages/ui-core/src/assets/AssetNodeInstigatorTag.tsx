@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import React from 'react';
+import {useMemo} from 'react';
 
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -16,7 +16,7 @@ export const AssetNodeInstigatorTag = ({
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
 }) => {
-  const {schedules, sensors} = React.useMemo(() => {
+  const {schedules, sensors} = useMemo(() => {
     const instigators = assetNode.targetingInstigators;
     const schedules = instigators.filter(
       (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',

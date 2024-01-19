@@ -1,12 +1,12 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
 
 export const SidebarComponent = (props: IPluginSidebarProps) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onOpen = () => setOpen(true);
     document.addEventListener('show-kind-info', onOpen);
     return () => document.removeEventListener('show-kind-info', onOpen);

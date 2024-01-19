@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar as BlueprintProgressBar, ProgressBarProps} from '@blueprintjs/core';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';

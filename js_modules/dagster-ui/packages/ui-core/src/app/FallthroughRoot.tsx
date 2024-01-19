@@ -1,5 +1,5 @@
 import {Box, Colors, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -20,7 +20,7 @@ const getVisibleJobs = (r: DagsterRepoOption) =>
   r.repository.pipelines.filter((j) => !isHiddenAssetGroupJob(j.name));
 
 const FinalRedirectOrLoadingRoot = () => {
-  const workspaceContext = React.useContext(WorkspaceContext);
+  const workspaceContext = useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
 
   if (loading) {

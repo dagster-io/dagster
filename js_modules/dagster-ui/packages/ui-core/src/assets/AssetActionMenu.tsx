@@ -1,5 +1,4 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {
   executionDisabledMessageForAssets,

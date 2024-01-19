@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
-import React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
@@ -141,17 +141,17 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
-  const [launching, setLaunching] = React.useState(false);
-  const [tagEditorOpen, setTagEditorOpen] = React.useState(false);
-  const [previewOpen, setPreviewOpen] = React.useState(false);
-  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
+  const [launching, setLaunching] = useState(false);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
     repoAddress.location,
     'SHOW_SINGLE_RUN_BACKFILL_TOGGLE',
   );
 
-  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   const refetch = async () => {
     await _refetch?.();
@@ -166,7 +166,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const assetHealthLoading = assetHealth.length === 0;
 
-  const displayedHealth = React.useMemo(() => {
+  const displayedHealth = useMemo(() => {
     if (target.type === 'pureAll') {
       return mergedAssetHealth([]);
     }
@@ -186,7 +186,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
-  const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
+  const [missingFailedOnly, setMissingFailedOnly] = useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
@@ -197,12 +197,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
-  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
+  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
   const canLaunchWithRangesAsTags =
     selections.every((s) => s.selectedRanges.length === 1) &&
     selections.some((s) => s.selectedKeys.length > 1);
 
-  const keysFiltered = React.useMemo(() => {
+  const keysFiltered = useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, (dIdxs) => {
       if (missingFailedOnly) {
         const state = displayedHealth.stateForKeyIdx(dIdxs);
@@ -225,15 +225,15 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
 
-  React.useEffect(() => {
+  useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
   }, [canLaunchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     launchWithRangesAsTags && setMissingFailedOnly(false);
   }, [launchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
   }, [target]);
 
@@ -785,7 +785,7 @@ const Warnings = ({
 
   const instance = warningsResult.data?.instance;
   const upstreamAssets = warningsResult.data?.assetNodes;
-  const upstreamAssetKeysSamePartitioning = React.useMemo(
+  const upstreamAssetKeysSamePartitioning = useMemo(
     () =>
       (upstreamAssets || [])
         .filter(

@@ -9,7 +9,6 @@ import {
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
-import React from 'react';
 import styled from 'styled-components';
 
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';

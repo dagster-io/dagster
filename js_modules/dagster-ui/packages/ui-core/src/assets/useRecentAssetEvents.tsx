@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
@@ -55,7 +55,7 @@ export function useRecentAssetEvents(
     },
   );
 
-  return React.useMemo(() => {
+  return useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];

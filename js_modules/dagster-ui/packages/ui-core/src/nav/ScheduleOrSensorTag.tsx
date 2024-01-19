@@ -7,7 +7,7 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
@@ -30,7 +30,7 @@ export const ScheduleOrSensorTag = ({
   sensors?: SensorSwitchFragment[];
   showSwitch?: boolean;
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const scheduleCount = schedules.length;
   const sensorCount = sensors.length;

@@ -1,6 +1,6 @@
 import {Alert, Box, Spinner} from '@dagster-io/ui-components';
 import {BorderSetting, BorderSide} from '@dagster-io/ui-components/src/components/types';
-import React from 'react';
+import {Fragment} from 'react';
 import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -39,9 +39,9 @@ export const CurrentRunsBanner = ({
                   {inProgressRunIds.length > 0 && (
                     <>
                       {inProgressRunIds.map((id) => (
-                        <React.Fragment key={id}>
+                        <Fragment key={id}>
                           Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </React.Fragment>
+                        </Fragment>
                       ))}{' '}
                       {inProgressRunIds.length === 1 ? 'is' : 'are'} currently refreshing this
                       asset.
@@ -50,9 +50,9 @@ export const CurrentRunsBanner = ({
                   {unstartedRunIds.length > 0 && (
                     <>
                       {unstartedRunIds.map((id) => (
-                        <React.Fragment key={id}>
+                        <Fragment key={id}>
                           Run <Link to={`/runs/${id}`}>{titleForRun({id})}</Link>
-                        </React.Fragment>
+                        </Fragment>
                       ))}{' '}
                       {unstartedRunIds.length === 1 ? 'has' : 'have'} started and will refresh this
                       asset.

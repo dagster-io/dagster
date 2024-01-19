@@ -1,6 +1,5 @@
 import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {
   START_SCHEDULE_MUTATION,

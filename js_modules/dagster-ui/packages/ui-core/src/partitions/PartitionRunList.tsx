@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {
   PartitionRunListQuery,

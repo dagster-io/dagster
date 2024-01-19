@@ -1,5 +1,5 @@
 import {Box, Popover, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useMemo} from 'react';
 
 import {StepSummaryForRun} from './StepSummaryForRun';
 import {RunStatus} from '../graphql/types';
@@ -18,11 +18,11 @@ interface Props {
   showSummary?: boolean;
 }
 
-export const LastRunSummary = React.memo(
+export const LastRunSummary = memo(
   ({name, run, showHover = false, showButton = true, showSummary = true}: Props) => {
     const {status} = run;
 
-    const intent = React.useMemo(() => {
+    const intent = useMemo(() => {
       switch (status) {
         case RunStatus.SUCCESS:
           return 'success';

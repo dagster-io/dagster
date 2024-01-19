@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {
@@ -79,16 +79,16 @@ export const CreatePartitionDialog = ({
   refetch?: () => Promise<void>;
   onCreated: (partitionName: string) => void;
 }) => {
-  const [partitionName, setPartitionName] = React.useState('');
+  const [partitionName, setPartitionName] = useState('');
 
   const [createPartition] = useMutation<
     AddDynamicPartitionMutation,
     AddDynamicPartitionMutationVariables
   >(CREATE_PARTITION_MUTATION);
 
-  const [isSaving, setIsSaving] = React.useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const isValidPartitionName = React.useMemo(() => {
+  const isValidPartitionName = useMemo(() => {
     return (
       partitionName.length === 0 ||
       !INVALID_PARITION_SUBSTRINGS.some((s) => partitionName.includes(s))
@@ -206,7 +206,7 @@ export const CreatePartitionDialog = ({
                 }
               }}
               strokeColor={isValidPartitionName ? undefined : Colors.accentRed()}
-              ref={React.useCallback((inputElement: HTMLInputElement) => {
+              ref={useCallback((inputElement: HTMLInputElement) => {
                 if (inputElement) {
                   inputElement.focus();
                 }

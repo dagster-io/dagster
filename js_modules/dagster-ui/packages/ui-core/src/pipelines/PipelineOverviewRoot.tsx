@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useCallback} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {PipelineExplorerContainer} from './PipelineExplorerRoot';
@@ -37,7 +37,7 @@ export const PipelineOverviewRoot = (props: Props) => {
   useJobTitle(explorerPath, isJob);
   useStripSnapshotFromPath({pipelinePath: explorerPathToString(explorerPath)});
 
-  const onChangeExplorerPath = React.useCallback(
+  const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, action: 'push' | 'replace') => {
       history[action]({
         search: location.search,
@@ -50,7 +50,7 @@ export const PipelineOverviewRoot = (props: Props) => {
     [history, location.search, repoAddress, isJob],
   );
 
-  const onNavigateToSourceAssetNode = React.useCallback(
+  const onNavigateToSourceAssetNode = useCallback(
     (node: AssetLocation) => {
       if (!node.jobName || !node.opNames.length || !node.repoAddress) {
         // This op has no definition in any loaded repository (source asset).

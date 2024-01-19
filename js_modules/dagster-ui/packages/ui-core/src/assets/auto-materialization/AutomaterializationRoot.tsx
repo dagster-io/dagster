@@ -11,7 +11,7 @@ import {
   Subtitle2,
   Table,
 } from '@dagster-io/ui-components';
-import React, {useLayoutEffect} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 import {Redirect} from 'react-router-dom';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
@@ -68,10 +68,10 @@ const GlobalAutomaterializationRoot = () => {
   const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
     ASSET_DAEMON_TICKS_QUERY,
   );
-  const [isPaused, setIsPaused] = React.useState(false);
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables: AssetDaemonTicksQueryVariables = React.useMemo(() => {
+  const [isPaused, setIsPaused] = useState(false);
+  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
+  const variables: AssetDaemonTicksQueryVariables = useMemo(() => {
     if (timeRange || statuses) {
       return {
         afterTimestamp: timeRange?.[0],
@@ -92,10 +92,10 @@ const GlobalAutomaterializationRoot = () => {
   useLayoutEffect(fetchData, [variables]);
   useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
-  const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
+  const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
   const [tableView, setTableView] = useQueryPersistedState<'evaluations' | 'runs'>(
-    React.useMemo(
+    useMemo(
       () => ({
         queryKey: 'view',
         decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
@@ -117,7 +117,7 @@ const GlobalAutomaterializationRoot = () => {
     ids.push('');
   }
 
-  const ticks = React.useMemo(
+  const ticks = useMemo(
     () => {
       const ticks = data?.autoMaterializeTicks;
       return (
@@ -138,7 +138,7 @@ const GlobalAutomaterializationRoot = () => {
     [...ids.slice(0, 100)],
   );
 
-  const onHoverTick = React.useCallback(
+  const onHoverTick = useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
       setIsPaused(!!tick);
     },

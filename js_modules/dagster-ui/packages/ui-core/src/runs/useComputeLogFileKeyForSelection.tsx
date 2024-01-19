@@ -1,4 +1,4 @@
-import React from 'react';
+import {useEffect} from 'react';
 
 import {ILogCaptureInfo, IRunMetadataDict} from './RunMetadataProvider';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -27,7 +27,7 @@ export function useComputeLogFileKeyForSelection({
     queryKey: 'logFileKey',
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!stepKeys?.length || computeLogFileKey) {
       return;
     }

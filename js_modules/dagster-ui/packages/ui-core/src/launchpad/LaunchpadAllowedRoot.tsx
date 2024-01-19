@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {Suspense, lazy, useEffect, useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {
@@ -20,9 +20,7 @@ import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-const LaunchpadStoredSessionsContainer = React.lazy(
-  () => import('./LaunchpadStoredSessionsContainer'),
-);
+const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
 
 interface Props {
   launchpadType: LaunchpadType;
@@ -75,7 +73,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
 
   const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
-  const filteredRootDefaultYaml = React.useMemo(() => {
+  const filteredRootDefaultYaml = useMemo(() => {
     if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
       return undefined;
     }
@@ -88,7 +86,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
   }, [runConfigSchemaOrError, sessionPresets]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!result.loading) {
       trace.endTrace();
     }
@@ -159,7 +157,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   } else {
     // job
     return (
-      <React.Suspense fallback={<div />}>
+      <Suspense fallback={<div />}>
         <LaunchpadStoredSessionsContainer
           launchpadType={launchpadType}
           pipeline={pipelineOrError}
@@ -171,7 +169,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
               : undefined
           }
         />
-      </React.Suspense>
+      </Suspense>
     );
   }
 };

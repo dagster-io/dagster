@@ -1,6 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
 import {LinkVertical as Link} from '@vx/shape';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {Edge} from './OpEdges';

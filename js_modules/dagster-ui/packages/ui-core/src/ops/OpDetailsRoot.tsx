@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {OP_CARD_SOLID_DEFINITION_FRAGMENT, OpCard} from './OpCard';

@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';

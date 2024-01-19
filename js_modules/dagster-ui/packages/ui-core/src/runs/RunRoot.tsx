@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useLayoutEffect, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
@@ -43,23 +43,23 @@ export const RunRoot = () => {
     ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
     : null;
 
-  const isJob = React.useMemo(
+  const isJob = useMemo(
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
 
-  const automaterializeTag = React.useMemo(
+  const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
     [run],
   );
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!loading) {
       trace.onRunLoaded();
     }
   }, [loading, trace]);
 
-  const tickDetails = React.useMemo(() => {
+  const tickDetails = useMemo(() => {
     if (repoAddress) {
       const tags = run?.tags || [];
       const tickTag = tags.find((tag) => tag.key === DagsterTag.TickId);

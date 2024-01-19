@@ -1,5 +1,5 @@
 import {Button} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';

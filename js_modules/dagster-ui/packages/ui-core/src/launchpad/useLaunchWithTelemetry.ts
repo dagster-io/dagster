@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import * as React from 'react';
+import {useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showLaunchError} from './showLaunchError';
@@ -24,7 +24,7 @@ export function useLaunchWithTelemetry() {
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 
-  return React.useCallback(
+  return useCallback(
     async (variables: LaunchPipelineExecutionMutationVariables, behavior: LaunchBehavior) => {
       const jobName =
         variables.executionParams.selector.jobName ||

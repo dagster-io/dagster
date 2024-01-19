@@ -3,7 +3,7 @@ import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import * as React from 'react';
 
 import {
   ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT,

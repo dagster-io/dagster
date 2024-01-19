@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useEffect} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
@@ -77,7 +77,7 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
   const runOrError = data?.runOrError;
   const run = runOrError?.__typename === 'Run' ? runOrError : null;
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Wait until we have a run, then create the session.
     if (!run) {
       return;

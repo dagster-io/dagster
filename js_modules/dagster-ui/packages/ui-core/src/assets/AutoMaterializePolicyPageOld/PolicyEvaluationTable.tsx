@@ -1,5 +1,5 @@
 import {Box, Colors, Table} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
@@ -33,8 +33,8 @@ const UnpartitionedPolicyEvaluationTable = ({
 }: {
   rootEvaluation: UnpartitionedAssetConditionEvaluation;
 }) => {
-  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const [hoveredKey, setHoveredKey] = useState<number | null>(null);
+  const flattened = useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
   return (
     <VeryCompactTable>
       <thead>
@@ -88,8 +88,8 @@ const PartitionedPolicyEvaluationTable = ({
 }: {
   rootEvaluation: PartitionedAssetConditionEvaluation;
 }) => {
-  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const [hoveredKey, setHoveredKey] = useState<number | null>(null);
+  const flattened = useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
   return (
     <VeryCompactTable>
       <thead>

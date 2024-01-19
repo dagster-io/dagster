@@ -1,4 +1,4 @@
-import React from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
@@ -29,7 +29,7 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
 }: Props) => {
   const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
     queryKey: 'statuses',
-    decode: React.useCallback(({statuses}: {statuses?: string}) => {
+    decode: useCallback(({statuses}: {statuses?: string}) => {
       return new Set<InstigationTickStatus>(
         statuses
           ? JSON.parse(statuses)
@@ -41,7 +41,7 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
             ],
       );
     }, []),
-    encode: React.useCallback((raw: Set<InstigationTickStatus>) => {
+    encode: useCallback((raw: Set<InstigationTickStatus>) => {
       return {statuses: JSON.stringify(Array.from(raw))};
     }, []),
   });
@@ -52,7 +52,7 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
   >({
     query: ASSET_DAEMON_TICKS_QUERY,
     variables: {
-      statuses: React.useMemo(() => Array.from(statuses), [statuses]),
+      statuses: useMemo(() => Array.from(statuses), [statuses]),
     },
     nextCursorForResult: (data) => {
       const ticks = data.autoMaterializeTicks;
@@ -73,7 +73,7 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
   // Only refresh if we're on the first page
   useQueryRefreshAtInterval(queryResult, 10000, !paginationProps.hasPrevCursor);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (paginationProps.hasPrevCursor) {
       const ticks = queryResult.data?.autoMaterializeTicks;
       if (ticks && ticks.length) {
@@ -88,7 +88,7 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
     }
   }, [paginationProps.hasPrevCursor, queryResult.data?.autoMaterializeTicks, setTimerange]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (paginationProps.hasPrevCursor) {
       setParentStatuses(Array.from(statuses));
     } else {

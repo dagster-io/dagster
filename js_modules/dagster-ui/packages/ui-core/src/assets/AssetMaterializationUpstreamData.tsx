@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 

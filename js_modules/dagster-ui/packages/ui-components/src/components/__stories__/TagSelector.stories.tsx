@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 import styled from 'styled-components';
 
 import {Box} from '../Box';
@@ -27,14 +27,14 @@ const allTags = [
 ];
 
 export const Basic = () => {
-  const [selectedTags, setSelectedTags] = React.useState<string[]>(['NY', 'NJ']);
+  const [selectedTags, setSelectedTags] = useState<string[]>(['NY', 'NJ']);
   return (
     <TagSelector allTags={allTags} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
   );
 };
 
 export const WithSearch = () => {
-  const [selectedTags, setSelectedTags] = React.useState<string[]>(['NY', 'NJ']);
+  const [selectedTags, setSelectedTags] = useState<string[]>(['NY', 'NJ']);
   return (
     <TagSelectorWithSearch
       allTags={allTags}
@@ -45,7 +45,7 @@ export const WithSearch = () => {
 };
 
 export const Styled = () => {
-  const [selectedTags, setSelectedTags] = React.useState<string[]>(allTags.slice(0, 2));
+  const [selectedTags, setSelectedTags] = useState<string[]>(allTags.slice(0, 2));
   const isAllSelected = selectedTags.length === 6;
   return (
     <TagSelector

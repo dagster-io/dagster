@@ -1,5 +1,5 @@
 import {ButtonLink} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {useFilterAssetKeys} from './assetFilters';
@@ -12,8 +12,8 @@ interface Props {
 }
 
 export const WaitingOnAssetKeysLink = ({assetKeys}: Props) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [queryString, setQueryString] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [queryString, setQueryString] = useState('');
   const count = assetKeys.length;
   const filteredAssetKeys = useFilterAssetKeys(assetKeys, queryString);
 

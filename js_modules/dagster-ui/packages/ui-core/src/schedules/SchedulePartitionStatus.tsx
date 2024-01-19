@@ -1,7 +1,7 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {ButtonLink, Caption, Colors, Group} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
@@ -46,7 +46,7 @@ interface Props {
   schedule: ScheduleFragment;
 }
 
-export const SchedulePartitionStatus = React.memo((props: Props) => {
+export const SchedulePartitionStatus = memo((props: Props) => {
   const {repoAddress, schedule} = props;
   const repo = useRepository(repoAddress);
   const {name: scheduleName, partitionSet, pipelineName} = schedule;
@@ -54,7 +54,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
   const partitionSetName = partitionSet?.name;
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  const partitionPath = React.useMemo(() => {
+  const partitionPath = useMemo(() => {
     const query = partitionSetName
       ? qs.stringify(
           {
@@ -81,7 +81,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
     },
   });
 
-  const onClick = React.useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
+  const onClick = useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
 
   const loadable = () => {
     if (loading) {

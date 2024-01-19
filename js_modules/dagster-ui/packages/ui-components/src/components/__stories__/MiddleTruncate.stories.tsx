@@ -1,6 +1,6 @@
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo, useRef, useState} from 'react';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -16,10 +16,10 @@ export default {
 } as Meta;
 
 export const Simple = () => {
-  const sizer = React.useRef<HTMLDivElement>(null);
-  const [controlledWidth, setControlledWidth] = React.useState(400);
+  const sizer = useRef<HTMLDivElement>(null);
+  const [controlledWidth, setControlledWidth] = useState(400);
 
-  const sentences = React.useMemo(() => {
+  const sentences = useMemo(() => {
     return new Array(30).fill(null).map(() => faker.random.words(20));
   }, []);
 
@@ -102,8 +102,8 @@ export const TagUsage = () => {
 };
 
 export const Containers = () => {
-  const sizer = React.useRef<HTMLDivElement>(null);
-  const [controlledWidth, setControlledWidth] = React.useState(400);
+  const sizer = useRef<HTMLDivElement>(null);
+  const [controlledWidth, setControlledWidth] = useState(400);
 
   const LONG_TEXT =
     'Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.';

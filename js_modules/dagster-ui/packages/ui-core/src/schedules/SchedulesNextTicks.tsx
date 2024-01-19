@@ -20,7 +20,7 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {memo, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -61,7 +61,7 @@ interface Props {
   repos: RepositoryForNextTicksFragment[];
 }
 
-export const SchedulesNextTicks = React.memo(({repos}: Props) => {
+export const SchedulesNextTicks = memo(({repos}: Props) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
   let anySchedules = false;
@@ -194,12 +194,12 @@ interface NextTickMenuProps {
   tickTimestamp: number;
 }
 
-const NextTickMenu = React.memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
+const NextTickMenu = memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName: schedule.name,
   };
-  const [isOpen, setOpen] = React.useState<boolean>(false);
+  const [isOpen, setOpen] = useState<boolean>(false);
   const [loadTickConfig, {called, loading, data}] = useLazyQuery<
     ScheduleTickConfigQuery,
     ScheduleTickConfigQueryVariables
@@ -334,7 +334,7 @@ const NextTickDialog = ({
   tickTimestamp: number;
 }) => {
   const [selectedRunRequest, setSelectedRunRequest] =
-    React.useState<ScheduleFutureTickRunRequestFragment | null>(
+    useState<ScheduleFutureTickRunRequestFragment | null>(
       evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
         ? evaluationResult.runRequests[0]!
         : null,
@@ -345,7 +345,7 @@ const NextTickDialog = ({
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       evaluationResult &&
       evaluationResult.runRequests &&

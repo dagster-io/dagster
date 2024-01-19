@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Button, Dialog, DialogFooter} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillStepStatusDialog.types';
 import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
@@ -91,10 +91,10 @@ const BackfillStepStatusDialogContent = ({
   partitionNames,
   repoAddress,
 }: ContentProps) => {
-  const [pageSize, setPageSize] = React.useState(60);
-  const [offset, setOffset] = React.useState<number>(0);
+  const [pageSize, setPageSize] = useState(60);
+  const [offset, setOffset] = useState<number>(0);
 
-  const runsFilter = React.useMemo(() => {
+  const runsFilter = useMemo(() => {
     const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.id}`};
     return [token];
   }, [backfill.id]);

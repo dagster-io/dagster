@@ -1,6 +1,5 @@
 import {QueryResult} from '@apollo/client';
 import {Box, Button, Colors, Heading, Icon, PageHeader, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {WorkspaceTabs} from './WorkspaceTabs';

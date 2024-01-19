@@ -11,7 +11,6 @@ import {
 } from '../src';
 
 import {MemoryRouter} from 'react-router-dom';
-import * as React from 'react';
 
 import {createGlobalStyle} from 'styled-components/macro';
 

@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Colors} from '../Color';
 import {Group} from '../Group';
@@ -13,7 +13,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [tab, setTab] = React.useState('health');
+  const [tab, setTab] = useState('health');
   return (
     <Group spacing={0} direction="column">
       <Tabs selectedTabId={tab} onChange={setTab}>

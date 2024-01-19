@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -38,7 +38,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   });
 
   const runningStateFilter = useInstigationStatusFilter();
-  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const filters = useMemo(() => [runningStateFilter], [runningStateFilter]);
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
@@ -55,7 +55,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const schedules = React.useMemo(() => {
+  const schedules = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.schedules;
     }
@@ -63,13 +63,13 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   }, [data]);
 
   const {state: runningState} = runningStateFilter;
-  const filteredByRunningState = React.useMemo(() => {
+  const filteredByRunningState = useMemo(() => {
     return runningState.size
       ? schedules.filter(({scheduleState}) => runningState.has(scheduleState.status))
       : schedules;
   }, [schedules, runningState]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredByRunningState.filter(({name}) =>
       name.toLocaleLowerCase().includes(searchToLower),
@@ -78,20 +78,20 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   const anySchedulesVisible = filteredBySearch.length > 0;
 
-  const permissionedSchedules = React.useMemo(() => {
+  const permissionedSchedules = useMemo(() => {
     return filteredBySearch.filter(({scheduleState}) =>
       filterPermissionedInstigationState(scheduleState),
     );
   }, [filteredBySearch]);
 
-  const permissionedKeys = React.useMemo(() => {
+  const permissionedKeys = useMemo(() => {
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
   const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(permissionedKeys);
 
-  const checkedSchedules = React.useMemo(() => {
+  const checkedSchedules = useMemo(() => {
     return permissionedSchedules
       .filter(({name}) => checkedKeys.has(makeScheduleKey(repoAddress, name)))
       .map(({name, scheduleState}) => {

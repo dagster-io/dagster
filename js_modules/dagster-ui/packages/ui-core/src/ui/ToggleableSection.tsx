@@ -1,5 +1,5 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 
 export const ToggleableSection = ({

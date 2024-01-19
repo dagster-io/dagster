@@ -11,7 +11,7 @@ import {
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -34,7 +34,7 @@ interface Props {
 
 export const RepoNavItem = (props: Props) => {
   const {allRepos, selected, onToggle} = props;
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const summary = () => {
     if (allRepos.length === 0) {

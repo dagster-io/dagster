@@ -1,7 +1,7 @@
 import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import * as React from 'react';
+import {useCallback, useMemo, useReducer} from 'react';
 
 import {
   ReloadRepositoryLocationMutation,
@@ -90,7 +90,7 @@ export const useRepositoryLocationReload = ({
   scope: 'location' | 'workspace';
   reloadFn: (client: ApolloClient<any>) => Promise<Action>;
 }) => {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const apollo = useApolloClient();
 
   const invalidateConfigs = useInvalidateConfigsForRepo();
@@ -201,7 +201,7 @@ export const useRepositoryLocationReload = ({
     },
   });
 
-  const tryReload = React.useCallback(async () => {
+  const tryReload = useCallback(async () => {
     dispatch({type: 'start-mutation'});
     const action = await reloadFn(apollo);
     dispatch(action);
@@ -213,7 +213,7 @@ export const useRepositoryLocationReload = ({
   const {mutating, pollStartTime, error, errorLocationId} = state;
   const reloading = mutating || pollStartTime !== null;
 
-  return React.useMemo(
+  return useMemo(
     () => ({reloading, error, errorLocationId, tryReload, mutating}),
     [reloading, error, errorLocationId, tryReload, mutating],
   );

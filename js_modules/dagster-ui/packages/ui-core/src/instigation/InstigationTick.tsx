@@ -9,7 +9,6 @@ import {
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
 import {SnapshotNav} from './SnapshotNav';

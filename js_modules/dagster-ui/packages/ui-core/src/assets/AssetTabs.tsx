@@ -1,6 +1,5 @@
 import {Tab, Tabs} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';

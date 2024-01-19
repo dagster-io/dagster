@@ -14,7 +14,7 @@ import {
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import {useEffect, useReducer} from 'react';
 import {Link, useHistory, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -376,8 +376,8 @@ const Label = styled.div`
 `;
 
 const Duration = ({start, end}: {start: number; end?: number | null}) => {
-  const [_, rerender] = React.useReducer((s: number, _: any) => s + 1, 0);
-  React.useEffect(() => {
+  const [_, rerender] = useReducer((s: number, _: any) => s + 1, 0);
+  useEffect(() => {
     if (end) {
       return;
     }

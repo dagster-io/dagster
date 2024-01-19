@@ -11,7 +11,7 @@ import {
   Popover,
   useViewport,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 import {PartitionRunList} from './PartitionRunList';
@@ -217,11 +217,11 @@ interface PartitionStepStatusProps extends PartitionStepStatusBaseProps {
 
 const PartitionStepStatus = (props: PartitionStepStatusProps) => {
   const {viewport, containerProps} = useViewport();
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
+  const [hovered, setHovered] = useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = useState<PartitionRunSelection | null>(null);
   const {setPageSize, data} = props;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       setPageSize(getVisibleItemCount(viewport.width));
     }
@@ -450,7 +450,7 @@ const PartitionSquare = ({
   setHovered: (hovered: PartitionRunSelection | null) => void;
   setFocused: (hovered: PartitionRunSelection | null) => void;
 }) => {
-  const [opened, setOpened] = React.useState(false);
+  const [opened, setOpened] = useState(false);
   let squareStatus;
 
   if (!runsLoaded) {

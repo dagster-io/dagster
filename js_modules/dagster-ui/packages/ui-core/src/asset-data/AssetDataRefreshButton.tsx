@@ -2,7 +2,7 @@ import {Box, Button, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
-import React from 'react';
+import {useEffect, useState} from 'react';
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
@@ -60,8 +60,8 @@ export const AssetDataRefreshButton = ({
 };
 
 const TimeFromNowWithSeconds = ({timestamp}: {timestamp: number}) => {
-  const [text, setText] = React.useState(dayjs(timestamp).fromNow(true));
-  React.useEffect(() => {
+  const [text, setText] = useState(dayjs(timestamp).fromNow(true));
+  useEffect(() => {
     const interval = setInterval(() => {
       setText(dayjs(timestamp).fromNow(true));
     }, 1000);

@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -25,26 +25,26 @@ const POLL_INTERVAL = 5 * 1000;
 type EntriesById = Record<string, LocationStatusEntry>;
 
 export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
-  const {locationEntries, refetch} = React.useContext(WorkspaceContext);
-  const [previousEntriesById, setPreviousEntriesById] = React.useState<EntriesById | null>(null);
+  const {locationEntries, refetch} = useContext(WorkspaceContext);
+  const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
 
   const history = useHistory();
 
-  const [showSpinner, setShowSpinner] = React.useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
 
-  const onClickViewButton = React.useCallback(() => {
+  const onClickViewButton = useCallback(() => {
     history.push('/locations');
   }, [history]);
 
   // Reload the workspace, but don't toast about it.
-  const reloadWorkspaceQuietly = React.useCallback(async () => {
+  const reloadWorkspaceQuietly = useCallback(async () => {
     setShowSpinner(true);
     await refetch();
     setShowSpinner(false);
   }, [refetch]);
 
   // Reload the workspace, and show a success or error toast upon completion.
-  const reloadWorkspaceLoudly = React.useCallback(async () => {
+  const reloadWorkspaceLoudly = useCallback(async () => {
     setShowSpinner(true);
     const result = await refetch();
     setShowSpinner(false);

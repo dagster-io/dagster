@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Colors} from '../Color';
 import {Group} from '../Group';
@@ -14,8 +14,8 @@ export default {
 } as Meta;
 
 export const Sizes = () => {
-  const [value, setValue] = React.useState(2);
-  const [minValue, setMinValue] = React.useState(1);
+  const [value, setValue] = useState(2);
+  const [minValue, setMinValue] = useState(1);
 
   return (
     <Group direction="column" spacing={32}>

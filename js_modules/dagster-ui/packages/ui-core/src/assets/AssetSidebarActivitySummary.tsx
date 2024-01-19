@@ -1,5 +1,5 @@
 import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
@@ -50,7 +50,7 @@ export const AssetSidebarActivitySummary = ({
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
 
-  React.useEffect(() => {
+  useEffect(() => {
     refetch();
   }, [assetLastMaterializedAt, refetch]);
 

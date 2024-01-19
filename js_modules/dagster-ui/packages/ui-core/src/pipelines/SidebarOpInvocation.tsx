@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Box, Button, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';

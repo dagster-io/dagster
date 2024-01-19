@@ -10,7 +10,7 @@ import {
   TokenizingFieldValue,
   tokenToString,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -75,7 +75,7 @@ export const PipelineRunsRoot = (props: Props) => {
   const trace = useStartTrace('PipelineRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
-  const permanentTokens = React.useMemo(() => {
+  const permanentTokens = useMemo(() => {
     return [
       isJob ? {token: 'job', value: pipelineName} : {token: 'pipeline', value: pipelineName},
       snapshotId ? {token: 'snapshotId', value: snapshotId} : null,
@@ -114,7 +114,7 @@ export const PipelineRunsRoot = (props: Props) => {
     },
   });
 
-  const onAddTag = React.useCallback(
+  const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
       if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
@@ -132,7 +132,7 @@ export const PipelineRunsRoot = (props: Props) => {
     loading: queryResult.loading,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!queryResult.loading) {
       trace.endTrace();
     }

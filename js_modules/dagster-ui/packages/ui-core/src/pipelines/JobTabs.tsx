@@ -1,5 +1,5 @@
 import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
 import {PermissionResult, PermissionsState, permissionResultForKey} from '../app/Permissions';
@@ -26,7 +26,7 @@ export const JobTabs = (props: Props) => {
     opNames: [],
   });
 
-  const selectedTab = React.useMemo(() => {
+  const selectedTab = useMemo(() => {
     return (
       tabs.find((tab) => tab.pathComponent === matchingTab) ||
       tabs.find((tab) => tab.pathComponent === '')

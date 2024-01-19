@@ -1,5 +1,5 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 
 import {GraphRoot} from './GraphRoot';
@@ -22,7 +22,7 @@ import {SensorRoot} from '../sensors/SensorRoot';
 
 const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
-  const workspaceState = React.useContext(WorkspaceContext);
+  const workspaceState = useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
 
   // A RepoAddress could not be created for this path, which means it's invalid.

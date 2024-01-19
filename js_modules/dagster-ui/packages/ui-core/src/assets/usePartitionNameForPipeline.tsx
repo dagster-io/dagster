@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import React from 'react';
+import {useMemo} from 'react';
 
 import {
   AssetJobPartitionSetsQuery,
@@ -21,7 +21,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
     },
   });
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       partitionSet:
         partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'

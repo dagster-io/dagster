@@ -1,5 +1,5 @@
 import {Box, Tag} from '@dagster-io/ui-components';
-import React from 'react';
+import {memo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {DagsterTag} from './RunTag';
@@ -16,7 +16,7 @@ type Props = {
   onAddTag?: (token: RunFilterToken) => void;
 };
 
-export const CreatedByTagCell = React.memo(({repoAddress, tags, onAddTag}: Props) => {
+export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
       <CreatedByTag repoAddress={repoAddress} tags={tags} onAddTag={onAddTag} />

@@ -1,5 +1,4 @@
 import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {EvaluationCounts} from './EvaluationCounts';

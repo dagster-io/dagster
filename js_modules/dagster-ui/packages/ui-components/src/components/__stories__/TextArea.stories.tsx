@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {Colors} from '../Color';
 import {TextArea} from '../TextInput';
@@ -11,7 +11,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"
@@ -23,7 +23,7 @@ export const Default = () => {
 };
 
 export const Resize = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"
@@ -35,7 +35,7 @@ export const Resize = () => {
 };
 
 export const StrokeColor = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"

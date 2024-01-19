@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -271,7 +271,7 @@ const InvocationList = ({
   invocations: SidebarOpInvocationInfo[];
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }) => {
-  const [showAll, setShowAll] = React.useState<boolean>(false);
+  const [showAll, setShowAll] = useState<boolean>(false);
   const visible = invocations.filter((i) => !isHiddenAssetGroupJob(i.pipelineName || ''));
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 

@@ -1,6 +1,6 @@
 import {useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {DeletionDialog} from './DeletionDialog';
@@ -24,10 +24,10 @@ type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
-  const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
+  const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
 
-  const {rootServerURI} = React.useContext(AppContext);
-  const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const {rootServerURI} = useContext(AppContext);
+  const {refetch} = useContext(RunsQueryRefetchContext);
 
   const copy = useCopyToClipboard();
   const history = useHistory();

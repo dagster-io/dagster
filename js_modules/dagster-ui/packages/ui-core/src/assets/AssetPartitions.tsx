@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
@@ -80,7 +80,7 @@ export const AssetPartitions = ({
     shouldReadPartitionQueryStringParam: false,
   });
 
-  const [sortTypes, setSortTypes] = React.useState<Array<SortType>>([]);
+  const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
 
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
@@ -104,7 +104,7 @@ export const AssetPartitions = ({
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const rangesForEachDimension = React.useMemo(() => {
+  const rangesForEachDimension = useMemo(() => {
     if (!assetHealth) {
       return selections.map(() => []);
     }

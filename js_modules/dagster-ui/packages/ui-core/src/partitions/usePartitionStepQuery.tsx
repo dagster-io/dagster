@@ -1,5 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import * as React from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
@@ -57,8 +57,8 @@ export function usePartitionStepQuery({
 }: PartitionStepQueryOptions) {
   const client = useApolloClient();
 
-  const version = React.useRef(0);
-  const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
+  const version = useRef(0);
+  const [dataState, setDataState] = useState<DataState>(InitialDataState);
 
   const _serializedRunTags = JSON.stringify([
     ...runsFilter.map((token) => {
@@ -71,7 +71,7 @@ export function usePartitionStepQuery({
     },
   ]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
     // invocation, we bump a version number that is captured in a local variable.
     // eg: If version.current no longer === v, this should stop updating state and exit.

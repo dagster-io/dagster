@@ -1,7 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Meta} from '@storybook/react';
 import {GraphQLError} from 'graphql';
-import * as React from 'react';
 
 import {AppStackTraceLink} from '../AppError';
 import {CustomAlertProvider} from '../CustomAlertProvider';

@@ -8,7 +8,7 @@ import {
   PageHeader,
   Tag,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleSwitch} from './ScheduleSwitch';
@@ -41,7 +41,7 @@ export const ScheduleDetails = (props: {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
   return (
     <>

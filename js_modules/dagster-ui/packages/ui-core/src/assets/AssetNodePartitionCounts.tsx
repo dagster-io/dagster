@@ -1,5 +1,4 @@
 import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
 import styled from 'styled-components';
 
 import {LiveDataForNode} from '../asset-graph/Utils';

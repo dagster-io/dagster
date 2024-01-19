@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import React from 'react';
+import {Fragment, memo} from 'react';
 
 import {buildSVGPath} from './Utils';
 import {AssetLayoutEdge} from './layout';
@@ -29,7 +29,7 @@ export const AssetEdges = ({
       doesViewportContainPoint(edge.to, viewportRect),
   );
   return (
-    <React.Fragment>
+    <Fragment>
       <AssetEdgeSet
         color={Colors.lineageEdge()}
         edges={intersectedEdges.length > 50 ? visibleToFromEdges : intersectedEdges}
@@ -48,7 +48,7 @@ export const AssetEdges = ({
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
       />
-    </React.Fragment>
+    </Fragment>
   );
 };
 
@@ -59,7 +59,7 @@ interface AssetEdgeSetProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const AssetEdgeSet = React.memo(({edges, color, strokeWidth}: AssetEdgeSetProps) => (
+const AssetEdgeSet = memo(({edges, color, strokeWidth}: AssetEdgeSetProps) => (
   <>
     <defs>
       <marker

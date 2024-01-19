@@ -10,7 +10,7 @@ import {
   Icon,
   NonIdealState,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 
 import {
   TickLogEventFragment,
@@ -176,7 +176,7 @@ const TickLogsTable = ({events}: {events: TickLogEventFragment[]}) => {
 };
 
 const Headers = () => {
-  const widths = React.useContext(ColumnWidthsContext);
+  const widths = useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
       <Header

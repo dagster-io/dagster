@@ -1,6 +1,5 @@
 import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 import {Button, Dialog, DialogBody, DialogFooter, Group} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {asAssetKeyInput} from './asInput';
 import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeDialog.types';

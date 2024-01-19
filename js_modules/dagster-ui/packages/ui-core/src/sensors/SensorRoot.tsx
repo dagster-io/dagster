@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {SensorDetails} from './SensorDetails';
@@ -32,9 +32,9 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     sensorName,
   };
 
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables = React.useMemo(() => {
+  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
+  const variables = useMemo(() => {
     if (timeRange || statuses) {
       return {
         afterTimestamp: timeRange?.[0],
@@ -46,7 +46,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   }, [statuses, timeRange]);
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<'evaluations' | 'runs'>(
-    React.useMemo(
+    useMemo(
       () => ({
         queryKey: 'view',
         decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),

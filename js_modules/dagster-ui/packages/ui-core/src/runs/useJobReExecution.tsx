@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import * as React from 'react';
+import {useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
@@ -27,7 +27,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
     LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
-  return React.useCallback(
+  return useCallback(
     async (
       run: {id: string; pipelineName: string},
       param: ReexecutionStrategy | ExecutionParams,

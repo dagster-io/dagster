@@ -1,7 +1,6 @@
 import {gql} from '@apollo/client';
 import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {DagsterTypeFragment} from './types/DagsterType.types';

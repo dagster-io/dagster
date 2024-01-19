@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Code} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';

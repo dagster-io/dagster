@@ -8,7 +8,7 @@ import {
 } from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetEventGroup} from './groupByPartition';
@@ -19,9 +19,9 @@ export const AssetMaterializationGraphs = (props: {
   asSidebarSection?: boolean;
   columnCount?: number;
 }) => {
-  const [xHover, setXHover] = React.useState<string | number | null>(null);
+  const [xHover, setXHover] = useState<string | number | null>(null);
 
-  const reversed = React.useMemo(() => {
+  const reversed = useMemo(() => {
     return [...props.groups].reverse();
   }, [props.groups]);
 

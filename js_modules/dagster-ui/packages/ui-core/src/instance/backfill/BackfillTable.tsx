@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Table} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
@@ -20,7 +20,7 @@ export const BackfillTable = ({
   showBackfillTarget?: boolean;
 }) => {
   const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] =
-    React.useState<BackfillTableFragment>();
+    useState<BackfillTableFragment>();
 
   return (
     <>

@@ -107,9 +107,11 @@ module.exports = {
     'object-shorthand': ['error', 'always'],
     'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
+    'react/jsx-uses-react': 'off',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
+    'react/react-in-jsx-scope': 'off',
     '@typescript-eslint/ban-types': [
       'error',
       {

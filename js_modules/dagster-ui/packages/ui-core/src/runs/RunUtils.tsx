@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
-import * as React from 'react';
+import {createContext, memo, useEffect} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
@@ -44,12 +44,12 @@ export function linkToRunEvent(
   })}`;
 }
 
-export const RunsQueryRefetchContext = React.createContext<{
+export const RunsQueryRefetchContext = createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
 export function useDidLaunchEvent(cb: () => void, delay = 1500) {
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = () => {
       setTimeout(cb, delay);
     };
@@ -289,7 +289,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
 }
 
-export const RunTime = React.memo(({run}: RunTimeProps) => {
+export const RunTime = memo(({run}: RunTimeProps) => {
   const {startTime, updateTime} = run;
 
   return (
@@ -303,7 +303,7 @@ export const RunTime = React.memo(({run}: RunTimeProps) => {
   );
 });
 
-export const RunStateSummary = React.memo(({run}: RunTimeProps) => {
+export const RunStateSummary = memo(({run}: RunTimeProps) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
   const failedToStart =

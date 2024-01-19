@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Fragment, useRef} from 'react';
 import styled from 'styled-components';
 
 import {showSharedToaster} from './DomUtils';
@@ -35,7 +35,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
   const copy = useCopyToClipboard();
 
-  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <>
@@ -59,7 +59,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
         {errorChain.map((chainLink, ii) => (
-          <React.Fragment key={ii}>
+          <Fragment key={ii}>
             <CauseHeader>
               {chainLink.isExplicitLink
                 ? 'The above exception was caused by the following exception:'
@@ -67,7 +67,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
             </CauseHeader>
             <ErrorHeader>{chainLink.error.message}</ErrorHeader>
             {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
-          </React.Fragment>
+          </Fragment>
         ))}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>

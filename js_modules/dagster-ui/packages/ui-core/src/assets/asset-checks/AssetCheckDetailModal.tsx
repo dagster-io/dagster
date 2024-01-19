@@ -13,7 +13,7 @@ import {
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
@@ -177,7 +177,7 @@ const AssetCheckDetailModalImpl = ({
 };
 
 export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
-  const [showMetadata, setShowMetadata] = React.useState(false);
+  const [showMetadata, setShowMetadata] = useState(false);
 
   if (!metadataEntries || !metadataEntries.length) {
     return <span>{' - '}</span>;

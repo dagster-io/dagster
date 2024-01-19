@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';

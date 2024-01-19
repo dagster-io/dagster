@@ -9,7 +9,6 @@ import {
   PageHeader,
   Spinner,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';

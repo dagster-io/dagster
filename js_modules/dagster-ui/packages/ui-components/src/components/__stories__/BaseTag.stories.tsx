@@ -1,5 +1,4 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {BaseTag} from '../BaseTag';
 import {Colors} from '../Color';

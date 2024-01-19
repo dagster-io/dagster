@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
 
 export interface GenericAnalytics {
@@ -8,7 +8,7 @@ export interface GenericAnalytics {
   track: (eventName: string, properties?: Record<string, any>) => void;
 }
 
-export const AnalyticsContext = React.createContext<GenericAnalytics>(undefined!);
+export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 
 const PAGEVIEW_DELAY = 300;
 
@@ -16,11 +16,11 @@ const usePageContext = () => {
   const match = useRouteMatch();
   const {pathname: specificPath} = useLocation();
   const {path} = match;
-  return React.useMemo(() => ({path, specificPath}), [path, specificPath]);
+  return useMemo(() => ({path, specificPath}), [path, specificPath]);
 };
 
 const useAnalytics = () => {
-  const analytics = React.useContext(AnalyticsContext);
+  const analytics = useContext(AnalyticsContext);
   if (!analytics && typeof 'jest' === undefined && !process.env.STORYBOOK) {
     throw new Error('Analytics may only be used within `AnalyticsContext.Provider`.');
   }
@@ -54,7 +54,7 @@ export const useTrackPageView = () => {
   const analytics = useAnalytics();
   const {path, specificPath} = usePageContext();
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
@@ -70,7 +70,7 @@ export const useTrackEvent = () => {
   const analytics = useAnalytics();
   const pathValues = usePageContext();
 
-  return React.useCallback(
+  return useCallback(
     (eventName: string, properties?: Record<string, any>) => {
       analytics.track(eventName, {...properties, ...pathValues});
     },

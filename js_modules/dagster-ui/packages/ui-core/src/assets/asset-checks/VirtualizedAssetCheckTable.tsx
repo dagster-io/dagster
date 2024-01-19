@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -22,7 +22,7 @@ type Props = {
 };
 
 export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
   const rowVirtualizer = useVirtualizer({
