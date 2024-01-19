@@ -1002,10 +1002,6 @@
             "path": "/guides/dagster/recommended-project-structure"
           },
           {
-            "title": "Automating your pipelines",
-            "path": "/guides/dagster/automating-pipelines"
-          },
-          {
             "title": "Building machine learning pipelines",
             "path": "/guides/dagster/ml-pipeline"
           },
