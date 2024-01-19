@@ -456,7 +456,7 @@ def test_stale_status_dependency_partitions_count_over_threshold() -> None:
 
     @asset(partitions_def=partitions_def)
     def asset1(context):
-        keys = partitions_def.get_partition_keys_in_range(context.asset_partition_key_range)
+        keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
         return {key: randint(0, 100) for key in keys}
 
     @asset

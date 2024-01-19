@@ -32,7 +32,7 @@ def create_my_daily_partitioned_asset(context):
     # Happens when the asset is materialized in a single run
     # Important: this will throw an error because we don't support materializing a partitioned
     # asset in a single run
-    partition_key_range = context.asset_partition_key_range
+    partition_key_range = context.partition_key_range
     context.log.info(f"Creating partitioned assets for window {partition_key_range}")
     return random.randint(0, 100)
 

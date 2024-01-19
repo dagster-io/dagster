@@ -61,7 +61,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
-        time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
+        time_window = context.partitions_time_window if context.has_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
             con.execute(self._get_cleanup_statement(table, schema, time_window))
 

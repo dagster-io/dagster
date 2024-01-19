@@ -183,7 +183,7 @@ class UPathIOManager(MemoizableIOManager):
         self, context: Union[InputContext, OutputContext]
     ) -> Dict[str, "UPath"]:
         """Returns a dict of partition_keys into I/O paths for a given context."""
-        if not context.has_asset_partitions:
+        if not context.has_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
                 "but the asset is not partitioned"
@@ -202,7 +202,7 @@ class UPathIOManager(MemoizableIOManager):
                 if isinstance(partition_key, MultiPartitionKey)
                 else partition_key
             )
-            for partition_key in context.asset_partition_keys
+            for partition_key in context.partition_keys
         }
 
         asset_path = self._get_path_without_extension(context)
@@ -216,13 +216,13 @@ class UPathIOManager(MemoizableIOManager):
     def _get_multipartition_backcompat_paths(
         self, context: Union[InputContext, OutputContext]
     ) -> Mapping[str, "UPath"]:
-        if not context.has_asset_partitions:
+        if not context.has_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
                 "but the asset is not partitioned"
             )
 
-        partition_keys = context.asset_partition_keys
+        partition_keys = context.partition_keys
 
         asset_path = self._get_path_without_extension(context)
         return {
@@ -426,7 +426,7 @@ class UPathIOManager(MemoizableIOManager):
                 return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
-        if context.has_asset_partitions:
+        if context.has_partitions:
             paths = self._get_paths_for_partitions(context)
 
             check.invariant(

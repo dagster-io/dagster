@@ -107,7 +107,7 @@ class AssetBasedInMemoryIOManager(IOManager):
         if not context.has_asset_key:
             return [None]
 
-        partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
+        partition_keys = context.partition_keys if context.has_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
@@ -155,7 +155,7 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
         if not context.has_asset_key:
             return [None]
 
-        partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
+        partition_keys = context.partition_keys if context.has_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:

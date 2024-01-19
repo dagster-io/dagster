@@ -13,7 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.events import (
     AssetKey,
@@ -325,7 +325,7 @@ class OutputContext:
 
     @public
     @property
-    def asset_partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
         result = self.step_context.job_def.asset_layer.partitions_def_for_asset(asset_key)
@@ -336,6 +336,13 @@ class OutputContext:
             )
 
         return result
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_def` instead.")
+    @public
+    @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the asset corresponding to this output."""
+        return self.partitions_def
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -393,11 +400,11 @@ class OutputContext:
 
     @public
     @property
-    def has_asset_partitions(self) -> bool:
+    def has_partitions(self) -> bool:
         """Returns True if the asset being stored is partitioned."""
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.has_asset_partitions"
+                "You are using InputContext.upstream_output.has_partitions"
                 "This use on upstream_output is deprecated and will fail in the future"
                 "Try to obtain what you need directly from InputContext"
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
@@ -407,6 +414,13 @@ class OutputContext:
             return self._step_context.has_asset_partitions_for_output(self.name)
         else:
             return False
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `has_partitions` instead.")
+    @public
+    @property
+    def has_asset_partitions(self) -> bool:
+        """Returns True if the asset being stored is partitioned."""
+        return self.has_partitions
 
     @public
     @property
@@ -428,14 +442,14 @@ class OutputContext:
 
     @public
     @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
+    def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for output asset.
 
         Raises an error if the output asset has no partitioning.
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_key_range"
+                "You are using InputContext.upstream_output.partition_key_range"
                 "This use on upstream_output is deprecated and will fail in the future"
                 "Try to obtain what you need directly from InputContext"
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
@@ -443,26 +457,63 @@ class OutputContext:
 
         return self.step_context.asset_partition_key_range_for_output(self.name)
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
-    def asset_partition_keys(self) -> Sequence[str]:
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for output asset."""
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
         """The partition keys for the output asset.
 
         Raises an error if the output asset has no partitioning.
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_keys"
+                "You are using InputContext.upstream_output.partition_keys"
                 "This use on upstream_output is deprecated and will fail in the future"
                 "Try to obtain what you need directly from InputContext"
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.asset_partitions_def.get_partition_keys_in_range(
+        return self.partitions_def.get_partition_keys_in_range(
             self.step_context.asset_partition_key_range_for_output(self.name),
             dynamic_partitions_store=self.step_context.instance,
         )
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
+    @public
+    @property
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for the output asset."""
+        return self.partition_keys
+
+    @public
+    @property
+    def partitions_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partitions_time_window"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        return self.step_context.asset_partitions_time_window_for_output(self.name)
+
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead."
+    )
     @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
@@ -473,15 +524,7 @@ class OutputContext:
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        if self._warn_on_step_context_use:
-            warnings.warn(
-                "You are using InputContext.upstream_output.asset_partitions_time_window"
-                "This use on upstream_output is deprecated and will fail in the future"
-                "Try to obtain what you need directly from InputContext"
-                "For more details: https://github.com/dagster-io/dagster/issues/7900"
-            )
-
-        return self.step_context.asset_partitions_time_window_for_output(self.name)
+        return self.partitions_time_window
 
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
@@ -579,7 +622,7 @@ class OutputContext:
         partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
         """
         if self.asset_key is not None:
-            if self.has_asset_partitions:
+            if self.has_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
             else:
                 return self.asset_key.path

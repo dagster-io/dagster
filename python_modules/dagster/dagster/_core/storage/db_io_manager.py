@@ -186,7 +186,7 @@ class DbIOManager(IOManager):
             else:
                 schema = "public"
 
-            if context.has_asset_partitions:
+            if context.has_partitions:
                 partition_expr = output_context_metadata.get("partition_expr")
                 if partition_expr is None:
                     raise ValueError(
@@ -196,11 +196,11 @@ class DbIOManager(IOManager):
                         ' @asset(metadata={"partition_expr": "your_partition_column"}).'
                     )
 
-                if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
+                if isinstance(context.partitions_def, MultiPartitionsDefinition):
                     multi_partition_key_mapping = cast(
                         MultiPartitionKey, context.asset_partition_key
                     ).keys_by_dimension
-                    for part in context.asset_partitions_def.partitions_defs:
+                    for part in context.partitions_def.partitions_defs:
                         partition_key = multi_partition_key_mapping[part.name]
                         if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
                             partitions = part.partitions_def.time_window_for_partition_key(
@@ -223,14 +223,12 @@ class DbIOManager(IOManager):
                                 partition_expr=cast(str, partition_expr_str), partitions=partitions
                             )
                         )
-                elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
+                elif isinstance(context.partitions_def, TimeWindowPartitionsDefinition):
                     partition_dimensions.append(
                         TablePartitionDimension(
                             partition_expr=cast(str, partition_expr),
                             partitions=(
-                                context.asset_partitions_time_window
-                                if context.asset_partition_keys
-                                else []
+                                context.partitions_time_window if context.partition_keys else []
                             ),
                         )
                     )
@@ -238,7 +236,7 @@ class DbIOManager(IOManager):
                     partition_dimensions.append(
                         TablePartitionDimension(
                             partition_expr=cast(str, partition_expr),
-                            partitions=context.asset_partition_keys,
+                            partitions=context.partition_keys,
                         )
                     )
         else:

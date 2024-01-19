@@ -27,7 +27,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
             con = self._connect_duckdb()
 
             path = self._get_path(context)
-            if context.has_asset_partitions:
+            if context.has_partitions:
                 to_scan = os.path.join(os.path.dirname(path), "*.pq", "*.parquet")
             else:
                 to_scan = path

@@ -467,9 +467,9 @@ class AssetLayer(NamedTuple):
 
                     return set(
                         cast(
-                            PartitionsDefinition, context.asset_partitions_def
+                            PartitionsDefinition, context.partitions_def
                         ).get_partition_keys_in_range(
-                            context.asset_partition_key_range,
+                            context.partition_key_range,
                             dynamic_partitions_store=context.step_context.instance,
                         )
                     )

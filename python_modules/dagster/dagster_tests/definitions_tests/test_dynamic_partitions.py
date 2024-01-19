@@ -107,7 +107,7 @@ def test_dynamic_partitioned_asset_io_manager_context():
         def handle_output(self, context, obj):
             assert context.partition_key == "apple"
             assert context.asset_partition_key == "apple"
-            assert context.asset_partition_keys == ["apple"]
+            assert context.partition_keys == ["apple"]
 
         def load_input(self, context):
             assert context.partition_key == "apple"

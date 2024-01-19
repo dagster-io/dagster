@@ -149,7 +149,7 @@ def test_single_partitioned_asset_job():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "b"
-            assert context.asset_partitions_def == partitions_def
+            assert context.partitions_def == partitions_def
 
         def load_input(self, context):
             assert False, "shouldn't get here"
@@ -243,9 +243,9 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
             if context.op_def.name == "upstream_asset":
                 assert context.asset_partition_key == "b"
             elif context.op_def.name in ["downstream_asset", "double_downstream_asset"]:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
                 with pytest.raises(Exception):  # TODO: better error message
-                    assert context.asset_partition_key_range
+                    assert context.partition_key_range
             else:
                 assert False
 
@@ -288,7 +288,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
 def test_output_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
-            assert context.asset_partitions_time_window == TimeWindow(
+            assert context.partitions_time_window == TimeWindow(
                 pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
             )
 
@@ -312,7 +312,7 @@ def test_input_context_asset_partitions_time_window():
 
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
-            assert context.asset_partitions_time_window == TimeWindow(
+            assert context.partitions_time_window == TimeWindow(
                 pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
             )
 
@@ -700,7 +700,7 @@ def test_multipartitioned_asset_partitions_time_window():
 
     class CustomIOManager(IOManager):
         def handle_output(self, context: OutputContext, obj):
-            assert context.asset_partitions_time_window == TimeWindow(
+            assert context.partitions_time_window == TimeWindow(
                 pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
             )
 

@@ -151,7 +151,7 @@ class ArtifactsIOManager(IOManager):
             self._clean_local_storage_path()
 
     def _upload_artifact(self, context: OutputContext, obj):
-        if not context.has_partition_key and context.has_asset_partitions:
+        if not context.has_partition_key and context.has_partitions:
             raise WandbArtifactsIOManagerError(
                 "Sorry, but the Weights & Biases (W&B) IO Manager can't handle processing several"
                 " partitions at the same time within a single run. Please process each partition"

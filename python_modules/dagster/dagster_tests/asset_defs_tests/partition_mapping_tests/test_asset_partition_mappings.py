@@ -160,7 +160,7 @@ def test_from_graph():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "a"
-            assert context.has_asset_partitions
+            assert context.has_partitions
 
         def load_input(self, context):
             assert context.asset_partition_key == "a"
@@ -193,10 +193,10 @@ def test_non_partitioned_depends_on_last_partition():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
             assert context.has_asset_partitions
@@ -234,10 +234,10 @@ def test_non_partitioned_depends_on_specific_partitions():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
             assert context.has_asset_partitions
@@ -302,10 +302,10 @@ def test_non_partitioned_depends_on_all_partitions():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
+                assert context.has_partitions
                 assert context.asset_partition_key == "b"
             else:
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
 
         def load_input(self, context):
             assert context.has_asset_partitions
@@ -355,8 +355,8 @@ def test_partition_keys_in_range():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
-                assert context.asset_partition_keys == ["2022-09-11"]
+                assert context.has_partitions
+                assert context.partition_keys == ["2022-09-11"]
 
         def load_input(self, context):
             assert context.has_asset_partitions
@@ -493,8 +493,8 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
-                assert context.has_asset_partitions
-                assert context.asset_partition_keys == ["a"]
+                assert context.has_partitions
+                assert context.partition_keys == ["a"]
 
         def load_input(self, context):
             assert context.has_asset_partitions
