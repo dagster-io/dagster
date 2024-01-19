@@ -575,6 +575,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             AssetKey, Optional[AssetMaterialization]
         ] = {}
 
+        self._upstream_asset_tags: Dict[
+            AssetKey, Optional[Union[Mapping[str, Mapping[str, str]], Mapping[str, str]]]
+        ] = {}
+
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
         self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
@@ -1000,6 +1004,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if event is None:
             self._input_asset_version_info[key] = None
             self._upstream_asset_materialization_events[key] = None
+            self._upstream_asset_tags[key] = None
         else:
             storage_id = event.storage_id
             # Input name will be none if this is an internal dep
@@ -1022,8 +1027,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 # constraint should be removed when we have thoroughly examined the performance of
                 # the data version retrieval query and can guarantee decent performance.
                 if len(input_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
-                    data_version = self._get_partitions_data_version_from_keys(key, input_keys)
+                    data_version = self._get_partitions_data_version_from_keys(
+                        key, input_keys, self._upstream_asset_tags
+                    )
                 else:
+                    # TODO - need to figure out what to do here for tags
                     data_version = extract_data_version_from_entry(event.event_log_entry)
             else:
                 data_version = extract_data_version_from_entry(event.event_log_entry)
@@ -1032,6 +1040,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 # that is irrelevant to the current execution
                 self._upstream_asset_materialization_events[key] = (
                     event.asset_materialization if event.asset_materialization else None
+                )
+                self._upstream_asset_tags[key] = (
+                    event.asset_materialization.tags if event.asset_materialization else None
                 )
             self._input_asset_version_info[key] = InputAssetVersionInfo(
                 storage_id, data_version, event.run_id, event.timestamp
@@ -1073,7 +1084,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def _get_partitions_data_version_from_keys(
-        self, key: AssetKey, partition_keys: Sequence[str]
+        self,
+        key: AssetKey,
+        partition_keys: Sequence[str],
+        upstream_asset_tags_dict: Dict[
+            AssetKey, Optional[Union[Mapping[str, Mapping[str, str]], Mapping[str, str]]]
+        ],
     ) -> "DataVersion":
         from dagster._core.definitions.data_version import (
             DataVersion,
@@ -1085,6 +1101,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
             key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
         )
+        upstream_asset_tags_dict[key] = tags_by_partition
         partition_data_versions = [
             pair[1][DATA_VERSION_TAG]
             for pair in sorted(tags_by_partition.items(), key=lambda x: x[0])
