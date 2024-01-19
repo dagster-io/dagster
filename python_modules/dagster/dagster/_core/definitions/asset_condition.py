@@ -16,14 +16,12 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_cursor import (
-    AssetConditionCursorExtras,
-)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._serdes.serdes import (
     FieldSerializer,
+    PackableValue,
     UnpackContext,
     WhitelistMap,
     pack_value,
@@ -31,12 +29,10 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
-)
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
+    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule import AutoMaterializeRule
 
 
@@ -175,6 +171,62 @@ class AssetConditionEvaluation(NamedTuple):
         return AssetConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
 
 
+class AssetConditionEvaluationResult(NamedTuple):
+    """Return value for the evaluate method of an AssetCondition."""
+
+    condition: "AssetCondition"
+    evaluation: AssetConditionEvaluation
+    extra_values_by_unique_id: Mapping[str, PackableValue]
+
+    @property
+    def true_subset(self) -> AssetSubset:
+        return self.evaluation.true_subset
+
+    @staticmethod
+    def create_from_children(
+        context: "AssetConditionEvaluationContext",
+        true_subset: AssetSubset,
+        child_results: Sequence["AssetConditionEvaluationResult"],
+    ) -> "AssetConditionEvaluationResult":
+        """Returns a new AssetConditionEvaluationResult from the given child results."""
+        return AssetConditionEvaluationResult(
+            condition=context.condition,
+            evaluation=AssetConditionEvaluation(
+                context.condition.snapshot,
+                true_subset=true_subset,
+                candidate_subset=context.candidate_subset,
+                subsets_with_metadata=[],
+                child_evaluations=[child_result.evaluation for child_result in child_results],
+            ),
+            extra_values_by_unique_id=dict(
+                item
+                for child_result in child_results
+                for item in child_result.extra_values_by_unique_id.items()
+            ),
+        )
+
+    @staticmethod
+    def create(
+        context: "AssetConditionEvaluationContext",
+        true_subset: AssetSubset,
+        subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
+        extra_value: PackableValue = None,
+    ) -> "AssetConditionEvaluationResult":
+        """Returns a new AssetConditionEvaluationResult from the given parameters."""
+        return AssetConditionEvaluationResult(
+            condition=context.condition,
+            evaluation=AssetConditionEvaluation(
+                context.condition.snapshot,
+                true_subset=true_subset,
+                candidate_subset=context.candidate_subset,
+                subsets_with_metadata=subsets_with_metadata,
+            ),
+            extra_values_by_unique_id={context.condition.unique_id: extra_value}
+            if extra_value
+            else {},
+        )
+
+
 @whitelist_for_serdes
 class AssetConditionEvaluationWithRunIds(NamedTuple):
     """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
@@ -209,8 +261,8 @@ class AssetCondition(ABC):
 
     @abstractmethod
     def evaluate(
-        self, context: AssetConditionEvaluationContext
-    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
+        self, context: "AssetConditionEvaluationContext"
+    ) -> AssetConditionEvaluationResult:
         raise NotImplementedError()
 
     @abstractproperty
@@ -282,21 +334,21 @@ class RuleCondition(
         return self.rule.description
 
     def evaluate(
-        self, context: AssetConditionEvaluationContext
-    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
+        self, context: "AssetConditionEvaluationContext"
+    ) -> AssetConditionEvaluationResult:
         context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
-        true_subset, subsets_with_metadata, extras = self.rule.evaluate_for_asset(context)
+        true_subset, subsets_with_metadata, extra_value = self.rule.evaluate_for_asset(context)
         context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Rule returned {true_subset.size} partitions" f"{true_subset}"
         )
-        return AssetConditionEvaluation(
-            condition_snapshot=self.snapshot,
+        return AssetConditionEvaluationResult.create(
+            context=context,
             true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
-        ), [AssetConditionCursorExtras(condition_snapshot=self.snapshot, extras=extras)]
+            extra_value=extra_value,
+        )
 
 
 class AndAssetCondition(
@@ -310,23 +362,18 @@ class AndAssetCondition(
         return "All of"
 
     def evaluate(
-        self, context: AssetConditionEvaluationContext
-    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
-        child_evaluations: List[AssetConditionEvaluation] = []
-        child_extras: List[AssetConditionCursorExtras] = []
+        self, context: "AssetConditionEvaluationContext"
+    ) -> AssetConditionEvaluationResult:
+        child_results: List[AssetConditionEvaluationResult] = []
         true_subset = context.candidate_subset
         for child in self.children:
             child_context = context.for_child(condition=child, candidate_subset=true_subset)
-            child_evaluation, child_extra = child.evaluate(child_context)
-            child_evaluations.append(child_evaluation)
-            child_extras.extend(child_extra)
-            true_subset &= child_evaluation.true_subset
-        return AssetConditionEvaluation(
-            condition_snapshot=self.snapshot,
-            true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
-            child_evaluations=child_evaluations,
-        ), child_extras
+            child_result = child.evaluate(child_context)
+            child_results.append(child_result)
+            true_subset &= child_result.true_subset
+        return AssetConditionEvaluationResult.create_from_children(
+            context, true_subset, child_results
+        )
 
 
 class OrAssetCondition(
@@ -340,25 +387,20 @@ class OrAssetCondition(
         return "Any of"
 
     def evaluate(
-        self, context: AssetConditionEvaluationContext
-    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
-        child_evaluations: List[AssetConditionEvaluation] = []
-        child_extras: List[AssetConditionCursorExtras] = []
+        self, context: "AssetConditionEvaluationContext"
+    ) -> AssetConditionEvaluationResult:
+        child_results: List[AssetConditionEvaluationResult] = []
         true_subset = context.empty_subset()
         for child in self.children:
             child_context = context.for_child(
                 condition=child, candidate_subset=context.candidate_subset
             )
-            child_evaluation, child_extra = child.evaluate(child_context)
-            child_evaluations.append(child_evaluation)
-            child_extras.extend(child_extra)
-            true_subset |= child_evaluation.true_subset
-        return AssetConditionEvaluation(
-            condition_snapshot=self.snapshot,
-            true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
-            child_evaluations=child_evaluations,
-        ), child_extras
+            child_result = child.evaluate(child_context)
+            child_results.append(child_result)
+            true_subset |= child_result.true_subset
+        return AssetConditionEvaluationResult.create_from_children(
+            context, true_subset, child_results
+        )
 
 
 class NotAssetCondition(
@@ -380,17 +422,14 @@ class NotAssetCondition(
         return self.children[0]
 
     def evaluate(
-        self, context: AssetConditionEvaluationContext
-    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
+        self, context: "AssetConditionEvaluationContext"
+    ) -> AssetConditionEvaluationResult:
         child_context = context.for_child(
             condition=self.child, candidate_subset=context.candidate_subset
         )
-        child_evaluation, child_extras = self.child.evaluate(child_context)
-        true_subset = context.candidate_subset - child_evaluation.true_subset
+        child_result = self.child.evaluate(child_context)
+        true_subset = context.candidate_subset - child_result.true_subset
 
-        return AssetConditionEvaluation(
-            condition_snapshot=self.snapshot,
-            true_subset=true_subset,
-            candidate_subset=context.candidate_subset,
-            child_evaluations=[child_evaluation],
-        ), child_extras
+        return AssetConditionEvaluationResult.create_from_children(
+            context, true_subset, [child_result]
+        )
