@@ -9,7 +9,6 @@ from dagster import (
     AutoMaterializeRule,
     DagsterInstance,
     instance_for_test,
-    serialize_value,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
