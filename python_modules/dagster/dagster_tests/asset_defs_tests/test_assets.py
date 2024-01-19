@@ -1520,9 +1520,7 @@ def test_self_dependency():
                 assert context.partition_key == "2020-01-02"
                 assert context.partition_keys == ["2020-01-01"]
                 assert context.asset_partition_key == "2020-01-01"
-                assert context.partition_key_range == PartitionKeyRange(
-                    "2020-01-01", "2020-01-01"
-                )
+                assert context.partition_key_range == PartitionKeyRange("2020-01-01", "2020-01-01")
                 assert context.has_partitions
 
     resources = {"io_manager": MyIOManager()}

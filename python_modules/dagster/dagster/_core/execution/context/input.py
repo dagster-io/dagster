@@ -442,7 +442,9 @@ class InputContext:
 
         return self.step_context.asset_partitions_time_window_for_input(self.name)
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead.")
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead."
+    )
     @public
     @property
     def asset_tmp_partitions_time_window(self) -> TimeWindow:
@@ -662,9 +664,7 @@ def build_input_context(
             "Use argument `partitions_def` instead."
         )
         partitions_def = asset_partitions_def
-    partitions_def = check.opt_inst_param(
-        partitions_def, "partitions_def", PartitionsDefinition
-    )
+    partitions_def = check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition)
 
     if partitions_def and partition_key_range:
         partitions_subset = partitions_def.empty_subset().with_partition_key_range(

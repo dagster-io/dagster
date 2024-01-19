@@ -389,9 +389,7 @@ class UPathIOManager(MemoizableIOManager):
 
             return {
                 partition_key: awaited_object
-                for partition_key, awaited_object in zip(
-                    context.partition_keys, awaited_objects
-                )
+                for partition_key, awaited_object in zip(context.partition_keys, awaited_objects)
                 if awaited_object is not None
             }
 
