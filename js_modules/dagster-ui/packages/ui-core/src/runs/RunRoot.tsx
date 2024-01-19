@@ -1,5 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useLayoutEffect, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -13,7 +21,13 @@ import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
 import {TickTagForRun} from './TickTagForRun';
-import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {RunFragment} from './types/RunFragments.types';
+import {
+  RunAssetsQuery,
+  RunAssetsQueryVariables,
+  RunRootQuery,
+  RunRootQueryVariables,
+} from './types/RunRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
@@ -135,14 +149,7 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetKeyTagCollection
-                  useTags
-                  assetKeys={
-                    isHiddenAssetGroupJob(run.pipelineName)
-                      ? assetKeysForRun(run)
-                      : run.assets.map((a) => a.key)
-                  }
-                />
+                <RunAssetTags run={run} />
                 <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
@@ -166,6 +173,30 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
+const RunAssetTags = (props: {run: RunFragment}) => {
+  const {run} = props;
+  const {data, loading} = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
+    variables: {runId: run.id},
+    skip: isHiddenAssetGroupJob(run.pipelineName),
+  });
+
+  if (isHiddenAssetGroupJob(run.pipelineName)) {
+    return <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />;
+  }
+
+  if (loading) {
+    return <div style={{color: Colors.textLight()}}>Loading…</div>;
+  }
+
+  if (!data || data.pipelineRunOrError.__typename !== 'Run') {
+    return null;
+  }
+
+  return (
+    <AssetKeyTagCollection useTags assetKeys={data.pipelineRunOrError.assets.map((a) => a.key)} />
+  );
+};
+
 const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: RunRootTrace}) => {
   const {data, runId, trace} = props;
 
@@ -188,7 +219,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: R
   return <Run run={data.pipelineRunOrError} runId={runId} trace={trace} />;
 };
 
-const RUN_ROOT_QUERY = gql`
+export const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -199,4 +230,20 @@ const RUN_ROOT_QUERY = gql`
   }
 
   ${RUN_PAGE_FRAGMENT}
+`;
+
+export const RUN_ASSETS_QUERY = gql`
+  query RunAssetsQuery($runId: ID!) {
+    pipelineRunOrError(runId: $runId) {
+      ... on Run {
+        id
+        assets {
+          id
+          key {
+            path
+          }
+        }
+      }
+    }
+  }
 `;
