@@ -13,6 +13,7 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -28,6 +29,7 @@ import {
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
@@ -178,12 +180,17 @@ export const AssetView = ({assetKey, trace}: Props) => {
     );
   };
 
+  const {flagUseNewAutomationPage} = useFeatureFlags();
+
   const renderAutomaterializeHistoryTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
+    if (flagUseNewAutomationPage) {
+      return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
+    }
     return (
-      <AssetAutomaterializePolicyPage
+      <AssetAutomaterializePolicyPageOld
         assetKey={assetKey}
         assetHasDefinedPartitions={!!definition?.partitionDefinition}
       />
@@ -214,7 +221,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
         return renderEventsTab();
       case 'plots':
         return renderPlotsTab();
-      case 'auto-materialize-history':
+      case 'automation':
         return renderAutomaterializeHistoryTab();
       case 'checks':
         return renderChecksTab();

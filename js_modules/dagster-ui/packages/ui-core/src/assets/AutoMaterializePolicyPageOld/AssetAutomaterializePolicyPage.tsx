@@ -11,7 +11,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AssetKey} from '../types';
 
-export const AssetAutomaterializePolicyPage = ({
+export const AssetAutomaterializePolicyPageOld = ({
   assetKey,
   assetHasDefinedPartitions,
 }: {
@@ -68,9 +68,7 @@ export const AssetAutomaterializePolicyPage = ({
       style={{flex: 1, minHeight: 0, color: Colors.textLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
-      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
-        <AutoMaterializeExperimentalBanner />
-      </Box>
+      <AutoMaterializeExperimentalBanner />
       <Box flex={{direction: 'row'}} style={{minHeight: 0, flex: 1}}>
         <Box flex={{direction: 'column', grow: 1}}>
           <Box

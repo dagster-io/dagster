@@ -5,7 +5,7 @@ import {
   buildEvaluationRecordsWithPartitions,
   buildEvaluationRecordsWithoutPartitions,
 } from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
-import {AutoMaterializeEvaluationRecordItemFragment} from '../types/GetEvaluationsQuery.types';
+import {AssetConditionEvaluationRecordFragment} from '../types/GetEvaluationsQuery.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -15,7 +15,7 @@ export default {
 
 export const WithPartitions = () => {
   const [selectedEvaluation, setSelectedEvaluation] = useState<
-    AutoMaterializeEvaluationRecordItemFragment | undefined
+    AssetConditionEvaluationRecordFragment | undefined
   >();
 
   const evaluations = buildEvaluationRecordsWithPartitions();
@@ -23,9 +23,8 @@ export const WithPartitions = () => {
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
-        assetHasDefinedPartitions
-        evaluations={evaluations}
-        onSelectEvaluation={(evaluation: AutoMaterializeEvaluationRecordItemFragment) =>
+        evaluations={evaluations as any}
+        onSelectEvaluation={(evaluation: AssetConditionEvaluationRecordFragment) =>
           setSelectedEvaluation(evaluation)
         }
         selectedEvaluation={selectedEvaluation}
@@ -36,7 +35,7 @@ export const WithPartitions = () => {
 
 export const NoPartitions = () => {
   const [selectedEvaluation, setSelectedEvaluation] = useState<
-    AutoMaterializeEvaluationRecordItemFragment | undefined
+    AssetConditionEvaluationRecordFragment | undefined
   >();
 
   const evaluations = buildEvaluationRecordsWithoutPartitions();
@@ -44,9 +43,8 @@ export const NoPartitions = () => {
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
-        assetHasDefinedPartitions={false}
-        evaluations={evaluations}
-        onSelectEvaluation={(evaluation: AutoMaterializeEvaluationRecordItemFragment) =>
+        evaluations={evaluations as any}
+        onSelectEvaluation={(evaluation: AssetConditionEvaluationRecordFragment) =>
           setSelectedEvaluation(evaluation)
         }
         selectedEvaluation={selectedEvaluation}

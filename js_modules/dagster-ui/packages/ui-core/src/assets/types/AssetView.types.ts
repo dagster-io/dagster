@@ -61,6 +61,7 @@ export type AssetViewDefinitionQuery = {
                 id: string;
                 jobOriginId: string;
                 name: string;
+                sensorType: Types.SensorType;
                 sensorState: {
                   __typename: 'InstigationState';
                   id: string;
@@ -15882,6 +15883,7 @@ export type AssetViewDefinitionNodeFragment = {
         id: string;
         jobOriginId: string;
         name: string;
+        sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
           id: string;

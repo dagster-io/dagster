@@ -8,13 +8,13 @@ import {ParentUpdatedLink} from './ParentUpdatedLink';
 import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnAssetKeysPartitionLink} from './WaitingOnAssetKeysPartitionLink';
-import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
 import {assertUnreachable} from '../../app/Util';
 import {
   AutoMaterializeDecisionType,
   AutoMaterializeRule,
   AutoMaterializeRuleEvaluation,
 } from '../../graphql/types';
+import {RuleWithEvaluationsFragment} from '../AutoMaterializePolicyPageOld/types/GetEvaluationsQuery.types';
 
 interface RuleEvaluationOutcomeProps {
   text: string;

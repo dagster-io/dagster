@@ -24,7 +24,7 @@ export const OverviewRoot = () => {
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
       </Route>
-      <Route path="/overview/automaterialize">
+      <Route path="/overview/automation">
         <AutomaterializationRoot />
       </Route>
       <Route path="/overview/backfills/:backfillId">

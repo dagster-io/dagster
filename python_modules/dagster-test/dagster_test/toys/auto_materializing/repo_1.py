@@ -1,4 +1,11 @@
-from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset, repository
+from dagster import (
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    asset,
+    repository,
+)
 
 ### Non partitioned ##
 
@@ -42,6 +49,21 @@ def eager_downstream_1_partitioned(eager_upstream_partitioned):
     return eager_upstream_partitioned + 1
 
 
+customers_partitions_def = DynamicPartitionsDefinition(name="customers")
+multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
+    {"customers": customers_partitions_def, "daily": DailyPartitionsDefinition("2023-01-01")}
+)
+
+
+@asset(
+    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    partitions_def=multipartition_w_dynamic_partitions_def,
+    deps=[eager_downstream_0_point_5_partitioned],
+)
+def eager_downstream_2_partitioned(eager_upstream_partitioned):
+    return eager_upstream_partitioned + 1
+
+
 @repository
 def auto_materialize_repo_1():
     return [
@@ -51,4 +73,5 @@ def auto_materialize_repo_1():
         eager_upstream_partitioned,
         eager_downstream_1_partitioned,
         eager_downstream_0_point_5_partitioned,
+        eager_downstream_2_partitioned,
     ]

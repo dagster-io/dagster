@@ -1,8 +1,11 @@
 import {
   Box,
   Colors,
+  Menu,
+  MenuItem,
   MiddleTruncate,
   Popover,
+  Tag,
   TextInput,
   TextInputContainer,
 } from '@dagster-io/ui-components';
@@ -11,9 +14,10 @@ import {useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {AssetConditionEvaluationStatus, AssetSubset} from './types';
 import {assertUnreachable} from '../../app/Util';
+import {AssetConditionEvaluationStatus, AssetSubsetValue} from '../../graphql/types';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
+import {numberFormatter} from '../../ui/formatters';
 
 const statusToColors = (status: AssetConditionEvaluationStatus) => {
   switch (status) {
@@ -28,49 +32,69 @@ const statusToColors = (status: AssetConditionEvaluationStatus) => {
   }
 };
 
+type AssetSusbsetWithoutTypenames = {
+  subsetValue: Omit<AssetSubsetValue, '__typename' | 'boolValue'>;
+};
+
 interface Props {
   description: string;
-  status: AssetConditionEvaluationStatus;
-  subset: AssetSubset | null;
-  width: number;
+  status: AssetConditionEvaluationStatus.TRUE;
+  subset: AssetSusbsetWithoutTypenames | null;
+  selectPartition: (partitionKey: string | null) => void;
 }
 
-export const PartitionSegmentWithPopover = ({description, width, status, subset}: Props) => {
-  const {color, hoverColor} = useMemo(() => statusToColors(status), [status]);
-  const segment = <PartitionSegment $color={color} $hoverColor={hoverColor} $width={width} />;
+export const PartitionSegmentWithPopover = ({
+  description,
+  selectPartition,
+  status,
+  subset,
+}: Props) => {
   if (!subset) {
-    return segment;
+    return null;
   }
 
+  const count = subset.subsetValue.partitionKeys?.length || 0;
+
   return (
-    <SegmentContainer $width={width}>
-      <Popover
-        interactionKind="hover"
-        placement="bottom"
-        hoverOpenDelay={50}
-        hoverCloseDelay={50}
-        content={<PartitionSubsetList description={description} status={status} subset={subset} />}
-      >
-        {segment}
-      </Popover>
-    </SegmentContainer>
+    <Popover
+      interactionKind="hover"
+      placement="bottom"
+      hoverOpenDelay={50}
+      hoverCloseDelay={50}
+      content={
+        <PartitionSubsetList
+          description={description}
+          status={status}
+          subset={subset}
+          selectPartition={selectPartition}
+        />
+      }
+    >
+      <Tag intent={count > 0 ? 'success' : 'none'} icon={count > 0 ? 'check_circle' : undefined}>
+        {numberFormatter.format(count)} {status.charAt(0) + status.toLowerCase().slice(1)}
+      </Tag>
+    </Popover>
   );
 };
 
 interface ListProps {
   description: string;
-  status: AssetConditionEvaluationStatus;
-  subset: AssetSubset;
+  status?: AssetConditionEvaluationStatus;
+  subset: AssetSusbsetWithoutTypenames;
+  selectPartition: (partitionKey: string | null) => void;
 }
 
 const ITEM_HEIGHT = 32;
 const MAX_ITEMS_BEFORE_TRUNCATION = 4;
 
-const PartitionSubsetList = ({description, status, subset}: ListProps) => {
+export const PartitionSubsetList = ({description, status, subset, selectPartition}: ListProps) => {
   const container = useRef<HTMLDivElement | null>(null);
   const [searchValue, setSearchValue] = useState('');
 
-  const {color, hoverColor} = useMemo(() => statusToColors(status), [status]);
+  const {color, hoverColor} = useMemo(
+    () => statusToColors(status ?? AssetConditionEvaluationStatus.TRUE),
+    [status],
+  );
 
   const partitionKeys = useMemo(() => subset.subsetValue.partitionKeys || [], [subset]);
 
@@ -97,11 +121,12 @@ const PartitionSubsetList = ({description, status, subset}: ListProps) => {
         padding={{vertical: 8, left: 12, right: 8}}
         border="bottom"
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+        style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 8}}
       >
         <strong>
           <MiddleTruncate text={description} />
         </strong>
-        <PolicyEvaluationStatusTag status={status} />
+        {status ? <PolicyEvaluationStatusTag status={status} /> : null}
       </Box>
       {partitionKeys.length > MAX_ITEMS_BEFORE_TRUNCATION ? (
         <SearchContainer padding={{vertical: 4, horizontal: 8}}>
@@ -115,71 +140,45 @@ const PartitionSubsetList = ({description, status, subset}: ListProps) => {
       ) : null}
       <div
         style={{
-          height: count > MAX_ITEMS_BEFORE_TRUNCATION ? '150px' : count * ITEM_HEIGHT,
+          height: count > MAX_ITEMS_BEFORE_TRUNCATION ? '150px' : count * ITEM_HEIGHT + 16,
           overflow: 'hidden',
         }}
       >
         <Container ref={container}>
-          <Inner $totalHeight={totalHeight}>
-            {virtualItems.map(({index, key, size, start}) => {
-              const partitionKey = filteredKeys[index]!;
-              return (
-                <Row $height={size} $start={start} key={key}>
-                  <Box
-                    style={{height: '100%'}}
-                    padding={{vertical: 8, horizontal: 16}}
-                    flex={{direction: 'row', alignItems: 'center', gap: 8}}
-                  >
-                    <PartitionStatusDot $color={color} $hoverColor={hoverColor} />
-                    <div>
-                      <MiddleTruncate text={partitionKey} />
-                    </div>
-                  </Box>
-                </Row>
-              );
-            })}
-          </Inner>
+          <Menu>
+            <Inner $totalHeight={totalHeight}>
+              {virtualItems.map(({index, key, size, start}) => {
+                const partitionKey = filteredKeys[index]!;
+                return (
+                  <Row $height={size} $start={start} key={key}>
+                    <MenuItem
+                      onClick={() => {
+                        selectPartition(partitionKey);
+                      }}
+                      text={
+                        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                          <PartitionStatusDot $color={color} $hoverColor={hoverColor} />
+                          <div>
+                            <MiddleTruncate text={partitionKey} />
+                          </div>
+                        </Box>
+                      }
+                    />
+                  </Row>
+                );
+              })}
+            </Inner>
+          </Menu>
         </Container>
       </div>
     </div>
   );
 };
 
-const SegmentContainer = styled.div.attrs<{$width: number}>(({$width}) => ({
-  style: {
-    flexBasis: `${$width}px`,
-  },
-}))<{$width: number}>`
-  .bp4-popover2-target {
-    display: block;
-  }
-`;
-
 const SearchContainer = styled(Box)`
   display: flex;
   ${TextInputContainer} {
     flex: 1;
-  }
-`;
-
-interface PartitionSegmentProps {
-  $color: string;
-  $hoverColor: string;
-  $width: number;
-}
-
-const PartitionSegment = styled.div.attrs<PartitionSegmentProps>(({$width}) => ({
-  style: {
-    flexBasis: `${$width}px`,
-  },
-}))<PartitionSegmentProps>`
-  background-color: ${({$color}) => $color};
-  border-radius: 2px;
-  height: 20px;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${({$hoverColor}) => $hoverColor};
   }
 `;
 
