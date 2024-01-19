@@ -25,15 +25,15 @@ interface Props {
 }
 
 export const PolicyEvaluationTable = ({evaluationRecord, definition, selectPartition}: Props) => {
-  const [uncollapsedRecords, setUncollapsedRecords] = React.useState<Set<string>>(new Set());
+  const [collapsedRecords, setcollapsedRecords] = React.useState<Set<string>>(new Set());
   const flattened = React.useMemo(
-    () => flattenEvaluations(evaluationRecord, uncollapsedRecords),
-    [evaluationRecord, uncollapsedRecords],
+    () => flattenEvaluations(evaluationRecord, collapsedRecords),
+    [evaluationRecord, collapsedRecords],
   );
 
   const toggleCollapsed = React.useCallback((uniqueId: string) => {
-    setUncollapsedRecords((uncollapsedRecords) => {
-      const copy = new Set(uncollapsedRecords);
+    setcollapsedRecords((collapsedRecords) => {
+      const copy = new Set(collapsedRecords);
       if (copy.has(uniqueId)) {
         copy.delete(uniqueId);
       } else {
@@ -51,7 +51,7 @@ export const PolicyEvaluationTable = ({evaluationRecord, definition, selectParti
         definition={definition}
         selectPartition={selectPartition}
         toggleCollapsed={toggleCollapsed}
-        uncollapsedRecords={uncollapsedRecords}
+        collapsedRecords={collapsedRecords}
       />
     );
   }
@@ -64,17 +64,17 @@ export const PolicyEvaluationTable = ({evaluationRecord, definition, selectParti
           | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[]
       }
       toggleCollapsed={toggleCollapsed}
-      uncollapsedRecords={uncollapsedRecords}
+      collapsedRecords={collapsedRecords}
     />
   );
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
   flattenedRecords,
-  uncollapsedRecords,
+  collapsedRecords,
   toggleCollapsed,
 }: {
-  uncollapsedRecords: Set<string>;
+  collapsedRecords: Set<string>;
   toggleCollapsed: (id: string) => void;
   flattenedRecords:
     | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
@@ -121,7 +121,7 @@ const UnpartitionedPolicyEvaluationTable = ({
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
-                  isCollapsed={uncollapsedRecords.has(uniqueId)}
+                  isCollapsed={!collapsedRecords.has(uniqueId)}
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
@@ -179,13 +179,13 @@ const FULL_SEGMENTS_WIDTH = 200;
 const PartitionedPolicyEvaluationTable = ({
   flattenedRecords,
   selectPartition,
-  uncollapsedRecords,
+  collapsedRecords,
   toggleCollapsed,
 }: {
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   definition?: AssetViewDefinitionNodeFragment | null;
   selectPartition: (partitionKey: string | null) => void;
-  uncollapsedRecords: Set<string>;
+  collapsedRecords: Set<string>;
   toggleCollapsed: (id: string) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
@@ -224,7 +224,7 @@ const PartitionedPolicyEvaluationTable = ({
                   label={description}
                   depth={depth}
                   type={type}
-                  isCollapsed={uncollapsedRecords.has(evaluation.uniqueId)}
+                  isCollapsed={!collapsedRecords.has(evaluation.uniqueId)}
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>

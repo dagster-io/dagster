@@ -26,7 +26,7 @@ type FlattenedEvaluation =
 
 export const flattenEvaluations = (
   evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>,
-  uncollapsedRecords: Set<string>,
+  collapsedRecords: Set<string>,
 ) => {
   const all: FlattenedEvaluation[] = [];
   let counter = 0;
@@ -50,7 +50,7 @@ export const flattenEvaluations = (
     } as FlattenedEvaluation);
     counter = id;
 
-    if (evaluation.childUniqueIds && uncollapsedRecords.has(evaluation.uniqueId)) {
+    if (evaluation.childUniqueIds && !collapsedRecords.has(evaluation.uniqueId)) {
       const parentCounter = counter;
       evaluation.childUniqueIds.forEach((childId) => {
         const child = recordsById[childId]!;

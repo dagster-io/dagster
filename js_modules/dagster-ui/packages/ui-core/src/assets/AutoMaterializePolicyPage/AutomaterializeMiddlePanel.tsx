@@ -351,6 +351,10 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
+          <Box border="bottom" padding={{vertical: 12}} margin={{vertical: 12}}>
+            <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
+          </Box>
+          <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
           <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
@@ -413,10 +417,6 @@ export const AutomaterializeMiddlePanelWithData = ({
             definition={definition}
             selectPartition={selectPartition}
           />
-          <Box border="bottom" padding={{vertical: 12}} margin={{vertical: 12}}>
-            <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
-          </Box>
-          <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
         </Box>
       ) : null}
     </Box>
