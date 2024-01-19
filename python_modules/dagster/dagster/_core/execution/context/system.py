@@ -1001,9 +1001,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._input_asset_version_info[key] = None
             self._upstream_asset_materialization_events[key] = None
         else:
-            self._upstream_asset_materialization_events[key] = (
-                event.asset_materialization if event.asset_materialization else None
-            )
             storage_id = event.storage_id
             # Input name will be none if this is an internal dep
             input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)
@@ -1030,6 +1027,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     data_version = extract_data_version_from_entry(event.event_log_entry)
             else:
                 data_version = extract_data_version_from_entry(event.event_log_entry)
+                # the AssetMaterialization fetched above is only accurate if the asset it not partitioned
+                # if the asset is partitioned, then the latest AssetMaterialization may be for a partition
+                # that is irrelevant to the current execution
+                self._upstream_asset_materialization_events[key] = (
+                    event.asset_materialization if event.asset_materialization else None
+                )
             self._input_asset_version_info[key] = InputAssetVersionInfo(
                 storage_id, data_version, event.run_id, event.timestamp
             )
