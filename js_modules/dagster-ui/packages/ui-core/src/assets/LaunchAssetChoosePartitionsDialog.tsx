@@ -691,9 +691,8 @@ const UpstreamUnavailableWarning = ({
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return (
-        a.dimensions.length && a.stateForKey([singleDimensionKey]) === AssetPartitionStatus.MISSING
-      );
+      const state = a.dimensions.length ? a.stateForKey([singleDimensionKey]) : null;
+      return state === AssetPartitionStatus.FAILED || state === AssetPartitionStatus.MISSING;
     });
 
   const upstreamUnavailableSpans =
@@ -727,7 +726,7 @@ const UpstreamUnavailableWarning = ({
             .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {
-            ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+            ' cannot be materialized because upstream materializations are not available. Consider materializing upstream assets or '
           }
           <ButtonLink underline="always" onClick={onRemoveUpstreamUnavailable}>
             remove these partitions
