@@ -5,11 +5,11 @@ import {GraphNode} from './Utils';
 import {AssetGroupSelector} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 
 type OptionalFilters =
   | {
