@@ -1,13 +1,15 @@
 import json
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
+import dagster._check as check
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
 from dagster._annotations import experimental
+from dagster._core.storage.upath_io_manager import is_dict_type
 
-from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
+from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
 try:
     from deltalake import DeltaTable
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
 
 
 DAGSTER_POLARS_STORAGE_METADATA_SUBDIR = ".dagster_polars_metadata"
+
+SINGLE_LOADING_TYPES = (pl.DataFrame, pl.LazyFrame, LazyFrameWithMetadata, DataFrameWithMetadata)
 
 
 class DeltaWriteMode(str, Enum):
@@ -37,7 +41,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     Features:
      - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
      - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
-     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). Automatically filters loaded partitions, unless `MultiPartitionsDefinition` are used. In this case you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
+     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table.
+       To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`).
+       Automatically filters loaded partitions, unless `MultiPartitionsDefinition` are used.
+       In this case you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
+       When loading all available asset partitions, the whole table can be loaded in one go by using type annotations like `pl.DataFrame` and `pl.LazyFrame`.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
@@ -108,6 +116,72 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
+
+    # tmp fix until UPathIOManager supports this: added special handling for loading all partitions of an asset
+
+    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
+            path = self._get_path(context)
+            return self._load_single_input(path, context)
+        else:
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) == 0:
+                return None
+            elif len(asset_partition_keys) == 1:
+                paths = self._get_paths_for_partitions(context)
+                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
+                path = next(iter(paths.values()))
+                backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                backcompat_path = (
+                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                )
+
+                return self._load_partition_from_path(
+                    context=context,
+                    partition_key=asset_partition_keys[0],
+                    path=path,
+                    backcompat_path=backcompat_path,
+                )
+            else:  # we are dealing with multiple partitions of an asset
+                type_annotation = context.dagster_type.typing_type
+                if type_annotation == Any or is_dict_type(type_annotation):
+                    return self._load_multiple_inputs(context)
+
+                # special case of loading the whole DeltaLake table at once
+                # when using AllPartitionMappings and native DeltaLake partitioning
+                elif (
+                    context.upstream_output is not None
+                    and context.upstream_output.metadata is not None
+                    and context.upstream_output.metadata.get("partition_by") is not None
+                    and type_annotation in SINGLE_LOADING_TYPES
+                    and context.upstream_output.asset_info is not None
+                    and context.upstream_output.asset_info.partitions_def is not None
+                    and set(asset_partition_keys)
+                    == set(
+                        context.upstream_output.asset_info.partitions_def.get_partition_keys(
+                            dynamic_partitions_store=context.instance
+                        )
+                    )
+                ):
+                    # load all partitions at once
+                    return self.load_from_path(
+                        context=context,
+                        path=self.get_path_for_partition(
+                            context=context,
+                            partition=asset_partition_keys[0],  # 0 would work,
+                            path=self._get_paths_for_partitions(context)[
+                                asset_partition_keys[0]
+                            ],  # 0 would work,
+                        ),
+                        partition_key=None,
+                    )
+                else:
+                    check.failed(
+                        "Loading an input that corresponds to multiple partitions, but the"
+                        f" type annotation on the op input is not a dict, Dict, Mapping, one of {SINGLE_LOADING_TYPES},"
+                        " or Any: is '{type_annotation}'."
+                    )
 
     def dump_df_to_path(
         self,

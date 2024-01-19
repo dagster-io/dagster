@@ -6,6 +6,7 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     Config,
     DagsterInstance,
@@ -246,6 +247,50 @@ def test_polars_delta_native_partitioning(
             downstream_load_multiple_partitions,
         ],
     )
+
+    @asset(io_manager_def=manager)
+    def downstream_load_multiple_partitions_as_single_df(
+        upstream_partitioned: pl.DataFrame,
+    ) -> None:
+        assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
+
+    materialize(
+        [
+            upstream_partitioned.to_source_asset(),
+            downstream_load_multiple_partitions_as_single_df,
+        ],
+    )
+
+
+def test_polars_delta_native_partitioning_loading_single_partition(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
+    manager = polars_delta_io_manager
+    df = df_for_delta
+
+    partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+    @asset(
+        io_manager_def=manager,
+        partitions_def=partitions_def,
+        metadata={"partition_by": "partition"},
+    )
+    def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
+        return df.with_columns(pl.lit(context.partition_key).alias("partition"))
+
+    @asset(io_manager_def=manager, partitions_def=partitions_def)
+    def downstream_partitioned(
+        context: AssetExecutionContext, upstream_partitioned: pl.DataFrame
+    ) -> None:
+        partitions = upstream_partitioned["partition"].unique().to_list()
+        assert len(partitions) == 1
+        assert partitions[0] == context.partition_key
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream_partitioned, downstream_partitioned],
+            partition_key=partition_key,
+        )
 
 
 def test_polars_delta_time_travel(

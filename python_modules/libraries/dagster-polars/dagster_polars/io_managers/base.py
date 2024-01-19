@@ -26,6 +26,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
+from dagster._core.storage.upath_io_manager import is_dict_type
 from pydantic.fields import Field, PrivateAttr
 
 from dagster_polars.io_managers.utils import get_polars_metadata
@@ -185,6 +186,42 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         ...
 
+    # tmp fix until https://github.com/dagster-io/dagster/pull/19294 is merged
+    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
+            path = self._get_path(context)
+            return self._load_single_input(path, context)
+        else:
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) == 0:
+                return None
+            elif len(asset_partition_keys) == 1:
+                paths = self._get_paths_for_partitions(context)
+                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
+                path = next(iter(paths.values()))
+                backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                backcompat_path = (
+                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                )
+
+                return self._load_partition_from_path(
+                    context=context,
+                    partition_key=asset_partition_keys[0],
+                    path=path,
+                    backcompat_path=backcompat_path,
+                )
+            else:  # we are dealing with multiple partitions of an asset
+                type_annotation = context.dagster_type.typing_type
+                if type_annotation != Any and not is_dict_type(type_annotation):
+                    check.failed(
+                        "Loading an input that corresponds to multiple partitions, but the"
+                        " type annotation on the op input is not a dict, Dict, Mapping, or"
+                        f" Any: is '{type_annotation}'."
+                    )
+
+                return self._load_multiple_inputs(context)
+
     def dump_to_path(
         self,
         context: OutputContext,
@@ -252,6 +289,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             # otherwise we would have been dealing with a multi-partition key
             # which is not straightforward to filter by
             if partition_by is not None and isinstance(partition_by, str):
+                context.log.debug(f"Filtering by {partition_by}=={partition_key}")
                 ldf = ldf.filter(pl.col(partition_by) == partition_key)
 
         if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
