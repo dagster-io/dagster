@@ -108,9 +108,11 @@ export const AutomaterializeLeftList = (props: ListProps) => {
             </Body2>
           </Box>
         </Box>
-        <Box flex={{direction: 'column'}}>
+        <Box flex={{direction: 'column', gap: 8}}>
           {evaluations.length === 0 ? (
-            <Caption color={colorTextLight()}>No evaluations</Caption>
+            <Box padding={{left: 12, top: 12, right: 8}}>
+              <Caption color={colorTextLight()}>No evaluations</Caption>
+            </Box>
           ) : null}
           {evaluations.map((evaluation) => {
             const isSelected = selectedEvaluation?.id === evaluation.id;

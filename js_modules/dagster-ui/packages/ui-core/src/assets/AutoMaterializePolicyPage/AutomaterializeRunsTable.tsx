@@ -1,17 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Body2, Box, Mono, Table, colorTextLighter} from '@dagster-io/ui-components';
-import React from 'react';
+import {Body2, Box, Colors, Mono, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {RunStatusTagWithStats} from '../../runs/RunStatusTag';
-import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime, titleForRun} from '../../runs/RunUtils';
 
 import {
   AutomaterializeRunsQuery,
   AutomaterializeRunsQueryVariables,
 } from './types/AutomaterializeRunsTable.types';
+import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {RunStatusTagWithStats} from '../../runs/RunStatusTag';
+import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime, titleForRun} from '../../runs/RunUtils';
 
 export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
   const {data, loading, error} = useQuery<
@@ -28,7 +26,7 @@ export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
 
   if (!runIds.length) {
     return (
-      <Body2 color={colorTextLighter()} style={{paddingBottom: 32}}>
+      <Body2 color={Colors.textLighter()} style={{paddingBottom: 32}}>
         None
       </Body2>
     );

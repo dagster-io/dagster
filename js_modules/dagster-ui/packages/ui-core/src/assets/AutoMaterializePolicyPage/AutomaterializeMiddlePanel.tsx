@@ -172,20 +172,22 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
             title="No evaluations"
             description={
               <Body2>
-                <Box flex={{direction: 'column', gap: 6}}>
+                <Box flex={{direction: 'column', gap: 8}}>
                   <Body2>
                     This asset’s automation policy has not been evaluated yet. Make sure your
                     automation sensor is running.
                   </Body2>
-                  <AnchorButton
-                    to={
-                      repoAddress && sensorName
-                        ? workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)
-                        : '/overview/automation'
-                    }
-                  >
-                    Manage sensor
-                  </AnchorButton>
+                  <div>
+                    <AnchorButton
+                      to={
+                        repoAddress && sensorName
+                          ? workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)
+                          : '/overview/automation'
+                      }
+                    >
+                      Manage sensor
+                    </AnchorButton>
+                  </div>
                   <a href="https://docs.dagster.io/concepts/assets/asset-auto-execution">
                     Learn more about automation policies
                   </a>
