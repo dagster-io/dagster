@@ -740,7 +740,11 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                     evaluations_by_asset_key = {
-                        evaluation_record.asset_key: evaluation_record.evaluation_with_run_ids
+                        evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids(
+                            partitions_def=asset_graph.get_partitions_def(
+                                evaluation_record.asset_key
+                            )
+                        )
                         for evaluation_record in evaluation_records
                     }
                 else:

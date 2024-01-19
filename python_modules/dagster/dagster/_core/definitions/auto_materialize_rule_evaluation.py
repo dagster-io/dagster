@@ -23,11 +23,13 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
+    _WHITELIST_MAP,
     NamedTupleSerializer,
     PackableValue,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
+    deserialize_value,
     whitelist_for_serdes,
 )
 
@@ -141,6 +143,49 @@ class AutoMaterializeRuleEvaluation(NamedTuple):
 # BACKCOMPAT GRAVEYARD
 
 
+def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+    serialized_evaluation: str, partitions_def: Optional[PartitionsDefinition]
+) -> "AssetConditionEvaluationWithRunIds":
+    """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
+    objects into the new AssetConditionEvaluationWithRunIds objects.
+    """
+    from .asset_condition import AssetConditionEvaluationWithRunIds
+
+    class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
+        @property
+        def partitions_def(self) -> Optional[PartitionsDefinition]:
+            return partitions_def
+
+    # create a new WhitelistMap that can deserialize SerializedPartitionSubset objects stored
+    # on the old cursor format
+    whitelist_map = WhitelistMap(
+        object_serializers=_WHITELIST_MAP.object_serializers,
+        object_deserializers={
+            **_WHITELIST_MAP.object_deserializers,
+            "AutoMaterializeAssetEvaluation": BackcompatDeserializer(
+                klass=AssetConditionEvaluationWithRunIds
+            ),
+        },
+        enum_serializers=_WHITELIST_MAP.enum_serializers,
+    )
+
+    return deserialize_value(
+        serialized_evaluation, AssetConditionEvaluationWithRunIds, whitelist_map=whitelist_map
+    )
+
+
+def deserialize_serialized_partitions_subset_to_asset_subset(
+    serialized: SerializedPartitionsSubset,
+    asset_key: AssetKey,
+    partitions_def: Optional[PartitionsDefinition],
+) -> AssetSubset:
+    if partitions_def is None or not serialized.can_deserialize(partitions_def):
+        # partitions def has changed since storage time
+        return AssetSubset.empty(asset_key, partitions_def)
+
+    return AssetSubset(asset_key, value=serialized.deserialize(partitions_def))
+
+
 class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
     AssetConditionEvaluationWithRunIds objects.
@@ -148,11 +193,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        """We may override this property in subclasses that are created at a point in time where
-        we know what the current partitions definition is. If we don't know, then we will be unable
-        to deserialize any SerializedPartitionsSubset objects.
+        """This property gets overridden by subclasses at runtime, once the partitions_def for the
+        specific record we're deserializing is known.
         """
-        return None
+        raise NotImplementedError()
 
     def _get_empty_subset(self, asset_key: AssetKey, is_partitioned: bool) -> AssetSubset:
         # We know this asset is partitioned, but we don't know what its partitions def is, so we
@@ -172,14 +216,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             # Confusingly, we used `None` to indicate "all of an unpartitioned asset" in the old
             # serialization scheme
             return AssetSubset(asset_key, True)
-        elif self.partitions_def is None or not serialized.can_deserialize(self.partitions_def):
-            # If we don't know the partitions def, then we can't deserialize the partitions subset,
-            # so we just use an empty one instead.
-            return self._get_empty_subset(asset_key, is_partitioned)
-        else:
-            # We are in an instance of this class that knows the partitions def, so we can
-            # deserialize the partitions subset
-            return AssetSubset(asset_key, serialized.deserialize(self.partitions_def))
+        return deserialize_serialized_partitions_subset_to_asset_subset(
+            serialized, asset_key, self.partitions_def
+        )
 
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
@@ -207,6 +246,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         from .asset_condition import (
             AssetConditionEvaluation,
             AssetSubsetWithMetadata,
+            HistoricalAllPartitionsSubsetSentinel,
         )
 
         condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
@@ -231,7 +271,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         return AssetConditionEvaluation(
             condition_snapshot=condition_snapshot,
             true_subset=true_subset,
-            candidate_subset=None,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.empty(asset_key, None),
             subsets_with_metadata=subsets_with_metadata,
         )
 
@@ -248,6 +290,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         from .asset_condition import (
             AssetConditionEvaluation,
             AssetConditionSnapshot,
+            HistoricalAllPartitionsSubsetSentinel,
             NotAssetCondition,
             OrAssetCondition,
         )
@@ -291,7 +334,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 true_subset=reduce(
                     operator.or_, (e.true_subset for e in child_evaluations), initial
                 ),
-                candidate_subset=None,
+                candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+                if is_partitioned
+                else AssetSubset.all(asset_key, None),
                 subsets_with_metadata=[],
                 child_evaluations=child_evaluations,
             )
@@ -314,7 +359,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             true_subset=evaluation.true_subset
             if evaluation.true_subset.is_partitioned
             else evaluation.true_subset._replace(value=not evaluation.true_subset.bool_value),
-            candidate_subset=None,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.all(asset_key, None),
             subsets_with_metadata=[],
             child_evaluations=[evaluation],
         )
@@ -329,6 +376,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             AndAssetCondition,
             AssetConditionEvaluation,
             AssetConditionSnapshot,
+            HistoricalAllPartitionsSubsetSentinel,
         )
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
@@ -383,15 +431,12 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         return AssetConditionEvaluation(
             condition_snapshot=condition_snapshot,
             true_subset=reduce(operator.and_, (e.true_subset for e in child_evaluations)),
-            candidate_subset=None,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.all(asset_key, None),
             subsets_with_metadata=[],
             child_evaluations=child_evaluations,
         ).with_run_ids(cast(AbstractSet[str], unpacked_dict.get("run_ids", set())))
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeAssetEvaluationSerializer)
-class AutoMaterializeAssetEvaluation(NamedTuple):
-    ...
 
 
 class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):

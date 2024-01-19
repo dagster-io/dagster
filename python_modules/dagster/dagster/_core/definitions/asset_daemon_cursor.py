@@ -12,16 +12,17 @@ from typing import (
 
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    BackcompatAutoMaterializeAssetEvaluationSerializer,
-)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._serdes.serdes import (
-    _WHITELIST_MAP,
+    FieldSerializer,
+    JsonSerializableValue,
     PackableValue,
+    SerializableNonScalarKeyMapping,
+    UnpackContext,
     WhitelistMap,
-    deserialize_value,
+    pack_value,
+    unpack_value,
     whitelist_for_serdes,
 )
 
@@ -88,7 +89,29 @@ class AssetConditionCursor(NamedTuple):
         return self.previous_evaluation.get_requested_or_discarded_subset(condition)
 
 
-@whitelist_for_serdes
+class ObserveRequestTimestampSerializer(FieldSerializer):
+    def pack(
+        self,
+        mapping: Mapping[str, float],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> JsonSerializableValue:
+        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
+
+    def unpack(
+        self,
+        unpacked_value: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> PackableValue:
+        return unpack_value(unpacked_value, dict, whitelist_map, context)
+
+
+@whitelist_for_serdes(
+    field_serializers={
+        "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
+    }
+)
 class AssetDaemonCursor(NamedTuple):
     """State that's stored between daemon evaluations.
 
@@ -177,7 +200,11 @@ def get_backcompat_asset_condition_cursor(
                 condition_snapshot=RuleCondition(MaterializeOnMissingRule()).snapshot,
                 extras={MaterializeOnMissingRule.HANDLED_SUBSET_KEY: handled_root_subset},
             )
-        ],
+        ]
+        # only include this information if it's non-empty (otherwise we can just rebuild it from
+        # the set of materialized partitions later on)
+        if handled_root_subset and handled_root_subset.size > 0
+        else [],
     )
 
 
@@ -187,7 +214,9 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition import AssetConditionEvaluationWithRunIds
+    from .auto_materialize_rule_evaluation import (
+        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+    )
 
     data = json.loads(cursor_str)
 
@@ -230,39 +259,27 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     latest_evaluation_by_asset_key = {}
     for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
         key = AssetKey.from_user_string(key_str)
+        partitions_def = asset_graph.get_partitions_def(key) if asset_graph else None
 
-        class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
-            @property
-            def partitions_def(self) -> Optional[PartitionsDefinition]:
-                return asset_graph.get_partitions_def(key) if asset_graph else None
-
-        # create a new WhitelistMap that can deserialize SerializedPartitionSubset objects stored
-        # on the old cursor format
-        whitelist_map = WhitelistMap(
-            object_serializers=_WHITELIST_MAP.object_serializers,
-            object_deserializers={
-                **_WHITELIST_MAP.object_deserializers,
-                "AutoMaterializeAssetEvaluation": BackcompatDeserializer(
-                    klass=AssetConditionEvaluationWithRunIds
-                ),
-            },
-            enum_serializers=_WHITELIST_MAP.enum_serializers,
-        )
-
-        # these string cursors will contain AutoMaterializeAssetEvaluation objects, which get
-        # deserialized into AssetConditionEvaluationWithRunIds, not AssetConditionEvaluation
-        evaluation = deserialize_value(
-            serialized_evaluation, AssetConditionEvaluationWithRunIds, whitelist_map=whitelist_map
+        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            serialized_evaluation, partitions_def
         ).evaluation
+
         latest_evaluation_by_asset_key[key] = evaluation
 
     asset_cursors = []
-    for asset_key, latest_evaluation in latest_evaluation_by_asset_key.items():
+    cursor_keys = (
+        asset_graph.auto_materialize_policies_by_key.keys()
+        if asset_graph
+        else latest_evaluation_by_asset_key.keys()
+    )
+    for asset_key in cursor_keys:
+        latest_evaluation = latest_evaluation_by_asset_key.get(asset_key)
         asset_cursors.append(
             get_backcompat_asset_condition_cursor(
                 asset_key,
                 data.get("latest_storage_id"),
-                data.get("latest_timestamp"),
+                data.get("latest_evaluation_timestamp"),
                 latest_evaluation,
                 handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
                 if asset_graph
