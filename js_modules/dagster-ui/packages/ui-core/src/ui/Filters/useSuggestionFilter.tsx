@@ -1,10 +1,9 @@
 import {Box, IconName} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {useMemo, useRef, useState} from 'react';
 
 import {FilterObject} from './useFilter';
 import {SetFilterActiveState} from './useStaticSetFilter';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 export type SuggestionFilterSuggestion<TValue> = {final?: boolean; value: TValue};
 
@@ -56,15 +55,15 @@ export function useSuggestionFilter<TValue>({
   matchType = 'any-of',
   getTooltipText,
 }: Args<TValue>): SuggestionFilter<TValue> {
-  const [nextSuggestionsLoading, setNextSuggestionsLoading] = React.useState(false);
-  const [nextSuggestions, setNextSuggestions] = React.useState<
+  const [nextSuggestionsLoading, setNextSuggestionsLoading] = useState(false);
+  const [nextSuggestions, setNextSuggestions] = useState<
     SuggestionFilterSuggestion<TValue>[] | null
   >(null);
   const nextSuggestionsRef = useUpdatingRef(nextSuggestions);
   const nextSuggestionsLoadingRef = useUpdatingRef(nextSuggestionsLoading);
-  const [suggestionPath, setSuggestionPath] = React.useState<TValue[]>([]);
+  const [suggestionPath, setSuggestionPath] = useState<TValue[]>([]);
 
-  const filterObj: SuggestionFilter<TValue> = React.useMemo(
+  const filterObj: SuggestionFilter<TValue> = useMemo(
     () => ({
       name,
       icon,
@@ -214,7 +213,7 @@ function SuggestionFilterLabel(props: SuggestionFilterLabelProps) {
   const {value, filter, renderLabel} = props;
   const isActive = filter.state.includes(value);
 
-  const labelRef = React.useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   return (
     // 2px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual

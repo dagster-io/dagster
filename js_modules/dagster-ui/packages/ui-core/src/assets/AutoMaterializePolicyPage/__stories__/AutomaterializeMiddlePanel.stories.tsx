@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import * as React from 'react';
 
 import {RunStatus} from '../../../graphql/types';
 import {

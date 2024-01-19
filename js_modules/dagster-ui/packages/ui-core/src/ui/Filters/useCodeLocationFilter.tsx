@@ -1,23 +1,22 @@
-import * as React from 'react';
+import {useContext, useMemo} from 'react';
 
+import {useStaticSetFilter} from './useStaticSetFilter';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {WorkspaceContext} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
-
 export const useCodeLocationFilter = () => {
-  const {allRepos, visibleRepos, setVisible, setHidden} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, setVisible, setHidden} = useContext(WorkspaceContext);
 
-  const allRepoAddresses = React.useMemo(() => {
+  const allRepoAddresses = useMemo(() => {
     return allRepos.map((repo) =>
       buildRepoAddress(repo.repository.name, repo.repositoryLocation.name),
     );
   }, [allRepos]);
 
-  const visibleRepoAddresses = React.useMemo(() => {
+  const visibleRepoAddresses = useMemo(() => {
     return visibleRepos.length === allRepos.length
       ? []
       : visibleRepos.map((repo) =>

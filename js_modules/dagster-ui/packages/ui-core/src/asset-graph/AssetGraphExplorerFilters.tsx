@@ -1,6 +1,7 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import {useContext, useMemo} from 'react';
 
+import {GraphNode} from './Utils';
 import {AssetGroupSelector} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
@@ -8,8 +9,6 @@ import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/u
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-
-import {GraphNode} from './Utils';
 
 const emptySet = new Set<any>();
 
@@ -47,9 +46,9 @@ export function useAssetGraphExplorerFilters({
   explorerPath,
   clearExplorerPath,
 }: Props) {
-  const {allRepos, visibleRepos, toggleVisible, setVisible} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, toggleVisible, setVisible} = useContext(WorkspaceContext);
 
-  const visibleReposSet = React.useMemo(() => new Set(visibleRepos), [visibleRepos]);
+  const visibleReposSet = useMemo(() => new Set(visibleRepos), [visibleRepos]);
 
   const reposFilter = useStaticSetFilter<DagsterRepoOption>({
     name: 'Code location',
@@ -128,7 +127,7 @@ export function useAssetGraphExplorerFilters({
       ' - ' +
       buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
 
-    initialState: React.useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
+    initialState: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
     onStateChanged: (values) => {
       if (setGroupFilters) {
         setGroupFilters(Array.from(values));
@@ -136,7 +135,7 @@ export function useAssetGraphExplorerFilters({
     },
   });
 
-  const allKindTags = React.useMemo(
+  const allKindTags = useMemo(
     () =>
       Array.from(
         new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
@@ -147,7 +146,7 @@ export function useAssetGraphExplorerFilters({
   const kindTagsFilter = useStaticSetFilter<string>({
     name: 'Compute kind',
     icon: 'tag',
-    allValues: React.useMemo(
+    allValues: useMemo(
       () =>
         allKindTags.map((value) => ({
           value,

@@ -1,6 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box, ButtonGroup, Checkbox, JoinedButtons} from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo, useState} from 'react';
 
 import {AutoMaterializePolicyType} from '../../../graphql/types';
 import {AssetAutomaterializePolicyPage} from '../AssetAutomaterializePolicyPage';
@@ -39,10 +39,10 @@ export const Errors = () => {
 };
 
 export const Controlled = () => {
-  const [policyType, setPolicyType] = React.useState<any>(AutoMaterializePolicyType.EAGER);
-  const [freshnessPolicy, setFreshnessPolicy] = React.useState(true);
+  const [policyType, setPolicyType] = useState<any>(AutoMaterializePolicyType.EAGER);
+  const [freshnessPolicy, setFreshnessPolicy] = useState(true);
 
-  const policyMock = React.useMemo(() => {
+  const policyMock = useMemo(() => {
     if (policyType === 'None') {
       return freshnessPolicy
         ? Policies.NoAutomaterializeYesFreshnessPolicy(path)

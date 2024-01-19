@@ -1,5 +1,7 @@
 import {ColorName} from './ColorName';
-import {CoreColors, DataVizColors, TranslucentColors} from './Colors';
+import {CoreColors} from './CoreColors';
+import {DataVizColors} from './DataVizColors';
+import {TranslucentColors} from './TranslucentColors';
 
 export const DarkPalette = {
   [ColorName.BrowserColorScheme]: 'dark',

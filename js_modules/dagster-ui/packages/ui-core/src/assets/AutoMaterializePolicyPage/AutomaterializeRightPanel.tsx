@@ -1,27 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Box,
-  Subheading,
   Body,
+  Box,
   ExternalAnchorButton,
   Icon,
+  Mono,
   NonIdealState,
   Spinner,
-  Mono,
+  Subheading,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, Redirect} from 'react-router-dom';
-
-import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {AutomaterializePolicyTag} from '../AutomaterializePolicyTag';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
-import {AssetKey} from '../types';
 
 import {
   GetPolicyInfoQuery,
   GetPolicyInfoQueryVariables,
 } from './types/AutomaterializeRightPanel.types';
+import {ErrorWrapper} from '../../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {AutomaterializePolicyTag} from '../AutomaterializePolicyTag';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {AssetKey} from '../types';
 
 interface Props {
   assetKey: AssetKey;

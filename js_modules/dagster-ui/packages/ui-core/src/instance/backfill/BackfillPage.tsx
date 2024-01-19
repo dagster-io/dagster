@@ -2,6 +2,7 @@ import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   Box,
   ButtonLink,
+  Colors,
   Heading,
   NonIdealState,
   Page,
@@ -9,19 +10,23 @@ import {
   Spinner,
   Table,
   Tag,
-  colorAccentBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorBackgroundLight,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import {useEffect, useReducer} from 'react';
 import {Link, useHistory, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
+import {
+  BackfillPartitionsForAssetKeyQuery,
+  BackfillPartitionsForAssetKeyQueryVariables,
+  BackfillStatusesByAssetQuery,
+  BackfillStatusesByAssetQueryVariables,
+} from './types/BackfillPage.types';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -35,16 +40,6 @@ import {AssetKey, BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
-
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
-import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
-import {
-  BackfillPartitionsForAssetKeyQuery,
-  BackfillPartitionsForAssetKeyQueryVariables,
-  BackfillStatusesByAssetQuery,
-  BackfillStatusesByAssetQueryVariables,
-} from './types/BackfillPage.types';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -309,7 +304,7 @@ export const BackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/overview/backfills" style={{color: colorTextLight()}}>
+            <Link to="/overview/backfills" style={{color: Colors.textLight()}}>
               Backfills
             </Link>
             {' / '}
@@ -356,7 +351,7 @@ function StatusBar({
     <div
       style={{
         borderRadius: '8px',
-        backgroundColor: colorBackgroundLight(),
+        backgroundColor: Colors.backgroundLight(),
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
           (100 * inProgress) / targeted
@@ -367,22 +362,22 @@ function StatusBar({
         overflow: 'hidden',
       }}
     >
-      <div style={{background: colorAccentGreen()}} />
-      <div style={{background: colorAccentRed()}} />
-      <div style={{background: colorAccentBlue()}} />
+      <div style={{background: Colors.accentGreen()}} />
+      <div style={{background: Colors.accentRed()}} />
+      <div style={{background: Colors.accentBlue()}} />
     </div>
   );
 }
 
 const Label = styled.div`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 12px;
   line-height: 16px;
 `;
 
 const Duration = ({start, end}: {start: number; end?: number | null}) => {
-  const [_, rerender] = React.useReducer((s: number, _: any) => s + 1, 0);
-  React.useEffect(() => {
+  const [_, rerender] = useReducer((s: number, _: any) => s + 1, 0);
+  useEffect(() => {
     if (end) {
       return;
     }

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useState} from 'react';
 
 import {AutomaterializeLeftList} from '../AutomaterializeLeftPanel';
 import {
@@ -14,7 +14,7 @@ export default {
 };
 
 export const WithPartitions = () => {
-  const [selectedEvaluation, setSelectedEvaluation] = React.useState<
+  const [selectedEvaluation, setSelectedEvaluation] = useState<
     AutoMaterializeEvaluationRecordItemFragment | undefined
   >();
 
@@ -35,7 +35,7 @@ export const WithPartitions = () => {
 };
 
 export const NoPartitions = () => {
-  const [selectedEvaluation, setSelectedEvaluation] = React.useState<
+  const [selectedEvaluation, setSelectedEvaluation] = useState<
     AutoMaterializeEvaluationRecordItemFragment | undefined
   >();
 

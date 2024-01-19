@@ -1,8 +1,8 @@
-import {MockedResponse, MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import * as React from 'react';
 
 import {
   buildPipeline,
@@ -16,12 +16,12 @@ import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
 import {
-  RunsFilterInputProps,
   RUN_TAG_KEYS_QUERY,
+  RunFilterToken,
+  RunsFilterInputProps,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
-  RunFilterToken,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
 import {

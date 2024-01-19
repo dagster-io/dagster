@@ -1,16 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Caption, colorTextLight} from '@dagster-io/ui-components';
+import {Caption, Colors} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-
-import {StepEventStatus} from '../graphql/types';
-import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
 import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
+import {StepEventStatus} from '../graphql/types';
+import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
 interface Props {
   runId: string;
@@ -28,7 +27,7 @@ export const StepSummaryForRun = (props: Props) => {
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;
 
-  const relevantSteps = React.useMemo(() => {
+  const relevantSteps = useMemo(() => {
     if (run?.__typename !== 'Run') {
       return [];
     }
@@ -58,13 +57,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={colorTextLight()}>
+        <Caption color={Colors.textLight()}>
           Failed at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
-      <Caption color={colorTextLight()}>
+      <Caption color={Colors.textLight()}>
         Failed at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );
@@ -77,13 +76,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={colorTextLight()}>
+        <Caption color={Colors.textLight()}>
           In progress at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
-      <Caption color={colorTextLight()}>
+      <Caption color={Colors.textLight()}>
         In progress at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );

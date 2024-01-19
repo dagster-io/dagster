@@ -1,23 +1,17 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
-
-import {
-  colorBackgroundDefault,
-  colorBorderDefault,
-  colorTextDefault,
-  colorTextDisabled,
-} from '../theme/color';
 
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
+import {Colors} from './Color';
 import {Icon} from './Icon';
-import {MenuItem, Menu} from './Menu';
+import {Menu, MenuItem} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
-import {Container as VirtualContainer, Inner, Row} from './VirtualizedTable';
+import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
 import {useViewport} from './useViewport';
 
 export type TagSelectorTagProps = {
@@ -234,7 +228,7 @@ const Container = styled.div`
 `;
 
 const Placeholder = styled.div`
-  color: ${colorTextDisabled()};
+  color: ${Colors.textDisabled()};
 `;
 
 const TagsContainer = styled(Box)`
@@ -257,7 +251,7 @@ export const TagSelectorWithSearch = (
     allTags,
     selectedTags,
     setSelectedTags,
-    rowHeight,
+    rowHeight: _rowHeight,
     renderDropdown,
     searchPlaceholder,
     ...rest
@@ -304,7 +298,7 @@ export const TagSelectorWithSearch = (
 };
 
 const DefaultTagTooltipStyle = JSON.stringify({
-  background: colorBackgroundDefault(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
+  background: Colors.backgroundDefault(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
 });

@@ -35,7 +35,9 @@ def ints_dynamic_partitions_job_sensor():
             RunRequest(partition_key=new_partition_key),
         ],
         dynamic_partitions_requests=[
-            ints_dynamic_partitions_def.build_add_request([new_partition_key])
+            ints_dynamic_partitions_def.build_add_request([new_partition_key]),
+            ints_dynamic_partitions_def.build_add_request([new_partition_key * 2]),
+            ints_dynamic_partitions_def.build_add_request([new_partition_key * 3]),
         ],
     )
 

@@ -1,14 +1,5 @@
-import {
-  BaseTag,
-  Icon,
-  IconName,
-  colorBackgroundBlue,
-  colorLinkDefault,
-  colorTextBlue,
-  colorTooltipBackground,
-  colorTooltipText,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
@@ -42,21 +33,21 @@ export const FilterTag = ({
 }) => (
   <div>
     <BaseTag
-      icon={iconName ? <Icon name={iconName} color={colorLinkDefault()} /> : undefined}
+      icon={iconName ? <Icon name={iconName} color={Colors.linkDefault()} /> : undefined}
       rightIcon={
         <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-          <Icon name="close" color={colorLinkDefault()} />
+          <Icon name="close" color={Colors.linkDefault()} />
         </div>
       }
       label={label}
-      fillColor={colorBackgroundBlue()}
-      textColor={colorLinkDefault()}
+      fillColor={Colors.backgroundBlue()}
+      textColor={Colors.linkDefault()}
     />
   </div>
 );
 
 const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)`
-  color: ${colorTextBlue()};
+  color: ${Colors.textBlue()};
   font-weight: 600;
   font-size: 12px;
   max-width: 100px;
@@ -91,8 +82,8 @@ export const FilterTagHighlightedText = React.forwardRef(
 );
 
 const LabelTooltipStyles = JSON.stringify({
-  background: colorTooltipBackground(),
-  color: colorTooltipText(),
+  background: Colors.tooltipBackground(),
+  color: Colors.tooltipText(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',

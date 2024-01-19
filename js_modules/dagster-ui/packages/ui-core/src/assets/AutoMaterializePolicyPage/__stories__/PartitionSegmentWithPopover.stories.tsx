@@ -1,6 +1,6 @@
 import {Box} from '@dagster-io/ui-components';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {PartitionSegmentWithPopover} from '../PartitionSegmentWithPopover';
 import {AssetConditionEvaluationStatus, AssetSubset} from '../types';
@@ -14,7 +14,7 @@ export default {
 const PARTITION_COUNT = 300;
 
 export const TruePartitions = () => {
-  const subset: AssetSubset = React.useMemo(() => {
+  const subset: AssetSubset = useMemo(() => {
     const partitionKeys = new Array(PARTITION_COUNT)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
@@ -42,7 +42,7 @@ export const TruePartitions = () => {
 };
 
 export const FalsePartitions = () => {
-  const subset: AssetSubset = React.useMemo(() => {
+  const subset: AssetSubset = useMemo(() => {
     const partitionKeys = new Array(PARTITION_COUNT)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
@@ -70,7 +70,7 @@ export const FalsePartitions = () => {
 };
 
 export const SkippedPartitions = () => {
-  const subset: AssetSubset = React.useMemo(() => {
+  const subset: AssetSubset = useMemo(() => {
     const partitionKeys = new Array(PARTITION_COUNT)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
@@ -98,7 +98,7 @@ export const SkippedPartitions = () => {
 };
 
 export const FewPartitions = () => {
-  const subset: AssetSubset = React.useMemo(() => {
+  const subset: AssetSubset = useMemo(() => {
     const partitionKeys = new Array(2)
       .fill(null)
       .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));

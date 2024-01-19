@@ -4,15 +4,15 @@ import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetLiveDataProvider';
 import {AssetGraphLiveQuery} from '../../asset-data/types/AssetLiveDataProvider.types';
 import {MockStaleReasonData} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
-  StaleStatus,
   RunStatus,
-  buildAssetNode,
-  buildRepositoryLocation,
-  buildRepository,
-  buildAssetKey,
-  buildPartitionDefinition,
-  buildFreshnessPolicy,
+  StaleStatus,
   buildAssetChecks,
+  buildAssetKey,
+  buildAssetNode,
+  buildFreshnessPolicy,
+  buildPartitionDefinition,
+  buildRepository,
+  buildRepositoryLocation,
 } from '../../graphql/types';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleNonSdaAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';

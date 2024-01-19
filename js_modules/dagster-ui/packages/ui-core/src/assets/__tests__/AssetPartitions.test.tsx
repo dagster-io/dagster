@@ -1,7 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import {useState} from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
 import {AssetKeyInput} from '../../graphql/types';
@@ -9,9 +9,9 @@ import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
 import {
+  MultiDimensionTimeFirstPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-  MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
 import {AssetViewParams} from '../types';
 
@@ -42,7 +42,7 @@ const SingleDimensionAssetPartitions = ({
   assetKey: AssetKeyInput;
   mocks?: MockedResponse[];
 }) => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
   return (
     <MemoryRouter>
       <MockedProvider
@@ -146,7 +146,7 @@ describe('AssetPartitions', () => {
 
   it('should support reverse sorting individual dimensions', async () => {
     const Component = () => {
-      const [params, setParams] = React.useState<AssetViewParams>({});
+      const [params, setParams] = useState<AssetViewParams>({});
       return (
         <MemoryRouter>
           <MockedProvider mocks={[MultiDimensionTimeFirstPartitionHealthQuery]}>

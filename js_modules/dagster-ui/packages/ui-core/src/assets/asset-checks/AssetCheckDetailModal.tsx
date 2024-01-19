@@ -3,6 +3,7 @@ import {
   Body2,
   Box,
   Button,
+  Colors,
   CursorHistoryControls,
   Dialog,
   DialogBody,
@@ -11,11 +12,15 @@ import {
   NonIdealState,
   Spinner,
   Table,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetCheckStatusTag} from './AssetCheckStatusTag';
+import {
+  AssetCheckDetailsQuery,
+  AssetCheckDetailsQueryVariables,
+} from './types/AssetCheckDetailModal.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {AssetKeyInput} from '../../graphql/types';
@@ -25,12 +30,6 @@ import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {
-  AssetCheckDetailsQuery,
-  AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
 
 export const AssetCheckDetailModal = ({
   assetKey,
@@ -178,7 +177,7 @@ const AssetCheckDetailModalImpl = ({
 };
 
 export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
-  const [showMetadata, setShowMetadata] = React.useState(false);
+  const [showMetadata, setShowMetadata] = useState(false);
 
   if (!metadataEntries || !metadataEntries.length) {
     return <span>{' - '}</span>;
@@ -260,7 +259,7 @@ export function MigrationRequired() {
         title="Migration required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
@@ -279,7 +278,7 @@ export function AgentUpgradeRequired() {
         title="Agent upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
               checks.
             </Body2>
@@ -298,7 +297,7 @@ export function NeedsUserCodeUpgrade() {
         title="Upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
               library in this code location to use them.
             </Body2>
@@ -317,7 +316,7 @@ export function NoChecks() {
         title="No checks found for this asset"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
             </Body2>
@@ -328,7 +327,7 @@ export function NoChecks() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={colorLinkDefault()} />
+              <Icon name="open_in_new" color={Color.linkDefault()} />
             </Box> */}
           </Box>
         }
@@ -345,7 +344,7 @@ function NoExecutions() {
         title="No executions found for this check"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
+            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               No executions found. Materialize this asset and the check will run automatically.
             </Body2>
             {/* <Box
@@ -355,7 +354,7 @@ function NoExecutions() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={colorLinkDefault()} />
+              <Icon name="open_in_new" color={Color.linkDefault()} />
             </Box> */}
           </Box>
         }

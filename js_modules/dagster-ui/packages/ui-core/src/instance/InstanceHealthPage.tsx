@@ -1,22 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, PageHeader, Heading, Subheading, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();
   useDocumentTitle('Daemons');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const {pageTitle} = useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthQuery, InstanceHealthQueryVariables>(
     INSTANCE_HEALTH_QUERY,
     {
@@ -29,7 +28,7 @@ export const InstanceHealthPage = () => {
   const daemonContent = () => {
     if (loading && !data?.instance) {
       return (
-        <Box padding={{horizontal: 24}} style={{color: colorTextLight()}}>
+        <Box padding={{horizontal: 24}} style={{color: Colors.textLight()}}>
           Loading…
         </Box>
       );

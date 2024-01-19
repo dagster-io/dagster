@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
@@ -25,7 +25,7 @@ type FlagMap = {
 };
 
 export const useFeatureFlags = () => {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
     const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {

@@ -1,28 +1,16 @@
-import {
-  Box,
-  FontFamily,
-  Icon,
-  Menu,
-  MenuItem,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorLineageGroupNodeBorder,
-  colorTextLight,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, Colors, FontFamily, Icon, Menu, MenuItem} from '@dagster-io/ui-components';
+import * as React from 'react';
 import styled from 'styled-components';
-
-import {withMiddleTruncation} from '../app/Util';
-import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
-import {AssetKey} from '../assets/types';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {withMiddleTruncation} from '../app/Util';
+import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
+import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
+import {AssetKey} from '../assets/types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
   const name = `${group.groupName} `;
@@ -55,7 +43,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: 22})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em', color: colorTextLight()}}>
+      <Box style={{lineHeight: '1em', color: Colors.textLight()}}>
         {withMiddleTruncation(location, {maxLength: 31})}
       </Box>
     </Box>
@@ -103,7 +91,7 @@ export const CollapsedGroupNode = ({
           </Box>
           {!minimal && (
             <Box padding={{horizontal: 12, bottom: 4}}>
-              <AssetDescription $color={colorTextLighter()}>
+              <AssetDescription $color={Colors.textLighter()}>
                 {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'}
               </AssetDescription>
             </Box>
@@ -173,20 +161,20 @@ export const useGroupNodeContextMenu = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundLight(),
+  background: Colors.backgroundLight(),
   border: `none`,
   borderRadius: '4px',
 });
 
 const GroupStackLine = styled.div`
   background: transparent;
-  border-top: 2px solid ${colorLineageGroupNodeBorder()};
+  border-top: 2px solid ${Colors.lineageGroupNodeBorder()};
   border-radius: 2px;
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
-  background: ${colorBackgroundLight()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  background: ${Colors.backgroundLight()};
   border-radius: 8px;
   position: relative;
   margin-top: 8px;
@@ -208,7 +196,7 @@ const CollapsedGroupNodeContainer = styled.div`
     gap: 3px;
     ${CollapsedGroupNodeBox} {
       transition: background linear 200ms;
-      background: ${colorBackgroundLightHover()};
+      background: ${Colors.backgroundLightHover()};
     }
   }
 `;

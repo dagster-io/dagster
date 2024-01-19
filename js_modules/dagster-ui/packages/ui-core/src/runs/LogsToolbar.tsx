@@ -1,28 +1,27 @@
 import {
   Box,
+  Button,
   ButtonGroup,
   Checkbox,
-  IconName,
-  Icon,
-  MenuItem,
-  Tooltip,
-  Suggest,
   ExternalAnchorButton,
-  Button,
+  Icon,
+  IconName,
+  MenuItem,
+  Suggest,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {extractLogCaptureStepsFromLegacySteps, IRunMetadataDict} from './RunMetadataProvider';
+import {IRunMetadataDict, extractLogCaptureStepsFromLegacySteps} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 export enum LogType {
   structured = 'structured',

@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import faker from 'faker';
-import * as React from 'react';
 
 import {AutomaterializeRequestedPartitionsLink} from '../AutomaterializeRequestedPartitionsLink';
 import {buildRunStatusAndPartitionKeyQuery} from '../__fixtures__/AutomaterializeRequestedPartitionsLink.fixtures';

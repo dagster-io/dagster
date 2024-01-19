@@ -1,45 +1,32 @@
-import {gql, useQuery, useMutation} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
-  Subheading,
-  MetadataTableWIP,
-  StyledRawCodeMirror,
-  PageHeader,
-  Heading,
   Box,
+  Button,
+  ButtonLink,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   Menu,
   MenuItem,
+  MetadataTableWIP,
   Mono,
+  NonIdealState,
+  Page,
+  PageHeader,
   Popover,
   Spinner,
-  ButtonLink,
+  StyledRawCodeMirror,
+  Subheading,
   Table,
   Tag,
   TextInput,
-  Button,
-  NonIdealState,
-  Page,
   Tooltip,
-  colorAccentGray,
-  colorTextLight,
-  colorBackgroundYellow,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {showSharedToaster} from '../app/DomUtils';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {COMMON_COLLATOR} from '../app/Util';
-import {useTrackPageView} from '../app/analytics';
-import {RunStatus} from '../graphql/types';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {RunStatusDot} from '../runs/RunStatusDots';
-import {failedStatuses} from '../runs/RunStatuses';
-import {titleForRun} from '../runs/RunUtils';
-import {TimeElapsed} from '../runs/TimeElapsed';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
@@ -48,18 +35,28 @@ import {
   ConcurrencyKeyDetailsQueryVariables,
   ConcurrencyLimitFragment,
   ConcurrencyStepFragment,
+  DeleteConcurrencyLimitMutation,
+  DeleteConcurrencyLimitMutationVariables,
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
   InstanceConcurrencyLimitsQuery,
   InstanceConcurrencyLimitsQueryVariables,
+  RunQueueConfigFragment,
   RunsForConcurrencyKeyQuery,
   RunsForConcurrencyKeyQueryVariables,
-  RunQueueConfigFragment,
-  DeleteConcurrencyLimitMutation,
-  DeleteConcurrencyLimitMutationVariables,
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
+import {showSharedToaster} from '../app/DomUtils';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {COMMON_COLLATOR} from '../app/Util';
+import {useTrackPageView} from '../app/analytics';
+import {RunStatus} from '../graphql/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {RunStatusDot} from '../runs/RunStatusDots';
+import {failedStatuses} from '../runs/RunStatuses';
+import {titleForRun} from '../runs/RunUtils';
+import {TimeElapsed} from '../runs/TimeElapsed';
 
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
@@ -844,7 +841,7 @@ const PendingStepsTable = ({
               placement="top"
               content="Priority can be set on each op/asset using the 'dagster/priority' tag. Higher priority steps will be assigned slots first."
             >
-              <Icon name="info" color={colorAccentGray()} />
+              <Icon name="info" color={Colors.accentGray()} />
             </Tooltip>
           </Box>
         </th>
@@ -862,7 +859,7 @@ const PendingStepsTable = ({
             <td colSpan={6}>
               <Box
                 flex={{alignItems: 'center', justifyContent: 'center'}}
-                style={{color: colorTextLight()}}
+                style={{color: Colors.textLight()}}
                 padding={16}
               >
                 There are no active or pending steps for this concurrency key.
@@ -877,7 +874,7 @@ const PendingStepsTable = ({
   return (
     <Table>
       {tableHeader}
-      <tbody style={{backgroundColor: colorBackgroundYellow()}}>
+      <tbody style={{backgroundColor: Colors.backgroundYellow()}}>
         {assignedSteps.map((step) => (
           <PendingStepRow
             key={step.runId + step.stepKey}
@@ -924,7 +921,7 @@ const PendingStepRow = ({
                   placement="top"
                   content="Slots for canceled / failed runs can automatically be freed by configuring a run monitoring setting."
                 >
-                  <Icon name="info" color={colorAccentGray()} />
+                  <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               ) : null}
             </Box>

@@ -1,24 +1,10 @@
-import {
-  Box,
-  Caption,
-  CursorPaginationControls,
-  colorBackgroundBlue,
-  colorBackgroundBlueHover,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorBackgroundLight,
-  colorKeylineDefault,
-  colorTextBlue,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui-components';
 import styled from 'styled-components';
-
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 import {EvaluationCounts} from './EvaluationCounts';
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 interface Props extends ListProps {
   evaluations: AutoMaterializeEvaluationRecordItemFragment[];
@@ -100,9 +86,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
 const PaginationWrapper = styled.div`
   position: sticky;
   bottom: 0;
-  background: ${colorBackgroundLight()};
-  border-right: 1px solid ${colorKeylineDefault()};
-  box-shadow: inset 0 1px ${colorKeylineDefault()};
+  background: ${Colors.backgroundLight()};
+  border-right: 1px solid ${Colors.keylineDefault()};
+  box-shadow: inset 0 1px ${Colors.keylineDefault()};
   margin-top: -1px;
   padding-bottom: 16px;
   padding-top: 16px;
@@ -117,10 +103,10 @@ interface EvaluationListItemProps {
 
 const EvaluationListItem = styled.button<EvaluationListItemProps>`
   background-color: ${({$selected}) =>
-    $selected ? colorBackgroundBlue() : colorBackgroundDefault()};
+    $selected ? Colors.backgroundBlue() : Colors.backgroundDefault()};
   border: none;
   border-radius: 8px;
-  color: ${({$selected}) => ($selected ? colorTextBlue() : colorTextDefault())};
+  color: ${({$selected}) => ($selected ? Colors.textBlue() : Colors.textDefault())};
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
@@ -131,7 +117,7 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
 
   &:hover {
     background-color: ${({$selected}) =>
-      $selected ? colorBackgroundBlueHover() : colorBackgroundDefaultHover()};
+      $selected ? Colors.backgroundBlueHover() : Colors.backgroundDefaultHover()};
   }
 
   &:focus,

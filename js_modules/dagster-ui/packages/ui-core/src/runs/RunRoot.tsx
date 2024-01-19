@@ -1,19 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useLayoutEffect, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
-import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
-import {InstigationSelector} from '../graphql/types';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
-
-import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
+import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
@@ -24,6 +14,15 @@ import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
+import {InstigationSelector} from '../graphql/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 export const RunRoot = () => {
   useTrackPageView();
@@ -44,23 +43,23 @@ export const RunRoot = () => {
     ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
     : null;
 
-  const isJob = React.useMemo(
+  const isJob = useMemo(
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
 
-  const automaterializeTag = React.useMemo(
+  const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
     [run],
   );
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!loading) {
       trace.onRunLoaded();
     }
   }, [loading, trace]);
 
-  const tickDetails = React.useMemo(() => {
+  const tickDetails = useMemo(() => {
     if (repoAddress) {
       const tags = run?.tags || [];
       const tickTag = tags.find((tag) => tag.key === DagsterTag.TickId);

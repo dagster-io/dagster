@@ -1,15 +1,14 @@
 import {Box, Heading, PageHeader, Subheading, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {InstancePageContext} from './InstancePageContext';
+import {InstanceTabs} from './InstanceTabs';
+import {flattenCodeLocationRows} from './flattenCodeLocationRows';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-
-import {InstancePageContext} from './InstancePageContext';
-import {InstanceTabs} from './InstanceTabs';
-import {flattenCodeLocationRows} from './flattenCodeLocationRows';
 
 const SEARCH_THRESHOLD = 10;
 
