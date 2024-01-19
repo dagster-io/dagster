@@ -253,12 +253,15 @@ class ExternalAssetGraph(AssetGraph):
                 "upstream": new_upstream,
                 "downstream": new_downstream,
             }
+            new_partition_mappings_by_key = {
+                k: vs for k, vs in self._partition_mappings_by_key.items() if k != cycle_key
+            }
             # recursively call cycle_safe_subset until there are no more cycles
             return ExternalAssetGraph(
                 asset_dep_graph=new_dep_graph,
                 source_asset_keys=self.source_asset_keys,
                 partitions_defs_by_key=self._partitions_defs_by_key,
-                partition_mappings_by_key=self._partition_mappings_by_key,
+                partition_mappings_by_key=new_partition_mappings_by_key,
                 group_names_by_key=self.group_names_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
                 auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
