@@ -5,7 +5,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Dict, Optional, Sequence, Tuple, Type, cast
+from typing import Dict, Optional, Sequence, Type, cast
 
 import pendulum
 
@@ -24,7 +24,6 @@ from dagster._core.definitions.run_request import (
     InstigatorType,
     RunRequest,
 )
-from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
@@ -33,9 +32,8 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
 )
+from dagster._core.execution.submit_asset_runs import submit_asset_runs_in_chunks
 from dagster._core.host_representation import (
-    ExternalExecutionPlan,
-    ExternalJob,
     ExternalSensor,
 )
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
@@ -48,7 +46,6 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
@@ -57,13 +54,11 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon
 from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
 from dagster._utils import (
     SingleInstigatorDebugCrashFlags,
     check_for_debug_crash,
-    hash_collection,
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -773,42 +768,36 @@ class AssetDaemon(DagsterDaemon):
                 f" {evaluation_id}{print_group_name}"
             )
 
-            pipeline_and_execution_plan_cache: Dict[
-                int, Tuple[ExternalJob, ExternalExecutionPlan]
-            ] = {}
-
             check.invariant(len(run_requests) == len(reserved_run_ids))
-
             updated_evaluation_asset_keys = set()
 
-            # here, we make sure to re-fetch the asset graph to ensure that these runs are submitted
-            # against the latest version of the graph, which may have changed since the tick started
-            workspace = workspace_process_context.create_request_context()
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
-
-            for i in range(len(run_requests)):
-                reserved_run_id = reserved_run_ids[i]
-                run_request = run_requests[i]
-
-                asset_keys = check.not_none(run_request.asset_selection)
-
-                submitted_run = submit_asset_run(
-                    reserved_run_id,
-                    run_request._replace(
+            for run_request_chunk in submit_asset_runs_in_chunks(
+                run_requests=[
+                    rr._replace(
                         tags={
-                            **run_request.tags,
+                            **rr.tags,
                             AUTO_MATERIALIZE_TAG: "true",
                             ASSET_EVALUATION_ID_TAG: str(evaluation_id),
                         }
-                    ),
-                    instance,
-                    workspace,
-                    asset_graph,
-                    pipeline_and_execution_plan_cache,
-                    self._logger,
-                    debug_crash_flags,
-                    i,
-                )
+                    )
+                    for rr in run_requests
+                ],
+                reserved_run_ids=reserved_run_ids,
+                chunk_size=1,
+                instance=instance,
+                workspace_process_context=workspace_process_context,
+                asset_graph=asset_graph,
+                debug_crash_flags=debug_crash_flags,
+                logger=self._logger,
+            ):
+                # heartbeat after each run is submitted
+                if run_request_chunk is None:
+                    yield
+                    continue
+
+                check.invariant(len(run_request_chunk) == 1)
+                run_request, submitted_run = run_request_chunk[0]
+                asset_keys = check.not_none(run_request.asset_selection)
 
                 tick_context.add_run_info(run_id=submitted_run.run_id)
 
@@ -822,13 +811,14 @@ class AssetDaemon(DagsterDaemon):
                         )
                         updated_evaluation_asset_keys.add(asset_key)
 
-            evaluations_to_update = [
-                evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
-            ]
-            if evaluations_to_update:
-                schedule_storage.add_auto_materialize_asset_evaluations(
-                    evaluation_id, evaluations_to_update
-                )
+                evaluations_to_update = [
+                    evaluations_by_asset_key[asset_key]
+                    for asset_key in updated_evaluation_asset_keys
+                ]
+                if evaluations_to_update:
+                    schedule_storage.add_auto_materialize_asset_evaluations(
+                        evaluation_id, evaluations_to_update
+                    )
 
             check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
@@ -842,129 +832,3 @@ class AssetDaemon(DagsterDaemon):
             )
 
         self._logger.info("Finished auto-materialization tick")
-
-
-def submit_asset_run(
-    run_id: str,
-    run_request: RunRequest,
-    instance: DagsterInstance,
-    workspace: IWorkspace,
-    asset_graph: ExternalAssetGraph,
-    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]],
-    logger: logging.Logger,
-    debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    run_request_index: int,
-) -> DagsterRun:
-    check.invariant(
-        not run_request.run_config, "Asset materialization run requests have no custom run config"
-    )
-    asset_keys = check.not_none(run_request.asset_selection)
-
-    check.invariant(len(asset_keys) > 0)
-
-    # check if the run already exists
-
-    run_to_submit = None
-
-    existing_run = instance.get_run_by_id(run_id)
-    if existing_run:
-        if existing_run.status != DagsterRunStatus.NOT_STARTED:
-            logger.warn(
-                f"Run {run_id} already submitted on a previously interrupted tick, skipping"
-            )
-
-            check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
-            check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
-
-            return existing_run
-        else:
-            logger.warn(
-                f"Run {run_id} already created on a previously interrupted tick, submitting"
-            )
-            run_to_submit = existing_run
-
-    if not run_to_submit:
-        repo_handle = asset_graph.get_repository_handle(asset_keys[0])
-
-        # Check that all asset keys are from the same repo
-        for key in asset_keys[1:]:
-            check.invariant(repo_handle == asset_graph.get_repository_handle(key))
-
-        location_name = repo_handle.code_location_origin.location_name
-        repository_name = repo_handle.repository_name
-        code_location = workspace.get_code_location(location_name)
-        job_name = check.not_none(
-            asset_graph.get_implicit_job_name_for_assets(
-                asset_keys, code_location.get_repository(repository_name)
-            )
-        )
-
-        job_selector = JobSubsetSelector(
-            location_name=location_name,
-            repository_name=repository_name,
-            job_name=job_name,
-            op_selection=None,
-            asset_selection=asset_keys,
-        )
-
-        selector_id = hash_collection(job_selector)
-
-        if selector_id not in pipeline_and_execution_plan_cache:
-            external_job = code_location.get_external_job(job_selector)
-
-            external_execution_plan = code_location.get_external_execution_plan(
-                external_job,
-                run_config={},
-                step_keys_to_execute=None,
-                known_state=None,
-                instance=instance,
-            )
-            pipeline_and_execution_plan_cache[selector_id] = (
-                external_job,
-                external_execution_plan,
-            )
-
-        check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
-        check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
-
-        external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
-
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
-        run_to_submit = instance.create_run(
-            job_name=external_job.name,
-            run_id=run_id,
-            run_config=None,
-            resolved_op_selection=None,
-            step_keys_to_execute=None,
-            status=DagsterRunStatus.NOT_STARTED,
-            op_selection=None,
-            root_run_id=None,
-            parent_run_id=None,
-            tags=run_request.tags,
-            job_snapshot=external_job.job_snapshot,
-            execution_plan_snapshot=execution_plan_snapshot,
-            parent_job_snapshot=external_job.parent_job_snapshot,
-            external_job_origin=external_job.get_external_origin(),
-            job_code_origin=external_job.get_python_origin(),
-            asset_selection=frozenset(asset_keys),
-            asset_check_selection=None,
-            asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
-        )
-
-    check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
-    check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
-
-    instance.submit_run(run_to_submit.run_id, workspace)
-
-    check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
-    check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
-
-    asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
-
-    logger.info(
-        f"Submitted run {run_to_submit.run_id} for assets {asset_key_str} with tags"
-        f" {run_request.tags}"
-    )
-
-    return run_to_submit
