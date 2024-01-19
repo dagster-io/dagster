@@ -274,10 +274,10 @@ class AssetDaemonContext:
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
                     if neighbor_key in evaluation_state_by_key:
-                        neighbor_evaluation = evaluation_state_by_key[neighbor_key]
-                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation._replace(
-                            evaluation=neighbor_evaluation.previous_evaluation._replace(
-                                true_subset=neighbor_evaluation.true_subset._replace(
+                        neighbor_evaluation_state = evaluation_state_by_key[neighbor_key]
+                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation_state._replace(
+                            previous_evaluation=neighbor_evaluation_state.previous_evaluation._replace(
+                                true_subset=neighbor_evaluation_state.true_subset._replace(
                                     asset_key=neighbor_key
                                 )
                             )

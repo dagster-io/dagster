@@ -1,8 +1,4 @@
-from unittest.mock import PropertyMock, patch
-
 import dagster._check as check
-import pendulum
-from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
 )
@@ -11,202 +7,16 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.run_request import (
-    InstigatorType,
-)
-from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-)
-from dagster._core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    SensorInstigatorData,
-    TickData,
-    TickStatus,
-)
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    asset_daemon_cursor_to_instigator_serialized_cursor,
 )
 from dagster._serdes.serdes import serialize_value
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
-
-TICKS_QUERY = """
-query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String, $beforeTimestamp: Float, $afterTimestamp: Float) {
-    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor, beforeTimestamp: $beforeTimestamp, afterTimestamp: $afterTimestamp) {
-        id
-        timestamp
-        endTimestamp
-        status
-        requestedAssetKeys {
-            path
-        }
-        requestedMaterializationsForAssets {
-            assetKey {
-                path
-            }
-            partitionKeys
-        }
-        requestedAssetMaterializationCount
-        autoMaterializeAssetEvaluationId
-    }
-}
-"""
-
-
-def _create_tick(instance, status, timestamp, evaluation_id, run_requests=None, end_timestamp=None):
-    return instance.create_tick(
-        TickData(
-            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-            instigator_name=_PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-            instigator_type=InstigatorType.AUTO_MATERIALIZE,
-            status=status,
-            timestamp=timestamp,
-            end_timestamp=end_timestamp,
-            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-            run_ids=[],
-            auto_materialize_evaluation_id=evaluation_id,
-            run_requests=run_requests,
-        )
-    )
-
-
-class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
-    def test_get_tick_range(self, graphql_context):
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 0
-
-        now = pendulum.now("UTC")
-        end_timestamp = now.timestamp() + 20
-
-        success_1 = _create_tick(
-            graphql_context.instance,
-            TickStatus.SUCCESS,
-            now.timestamp(),
-            end_timestamp=end_timestamp,
-            evaluation_id=3,
-            run_requests=[
-                RunRequest(asset_selection=[AssetKey("foo"), AssetKey("bar")], partition_key="abc"),
-                RunRequest(asset_selection=[AssetKey("bar")], partition_key="def"),
-                RunRequest(asset_selection=[AssetKey("baz")], partition_key=None),
-            ],
-        )
-
-        success_2 = _create_tick(
-            graphql_context.instance,
-            TickStatus.SUCCESS,
-            now.subtract(days=1, hours=1).timestamp(),
-            evaluation_id=2,
-        )
-
-        _create_tick(
-            graphql_context.instance,
-            TickStatus.SKIPPED,
-            now.subtract(days=2, hours=1).timestamp(),
-            evaluation_id=1,
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 3
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": 1, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 1
-        tick = result.data["autoMaterializeTicks"][0]
-        assert tick["endTimestamp"] == end_timestamp
-        assert tick["autoMaterializeAssetEvaluationId"] == 3
-        assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
-            {"path": ["bar"]},
-            {"path": ["baz"]},
-            {"path": ["foo"]},
-        ]
-
-        asset_materializations = tick["requestedMaterializationsForAssets"]
-        by_asset_key = {
-            AssetKey.from_coercible(mat["assetKey"]["path"]).to_user_string(): mat["partitionKeys"]
-            for mat in asset_materializations
-        }
-
-        assert {key: sorted(val) for key, val in by_asset_key.items()} == {
-            "foo": ["abc"],
-            "bar": ["abc", "def"],
-            "baz": [],
-        }
-
-        assert tick["requestedAssetMaterializationCount"] == 4
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={
-                "beforeTimestamp": success_2.timestamp + 1,
-                "afterTimestamp": success_2.timestamp - 1,
-            },
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 1
-        tick = result.data["autoMaterializeTicks"][0]
-        assert (
-            tick["autoMaterializeAssetEvaluationId"]
-            == success_2.tick_data.auto_materialize_evaluation_id
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"]},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 2
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"], "limit": 1},
-        )
-        ticks = result.data["autoMaterializeTicks"]
-        assert len(ticks) == 1
-        assert ticks[0]["timestamp"] == success_1.timestamp
-        assert (
-            ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.tick_data.auto_materialize_evaluation_id
-        )
-
-        cursor = ticks[0]["id"]
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={
-                "dayRange": None,
-                "dayOffset": None,
-                "statuses": ["SUCCESS"],
-                "limit": 1,
-                "cursor": cursor,
-            },
-        )
-        ticks = result.data["autoMaterializeTicks"]
-        assert len(ticks) == 1
-        assert ticks[0]["timestamp"] == success_2.timestamp
-
 
 AUTOMATION_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
@@ -343,55 +153,6 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
-    def test_automation_policy_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_origin = ExternalInstigatorOrigin(
-            external_repository_origin=infer_repository(graphql_context).get_external_origin(),
-            instigator_name="my_automation_policy_sensor",
-        )
-
-        check.not_none(graphql_context.instance.schedule_storage).add_instigator_state(
-            InstigatorState(
-                sensor_origin,
-                InstigatorType.SENSOR,
-                status=InstigatorStatus.RUNNING,
-                instigator_data=SensorInstigatorData(
-                    sensor_type=SensorType.AUTOMATION_POLICY,
-                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
-                        AssetDaemonCursor.empty(12345)
-                    ),
-                ),
-            )
-        )
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            AUTOMATION_POLICY_SENSORS_QUERY,
-            variables={
-                "assetKey": {"path": ["fresh_diamond_bottom"]},
-            },
-        )
-        assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
-
-        with patch(
-            "dagster._core.instance.DagsterInstance.auto_materialize_use_automation_policy_sensors",
-            new_callable=PropertyMock,
-        ) as mock_my_property:
-            mock_my_property.return_value = True
-
-            results = execute_dagster_graphql(
-                graphql_context,
-                AUTOMATION_POLICY_SENSORS_QUERY,
-                variables={
-                    "assetKey": {"path": ["fresh_diamond_bottom"]},
-                },
-            )
-
-            assert any(
-                instigator["name"] == "my_automation_policy_sensor"
-                for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
-            )
-            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
-
     def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
         evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
             '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',

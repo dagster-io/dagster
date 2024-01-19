@@ -3177,6 +3177,19 @@ type Query {
   autoMaterializeEvaluationsForEvaluationId(
     evaluationId: Int!
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  assetConditionEvaluationForPartition(
+    assetKey: AssetKeyInput!
+    evaluationId: Int!
+    partition: String!
+  ): AssetConditionEvaluation
+  assetConditionEvaluationRecordsOrError(
+    assetKey: AssetKeyInput!
+    limit: Int!
+    cursor: String
+  ): AssetConditionEvaluationRecordsOrError
+  assetConditionEvaluationsForEvaluationId(
+    evaluationId: Int!
+  ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
     dayOffset: Int
@@ -3400,6 +3413,85 @@ type WaitingOnKeysRuleEvaluationData {
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
+}
+
+type AssetConditionEvaluation {
+  rootUniqueId: String!
+  evaluationNodes: [AssetConditionEvaluationNode!]!
+}
+
+union AssetConditionEvaluationNode =
+    UnpartitionedAssetConditionEvaluationNode
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+
+type UnpartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  startTimestamp: Float
+  endTimestamp: Float
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
+enum AssetConditionEvaluationStatus {
+  TRUE
+  FALSE
+  SKIPPED
+}
+
+type PartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  startTimestamp: Float
+  endTimestamp: Float
+  trueSubset: AssetSubset!
+  candidateSubset: AssetSubset
+  numTrue: Int!
+  numFalse: Int
+  numSkipped: Int
+  childUniqueIds: [String!]!
+}
+
+type AssetSubset {
+  assetKey: AssetKey!
+  subsetValue: AssetSubsetValue!
+}
+
+type AssetSubsetValue {
+  boolValue: Boolean
+  partitionKeys: [String!]
+  partitionKeyRanges: [PartitionKeyRange!]
+  isPartitioned: Boolean!
+}
+
+type SpecificPartitionAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
+union AssetConditionEvaluationRecordsOrError =
+    AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AssetConditionEvaluationRecords {
+  records: [AssetConditionEvaluationRecord!]!
+}
+
+type AssetConditionEvaluationRecord {
+  id: ID!
+  evaluationId: Int!
+  runIds: [String!]!
+  timestamp: Float!
+  assetKey: AssetKey!
+  numRequested: Int!
+  startTimestamp: Float
+  endTimestamp: Float
+  evaluation: AssetConditionEvaluation!
 }
 
 type Mutation {

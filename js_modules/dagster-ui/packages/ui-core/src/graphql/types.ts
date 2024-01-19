@@ -277,6 +277,45 @@ export type AssetChecksOrError =
   | AssetCheckNeedsUserCodeUpgrade
   | AssetChecks;
 
+export type AssetConditionEvaluation = {
+  __typename: 'AssetConditionEvaluation';
+  evaluationNodes: Array<AssetConditionEvaluationNode>;
+  rootUniqueId: Scalars['String'];
+};
+
+export type AssetConditionEvaluationNode =
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode;
+
+export type AssetConditionEvaluationRecord = {
+  __typename: 'AssetConditionEvaluationRecord';
+  assetKey: AssetKey;
+  endTimestamp: Maybe<Scalars['Float']>;
+  evaluation: AssetConditionEvaluation;
+  evaluationId: Scalars['Int'];
+  id: Scalars['ID'];
+  numRequested: Scalars['Int'];
+  runIds: Array<Scalars['String']>;
+  startTimestamp: Maybe<Scalars['Float']>;
+  timestamp: Scalars['Float'];
+};
+
+export type AssetConditionEvaluationRecords = {
+  __typename: 'AssetConditionEvaluationRecords';
+  records: Array<AssetConditionEvaluationRecord>;
+};
+
+export type AssetConditionEvaluationRecordsOrError =
+  | AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError;
+
+export enum AssetConditionEvaluationStatus {
+  FALSE = 'FALSE',
+  SKIPPED = 'SKIPPED',
+  TRUE = 'TRUE',
+}
+
 export type AssetConnection = {
   __typename: 'AssetConnection';
   nodes: Array<Asset>;
@@ -528,6 +567,20 @@ export type AssetPartitionsStatusCounts = {
 export type AssetSelection = {
   __typename: 'AssetSelection';
   assetSelectionString: Maybe<Scalars['String']>;
+};
+
+export type AssetSubset = {
+  __typename: 'AssetSubset';
+  assetKey: AssetKey;
+  subsetValue: AssetSubsetValue;
+};
+
+export type AssetSubsetValue = {
+  __typename: 'AssetSubsetValue';
+  boolValue: Maybe<Scalars['Boolean']>;
+  isPartitioned: Scalars['Boolean'];
+  partitionKeyRanges: Maybe<Array<PartitionKeyRange>>;
+  partitionKeys: Maybe<Array<Scalars['String']>>;
 };
 
 export type AssetWipeMutationResult =
@@ -3083,6 +3136,20 @@ export type PartitionTags = {
 
 export type PartitionTagsOrError = PartitionTags | PythonError;
 
+export type PartitionedAssetConditionEvaluationNode = {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+  candidateSubset: Maybe<AssetSubset>;
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  endTimestamp: Maybe<Scalars['Float']>;
+  numFalse: Maybe<Scalars['Int']>;
+  numSkipped: Maybe<Scalars['Int']>;
+  numTrue: Scalars['Int'];
+  startTimestamp: Maybe<Scalars['Float']>;
+  trueSubset: AssetSubset;
+  uniqueId: Scalars['String'];
+};
+
 export type Partitions = {
   __typename: 'Partitions';
   results: Array<Partition>;
@@ -3458,6 +3525,9 @@ export type Query = {
   allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
+  assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
+  assetConditionEvaluationRecordsOrError: Maybe<AssetConditionEvaluationRecordsOrError>;
+  assetConditionEvaluationsForEvaluationId: Maybe<AssetConditionEvaluationRecordsOrError>;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -3521,6 +3591,22 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String'];
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
+};
+
+export type QueryAssetConditionEvaluationForPartitionArgs = {
+  assetKey: AssetKeyInput;
+  evaluationId: Scalars['Int'];
+  partition: Scalars['String'];
+};
+
+export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
+  assetKey: AssetKeyInput;
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
+};
+
+export type QueryAssetConditionEvaluationsForEvaluationIdArgs = {
+  evaluationId: Scalars['Int'];
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
@@ -4748,6 +4834,32 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String'];
 };
 
+export type SpecificPartitionAssetConditionEvaluationNode = {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
+  status: AssetConditionEvaluationStatus;
+  uniqueId: Scalars['String'];
+};
+
 export type StaleCause = {
   __typename: 'StaleCause';
   category: StaleCauseCategory;
@@ -5106,6 +5218,34 @@ export type UnknownPipeline = PipelineReference & {
   __typename: 'UnknownPipeline';
   name: Scalars['String'];
   solidSelection: Maybe<Array<Scalars['String']>>;
+};
+
+export type UnpartitionedAssetConditionEvaluationNode = {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  endTimestamp: Maybe<Scalars['Float']>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
+  startTimestamp: Maybe<Scalars['Float']>;
+  status: AssetConditionEvaluationStatus;
+  uniqueId: Scalars['String'];
 };
 
 export type UnpartitionedAssetStatus = {
@@ -5645,6 +5785,70 @@ export const buildAssetChecks = (
   };
 };
 
+export const buildAssetConditionEvaluation = (
+  overrides?: Partial<AssetConditionEvaluation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluation'} & AssetConditionEvaluation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluation');
+  return {
+    __typename: 'AssetConditionEvaluation',
+    evaluationNodes:
+      overrides && overrides.hasOwnProperty('evaluationNodes') ? overrides.evaluationNodes! : [],
+    rootUniqueId:
+      overrides && overrides.hasOwnProperty('rootUniqueId') ? overrides.rootUniqueId! : 'eos',
+  };
+};
+
+export const buildAssetConditionEvaluationRecord = (
+  overrides?: Partial<AssetConditionEvaluationRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluationRecord'} & AssetConditionEvaluationRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluationRecord');
+  return {
+    __typename: 'AssetConditionEvaluationRecord',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
+    evaluation:
+      overrides && overrides.hasOwnProperty('evaluation')
+        ? overrides.evaluation!
+        : relationshipsToOmit.has('AssetConditionEvaluation')
+        ? ({} as AssetConditionEvaluation)
+        : buildAssetConditionEvaluation({}, relationshipsToOmit),
+    evaluationId:
+      overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 5501,
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    numRequested:
+      overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
+    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.88,
+  };
+};
+
+export const buildAssetConditionEvaluationRecords = (
+  overrides?: Partial<AssetConditionEvaluationRecords>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluationRecords'} & AssetConditionEvaluationRecords => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluationRecords');
+  return {
+    __typename: 'AssetConditionEvaluationRecords',
+    records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
+  };
+};
+
 export const buildAssetConnection = (
   overrides?: Partial<AssetConnection>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -6163,6 +6367,49 @@ export const buildAssetSelection = (
       overrides && overrides.hasOwnProperty('assetSelectionString')
         ? overrides.assetSelectionString!
         : 'dolores',
+  };
+};
+
+export const buildAssetSubset = (
+  overrides?: Partial<AssetSubset>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSubset'} & AssetSubset => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSubset');
+  return {
+    __typename: 'AssetSubset',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    subsetValue:
+      overrides && overrides.hasOwnProperty('subsetValue')
+        ? overrides.subsetValue!
+        : relationshipsToOmit.has('AssetSubsetValue')
+        ? ({} as AssetSubsetValue)
+        : buildAssetSubsetValue({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetSubsetValue = (
+  overrides?: Partial<AssetSubsetValue>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSubsetValue'} & AssetSubsetValue => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSubsetValue');
+  return {
+    __typename: 'AssetSubsetValue',
+    boolValue: overrides && overrides.hasOwnProperty('boolValue') ? overrides.boolValue! : false,
+    isPartitioned:
+      overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : false,
+    partitionKeyRanges:
+      overrides && overrides.hasOwnProperty('partitionKeyRanges')
+        ? overrides.partitionKeyRanges!
+        : [],
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
 };
 
@@ -10438,6 +10685,43 @@ export const buildPartitionTags = (
   };
 };
 
+export const buildPartitionedAssetConditionEvaluationNode = (
+  overrides?: Partial<PartitionedAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+} & PartitionedAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionedAssetConditionEvaluationNode');
+  return {
+    __typename: 'PartitionedAssetConditionEvaluationNode',
+    candidateSubset:
+      overrides && overrides.hasOwnProperty('candidateSubset')
+        ? overrides.candidateSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 9.74,
+    numFalse: overrides && overrides.hasOwnProperty('numFalse') ? overrides.numFalse! : 4729,
+    numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 5678,
+    numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.96,
+    trueSubset:
+      overrides && overrides.hasOwnProperty('trueSubset')
+        ? overrides.trueSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sed',
+  };
+};
+
 export const buildPartitions = (
   overrides?: Partial<Partitions>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11130,6 +11414,24 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
         : [],
+    assetConditionEvaluationForPartition:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationForPartition')
+        ? overrides.assetConditionEvaluationForPartition!
+        : relationshipsToOmit.has('AssetConditionEvaluation')
+        ? ({} as AssetConditionEvaluation)
+        : buildAssetConditionEvaluation({}, relationshipsToOmit),
+    assetConditionEvaluationRecordsOrError:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationRecordsOrError')
+        ? overrides.assetConditionEvaluationRecordsOrError!
+        : relationshipsToOmit.has('AssetConditionEvaluationRecords')
+        ? ({} as AssetConditionEvaluationRecords)
+        : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
+    assetConditionEvaluationsForEvaluationId:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationsForEvaluationId')
+        ? overrides.assetConditionEvaluationsForEvaluationId!
+        : relationshipsToOmit.has('AssetConditionEvaluationRecords')
+        ? ({} as AssetConditionEvaluationRecords)
+        : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
@@ -13357,6 +13659,31 @@ export const buildSolidStepStatusUnavailableError = (
   };
 };
 
+export const buildSpecificPartitionAssetConditionEvaluationNode = (
+  overrides?: Partial<SpecificPartitionAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+} & SpecificPartitionAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SpecificPartitionAssetConditionEvaluationNode');
+  return {
+    __typename: 'SpecificPartitionAssetConditionEvaluationNode',
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ut',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetConditionEvaluationStatus.FALSE,
+    uniqueId:
+      overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'repudiandae',
+  };
+};
+
 export const buildStaleCause = (
   overrides?: Partial<StaleCause>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14011,6 +14338,34 @@ export const buildUnknownPipeline = (
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
+  };
+};
+
+export const buildUnpartitionedAssetConditionEvaluationNode = (
+  overrides?: Partial<UnpartitionedAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+} & UnpartitionedAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnpartitionedAssetConditionEvaluationNode');
+  return {
+    __typename: 'UnpartitionedAssetConditionEvaluationNode',
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'veniam',
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 3.21,
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 2.94,
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetConditionEvaluationStatus.FALSE,
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'et',
   };
 };
 
