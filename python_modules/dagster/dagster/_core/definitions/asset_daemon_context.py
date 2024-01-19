@@ -175,12 +175,12 @@ class AssetDaemonContext:
         new parent materializations is calculated, as this can result in materializations being
         ignored if they happen between the two calculations.
         """
-        self._verbose_log_fn(
+        self._logger.info(
             f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
         )
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
-        self._verbose_log_fn("Done prefetching asset records.")
-        self._verbose_log_fn(
+        self._logger.info("Done prefetching asset records.")
+        self._logger.info(
             f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}.\n"
             f"Precalculating updated parents for {len(self.auto_materialize_asset_keys)} assets using previous "
             f"latest_storage_id of {self.latest_storage_id}."
@@ -189,7 +189,7 @@ class AssetDaemonContext:
             self.instance_queryer.asset_partitions_with_newly_updated_parents(
                 latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
             )
-        self._verbose_log_fn("Done precalculating updated parents.")
+        self._logger.info("Done precalculating updated parents.")
 
     @cached_method
     def get_new_latest_storage_id(self) -> Optional[int]:
