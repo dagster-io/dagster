@@ -12,7 +12,10 @@ from typing import (
     Tuple,
 )
 
+import toposort
+
 import dagster._check as check
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
@@ -229,6 +232,45 @@ class ExternalAssetGraph(AssetGraph):
     @property
     def repository_handles_by_key(self) -> Mapping[AssetKey, RepositoryHandle]:
         return self._repo_handles_by_key
+
+    def cycle_safe_subset(self) -> "ExternalAssetGraph":
+        try:
+            # exhaust the iterator
+            list(toposort.toposort(self._asset_dep_graph["upstream"]))
+            return self
+        except toposort.CircularDependencyError as e:
+            cycles = e.data
+
+            # eliminate just a single edge at a time to minimize the number of deleted edges
+            cycle_key = sorted(cycles.keys())[0]
+            new_upstream = {
+                k: vs for k, vs in self._asset_dep_graph["upstream"].items() if k != cycle_key
+            }
+            new_downstream = {
+                k: {v for v in vs if v != cycle_key}
+                for k, vs in self._asset_dep_graph["downstream"].items()
+            }
+            new_dep_graph: DependencyGraph[AssetKey] = {
+                "upstream": new_upstream,
+                "downstream": new_downstream,
+            }
+            # recursively call cycle_safe_subset until there are no more cycles
+            return ExternalAssetGraph(
+                asset_dep_graph=new_dep_graph,
+                source_asset_keys=self.source_asset_keys,
+                partitions_defs_by_key=self._partitions_defs_by_key,
+                partition_mappings_by_key=self._partition_mappings_by_key,
+                group_names_by_key=self.group_names_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
+                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
+                backfill_policies_by_key=self.backfill_policies_by_key,
+                repo_handles_by_key=self._repo_handles_by_key,
+                job_names_by_key=self._materialization_job_names_by_key,
+                code_versions_by_key=self._code_versions_by_key,
+                is_observable_by_key=self._is_observable_by_key,
+                auto_observe_interval_minutes_by_key=self._auto_observe_interval_minutes_by_key,
+                required_assets_and_checks_by_key=self._required_assets_and_checks_by_key,
+            ).cycle_safe_subset()
 
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self._repo_handles_by_key[asset_key]

@@ -153,6 +153,15 @@ class AssetGraph:
     def get_auto_observe_interval_minutes(self, asset_key: AssetKey) -> Optional[float]:
         return self._auto_observe_interval_minutes_by_key.get(asset_key)
 
+    def cycle_safe_subset(self) -> "AssetGraph":
+        """It is currently possible to create an ExternalAssetGraph with a cycle in the dependency
+        graph, as we are not able to validate the dependency graph until we have loaded all the
+        separate code locations. This method returns a new ExternalAssetGraph that is guaranteed to
+        not contain any cycles, although it may be missing some edges. Therefore, this should not
+        be used outside of specialized circumstances where this is acceptable.
+        """
+        return self
+
     @staticmethod
     def from_assets(
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],

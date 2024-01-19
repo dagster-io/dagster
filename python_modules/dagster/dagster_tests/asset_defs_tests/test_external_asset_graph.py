@@ -20,6 +20,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
@@ -437,3 +438,15 @@ def test_cycle_status(instance):
     resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
     for key in asset_graph.all_asset_keys:
         resolver.get_status(key)
+
+
+def test_root_stale_causes(instance: DagsterInstance) -> None:
+    asset_graph = ExternalAssetGraph.from_workspace(
+        _make_context(instance, ["cycle_defs_a", "cycle_defs_b"])
+    )
+    resolver = CachingStaleStatusResolver(instance, asset_graph)
+    for key in asset_graph.all_asset_keys:
+        instance.report_runless_asset_event(AssetMaterialization(key))
+
+    for key in asset_graph.all_asset_keys:
+        resolver.get_stale_root_causes(key)

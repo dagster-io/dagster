@@ -383,11 +383,11 @@ class CachingStaleStatusResolver:
         self._instance = instance
         self._instance_queryer = None
         if isinstance(asset_graph, AssetGraph):
-            self._asset_graph = asset_graph
+            self._asset_graph = asset_graph.cycle_safe_subset()
             self._asset_graph_load_fn = None
         else:
             self._asset_graph = None
-            self._asset_graph_load_fn = asset_graph
+            self._asset_graph_load_fn = lambda: asset_graph().cycle_safe_subset()
 
     def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
         from dagster._core.definitions.events import AssetKeyPartitionKey
