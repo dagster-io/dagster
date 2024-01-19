@@ -81,7 +81,7 @@ export const buildEvaluationRecordsWithPartitions = () => {
           }),
         ],
       }),
-    }) as any,
+    }),
     buildAssetConditionEvaluationRecord({
       id: 'f',
       evaluationId: 24,
@@ -251,7 +251,7 @@ export const Evaluations = {
           }),
           currentAutoMaterializeEvaluationId: 1000,
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -268,7 +268,7 @@ export const Evaluations = {
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -285,7 +285,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -302,7 +302,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -319,7 +319,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
