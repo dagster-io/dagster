@@ -678,6 +678,9 @@ def _submit_runs_and_update_backfill_in_chunks(
     )
 
     mid_iteration_cancel_requested = False
+    # Iterate through runs to request, submitting runs in chunks.
+    # In between each chunk, check that the backfill is still marked as 'requested',
+    # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
     for run_requests_chunk in submit_asset_runs_in_chunks(
         run_requests=run_requests,
         reserved_run_ids=None,
@@ -688,7 +691,7 @@ def _submit_runs_and_update_backfill_in_chunks(
         logger=logger,
         debug_crash_flags={},
     ):
-        # refetch, backfill status
+        # Refetch backfill status
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
         if backfill.status != BulkActionStatus.REQUESTED:
             mid_iteration_cancel_requested = True
