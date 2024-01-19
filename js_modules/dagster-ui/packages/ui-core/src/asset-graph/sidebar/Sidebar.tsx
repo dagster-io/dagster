@@ -149,7 +149,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           groupsCount += 1;
         }
         codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
-          groupName
+          groupId
         ] || {
           groupName,
           assets: [],
