@@ -10,6 +10,12 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {EditCursorDialog} from './EditCursorDialog';
+import {SensorMonitoredAssets} from './SensorMonitoredAssets';
+import {SensorResetButton} from './SensorResetButton';
+import {SensorSwitch} from './SensorSwitch';
+import {SensorTargetList} from './SensorTargetList';
+import {SensorFragment} from './types/SensorFragment.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -17,12 +23,6 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
-
-import {EditCursorDialog} from './EditCursorDialog';
-import {SensorMonitoredAssets} from './SensorMonitoredAssets';
-import {SensorSwitch} from './SensorSwitch';
-import {SensorTargetList} from './SensorTargetList';
-import {SensorFragment} from './types/SensorFragment.types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -84,19 +84,12 @@ export const SensorDetails = ({
   return (
     <>
       <PageHeader
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{name}</Heading>
-            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-          </Box>
-        }
+        title={<Heading>{name}</Heading>}
         icon="sensors"
         tags={
-          <>
-            <Tag icon="sensors">
-              Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </Tag>
-          </>
+          <Tag icon="sensors">
+            Sensor in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
         }
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -165,6 +158,22 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
+          <tr>
+            <td>
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Running
+              </Box>
+            </td>
+            <td>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
+                <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                {sensor.canReset && <SensorResetButton repoAddress={repoAddress} sensor={sensor} />}
+              </Box>
+            </td>
+          </tr>
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
