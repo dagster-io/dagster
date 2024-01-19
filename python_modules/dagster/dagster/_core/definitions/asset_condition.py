@@ -1,6 +1,6 @@
 import functools
 import hashlib
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -148,6 +148,10 @@ class AssetCondition(ABC):
     ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         raise NotImplementedError()
 
+    @abstractproperty
+    def description(self) -> str:
+        raise NotImplementedError()
+
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
         # group AndAutomationConditions together
         if isinstance(self, AndAssetCondition):
@@ -192,7 +196,7 @@ class AssetCondition(ABC):
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
-            description=str(self),
+            description=self.description,
             unique_id=self.unique_id,
         )
 
@@ -205,8 +209,12 @@ class RuleCondition(
 
     @property
     def unique_id(self) -> str:
-        parts = [self.rule.__class__.__name__, self.rule.description]
+        parts = [self.rule.__class__.__name__, self.description]
         return hashlib.md5("".join(parts).encode()).hexdigest()
+
+    @property
+    def description(self) -> str:
+        return self.rule.description
 
     def evaluate(
         self, context: AssetConditionEvaluationContext
@@ -214,16 +222,16 @@ class RuleCondition(
         context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
-        true_subset, subsets_with_metadata = self.rule.evaluate_for_asset(context)
+        true_subset, subsets_with_metadata, extras = self.rule.evaluate_for_asset(context)
         context.root_context.daemon_context._verbose_log_fn(  # noqa
-            f"Rule returned {true_subset.size} partitions"
+            f"Rule returned {true_subset.size} partitions" f"{true_subset}"
         )
         return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
-        ), [AssetConditionCursorExtras(condition_snapshot=self.snapshot, extras={})]
+        ), [AssetConditionCursorExtras(condition_snapshot=self.snapshot, extras=extras)]
 
 
 class AndAssetCondition(
@@ -231,6 +239,10 @@ class AndAssetCondition(
     AssetCondition,
 ):
     """This class represents the condition that all of its children evaluate to true."""
+
+    @property
+    def description(self) -> str:
+        return "All of"
 
     def evaluate(
         self, context: AssetConditionEvaluationContext
@@ -257,6 +269,10 @@ class OrAssetCondition(
     AssetCondition,
 ):
     """This class represents the condition that any of its children evaluate to true."""
+
+    @property
+    def description(self) -> str:
+        return "Any of"
 
     def evaluate(
         self, context: AssetConditionEvaluationContext
@@ -289,6 +305,10 @@ class NotAssetCondition(
     def __new__(cls, children: Sequence[AssetCondition]):
         check.invariant(len(children) == 1)
         return super().__new__(cls, children)
+
+    @property
+    def description(self) -> str:
+        return "Not"
 
     @property
     def child(self) -> AssetCondition:

@@ -32,7 +32,9 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.definitions.time_window_partitions import (
+    get_time_partitions_def,
+)
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import (
@@ -109,7 +111,7 @@ class AutoMaterializeRule(ABC):
         # we've explicitly said to ignore it
         ignore_subset = has_metadata_subset | ignore_subset
 
-        for elt in context.previous_subsets_with_metadata or []:
+        for elt in context.previous_subsets_with_metadata:
             carry_forward_subset = elt.subset - ignore_subset
             if carry_forward_subset.size > 0:
                 mapping[elt.frozen_metadata] |= carry_forward_subset
@@ -117,11 +119,12 @@ class AutoMaterializeRule(ABC):
         # for now, an asset is in the "true" subset if and only if we have some metadata for it
         true_subset = reduce(operator.or_, mapping.values(), context.empty_subset())
         return (
-            true_subset,
+            context.candidate_subset & true_subset,
             [
                 AssetSubsetWithMetadata(subset, dict(metadata))
                 for metadata, subset in mapping.items()
             ],
+            {},
         )
 
     @abstractmethod
@@ -308,7 +311,7 @@ class MaterializeOnCronRule(
         self, context: AssetConditionEvaluationContext
     ) -> Sequence[datetime.datetime]:
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        if not context.previous_evaluation_timestamp:
+        if not context.cursor.previous_evaluation_timestamp:
             previous_dt = next(
                 reverse_cron_string_iterator(
                     end_timestamp=context.evaluation_time.timestamp(),
@@ -319,7 +322,7 @@ class MaterializeOnCronRule(
             return [previous_dt]
         missed_ticks = []
         for dt in cron_string_iterator(
-            start_timestamp=context.previous_evaluation_timestamp,
+            start_timestamp=context.cursor.previous_evaluation_timestamp,
             cron_string=self.cron_schedule,
             execution_timezone=self.timezone,
         ):
@@ -400,7 +403,7 @@ class MaterializeOnCronRule(
             - context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        return asset_subset_to_request, []
+        return asset_subset_to_request, [], {}
 
 
 @whitelist_for_serdes
@@ -598,6 +601,8 @@ class MaterializeOnParentUpdatedRule(
 
 @whitelist_for_serdes
 class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
+    HANDLED_SUBSET_KEY: str = "handled_subset"
+
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
@@ -608,28 +613,27 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
     def evaluate_for_asset(self, context: AssetConditionEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions for this asset which are missing and were not
-        previously discarded. Currently only applies to root asset partitions and asset partitions
-        with updated parents.
+        previously discarded.
         """
-        missing_asset_partitions = set(
-            context.never_materialized_requested_or_discarded_root_subset.asset_partitions
+        handled_subset = (
+            (
+                context.cursor.get_extras_value(
+                    context.condition, self.HANDLED_SUBSET_KEY, AssetSubset
+                )
+                or context.empty_subset()
+            )
+            | context.previous_tick_requested_subset
+            | context.materialized_since_previous_tick_subset
         )
-        # in addition to missing root asset partitions, check any asset partitions with updated
-        # parents to see if they're missing
-        for candidate in context.candidate_parent_has_or_will_update_subset.asset_partitions:
-            if not context.instance_queryer.asset_partition_has_materialization_or_observation(
-                candidate
-            ):
-                missing_asset_partitions |= {candidate}
-
-        newly_missing_subset = AssetSubset.from_asset_partitions_set(
-            context.asset_key, context.partitions_def, missing_asset_partitions
+        unhandled_candidates = (
+            context.candidate_subset
+            & handled_subset.inverse(
+                context.partitions_def, context.evaluation_time, context.instance_queryer
+            )
+            if handled_subset.size > 0
+            else context.candidate_subset
         )
-        missing_subset = newly_missing_subset | (
-            context.previous_true_subset
-            - context.materialized_requested_or_discarded_since_previous_tick_subset
-        )
-        return missing_subset, []
+        return (unhandled_candidates, [], {self.HANDLED_SUBSET_KEY: handled_subset})
 
 
 @whitelist_for_serdes
@@ -870,14 +874,14 @@ class SkipOnBackfillInProgressRule(
         ).get_asset_subset(context.asset_key, context.asset_graph)
 
         if backfilling_subset.size == 0:
-            return context.empty_subset(), []
+            return context.empty_subset(), [], {}
 
         if self.all_partitions:
             true_subset = context.candidate_subset
         else:
             true_subset = context.candidate_subset & backfilling_subset
 
-        return true_subset, []
+        return true_subset, [], {}
 
 
 @whitelist_for_serdes
@@ -901,6 +905,10 @@ class DiscardOnMaxMaterializationsExceededRule(
             )[self.limit :]
         )
 
-        return AssetSubset.from_asset_partitions_set(
-            context.asset_key, context.partitions_def, rate_limited_asset_partitions
-        ), []
+        return (
+            AssetSubset.from_asset_partitions_set(
+                context.asset_key, context.partitions_def, rate_limited_asset_partitions
+            ),
+            [],
+            {},
+        )

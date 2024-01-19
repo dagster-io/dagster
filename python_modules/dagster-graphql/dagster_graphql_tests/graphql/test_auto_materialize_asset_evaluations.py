@@ -6,7 +6,6 @@ import pendulum
 from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.run_request import (
     InstigatorType,
@@ -28,8 +27,10 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    asset_daemon_cursor_to_instigator_serialized_cursor,
 )
 from dagster._serdes import deserialize_value
+from dagster._serdes.serdes import serialize_value
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -352,9 +353,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 status=InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
                     sensor_type=SensorType.AUTOMATION_POLICY,
-                    cursor=LegacyAssetDaemonCursorWrapper(
-                        AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize()
-                    ).to_compressed(),
+                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
+                        AssetDaemonCursor.empty(12345)
+                    ),
                 ),
             )
         )
@@ -708,7 +709,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
+            {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(AssetDaemonCursor.empty(0))}
         )
 
         results = execute_dagster_graphql(
@@ -728,9 +729,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
                 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: (
-                    AssetDaemonCursor.empty()
-                    .with_updates(0, set(), set(), set(), {}, 42, None, [], 0)  # type: ignore
-                    .serialize()
+                    serialize_value(AssetDaemonCursor.empty(0).with_updates(0, 1.0, [], []))
                 )
             }
         )

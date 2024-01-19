@@ -9,10 +9,12 @@ from typing import (
     AbstractSet,
     Dict,
     FrozenSet,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    Union,
     cast,
 )
 
@@ -22,13 +24,14 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
+    PackableValue,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
     whitelist_for_serdes,
 )
 
-from .partition import DefaultPartitionsSubset, SerializedPartitionsSubset
+from .partition import DefaultPartitionsSubset, PartitionsDefinition, SerializedPartitionsSubset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_condition import AssetSubsetWithMetadata
@@ -124,7 +127,9 @@ class WaitingOnAssetsRuleEvaluationData(
         }
 
 
-RuleEvaluationResults = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]
+RuleEvaluationResults = Tuple[
+    AssetSubset, Sequence["AssetSubsetWithMetadata"], Mapping[str, PackableValue]
+]
 
 
 @whitelist_for_serdes
@@ -140,6 +145,41 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
     AssetConditionEvaluationWithRunIds objects.
     """
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """We may override this property in subclasses that are created at a point in time where
+        we know what the current partitions definition is. If we don't know, then we will be unable
+        to deserialize any SerializedPartitionsSubset objects.
+        """
+        return None
+
+    def _get_empty_subset(self, asset_key: AssetKey, is_partitioned: bool) -> AssetSubset:
+        # We know this asset is partitioned, but we don't know what its partitions def is, so we
+        # just use a DefaultPartitionsSubset
+        if is_partitioned and self.partitions_def is None:
+            return AssetSubset(asset_key, DefaultPartitionsSubset(set()))
+        else:
+            return AssetSubset.empty(asset_key, self.partitions_def)
+
+    def deserialize_serialized_partitions_subset_or_none(
+        self,
+        asset_key: AssetKey,
+        is_partitioned: bool,
+        serialized: Union[None, SerializedPartitionsSubset],
+    ) -> AssetSubset:
+        if serialized is None:
+            # Confusingly, we used `None` to indicate "all of an unpartitioned asset" in the old
+            # serialization scheme
+            return AssetSubset(asset_key, True)
+        elif self.partitions_def is None or not serialized.can_deserialize(self.partitions_def):
+            # If we don't know the partitions def, then we can't deserialize the partitions subset,
+            # so we just use an empty one instead.
+            return self._get_empty_subset(asset_key, is_partitioned)
+        else:
+            # We are in an instance of this class that knows the partitions def, so we can
+            # deserialize the partitions subset
+            return AssetSubset(asset_key, serialized.deserialize(self.partitions_def))
 
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
@@ -171,28 +211,28 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
 
-        if is_partitioned:
-            # for partitioned assets, we can't deserialize SerializedPartitionsSubset into an
-            # AssetSubset, so we just return a dummy empty default partition subset
-            value = DefaultPartitionsSubset(set())
-        else:
-            value = len(partition_subsets_by_condition) > 0
+        subsets_with_metadata = [
+            AssetSubsetWithMetadata(
+                subset=self.deserialize_serialized_partitions_subset_or_none(
+                    asset_key, is_partitioned, serialized
+                ),
+                metadata=rule_evaluation.evaluation_data.metadata,
+            )
+            for rule_evaluation, serialized in partition_subsets_by_condition
+            if rule_evaluation.evaluation_data
+        ]
 
-        true_subset = AssetSubset(asset_key, value)
+        true_subset = self._get_empty_subset(asset_key, is_partitioned)
+        for _, serialized in partition_subsets_by_condition:
+            true_subset |= self.deserialize_serialized_partitions_subset_or_none(
+                asset_key, is_partitioned, serialized
+            )
 
         return AssetConditionEvaluation(
             condition_snapshot=condition_snapshot,
             true_subset=true_subset,
             candidate_subset=None,
-            subsets_with_metadata=[]
-            if is_partitioned
-            else [
-                AssetSubsetWithMetadata(
-                    subset=true_subset, metadata=rule_evaluation.evaluation_data.metadata
-                )
-                for rule_evaluation, _ in partition_subsets_by_condition
-                if rule_evaluation.evaluation_data
-            ],
+            subsets_with_metadata=subsets_with_metadata,
         )
 
     def _get_child_decision_type_evaluation(
@@ -239,7 +279,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             ]
             unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
             decision_type_snapshot = AssetConditionSnapshot(
-                class_name=OrAssetCondition.__name__, description="", unique_id=unique_id
+                class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
             )
             initial = (
                 AssetSubset(asset_key, DefaultPartitionsSubset(set()))
@@ -267,7 +307,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
-                class_name=NotAssetCondition.__name__, description="", unique_id=unique_id
+                class_name=NotAssetCondition.__name__, description="Not", unique_id=unique_id
             ),
             # for partitioned assets, we don't bother calculating the true subset, as we can't
             # properly deserialize the inner results
@@ -337,7 +377,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         ]
         unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
         condition_snapshot = AssetConditionSnapshot(
-            class_name=AndAssetCondition.__name__, description="", unique_id=unique_id
+            class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
         )
 
         return AssetConditionEvaluation(
