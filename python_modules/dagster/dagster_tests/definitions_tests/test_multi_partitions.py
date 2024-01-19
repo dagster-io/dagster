@@ -603,16 +603,16 @@ def test_multipartitions_self_dependency():
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"
             if context.partition_key == first_partition_key:
-                assert context.asset_partition_keys == []
-                assert context.has_asset_partitions
+                assert context.partition_keys == []
+                assert context.has_partitions
             else:
                 assert context.partition_key == second_partition_key
-                assert context.asset_partition_keys == [first_partition_key]
+                assert context.partition_keys == [first_partition_key]
                 assert context.asset_partition_key == first_partition_key
-                assert context.asset_partition_key_range == PartitionKeyRange(
+                assert context.partition_key_range == PartitionKeyRange(
                     first_partition_key, first_partition_key
                 )
-                assert context.has_asset_partitions
+                assert context.has_partitions
 
     resources = {"io_manager": MyIOManager()}
 

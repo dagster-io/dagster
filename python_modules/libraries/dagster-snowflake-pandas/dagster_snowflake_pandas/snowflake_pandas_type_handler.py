@@ -153,7 +153,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pd.DataFrame:
-        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+        if table_slice.partition_dimensions and len(context.partition_keys) == 0:
             return pd.DataFrame()
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection

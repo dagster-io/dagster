@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -12,7 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -71,8 +72,8 @@ class InputContext:
         step_context: Optional["StepExecutionContext"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
-        asset_partitions_subset: Optional[PartitionsSubset] = None,
-        asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        partitions_subset: Optional[PartitionsSubset] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
@@ -94,8 +95,8 @@ class InputContext:
         else:
             self._partition_key = partition_key
 
-        self._asset_partitions_subset = asset_partitions_subset
-        self._asset_partitions_def = asset_partitions_def
+        self._partitions_subset = partitions_subset
+        self._partitions_def = partitions_def
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -275,9 +276,9 @@ class InputContext:
 
     @public
     @property
-    def asset_partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        if self._asset_partitions_def is None:
+        if self._partitions_def is None:
             if self.asset_key:
                 raise DagsterInvariantViolationError(
                     f"Attempting to access partitions def for asset {self.asset_key}, but it is not"
@@ -289,7 +290,14 @@ class InputContext:
                     " to an asset"
                 )
 
-        return self._asset_partitions_def
+        return self._partitions_def
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_def` instead.")
+    @public
+    @property
+    def asset_tmp_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        return self.partitions_def
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -323,9 +331,16 @@ class InputContext:
 
     @public
     @property
-    def has_asset_partitions(self) -> bool:
+    def has_partitions(self) -> bool:
         """Returns True if the asset being loaded as input is partitioned."""
-        return self._asset_partitions_subset is not None
+        return self._partitions_subset is not None
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `has_partitions` instead.")
+    @public
+    @property
+    def has_asset_tmp_partitions(self) -> bool:
+        """Returns True if the asset being loaded as input is partitioned."""
+        return self.has_partitions
 
     @public
     @property
@@ -335,7 +350,7 @@ class InputContext:
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
         """
-        subset = self._asset_partitions_subset
+        subset = self._partitions_subset
 
         if subset is None:
             check.failed("The input does not correspond to a partitioned asset.")
@@ -351,46 +366,66 @@ class InputContext:
 
     @public
     @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
+    def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
-        subset = self._asset_partitions_subset
+        subset = self._partitions_subset
 
         if subset is None:
             check.failed(
-                "Tried to access asset_partition_key_range, but the asset is not partitioned.",
+                "Tried to access partition_key_range, but the asset is not partitioned.",
             )
 
         partition_key_ranges = subset.get_partition_key_ranges(
-            self.asset_partitions_def, dynamic_partitions_store=self.instance
+            self.partitions_def, dynamic_partitions_store=self.instance
         )
         if len(partition_key_ranges) != 1:
             check.failed(
-                "Tried to access asset_partition_key_range, but there are "
+                "Tried to access partition_key_range, but there are "
                 f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
-    def asset_partition_keys(self) -> Sequence[str]:
+    def asset_tmp_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
         """The partition keys for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
-        if self._asset_partitions_subset is None:
+        if self._partitions_subset is None:
             check.failed(
-                "Tried to access asset_partition_keys, but the asset is not partitioned.",
+                "Tried to access partition_keys, but the asset is not partitioned.",
             )
 
-        return list(self._asset_partitions_subset.get_partition_keys())
+        return list(self._partitions_subset.get_partition_keys())
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
+    @public
+    @property
+    def asset_tmp_partition_keys(self) -> Sequence[str]:
+        """The partition keys for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.partition_keys
 
     @public
     @property
-    def asset_partitions_time_window(self) -> TimeWindow:
+    def partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
@@ -398,14 +433,27 @@ class InputContext:
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        subset = self._asset_partitions_subset
+        subset = self._partitions_subset
 
         if subset is None:
             check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
+                "Tried to access partitions_time_window, but the asset is not partitioned.",
             )
 
         return self.step_context.asset_partitions_time_window_for_input(self.name)
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead.")
+    @public
+    @property
+    def asset_tmp_partitions_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self.partitions_time_window
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -442,7 +490,7 @@ class InputContext:
         partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
         """
         if self.asset_key is not None:
-            if self.has_asset_partitions:
+            if self.has_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
             else:
                 return self.asset_key.path
@@ -480,7 +528,7 @@ class InputContext:
             observation = AssetObservation(
                 asset_key=self.asset_key,
                 description=description,
-                partition=self.asset_partition_key if self.has_asset_partitions else None,
+                partition=self.asset_partition_key if self.has_partitions else None,
                 metadata=metadata,
             )
             self._observations.append(observation)
@@ -531,7 +579,11 @@ def build_input_context(
     step_context: Optional["StepExecutionContext"] = None,
     asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
+    partition_key_range: Optional[PartitionKeyRange] = None,
+    # TODO: This argument is kept only for back compat. Remove for version 2.0.
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
+    # TODO: This argument is kept only for back compat. Remove for version 2.0.
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> "InputContext":
@@ -559,10 +611,13 @@ def build_input_context(
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
-        asset_partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
+        partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
             to load.
-        asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
-            being loaded.
+        asset_partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
+            to load. This is the same as `partition_key_rage` and is kept only for back compatibility until version 2.0.
+        partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset being loaded.
+        asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset being loaded.
+            This is the same as `partitions_def` and is kept only for back compatibility until version 2.0.
 
     Examples:
         .. code-block:: python
@@ -588,20 +643,37 @@ def build_input_context(
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
     asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
-    asset_partition_key_range = check.opt_inst_param(
-        asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
-    )
-    asset_partitions_def = check.opt_inst_param(
-        asset_partitions_def, "asset_partitions_def", PartitionsDefinition
-    )
-    if asset_partitions_def and asset_partition_key_range:
-        asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
+
+    # TODO: This condition is kept only for back compat. Remove for version 2.0.
+    if partition_key_range is None and asset_partition_key_range is not None:
+        warnings.warn(
+            "The argument `asset_partition_key_range` is deprecated and will fail in the future."
+            "Use argument `partition_key_range` instead."
         )
-    elif asset_partition_key_range:
-        asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
+        partition_key_range = asset_partition_key_range
+    partition_key_range = check.opt_inst_param(
+        partition_key_range, "partition_key_range", PartitionKeyRange
+    )
+
+    # TODO: This condition is kept only for back compat. Remove for version 2.0.
+    if partitions_def is None and asset_partitions_def is not None:
+        warnings.warn(
+            "The argument `asset_partitions_def` is deprecated and will fail in the future."
+            "Use argument `partitions_def` instead."
+        )
+        partitions_def = asset_partitions_def
+    partitions_def = check.opt_inst_param(
+        partitions_def, "partitions_def", PartitionsDefinition
+    )
+
+    if partitions_def and partition_key_range:
+        partitions_subset = partitions_def.empty_subset().with_partition_key_range(
+            partitions_def, partition_key_range, dynamic_partitions_store=instance
+        )
+    elif partition_key_range:
+        partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(partition_key_range)
     else:
-        asset_partitions_subset = None
+        partitions_subset = None
 
     return InputContext(
         name=name,
@@ -617,8 +689,8 @@ def build_input_context(
         op_def=op_def,
         asset_key=asset_key,
         partition_key=partition_key,
-        asset_partitions_subset=asset_partitions_subset,
-        asset_partitions_def=asset_partitions_def,
+        partitions_subset=partitions_subset,
+        partitions_def=partitions_def,
         instance=instance,
     )
 

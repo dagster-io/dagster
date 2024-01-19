@@ -1514,16 +1514,16 @@ def test_self_dependency():
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"
             if context.partition_key == "2020-01-01":
-                assert context.asset_partition_keys == []
-                assert context.has_asset_partitions
+                assert context.partition_keys == []
+                assert context.has_partitions
             else:
                 assert context.partition_key == "2020-01-02"
-                assert context.asset_partition_keys == ["2020-01-01"]
+                assert context.partition_keys == ["2020-01-01"]
                 assert context.asset_partition_key == "2020-01-01"
-                assert context.asset_partition_key_range == PartitionKeyRange(
+                assert context.partition_key_range == PartitionKeyRange(
                     "2020-01-01", "2020-01-01"
                 )
-                assert context.has_asset_partitions
+                assert context.has_partitions
 
     resources = {"io_manager": MyIOManager()}
     materialize([a], partition_key="2020-01-01", resources=resources)

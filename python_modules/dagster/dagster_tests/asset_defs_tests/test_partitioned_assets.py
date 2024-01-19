@@ -251,10 +251,10 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
 
         def load_input(self, context):
             if context.op_def.name == "double_downstream_asset":
-                assert not context.has_asset_partitions
+                assert not context.has_partitions
             else:
-                assert context.has_asset_partitions
-                assert context.asset_partition_key_range == PartitionKeyRange("a", "c")
+                assert context.has_partitions
+                assert context.partition_key_range == PartitionKeyRange("a", "c")
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
@@ -317,7 +317,7 @@ def test_input_context_asset_partitions_time_window():
             )
 
         def load_input(self, context):
-            assert context.asset_partitions_time_window == TimeWindow(
+            assert context.partitions_time_window == TimeWindow(
                 pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
             )
 
@@ -359,7 +359,7 @@ def test_cross_job_different_partitions():
             pass
 
         def load_input(self, context):
-            key_range = context.asset_partition_key_range
+            key_range = context.partition_key_range
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
@@ -387,7 +387,7 @@ def test_source_asset_partitions():
             pass
 
         def load_input(self, context):
-            key_range = context.asset_partition_key_range
+            key_range = context.partition_key_range
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
@@ -705,7 +705,7 @@ def test_multipartitioned_asset_partitions_time_window():
             )
 
         def load_input(self, context: InputContext):
-            assert context.asset_partitions_time_window == TimeWindow(
+            assert context.partitions_time_window == TimeWindow(
                 pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
             )
 

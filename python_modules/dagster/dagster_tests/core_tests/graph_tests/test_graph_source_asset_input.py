@@ -105,7 +105,7 @@ def test_non_partitioned_job_partitioned_source_asset():
         def load_input(self, context):
             self.loaded_input = True
             assert context.asset_key == asset1.key
-            assert set(context.asset_partition_keys) == {"foo", "bar"}
+            assert set(context.partition_keys) == {"foo", "bar"}
             return 5
 
     @op

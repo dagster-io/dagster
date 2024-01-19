@@ -159,12 +159,12 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
-            asset_partition_key_range=(
+            partition_key_range=(
                 PartitionKeyRange(partition_key, partition_key)
                 if partition_key is not None
                 else None
             ),
-            asset_partitions_def=asset_partitions_def,
+            partitions_def=asset_partitions_def,
             instance=self._instance,
             metadata=metadata,
         )

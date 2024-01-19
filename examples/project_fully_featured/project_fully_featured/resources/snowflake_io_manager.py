@@ -171,7 +171,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
                     table,
                     schema,
                     (context.metadata or {}).get("columns"),
-                    context.asset_partitions_time_window if context.has_asset_partitions else None,
+                    context.partitions_time_window if context.has_partitions else None,
                 ),
                 con=con,
             )

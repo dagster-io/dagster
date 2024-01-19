@@ -112,7 +112,7 @@ def test_dynamic_partitioned_asset_io_manager_context():
         def load_input(self, context):
             assert context.partition_key == "apple"
             assert context.asset_partition_key == "apple"
-            assert context.asset_partition_keys == ["apple"]
+            assert context.partition_keys == ["apple"]
 
     @asset(partitions_def=partitions_def, io_manager_key="custom_io")
     def asset1():

@@ -217,11 +217,11 @@ def test_partition_key():
 
         def load_input(self, context):
             assert context.partition_key == "2020-05-05"
-            assert context.has_asset_partitions
-            assert context.asset_partition_key_range == PartitionKeyRange(
+            assert context.has_partitions
+            assert context.partition_key_range == PartitionKeyRange(
                 "2020-05-05", "2020-05-05"
             )
-            assert context.asset_partition_keys == ["2020-05-05"]
+            assert context.partition_keys == ["2020-05-05"]
             return 5
 
     @io_manager

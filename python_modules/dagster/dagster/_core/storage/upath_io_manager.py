@@ -322,7 +322,7 @@ class UPathIOManager(MemoizableIOManager):
         objs = {}
 
         if not inspect.iscoroutinefunction(self.load_from_path):
-            for partition_key in context.asset_partition_keys:
+            for partition_key in context.partition_keys:
                 obj = self._load_partition_from_path(
                     context,
                     partition_key,
@@ -340,7 +340,7 @@ class UPathIOManager(MemoizableIOManager):
 
                 tasks = []
 
-                for partition_key in context.asset_partition_keys:
+                for partition_key in context.partition_keys:
                     tasks.append(
                         loop.create_task(
                             self._load_partition_from_path(
@@ -363,7 +363,7 @@ class UPathIOManager(MemoizableIOManager):
 
                 results_without_errors = []
                 found_errors = False
-                for partition_key, result in zip(context.asset_partition_keys, results):
+                for partition_key, result in zip(context.partition_keys, results):
                     if isinstance(result, FileNotFoundError):
                         if allow_missing_partitions:
                             context.log.warning(
@@ -390,18 +390,18 @@ class UPathIOManager(MemoizableIOManager):
             return {
                 partition_key: awaited_object
                 for partition_key, awaited_object in zip(
-                    context.asset_partition_keys, awaited_objects
+                    context.partition_keys, awaited_objects
                 )
                 if awaited_object is not None
             }
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
-        if not context.has_asset_key or not context.has_asset_partitions:
+        if not context.has_asset_key or not context.has_partitions:
             path = self._get_path(context)
             return self._load_single_input(path, context)
         else:
-            asset_partition_keys = context.asset_partition_keys
+            asset_partition_keys = context.partition_keys
             if len(asset_partition_keys) == 0:
                 return None
             elif len(asset_partition_keys) == 1:

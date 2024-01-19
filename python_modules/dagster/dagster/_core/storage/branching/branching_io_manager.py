@@ -71,8 +71,8 @@ class BranchingIOManager(ConfigurableIOManager):
             # we are dealing with an asset input
             # figure out which partition keys are loaded, if any
             partition_keys = []
-            if context.has_asset_partitions:
-                partition_keys = context.asset_partition_keys
+            if context.has_partitions:
+                partition_keys = context.partition_keys
 
             # we'll fetch materializations with key=None if we aren't loading
             # a partitioned asset, this will return us the latest materialization
