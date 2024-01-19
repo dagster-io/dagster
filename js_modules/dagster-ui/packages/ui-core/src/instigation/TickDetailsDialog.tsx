@@ -79,7 +79,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       ? data?.instigationStateOrError.tick
       : undefined;
 
-  const [addedPartitions, deletedPartitions] = React.useMemo(() => {
+  const [addedPartitionRequests, deletedPartitionRequests] = React.useMemo(() => {
     const added = tick?.dynamicPartitionsRequestResults.filter(
       (request) =>
         request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
@@ -134,20 +134,20 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
               )}
             </>
           ) : null}
-          {addedPartitions?.length ? (
+          {addedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Added partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={addedPartitions} />
+              <PartitionsTable partitions={addedPartitionRequests} />
             </>
           ) : null}
-          {deletedPartitions?.length ? (
+          {deletedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Deleted partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={deletedPartitions} />
+              <PartitionsTable partitions={deletedPartitionRequests} />
             </>
           ) : null}
           {tick.error ? (

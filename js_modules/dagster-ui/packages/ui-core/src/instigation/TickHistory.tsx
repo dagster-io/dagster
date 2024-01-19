@@ -50,7 +50,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {isStuckStartedTick, truncate} from './util';
+import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -397,16 +397,15 @@ function TickRow({
   const [showResults, setShowResults] = React.useState(false);
 
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
-    const added = tick?.dynamicPartitionsRequestResults.filter(
-      (request) =>
-        request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
-        request.partitionKeys?.length,
-    ).length;
-    const deleted = tick?.dynamicPartitionsRequestResults.filter(
-      (request) =>
-        request.type === DynamicPartitionsRequestType.DELETE_PARTITIONS &&
-        request.partitionKeys?.length,
-    ).length;
+    const requests = tick.dynamicPartitionsRequestResults;
+    const added = countPartitionsAddedOrDeleted(
+      requests,
+      DynamicPartitionsRequestType.ADD_PARTITIONS,
+    );
+    const deleted = countPartitionsAddedOrDeleted(
+      requests,
+      DynamicPartitionsRequestType.DELETE_PARTITIONS,
+    );
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
