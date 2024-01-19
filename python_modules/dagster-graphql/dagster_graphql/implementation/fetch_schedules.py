@@ -39,10 +39,11 @@ def start_schedule(
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_code_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
-    instance = graphene_info.context.instance
-    schedule_state = instance.start_schedule(
-        repository.get_external_schedule(schedule_selector.schedule_name)
-    )
+
+    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
+    stored_state = graphene_info.context.instance.start_schedule(external_schedule)
+    schedule_state = external_schedule.get_current_instigator_state(stored_state)
+
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
@@ -92,9 +93,9 @@ def reset_schedule(
     location = graphene_info.context.get_code_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
 
-    schedule_state = graphene_info.context.instance.reset_schedule(
-        repository.get_external_schedule(schedule_selector.schedule_name)
-    )
+    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
+    stored_state = graphene_info.context.instance.reset_schedule(external_schedule)
+    schedule_state = external_schedule.get_current_instigator_state(stored_state)
 
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 

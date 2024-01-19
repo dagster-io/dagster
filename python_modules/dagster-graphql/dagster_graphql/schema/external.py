@@ -293,17 +293,16 @@ class GrapheneRepository(graphene.ObjectType):
         )
 
     def resolve_sensors(self, _graphene_info: ResolveInfo):
-        return sorted(
-            [
-                GrapheneSensor(
-                    sensor,
-                    self._batch_loader.get_sensor_state(sensor.name),
-                    self._batch_loader,
-                )
-                for sensor in self._repository.get_external_sensors()
-            ],
-            key=lambda sensor: sensor.name,
-        )
+        return [
+            GrapheneSensor(
+                sensor,
+                self._batch_loader.get_sensor_state(sensor.name),
+                self._batch_loader,
+            )
+            for sensor in sorted(
+                self._repository.get_external_sensors(), key=lambda sensor: sensor.name
+            )
+        ]
 
     def resolve_pipelines(self, _graphene_info: ResolveInfo):
         return [

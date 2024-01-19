@@ -2749,8 +2749,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def reset_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
-        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage. Otherwise, update the status to
-        `InstigatorStatus.STOPPED`.
+        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
 
         Args:
             instance (DagsterInstance): The current instance.
@@ -2770,11 +2769,7 @@ class DagsterInstance(DynamicPartitionsStore):
             min_interval=external_sensor.min_interval_seconds,
             sensor_type=external_sensor.sensor_type,
         )
-        new_status = (
-            InstigatorStatus.DECLARED_IN_CODE
-            if external_sensor._external_sensor_data.default_status  # noqa: SLF001
-            else InstigatorStatus.STOPPED
-        )
+        new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
             reset_state = self.add_instigator_state(
