@@ -396,7 +396,7 @@ def test_partitioned_io_manager_load_single_partition_called(
         ) -> Any:
             assert context.partition_key is None
 
-    io_manager_def = MyIOManager(base_path=tmp_path)
+    io_manager_def = MyIOManager(base_path=UPath(tmp_path))
 
     @asset(partitions_def=partitions_def, io_manager_def=io_manager_def)
     def upstream_asset():
