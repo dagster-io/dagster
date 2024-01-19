@@ -38,10 +38,6 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     href="/concepts/assets/asset-selection-syntax"
   ></ArticleListItem>
   <ArticleListItem
-    title="Auto-materializing assets"
-    href="/concepts/assets/asset-auto-execution"
-  ></ArticleListItem>
-  <ArticleListItem
     title="Asset checks (Experimental)"
     href="/concepts/assets/asset-checks"
   ></ArticleListItem>
@@ -53,11 +49,15 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 ---
 
-## Schedules and sensors
+## Automation
 
-Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change.
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers.
 
 <ArticleList>
+  <ArticleListItem
+    title="Automation overview"
+    href="/concepts/automation"
+  ></ArticleListItem>
   <ArticleListItem
     title="Schedules"
     href="/concepts/partitions-schedules-sensors/schedules"
@@ -65,6 +65,10 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
   <ArticleListItem
     title="Sensors"
     href="/concepts/partitions-schedules-sensors/sensors"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Auto-materialize policies"
+    href="/concepts/assets/asset-auto-execution"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset Sensors"
