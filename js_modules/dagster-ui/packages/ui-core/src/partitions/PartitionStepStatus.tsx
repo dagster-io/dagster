@@ -2,26 +2,49 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
+  DialogFooter,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
   Popover,
   useViewport,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {PartitionRunList} from './PartitionRunList';
+import {
+  BOX_SIZE,
+  GridColumn,
+  GridFloatingContainer,
+  LeftLabel,
+  TopLabel,
+  TopLabelTilted,
+  topLabelHeightForLabels,
+} from './RunMatrixUtils';
+import {
+  PartitionStepStatusPipelineQuery,
+  PartitionStepStatusPipelineQueryVariables,
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  MatrixData,
+  MatrixStep,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  PartitionRuns,
+  StatusSquareColor,
+  useMatrixData,
+} from './useMatrixData';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStatusAtIndex,
   Range,
+  partitionStatusAtIndex,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -31,30 +54,6 @@ import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {PartitionRunList} from './PartitionRunList';
-import {
-  BOX_SIZE,
-  GridColumn,
-  GridFloatingContainer,
-  LeftLabel,
-  TopLabel,
-  topLabelHeightForLabels,
-  TopLabelTilted,
-} from './RunMatrixUtils';
-import {
-  PartitionStepStatusPipelineQuery,
-  PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatus.types';
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
-  MatrixData,
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  StatusSquareColor,
-} from './useMatrixData';
 
 const BUFFER = 3;
 

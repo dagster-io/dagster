@@ -2,9 +2,8 @@ import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {LayoutContext} from '../app/LayoutProvider';
-
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
+import {LayoutContext} from '../app/LayoutProvider';
 
 export const LeftNav = () => {
   const {nav} = React.useContext(LayoutContext);

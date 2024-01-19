@@ -3,10 +3,9 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetNode} from '../asset-graph/AssetNode';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetNodeList = ({items}: {items: AssetNodeForGraphQueryFragment[] | null}) => {
   const history = useHistory();

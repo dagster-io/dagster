@@ -1,18 +1,8 @@
 import {gql} from '@apollo/client';
-import {Box, ConfigTypeSchema, FontFamily, Icon, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
-import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
-import {pluginForMetadata} from '../plugins';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Description} from './Description';
 import {
@@ -24,15 +14,24 @@ import {
 } from './SidebarComponents';
 import {
   Invocation,
+  OpEdges,
+  OpMappingTable,
   ResourceContainer,
   ResourceHeader,
   ShowAllButton,
   SidebarOpInvocationInfo,
-  OpEdges,
-  OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
 import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
+import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from '../ops/OpTypeSignature';
+import {pluginForMetadata} from '../plugins';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface SidebarOpDefinitionProps {
   definition: SidebarOpDefinitionFragment;

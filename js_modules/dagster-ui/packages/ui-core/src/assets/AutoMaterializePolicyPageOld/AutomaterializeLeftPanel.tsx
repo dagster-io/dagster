@@ -1,12 +1,11 @@
-import {Box, Caption, CursorPaginationControls, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 import {EvaluationCounts} from './EvaluationCounts';
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 interface Props extends ListProps {
   evaluations: AutoMaterializeEvaluationRecordItemFragment[];

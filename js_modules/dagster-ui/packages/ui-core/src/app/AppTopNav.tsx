@@ -3,6 +3,9 @@ import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {LayoutContext} from './LayoutProvider';
+import {ShortcutHandler} from './ShortcutHandler';
+import {WebSocketStatus} from './WebSocketProvider';
 import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {
@@ -10,10 +13,6 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../search/SearchDialog';
-
-import {LayoutContext} from './LayoutProvider';
-import {ShortcutHandler} from './ShortcutHandler';
-import {WebSocketStatus} from './WebSocketProvider';
 
 type AppNavLinkType = {
   title: string;

@@ -1,22 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Caption, Icon, MiddleTruncate, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetMaterializationUpstreamQuery,
+  AssetMaterializationUpstreamQueryVariables,
+  AssetMaterializationUpstreamTableFragment,
+  MaterializationUpstreamDataVersionFragment,
+} from './types/AssetMaterializationUpstreamData.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetMaterializationUpstreamTableFragment,
-  AssetMaterializationUpstreamQuery,
-  AssetMaterializationUpstreamQueryVariables,
-  MaterializationUpstreamDataVersionFragment,
-} from './types/AssetMaterializationUpstreamData.types';
 
 dayjs.extend(relativeTime);
 

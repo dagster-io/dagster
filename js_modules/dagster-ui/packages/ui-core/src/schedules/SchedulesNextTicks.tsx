@@ -3,27 +3,36 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
+  ExternalAnchorButton,
   Group,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
   NonIdealState,
   Popover,
   Spinner,
-  Table,
-  Subheading,
-  ExternalAnchorButton,
   StyledRawCodeMirror,
-  Colors,
+  Subheading,
+  Table,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {TimestampDisplay} from './TimestampDisplay';
+import {
+  RepositoryForNextTicksFragment,
+  ScheduleFutureTickEvaluationResultFragment,
+  ScheduleFutureTickRunRequestFragment,
+  ScheduleNextFiveTicksFragment,
+  ScheduleTickConfigQuery,
+  ScheduleTickConfigQueryVariables,
+} from './types/SchedulesNextTicks.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -41,16 +50,6 @@ import {
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {TimestampDisplay} from './TimestampDisplay';
-import {
-  RepositoryForNextTicksFragment,
-  ScheduleFutureTickEvaluationResultFragment,
-  ScheduleFutureTickRunRequestFragment,
-  ScheduleNextFiveTicksFragment,
-  ScheduleTickConfigQuery,
-  ScheduleTickConfigQueryVariables,
-} from './types/SchedulesNextTicks.types';
 
 interface ScheduleTick {
   schedule: ScheduleNextFiveTicksFragment;

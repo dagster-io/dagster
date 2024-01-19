@@ -2,11 +2,11 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Icon,
   Menu,
   MenuItem,
   Popover,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';

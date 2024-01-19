@@ -1,13 +1,6 @@
-import {Box, Icon, Tag, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-
-import {assertUnreachable} from '../../app/Util';
-import {
-  AutoMaterializeDecisionType,
-  AutoMaterializeRule,
-  AutoMaterializeRuleEvaluation,
-} from '../../graphql/types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
@@ -16,6 +9,12 @@ import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnAssetKeysPartitionLink} from './WaitingOnAssetKeysPartitionLink';
 import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
+import {assertUnreachable} from '../../app/Util';
+import {
+  AutoMaterializeDecisionType,
+  AutoMaterializeRule,
+  AutoMaterializeRuleEvaluation,
+} from '../../graphql/types';
 
 interface RuleEvaluationOutcomeProps {
   text: string;

@@ -1,8 +1,33 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-io/ui-components';
+import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
+import {AssetEvents} from './AssetEvents';
+import {AssetFeatureContext} from './AssetFeatureContext';
+import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
+import {AssetNodeLineage} from './AssetNodeLineage';
+import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPartitions} from './AssetPartitions';
+import {AssetPlots} from './AssetPlots';
+import {AssetTabs} from './AssetTabs';
+import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
+import {OverdueTag} from './OverdueTag';
+import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
+import {AssetChecks} from './asset-checks/AssetChecks';
+import {AssetKey, AssetViewParams} from './types';
+import {
+  AssetViewDefinitionNodeFragment,
+  AssetViewDefinitionQuery,
+  AssetViewDefinitionQueryVariables,
+} from './types/AssetView.types';
+import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
+import {useReportEventsModal} from './useReportEventsModal';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
@@ -20,32 +45,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {useStartTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {AssetEvents} from './AssetEvents';
-import {AssetFeatureContext} from './AssetFeatureContext';
-import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
-import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
-import {AssetNodeLineage} from './AssetNodeLineage';
-import {AssetPageHeader} from './AssetPageHeader';
-import {AssetPartitions} from './AssetPartitions';
-import {AssetPlots} from './AssetPlots';
-import {AssetTabs} from './AssetTabs';
-import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
-import {OverdueTag} from './OverdueTag';
-import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
-import {AssetChecks} from './asset-checks/AssetChecks';
-import {AssetKey, AssetViewParams} from './types';
-import {
-  AssetViewDefinitionQuery,
-  AssetViewDefinitionQueryVariables,
-  AssetViewDefinitionNodeFragment,
-} from './types/AssetView.types';
-import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
-import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;

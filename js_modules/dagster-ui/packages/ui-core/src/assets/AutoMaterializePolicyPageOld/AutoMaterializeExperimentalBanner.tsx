@@ -1,4 +1,4 @@
-import {Alert, Icon, Tag, Tooltip, Colors} from '@dagster-io/ui-components';
+import {Alert, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 
 const LearnMoreLink =

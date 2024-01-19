@@ -1,20 +1,19 @@
 import {gql} from '@apollo/client';
-import {Box, Icon, IconWrapper, Tag, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {AppContext} from '../app/AppContext';
-import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 import {VirtualizedAssetHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {RepoAssetTableFragment} from './types/VirtualizedRepoAssetTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {AppContext} from '../app/AppContext';
+import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 type Asset = RepoAssetTableFragment;
 

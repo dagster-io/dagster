@@ -1,12 +1,11 @@
 import memoize from 'lodash/memoize';
 import React from 'react';
 
+import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
-
-import {ILayoutOp, layoutOpGraph, LayoutOpGraphOptions, OpGraphLayout} from './layout';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 

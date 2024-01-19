@@ -1,9 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Icon, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {RepoAddress} from './types';
+import {
+  SingleNonSdaAssetQuery,
+  SingleNonSdaAssetQueryVariables,
+} from './types/VirtualizedAssetRow.types';
+import {workspacePathFromAddress} from './workspacePath';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
@@ -21,13 +27,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
-import {RepoAddress} from './types';
-import {
-  SingleNonSdaAssetQuery,
-  SingleNonSdaAssetQueryVariables,
-} from './types/VirtualizedAssetRow.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';

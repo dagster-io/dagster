@@ -3,10 +3,10 @@ import {gql} from '@apollo/client';
 import {Breadcrumbs} from '@blueprintjs/core';
 import {
   Checkbox,
+  Colors,
+  ErrorBoundary,
   SplitPanelContainer,
   TextInput,
-  ErrorBoundary,
-  Colors,
 } from '@dagster-io/ui-components';
 import ColorLib from 'color';
 import qs from 'qs';
@@ -14,19 +14,18 @@ import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {filterByQuery} from '../app/GraphQueryImpl';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
-import {useOpLayout} from '../graph/asyncGraphLayout';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {RepoAddress} from '../workspace/types';
-
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
+import {useOpLayout} from '../graph/asyncGraphLayout';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {RepoAddress} from '../workspace/types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;

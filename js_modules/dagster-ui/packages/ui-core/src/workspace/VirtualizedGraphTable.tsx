@@ -5,12 +5,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-
 import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 export type Graph = {name: string; path: string; description: string | null};
 

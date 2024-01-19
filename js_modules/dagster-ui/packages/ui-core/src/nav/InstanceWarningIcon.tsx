@@ -1,9 +1,8 @@
-import {Icon, Colors} from '@dagster-io/ui-components';
+import {Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
-
 import {WarningTooltip} from './WarningTooltip';
+import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
 export const InstanceWarningIcon = React.memo(() => {
   const {daemons} = React.useContext(DeploymentStatusContext);

@@ -1,10 +1,6 @@
-import {Body, Box, Icon, MiddleTruncate, Spinner, Colors} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
-import {SidebarSection} from '../pipelines/SidebarComponents';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
@@ -22,6 +18,9 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {isRunlessEvent} from './isRunlessEvent';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
+import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
   asset: SidebarAssetFragment;

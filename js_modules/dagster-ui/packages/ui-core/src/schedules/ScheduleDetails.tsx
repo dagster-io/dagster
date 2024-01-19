@@ -1,15 +1,20 @@
 import {
   Box,
+  Button,
+  Code,
   Group,
+  Heading,
   MetadataTableWIP,
   PageHeader,
   Tag,
-  Code,
-  Heading,
-  Button,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleSwitch} from './ScheduleSwitch';
+import {TimestampDisplay} from './TimestampDisplay';
+import {humanCronString} from './humanCronString';
+import {ScheduleFragment} from './types/ScheduleUtils.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -18,12 +23,6 @@ import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {SchedulePartitionStatus} from './SchedulePartitionStatus';
-import {ScheduleSwitch} from './ScheduleSwitch';
-import {TimestampDisplay} from './TimestampDisplay';
-import {humanCronString} from './humanCronString';
-import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 

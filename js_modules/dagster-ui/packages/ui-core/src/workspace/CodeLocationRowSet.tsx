@@ -2,17 +2,25 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
   Icon,
   JoinedButtons,
   MiddleTruncate,
   Tag,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {CodeLocationMenu} from './CodeLocationMenu';
+import {RepositoryCountTags} from './RepositoryCountTags';
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
+import {workspacePathFromAddress} from './workspacePath';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -24,15 +32,6 @@ import {
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
 import {TimeFromNow} from '../ui/TimeFromNow';
-
-import {CodeLocationMenu} from './CodeLocationMenu';
-import {RepositoryCountTags} from './RepositoryCountTags';
-import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 interface Props {
   locationNode: WorkspaceRepositoryLocationNode;

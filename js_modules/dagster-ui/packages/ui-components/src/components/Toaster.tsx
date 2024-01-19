@@ -1,13 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
-import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
+import {IToasterProps, ToastProps, ToasterInstance} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {CoreColors} from '../palettes/CoreColors';
-
 import {Colors} from './Color';
-import {IconName, Icon, IconWrapper} from './Icon';
+import {Icon, IconName, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
+import {CoreColors} from '../palettes/CoreColors';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {

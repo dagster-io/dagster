@@ -3,10 +3,9 @@ import {Code} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-
-import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 
 interface IOpTypeSignature {
   definition: OpTypeSignatureFragment;

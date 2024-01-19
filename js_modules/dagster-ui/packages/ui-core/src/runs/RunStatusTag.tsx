@@ -1,11 +1,10 @@
-import {Box, CaptionMono, Popover, Tag, Colors} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {assertUnreachable} from '../app/Util';
-import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
+import {assertUnreachable} from '../app/Util';
+import {RunStatus} from '../graphql/types';
 
 const statusToIntent = (status: RunStatus) => {
   switch (status) {

@@ -1,20 +1,26 @@
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
+  DialogFooter,
   Group,
   Icon,
   IconWrapper,
-  Table,
   Mono,
-  Colors,
+  Table,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {AssetLineageElements} from './AssetLineageElements';
+import {AssetEventGroup} from './groupByPartition';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {MetadataEntry} from '../metadata/MetadataEntry';
@@ -23,13 +29,6 @@ import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
-import {AssetLineageElements} from './AssetLineageElements';
-import {AssetEventGroup} from './groupByPartition';
-import {
-  AssetMaterializationFragment,
-  AssetObservationFragment,
-} from './types/useRecentAssetEvents.types';
 
 interface AssetEventsTableProps {
   hasPartitions: boolean;

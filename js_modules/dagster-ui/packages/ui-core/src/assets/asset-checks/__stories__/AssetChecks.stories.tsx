@@ -14,10 +14,10 @@ import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoM
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
 import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
 import {
-  testAssetKey,
-  testLatestMaterializationTimeStamp,
   TestAssetCheck,
   TestAssetCheckWarning,
+  testAssetKey,
+  testLatestMaterializationTimeStamp,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetCheckDetailsQueryVariables} from '../types/AssetCheckDetailModal.types';
 import {AssetChecksQueryVariables} from '../types/AssetChecks.types';

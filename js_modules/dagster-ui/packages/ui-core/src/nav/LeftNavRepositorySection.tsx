@@ -2,12 +2,11 @@ import {Body, Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {RepoNavItem} from './RepoNavItem';
+import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {RepoNavItem} from './RepoNavItem';
-import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 const LoadedRepositorySection = ({
   allRepos,

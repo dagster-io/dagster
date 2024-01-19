@@ -1,13 +1,12 @@
 import {gql} from '@apollo/client';
-import {ConfigTypeSchema, Icon, IconWrapper, Box, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
 import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 const NO_DESCRIPTION = '';
 

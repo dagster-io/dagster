@@ -1,10 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, MiddleTruncate, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {buildPipelineSelector} from './WorkspaceContext';
+import {RepoAddress} from './types';
+import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
+import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -13,12 +18,6 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
-import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {buildPipelineSelector} from './WorkspaceContext';
-import {RepoAddress} from './types';
-import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 

@@ -3,19 +3,18 @@ import isEqual from 'lodash/isEqual';
 import keyBy from 'lodash/keyBy';
 import React from 'react';
 
-import {assertUnreachable} from '../app/Util';
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
-import {assembleIntoSpans} from '../partitions/SpanRepresentation';
-
 import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
-import {assembleRangesFromTransitions, Transition} from './MultipartitioningSupport';
+import {Transition, assembleRangesFromTransitions} from './MultipartitioningSupport';
 import {usePartitionDataSubscriber} from './PartitionSubscribers';
 import {AssetKey} from './types';
 import {
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
+import {assertUnreachable} from '../app/Util';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
+import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],

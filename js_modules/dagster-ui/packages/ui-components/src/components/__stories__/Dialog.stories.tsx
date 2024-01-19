@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {Button} from '../Button';
-import {DialogBody, DialogFooter, DialogHeader, Dialog, GlobalDialogStyle} from '../Dialog';
+import {Dialog, DialogBody, DialogFooter, DialogHeader, GlobalDialogStyle} from '../Dialog';
 import {Group} from '../Group';
 
 // eslint-disable-next-line import/no-default-export

@@ -1,14 +1,13 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {Group, Icon, IconWrapper, Code, FontFamily, Colors} from '@dagster-io/ui-components';
+import {Code, Colors, FontFamily, Group, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {SectionHeader} from './SidebarComponents';
 import {titleOfIO} from '../app/titleOfIO';
 import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';
-
-import {SectionHeader} from './SidebarComponents';
 
 type OpLinkInfo = {
   solid: {name: string};

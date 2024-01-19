@@ -1,4 +1,4 @@
-import {Button, DialogBody, DialogFooter, Dialog, Icon} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogBody, DialogFooter, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';

@@ -4,9 +4,9 @@ import React from 'react';
 
 import {
   buildAssetKey,
-  buildSubscription,
   buildMaterializationEvent,
   buildPipelineRunLogsSubscriptionSuccess,
+  buildSubscription,
 } from '../../graphql/types';
 import {
   ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,

@@ -1,4 +1,4 @@
-import {IconWrapper, Colors} from '@dagster-io/ui-components';
+import {Colors, IconWrapper} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const ClearButton = styled.button`

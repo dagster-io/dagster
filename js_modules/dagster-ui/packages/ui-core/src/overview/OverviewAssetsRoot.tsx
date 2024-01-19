@@ -2,13 +2,13 @@ import {useQuery} from '@apollo/client';
 import {
   Box,
   Caption,
+  Colors,
   Icon,
   MenuItem,
   Select,
   Spinner,
   Tag,
   TextInput,
-  Colors,
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';

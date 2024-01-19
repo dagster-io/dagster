@@ -1,15 +1,15 @@
 /* eslint-disable no-restricted-imports */
 import {
-  Intent,
   Menu as BlueprintMenu,
   MenuDivider as BlueprintMenuDivider,
   MenuItem as BlueprintMenuItem,
+  Intent,
 } from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconName, Icon, IconWrapper} from './Icon';
+import {Icon, IconName, IconWrapper} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 

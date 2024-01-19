@@ -1,12 +1,11 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {weakmapMemoize} from '../app/Util';
-import {buildSVGPath} from '../asset-graph/Utils';
-
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {weakmapMemoize} from '../app/Util';
+import {buildSVGPath} from '../asset-graph/Utils';
 
 export type Edge = {a: string; b: string};
 

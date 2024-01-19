@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {Colors} from './Color';
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
@@ -152,8 +153,6 @@ import wysiwyg from '../icon-svgs/wysiwyg.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
-
-import {Colors} from './Color';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined

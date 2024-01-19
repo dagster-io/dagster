@@ -1,4 +1,4 @@
-import {Group, Icon, Spinner, FontFamily, Colors} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Group, Icon, Spinner} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';

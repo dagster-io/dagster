@@ -3,22 +3,14 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {
-  OpenWithIntent,
-  useInstigationStateReducer,
-} from '../instigation/useInstigationStateReducer';
-import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {NavigationBlock} from '../runs/NavigationBlock';
-import {RepoAddress} from '../workspace/types';
 
 import {START_SENSOR_MUTATION, STOP_SENSOR_MUTATION} from './SensorMutations';
 import {
@@ -27,6 +19,13 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
+import {
+  OpenWithIntent,
+  useInstigationStateReducer,
+} from '../instigation/useInstigationStateReducer';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {NavigationBlock} from '../runs/NavigationBlock';
+import {RepoAddress} from '../workspace/types';
 
 export type SensorInfo = {
   repoAddress: RepoAddress;

@@ -1,5 +1,6 @@
 import {
   Button,
+  Colors,
   Icon,
   IconName,
   Menu,
@@ -7,7 +8,6 @@ import {
   Popover,
   Spinner,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';

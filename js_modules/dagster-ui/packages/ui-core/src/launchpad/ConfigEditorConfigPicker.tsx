@@ -4,19 +4,27 @@ import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
+  Colors,
   Icon,
   IconWrapper,
+  Menu,
   MenuDivider,
   MenuItem,
-  Menu,
   Select,
   Spinner,
   Suggest,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {
+  ConfigEditorGeneratorPipelineFragment,
+  ConfigEditorPipelinePresetFragment,
+  ConfigPartitionResultFragment,
+  ConfigPartitionsQuery,
+  ConfigPartitionsQueryVariables,
+  PartitionSetForConfigEditorFragment,
+} from './types/ConfigEditorConfigPicker.types';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
@@ -29,15 +37,6 @@ import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  ConfigEditorGeneratorPipelineFragment,
-  ConfigEditorPipelinePresetFragment,
-  PartitionSetForConfigEditorFragment,
-  ConfigPartitionResultFragment,
-  ConfigPartitionsQuery,
-  ConfigPartitionsQueryVariables,
-} from './types/ConfigEditorConfigPicker.types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;

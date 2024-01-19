@@ -2,9 +2,6 @@ import {gql, useQuery, useSubscription} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
-import {WebSocketContext} from '../app/WebSocketProvider';
-
 import {RawLogContent} from './RawLogContent';
 import {ILogCaptureInfo} from './RunMetadataProvider';
 import {
@@ -16,6 +13,8 @@ import {
   CapturedLogsSubscription,
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
+import {AppContext} from '../app/AppContext';
+import {WebSocketContext} from '../app/WebSocketProvider';
 
 interface CapturedLogProps {
   logKey: string[];

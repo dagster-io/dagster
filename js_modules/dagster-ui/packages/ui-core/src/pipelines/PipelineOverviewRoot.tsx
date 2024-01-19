@@ -1,6 +1,14 @@
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
+import {PipelineExplorerContainer} from './PipelineExplorerRoot';
+import {
+  ExplorerPath,
+  explorerPathFromString,
+  explorerPathToString,
+  useStripSnapshotFromPath,
+} from './PipelinePathUtils';
+import {useJobTitle} from './useJobTitle';
 import {useTrackPageView} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -8,15 +16,6 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {PipelineExplorerContainer} from './PipelineExplorerRoot';
-import {
-  explorerPathFromString,
-  explorerPathToString,
-  ExplorerPath,
-  useStripSnapshotFromPath,
-} from './PipelinePathUtils';
-import {useJobTitle} from './useJobTitle';
 
 interface Props {
   repoAddress: RepoAddress;

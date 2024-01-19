@@ -3,21 +3,20 @@ import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '@apollo
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {
+  ReloadRepositoryLocationMutation,
+  ReloadRepositoryLocationMutationVariables,
+  ReloadWorkspaceMutation,
+  ReloadWorkspaceMutationVariables,
+  RepositoryLocationStatusQuery,
+  RepositoryLocationStatusQueryVariables,
+} from './types/useRepositoryLocationReload.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
-
-import {
-  RepositoryLocationStatusQuery,
-  RepositoryLocationStatusQueryVariables,
-  ReloadRepositoryLocationMutationVariables,
-  ReloadWorkspaceMutationVariables,
-  ReloadWorkspaceMutation,
-  ReloadRepositoryLocationMutation,
-} from './types/useRepositoryLocationReload.types';
 
 type State = {
   mutating: boolean;

@@ -1,16 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
+import {OverviewSensorTable} from './OverviewSensorsTable';
+import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
+import {
+  OverviewSensorsQuery,
+  OverviewSensorsQueryVariables,
+} from './types/OverviewSensorsRoot.types';
+import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -31,17 +41,6 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
-import {OverviewSensorTable} from './OverviewSensorsTable';
-import {OverviewTabs} from './OverviewTabs';
-import {sortRepoBuckets} from './sortRepoBuckets';
-import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
-import {
-  OverviewSensorsQuery,
-  OverviewSensorsQueryVariables,
-} from './types/OverviewSensorsRoot.types';
-import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();

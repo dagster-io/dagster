@@ -1,7 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
 
-import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
-
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
@@ -15,7 +13,8 @@ import {
   IGanttNode,
   LEFT_INSET,
 } from './Constants';
-import {isDynamicStep, isPlannedDynamicStep, dynamicKeyWithoutIndex} from './DynamicStepSupport';
+import {dynamicKeyWithoutIndex, isDynamicStep, isPlannedDynamicStep} from './DynamicStepSupport';
+import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];

@@ -3,14 +3,13 @@ import {Button} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
-import {RunsFilter} from '../graphql/types';
-
 import {queuedStatuses} from './RunStatuses';
 import {TerminationDialog} from './TerminationDialog';
 import {
   TerminateRunIdsQuery,
   TerminateRunIdsQueryVariables,
 } from './types/TerminateAllRunsButton.types';
+import {RunsFilter} from '../graphql/types';
 
 export const TerminateAllRunsButton = ({
   refetch,

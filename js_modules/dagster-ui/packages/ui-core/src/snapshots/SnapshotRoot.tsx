@@ -1,11 +1,10 @@
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
+import {SnapshotNav} from './SnapshotNav';
 import {PipelineExplorerSnapshotRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {PipelineRunsRoot} from '../pipelines/PipelineRunsRoot';
-
-import {SnapshotNav} from './SnapshotNav';
 
 export const SnapshotRoot = () => {
   const {pipelinePath, tab} = useParams<{

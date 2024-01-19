@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Collapse} from '@blueprintjs/core';
-import {Icon, FontFamily, Colors} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

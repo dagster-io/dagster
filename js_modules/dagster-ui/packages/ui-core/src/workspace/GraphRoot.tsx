@@ -1,25 +1,24 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {RepoAddress} from './types';
+import {GraphExplorerRootQuery, GraphExplorerRootQueryVariables} from './types/GraphRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {
-  GraphExplorer,
-  GraphExplorerOptions,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
+  GraphExplorer,
+  GraphExplorerOptions,
 } from '../pipelines/GraphExplorer';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {RepoAddress} from './types';
-import {GraphExplorerRootQuery, GraphExplorerRootQueryVariables} from './types/GraphRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;

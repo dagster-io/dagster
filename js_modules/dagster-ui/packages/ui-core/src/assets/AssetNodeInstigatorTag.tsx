@@ -1,14 +1,13 @@
 import {gql} from '@apollo/client';
 import React from 'react';
 
+import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
-
-import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag = ({
   assetNode,

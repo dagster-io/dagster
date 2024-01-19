@@ -2,17 +2,16 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {OP_CARD_SOLID_DEFINITION_FRAGMENT, OpCard} from './OpCard';
+import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/OpDetailsRoot.types';
 import {
-  SidebarOpDefinition,
   SIDEBAR_OP_DEFINITION_FRAGMENT,
+  SidebarOpDefinition,
 } from '../pipelines/SidebarOpDefinition';
 import {SidebarOpInvocationInfo} from '../pipelines/SidebarOpHelpers';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
-import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/OpDetailsRoot.types';
 
 interface UsedSolidDetailsProps {
   name: string;

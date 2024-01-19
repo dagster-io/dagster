@@ -1,20 +1,19 @@
 import {gql, useQuery} from '@apollo/client';
 import {
+  Body,
   Box,
+  Colors,
   Group,
   Icon,
   NonIdealState,
   Spinner,
-  Body,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(

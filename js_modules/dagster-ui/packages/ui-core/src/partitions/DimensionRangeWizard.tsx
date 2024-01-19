@@ -2,29 +2,28 @@ import {
   Box,
   Button,
   Checkbox,
-  TagSelectorDropdownProps,
+  Colors,
   Icon,
   Menu,
   MenuDivider,
   MenuItem,
-  TagSelectorWithSearch,
-  TagSelectorDropdownItemProps,
   MiddleTruncate,
-  Colors,
+  TagSelectorDropdownItemProps,
+  TagSelectorDropdownProps,
+  TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {CreatePartitionDialog} from './CreatePartitionDialog';
+import {DimensionRangeInput} from './DimensionRangeInput';
+import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
-
-import {CreatePartitionDialog} from './CreatePartitionDialog';
-import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
 
 export const DimensionRangeWizard = ({
   selected,

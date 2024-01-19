@@ -1,4 +1,4 @@
-import {Icon, Menu, MenuItem, Select, Button} from '@dagster-io/ui-components';
+import {Button, Icon, Menu, MenuItem, Select} from '@dagster-io/ui-components';
 import {DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
 

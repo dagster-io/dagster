@@ -3,6 +3,7 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {
+  buildAssetKey,
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildCompositeConfigType,
@@ -11,7 +12,6 @@ import {
   buildIntMetadataEntry,
   buildPathMetadataEntry,
   buildResourceRequirement,
-  buildAssetKey,
 } from '../../graphql/types';
 import {AssetNodeDefinition} from '../AssetNodeDefinition';
 

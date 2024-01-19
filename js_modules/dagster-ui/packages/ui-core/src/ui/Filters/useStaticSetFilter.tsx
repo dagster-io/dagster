@@ -1,10 +1,9 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import React from 'react';
 
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
-
-import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 export type SetFilterValue<T> = {
   value: T;

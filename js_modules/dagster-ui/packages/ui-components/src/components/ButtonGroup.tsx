@@ -3,7 +3,7 @@ import * as React from 'react';
 import {BaseButton} from './BaseButton';
 import {JoinedButtons, buildColorSet} from './Button';
 import {Colors} from './Color';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 import {Tooltip} from './Tooltip';
 
 export type ButtonGroupItem<T> = {

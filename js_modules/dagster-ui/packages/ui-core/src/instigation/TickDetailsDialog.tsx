@@ -1,22 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
 import {
-  Button,
-  DialogFooter,
-  Dialog,
   Box,
-  Subtitle2,
-  Table,
-  Spinner,
-  DialogHeader,
+  Button,
   ButtonLink,
-  Tag,
+  Dialog,
+  DialogFooter,
+  DialogHeader,
   MiddleTruncate,
-  Tabs,
+  Spinner,
+  Subtitle2,
   Tab,
+  Table,
+  Tabs,
+  Tag,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {FailedRunList, RunList} from './InstigationTick';
+import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -31,11 +35,6 @@ import {
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {QueryfulTickLogsTable} from '../ticks/TickLogDialog';
-
-import {FailedRunList, RunList} from './InstigationTick';
-import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;

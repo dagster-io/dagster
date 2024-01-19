@@ -3,6 +3,7 @@ import {
   Body2,
   Box,
   Button,
+  Colors,
   CursorHistoryControls,
   Dialog,
   DialogBody,
@@ -11,11 +12,15 @@ import {
   NonIdealState,
   Spinner,
   Table,
-  Colors,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetCheckStatusTag} from './AssetCheckStatusTag';
+import {
+  AssetCheckDetailsQuery,
+  AssetCheckDetailsQueryVariables,
+} from './types/AssetCheckDetailModal.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {AssetKeyInput} from '../../graphql/types';
@@ -25,12 +30,6 @@ import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {
-  AssetCheckDetailsQuery,
-  AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
 
 export const AssetCheckDetailModal = ({
   assetKey,

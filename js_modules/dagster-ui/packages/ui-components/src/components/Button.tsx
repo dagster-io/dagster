@@ -3,12 +3,11 @@ import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {CoreColors} from '../palettes/CoreColors';
-
 import {BaseButton} from './BaseButton';
 import {Colors} from './Color';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
+import {CoreColors} from '../palettes/CoreColors';
 
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];

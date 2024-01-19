@@ -1,13 +1,13 @@
 import {
   Button,
   ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Tag,
   Trace,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 

@@ -2,11 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the

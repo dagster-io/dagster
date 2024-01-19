@@ -3,17 +3,15 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {ReexecutionStrategy} from '../graphql/types';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
@@ -21,6 +19,7 @@ import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
+import {ReexecutionStrategy} from '../graphql/types';
 
 interface Props {
   isOpen: boolean;

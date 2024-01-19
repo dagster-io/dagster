@@ -1,12 +1,11 @@
 import {gql, useSubscription} from '@apollo/client';
 import React from 'react';
 
-import {AssetKey} from '../graphql/types';
-
 import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,
 } from './types/AssetRunLogObserver.types';
+import {AssetKey} from '../graphql/types';
 
 const OBSERVED_RUNS_CHANGED = 'observed-runs-changed';
 

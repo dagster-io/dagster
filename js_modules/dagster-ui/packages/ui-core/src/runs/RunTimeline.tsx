@@ -1,21 +1,27 @@
 import {
   Box,
-  Popover,
-  Mono,
-  FontFamily,
-  Tooltip,
-  Tag,
-  Icon,
-  Spinner,
-  MiddleTruncate,
-  useViewport,
   Colors,
+  FontFamily,
+  Icon,
+  MiddleTruncate,
+  Mono,
+  Popover,
+  Spinner,
+  Tag,
+  Tooltip,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
+import {RunStatusDot} from './RunStatusDots';
+import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
+import {TimeElapsed} from './TimeElapsed';
+import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
+import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {RunStatus} from '../graphql/types';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -28,13 +34,6 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
-
-import {SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
-import {RunStatusDot} from './RunStatusDots';
-import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
-import {TimeElapsed} from './TimeElapsed';
-import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
-import {mergeStatusToBackground} from './mergeStatusToBackground';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;

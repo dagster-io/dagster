@@ -1,13 +1,12 @@
-import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui-components';
+import {FontFamily, Spinner, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {LiveDataForNode} from './Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../assets/types';
 import {AssetKeyInput} from '../graphql/types';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-
-import {LiveDataForNode} from './Utils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 
 interface AssetLatestRunSpinnerProps {
   liveData?: LiveDataForNode;

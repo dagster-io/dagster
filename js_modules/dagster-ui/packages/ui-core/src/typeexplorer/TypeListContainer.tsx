@@ -2,6 +2,11 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {TYPE_LIST_FRAGMENT, TypeList} from './TypeList';
+import {
+  TypeListContainerQuery,
+  TypeListContainerQueryVariables,
+} from './types/TypeListContainer.types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
@@ -11,12 +16,6 @@ import {
 } from '../workspace/WorkspaceContext';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
-
-import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
-import {
-  TypeListContainerQuery,
-  TypeListContainerQueryVariables,
-} from './types/TypeListContainer.types';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;

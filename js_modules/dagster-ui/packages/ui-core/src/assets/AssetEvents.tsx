@@ -1,22 +1,18 @@
 import {
   Box,
+  Button,
   ButtonGroup,
-  Spinner,
-  Subheading,
-  ErrorBoundary,
   Checkbox,
-  Popover,
+  Colors,
+  ErrorBoundary,
+  Icon,
   Menu,
   MenuItem,
-  Button,
-  Icon,
-  Colors,
+  Popover,
+  Spinner,
+  Subheading,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
@@ -27,6 +23,9 @@ import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
+import {RepositorySelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface Props {
   assetKey: AssetKey;

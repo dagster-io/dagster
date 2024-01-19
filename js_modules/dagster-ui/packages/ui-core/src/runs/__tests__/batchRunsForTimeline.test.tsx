@@ -1,4 +1,4 @@
-import {batchRunsForTimeline, RunWithTime} from '../batchRunsForTimeline';
+import {RunWithTime, batchRunsForTimeline} from '../batchRunsForTimeline';
 
 describe('batchRunsForTimeline', () => {
   const start = 0;

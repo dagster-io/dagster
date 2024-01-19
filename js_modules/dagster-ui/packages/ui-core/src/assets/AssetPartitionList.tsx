@@ -1,11 +1,10 @@
-import {Box, MiddleTruncate, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Inner} from '../ui/VirtualizedTable';
-
-import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetListContainer, AssetListRow} from './AssetEventList';
 import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
+import {Inner} from '../ui/VirtualizedTable';
 
 export interface AssetPartitionListProps {
   partitions: string[];

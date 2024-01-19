@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   ErrorBoundary,
   Icon,
   Menu,
@@ -10,36 +11,12 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
-import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
-import {AssetKey} from '../assets/types';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
-import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector} from '../graphql/types';
-import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
-import {useStartTrace} from '../performance';
-import {
-  GraphExplorerOptions,
-  OptionsOverlay,
-  RightInfoPanel,
-  RightInfoPanelContent,
-} from '../pipelines/GraphExplorer';
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Loading} from '../ui/Loading';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {AssetEdges} from './AssetEdges';
 import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
@@ -64,6 +41,28 @@ import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
+import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
+import {AssetKey} from '../assets/types';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {AssetGroupSelector} from '../graphql/types';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useStartTrace} from '../performance';
+import {
+  GraphExplorerOptions,
+  OptionsOverlay,
+  RightInfoPanel,
+  RightInfoPanelContent,
+} from '../pipelines/GraphExplorer';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Loading} from '../ui/Loading';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 

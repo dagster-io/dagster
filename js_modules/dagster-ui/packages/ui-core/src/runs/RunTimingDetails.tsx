@@ -2,11 +2,10 @@ import {gql} from '@apollo/client';
 import {Colors, MetadataTable} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {RunStatus} from '../graphql/types';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-
 import {TimeElapsed} from './TimeElapsed';
 import {RunTimingFragment} from './types/RunTimingDetails.types';
+import {RunStatus} from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {

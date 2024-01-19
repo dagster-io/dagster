@@ -1,18 +1,17 @@
-import {useApolloClient, ApolloClient, gql} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import * as React from 'react';
 
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  PartitionStepLoaderQuery,
+  PartitionStepLoaderQueryVariables,
+} from './types/usePartitionStepQuery.types';
+import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  PartitionStepLoaderQueryVariables,
-  PartitionStepLoaderQuery,
-} from './types/usePartitionStepQuery.types';
-import {PartitionRuns, PARTITION_MATRIX_STEP_RUN_FRAGMENT} from './useMatrixData';
 
 interface DataState {
   runs: PartitionMatrixStepRunFragment[];

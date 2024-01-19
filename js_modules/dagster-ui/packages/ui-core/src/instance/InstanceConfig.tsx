@@ -3,25 +3,24 @@ import 'codemirror/addon/search/searchcursor';
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Code,
+  Colors,
+  Heading,
   PageHeader,
   Spinner,
-  Code,
-  Heading,
   StyledRawCodeMirror,
   Subheading,
-  Colors,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config {

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import {Colors} from '../Color';
 import {Group} from '../Group';
-import {Menu, MenuItem, MenuDivider} from '../Menu';
+import {Menu, MenuDivider, MenuItem} from '../Menu';
 
 // eslint-disable-next-line import/no-default-export
 export default {

@@ -1,7 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {VirtualizedResourceTable} from './VirtualizedResourceTable';
+import {
+  WorkspaceResourcesQuery,
+  WorkspaceResourcesQueryVariables,
+} from './types/WorkspaceResourcesRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -10,12 +15,6 @@ import {WorkspaceHeader} from '../workspace/WorkspaceHeader';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {VirtualizedResourceTable} from './VirtualizedResourceTable';
-import {
-  WorkspaceResourcesQuery,
-  WorkspaceResourcesQueryVariables,
-} from './types/WorkspaceResourcesRoot.types';
 
 export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();

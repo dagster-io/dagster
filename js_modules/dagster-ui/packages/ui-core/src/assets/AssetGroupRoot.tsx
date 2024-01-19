@@ -1,8 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
+import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {AssetGlobalLineageLink} from './AssetPageHeader';
+import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetGroupMetadataQuery,
+  AssetGroupMetadataQueryVariables,
+} from './types/AssetGroupRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -18,16 +27,6 @@ import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {AssetGlobalLineageLink} from './AssetPageHeader';
-import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetGroupMetadataQuery,
-  AssetGroupMetadataQueryVariables,
-} from './types/AssetGroupRoot.types';
 
 interface AssetGroupRootParams {
   groupName: string;

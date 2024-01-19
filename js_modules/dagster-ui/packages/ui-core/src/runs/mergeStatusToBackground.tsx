@@ -1,6 +1,6 @@
 import {Colors} from '@dagster-io/ui-components';
 
-import {queuedStatuses, inProgressStatuses, failedStatuses, successStatuses} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
 import {TimelineRun} from './RunTimeline';
 
 type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'scheduled';

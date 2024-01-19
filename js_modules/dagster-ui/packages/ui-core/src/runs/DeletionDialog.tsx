@@ -3,13 +3,13 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 

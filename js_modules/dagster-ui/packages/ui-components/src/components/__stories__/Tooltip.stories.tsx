@@ -8,7 +8,7 @@ import {Colors} from '../Color';
 import {CustomTooltipProvider} from '../CustomTooltipProvider';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
-import {Tooltip, GlobalTooltipStyle} from '../Tooltip';
+import {GlobalTooltipStyle, Tooltip} from '../Tooltip';
 
 const SOLID_STYLES: React.CSSProperties = {
   background: Colors.backgroundDefault(),

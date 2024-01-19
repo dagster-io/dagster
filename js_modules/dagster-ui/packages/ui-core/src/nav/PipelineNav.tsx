@@ -1,16 +1,15 @@
-import {Box, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
+import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
+import {JobMetadata} from './JobMetadata';
+import {RepositoryLink} from './RepositoryLink';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {JobFeatureContext} from '../pipelines/JobFeatureContext';
 import {JobTabs} from '../pipelines/JobTabs';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {JobMetadata} from './JobMetadata';
-import {RepositoryLink} from './RepositoryLink';
 
 interface Props {
   repoAddress: RepoAddress;

@@ -2,14 +2,13 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {ExecutionParams, ReexecutionStrategy} from '../graphql/types';
-import {showLaunchError} from '../launchpad/showLaunchError';
-
-import {handleLaunchResult, LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
+import {ExecutionParams, ReexecutionStrategy} from '../graphql/types';
+import {showLaunchError} from '../launchpad/showLaunchError';
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.

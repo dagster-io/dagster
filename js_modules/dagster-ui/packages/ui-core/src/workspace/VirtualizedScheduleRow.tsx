@@ -4,31 +4,16 @@ import {
   Button,
   Caption,
   Checkbox,
+  Colors,
   Icon,
   Menu,
   MiddleTruncate,
   Popover,
   Tooltip,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus} from '../graphql/types';
-import {LastRunSummary} from '../instance/LastRunSummary';
-import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
-import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {errorDisplay} from '../schedules/SchedulesTable';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
-import {TickStatusTag} from '../ticks/TickStatusTag';
-import {MenuLink} from '../ui/MenuLink';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
@@ -38,6 +23,20 @@ import {
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {InstigationStatus} from '../graphql/types';
+import {LastRunSummary} from '../instance/LastRunSummary';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {errorDisplay} from '../schedules/SchedulesTable';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanCronString} from '../schedules/humanCronString';
+import {TickStatusTag} from '../ticks/TickStatusTag';
+import {MenuLink} from '../ui/MenuLink';
+import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1fr 1fr 76px 148px 210px 92px';
 const TEMPLATE_COLUMNS = '1fr 1fr 76px 148px 210px 92px';

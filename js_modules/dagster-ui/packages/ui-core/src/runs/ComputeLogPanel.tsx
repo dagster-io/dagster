@@ -1,10 +1,9 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
-
 import {RawLogContent} from './RawLogContent';
 import {useComputeLogs} from './useComputeLogs';
+import {AppContext} from '../app/AppContext';
 
 interface ComputeLogPanelProps {
   runId: string;

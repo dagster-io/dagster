@@ -1,14 +1,13 @@
-import {ButtonLink, Box, Tag, Caption} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Caption, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {sortAssetKeys} from '../../asset-graph/Utils';
-import {AssetLink} from '../AssetLink';
-import {AssetKey} from '../types';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {VirtualizedAssetPartitionListForDialog} from './VirtualizedAssetPartitionListForDialog';
 import {AssetDetailType, detailTypeToLabel} from './assetDetailUtils';
 import {useFilterPartitionNames} from './assetFilters';
+import {sortAssetKeys} from '../../asset-graph/Utils';
+import {AssetLink} from '../AssetLink';
+import {AssetKey} from '../types';
 
 interface Props {
   updatedAssetKeys: Record<string, AssetKey[]>;

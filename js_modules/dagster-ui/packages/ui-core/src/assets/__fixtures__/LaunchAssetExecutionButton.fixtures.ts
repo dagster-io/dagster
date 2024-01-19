@@ -1,6 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 import without from 'lodash/without';
 
+import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {
@@ -40,8 +41,6 @@ import {
 } from '../types/LaunchAssetExecutionButton.types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
-
-import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 
 export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode',

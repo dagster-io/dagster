@@ -1,10 +1,9 @@
-import {FontFamily, Colors} from '@dagster-io/ui-components';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {formatElapsedTimeWithoutMsec} from '../app/Util';
-
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 
 const ONE_MIN = 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;

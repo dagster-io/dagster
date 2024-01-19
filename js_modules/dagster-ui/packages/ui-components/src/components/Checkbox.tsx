@@ -181,8 +181,8 @@ const Base = ({
   disabled = false,
   indeterminate = false,
   fillColor = Colors.accentBlue(),
-  children, // not passed to input
-  size,
+  children: _children, // not passed to input
+  size: _size,
   onClick,
   ...rest
 }: Props) => {

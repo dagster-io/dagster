@@ -1,4 +1,4 @@
-import {Box, FontFamily, IconWrapper, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

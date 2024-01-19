@@ -1,18 +1,17 @@
-import {Box, Caption, Icon, Tag, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {RunlessEventTag} from './RunlessEventTag';
+import {AssetEventGroup} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetKeyInput} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
-import {RunlessEventTag} from './RunlessEventTag';
-import {AssetEventGroup} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 

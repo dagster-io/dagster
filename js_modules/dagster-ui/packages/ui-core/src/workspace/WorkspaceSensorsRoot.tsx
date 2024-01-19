@@ -2,6 +2,15 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {VirtualizedSensorTable} from './VirtualizedSensorTable';
+import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {repoAddressToSelector} from './repoAddressToSelector';
+import {RepoAddress} from './types';
+import {
+  WorkspaceSensorsQuery,
+  WorkspaceSensorsQueryVariables,
+} from './types/WorkspaceSensorsRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -15,16 +24,6 @@ import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
-
-import {VirtualizedSensorTable} from './VirtualizedSensorTable';
-import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {repoAddressToSelector} from './repoAddressToSelector';
-import {RepoAddress} from './types';
-import {
-  WorkspaceSensorsQuery,
-  WorkspaceSensorsQueryVariables,
-} from './types/WorkspaceSensorsRoot.types';
 
 export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();

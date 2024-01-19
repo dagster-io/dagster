@@ -6,12 +6,12 @@ import {Box} from './Box';
 import {Checkbox} from './Checkbox';
 import {Colors} from './Color';
 import {Icon} from './Icon';
-import {MenuItem, Menu} from './Menu';
+import {Menu, MenuItem} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
-import {Container as VirtualContainer, Inner, Row} from './VirtualizedTable';
+import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
 import {useViewport} from './useViewport';
 
 export type TagSelectorTagProps = {
@@ -251,7 +251,7 @@ export const TagSelectorWithSearch = (
     allTags,
     selectedTags,
     setSelectedTags,
-    rowHeight,
+    rowHeight: _rowHeight,
     renderDropdown,
     searchPlaceholder,
     ...rest

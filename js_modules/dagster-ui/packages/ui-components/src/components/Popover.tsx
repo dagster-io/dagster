@@ -5,10 +5,9 @@ import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import searchSVG from '../icon-svgs/search.svg';
-
 import {Colors} from './Color';
 import {FontFamily} from './styles';
+import searchSVG from '../icon-svgs/search.svg';
 
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagster-popover.bp4-popover2,
