@@ -1,48 +1,95 @@
-from dagster import AssetCheckResult, AutoMaterializePolicy, asset, asset_check
-from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
-
-from ..base_scenario import (
-    AssetReconciliationScenario,
-    run,
-    run_request,
+from dagster import AssetCheckResult, AssetKey, AutoMaterializePolicy, Output, asset
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    BlockingAssetCheckRule,
+)
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeRuleEvaluation,
+    ParentUpdatedRuleEvaluationData,
 )
 
+from ..base_scenario import (
+    AssetEvaluationSpec,
+    AssetReconciliationScenario,
+    run,
+)
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+eager_with_blocking_check = AutoMaterializePolicy.eager().with_rules(BlockingAssetCheckRule())
+
+
+@asset(
+    auto_materialize_policy=eager_with_blocking_check,
+    check_specs=[AssetCheckSpec(name="check1", asset="asset1", blocking=True)],
+)
 def asset1():
-    pass
+    yield Output(1)
+    yield AssetCheckResult(passed=False)
 
 
-@asset_check(asset=asset1)
-def asset1_check():
-    return AssetCheckResult(passed=False)
-
-
-asset1_with_blocking_check = build_asset_with_blocking_check(asset1, [asset1_check])
-
-
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1_with_blocking_check])
+@asset(auto_materialize_policy=eager_with_blocking_check, deps=[asset1])
 def asset2():
     pass
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset2])
+@asset(auto_materialize_policy=eager_with_blocking_check, deps=[asset2])
 def asset3():
     pass
 
 
-# AMP currently doesn't respect blocking checks. The blocking check will stop downstreams if they're
-# in the same run, but not if they're in a different run.
-
 blocking_check_scenarios = {
-    "blocking_check_works_inside_run": AssetReconciliationScenario(
-        assets=[asset1_with_blocking_check, asset2, asset3],
-        unevaluated_runs=[run(["asset1"]), run(["asset2"]), run(["asset1", "asset2"])],
+    "blocking_check_inside_run": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
+        unevaluated_runs=[run(["asset1", "asset2"])],
         expected_run_requests=[],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset2",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            BlockingAssetCheckRule().to_snapshot(), evaluation_data=None
+                        ),
+                        None,
+                    ),
+                ],
+            ),
+        ],
     ),
-    "blocking_check_doesnt_work_across_runs": AssetReconciliationScenario(
-        assets=[asset1_with_blocking_check, asset2, asset3],
+    "blocking_check_across_runs": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
         unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
+        expected_run_requests=[],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset2",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                updated_asset_keys=frozenset({AssetKey(["asset1"])}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            BlockingAssetCheckRule().to_snapshot(), evaluation_data=None
+                        ),
+                        None,
+                    ),
+                ],
+                num_skipped=1,
+            ),
+        ],
     ),
 }

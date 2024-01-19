@@ -933,3 +933,33 @@ class DiscardOnMaxMaterializationsExceededRule(
                 context.asset_key, context.partitions_def, rate_limited_asset_partitions
             ),
         )
+
+
+@whitelist_for_serdes
+class BlockingAssetCheckRule(AutoMaterializeRule, NamedTuple("_BlockingAssetcheckRule", [])):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset(
+        self, context: AssetConditionEvaluationContext
+    ) -> "AssetConditionResult":
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionRecordStatus,
+        )
+
+        parent_assets = context.instance_queryer.asset_graph.get_parents(context.asset_key)
+        checks_on_parent_assets = [
+            key
+            for key in context.instance_queryer.asset_graph.asset_check_keys
+            if key.asset_key in parent_assets
+        ]
+        # todo: filter to blocking
+        check_executions = context.instance_queryer.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            checks_on_parent_assets
+        ).values()
+        for check_execution in check_executions:
+            if check_execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
+                return AssetConditionResult.create(context, context.candidate_subset)
+
+        return AssetConditionResult.create(context, context.empty_subset())
