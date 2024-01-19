@@ -351,10 +351,10 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
-          <Box border="bottom" padding={{vertical: 12}} margin={{top: 12, bottom: 12}}>
+          <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
-          <Box padding={{vertical: 12}} flex={{justifyContent: 'space-between'}}>
+          <Box padding={{vertical: 12}} flex={{justifyContent: 'flex-end'}}>
             <TagSelectorWrapper>
               <TagSelectorWithSearch
                 closeOnSelect
