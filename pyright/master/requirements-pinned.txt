@@ -599,7 +599,7 @@ websocket-client==1.7.0
 websockets==12.0
 Werkzeug==2.2.3
 widgetsnbextension==4.0.9
-with_airflow==0.0.0
+-e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_pyspark
 -e examples/with_wandb
