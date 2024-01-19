@@ -244,7 +244,6 @@ class AssetDaemonContext:
         num_checked_assets = 0
         num_auto_materialize_asset_keys = len(self.auto_materialize_asset_keys)
 
-        visited_multi_asset_keys = set()
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.auto_materialize_asset_keys:
@@ -256,10 +255,6 @@ class AssetDaemonContext:
                 "Evaluating asset"
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
-
-            if asset_key in visited_multi_asset_keys:
-                self._verbose_log_fn(f"Asset {asset_key.to_user_string()} already visited")
-                continue
 
             (evaluation, asset_cursor_for_asset, expected_data_time) = self.evaluate_asset(
                 asset_key, evaluation_results_by_key, expected_data_time_mapping
@@ -288,7 +283,17 @@ class AssetDaemonContext:
             if num_requested > 0:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
                     expected_data_time_mapping[neighbor_key] = expected_data_time
-                    visited_multi_asset_keys.add(neighbor_key)
+
+                    # make sure that the true_subset of the neighbor is accurate -- when it was
+                    # evaluated it may have had a different requested AssetSubset. however, because
+                    # all these neighbors must be executed as a unit, we need to union together
+                    # the subset of all required neighbors
+                    if neighbor_key in evaluation_results_by_key:
+                        neighbor_evaluation = evaluation_results_by_key[neighbor_key]
+                        evaluation_results_by_key[neighbor_key] = neighbor_evaluation._replace(
+                            true_subset=neighbor_evaluation.true_subset
+                            | evaluation.true_subset._replace(asset_key=neighbor_key)
+                        )
                     to_request |= {
                         ap._replace(asset_key=neighbor_key)
                         for ap in evaluation.true_subset.asset_partitions
