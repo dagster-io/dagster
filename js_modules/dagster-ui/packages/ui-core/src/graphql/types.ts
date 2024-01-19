@@ -3854,7 +3854,9 @@ export type ScalarUnionConfigType = ConfigType & {
 
 export type Schedule = {
   __typename: 'Schedule';
+  canReset: Scalars['Boolean'];
   cronSchedule: Scalars['String'];
+  defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']>;
   executionTimezone: Maybe<Scalars['String']>;
   futureTick: DryRunInstigationTick;
@@ -3970,6 +3972,8 @@ export type SelectorTypeConfigError = PipelineConfigValidationError & {
 
 export type Sensor = {
   __typename: 'Sensor';
+  canReset: Scalars['Boolean'];
+  defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   jobOriginId: Scalars['String'];
@@ -11787,8 +11791,13 @@ export const buildSchedule = (
   relationshipsToOmit.add('Schedule');
   return {
     __typename: 'Schedule',
+    canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : false,
     cronSchedule:
       overrides && overrides.hasOwnProperty('cronSchedule') ? overrides.cronSchedule! : 'possimus',
+    defaultStatus:
+      overrides && overrides.hasOwnProperty('defaultStatus')
+        ? overrides.defaultStatus!
+        : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'porro',
     executionTimezone:
@@ -12029,6 +12038,11 @@ export const buildSensor = (
   relationshipsToOmit.add('Sensor');
   return {
     __typename: 'Sensor',
+    canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : true,
+    defaultStatus:
+      overrides && overrides.hasOwnProperty('defaultStatus')
+        ? overrides.defaultStatus!
+        : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
     id:

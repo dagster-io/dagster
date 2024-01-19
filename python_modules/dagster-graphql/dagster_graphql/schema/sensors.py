@@ -1,11 +1,14 @@
+from typing import Optional
+
 import dagster._check as check
 import graphene
+from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.host_representation import ExternalSensor, ExternalTargetData
-from dagster._core.scheduler.instigation import InstigatorState
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -30,7 +33,11 @@ from .errors import (
     GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneSensorSelector
-from .instigation import GrapheneDryRunInstigationTick, GrapheneInstigationState
+from .instigation import (
+    GrapheneDryRunInstigationTick,
+    GrapheneInstigationState,
+    GrapheneInstigationStatus,
+)
 from .util import ResolveInfo, non_null_list
 
 
@@ -68,6 +75,8 @@ class GrapheneSensor(graphene.ObjectType):
     jobOriginId = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     targets = graphene.List(graphene.NonNull(GrapheneTarget))
+    defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
+    canReset = graphene.NonNull(graphene.Boolean)
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
@@ -78,7 +87,12 @@ class GrapheneSensor(graphene.ObjectType):
     class Meta:
         name = "Sensor"
 
-    def __init__(self, external_sensor, sensor_state, batch_loader=None):
+    def __init__(
+        self,
+        external_sensor: ExternalSensor,
+        sensor_state: Optional[InstigatorState],
+        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
+    ):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
 
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
@@ -86,6 +100,8 @@ class GrapheneSensor(graphene.ObjectType):
         self._batch_loader = check.opt_inst_param(
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
+
+        self._stored_state = sensor_state
         self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(
@@ -102,6 +118,19 @@ class GrapheneSensor(graphene.ObjectType):
 
     def resolve_id(self, _):
         return self._external_sensor.get_external_origin_id()
+
+    def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
+        default_sensor_status = self._external_sensor.default_status
+
+        if default_sensor_status == DefaultSensorStatus.RUNNING:
+            return GrapheneInstigationStatus.RUNNING
+        elif default_sensor_status == DefaultSensorStatus.STOPPED:
+            return GrapheneInstigationStatus.STOPPED
+
+    def resolve_canReset(self, _graphene_info: ResolveInfo):
+        return bool(
+            self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
+        )
 
     def resolve_sensorState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the sensor runs

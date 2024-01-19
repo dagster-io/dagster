@@ -1571,11 +1571,18 @@ type Schedule {
   mode: String!
   executionTimezone: String
   description: String
+  defaultStatus: InstigationStatus!
+  canReset: Boolean!
   scheduleState: InstigationState!
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
+}
+
+enum InstigationStatus {
+  RUNNING
+  STOPPED
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2447,11 +2454,6 @@ enum InstigationType {
   AUTO_MATERIALIZE
 }
 
-enum InstigationStatus {
-  RUNNING
-  STOPPED
-}
-
 type InstigationStateNotFoundError implements Error {
   message: String!
   name: String!
@@ -2870,6 +2872,8 @@ type Sensor {
   jobOriginId: String!
   name: String!
   targets: [Target!]
+  defaultStatus: InstigationStatus!
+  canReset: Boolean!
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
