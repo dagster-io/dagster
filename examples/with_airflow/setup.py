@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster_airflow",
-        "apache-airflow<2.8.1",
+        "apache-airflow<2.8",
         # for the kubernetes operator
         "apache-airflow-providers-cncf-kubernetes>=4.4.0",
         "apache-airflow-providers-docker>=3.1.0",
