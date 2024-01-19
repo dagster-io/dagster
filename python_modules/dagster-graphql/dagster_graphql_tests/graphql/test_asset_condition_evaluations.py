@@ -37,7 +37,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    asset_daemon_cursor_to_instigator_serialized_cursor
+    asset_daemon_cursor_to_instigator_serialized_cursor,
 )
 from dagster._serdes.serdes import serialize_value
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
