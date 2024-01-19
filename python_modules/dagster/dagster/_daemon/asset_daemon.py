@@ -811,14 +811,13 @@ class AssetDaemon(DagsterDaemon):
                         )
                         updated_evaluation_asset_keys.add(asset_key)
 
-                evaluations_to_update = [
-                    evaluations_by_asset_key[asset_key]
-                    for asset_key in updated_evaluation_asset_keys
-                ]
-                if evaluations_to_update:
-                    schedule_storage.add_auto_materialize_asset_evaluations(
-                        evaluation_id, evaluations_to_update
-                    )
+            evaluations_to_update = [
+                evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
+            ]
+            if evaluations_to_update:
+                schedule_storage.add_auto_materialize_asset_evaluations(
+                    evaluation_id, evaluations_to_update
+                )
 
             check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
