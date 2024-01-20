@@ -380,6 +380,22 @@ dagster-user-deployments:
       #     subPath: test_file.yaml
       volumeMounts: []
 
+      # Init containers to run before the main container. See:
+      # https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+      initContainers: []
+
+      # Additional containers (i.e. sidecars) to run alongside the main container. See:
+      # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+      #
+      # Example:
+      #
+      # sidecarContainers:
+      #   - name: my-sidecar
+      #     image: ...
+      #     volumeMounts: []
+      #     env: []
+      sidecarContainers: []
+
       annotations: {}
       nodeSelector: {}
       affinity: {}
@@ -538,22 +554,6 @@ runLauncher:
       #     cpu: 100m
       #     memory: 128Mi
       resources: {}
-
-      # Init containers to run before the main container. See:
-      # https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-      initContainers: []
-
-      # Additional containers (i.e. sidecars) to run alongside the main container. See:
-      # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
-      #
-      # Example:
-      #
-      # sidecarContainers:
-      #   - name: my-sidecar
-      #     image: ...
-      #     volumeMounts: []
-      #     env: []
-      sidecarContainers: []
 
       # Override the default K8s scheduler for launched Pods
       # schedulerName: ~

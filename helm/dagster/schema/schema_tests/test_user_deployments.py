@@ -912,11 +912,12 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
 def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 
-    init_containers = []
+    init_containers = [
+        {"name": "my-init-container", "image": "my-init-image"},
+    ]
 
     sidecars = [
-        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
-        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+        {"name": "my-sidecar", "image": "my-sidecar-image"},
     ]
 
     deployment = UserDeployment.construct(
@@ -946,41 +947,43 @@ def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launc
     image = user_deployments[0].spec.template.spec.containers[0].image
     image_name, image_tag = image.split(":")
 
-    # deployed_volume_mounts = user_deployments[0].spec.template.spec.containers[0].volume_mounts
-    # assert deployed_volume_mounts == [
-    #     k8s_model_from_dict(
-    #         k8s_client.models.V1VolumeMount,
-    #         k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
-    #     )
-    #     for volume_mount in volume_mounts
-    # ]
+    deployed_sidecars = user_deployments[0].spec.template.spec.containers[1:]
+    assert deployed_sidecars == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Container,
+            k8s_snake_case_dict(k8s_client.models.V1Container, sidecar),
+        )
+        for sidecar in sidecars
+    ]
 
-    # deployed_volumes = user_deployments[0].spec.template.spec.volumes
-    # assert deployed_volumes == [
-    #     k8s_model_from_dict(
-    #         k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
-    #     )
-    #     for volume in volumes
-    # ]
-
-    assert image_name == deployment.image.repository
-    assert image_tag == deployment.image.tag
+    deployed_init_containers = user_deployments[0].spec.template.spec.init_containers
+    assert deployed_init_containers == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Container,
+            k8s_snake_case_dict(k8s_client.models.V1Container, container),
+        )
+        for container in init_containers
+    ]
 
     if include_config_in_launched_runs:
         container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
         assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
-        # assert json.loads(container_context.value) == {
-        #     "k8s": {
-        #         "env_config_maps": [
-        #             "release-name-dagster-user-deployments-foo-user-env",
-        #         ],
-        #         "image_pull_policy": "Always",
-        #         "volume_mounts": volume_mounts,
-        #         "volumes": volumes,
-        #         "namespace": "default",
-        #         "service_account_name": "release-name-dagster-user-deployments-user-deployments",
-        #     }
-        # }
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "image_pull_policy": "Always",
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "init_containers": init_containers,
+                        "containers": sidecars,
+                    },
+                },
+            }
+        }
     else:
         _assert_no_container_context(user_deployments[0])
 
