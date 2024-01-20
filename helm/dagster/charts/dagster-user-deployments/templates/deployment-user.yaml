@@ -36,9 +36,9 @@ spec:
       imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
-      {{- if $.Values.extraInitContainers }}
+      {{- if $deployment.initContainers }}
       initContainers:
-        {{- toYaml $.Values.extraInitContainers | nindent 8 }}
+        {{- toYaml $deployment.initContainers | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ $.Chart.Name }}
@@ -177,8 +177,8 @@ spec:
             - {{- $volumeMount | toYaml | nindent 14 }}
           {{- end }}
         {{- end }}
-        {{- if $.Values.extraContainers }}
-        {{- toYaml $.Values.extraContainers | nindent 8 }}
+        {{- if $deployment.sidecarContainers }}
+        {{- toYaml $deployment.sidecarContainers | nindent 8 }}
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
