@@ -909,6 +909,83 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
 
 
 @pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    init_containers = []
+
+    sidecars = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        initContainers=[kubernetes.Container.construct(None, **container) for container in init_containers],
+        sidecarContainers=[kubernetes.Container.construct(None, **sidecar) for sidecar in sidecars],
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    # deployed_volume_mounts = user_deployments[0].spec.template.spec.containers[0].volume_mounts
+    # assert deployed_volume_mounts == [
+    #     k8s_model_from_dict(
+    #         k8s_client.models.V1VolumeMount,
+    #         k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
+    #     )
+    #     for volume_mount in volume_mounts
+    # ]
+
+    # deployed_volumes = user_deployments[0].spec.template.spec.volumes
+    # assert deployed_volumes == [
+    #     k8s_model_from_dict(
+    #         k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+    #     )
+    #     for volume in volumes
+    # ]
+
+    assert image_name == deployment.image.repository
+    assert image_tag == deployment.image.tag
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        # assert json.loads(container_context.value) == {
+        #     "k8s": {
+        #         "env_config_maps": [
+        #             "release-name-dagster-user-deployments-foo-user-env",
+        #         ],
+        #         "image_pull_policy": "Always",
+        #         "volume_mounts": volume_mounts,
+        #         "volumes": volumes,
+        #         "namespace": "default",
+        #         "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+        #     }
+        # }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
 def test_subchart_image_pull_secrets(
     subchart_template: HelmTemplate, include_config_in_launched_runs: bool
 ):
