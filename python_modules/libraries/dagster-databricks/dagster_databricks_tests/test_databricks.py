@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from unittest import mock
 
 import dagster
@@ -15,7 +16,6 @@ from dagster_databricks.databricks import (
 )
 from dagster_databricks.resources import AzureServicePrincipalCredentials, OauthCredentials
 from databricks.sdk.service import compute, jobs
-from importlib_metadata import version
 from pytest_mock import MockerFixture
 
 HOST = "https://uksouth.azuredatabricks.net"
