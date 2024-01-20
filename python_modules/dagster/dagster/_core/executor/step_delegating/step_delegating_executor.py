@@ -200,7 +200,6 @@ class StepDelegatingExecutor(Executor):
                 # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
                 # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
                 # is_complete can return true when we're just between steps.
-                has_unpopped_emitted_events = False
                 while not active_execution.is_complete:
                     if active_execution.check_for_interrupts():
                         active_execution.mark_interrupted()
@@ -234,7 +233,7 @@ class StepDelegatingExecutor(Executor):
 
                         return
 
-                    if has_unpopped_emitted_events or active_execution.has_in_flight_steps:
+                    if active_execution.has_in_flight_steps:
                         for dagster_event in self._pop_events(
                             plan_context.instance,
                             plan_context.run_id,
@@ -263,11 +262,9 @@ class StepDelegatingExecutor(Executor):
                                         active_execution.verify_complete(
                                             plan_context, dagster_event.step_key
                                         )
-                        has_unpopped_emitted_events = False
 
                     # process skips from failures or uncovered inputs
-                    skips = list(active_execution.plan_events_iterator(plan_context))
-                    has_unpopped_emitted_events = has_unpopped_emitted_events or len(skips) > 0
+                    list(active_execution.plan_events_iterator(plan_context))
 
                     curr_time = pendulum.now("UTC")
                     if (
@@ -284,7 +281,6 @@ class StepDelegatingExecutor(Executor):
                                     )
                                 )
                                 if not health_check_result.is_healthy:
-                                    has_unpopped_emitted_events = True
                                     DagsterEvent.step_failure_event(
                                         step_context=step_context,
                                         step_failure_data=StepFailureData(
@@ -302,7 +298,6 @@ class StepDelegatingExecutor(Executor):
                                 )
                                 # Log a step failure event if there was an error during the health
                                 # check
-                                has_unpopped_emitted_events = True
                                 DagsterEvent.step_failure_event(
                                     step_context=plan_context.for_step(step),
                                     step_failure_data=StepFailureData(
@@ -320,12 +315,7 @@ class StepDelegatingExecutor(Executor):
                         max_steps_to_run = None  # disables limit
 
                     # process events from concurrency blocked steps
-                    concurrency_events = list(
-                        active_execution.concurrency_event_iterator(plan_context)
-                    )
-                    has_unpopped_emitted_events = (
-                        has_unpopped_emitted_events or len(concurrency_events) > 0
-                    )
+                    list(active_execution.concurrency_event_iterator(plan_context))
 
                     for step in active_execution.get_steps_to_execute(max_steps_to_run):
                         running_steps[step.key] = step

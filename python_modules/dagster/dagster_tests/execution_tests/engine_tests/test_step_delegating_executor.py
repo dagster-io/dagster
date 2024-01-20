@@ -1,8 +1,8 @@
 import subprocess
 import tempfile
+import threading
 import time
 
-import mock
 import pytest
 from dagster import (
     AssetKey,
@@ -25,7 +25,7 @@ from dagster._core.definitions.reconstruct import (
 )
 from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import ReexecutionOptions, execute_job, execute_run_iterator
+from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -475,32 +475,37 @@ def simple_job():
 
 def test_blocked_concurrency_limits():
     TestStepHandler.reset()
-    with mock.patch("dagster._core.execution.plan.active.CONCURRENCY_CLAIM_MESSAGE_INTERVAL", 10):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with instance_for_test(
-                temp_dir=temp_dir,
-                overrides={
-                    "event_log_storage": {
-                        "module": "dagster.utils.test",
-                        "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
-                        "config": {"base_dir": temp_dir},
-                    }
-                },
-            ) as instance:
-                instance.event_log_storage.set_concurrency_slots("foo", 0)
-                run = instance.create_run_for_job(simple_job)
-                run_iter = execute_run_iterator(
-                    job=reconstructable(simple_job), dagster_run=run, instance=instance
-                )
-                blocked_message_count = 0
-                while True:
-                    event = next(run_iter)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            temp_dir=temp_dir,
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                }
+            },
+        ) as instance:
+            instance.event_log_storage.set_concurrency_slots("foo", 0)
 
-                    if "blocked by concurrency limit for key foo" in event.message:
-                        blocked_message_count += 1
-                        assert (
-                            instance.event_log_storage.get_records_for_run_calls(run.run_id)
-                            == blocked_message_count
-                        )
-                        if blocked_message_count == 2:
-                            break
+            def _unblock_concurrency_key(instance, timeout):
+                time.sleep(timeout)
+                instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+            TIMEOUT = 3
+            threading.Thread(
+                target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
+            ).start()
+            with execute_job(reconstructable(simple_job), instance=instance) as result:
+                TestStepHandler.wait_for_processes()
+                assert result.success
+                assert any(
+                    [
+                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        for event in result.all_events
+                    ]
+                )
+                # the executor loop sleeps every second, so there should be at least a call per
+                # second that the steps are blocked, in addition to the processing of any step
+                # events
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3
