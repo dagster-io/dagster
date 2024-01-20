@@ -182,6 +182,8 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         return AssetDaemonCursor.empty(evaluation_id)
     elif not isinstance(data, dict):
         return AssetDaemonCursor.empty(default_evaluation_id)
+    elif asset_graph is None:
+        return AssetDaemonCursor.empty(data.get("evaluation_id", default_evaluation_id))
 
     serialized_last_observe_request_timestamp_by_asset_key = data.get(
         "last_observe_request_timestamp_by_asset_key", {}
