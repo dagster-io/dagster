@@ -63,7 +63,7 @@ def observable_source_asset(
 
     The observation function of a source asset is wrapped inside of an op and can be executed as
     part of a job. Each execution generates an `AssetObservation` event associated with the source
-    asset. The source asset observation function should return a metadata dictionary that will be
+    asset. The source asset observation function should return a `DataVersion` that will be
     attached to the `AssetObservation`.
 
     Args:
