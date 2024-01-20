@@ -740,3 +740,6 @@ class DatabricksJobRunner:
                 num_attempts += 1
                 time.sleep(waiter_delay)
         log.warn("Could not retrieve cluster logs!")
+
+    def get_run_url(self, run_id: int) -> Optional[str]:
+        return self._client.workspace_client.jobs.get_run(run_id).run_page_url

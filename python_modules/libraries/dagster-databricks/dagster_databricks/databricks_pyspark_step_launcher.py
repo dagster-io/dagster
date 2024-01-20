@@ -281,6 +281,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         task = self._get_databricks_task(run_id, step_key)
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
+        run_url = self.databricks_runner.get_run_url(databricks_run_id)
+        if run_url is not None:
+            step_context.log.info(f"Run URL: {run_url}")
+
         if self.permissions:
             self._grant_permissions(log, databricks_run_id)
 
@@ -583,6 +587,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             ]
         )
         return f"/dbfs/{path}"
+
+    def get_run_url(self, run_id: int) -> str:
+        return self.databricks_runner(run_id)
 
 
 class DatabricksConfig:
