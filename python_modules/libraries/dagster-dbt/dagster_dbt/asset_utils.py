@@ -41,7 +41,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .utils import dagster_name_fn
+from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -51,12 +51,12 @@ DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
-    """Return the corresponding Dagster asset key for a dbt model.
+    """Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
 
     Args:
         dbt_assets (AssetsDefinition): An AssetsDefinition object produced by
             load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets.
-        model_name (str): The name of the dbt model.
+        model_name (str): The name of the dbt model, seed, or snapshot.
 
     Returns:
         AssetKey: The corresponding Dagster asset key.
@@ -84,11 +84,11 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
     matching_models = [
         value
         for value in manifest["nodes"].values()
-        if value["name"] == model_name and value["resource_type"] == "model"
+        if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
     ]
 
     if len(matching_models) == 0:
-        raise KeyError(f"Could not find a dbt model with name: {model_name}")
+        raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
 
     return dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
 
