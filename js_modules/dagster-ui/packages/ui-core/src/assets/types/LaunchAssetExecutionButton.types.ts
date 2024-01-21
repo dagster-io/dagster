@@ -1236,6 +1236,7 @@ export type LaunchAssetLoaderQuery = {
           };
     } | null;
   }>;
+  assetNodeAdditionalRequiredKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetNodeDefinitionCollisions: Array<{
     __typename: 'AssetNodeDefinitionCollision';
     assetKey: {__typename: 'AssetKey'; path: Array<string>};

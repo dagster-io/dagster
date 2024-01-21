@@ -11,14 +11,19 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import React from 'react';
+import {Link} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
-import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
+import {
+  ADDITIONAL_REQUIRED_KEYS_WARNING,
+  MULTIPLE_DEFINITIONS_WARNING,
+} from './AssetDefinedInMultipleReposNotice';
 import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {
   LaunchAssetCheckUpstreamQuery,
@@ -332,12 +337,26 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
     setState({type: 'loading'});
 
-    const data = await onLoad(assetKeysOrJob);
+    let data = await onLoad(assetKeysOrJob);
 
     if ('assetNodeDefinitionCollisions' in data && data.assetNodeDefinitionCollisions.length) {
       showCustomAlert(buildAssetCollisionsAlert(data));
       setState({type: 'none'});
       return;
+    }
+
+    if ('assetNodeAdditionalRequiredKeys' in data && data.assetNodeAdditionalRequiredKeys.length) {
+      setState({type: 'none'});
+      try {
+        await confirm(buildAssetAdditionalRequiredKeysAlert(data));
+
+        if (assetKeysOrJob instanceof Array) {
+          data = await onLoad([...assetKeysOrJob, ...data.assetNodeAdditionalRequiredKeys]);
+        }
+        setState({type: 'loading'});
+      } catch {
+        return;
+      }
     }
 
     const assets = data.assetNodes;
@@ -357,22 +376,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     if (missing.length) {
       setState({type: 'none'});
       try {
-        await confirm({
-          title: 'Are you sure?',
-          description: (
-            <>
-              <div>
-                Materializing these assets may fail because the upstream assets listed below have
-                not been materialized yet.
-              </div>
-              <ul>
-                {missing.map((assetKey, idx) => (
-                  <li key={idx}>{displayNameForAssetKey(assetKey)}</li>
-                ))}
-              </ul>
-            </>
-          ),
-        });
+        await confirm(buildUpstreamAssetsWithNoMaterializationsAlert(missing));
         setState({type: 'loading'});
       } catch {
         return;
@@ -676,7 +680,9 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>
-              <strong>{displayNameForAssetKey(collision.assetKey)}</strong>
+              <Link to={assetDetailsPathForKey(collision.assetKey)} target="_blank">
+                <strong>{displayNameForAssetKey(collision.assetKey)}</strong>
+              </Link>
               <ul>
                 {collision.repositories.map((r, ridx) => (
                   <li key={ridx}>
@@ -688,6 +694,46 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
           ))}
         </ul>
       </div>
+    ),
+  };
+}
+
+export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQuery) {
+  return {
+    title: ADDITIONAL_REQUIRED_KEYS_WARNING,
+    description: (
+      <div style={{overflow: 'auto'}}>
+        One or more of the selected assets are part of a multi-asset that does not support
+        subsetting or that has required outputs outside the current selection. Materializing the
+        current selection will also yield new materializations for the following:
+        <ul>
+          {data.assetNodeAdditionalRequiredKeys.map((assetKey, idx) => (
+            <li key={idx}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'definition'})} target="_blank">
+                <strong>{displayNameForAssetKey(assetKey)}</strong>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  };
+}
+export function buildUpstreamAssetsWithNoMaterializationsAlert(missing: AssetKey[]) {
+  return {
+    title: 'Are you sure?',
+    description: (
+      <>
+        <div>
+          Materializing these assets may fail because the upstream assets listed below have not been
+          materialized yet.
+        </div>
+        <ul>
+          {missing.map((assetKey, idx) => (
+            <li key={idx}>{displayNameForAssetKey(assetKey)}</li>
+          ))}
+        </ul>
+      </>
     ),
   };
 }
@@ -767,6 +813,9 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
     assetNodes(assetKeys: $assetKeys) {
       id
       ...LaunchAssetExecutionAssetNodeFragment
+    }
+    assetNodeAdditionalRequiredKeys(assetKeys: $assetKeys) {
+      path
     }
     assetNodeDefinitionCollisions(assetKeys: $assetKeys) {
       assetKey {

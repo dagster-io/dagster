@@ -2893,6 +2893,7 @@ export type OutputDefinition = {
   __typename: 'OutputDefinition';
   description: Maybe<Scalars['String']>;
   isDynamic: Maybe<Scalars['Boolean']>;
+  isRequired: Maybe<Scalars['Boolean']>;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -3540,6 +3541,7 @@ export type Query = {
   assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
   assetConditionEvaluationRecordsOrError: Maybe<AssetConditionEvaluationRecordsOrError>;
   assetConditionEvaluationsForEvaluationId: Maybe<AssetConditionEvaluationRecordsOrError>;
+  assetNodeAdditionalRequiredKeys: Array<AssetKey>;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -3621,8 +3623,12 @@ export type QueryAssetConditionEvaluationsForEvaluationIdArgs = {
   evaluationId: Scalars['Int'];
 };
 
+export type QueryAssetNodeAdditionalRequiredKeysArgs = {
+  assetKeys: Array<AssetKeyInput>;
+};
+
 export type QueryAssetNodeDefinitionCollisionsArgs = {
-  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
+  assetKeys: Array<AssetKeyInput>;
 };
 
 export type QueryAssetNodeOrErrorArgs = {
@@ -10227,6 +10233,7 @@ export const buildOutputDefinition = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quis',
     isDynamic: overrides && overrides.hasOwnProperty('isDynamic') ? overrides.isDynamic! : false,
+    isRequired: overrides && overrides.hasOwnProperty('isRequired') ? overrides.isRequired! : true,
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellendus',
@@ -11463,6 +11470,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('AssetConditionEvaluationRecords')
         ? ({} as AssetConditionEvaluationRecords)
         : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
+    assetNodeAdditionalRequiredKeys:
+      overrides && overrides.hasOwnProperty('assetNodeAdditionalRequiredKeys')
+        ? overrides.assetNodeAdditionalRequiredKeys!
+        : [],
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!

@@ -53,6 +53,7 @@ from ...implementation.external import (
 )
 from ...implementation.fetch_asset_checks import fetch_asset_check_executions
 from ...implementation.fetch_assets import (
+    get_additional_required_keys,
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
@@ -104,6 +105,7 @@ from ...implementation.utils import (
 from ..asset_checks import GrapheneAssetCheckExecution
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
+    GrapheneAssetKey,
     GrapheneAssetNode,
     GrapheneAssetNodeDefinitionCollision,
     GrapheneAssetNodeOrError,
@@ -418,9 +420,15 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve an asset node by asset key.",
     )
 
+    assetNodeAdditionalRequiredKeys = graphene.Field(
+        non_null_list(GrapheneAssetKey),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Retrieve a list of additional asset keys that must be materialized with the provided selection (with @multi_asset is_required=True within the same ops.)"
+    )
+
     assetNodeDefinitionCollisions = graphene.Field(
         non_null_list(GrapheneAssetNodeDefinitionCollision),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
         description=(
             "Retrieve a list of asset keys where two or more repos provide an asset definition."
             " Note: Assets should "
@@ -1001,10 +1009,19 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
 
+    def resolve_assetNodeAdditionalRequiredKeys(self,
+        graphene_info: ResolveInfo,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
+ ):
+        assert assetKeys is not None
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
+        return get_additional_required_keys(graphene_info, asset_keys)
+
     def resolve_assetNodeDefinitionCollisions(
         self,
         graphene_info: ResolveInfo,
-        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
         raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
