@@ -53,7 +53,7 @@ spec:
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
           resources:
-            {{- toYaml $_.Values.dagsterWebserver.initContainers.resources | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
@@ -62,7 +62,7 @@ spec:
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
           resources:
-            {{- toYaml $_.Values.dagsterWebserver.initContainers.resources | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:

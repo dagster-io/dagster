@@ -164,9 +164,7 @@ dagsterWebserver:
   resources: {}
 
   # Configure initContainer resources separately from main container
-  initContainers:
-    resources: {}
-
+  initContainerResources: {}
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -1204,9 +1202,7 @@ dagsterDaemon:
   resources: {}
 
   # Configure initContainer resources separately from main container
-  initContainers:
-    resources: {}
-
+  initContainerResources: {}
   # Override the default K8s scheduler
   # schedulerName: ~
 
