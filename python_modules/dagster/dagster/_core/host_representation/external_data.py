@@ -1131,6 +1131,7 @@ class ExternalAssetCheck(
             ("description", Optional[str]),
             ("atomic_execution_unit_id", Optional[str]),
             ("job_names", Sequence[str]),
+            ("blocking", bool),
         ],
     )
 ):
@@ -1143,6 +1144,7 @@ class ExternalAssetCheck(
         description: Optional[str],
         atomic_execution_unit_id: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
+        blocking: bool = False,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
@@ -1153,6 +1155,7 @@ class ExternalAssetCheck(
                 atomic_execution_unit_id, "automic_execution_unit_id"
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
+            blocking=check.bool_param(blocking, "blocking"),
         )
 
     @property
@@ -1519,6 +1522,7 @@ def external_asset_checks_from_defs(
                 description=spec.description,
                 atomic_execution_unit_id=atomic_execution_unit_id,
                 job_names=job_names_by_check_key[check_key],
+                blocking=spec.blocking,
             )
         )
 

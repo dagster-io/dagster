@@ -20,6 +20,7 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 
+from .asset_check_spec import AssetCheckKey
 from .asset_graph import AssetGraph, AssetKeyOrCheckKey
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey
@@ -53,6 +54,7 @@ class ExternalAssetGraph(AssetGraph):
         required_assets_and_checks_by_key: Mapping[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
+        blocking_asset_check_keys: AbstractSet[AssetCheckKey],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -67,6 +69,7 @@ class ExternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            blocking_asset_check_keys=blocking_asset_check_keys,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._materialization_job_names_by_key = job_names_by_key
@@ -209,6 +212,12 @@ class ExternalAssetGraph(AssetGraph):
                 for key in keys:
                     required_assets_and_checks_by_key[key] = keys
 
+        blocking_asset_check_keys = {
+            external_check.key
+            for external_check in external_asset_checks
+            if external_check.blocking
+        }
+
         return cls(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
             source_asset_keys=source_asset_keys,
@@ -224,6 +233,7 @@ class ExternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            blocking_asset_check_keys=blocking_asset_check_keys,
         )
 
     @property

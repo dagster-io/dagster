@@ -13,6 +13,7 @@ from ..base_scenario import (
     AssetEvaluationSpec,
     AssetReconciliationScenario,
     run,
+    run_request,
 )
 
 eager_with_blocking_check = AutoMaterializePolicy.eager().with_rules(BlockingAssetCheckRule())
@@ -20,11 +21,20 @@ eager_with_blocking_check = AutoMaterializePolicy.eager().with_rules(BlockingAss
 
 @asset(
     auto_materialize_policy=eager_with_blocking_check,
-    check_specs=[AssetCheckSpec(name="check1", asset="asset1", blocking=True)],
+    check_specs=[
+        AssetCheckSpec(name="blocking_check", asset="asset1", blocking=True),
+        AssetCheckSpec(name="non_blocking_check", asset="asset1"),
+    ],
 )
-def asset1():
+def asset1(context):
     yield Output(1)
-    yield AssetCheckResult(passed=False)
+    yield AssetCheckResult(
+        check_name="blocking_check", passed=context.run.tags.get("blocking_check_fail") != "true"
+    )
+    yield AssetCheckResult(
+        check_name="non_blocking_check",
+        passed=context.run.tags.get("non_blocking_check_fail") != "true",
+    )
 
 
 @asset(auto_materialize_policy=eager_with_blocking_check, deps=[asset1])
@@ -38,9 +48,9 @@ def asset3():
 
 
 blocking_check_scenarios = {
-    "blocking_check_inside_run": AssetReconciliationScenario(
+    "blocking_check_fail_inside_run": AssetReconciliationScenario(
         assets=[asset1, asset2, asset3],
-        unevaluated_runs=[run(["asset1", "asset2"])],
+        unevaluated_runs=[run(["asset1", "asset2"], tags={"blocking_check_fail": "true"})],
         expected_run_requests=[],
         expected_evaluations=[
             AssetEvaluationSpec(
@@ -56,9 +66,9 @@ blocking_check_scenarios = {
             ),
         ],
     ),
-    "blocking_check_across_runs": AssetReconciliationScenario(
+    "blocking_check_fail_across_runs": AssetReconciliationScenario(
         assets=[asset1, asset2, asset3],
-        unevaluated_runs=[run(["asset1"])],
+        unevaluated_runs=[run(["asset1"], tags={"blocking_check_fail": "true"})],
         expected_run_requests=[],
         expected_evaluations=[
             AssetEvaluationSpec(
@@ -91,5 +101,25 @@ blocking_check_scenarios = {
                 num_skipped=1,
             ),
         ],
+    ),
+    "blocking_check_pass_inside_run": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
+        unevaluated_runs=[run(["asset1", "asset2"])],
+        expected_run_requests=[run_request(["asset3"])],
+    ),
+    "blocking_check_pass_across_runs": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(["asset2", "asset3"])],
+    ),
+    "non_blocking_check_pass_inside_run": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
+        unevaluated_runs=[run(["asset1", "asset2"], tags={"non_blocking_check_fail": "true"})],
+        expected_run_requests=[run_request(["asset3"])],
+    ),
+    "non_blocking_check_pass_across_runs": AssetReconciliationScenario(
+        assets=[asset1, asset2, asset3],
+        unevaluated_runs=[run(["asset1"], tags={"non_blocking_check_fail": "true"})],
+        expected_run_requests=[run_request(["asset2", "asset3"])],
     ),
 }
