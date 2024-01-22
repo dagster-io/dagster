@@ -1,13 +1,9 @@
 import {ApolloClient, gql} from '@apollo/client';
 
 import type {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-  AssetNodeLiveFragment,
-} from './types/AssetLiveDataThread.types';
+import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetLiveDataThread.types';
 import {BATCHING_INTERVAL} from './util';
-import {LiveDataForNode, buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
+import {buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 
 export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph';
@@ -59,10 +55,7 @@ export class AssetLiveDataThread {
     }
     this.isLooping = true;
     const fetch = () => {
-      const nextAssets = this.manager.determineAssetsToFetch(this.getObservedKeys());
-      if (nextAssets.length) {
-        this._batchedQueryAssets(nextAssets);
-      }
+      this._batchedQueryAssets();
     };
     setTimeout(fetch, BATCHING_INTERVAL);
     this.interval = setInterval(fetch, 5000);
@@ -85,22 +78,23 @@ export class AssetLiveDataThread {
         assetKeys,
       },
     });
-    const nodesByKey: Record<string, AssetNodeLiveFragment> = {};
-    const liveDataByKey: Record<string, LiveDataForNode> = {};
-    data.assetNodes.forEach((assetNode) => {
-      const id = tokenForAssetKey(assetNode.assetKey);
-      nodesByKey[id] = assetNode;
-    });
-    data.assetsLatestInfo.forEach((assetLatestInfo) => {
-      const id = tokenForAssetKey(assetLatestInfo.assetKey);
-      liveDataByKey[id] = buildLiveDataForNode(nodesByKey[id]!, assetLatestInfo);
-    });
+    const nodesByKey = Object.fromEntries(
+      data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
+    );
+
+    const liveDataByKey = Object.fromEntries(
+      data.assetsLatestInfo.map((assetLatestInfo) => {
+        const id = tokenForAssetKey(assetLatestInfo.assetKey);
+        return [id, buildLiveDataForNode(nodesByKey[id]!, assetLatestInfo)];
+      }),
+    );
 
     this.manager._updateCache(liveDataByKey);
     return liveDataByKey;
   }
 
-  private async _batchedQueryAssets(assetKeys: AssetKeyInput[]) {
+  private async _batchedQueryAssets() {
+    const assetKeys = this.manager.determineAssetsToFetch(this.getObservedKeys());
     if (!assetKeys.length || this.isFetching) {
       return;
     }
@@ -109,10 +103,7 @@ export class AssetLiveDataThread {
 
     const doNextFetch = () => {
       this.isFetching = false;
-      const nextAssets = this.manager.determineAssetsToFetch(this.getObservedKeys());
-      if (nextAssets.length) {
-        this._batchedQueryAssets(nextAssets);
-      }
+      this._batchedQueryAssets();
     };
     try {
       const data = await this.queryAssetKeys(assetKeys);
@@ -245,6 +236,7 @@ export const ASSETS_GRAPH_LIVE_QUERY = gql`
       ...AssetNodeLiveFragment
     }
     assetsLatestInfo(assetKeys: $assetKeys) {
+      id
       ...AssetLatestInfoFragment
     }
   }
