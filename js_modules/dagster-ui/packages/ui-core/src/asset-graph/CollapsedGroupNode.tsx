@@ -1,12 +1,24 @@
-import {Box, Colors, FontFamily, Icon, Menu, MenuItem} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Icon,
+  Menu,
+  MenuItem,
+  Tag,
+  Tooltip,
+  ifPlural,
+} from '@dagster-io/ui-components';
+import React from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {groupAssetsByStatus} from './util';
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -89,19 +101,97 @@ export const CollapsedGroupNode = ({
               <Icon name="unfold_more" />
             </Box>
           </Box>
-          {!minimal && (
-            <Box padding={{horizontal: 12, bottom: 4}}>
-              <AssetDescription $color={Colors.textLighter()}>
-                {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'}
-              </AssetDescription>
-            </Box>
-          )}
+          {!minimal && <GroupNodeAssetStatusCounts group={group} />}
         </CollapsedGroupNodeBox>
         <GroupStackLine style={{width: '94%', marginLeft: '3%'}} />
         <GroupStackLine style={{width: '88%', marginLeft: '6%'}} />
       </CollapsedGroupNodeContainer>
       {dialog}
     </ContextMenuWrapper>
+  );
+};
+
+const GroupNodeAssetStatusCounts = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
+  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
+
+  const {liveDataByNode} = useAssetsLiveData(assetKeys, 'group-node');
+  const statuses = React.useMemo(
+    () =>
+      groupAssetsByStatus(
+        group.assets.map((asset) => ({...asset, key: asset.assetKey})),
+        liveDataByNode,
+      ),
+    [group.assets, liveDataByNode],
+  );
+  return (
+    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+      {Object.keys(liveDataByNode).length !== assetKeys.length ? (
+        <AssetDescription $color={Colors.textLighter()}>
+          {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
+        </AssetDescription>
+      ) : (
+        <>
+          <>
+            {statuses.successful.length ? (
+              <Tooltip
+                content={`${statuses.successful.length} asset${ifPlural(
+                  statuses.successful.length,
+                  '',
+                  's',
+                )} are up to date`}
+              >
+                <Tag icon="dot_filled" intent="success">
+                  {statuses.successful.length}
+                </Tag>
+              </Tooltip>
+            ) : null}
+          </>
+          {statuses.missing.length ? (
+            <Tooltip
+              content={`${statuses.missing.length} asset${ifPlural(
+                statuses.missing.length,
+                '',
+                's',
+              )} are missing or have changed`}
+            >
+              <Tag icon="dot_filled" intent="warning">
+                {statuses.missing.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses.failed.length ? (
+            <Tooltip
+              content={`${statuses.failed.length} asset${ifPlural(
+                statuses.failed.length,
+                '',
+                's',
+              )} have failed or are overdue`}
+            >
+              <Tag icon="dot_filled" intent="danger">
+                {statuses.failed.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses.inprogress.length ? (
+            <Tooltip
+              content={`${statuses.inprogress.length} asset${ifPlural(
+                statuses.inprogress.length,
+                '',
+                's',
+              )} are executing`}
+            >
+              <Tag icon="spinner" intent="primary">
+                {statuses.inprogress.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+        </>
+      )}
+    </Box>
   );
 };
 
