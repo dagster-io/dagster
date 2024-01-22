@@ -17,9 +17,11 @@ import mock
 import pendulum
 import pytest
 from dagster import (
+    AssetDep,
     AssetIn,
     AssetKey,
     AssetsDefinition,
+    BackfillPolicy,
     DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
@@ -1502,3 +1504,62 @@ def test_asset_backfill_unpartitioned_root_turned_to_partitioned():
     assert asset_backfill_data.get_target_root_partitions_subset(
         get_asset_graph(repo_with_partitioned_root)
     ).get_partition_keys() == ["2024-01-01"]
+
+
+def test_assets_backfill_with_backfill_policy_and_partition_mapping():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-3, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-01",
+            "2023-03-02",
+            "2023-03-03",
+            "2023-03-04",
+            "2023-03-05",
+            "2023-03-06",
+            "2023-03-07",
+            "2023-03-08",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 1

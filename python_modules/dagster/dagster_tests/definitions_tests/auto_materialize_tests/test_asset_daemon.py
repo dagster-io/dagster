@@ -84,6 +84,18 @@ def _get_threadpool_executor(instance: DagsterInstance):
 # just run over a subset of the total scenarios
 daemon_scenarios = [*basic_scenarios, *partition_scenarios]
 
+backcompat_serialized_cursor = """{"latest_storage_id": 50, "evaluation_id": 20, "latest_evaluation_by_asset_key": {"hourly_to_daily_1_45": "{\\"__class__\\": \\"AutoMaterializeAssetEvaluation\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"hourly_to_daily_1_45\\"]}, \\"num_discarded\\": 0, \\"num_requested\\": 0, \\"num_skipped\\": 0, \\"partition_subsets_by_condition\\": [[{\\"__class__\\": \\"AutoMaterializeRuleEvaluation\\", \\"evaluation_data\\": {\\"__class__\\": \\"WaitingOnAssetsRuleEvaluationData\\", \\"waiting_on_asset_keys\\": {\\"__frozenset__\\": [{\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"hourly_to_daily_0_8\\"]}]}}, \\"rule_snapshot\\": {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnParentMissingRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"waiting on upstream data to be present\\"}}, {\\"__class__\\": \\"SerializedPartitionsSubset\\", \\"serialized_partitions_def_class_name\\": \\"TimeWindowPartitionsDefinition\\", \\"serialized_partitions_def_unique_id\\": \\"241c72b8dcaedd1676326a771544c0501246866b\\", \\"serialized_subset\\": \\"{\\\\\\"version\\\\\\": 1, \\\\\\"time_windows\\\\\\": [[1701313200.0, 1701316800.0], [1701320400.0, 1701324000.0], [1701338400.0, 1701342000.0]], \\\\\\"num_partitions\\\\\\": 3}\\"}], [{\\"__class__\\": \\"AutoMaterializeRuleEvaluation\\", \\"evaluation_data\\": {\\"__class__\\": \\"WaitingOnAssetsRuleEvaluationData\\", \\"waiting_on_asset_keys\\": {\\"__frozenset__\\": [{\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"hourly_to_daily_0_8\\"]}, {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"hourly_to_daily_0_9\\"]}]}}, \\"rule_snapshot\\": {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnParentMissingRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"waiting on upstream data to be present\\"}}, {\\"__class__\\": \\"SerializedPartitionsSubset\\", \\"serialized_partitions_def_class_name\\": \\"TimeWindowPartitionsDefinition\\", \\"serialized_partitions_def_unique_id\\": \\"241c72b8dcaedd1676326a771544c0501246866b\\", \\"serialized_subset\\": \\"{\\\\\\"version\\\\\\": 1, \\\\\\"time_windows\\\\\\": [[1701316800.0, 1701320400.0], [1701331200.0, 1701334800.0]], \\\\\\"num_partitions\\\\\\": 2}\\"}]], \\"rule_snapshots\\": [{\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnParentMissingRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"waiting on upstream data to be present\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnParentOutdatedRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"waiting on upstream data to be up to date\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnRequiredButNonexistentParentsRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"required parent partitions do not exist\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"MaterializeOnRequiredForFreshnessRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.MATERIALIZE\\"}, \\"description\\": \\"required to meet this or downstream asset's freshness policy\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"MaterializeOnMissingRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.MATERIALIZE\\"}, \\"description\\": \\"materialization is missing\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"MaterializeOnParentUpdatedRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.MATERIALIZE\\"}, \\"description\\": \\"upstream data has changed since latest materialization\\"}, {\\"__class__\\": \\"AutoMaterializeRuleSnapshot\\", \\"class_name\\": \\"SkipOnBackfillInProgressRule\\", \\"decision_type\\": {\\"__enum__\\": \\"AutoMaterializeDecisionType.SKIP\\"}, \\"description\\": \\"targeted by an in-progress backfill\\"}], \\"run_ids\\": {\\"__set__\\": []}}"}}"""
+backcompat_scenarios = [
+    AssetDaemonScenario(
+        id="backcompat_cursor",
+        initial_state=one_asset.with_all_eager(),
+        execution_fn=lambda state: state.evaluate_tick()
+        .evaluate_tick()
+        .with_serialized_cursor(backcompat_serialized_cursor)
+        .evaluate_tick()
+        .evaluate_tick(),
+    )
+]
 
 automation_policy_sensor_scenarios = [
     AssetDaemonScenario(
@@ -146,11 +158,14 @@ automation_policy_sensor_scenarios = [
 
 
 @pytest.mark.parametrize(
-    "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
+    "scenario",
+    daemon_scenarios + backcompat_scenarios,
+    ids=[scenario.id for scenario in daemon_scenarios + backcompat_scenarios],
 )
 def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
     with get_daemon_instance() as instance:
         scenario.evaluate_daemon(instance)
+    assert False
 
 
 daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]

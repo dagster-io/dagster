@@ -1509,6 +1509,7 @@ def should_backfill_atomic_asset_partitions_unit(
                 is asset_graph.get_repository_handle(parent.asset_key)
                 and asset_graph.get_backfill_policy(parent.asset_key)
                 == asset_graph.get_backfill_policy(candidate.asset_key)
+                and asset_graph.get_backfill_policy(candidate.asset_key) is None
             )
 
             if (
