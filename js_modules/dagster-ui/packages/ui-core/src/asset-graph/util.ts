@@ -1,7 +1,6 @@
-import {AssetKeyInput} from '../graphql/types';
-
-import {buildAssetNodeStatusContent, StatusCase} from './AssetNodeStatusContent';
+import {StatusCase, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, tokenForAssetKey} from './Utils';
+import {AssetKeyInput} from '../graphql/types';
 
 export function groupAssetsByStatus<
   T extends {
