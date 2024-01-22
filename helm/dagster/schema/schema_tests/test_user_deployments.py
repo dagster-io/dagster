@@ -925,7 +925,9 @@ def test_user_deployment_sidecar(template: HelmTemplate, include_config_in_launc
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
         port=3030,
-        initContainers=[kubernetes.Container.construct(None, **container) for container in init_containers],
+        initContainers=[
+            kubernetes.Container.construct(None, **container) for container in init_containers
+        ],
         sidecarContainers=[kubernetes.Container.construct(None, **sidecar) for sidecar in sidecars],
         includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
             enabled=include_config_in_launched_runs
