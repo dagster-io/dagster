@@ -23,6 +23,11 @@ from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
+from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
+    fetch_asset_condition_evaluation_record_for_partition,
+    fetch_asset_condition_evaluation_records_for_asset_key,
+    fetch_asset_condition_evaluation_records_for_evaluation_id,
+)
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
@@ -30,6 +35,10 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.schema.asset_condition_evaluations import (
+    GrapheneAssetConditionEvaluation,
+    GrapheneAssetConditionEvaluationRecordsOrError,
+)
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
@@ -52,7 +61,6 @@ from ...implementation.fetch_assets import (
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
-    get_unloadable_instigator_states_or_error,
 )
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
@@ -128,11 +136,9 @@ from ..inputs import (
 from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
-    GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
     GrapheneInstigationTick,
     GrapheneInstigationTickStatus,
-    GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
     GrapheneCapturedLogs,
@@ -280,14 +286,6 @@ class GrapheneQuery(graphene.ObjectType):
         description=(
             "Retrieve the state for a schedule or sensor by its location name, repository name, and"
             " schedule/sensor name."
-        ),
-    )
-
-    unloadableInstigationStatesOrError = graphene.Field(
-        graphene.NonNull(GrapheneInstigationStatesOrError),
-        instigationType=graphene.Argument(GrapheneInstigationType),
-        description=(
-            "Retrieve the running schedules and sensors that are missing from the workspace."
         ),
     )
 
@@ -513,6 +511,28 @@ class GrapheneQuery(graphene.ObjectType):
         ),
     )
 
+    assetConditionEvaluationForPartition = graphene.Field(
+        GrapheneAssetConditionEvaluation,
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        partition=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve the condition evaluation for an asset and partition.",
+    )
+
+    assetConditionEvaluationRecordsOrError = graphene.Field(
+        GrapheneAssetConditionEvaluationRecordsOrError,
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        cursor=graphene.Argument(graphene.String),
+        description="Retrieve the condition evaluation records for an asset.",
+    )
+
+    assetConditionEvaluationsForEvaluationId = graphene.Field(
+        GrapheneAssetConditionEvaluationRecordsOrError,
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=("Retrieve the condition evaluation records for a given evaluation ID."),
+    )
+
     autoMaterializeTicks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
         dayRange=graphene.Int(),
@@ -620,7 +640,7 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -665,7 +685,7 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -683,15 +703,6 @@ class GrapheneQuery(graphene.ObjectType):
         return get_instigator_state_or_error(
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
-
-    @capture_error
-    def resolve_unloadableInstigationStatesOrError(
-        self,
-        graphene_info: ResolveInfo,
-        instigationType: Optional[GrapheneInstigationType] = None,  # type: ignore (idk)
-    ):
-        instigation_type = InstigatorType(instigationType) if instigationType else None
-        return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
@@ -1089,6 +1100,38 @@ class GrapheneQuery(graphene.ObjectType):
         evaluationId: int,
     ):
         return fetch_auto_materialize_asset_evaluations_for_evaluation_id(
+            graphene_info=graphene_info, evaluation_id=evaluationId
+        )
+
+    def resolve_assetConditionEvaluationForPartition(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        evaluationId: int,
+        partition: str,
+    ):
+        return fetch_asset_condition_evaluation_record_for_partition(
+            graphene_info=graphene_info,
+            graphene_asset_key=assetKey,
+            evaluation_id=evaluationId,
+            partition_key=partition,
+        )
+
+    def resolve_assetConditionEvaluationRecordsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return fetch_asset_condition_evaluation_records_for_asset_key(
+            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_assetConditionEvaluationsForEvaluationId(
+        self, graphene_info: ResolveInfo, evaluationId: int
+    ):
+        return fetch_asset_condition_evaluation_records_for_evaluation_id(
             graphene_info=graphene_info, evaluation_id=evaluationId
         )
 

@@ -1,16 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 export type Graph = {name: string; path: string; description: string | null};
 
@@ -20,7 +19,7 @@ interface Props {
 }
 
 export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: graphs.length,
@@ -41,7 +40,7 @@ export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
           gridTemplateColumns: '100%',
           height: '32px',
           fontSize: '12px',
-          color: colorTextLight(),
+          color: Colors.textLight(),
         }}
       >
         <HeaderCell>Graph</HeaderCell>
@@ -98,7 +97,7 @@ const GraphRow = (props: GraphRowProps) => {
   useDelayedRowQuery(queryGraph);
   const {data} = queryResult;
 
-  const displayedDescription = React.useMemo(() => {
+  const displayedDescription = useMemo(() => {
     if (description) {
       return description;
     }
@@ -126,7 +125,7 @@ const GraphRow = (props: GraphRowProps) => {
               >
                 <Caption
                   style={{
-                    color: colorTextLight(),
+                    color: Colors.textLight(),
                     whiteSpace: 'nowrap',
                   }}
                 >

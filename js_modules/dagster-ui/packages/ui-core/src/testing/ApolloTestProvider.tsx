@@ -5,9 +5,8 @@ import {addMocksToSchema} from '@graphql-tools/mock';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import * as React from 'react';
 
-import {createAppCache} from '../app/AppCache';
-
 import {defaultMocks} from './defaultMocks';
+import {createAppCache} from '../app/AppCache';
 
 export interface ApolloTestProps {
   /**

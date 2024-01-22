@@ -1,17 +1,16 @@
-import {colorBackgroundGray} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors} from '@dagster-io/ui-components';
+import {Fragment} from 'react';
 import styled from 'styled-components';
-
-import {titleOfIO} from '../app/titleOfIO';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
-import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
-import {SVGLabeledRect} from './SVGComponents';
+import {OpIOBox, PARENT_IN, PARENT_OUT, metadataForCompositeParentIO} from './OpIOBox';
+import {SVGMonospaceText} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {titleOfIO} from '../app/titleOfIO';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;
@@ -53,7 +52,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
       <SVGLabeledParentRect
         {...bounds}
         label={op.definition.name}
-        fill={colorBackgroundGray()}
+        fill={Colors.backgroundYellow()}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
@@ -127,71 +126,110 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
           />
         );
       })}
+      {op.definition.inputDefinitions.map((input, idx) => {
+        const metadata = metadataForCompositeParentIO(op.definition, input);
+        const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
+        return (
+          <Fragment key={idx}>
+            {invocationInput.dependsOn.map((dependsOn, iidx) => (
+              <ExternalConnectionNode
+                {...highlightingProps}
+                {...metadata}
+                key={iidx}
+                labelAttachment="top"
+                label={titleOfIO(dependsOn)}
+                minified={minified}
+                layout={parentLayout.dependsOn[titleOfIO(dependsOn)]!}
+                target={parentLayout.inputs[input.name]!.port}
+                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
+              />
+            ))}
+          </Fragment>
+        );
+      })}
+      {op.definition.outputDefinitions.map((output, idx) => {
+        const metadata = metadataForCompositeParentIO(op.definition, output);
+        const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
+        return (
+          <Fragment key={idx}>
+            {invocationOutput.dependedBy.map((dependedBy, iidx) => (
+              <ExternalConnectionNode
+                {...highlightingProps}
+                {...metadata}
+                key={iidx}
+                labelAttachment="bottom"
+                label={titleOfIO(dependedBy)}
+                minified={minified}
+                layout={parentLayout.dependedBy[titleOfIO(dependedBy)]!}
+                target={parentLayout.outputs[output.name]!.port}
+                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
+              />
+            ))}
+          </Fragment>
+        );
+      })}
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
-        {op.definition.inputDefinitions.map((input, idx) => {
-          const metadata = metadataForCompositeParentIO(op.definition, input);
-          const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
-
-          return (
-            <React.Fragment key={idx}>
-              {invocationInput.dependsOn.map((dependsOn, iidx) => (
-                <ExternalConnectionNode
-                  {...highlightingProps}
-                  {...metadata}
-                  key={iidx}
-                  labelAttachment="top"
-                  label={titleOfIO(dependsOn)}
-                  minified={minified}
-                  layout={parentLayout.dependsOn[titleOfIO(dependsOn)]!}
-                  target={parentLayout.inputs[input.name]!.port}
-                  onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
-                />
-              ))}
-              <OpIOBox
-                {...highlightingProps}
-                {...metadata}
-                minified={minified}
-                colorKey="input"
-                item={input}
-                layoutInfo={parentLayout.inputs[input.name]}
-              />
-            </React.Fragment>
-          );
-        })}
-        {op.definition.outputDefinitions.map((output, idx) => {
-          const metadata = metadataForCompositeParentIO(op.definition, output);
-          const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
-
-          return (
-            <React.Fragment key={idx}>
-              {invocationOutput.dependedBy.map((dependedBy, iidx) => (
-                <ExternalConnectionNode
-                  {...highlightingProps}
-                  {...metadata}
-                  key={iidx}
-                  labelAttachment="bottom"
-                  label={titleOfIO(dependedBy)}
-                  minified={minified}
-                  layout={parentLayout.dependedBy[titleOfIO(dependedBy)]!}
-                  target={parentLayout.outputs[output.name]!.port}
-                  onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
-                />
-              ))}
-              <OpIOBox
-                {...highlightingProps}
-                {...metadata}
-                minified={minified}
-                colorKey="output"
-                item={output}
-                layoutInfo={parentLayout.outputs[output.name]}
-              />
-            </React.Fragment>
-          );
-        })}
+        {op.definition.inputDefinitions.map((input, idx) => (
+          <OpIOBox
+            {...highlightingProps}
+            {...metadataForCompositeParentIO(op.definition, input)}
+            key={idx}
+            minified={minified}
+            colorKey="input"
+            item={input}
+            layoutInfo={parentLayout.inputs[input.name]}
+          />
+        ))}
+        {op.definition.outputDefinitions.map((output, idx) => (
+          <OpIOBox
+            {...highlightingProps}
+            {...metadataForCompositeParentIO(op.definition, output)}
+            key={idx}
+            minified={minified}
+            colorKey="output"
+            item={output}
+            layoutInfo={parentLayout.outputs[output.name]}
+          />
+        ))}
       </foreignObject>
     </>
   );
 };
+
+const SVGLabeledRect = ({
+  minified,
+  label,
+  fill,
+  className,
+  ...rect
+}: {
+  x: number;
+  y: number;
+  minified: boolean;
+  width: number;
+  height: number;
+  label: string;
+  fill: string;
+  className?: string;
+}) => (
+  <g>
+    <rect
+      {...rect}
+      fill={fill}
+      stroke={Colors.keylineDefault()}
+      strokeWidth={1}
+      className={className}
+    />
+    <SVGMonospaceText
+      x={rect.x + (minified ? 10 : 5)}
+      y={rect.y + (minified ? 10 : 5)}
+      height={undefined}
+      size={minified ? 30 : 16}
+      text={label}
+      fill="#979797"
+    />
+  </g>
+);
 
 export const SVGLabeledParentRect = styled(SVGLabeledRect)`
   transition:

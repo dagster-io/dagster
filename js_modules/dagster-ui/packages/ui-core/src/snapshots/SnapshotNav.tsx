@@ -1,14 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
+import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
-
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {

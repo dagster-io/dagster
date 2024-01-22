@@ -1,7 +1,11 @@
+import base64
 import logging
 import sys
 import threading
+import zlib
 from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import ExitStack
 from types import TracebackType
 from typing import Dict, Optional, Sequence, Tuple, Type, cast
 
@@ -12,6 +16,7 @@ from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     LegacyAssetDaemonCursorWrapper,
+    backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -53,11 +58,14 @@ from dagster._core.storage.tags import (
     AUTO_OBSERVE_TAG,
     SENSOR_NAME_TAG,
 )
-from dagster._core.utils import make_new_run_id
+from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon
 from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
+from dagster._serdes import serialize_value
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import (
     SingleInstigatorDebugCrashFlags,
     check_for_debug_crash,
@@ -108,26 +116,75 @@ def get_current_evaluation_id(
 ) -> Optional[int]:
     if not sensor_origin:
         serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+        if not serialized_cursor:
+            return None
+        cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+            serialized_cursor, None
+        )
     else:
         instigator_state = check.not_none(instance.schedule_storage).get_instigator_state(
             sensor_origin.get_id(), sensor_origin.get_selector().get_id()
         )
-        compressed_cursor = (
+        serialized_cursor = (
             cast(SensorInstigatorData, instigator_state.instigator_data).cursor
             if instigator_state
             else None
         )
-        serialized_cursor = (
-            LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor).serialized_cursor
-            if compressed_cursor
-            else None
-        )
+        if not serialized_cursor:
+            return None
+        cursor = asset_daemon_cursor_from_instigator_serialized_cursor(serialized_cursor, None)
 
-    return (
-        AssetDaemonCursor.get_evaluation_id_from_serialized(serialized_cursor)
-        if serialized_cursor
-        else None
+    return cursor.evaluation_id
+
+
+def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCursor) -> str:
+    """This method compresses the serialized cursor and returns a b64 encoded string to be stored
+    as a string value.
+    """
+    # increment the version if the cursor format changes
+    VERSION = "0"
+
+    serialized_bytes = serialize_value(cursor).encode("utf-8")
+    compressed_bytes = zlib.compress(serialized_bytes)
+    encoded_cursor = base64.b64encode(compressed_bytes).decode("utf-8")
+    return VERSION + encoded_cursor
+
+
+def asset_daemon_cursor_from_instigator_serialized_cursor(
+    serialized_cursor: Optional[str], asset_graph: Optional[AssetGraph]
+) -> AssetDaemonCursor:
+    """This method decompresses the serialized cursor and returns a deserialized cursor object,
+    converting from the legacy cursor format if necessary.
+    """
+    if serialized_cursor is None:
+        return AssetDaemonCursor.empty()
+
+    version, encoded_bytes = serialized_cursor[0], serialized_cursor[1:]
+    if version != "0":
+        return AssetDaemonCursor.empty()
+
+    decoded_bytes = base64.b64decode(encoded_bytes)
+    decompressed_bytes = zlib.decompress(decoded_bytes)
+    decompressed_str = decompressed_bytes.decode("utf-8")
+
+    deserialized_cursor = deserialize_value(
+        decompressed_str, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
     )
+    if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
+        return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
+    return deserialized_cursor
+
+
+def asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+    serialized_cursor: Optional[str], asset_graph: Optional[AssetGraph]
+) -> AssetDaemonCursor:
+    if serialized_cursor is None:
+        return AssetDaemonCursor.empty()
+
+    try:
+        return deserialize_value(serialized_cursor, AssetDaemonCursor)
+    except DeserializationError:
+        return backcompat_deserialize_asset_daemon_cursor_str(serialized_cursor, asset_graph, 0)
 
 
 class AutoMaterializeLaunchContext:
@@ -249,7 +306,6 @@ class AssetDaemon(DagsterDaemon):
         self._next_evaluation_id = None
 
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
-        self._last_pre_sensor_submit_time = None
 
         super().__init__()
 
@@ -278,16 +334,18 @@ class AssetDaemon(DagsterDaemon):
                     continue
                 compressed_cursor = instigator_data.cursor
                 if compressed_cursor:
-                    stored_evaluation_id = (
-                        LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor)
-                        .get_asset_daemon_cursor(asset_graph)
-                        .evaluation_id
-                    )
+                    stored_evaluation_id = asset_daemon_cursor_from_instigator_serialized_cursor(
+                        compressed_cursor, asset_graph
+                    ).evaluation_id
                     self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
 
             serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
             if serialized_cursor:
-                stored_cursor = AssetDaemonCursor.from_serialized(serialized_cursor, asset_graph)
+                stored_cursor = (
+                    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                        serialized_cursor, asset_graph
+                    )
+                )
                 self._next_evaluation_id = max(
                     self._next_evaluation_id, stored_cursor.evaluation_id
                 )
@@ -321,23 +379,42 @@ class AssetDaemon(DagsterDaemon):
             )
 
         sensor_state_lock = threading.Lock()
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            yield from self._run_iteration_impl(
-                workspace_process_context,
-                debug_crash_flags={},
-                sensor_state_lock=sensor_state_lock,
-            )
-            yield None
-            end_time = pendulum.now("UTC").timestamp()
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)
-            shutdown_event.wait(sleep_time)
-            yield None
+        amp_tick_futures: Dict[Optional[str], Future] = {}
+        last_submit_times = {}
+        threadpool_executor = None
+        with ExitStack() as stack:
+            settings = instance.get_settings("auto_materialize")
+            if settings.get("use_threads"):
+                threadpool_executor = stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_workers"),
+                        thread_name_prefix="asset_daemon_worker",
+                    )
+                )
+
+            while True:
+                start_time = pendulum.now("UTC").timestamp()
+                yield from self._run_iteration_impl(
+                    workspace_process_context,
+                    threadpool_executor=threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    debug_crash_flags={},
+                    last_submit_times=last_submit_times,
+                    sensor_state_lock=sensor_state_lock,
+                )
+                yield None
+                end_time = pendulum.now("UTC").timestamp()
+                loop_duration = end_time - start_time
+                sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)
+                shutdown_event.wait(sleep_time)
+                yield None
 
     def _run_iteration_impl(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        threadpool_executor: Optional[ThreadPoolExecutor],
+        amp_tick_futures: Dict[Optional[str], Future],
+        last_submit_times: Dict[Optional[str], float],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         sensor_state_lock: threading.Lock,
     ):
@@ -403,39 +480,54 @@ class AssetDaemon(DagsterDaemon):
 
             auto_materialize_state = all_auto_materialize_states.get(selector_id)
 
-            if sensor:
-                if not auto_materialize_state:
-                    assert sensor.default_status == DefaultSensorStatus.RUNNING
-                    auto_materialize_state = InstigatorState(
-                        sensor.get_external_origin(),
-                        InstigatorType.SENSOR,
-                        InstigatorStatus.AUTOMATICALLY_RUNNING,
-                        SensorInstigatorData(
-                            min_interval=sensor.min_interval_seconds,
-                            cursor=None,
-                            last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                            sensor_type=SensorType.AUTOMATION_POLICY,
-                        ),
-                    )
-                    instance.add_instigator_state(auto_materialize_state)
-                elif is_under_min_interval(auto_materialize_state, sensor):
-                    continue
-            else:
+            if not sensor:
+                # make sure we are only running every pre_sensor_interval_seconds
                 if (
-                    self._last_pre_sensor_submit_time
-                    and now - self._last_pre_sensor_submit_time < self._pre_sensor_interval_seconds
+                    selector_id in last_submit_times
+                    and now < last_submit_times[selector_id] + self._pre_sensor_interval_seconds
                 ):
-                    # Wait until the pre-sensor interval has finished before running
+                    continue
+            elif not auto_materialize_state:
+                assert sensor.default_status == DefaultSensorStatus.RUNNING
+                auto_materialize_state = InstigatorState(
+                    sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.DECLARED_IN_CODE,
+                    SensorInstigatorData(
+                        min_interval=sensor.min_interval_seconds,
+                        cursor=None,
+                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        sensor_type=SensorType.AUTOMATION_POLICY,
+                    ),
+                )
+                instance.add_instigator_state(auto_materialize_state)
+            elif is_under_min_interval(auto_materialize_state, sensor):
+                continue
+
+            if threadpool_executor:
+                # only one tick per sensor can be in flight
+                if selector_id in amp_tick_futures and not amp_tick_futures[selector_id].done():
                     continue
 
-                self._last_pre_sensor_submit_time = now
+                last_submit_times[selector_id] = now
+                future = threadpool_executor.submit(
+                    self._process_auto_materialize_tick,
+                    workspace_process_context,
+                    sensor,
+                    sensor_state_lock,
+                    debug_crash_flags,
+                )
+                amp_tick_futures[selector_id] = future
+                yield
+            else:
+                last_submit_times[selector_id] = now
 
-            yield from self._process_auto_materialize_tick_generator(
-                workspace_process_context,
-                sensor,
-                sensor_state_lock,
-                debug_crash_flags,
-            )
+                yield from self._process_auto_materialize_tick_generator(
+                    workspace_process_context,
+                    sensor,
+                    sensor_state_lock,
+                    debug_crash_flags,
+                )
 
     def _process_auto_materialize_tick(
         self,
@@ -529,17 +621,12 @@ class AssetDaemon(DagsterDaemon):
         )
 
         if sensor:
-            compressed_cursor = cast(
-                SensorInstigatorData,
-                check.not_none(auto_materialize_instigator_state).instigator_data,
-            ).cursor
-
-            stored_cursor: AssetDaemonCursor = (
-                LegacyAssetDaemonCursorWrapper.from_compressed(
-                    compressed_cursor
-                ).get_asset_daemon_cursor(asset_graph)
-                if compressed_cursor
-                else AssetDaemonCursor.empty()
+            stored_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
+                cast(
+                    SensorInstigatorData,
+                    check.not_none(auto_materialize_instigator_state).instigator_data,
+                ).cursor,
+                asset_graph,
             )
 
             instigator_origin_id = sensor.get_external_origin().get_id()
@@ -547,10 +634,8 @@ class AssetDaemon(DagsterDaemon):
             instigator_name = sensor.name
         else:
             serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-            stored_cursor = (
-                AssetDaemonCursor.from_serialized(serialized_cursor, asset_graph)
-                if serialized_cursor
-                else AssetDaemonCursor.empty()
+            stored_cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                serialized_cursor, asset_graph
             )
             instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
             instigator_selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
@@ -655,7 +740,11 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                     evaluations_by_asset_key = {
-                        evaluation_record.asset_key: evaluation_record.evaluation
+                        evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids(
+                            partitions_def=asset_graph.get_partitions_def(
+                                evaluation_record.asset_key
+                            )
+                        )
                         for evaluation_record in evaluation_records
                     }
                 else:
@@ -684,13 +773,15 @@ class AssetDaemon(DagsterDaemon):
                 check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
 
                 evaluations_by_asset_key = {
-                    evaluation.asset_key: evaluation for evaluation in evaluations
+                    evaluation.asset_key: evaluation.with_run_ids(set())
+                    for evaluation in evaluations
                 }
 
                 # Write the asset evaluations without run IDs first
                 if schedule_storage.supports_auto_materialize_asset_evaluations:
                     schedule_storage.add_auto_materialize_asset_evaluations(
-                        evaluation_id, list(evaluations_by_asset_key.values())
+                        evaluation_id,
+                        list(evaluations_by_asset_key.values()),
                     )
                     check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
@@ -716,16 +807,16 @@ class AssetDaemon(DagsterDaemon):
                                 SensorInstigatorData(
                                     last_tick_timestamp=tick.timestamp,
                                     min_interval=sensor.min_interval_seconds,
-                                    cursor=LegacyAssetDaemonCursorWrapper(
-                                        new_cursor.serialize()
-                                    ).to_compressed(),
+                                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
+                                        new_cursor
+                                    ),
                                     sensor_type=SensorType.AUTOMATION_POLICY,
                                 )
                             )
                         )
                 else:
                     instance.daemon_cursor_storage.set_cursor_values(
-                        {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: new_cursor.serialize()}
+                        {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
                     )
 
                 check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")

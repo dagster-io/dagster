@@ -1,24 +1,4 @@
-import {
-  Icon,
-  Box,
-  Tooltip,
-  IconName,
-  colorBackgroundRed,
-  colorTextRed,
-  colorAccentRed,
-  colorBackgroundGreen,
-  colorTextGreen,
-  colorAccentGreen,
-  colorAccentBlue,
-  colorAccentGray,
-  colorBackgroundBlue,
-  colorBackgroundGray,
-  colorTextBlue,
-  colorTextLight,
-  colorTextDefault,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -49,30 +29,30 @@ export const StyleForAssetPartitionStatus: Record<
   }
 > = {
   [AssetPartitionStatus.FAILED]: {
-    background: colorBackgroundRed(),
-    foreground: colorTextRed(),
-    border: colorAccentRed(),
+    background: Colors.backgroundRed(),
+    foreground: Colors.textRed(),
+    border: Colors.accentRed(),
     icon: 'partition_failure',
     adjective: 'failed',
   },
   [AssetPartitionStatus.MATERIALIZED]: {
-    background: colorBackgroundGreen(),
-    foreground: colorTextGreen(),
-    border: colorAccentGreen(),
+    background: Colors.backgroundGreen(),
+    foreground: Colors.textGreen(),
+    border: Colors.accentGreen(),
     icon: 'partition_success',
     adjective: 'materialized',
   },
   [AssetPartitionStatus.MATERIALIZING]: {
-    background: colorBackgroundBlue(),
-    foreground: colorTextBlue(),
-    border: colorAccentBlue(),
+    background: Colors.backgroundBlue(),
+    foreground: Colors.textBlue(),
+    border: Colors.accentBlue(),
     icon: 'partition_success',
     adjective: 'materializing',
   },
   [AssetPartitionStatus.MISSING]: {
-    background: colorBackgroundGray(),
-    foreground: colorTextLight(),
-    border: colorAccentGray(),
+    background: Colors.backgroundGray(),
+    foreground: Colors.textLight(),
+    border: Colors.accentGray(),
     icon: 'partition_missing',
     adjective: 'missing',
   },
@@ -114,8 +94,8 @@ const PartitionCountTag = ({
   total: number | undefined;
 }) => {
   const style = StyleForAssetPartitionStatus[status];
-  const foreground = value ? style.foreground : colorTextLight();
-  const background = value ? style.background : colorBackgroundGray();
+  const foreground = value ? style.foreground : Colors.textLight();
+  const background = value ? style.background : Colors.backgroundGray();
 
   return (
     <Tooltip
@@ -184,10 +164,10 @@ const PartitionCountLabel = ({
       <Box
         flex={{gap: 4, alignItems: 'center'}}
         style={{
-          color: value === undefined || value === 0 ? colorTextLighter() : colorTextDefault(),
+          color: value === undefined || value === 0 ? Colors.textLighter() : Colors.textDefault(),
         }}
       >
-        <Icon name={style.icon} color={value ? style.border : colorTextLighter()} size={12} />
+        <Icon name={style.icon} color={value ? style.border : Colors.textLighter()} size={12} />
         {value === undefined ? '—' : value === total ? 'All' : value.toLocaleString()}
       </Box>
     </Tooltip>

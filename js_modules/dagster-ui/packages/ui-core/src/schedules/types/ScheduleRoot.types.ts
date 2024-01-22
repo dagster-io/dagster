@@ -29,6 +29,8 @@ export type ScheduleRootQuery = {
         solidSelection: Array<string | null> | null;
         mode: string;
         description: string | null;
+        defaultStatus: Types.InstigationStatus;
+        canReset: boolean;
         partitionSet: {__typename: 'PartitionSet'; id: string; name: string} | null;
         scheduleState: {
           __typename: 'InstigationState';

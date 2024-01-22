@@ -1,11 +1,10 @@
 import {ApolloClient} from '@apollo/client';
 
+import {AssetLiveDataThread, AssetLiveDataThreadID} from './AssetLiveDataThread';
+import {BATCH_SIZE} from './util';
 import {LiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {isDocumentVisible} from '../hooks/useDocumentVisibility';
-
-import {AssetLiveDataThread, AssetLiveDataThreadID} from './AssetLiveDataThread';
-import {BATCH_SIZE} from './util';
 
 type Listener = (stringKey: string, assetData?: LiveDataForNode) => void;
 
@@ -61,7 +60,11 @@ export class AssetLiveDataThreadManager {
     this.onUpdatedOrUpdating = onUpdatingOrUpdated;
   }
 
-  public subscribe(key: AssetKeyInput, listener: Listener, threadID: AssetLiveDataThreadID) {
+  public subscribe(
+    key: AssetKeyInput,
+    listener: Listener,
+    threadID: AssetLiveDataThreadID = 'default',
+  ) {
     const assetKey = tokenForAssetKey(key);
     let _thread = this.threads[threadID];
     if (!_thread) {
@@ -207,30 +210,27 @@ export class AssetLiveDataThreadManager {
   public _updateFetchedAssets(assetKeys: AssetKeyInput[], data: Record<string, LiveDataForNode>) {
     const fetchedTime = Date.now();
     assetKeys.forEach((key) => {
-      this.lastFetchedOrRequested[tokenForAssetKey(key)] = {
+      const stringKey = tokenForAssetKey(key);
+      this.lastFetchedOrRequested[stringKey] = {
         fetched: fetchedTime,
       };
-    });
-    Object.entries(data).forEach(([key, assetData]) => {
-      this.cache[key] = assetData;
-      const listeners = this.listeners[key];
+      const assetData = data[stringKey];
+      if (!assetData) {
+        return;
+      }
+      this.cache[stringKey] = assetData;
+      const listeners = this.listeners[stringKey];
       if (!listeners) {
         return;
       }
       listeners.forEach((listener) => {
-        listener(key, assetData);
+        listener(stringKey, assetData);
       });
     });
     this.onUpdatedOrUpdating();
   }
 
   public static __resetForJest() {
-    const instance = AssetLiveDataThreadManager._instance;
-    if (instance) {
-      instance.cache = {};
-      Object.values(instance.threads).forEach((thread) => thread.stopFetchLoop());
-      instance.threads = {};
-    }
     // @ts-expect-error - its ok
     AssetLiveDataThreadManager._instance = undefined;
   }

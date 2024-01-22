@@ -1,7 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {explodeCompositesInHandleGraph} from './CompositeSupport';
+import {
+  GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
+  GRAPH_EXPLORER_FRAGMENT,
+  GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
+  GraphExplorer,
+  GraphExplorerOptions,
+} from './GraphExplorer';
+import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
+import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
+import {
+  PipelineExplorerRootQuery,
+  PipelineExplorerRootQueryVariables,
+} from './types/PipelineExplorerRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
@@ -12,21 +26,6 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {explodeCompositesInHandleGraph} from './CompositeSupport';
-import {
-  GraphExplorer,
-  GraphExplorerOptions,
-  GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
-  GRAPH_EXPLORER_FRAGMENT,
-  GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from './GraphExplorer';
-import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
-import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
-import {
-  PipelineExplorerRootQuery,
-  PipelineExplorerRootQueryVariables,
-} from './types/PipelineExplorerRoot.types';
 
 export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
@@ -64,7 +63,7 @@ export const PipelineExplorerContainer = ({
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }) => {
-  const [options, setOptions] = React.useState<GraphExplorerOptions>({
+  const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });

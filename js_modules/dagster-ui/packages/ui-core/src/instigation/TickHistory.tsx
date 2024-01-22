@@ -3,27 +3,32 @@ import 'chartjs-adapter-date-fns';
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  ButtonLink,
+  Caption,
   Checkbox,
+  Colors,
   CursorHistoryControls,
-  NonIdealState,
-  Spinner,
-  Table,
-  Subheading,
   FontFamily,
   Icon,
   IconWrapper,
-  ButtonLink,
+  NonIdealState,
+  Spinner,
+  Subheading,
+  Table,
   ifPlural,
-  Caption,
-  colorLinkDefault,
-  colorAccentGray,
-  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
+import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
+import {LiveTickTimeline} from './LiveTickTimeline2';
+import {TickDetailsDialog} from './TickDetailsDialog';
+import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
+import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -43,14 +48,6 @@ import {TickLogDialog} from '../ticks/TickLogDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {RunStatusLink, RUN_STATUS_FRAGMENT, HISTORY_TICK_FRAGMENT} from './InstigationUtils';
-import {LiveTickTimeline} from './LiveTickTimeline2';
-import {TickDetailsDialog} from './TickDetailsDialog';
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {isStuckStartedTick, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -397,16 +394,15 @@ function TickRow({
   const [showResults, setShowResults] = React.useState(false);
 
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
-    const added = tick?.dynamicPartitionsRequestResults.filter(
-      (request) =>
-        request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
-        request.partitionKeys?.length,
-    ).length;
-    const deleted = tick?.dynamicPartitionsRequestResults.filter(
-      (request) =>
-        request.type === DynamicPartitionsRequestType.DELETE_PARTITIONS &&
-        request.partitionKeys?.length,
-    ).length;
+    const requests = tick.dynamicPartitionsRequestResults;
+    const added = countPartitionsAddedOrDeleted(
+      requests,
+      DynamicPartitionsRequestType.ADD_PARTITIONS,
+    );
+    const deleted = countPartitionsAddedOrDeleted(
+      requests,
+      DynamicPartitionsRequestType.DELETE_PARTITIONS,
+    );
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
@@ -553,16 +549,16 @@ const CopyButton = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${colorAccentGray()};
+    background-color: ${Colors.accentGray()};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${colorAccentGrayHover()};
+    background-color: ${Colors.accentGrayHover()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${colorLinkDefault()};
+    background-color: ${Colors.linkDefault()};
   }
 `;
 

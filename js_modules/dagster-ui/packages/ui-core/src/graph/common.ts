@@ -1,6 +1,5 @@
-import {AssetGraphLayout, AssetLayout} from '../asset-graph/layout';
-
 import {OpGraphLayout, OpLayout} from './layout';
+import {AssetGraphLayout, AssetLayout} from '../asset-graph/layout';
 
 export type Edge = {a: string; b: string};
 

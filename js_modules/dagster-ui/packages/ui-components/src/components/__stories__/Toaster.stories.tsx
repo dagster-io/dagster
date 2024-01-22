@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 
 import {Button} from '../Button';
 import {Group} from '../Group';
@@ -13,9 +13,9 @@ export default {
 } as Meta;
 
 export const Sizes = () => {
-  const sharedToaster = React.useRef<DToaster | null>(null);
+  const sharedToaster = useRef<DToaster | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const makeToaster = async () => {
       sharedToaster.current = await Toaster.asyncCreate({position: 'top'}, document.body);
     };

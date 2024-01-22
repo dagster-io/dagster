@@ -2,9 +2,8 @@ import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {testId} from '../testing/testId';
-
 import {copyValue} from './DomUtils';
+import {testId} from '../testing/testId';
 
 const CURRENT_ALERT_CHANGED = 'alert-changed';
 

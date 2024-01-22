@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
@@ -11,6 +11,7 @@ export const FeatureFlag = {
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
+  flagUseNewAutomationPage: 'flagUseNewAutomationPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
@@ -25,7 +26,7 @@ type FlagMap = {
 };
 
 export const useFeatureFlags = () => {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
     const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {

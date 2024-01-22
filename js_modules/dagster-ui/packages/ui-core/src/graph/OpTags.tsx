@@ -1,11 +1,4 @@
-import {
-  Box,
-  FontFamily,
-  IconWrapper,
-  colorAccentPrimary,
-  colorBackgroundGray,
-  colorLineageNodeBackground,
-} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -601,7 +594,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background: reduceColor ? colorBackgroundGray() : colorLineageNodeBackground(),
+              background: reduceColor ? Colors.backgroundGray() : Colors.lineageNodeBackground(),
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
@@ -610,7 +603,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 role="img"
                 $size={16}
                 $img={known.icon.src}
-                $color={reversed ? colorAccentPrimary() : color}
+                $color={reversed ? Colors.accentPrimary() : color}
                 $rotation={null}
                 aria-label={tag.label}
               />

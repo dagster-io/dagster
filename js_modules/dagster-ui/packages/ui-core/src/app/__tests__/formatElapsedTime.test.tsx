@@ -1,4 +1,4 @@
-import {formatElapsedTimeWithoutMsec, formatElapsedTimeWithMsec} from '../Util';
+import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../Util';
 
 const SECOND = 1 * 1000;
 const MINUTE = 60 * SECOND;

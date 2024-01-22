@@ -1,5 +1,5 @@
-import {MenuItem, useViewport, Suggest, colorTextLighter} from '@dagster-io/ui-components';
-import React from 'react';
+import {Colors, MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
@@ -66,7 +66,7 @@ const SuggestWrapper = styled.div`
     width: 100%;
 
     ::placeholder {
-      color: ${colorTextLighter()};
+      color: ${Colors.textLighter()};
     }
   }
 `;

@@ -53,7 +53,8 @@ basic_scenarios = [
                     ParentUpdatedRuleEvaluationData,
                     updated_asset_keys=set(),
                     will_update_asset_keys={"A"},
-                )
+                ),
+                AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing()),
             ],
         ),
     ),
@@ -165,7 +166,7 @@ basic_scenarios = [
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A"]))
-        .evaluate_tick()
+        .evaluate_tick("a")
         .assert_requested_runs(run_request(["C"]))
         .assert_evaluation(
             "C",

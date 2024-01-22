@@ -1,30 +1,33 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
-  Button,
-  Dialog,
-  DialogFooter,
+  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
   Tooltip,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useMemo} from 'react';
 
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
+import {OverviewSensorTable} from './OverviewSensorsTable';
+import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
+import {
+  OverviewSensorsQuery,
+  OverviewSensorsQueryVariables,
+} from './types/OverviewSensorsRoot.types';
+import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
-import {UnloadableSensors} from '../instigation/Unloadable';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
@@ -39,24 +42,11 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
-import {OverviewSensorTable} from './OverviewSensorsTable';
-import {OverviewTabs} from './OverviewTabs';
-import {sortRepoBuckets} from './sortRepoBuckets';
-import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
-import {
-  OverviewSensorsQuery,
-  OverviewSensorsQueryVariables,
-  UnloadableSensorsQuery,
-  UnloadableSensorsQueryVariables,
-} from './types/OverviewSensorsRoot.types';
-import {visibleRepoKeys} from './visibleRepoKeys';
-
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -66,7 +56,7 @@ export const OverviewSensorsRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(
+  const filters = useMemo(
     () => [codeLocationFilter, runningStateFilter],
     [codeLocationFilter, runningStateFilter],
   );
@@ -83,7 +73,7 @@ export const OverviewSensorsRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = React.useMemo(() => {
+  const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
@@ -91,7 +81,7 @@ export const OverviewSensorsRoot = () => {
   }, [data, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
-  const filteredBuckets = React.useMemo(() => {
+  const filteredBuckets = useMemo(() => {
     return repoBuckets.map(({sensors, ...rest}) => {
       return {
         ...rest,
@@ -105,7 +95,7 @@ export const OverviewSensorsRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredBuckets
       .map(({repoAddress, sensors}) => ({
@@ -115,14 +105,14 @@ export const OverviewSensorsRoot = () => {
       .filter(({sensors}) => sensors.length > 0);
   }, [filteredBuckets, sanitizedSearch]);
 
-  const anySensorsVisible = React.useMemo(
+  const anySensorsVisible = useMemo(
     () => filteredBySearch.some(({sensors}) => sensors.length > 0),
     [filteredBySearch],
   );
 
   // Collect all sensors across visible code locations that the viewer has permission
   // to start or stop.
-  const allPermissionedSensors = React.useMemo(() => {
+  const allPermissionedSensors = useMemo(() => {
     return repoBuckets
       .map(({repoAddress, sensors}) => {
         return sensors
@@ -138,7 +128,7 @@ export const OverviewSensorsRoot = () => {
 
   // Build a list of keys from the permissioned schedules for use in checkbox state.
   // This includes collapsed code locations.
-  const allPermissionedSensorKeys = React.useMemo(() => {
+  const allPermissionedSensorKeys = useMemo(() => {
     return allPermissionedSensors.map(({repoAddress, sensorName}) =>
       makeSensorKey(repoAddress, sensorName),
     );
@@ -148,7 +138,7 @@ export const OverviewSensorsRoot = () => {
     useSelectionReducer(allPermissionedSensorKeys);
 
   // Filter to find keys that are visible given any text search.
-  const permissionedKeysOnScreen = React.useMemo(() => {
+  const permissionedKeysOnScreen = useMemo(() => {
     const filteredKeys = new Set(
       filteredBySearch
         .map(({repoAddress, sensors}) => {
@@ -161,7 +151,7 @@ export const OverviewSensorsRoot = () => {
 
   // Determine the list of sensor objects that have been checked by the viewer.
   // These are the sensors that will be operated on by the bulk start/stop action.
-  const checkedSensors = React.useMemo(() => {
+  const checkedSensors = useMemo(() => {
     const checkedKeysOnScreen = new Set(
       permissionedKeysOnScreen.filter((key: string) => checkedKeys.has(key)),
     );
@@ -179,7 +169,7 @@ export const OverviewSensorsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading sensors…</div>
+            <div style={{color: Colors.textLight()}}>Loading sensors…</div>
           </Box>
         </Box>
       );
@@ -302,11 +292,6 @@ export const OverviewSensorsRoot = () => {
         </Box>
       ) : (
         <>
-          {data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates' ? (
-            <UnloadableSensorsAlert
-              count={data.unloadableInstigationStatesOrError.results.length}
-            />
-          ) : null}
           <SensorInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
@@ -317,73 +302,6 @@ export const OverviewSensorsRoot = () => {
       )}
     </Box>
   );
-};
-
-const UnloadableSensorsAlert = ({count}: {count: number}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  if (!count) {
-    return null;
-  }
-
-  const title = count === 1 ? '1 unloadable sensor' : `${count} unloadable sensors`;
-
-  return (
-    <>
-      <Box padding={{vertical: 16, horizontal: 24}} border="top">
-        <Alert
-          intent="warning"
-          title={title}
-          description={
-            <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
-              <div>
-                Sensors were previously started but now cannot be loaded. They may be part of a code
-                location that no longer exists. You can turn them off, but you cannot turn them back
-                on.
-              </div>
-              <Button onClick={() => setIsOpen(true)}>
-                {count === 1 ? 'View unloadable sensor' : 'View unloadable sensors'}
-              </Button>
-            </Box>
-          }
-        />
-      </Box>
-      <Dialog
-        isOpen={isOpen}
-        title="Unloadable schedules"
-        style={{width: '90vw', maxWidth: '1200px'}}
-      >
-        <Box padding={{bottom: 8}}>
-          <UnloadableSensorDialog />
-        </Box>
-        <DialogFooter>
-          <Button intent="primary" onClick={() => setIsOpen(false)}>
-            Done
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </>
-  );
-};
-
-const UnloadableSensorDialog = () => {
-  const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
-    UNLOADABLE_SENSORS_QUERY,
-  );
-  if (!data) {
-    return <Spinner purpose="section" />;
-  }
-
-  if (data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates') {
-    return (
-      <UnloadableSensors
-        sensorStates={data.unloadableInstigationStatesOrError.results}
-        showSubheading={false}
-      />
-    );
-  }
-
-  return <PythonErrorInfo error={data?.unloadableInstigationStatesOrError} />;
 };
 
 type RepoBucket = {
@@ -453,13 +371,6 @@ const OVERVIEW_SENSORS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    unloadableInstigationStatesOrError(instigationType: SENSOR) {
-      ... on InstigationStates {
-        results {
-          id
-        }
-      }
-    }
     instance {
       id
       ...InstanceHealthFragment
@@ -469,21 +380,4 @@ const OVERVIEW_SENSORS_QUERY = gql`
   ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SENSORS_QUERY = gql`
-  query UnloadableSensorsQuery {
-    unloadableInstigationStatesOrError(instigationType: SENSOR) {
-      ... on InstigationStates {
-        results {
-          id
-          ...InstigationStateFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -8,34 +9,27 @@ import {
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-  FontFamily,
-  colorKeylineDefault,
-  colorBackgroundLight,
-  colorBackgroundDefault,
-  colorAccentLime,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 import {
+  CellMeasurerCache,
   AutoSizer as _AutoSizer,
   CellMeasurer as _CellMeasurerer,
-  CellMeasurerCache,
   List as _List,
 } from 'react-virtualized';
 import styled from 'styled-components';
 
+import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
+import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from './OpTypeSignature';
+import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 
 const AutoSizer: any = _AutoSizer;
 const CellMeasurer: any = _CellMeasurerer;
@@ -306,11 +300,13 @@ const OpList = (props: OpListProps) => {
             <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
               <OpListItem
                 style={style}
-                selected={solid === props.selected}
+                $selected={solid === props.selected}
                 onClick={() => props.onClickOp(solid.definition.name)}
               >
                 <OpName>{solid.definition.name}</OpName>
-                <OpTypeSignature definition={solid.definition} />
+                <div>
+                  <OpTypeSignature definition={solid.definition} />
+                </div>
               </OpListItem>
             </CellMeasurer>
           );
@@ -356,25 +352,21 @@ const OPS_ROOT_QUERY = gql`
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
-const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
+const OpListItem = styled.div<{$selected: boolean}>`
+  align-items: flex-start;
+  background: ${({$selected}) =>
+    $selected ? Colors.backgroundLighter() : Colors.backgroundDefault()};
   box-shadow:
-    ${({selected}) => (selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
-    ${colorKeylineDefault()} 0 -1px 0 inset;
-  color: ${colorTextLight()};
+    ${({$selected}) => ($selected ? Colors.accentLime() : 'transparent')} 4px 0 0 inset,
+    ${Colors.keylineDefault()} 0 -1px 0 inset;
+  color: ${({$selected}) => ($selected ? Colors.textDefault() : Colors.textLight())};
   cursor: pointer;
   font-size: 14px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
   padding: 12px 24px;
   user-select: none;
-
-  & > code.bp4-code {
-    color: ${colorTextLight()};
-    background: transparent;
-    font-family: ${FontFamily.monospace};
-    padding: 5px 0 0 0;
-  }
 `;
 
 const OpName = styled.div`

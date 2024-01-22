@@ -1,7 +1,6 @@
 import {useApolloClient} from '@apollo/client';
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetLiveDataThreadManager} from '../../asset-data/AssetLiveDataThreadManager';

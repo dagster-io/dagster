@@ -1,20 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentPrimary,
-  colorAccentReversed,
-  colorAccentYellow,
-  colorBackgroundLight,
-  colorBackgroundLighter,
-  colorBorderDefault,
-  colorTextLighter,
-  colorTextRed,
-  colorTooltipBackground,
-  colorTooltipText,
-} from '../theme/color';
-
+import {Colors} from './Color';
 import {Popover} from './Popover';
 import {ConfigSchema_allConfigTypes as TypeData} from './configeditor/types/ConfigSchema';
 import {FontFamily} from './styles';
@@ -51,7 +38,7 @@ type renderTypeRecursiveType = ((
 const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, props, typeName) => {
   if (!type) {
     return (
-      <span style={{color: colorTextRed(), opacity: 0.8}}>
+      <span style={{color: Colors.textRed(), opacity: 0.8}}>
         type &quot;{typeName}&quot; not found
       </span>
     );
@@ -74,7 +61,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
               theme={props.theme}
               style={
                 fieldData.defaultValueAsJson
-                  ? {borderBottom: `dashed ${colorAccentBlue()} 1px`, cursor: 'pointer'}
+                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`, cursor: 'pointer'}
                   : undefined
               }
             >
@@ -204,15 +191,15 @@ const ConfigContent = React.memo(({value}: {value: string}) => (
 ));
 
 const ConfigHeader = styled.div`
-  background-color: ${colorTooltipBackground()};
-  color: ${colorTooltipText()};
+  background-color: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   font-size: 13px;
   padding: 8px;
 `;
 
 const ConfigJSON = styled.pre`
-  background-color: ${colorTooltipBackground()};
-  color: ${colorTooltipText()};
+  background-color: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   whitespace: pre-wrap;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -343,10 +330,10 @@ const DictEntryDiv = styled.div<{$hovered: boolean}>`
   ${({$hovered}) =>
     $hovered
       ? `
-      border: 1px solid ${colorBorderDefault()};
-      background-color: ${colorBackgroundLight()};
+      border: 1px solid ${Colors.borderDefault()};
+      background-color: ${Colors.backgroundLight()};
       >${DictEntryDiv2} {
-        background-color: ${colorBackgroundLighter()};
+        background-color: ${Colors.backgroundLighter()};
       }
     `
       : ``}
@@ -354,7 +341,7 @@ const DictEntryDiv = styled.div<{$hovered: boolean}>`
 `;
 
 const TypeSchemaContainer = styled.code`
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   display: block;
   white-space: pre-wrap;
   font-size: 14px;
@@ -362,7 +349,7 @@ const TypeSchemaContainer = styled.code`
 `;
 
 const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
-  color: ${({theme}) => (theme === 'dark' ? colorAccentReversed() : colorAccentPrimary())};
+  color: ${({theme}) => (theme === 'dark' ? Colors.accentReversed() : Colors.accentPrimary())};
 `;
 
 const DictComment = styled.div`
@@ -378,4 +365,4 @@ const DictBlockComment = ({indent = '', content}: {indent: string; content: stri
     <DictComment>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</DictComment>
   ) : null;
 
-const Optional = <span style={{fontWeight: 500, color: colorAccentYellow()}}>?</span>;
+const Optional = <span style={{fontWeight: 500, color: Colors.accentYellow()}}>?</span>;
