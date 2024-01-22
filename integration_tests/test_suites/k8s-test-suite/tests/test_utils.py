@@ -320,6 +320,36 @@ Last 25 log lines for container 'failpoddebug':"""
         assert " whoops!\n" in pod_debug_info
         assert pod_debug_info.endswith("No warning events for pod.")
 
+        # Test case where the pod unexpectedly terminates and logs collection is skipped
+        api_client.batch_api.create_namespaced_job(
+            body=construct_job_manifest("failpoddebugnologs", 'echo "whoopsies!"; exit 1'),
+            namespace=namespace,
+        )
+
+        with pytest.raises(
+            DagsterK8sError,
+            match="Encountered failed job pods for job failpoddebugnologs with status:",
+        ):
+            api_client.wait_for_job_success("failpoddebugnologs", namespace=namespace)
+
+        pod_names = api_client.get_pod_names_in_job("failpoddebugnologs", namespace=namespace)
+
+        pod_debug_info = api_client.get_pod_debug_info(
+            pod_names[0], namespace=namespace, include_container_logs=False
+        )
+
+        print(pod_debug_info)  # noqa
+
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
+
+Pod status: Failed
+Container 'failpoddebugnologs' status: Terminated with exit code 1: Error
+            """.strip()
+        )
+        assert " whoopsies!\n" not in pod_debug_info
+        assert pod_debug_info.endswith("No warning events for pod.")
+
         # Test case where the pod completes successfully
         api_client.batch_api.create_namespaced_job(
             body=construct_job_manifest("goodpod1", 'echo "hello world"'), namespace=namespace
