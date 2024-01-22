@@ -117,7 +117,7 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
 
 def _materialize_dbt_assets(
-    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+    dbt_commands: List[List[str]], selection: Optional[AssetSelection], raise_on_error: bool = True
 ) -> ExecuteInProcessResult:
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
@@ -132,16 +132,20 @@ def _materialize_dbt_assets(
             "dbt": dbt,
         },
         selection=selection,
+        raise_on_error=raise_on_error,
     )
 
-    assert result.success
+    if raise_on_error:
+        assert result.success
+
     return result
 
 
 def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
-    result = _materialize_dbt_assets(dbt_commands, selection=None)
-    assert len(result.get_asset_materialization_events()) == 8
-    assert len(result.get_asset_check_evaluations()) == 20
+    result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
+    assert not result.success  # fail_tests_model fails
+    assert len(result.get_asset_materialization_events()) == 9
+    assert len(result.get_asset_check_evaluations()) == 22
 
 
 @pytest.mark.xfail(
@@ -194,6 +198,7 @@ def test_asset_checks_are_logged_from_resource(
             dagster_dbt_translator=dagster_dbt_translator_with_checks,
             context=mock_context,
             target_path=Path("target"),
+            raise_on_error=False,
         )
 
         events += list(dbt_cli_invocation.stream())
@@ -213,7 +218,6 @@ def test_asset_checks_are_logged_from_resource(
                 "invocation_id": invocation_id,
                 "status": "pass",
             },
-            severity=AssetCheckSeverity.WARN,
         )
         in events
     )
@@ -229,9 +233,32 @@ def test_asset_checks_are_logged_from_resource(
                 "invocation_id": invocation_id,
                 "status": "pass",
             },
-            severity=AssetCheckSeverity.ERROR,
         )
         in events
+    )
+    assert AssetCheckResult(
+        passed=False,
+        asset_key=AssetKey(["fail_tests_model"]),
+        check_name="unique_fail_tests_model_id",
+        severity=AssetCheckSeverity.WARN,
+        metadata={
+            "unique_id": ("test.test_dagster_asset_checks.unique_fail_tests_model_id.1619308eb1"),
+            "invocation_id": invocation_id,
+            "status": "warn",
+        },
+    )
+    assert AssetCheckResult(
+        passed=False,
+        asset_key=AssetKey(["fail_tests_model"]),
+        check_name="unique_fail_tests_model_id",
+        severity=AssetCheckSeverity.ERROR,
+        metadata={
+            "unique_id": (
+                "test.test_dagster_asset_checks.accepted_values_fail_tests_model_first_name__foo__bar__baz.5f958cf018"
+            ),
+            "invocation_id": invocation_id,
+            "status": "error",
+        },
     )
 
 
