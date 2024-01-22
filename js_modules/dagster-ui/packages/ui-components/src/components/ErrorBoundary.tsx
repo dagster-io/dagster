@@ -48,6 +48,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: any) {
+    if (typeof jest !== 'undefined') {
+      throw error;
+    }
     (this.context as ErrorCollectionContextValue).onReportError(error, {
       info,
       region: this.props.region,

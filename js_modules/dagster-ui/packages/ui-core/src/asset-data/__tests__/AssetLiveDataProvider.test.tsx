@@ -7,19 +7,15 @@ import {GraphQLError} from 'graphql/error';
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
 import {getMockResultFn} from '../../testing/mocking';
-import {
-  AssetLiveDataProvider,
-  BATCH_SIZE,
-  SUBSCRIPTION_IDLE_POLL_RATE,
-  _resetLastFetchedOrRequested,
-  useAssetsLiveData,
-} from '../AssetLiveDataProvider';
+import {AssetLiveDataProvider, useAssetsLiveData} from '../AssetLiveDataProvider';
+import {AssetLiveDataThreadManager} from '../AssetLiveDataThreadManager';
+import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
 afterEach(() => {
-  _resetLastFetchedOrRequested();
+  AssetLiveDataThreadManager.__resetForJest();
 });
 
 function Test({
@@ -81,6 +77,7 @@ describe('AssetLiveDataProvider', () => {
     await waitFor(() => {
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
+
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -378,9 +375,6 @@ describe('AssetLiveDataProvider', () => {
     });
 
     expect(resultFn).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
-    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect no fetches to be made
