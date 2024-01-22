@@ -416,6 +416,7 @@ def get_dbt_multi_asset_args(
                 dagster_dbt_translator,
                 test_resource_props,
                 dbt_nodes,
+                manifest["parent_map"].get(test_unique_id, []),
             )
 
             if check_spec:

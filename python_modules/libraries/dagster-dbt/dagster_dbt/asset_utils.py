@@ -40,7 +40,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .utils import ASSET_RESOURCE_TYPES, input_name_fn, output_name_fn
+from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import (
@@ -532,6 +532,7 @@ def default_asset_check_fn(
     dagster_dbt_translator: "DagsterDbtTranslator",
     dbt_resource_props: Mapping[str, Any],
     dbt_nodes: Mapping[str, Any],
+    parent_ids: List[str],
 ) -> Optional[AssetCheckSpec]:
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
         unique_id, dbt_resource_props
@@ -545,17 +546,11 @@ def default_asset_check_fn(
     ):
         return None
 
-    test_unique_id = dbt_resource_props["unique_id"]
-    # tests can't depend on tests, but include "test" so that we collect deps for test_unique_id
-    check_deps = get_deps(
-        dbt_nodes, {test_unique_id}, asset_resource_types=ASSET_RESOURCE_TYPES + ["test"]
-    )
-
-    additional_deps = []
-    for parent_unique_id in check_deps.get(test_unique_id, []):
-        depends_on_asset_key = dagster_dbt_translator.get_asset_key(dbt_nodes[parent_unique_id])
-        if depends_on_asset_key != asset_key:
-            additional_deps.append(depends_on_asset_key)
+    additional_deps = [
+        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
+        for parent_id in parent_ids
+        if parent_id != unique_id
+    ]
 
     return AssetCheckSpec(
         name=dbt_resource_props["name"],
@@ -733,12 +728,14 @@ def get_asset_deps(
 
             for test_unique_id in test_unique_ids:
                 test_resource_props = manifest["nodes"][test_unique_id]
+
                 check_spec = default_asset_check_fn(
                     asset_key,
                     unique_id,
                     dagster_dbt_translator,
                     test_resource_props,
                     dbt_nodes,
+                    manifest["parent_map"].get(test_unique_id, []),
                 )
 
                 if check_spec:
