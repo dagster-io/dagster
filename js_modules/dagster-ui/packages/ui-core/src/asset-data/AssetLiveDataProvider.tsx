@@ -3,6 +3,7 @@ import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+import {AssetLiveDataThreadID} from './AssetLiveDataThread';
 import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
@@ -25,9 +26,13 @@ export const AssetLiveDataRefreshContext = React.createContext<{
   refresh: () => {},
 });
 
-export function useAssetLiveData(assetKey: AssetKeyInput) {
+export function useAssetLiveData(
+  assetKey: AssetKeyInput,
+  thread: AssetLiveDataThreadID = 'default',
+) {
   const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
     React.useMemo(() => [assetKey], [assetKey]),
+    thread,
   );
   return {
     liveData: liveDataByNode[tokenForAssetKey(assetKey)],
@@ -36,7 +41,10 @@ export function useAssetLiveData(assetKey: AssetKeyInput) {
   };
 }
 
-export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
+export function useAssetsLiveData(
+  assetKeys: AssetKeyInput[],
+  thread: AssetLiveDataThreadID = 'default',
+) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -56,14 +64,14 @@ export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
       });
     };
     const unsubscribeCallbacks = assetKeys.map((key) =>
-      manager.subscribe(key, setDataSingle, 'default'),
+      manager.subscribe(key, setDataSingle, thread),
     );
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
     };
-  }, [assetKeys, manager]);
+  }, [assetKeys, manager, thread]);
 
   return {
     liveDataByNode: data,
