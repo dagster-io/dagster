@@ -335,7 +335,7 @@ Last 25 log lines for container 'failpoddebug':"""
         pod_names = api_client.get_pod_names_in_job("failpoddebugnologs", namespace=namespace)
 
         pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, skip_logs=True
+            pod_names[0], namespace=namespace, include_container_logs=False
         )
 
         print(pod_debug_info)  # noqa

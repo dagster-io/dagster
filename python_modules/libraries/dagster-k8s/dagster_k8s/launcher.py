@@ -367,7 +367,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def get_run_worker_debug_info(
-        self, run: DagsterRun, skip_logs: Optional[bool] = False
+        self, run: DagsterRun, include_container_logs: Optional[bool] = True
     ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
         if self.supports_run_worker_crash_recovery:
@@ -381,7 +381,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         full_msg = ""
         try:
             pod_debug_info = [
-                self._api_client.get_pod_debug_info(pod_name, namespace, skip_logs=skip_logs)
+                self._api_client.get_pod_debug_info(pod_name, namespace, include_container_logs=include_container_logs)
                 for pod_name in pod_names
             ]
             full_msg = "\n".join(pod_debug_info)

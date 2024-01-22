@@ -97,7 +97,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         )
 
     def get_run_worker_debug_info(
-        self, run: DagsterRun, skip_logs: Optional[bool] = False
+        self, run: DagsterRun, include_container_logs: Optional[bool] = True
     ) -> Optional[str]:
         return None
 

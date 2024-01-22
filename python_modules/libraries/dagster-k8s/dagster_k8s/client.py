@@ -736,7 +736,7 @@ class DagsterKubernetesClient:
         pod_name,
         namespace,
         pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
-        skip_logs: bool = False,
+        include_container_logs: Optional[bool] = True,
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
@@ -756,7 +756,7 @@ class DagsterKubernetesClient:
             else {}
         )
 
-        if not skip_logs:
+        if include_container_logs:
             for container in (
                 pod.spec.containers if (pod and pod.spec and pod.spec.containers) else []
             ):
