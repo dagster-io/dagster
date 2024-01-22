@@ -381,7 +381,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         full_msg = ""
         try:
             pod_debug_info = [
-                self._api_client.get_pod_debug_info(pod_name, namespace, include_container_logs=include_container_logs)
+                self._api_client.get_pod_debug_info(
+                    pod_name, namespace, include_container_logs=include_container_logs
+                )
                 for pod_name in pod_names
             ]
             full_msg = "\n".join(pod_debug_info)
