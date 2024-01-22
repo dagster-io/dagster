@@ -1,6 +1,6 @@
 import {
-  gql,
   OnSubscriptionDataOptions,
+  gql,
   useApolloClient,
   useQuery,
   useSubscription,
@@ -9,22 +9,21 @@ import {TokenizingFieldValue} from '@dagster-io/ui-components';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
-import {WebSocketContext} from '../app/WebSocketProvider';
-import {RunStatus} from '../graphql/types';
-
 import {LogLevelCounts} from './LogsToolbar';
 import {RUN_DAGSTER_RUN_EVENT_FRAGMENT} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
 import {
-  RunLogsSubscriptionSuccessFragment,
-  PipelineRunLogsSubscriptionStatusFragment,
-  RunLogsQuery,
   PipelineRunLogsSubscription,
-  RunLogsQueryVariables,
+  PipelineRunLogsSubscriptionStatusFragment,
   PipelineRunLogsSubscriptionVariables,
+  RunLogsQuery,
+  RunLogsQueryVariables,
+  RunLogsSubscriptionSuccessFragment,
 } from './types/LogsProvider.types';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
+import {WebSocketContext} from '../app/WebSocketProvider';
+import {RunStatus} from '../graphql/types';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';

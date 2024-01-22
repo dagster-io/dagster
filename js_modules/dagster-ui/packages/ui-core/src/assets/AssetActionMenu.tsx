@@ -1,11 +1,4 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {usePermissionsForLocation} from '../app/Permissions';
-import {AssetKeyInput} from '../graphql/types';
-import {MenuLink} from '../ui/MenuLink';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   executionDisabledMessageForAssets,
@@ -13,6 +6,11 @@ import {
 } from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {AssetKeyInput} from '../graphql/types';
+import {MenuLink} from '../ui/MenuLink';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   path: string[];

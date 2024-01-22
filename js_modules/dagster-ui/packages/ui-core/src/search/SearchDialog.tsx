@@ -1,34 +1,17 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {
-  Box,
-  Icon,
-  Spinner,
-  FontFamily,
-  colorAccentGray,
-  colorTextLight,
-  colorTextLighter,
-  colorBackgroundDefault,
-  colorKeylineDefault,
-  colorDialogBackground,
-  colorNavButton,
-  colorNavButtonHover,
-  colorShadowDefault,
-  colorNavTextHover,
-  colorFocusRing,
-} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {useTrackEvent} from '../app/analytics';
-
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {useTrackEvent} from '../app/analytics';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -213,7 +196,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
                   justifyContent: 'center',
                 }}
               >
-                <Icon name="search" color={colorNavTextHover()} />
+                <Icon name="search" color={Colors.navTextHover()} />
               </div>
               <div>{searchPlaceholder}</div>
             </Box>
@@ -222,14 +205,14 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: colorDialogBackground()}}}
+        backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <Icon name="search" color={colorAccentGray()} size={20} />
+            <Icon name="search" color={Colors.accentGray()} size={20} />
             <SearchInput
               autoFocus
               spellCheck={false}
@@ -254,10 +237,10 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
 };
 
 const SearchTrigger = styled.button`
-  background-color: ${colorNavButton()};
+  background-color: ${Colors.navButton()};
   border-radius: 24px;
   border: none;
-  color: ${colorNavTextHover()};
+  color: ${Colors.navTextHover()};
   font-size: 14px;
   cursor: pointer;
   padding: 4px 16px 4px 8px;
@@ -268,18 +251,18 @@ const SearchTrigger = styled.button`
   transition: background-color 100ms linear;
 
   :hover {
-    background-color: ${colorNavButtonHover()};
+    background-color: ${Colors.navButtonHover()};
   }
 
   :focus-visible {
-    outline: ${colorFocusRing()} auto 1px;
+    outline: ${Colors.focusRing()} auto 1px;
   }
 `;
 
 const Container = styled.div`
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${Colors.backgroundDefault()};
   border-radius: 4px;
-  box-shadow: 2px 2px 8px ${colorShadowDefault()};
+  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
   max-height: 60vh;
   left: calc(50% - 300px);
   overflow: hidden;
@@ -298,14 +281,14 @@ interface SearchBoxProps {
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
   border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${colorKeylineDefault()}` : 'none'};
+    hasQueryString ? `1px solid ${Colors.keylineDefault()}` : 'none'};
   display: flex;
   padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
   border: none;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -313,14 +296,14 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${colorTextLighter()};
+    color: ${Colors.textLighter()};
   }
 `;
 
 const SlashShortcut = styled.div`
   background-color: transparent;
   border-radius: 3px;
-  color: ${colorNavTextHover()};
+  color: ${Colors.navTextHover()};
   font-size: 14px;
   padding: 2px;
 `;

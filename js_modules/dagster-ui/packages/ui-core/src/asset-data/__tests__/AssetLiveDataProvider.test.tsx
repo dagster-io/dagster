@@ -1,17 +1,15 @@
 jest.useFakeTimers();
 
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, act, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {GraphQLError} from 'graphql/error';
-import React from 'react';
 
+import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
 import {getMockResultFn} from '../../testing/mocking';
 import {AssetLiveDataProvider, useAssetsLiveData} from '../AssetLiveDataProvider';
 import {AssetLiveDataThreadManager} from '../AssetLiveDataThreadManager';
-import {SUBSCRIPTION_IDLE_POLL_RATE, BATCH_SIZE} from '../util';
-
-import {buildMockedAssetGraphLiveQuery} from './util';
+import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});

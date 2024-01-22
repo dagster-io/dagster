@@ -1,17 +1,15 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import React from 'react';
+import {useContext, useMemo} from 'react';
 
+import {GraphNode} from './Utils';
 import {AssetGroupSelector} from '../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
-import {FilterObject} from '../ui/Filters/useFilter';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-
-import {GraphNode} from './Utils';
-
-const emptySet = new Set<any>();
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type OptionalFilters =
   | {
@@ -31,6 +29,8 @@ type OptionalFilters =
 
 type Props = {
   nodes: GraphNode[];
+  clearExplorerPath: () => void;
+  explorerPath: string;
 } & OptionalFilters;
 
 const emptyArray: any[] = [];
@@ -42,46 +42,12 @@ export function useAssetGraphExplorerFilters({
   setGroupFilters,
   computeKindTags,
   setComputeKindTags,
+  explorerPath,
+  clearExplorerPath,
 }: Props) {
-  const {allRepos, visibleRepos, toggleVisible, setVisible} = React.useContext(WorkspaceContext);
+  const {allRepos} = useContext(WorkspaceContext);
 
-  const visibleReposSet = React.useMemo(() => new Set(visibleRepos), [visibleRepos]);
-
-  const reposFilter = useStaticSetFilter<DagsterRepoOption>({
-    name: 'Code location',
-    icon: 'repo',
-    allValues: allRepos.map((repo) => ({
-      key: repo.repository.id,
-      value: repo,
-      match: [buildRepoPathForHuman(repo.repository.name, repo.repositoryLocation.name)],
-    })),
-    menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="repo" />
-        <TruncatedTextWithFullTextOnHover
-          text={buildRepoPathForHuman(value.repository.name, value.repositoryLocation.name)}
-        />
-      </Box>
-    ),
-    getStringValue: (value) =>
-      buildRepoPathForHuman(value.repository.name, value.repositoryLocation.name),
-    initialState: visibleReposSet.size === allRepos.length ? emptySet : visibleReposSet,
-    onStateChanged: (values) => {
-      let areAllVisible = false;
-      if (values.size === 0) {
-        areAllVisible = true;
-      }
-      allRepos.forEach((repo) => {
-        const address = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
-        if (areAllVisible) {
-          setVisible([address]);
-        } else if (visibleReposSet.has(repo) !== values.has(repo)) {
-          toggleVisible([address]);
-        }
-      });
-    },
-  });
+  const reposFilter = useCodeLocationFilter();
 
   const groupsFilter = useStaticSetFilter<AssetGroupSelector>({
     name: 'Asset Groups',
@@ -124,7 +90,7 @@ export function useAssetGraphExplorerFilters({
       ' - ' +
       buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
 
-    initialState: React.useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
+    initialState: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
     onStateChanged: (values) => {
       if (setGroupFilters) {
         setGroupFilters(Array.from(values));
@@ -132,7 +98,7 @@ export function useAssetGraphExplorerFilters({
     },
   });
 
-  const allKindTags = React.useMemo(
+  const allKindTags = useMemo(
     () =>
       Array.from(
         new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
@@ -143,7 +109,7 @@ export function useAssetGraphExplorerFilters({
   const kindTagsFilter = useStaticSetFilter<string>({
     name: 'Compute kind',
     icon: 'tag',
-    allValues: React.useMemo(
+    allValues: useMemo(
       () =>
         allKindTags.map((value) => ({
           value,
@@ -179,11 +145,25 @@ export function useAssetGraphExplorerFilters({
   }
   return {
     button,
-    filterBar: activeFiltersJsx.length ? (
-      <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
-        {' '}
-        {activeFiltersJsx}
-      </Box>
-    ) : null,
+    filterBar:
+      activeFiltersJsx.length || explorerPath ? (
+        <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
+          {' '}
+          {activeFiltersJsx}
+          {explorerPath ? (
+            <FilterTag
+              label={
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  Asset selection is&nbsp;
+                  <FilterTagHighlightedText tooltipText={explorerPath}>
+                    {explorerPath}
+                  </FilterTagHighlightedText>
+                </Box>
+              }
+              onRemove={clearExplorerPath}
+            />
+          ) : null}
+        </Box>
+      ) : null,
   };
 }

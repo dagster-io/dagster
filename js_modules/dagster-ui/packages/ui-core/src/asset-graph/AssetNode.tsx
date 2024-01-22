@@ -1,33 +1,18 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  FontFamily,
-  Icon,
-  Spinner,
-  Tooltip,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorBackgroundLight,
-  colorTextDefault,
-  colorTextLight,
-  colorTextLighter,
-  colorLineageNodeBorder,
-  colorLineageNodeBorderSelected,
-  colorLineageNodeBorderHover,
-  colorLineageNodeBackground,
-  colorShadowDefault,
-} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
+import {useAssetNodeMenu} from './AssetNodeMenu';
+import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {AssetLatestRunSpinner} from './AssetRunLinking';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {GraphData, GraphNode, LiveDataForNode} from './Utils';
+import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
+import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
@@ -37,14 +22,6 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-
-import {useAssetNodeMenu} from './AssetNodeMenu';
-import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {AssetLatestRunSpinner} from './AssetRunLinking';
-import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
-import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props {
   definition: AssetNodeFragment;
@@ -78,11 +55,11 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
           </AssetName>
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <AssetDescription $color={colorTextDefault()}>
+              <AssetDescription $color={Colors.textDefault()}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </AssetDescription>
             ) : (
-              <AssetDescription $color={colorTextLight()}>No description</AssetDescription>
+              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -166,23 +143,23 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
   {
     type: 'NOT_EVALUATED',
-    content: <Icon name="dot" color={colorAccentGray()} />,
+    content: <Icon name="dot" color={Colors.accentGray()} />,
   },
   {
     type: 'ERROR',
-    content: <Icon name="cancel" color={colorAccentRed()} />,
+    content: <Icon name="cancel" color={Colors.accentRed()} />,
   },
   {
     type: 'WARN',
-    content: <Icon name="warning_outline" color={colorAccentYellow()} />,
+    content: <Icon name="warning_outline" color={Colors.accentYellow()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={colorAccentGray()} />,
+    content: <Icon name="dot" color={Colors.accentGray()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={colorAccentGreen()} />,
+    content: <Icon name="check_circle" color={Colors.accentGreen()} />,
   },
 ];
 
@@ -251,7 +228,7 @@ const AssetNodeChecksRow = ({
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="top"
-      background={colorBackgroundLight()}
+      background={Colors.backgroundLight()}
     >
       Checks
       <Link
@@ -363,19 +340,19 @@ const AssetNodeShowOnHover = styled.span`
 const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
+      ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
       : `border: 2px solid ${
-          p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()
+          p.$selected ? Colors.lineageNodeBorderSelected() : Colors.lineageNodeBorder()
         }`};
-  ${(p) => p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
+  ${(p) => p.$selected && `outline: 2px solid ${Colors.lineageNodeBorderSelected()}`};
 
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   border-radius: 10px;
   position: relative;
   transition: all 150ms linear;
   &:hover {
-    ${(p) => !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
-    box-shadow: ${colorShadowDefault()} 0px 1px 4px 0px;
+    ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
+    box-shadow: ${Colors.shadowDefault()} 0px 1px 4px 0px;
     scale: 1.03;
     ${AssetNodeShowOnHover} {
       display: initial;
@@ -386,7 +363,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
   padding: '3px 6px',
-  color: colorTextDefault(),
+  color: Colors.textDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
 };
@@ -400,13 +377,13 @@ export const NameTooltipCSS: CSSObject = {
 
 export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorLineageNodeBackground(),
+  background: Colors.lineageNodeBackground(),
   border: `none`,
 });
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundGray(),
+  background: Colors.backgroundGray(),
   border: `none`,
 });
 
@@ -414,7 +391,7 @@ const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorLineageNodeBackground())};
+  background: ${(p) => (p.$isSource ? Colors.backgroundLight() : Colors.lineageNodeBackground())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
@@ -438,8 +415,8 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
-      : `border: 4px solid ${p.$selected ? colorLineageNodeBorderSelected() : p.$border}`};
+      ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
 
   border-radius: 16px;
   position: relative;
@@ -447,7 +424,7 @@ const MinimalAssetNodeBox = styled.div<{
   height: 100%;
   min-height: 86px;
   &:hover {
-    box-shadow: ${colorShadowDefault()} 0px 2px 12px 0px;
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
   }
 `;
 
@@ -465,7 +442,7 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   font-size: 12px;
 `;
 

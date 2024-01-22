@@ -1,13 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -18,6 +11,12 @@ import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
 } from './types/WorkspaceGraphsRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -45,7 +44,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const graphs = React.useMemo(() => {
+  const graphs = useMemo(() => {
     const repo = data?.repositoryOrError;
     if (!repo || repo.__typename !== 'Repository') {
       return [];
@@ -79,7 +78,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     return items.sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return graphs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [graphs, sanitizedSearch]);
@@ -90,7 +89,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading graphs…</div>
+            <div style={{color: Colors.textLight()}}>Loading graphs…</div>
           </Box>
         </Box>
       );

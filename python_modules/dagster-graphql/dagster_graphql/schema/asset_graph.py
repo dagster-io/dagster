@@ -923,9 +923,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return matching_sensors[0]
 
     def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
-        from dagster._daemon.asset_daemon import (
-            get_current_evaluation_id,
-        )
+        from dagster._daemon.asset_daemon import get_current_evaluation_id
 
         instance = graphene_info.context.instance
         if instance.auto_materialize_use_automation_policy_sensors:

@@ -3197,7 +3197,8 @@ class TestEventLogStorage:
                     records = storage.get_asset_records()  # should select all assets
                     assert len(records) == 2
 
-                    list(records).sort(
+                    records = list(records)
+                    records.sort(
                         key=lambda record: record.asset_entry.asset_key
                     )  # order by asset key
                     asset_entry = records[0].asset_entry
@@ -4466,6 +4467,10 @@ class TestEventLogStorage:
         assert info.active_slot_count == 0
         assert info.pending_step_count == 1
         assert info.assigned_step_count == 0
+
+        # delete the concurrency slot
+        storage.delete_concurrency_limit("foo")
+        assert storage.get_concurrency_keys() == set()
 
     def test_default_concurrency(
         self,

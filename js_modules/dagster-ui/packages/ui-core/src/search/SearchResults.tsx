@@ -1,12 +1,4 @@
-import {
-  IconName,
-  Icon,
-  colorTextLight,
-  colorTextDefault,
-  colorBackgroundLight,
-  colorAccentLime,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
+import {Colors, Icon, IconName} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -71,7 +63,7 @@ const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemP
       <ResultLink to={item.href} onMouseDown={onClick}>
         <Icon
           name={iconForType(item.type)}
-          color={isHighlight ? colorTextDefault() : colorTextLight()}
+          color={isHighlight ? Colors.textDefault() : Colors.textLight()}
         />
         <div style={{marginLeft: '12px'}}>
           <Label isHighlight={isHighlight}>{item.label}</Label>
@@ -111,7 +103,7 @@ export const SearchResults = (props: Props) => {
 };
 
 const NoResults = styled.div`
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   font-size: 16px;
   padding: 16px;
 `;
@@ -134,9 +126,10 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? colorBackgroundLight() : 'transparent')};
-  box-shadow: ${({isHighlight}) => (isHighlight ? colorAccentLime() : 'transparent')} 4px 0 0 inset;
-  color: ${colorTextLight()};
+  background-color: ${({isHighlight}) => (isHighlight ? Colors.backgroundLight() : 'transparent')};
+  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentLime() : 'transparent')} 4px 0 0
+    inset;
+  color: ${Colors.textLight()};
   display: flex;
   flex-direction: row;
   list-style: none;
@@ -144,7 +137,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${colorBackgroundLight()};
+    background-color: ${Colors.backgroundLight()};
   }
 `;
 
@@ -163,12 +156,12 @@ const ResultLink = styled(Link)`
 `;
 
 const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? colorTextDefault() : colorTextLight())};
+  color: ${({isHighlight}) => (isHighlight ? Colors.textDefault() : Colors.textLight())};
   font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? colorTextDefault() : colorTextLight())};
+  color: ${({isHighlight}) => (isHighlight ? Colors.textDefault() : Colors.textLight())};
   font-size: 12px;
   max-width: 530px;
   overflow-x: hidden;

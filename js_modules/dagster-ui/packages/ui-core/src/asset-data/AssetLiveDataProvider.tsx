@@ -2,14 +2,13 @@ import {useApolloClient} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
+import {AssetDataRefreshButton} from './AssetDataRefreshButton';
+import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-
-import {AssetDataRefreshButton} from './AssetDataRefreshButton';
-import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;

@@ -1,26 +1,8 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  ConfigTypeSchema,
-  FontFamily,
-  Icon,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui-components';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
-import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
-import {pluginForMetadata} from '../plugins';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Description} from './Description';
 import {
@@ -32,15 +14,24 @@ import {
 } from './SidebarComponents';
 import {
   Invocation,
+  OpEdges,
+  OpMappingTable,
   ResourceContainer,
   ResourceHeader,
   ShowAllButton,
   SidebarOpInvocationInfo,
-  OpEdges,
-  OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
 import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
+import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from '../ops/OpTypeSignature';
+import {pluginForMetadata} from '../plugins';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface SidebarOpDefinitionProps {
   definition: SidebarOpDefinitionFragment;
@@ -124,7 +115,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
               .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
               .map((requirement) => (
                 <ResourceContainer key={requirement.resourceKey}>
-                  <Icon name="resource" color={colorAccentGray()} />
+                  <Icon name="resource" color={Colors.accentGray()} />
                   {repoAddress ? (
                     <Link
                       to={workspacePathFromAddress(
@@ -280,7 +271,7 @@ const InvocationList = ({
   invocations: SidebarOpInvocationInfo[];
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }) => {
-  const [showAll, setShowAll] = React.useState<boolean>(false);
+  const [showAll, setShowAll] = useState<boolean>(false);
   const visible = invocations.filter((i) => !isHiddenAssetGroupJob(i.pipelineName || ''));
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
@@ -306,7 +297,7 @@ const AssetNodeListItem = styled(Link)`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   display: flex;
   gap: 6px;
 
@@ -315,7 +306,7 @@ const AssetNodeListItem = styled(Link)`
   }
 
   &:hover {
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
   }
 
   font-family: ${FontFamily.monospace};

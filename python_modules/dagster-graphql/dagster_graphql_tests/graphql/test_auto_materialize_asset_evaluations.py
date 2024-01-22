@@ -1,222 +1,22 @@
-from datetime import datetime
-from unittest.mock import PropertyMock, patch
-
 import dagster._check as check
-import pendulum
-from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    LegacyAssetDaemonCursorWrapper,
 )
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleEvaluation,
-    ParentUpdatedRuleEvaluationData,
-    WaitingOnAssetsRuleEvaluationData,
+    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
-from dagster._core.definitions.partition import (
-    SerializedPartitionsSubset,
-    StaticPartitionsDefinition,
-)
-from dagster._core.definitions.run_request import (
-    InstigatorType,
-)
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-)
-from dagster._core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    SensorInstigatorData,
-    TickData,
-    TickStatus,
-)
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
+from dagster._serdes.serdes import serialize_value
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
-from dagster_graphql_tests.graphql.repo import static_partitions_def
-
-TICKS_QUERY = """
-query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String, $beforeTimestamp: Float, $afterTimestamp: Float) {
-    autoMaterializeTicks(dayRange: $dayRange, dayOffset: $dayOffset, statuses: $statuses, limit: $limit, cursor: $cursor, beforeTimestamp: $beforeTimestamp, afterTimestamp: $afterTimestamp) {
-        id
-        timestamp
-        endTimestamp
-        status
-        requestedAssetKeys {
-            path
-        }
-        requestedMaterializationsForAssets {
-            assetKey {
-                path
-            }
-            partitionKeys
-        }
-        requestedAssetMaterializationCount
-        autoMaterializeAssetEvaluationId
-    }
-}
-"""
-
-
-def _create_tick(instance, status, timestamp, evaluation_id, run_requests=None, end_timestamp=None):
-    return instance.create_tick(
-        TickData(
-            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-            instigator_name=_PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-            instigator_type=InstigatorType.AUTO_MATERIALIZE,
-            status=status,
-            timestamp=timestamp,
-            end_timestamp=end_timestamp,
-            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-            run_ids=[],
-            auto_materialize_evaluation_id=evaluation_id,
-            run_requests=run_requests,
-        )
-    )
-
-
-class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
-    def test_get_tick_range(self, graphql_context):
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 0
-
-        now = pendulum.now("UTC")
-        end_timestamp = now.timestamp() + 20
-
-        success_1 = _create_tick(
-            graphql_context.instance,
-            TickStatus.SUCCESS,
-            now.timestamp(),
-            end_timestamp=end_timestamp,
-            evaluation_id=3,
-            run_requests=[
-                RunRequest(asset_selection=[AssetKey("foo"), AssetKey("bar")], partition_key="abc"),
-                RunRequest(asset_selection=[AssetKey("bar")], partition_key="def"),
-                RunRequest(asset_selection=[AssetKey("baz")], partition_key=None),
-            ],
-        )
-
-        success_2 = _create_tick(
-            graphql_context.instance,
-            TickStatus.SUCCESS,
-            now.subtract(days=1, hours=1).timestamp(),
-            evaluation_id=2,
-        )
-
-        _create_tick(
-            graphql_context.instance,
-            TickStatus.SKIPPED,
-            now.subtract(days=2, hours=1).timestamp(),
-            evaluation_id=1,
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 3
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": 1, "dayOffset": None},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 1
-        tick = result.data["autoMaterializeTicks"][0]
-        assert tick["endTimestamp"] == end_timestamp
-        assert tick["autoMaterializeAssetEvaluationId"] == 3
-        assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
-            {"path": ["bar"]},
-            {"path": ["baz"]},
-            {"path": ["foo"]},
-        ]
-
-        asset_materializations = tick["requestedMaterializationsForAssets"]
-        by_asset_key = {
-            AssetKey.from_coercible(mat["assetKey"]["path"]).to_user_string(): mat["partitionKeys"]
-            for mat in asset_materializations
-        }
-
-        assert {key: sorted(val) for key, val in by_asset_key.items()} == {
-            "foo": ["abc"],
-            "bar": ["abc", "def"],
-            "baz": [],
-        }
-
-        assert tick["requestedAssetMaterializationCount"] == 4
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={
-                "beforeTimestamp": success_2.timestamp + 1,
-                "afterTimestamp": success_2.timestamp - 1,
-            },
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 1
-        tick = result.data["autoMaterializeTicks"][0]
-        assert (
-            tick["autoMaterializeAssetEvaluationId"]
-            == success_2.tick_data.auto_materialize_evaluation_id
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"]},
-        )
-        assert len(result.data["autoMaterializeTicks"]) == 2
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={"dayRange": None, "dayOffset": None, "statuses": ["SUCCESS"], "limit": 1},
-        )
-        ticks = result.data["autoMaterializeTicks"]
-        assert len(ticks) == 1
-        assert ticks[0]["timestamp"] == success_1.timestamp
-        assert (
-            ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.tick_data.auto_materialize_evaluation_id
-        )
-
-        cursor = ticks[0]["id"]
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            TICKS_QUERY,
-            variables={
-                "dayRange": None,
-                "dayOffset": None,
-                "statuses": ["SUCCESS"],
-                "limit": 1,
-                "cursor": cursor,
-            },
-        )
-        ticks = result.data["autoMaterializeTicks"]
-        assert len(ticks) == 1
-        assert ticks[0]["timestamp"] == success_2.timestamp
-
 
 AUTOMATION_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
@@ -353,78 +153,19 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
-    def test_automation_policy_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_origin = ExternalInstigatorOrigin(
-            external_repository_origin=infer_repository(graphql_context).get_external_origin(),
-            instigator_name="my_automation_policy_sensor",
-        )
-
-        check.not_none(graphql_context.instance.schedule_storage).add_instigator_state(
-            InstigatorState(
-                sensor_origin,
-                InstigatorType.SENSOR,
-                status=InstigatorStatus.RUNNING,
-                instigator_data=SensorInstigatorData(
-                    sensor_type=SensorType.AUTOMATION_POLICY,
-                    cursor=LegacyAssetDaemonCursorWrapper(
-                        AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize()
-                    ).to_compressed(),
-                ),
-            )
-        )
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            AUTOMATION_POLICY_SENSORS_QUERY,
-            variables={
-                "assetKey": {"path": ["fresh_diamond_bottom"]},
-            },
-        )
-        assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
-
-        with patch(
-            "dagster._core.instance.DagsterInstance.auto_materialize_use_automation_policy_sensors",
-            new_callable=PropertyMock,
-        ) as mock_my_property:
-            mock_my_property.return_value = True
-
-            results = execute_dagster_graphql(
-                graphql_context,
-                AUTOMATION_POLICY_SENSORS_QUERY,
-                variables={
-                    "assetKey": {"path": ["fresh_diamond_bottom"]},
-                },
-            )
-
-            assert any(
-                instigator["name"] == "my_automation_policy_sensor"
-                for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
-            )
-            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
-
     def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
+        evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
+        evaluation2 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_two"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
         check.not_none(
             graphql_context.instance.schedule_storage
         ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_one"),
-                    partition_subsets_by_condition=[],
-                    num_requested=0,
-                    num_skipped=0,
-                    num_discarded=0,
-                    rule_snapshots=None,
-                ),
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                    rule_snapshots=[AutoMaterializeRule.materialize_on_missing().to_snapshot()],
-                ),
-            ],
+            evaluation_id=10, asset_evaluations=[evaluation1, evaluation2]
         )
 
         results = execute_dagster_graphql(
@@ -432,8 +173,23 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
+        )
+
         assert len(results.data["autoMaterializeAssetEvaluationsOrError"]["records"]) == 1
-        assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"] is None
+        assert (
+            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["rules"]
+            == expected_rules
+        )
         assert results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["assetKey"] == {
             "path": ["asset_one"]
         }
@@ -452,13 +208,6 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             )
             == 1
         )
-        rule = results_asset_two.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
-            "rules"
-        ][0]
-
-        assert rule["decisionType"] == "MATERIALIZE"
-        assert rule["description"] == "materialization is missing"
-        assert rule["className"] == "MaterializeOnMissingRule"
 
         results_by_evaluation_id = execute_dagster_graphql(
             graphql_context,
@@ -500,35 +249,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_get_required_but_nonexistent_parent_evaluation(
         self, graphql_context: WorkspaceRequestContext
     ):
-        partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
-
+        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["blah"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]),
+        )
         check.not_none(
             graphql_context.instance.schedule_storage
         ).add_auto_materialize_asset_evaluations(
             evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("upstream_static_partitioned_asset"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
-                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                    waiting_on_asset_keys=frozenset({AssetKey("blah")})
-                                ),
-                            ),
-                            SerializedPartitionsSubset.from_subset(
-                                partitions_def.empty_subset().with_partition_keys(["a"]),
-                                partitions_def,
-                                None,  # type: ignore
-                            ),
-                        )
-                    ],
-                    num_requested=0,
-                    num_skipped=1,
-                    num_discarded=0,
-                ),
-            ],
+            asset_evaluations=[evaluation],
         )
 
         results = execute_dagster_graphql(
@@ -539,6 +268,18 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
             },
+        )
+
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
         )
 
         assert results.data == {
@@ -556,22 +297,40 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                                 "rule": {"decisionType": "SKIP"},
                                 "ruleEvaluations": [
                                     {
-                                        "partitionKeysOrError": {"partitionKeys": ["a"]},
                                         "evaluationData": {
-                                            "waitingOnAssetKeys": [{"path": ["blah"]}]
+                                            "waitingOnAssetKeys": [{"path": ["blah"]}],
+                                        },
+                                        "partitionKeysOrError": {
+                                            "partitionKeys": ["a"],
                                         },
                                     }
                                 ],
-                            }
+                            },
                         ],
-                        "rules": None,
+                        "rules": expected_rules,
                         "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                     }
                 ],
             },
         }
 
-    def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
+    def test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
+        evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
+        evaluation2 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_two"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
+        evaluation3 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_three"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
+        evaluation4 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_four"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "ParentUpdatedRuleEvaluationData", "updated_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_two"]}]}, "will_update_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["asset_three"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}}, null]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            None,
+        )
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
@@ -579,77 +338,30 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
         }
 
         check.not_none(
             graphql_context.instance.schedule_storage
         ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_one"),
-                    partition_subsets_by_condition=[],
-                    num_requested=0,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            None,
-                        )
-                    ],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_three"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
-                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                    waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
-                                ),
-                            ),
-                            None,
-                        )
-                    ],
-                    num_requested=0,
-                    num_skipped=1,
-                    num_discarded=0,
-                ),
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_four"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
-                                evaluation_data=ParentUpdatedRuleEvaluationData(
-                                    updated_asset_keys=frozenset([AssetKey("asset_two")]),
-                                    will_update_asset_keys=frozenset([AssetKey("asset_three")]),
-                                ),
-                            ),
-                            None,
-                        )
-                    ],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-            ],
+            evaluation_id=10, asset_evaluations=[evaluation1, evaluation2, evaluation3, evaluation4]
         )
 
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
+        )
+        expected_rules = sorted(
+            [
+                {
+                    "className": rs.description,
+                    "decisionType": rs.decision_type.value,
+                    "description": rs.description,
+                }
+                for rs in AutoMaterializePolicy.eager().rule_snapshots
+            ],
+            key=lambda x: x["className"],
         )
         assert results.data == {
             "assetNodeOrError": {
@@ -658,9 +370,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_one"]},
                         "numRequested": 0,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [],
                     }
                 ],
@@ -679,9 +393,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_two"]},
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "MATERIALIZE"},
@@ -704,15 +420,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_three"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
-            },
+            "assetNodeOrError": {},
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_three"]},
                         "numRequested": 0,
                         "numSkipped": 1,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "SKIP"},
@@ -737,15 +453,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_four"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
-            },
+            "assetNodeOrError": {},
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
+                        "assetKey": {"path": ["asset_four"]},
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
+                        "rules": expected_rules,
                         "rulesWithRuleEvaluations": [
                             {
                                 "rule": {"decisionType": "MATERIALIZE"},
@@ -765,7 +481,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         }
 
-    def _test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
+    def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
+        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 2, "num_skipped": 0, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": null, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\", \\"b\\"]}"}]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be present"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnParentUpdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed since latest materialization"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnBackfillInProgressRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "targeted by an in-progress backfill"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnParentOutdatedRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "waiting on upstream data to be up to date"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnRequiredForFreshnessRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "required to meet this or downstream asset\'s freshness policy"}, {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
+            StaticPartitionsDefinition(["a", "b"]),
+        )
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
@@ -784,32 +504,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         check.not_none(
             graphql_context.instance.schedule_storage
-        ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("upstream_static_partitioned_asset"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            SerializedPartitionsSubset.from_subset(
-                                static_partitions_def.empty_subset().with_partition_keys(
-                                    ["a", "b"]
-                                ),
-                                static_partitions_def,
-                                None,  # type: ignore
-                            ),
-                        )
-                    ],
-                    num_requested=2,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-            ],
-        )
+        ).add_auto_materialize_asset_evaluations(evaluation_id=10, asset_evaluations=[evaluation])
 
         results = execute_dagster_graphql(
             graphql_context,
@@ -848,96 +543,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             ][0]["ruleEvaluations"][0]["partitionKeysOrError"]["partitionKeys"]
         ) == {"a", "b"}
 
-    def _test_get_evaluations_invalid_partitions(self, graphql_context: WorkspaceRequestContext):
-        wrong_partitions_def = TimeWindowPartitionsDefinition(
-            cron_schedule="0 0 * * *", start=datetime(year=2020, month=1, day=5), fmt="%Y-%m-%d"
-        )
-
-        check.not_none(
-            graphql_context.instance.schedule_storage
-        ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("upstream_static_partitioned_asset"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            SerializedPartitionsSubset.from_subset(
-                                wrong_partitions_def.empty_subset().with_partition_keys(
-                                    ["2023-07-07"]
-                                ),
-                                wrong_partitions_def,
-                                None,  # type: ignore
-                            ),
-                        )
-                    ],
-                    num_requested=2,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
-            ],
-        )
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            QUERY,
-            variables={
-                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
-                "limit": 10,
-                "cursor": None,
-            },
-        )
-        assert results.data == {
-            "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
-            },
-            "autoMaterializeAssetEvaluationsOrError": {
-                "records": [
-                    {
-                        "numRequested": 2,
-                        "numSkipped": 0,
-                        "numDiscarded": 0,
-                        "rulesWithRuleEvaluations": [
-                            {
-                                "rule": {"decisionType": "MATERIALIZE"},
-                                "ruleEvaluations": [
-                                    {
-                                        "evaluationData": None,
-                                        "partitionKeysOrError": {
-                                            "message": (
-                                                "Partition subset cannot be deserialized. The"
-                                                " PartitionsDefinition may have changed."
-                                            )
-                                        },
-                                    }
-                                ],
-                            },
-                        ],
-                    }
-                ],
-            },
-        }
-
-        results_by_evaluation_id = execute_dagster_graphql(
-            graphql_context,
-            QUERY_FOR_EVALUATION_ID,
-            variables={"evaluationId": 10},
-        )
-
-        records = results_by_evaluation_id.data["autoMaterializeEvaluationsForEvaluationId"][
-            "records"
-        ]
-
-        assert len(records) == 1
-        assert records[0] == results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]
-
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
+            {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(AssetDaemonCursor.empty(0))}
         )
 
         results = execute_dagster_graphql(
@@ -957,9 +565,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
                 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: (
-                    AssetDaemonCursor.empty()
-                    .with_updates(0, set(), set(), set(), {}, 42, None, [], 0)  # type: ignore
-                    .serialize()
+                    serialize_value(AssetDaemonCursor.empty(0).with_updates(0, 1.0, [], []))
                 )
             }
         )

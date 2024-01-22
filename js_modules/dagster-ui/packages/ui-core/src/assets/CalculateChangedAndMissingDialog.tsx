@@ -1,28 +1,22 @@
-import {useQuery, gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
-  Spinner,
+  Box,
+  Button,
+  Checkbox,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Button,
-  Box,
   Icon,
-  Checkbox,
   MiddleTruncate,
-  colorLinkDefault,
-  colorTextLight,
-  colorAccentGreen,
+  Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
-import {isAssetStale, isAssetMissing} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
@@ -30,6 +24,9 @@ import {
   AssetStaleStatusQuery,
   AssetStaleStatusQueryVariables,
 } from './types/CalculateChangedAndMissingDialog.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 export const CalculateChangedAndMissingDialog = React.memo(
   ({
@@ -115,7 +112,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                   });
                 }}
               />
-              <label htmlFor="check-all" style={{color: colorTextLight(), cursor: 'pointer'}}>
+              <label htmlFor="check-all" style={{color: Colors.textLight(), cursor: 'pointer'}}>
                 Asset Name
               </label>
             </RowGrid>
@@ -157,7 +154,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>
                           <Link to={assetDetailsPathForKey(item)} target="_blank">
-                            <Icon name="open_in_new" color={colorLinkDefault()} />
+                            <Icon name="open_in_new" color={Colors.linkDefault()} />
                           </Link>
                         </Box>
                       </RowGrid>
@@ -171,7 +168,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
       }
       return (
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="check_circle" color={colorAccentGreen()} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           <div>All assets are up to date</div>
         </Box>
       );

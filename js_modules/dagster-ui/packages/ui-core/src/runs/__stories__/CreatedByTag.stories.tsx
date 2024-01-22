@@ -1,6 +1,5 @@
 import {MetadataTableWIP} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {buildPipelineTag} from '../../graphql/types';
 import {CreatedByTag} from '../CreatedByTag';

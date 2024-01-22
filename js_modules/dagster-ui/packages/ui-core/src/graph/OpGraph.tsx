@@ -1,19 +1,11 @@
 import {gql} from '@apollo/client';
-import {
-  colorAccentBlue,
-  colorBackgroundBlue,
-  colorBackgroundBlueHover,
-  colorBackgroundYellow,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-
 import {OpEdges} from './OpEdges';
-import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
-import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
+import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
+import {ParentOpNode} from './ParentOpNode';
 import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
@@ -25,6 +17,7 @@ import {
   isOpHighlighted,
 } from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 const NoOp = () => {};
 
@@ -72,15 +65,6 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
 
   return (
     <>
-      {parentOp && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
-        <SVGLabeledParentRect
-          {...layout.parent.invocationBoundingBox}
-          key={`composite-rect-${parentHandleID}`}
-          label=""
-          fill={colorBackgroundYellow()}
-          minified={minified}
-        />
-      )}
       {parentOp && (
         <ParentOpNode
           onClickOp={onClickOp}
@@ -96,14 +80,14 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
       <OpEdges
         ops={ops}
         layout={layout}
-        color={colorKeylineDefault()}
+        color={Colors.lineageEdge()}
         edges={layout.edges}
         onHighlight={setHighlighted}
       />
       <OpEdges
         ops={ops}
         layout={layout}
-        color={colorAccentBlue()}
+        color={Colors.accentBlue()}
         onHighlight={setHighlighted}
         edges={layout.edges.filter(({from, to}) =>
           isHighlighted(highlighted, {a: from.opName, b: to.opName}),
@@ -113,8 +97,8 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
         <rect
           key={idx}
           {...box}
-          stroke={colorBackgroundBlue()}
-          fill={colorBackgroundBlueHover()}
+          stroke={Colors.backgroundBlue()}
+          fill={Colors.backgroundBlueHover()}
           strokeWidth={2}
         />
       ))}

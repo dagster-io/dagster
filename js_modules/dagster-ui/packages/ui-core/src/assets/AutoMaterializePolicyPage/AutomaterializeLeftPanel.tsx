@@ -1,32 +1,33 @@
 import {
+  Body2,
   Box,
   Caption,
+  Colors,
   CursorPaginationControls,
-  colorBackgroundBlue,
-  colorBackgroundBlueHover,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorBackgroundLight,
-  colorKeylineDefault,
-  colorTextBlue,
-  colorTextDefault,
+  Icon,
+  MiddleTruncate,
+  Subtitle1,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
-import {EvaluationCounts} from './EvaluationCounts';
-import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
+import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
+import {SensorType} from '../../graphql/types';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {numberFormatter} from '../../ui/formatters';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props extends ListProps {
-  evaluations: AutoMaterializeEvaluationRecordItemFragment[];
+  evaluations: AssetConditionEvaluationRecordFragment[];
   paginationProps: ReturnType<typeof useEvaluationsQueryResult>['paginationProps'];
 }
 
 export const AutomaterializeLeftPanel = ({
-  assetHasDefinedPartitions,
+  definition,
   evaluations,
   paginationProps,
   onSelectEvaluation,
@@ -35,7 +36,7 @@ export const AutomaterializeLeftPanel = ({
   return (
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
       <AutomaterializeLeftList
-        assetHasDefinedPartitions={assetHasDefinedPartitions}
+        definition={definition}
         evaluations={evaluations}
         onSelectEvaluation={onSelectEvaluation}
         selectedEvaluation={selectedEvaluation}
@@ -50,48 +51,107 @@ export const AutomaterializeLeftPanel = ({
 };
 
 interface ListProps {
-  assetHasDefinedPartitions: boolean;
-  evaluations: AutoMaterializeEvaluationRecordItemFragment[];
-  onSelectEvaluation: (evaluation: AutoMaterializeEvaluationRecordItemFragment) => void;
-  selectedEvaluation?: AutoMaterializeEvaluationRecordItemFragment;
+  definition?: AssetViewDefinitionNodeFragment | null;
+  evaluations: AssetConditionEvaluationRecordFragment[];
+  onSelectEvaluation: (evaluation: AssetConditionEvaluationRecordFragment) => void;
+  selectedEvaluation?: AssetConditionEvaluationRecordFragment;
 }
 
 export const AutomaterializeLeftList = (props: ListProps) => {
-  const {assetHasDefinedPartitions, evaluations, onSelectEvaluation, selectedEvaluation} = props;
+  const {evaluations, onSelectEvaluation, selectedEvaluation, definition} = props;
+
+  const sensorName = React.useMemo(
+    () =>
+      definition?.targetingInstigators.find(
+        (instigator) =>
+          instigator.__typename === 'Sensor' &&
+          instigator.sensorType === SensorType.AUTOMATION_POLICY,
+      )?.name,
+    [definition],
+  );
+
+  const repoAddress = definition
+    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+    : null;
 
   return (
-    <Box
-      padding={{vertical: 8, horizontal: 12}}
-      style={{flex: 1, minHeight: 0, overflowY: 'auto'}}
-      flex={{grow: 1, direction: 'column'}}
-    >
-      {evaluations.map((evaluation) => {
-        const isSelected = selectedEvaluation?.evaluationId === evaluation.evaluationId;
-        const {numRequested, numSkipped, numDiscarded} = evaluation;
-
-        return (
-          <EvaluationListItem
-            key={`skip-${evaluation.timestamp}`}
-            onClick={() => {
-              onSelectEvaluation(evaluation);
-            }}
-            $selected={isSelected}
-          >
-            <Box flex={{direction: 'column', gap: 4}}>
-              <TimestampDisplay timestamp={evaluation.timestamp} />
-              <EvaluationCounts
-                numRequested={numRequested}
-                numSkipped={numSkipped}
-                numDiscarded={numDiscarded}
-                isPartitionedAsset={assetHasDefinedPartitions}
-                selected={isSelected}
-              />
+    <Box flex={{grow: 1, direction: 'column'}}>
+      <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
+        <Subtitle1>Evaluations</Subtitle1>
+      </Box>
+      <Box
+        padding={{bottom: 8, horizontal: 12}}
+        style={{flex: 1, minHeight: 0, overflowY: 'auto'}}
+        flex={{grow: 1, direction: 'column'}}
+      >
+        <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
+          <Box flex={{alignItems: 'center', gap: 4}}>
+            <Icon name="sensors" color={Colors.accentBlue()} />
+            <Body2>
+              {repoAddress && sensorName ? (
+                <Link
+                  to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}
+                  style={{maxWidth: 200, overflow: 'hidden'}}
+                >
+                  <MiddleTruncate text={sensorName} />
+                </Link>
+              ) : (
+                <Link to="/overview/automation">{sensorName ?? 'Automation'}</Link>
+              )}
+            </Body2>
+          </Box>
+        </Box>
+        <Box flex={{direction: 'column', gap: 8}}>
+          {evaluations.length === 0 ? (
+            <Box padding={{left: 12, top: 12, right: 8}}>
+              <Caption color={Colors.textLight()}>No evaluations</Caption>
             </Box>
-          </EvaluationListItem>
-        );
-      })}
-      <Box border="top" padding={{vertical: 20, horizontal: 12}} margin={{top: 12}}>
-        <Caption>Evaluations are retained for 30 days</Caption>
+          ) : null}
+          {evaluations.map((evaluation) => {
+            const isSelected = selectedEvaluation?.id === evaluation.id;
+
+            const hasRequested = evaluation.numRequested > 0;
+
+            function status() {
+              if (hasRequested) {
+                if (definition?.partitionDefinition) {
+                  return (
+                    <Caption>{numberFormatter.format(evaluation.numRequested)} Requested</Caption>
+                  );
+                }
+                return <Caption>requested</Caption>;
+              }
+              return <Caption>not requested</Caption>;
+            }
+
+            return (
+              <EvaluationListItem
+                key={`skip-${evaluation.id}`}
+                onClick={() => {
+                  onSelectEvaluation(evaluation);
+                }}
+                $selected={isSelected}
+              >
+                <Box flex={{direction: 'column', gap: 4}}>
+                  <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
+                    <StatusDot
+                      $color={
+                        evaluation.numRequested ? Colors.accentGreen() : Colors.backgroundDisabled()
+                      }
+                    />
+                    <span style={evaluation.numRequested ? {color: Colors.textGreen()} : undefined}>
+                      <TimestampDisplay timestamp={evaluation.timestamp} />
+                    </span>
+                  </Box>
+                  <div style={{paddingLeft: 22}}>{status()}</div>
+                </Box>
+              </EvaluationListItem>
+            );
+          })}
+        </Box>
+        <Box border="top" padding={{vertical: 20, horizontal: 12}} margin={{top: 12}}>
+          <Caption>Evaluations are retained for 30 days</Caption>
+        </Box>
       </Box>
     </Box>
   );
@@ -100,9 +160,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
 const PaginationWrapper = styled.div`
   position: sticky;
   bottom: 0;
-  background: ${colorBackgroundLight()};
-  border-right: 1px solid ${colorKeylineDefault()};
-  box-shadow: inset 0 1px ${colorKeylineDefault()};
+  background: ${Colors.backgroundLight()};
+  border-right: 1px solid ${Colors.keylineDefault()};
+  box-shadow: inset 0 1px ${Colors.keylineDefault()};
   margin-top: -1px;
   padding-bottom: 16px;
   padding-top: 16px;
@@ -117,10 +177,10 @@ interface EvaluationListItemProps {
 
 const EvaluationListItem = styled.button<EvaluationListItemProps>`
   background-color: ${({$selected}) =>
-    $selected ? colorBackgroundBlue() : colorBackgroundDefault()};
+    $selected ? Colors.backgroundBlue() : Colors.backgroundDefault()};
   border: none;
   border-radius: 8px;
-  color: ${({$selected}) => ($selected ? colorTextBlue() : colorTextDefault())};
+  color: ${({$selected}) => ($selected ? Colors.textBlue() : Colors.textDefault())};
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
@@ -131,7 +191,7 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
 
   &:hover {
     background-color: ${({$selected}) =>
-      $selected ? colorBackgroundBlueHover() : colorBackgroundDefaultHover()};
+      $selected ? Colors.backgroundBlueHover() : Colors.backgroundDefaultHover()};
   }
 
   &:focus,
@@ -140,4 +200,12 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   }
 
   padding: 8px 12px;
+`;
+
+export const StatusDot = styled.div<{$color: string}>`
+  background-color: ${({$color}) => $color};
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  margin: 5px;
 `;

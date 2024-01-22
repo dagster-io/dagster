@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     AssetKey,
+    DefaultSensorStatus,
     RunFailureSensorContext,
     RunRequest,
     SkipReason,
@@ -149,7 +150,11 @@ def get_toys_sensors():
                 tags={"fee": "fifofum"},
             )
 
-    @sensor(job=simple_config_job, minimum_interval_seconds=2)
+    @sensor(
+        job=simple_config_job,
+        minimum_interval_seconds=2,
+        default_status=DefaultSensorStatus.STOPPED,
+    )
     def tick_logging_sensor(context):
         cursor = int(context.cursor) if context.cursor else 1
         context.update_cursor(str(cursor + 1))

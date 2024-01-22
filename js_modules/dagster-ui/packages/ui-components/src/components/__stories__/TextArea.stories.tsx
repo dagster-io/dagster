@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
-import {colorAccentRed} from '../../theme/color';
+import {Colors} from '../Color';
 import {TextArea} from '../TextInput';
 
 // eslint-disable-next-line import/no-default-export
@@ -11,7 +11,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"
@@ -23,7 +23,7 @@ export const Default = () => {
 };
 
 export const Resize = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"
@@ -35,14 +35,14 @@ export const Resize = () => {
 };
 
 export const StrokeColor = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextArea
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
       $resize="none"
-      $strokeColor={colorAccentRed()}
+      $strokeColor={Colors.accentRed()}
     />
   );
 };

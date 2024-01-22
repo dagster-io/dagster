@@ -1,12 +1,4 @@
-import {
-  Box,
-  Icon,
-  IconName,
-  colorAccentPrimary,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -18,10 +10,12 @@ interface Props {
   label: React.ReactNode;
   type: ConditionType;
   skipped?: boolean;
+  isCollapsed: boolean;
+  hasChildren: boolean;
 }
 
 export const PolicyEvaluationCondition = (props: Props) => {
-  const {depth, icon, label, type, skipped = false} = props;
+  const {depth, icon, label, type, skipped = false, isCollapsed, hasChildren} = props;
   const depthLines = React.useMemo(() => {
     return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
   }, [depth]);
@@ -33,7 +27,14 @@ export const PolicyEvaluationCondition = (props: Props) => {
       style={{height: '48px'}}
     >
       {depthLines}
-      <Icon name={icon} color={colorAccentPrimary()} />
+
+      {hasChildren ? (
+        <Icon
+          name="arrow_drop_down"
+          style={{transform: isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+        />
+      ) : null}
+      <Icon name={icon} color={Colors.accentPrimary()} />
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
       </ConditionLabel>
@@ -42,7 +43,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
 };
 
 const DepthLine = styled.div`
-  background-color: ${colorKeylineDefault()};
+  background-color: ${Colors.keylineDefault()};
   height: 100%;
   margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
   width: 2px;
@@ -55,5 +56,5 @@ interface ConditionLabelProps {
 
 const ConditionLabel = styled.div<ConditionLabelProps>`
   font-weight: ${({$type}) => ($type === 'group' ? '600' : '400')};
-  color: ${({$skipped}) => ($skipped ? colorTextDisabled() : colorTextDefault())};
+  color: ${({$skipped}) => ($skipped ? Colors.textDisabled() : Colors.textDefault())};
 `;

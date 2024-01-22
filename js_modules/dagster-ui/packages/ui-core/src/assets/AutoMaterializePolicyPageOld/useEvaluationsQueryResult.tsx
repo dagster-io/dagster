@@ -1,11 +1,10 @@
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {AssetKey} from '../types';
-
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {
   OldGetEvaluationsQuery,
   OldGetEvaluationsQueryVariables,
 } from './types/GetEvaluationsQuery.types';
+import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {AssetKey} from '../types';
 
 export const PAGE_SIZE = 30;
 

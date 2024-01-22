@@ -1,7 +1,8 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback} from 'react';
 
+import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
@@ -12,8 +13,6 @@ import {useJobReexecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
-
-import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 
 interface Props {
   job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
@@ -47,7 +46,7 @@ export const JobMenu = (props: Props) => {
     RunReExecutionQueryVariables
   >(RUN_RE_EXECUTION_QUERY);
 
-  const fetchIfPossible = React.useCallback(() => {
+  const fetchIfPossible = useCallback(() => {
     if (lastRun?.id) {
       fetchHasExecutionPlan({variables: {runId: lastRun.id}});
     }

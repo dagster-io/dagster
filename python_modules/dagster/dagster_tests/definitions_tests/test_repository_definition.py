@@ -1499,4 +1499,4 @@ def test_invalid_asset_selection():
         Definitions(
             assets=[source_asset, asset1],
             jobs=[define_asset_job("foo", selection=[source_asset, asset1])],
-        )
+        ).get_all_job_defs()

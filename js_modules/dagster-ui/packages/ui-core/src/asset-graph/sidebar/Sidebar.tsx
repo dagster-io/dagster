@@ -1,18 +1,17 @@
-import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import * as React from 'react';
 
+import {AssetSidebarNode} from './AssetSidebarNode';
+import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
-import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
+import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
-
-import {AssetSidebarNode} from './AssetSidebarNode';
-import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -139,34 +138,36 @@ export const AssetGraphExplorerSidebar = React.memo(
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
+        const groupId = groupIdForNode(node);
         const codeLocation = buildRepoPathForHuman(repositoryName, locationName);
         codeLocationNodes[codeLocation] = codeLocationNodes[codeLocation] || {
           locationName: codeLocation,
           groups: {},
         };
-        if (!codeLocationNodes[codeLocation]!.groups[groupName]!) {
+        if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
           groupsCount += 1;
         }
-        codeLocationNodes[codeLocation]!.groups[groupName] = codeLocationNodes[codeLocation]!
-          .groups[groupName] || {
+        codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
+          groupId
+        ] || {
           groupName,
           assets: [],
         };
-        codeLocationNodes[codeLocation]!.groups[groupName]!.assets.push(id);
+        codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(id);
       });
+      const codeLocationsCount = Object.keys(codeLocationNodes).length;
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName) || groupsCount === 1) {
-          Object.entries(locationNode.groups).forEach(([groupName, groupNode]) => {
-            const groupId = locationName + ':' + groupName;
-            folderNodes.push({groupName, id: groupId, level: 2});
-            if (openNodes.has(groupId) || groupsCount === 1) {
+        if (openNodes.has(locationName) || codeLocationsCount === 1) {
+          Object.entries(locationNode.groups).forEach(([id, groupNode]) => {
+            folderNodes.push({groupName: groupNode.groupName, id, level: 2});
+            if (openNodes.has(id) || groupsCount === 1) {
               groupNode.assets
                 .sort((a, b) => COLLATOR.compare(a, b))
                 .forEach((assetKey) => {
                   folderNodes.push({
                     id: assetKey,
-                    path: locationName + ':' + groupName + ':' + assetKey,
+                    path: locationName + ':' + groupNode.groupName + ':' + assetKey,
                     level: 3,
                   });
                 });
@@ -336,6 +337,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const isCodelocationNode = 'locationName' in node;
                 const isGroupNode = 'groupName' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                const isSelected =
+                  selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                 return (
                   <Row $height={size} $start={start} key={key} data-key={key}>
                     <AssetSidebarNode
@@ -344,9 +347,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                       node={row!}
                       level={node.level}
                       isLastSelected={lastSelectedNode?.id === node.id}
-                      isSelected={
-                        selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
-                      }
+                      isSelected={isSelected}
                       toggleOpen={() => {
                         setOpenNodes((nodes) => {
                           const openNodes = new Set(nodes);
