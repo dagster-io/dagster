@@ -47,8 +47,6 @@ export function useAssetsLiveData(
   batchUpdatesInterval: number = 1000,
 ) {
   const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
-  const dataRef = React.useRef(data);
-  dataRef.current = data;
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -62,16 +60,18 @@ export function useAssetsLiveData(
     let updates: {stringKey: string; assetData: LiveDataForNode | undefined}[] = [];
 
     function processUpdates() {
-      const copy = {...dataRef.current};
-      updates.forEach(({stringKey, assetData}) => {
-        if (assetData) {
-          copy[stringKey] = assetData;
-        } else {
-          delete copy[stringKey];
-        }
+      setData((data) => {
+        const copy = {...data};
+        updates.forEach(({stringKey, assetData}) => {
+          if (assetData) {
+            copy[stringKey] = assetData;
+          } else {
+            delete copy[stringKey];
+          }
+        });
+        updates = [];
+        return copy;
       });
-      updates = [];
-      setData(copy);
     }
 
     const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
@@ -88,7 +88,10 @@ export function useAssetsLiveData(
           });
         }
       } else if (!timeout) {
-        timeout = setTimeout(processUpdates, batchUpdatesInterval);
+        timeout = setTimeout(() => {
+          processUpdates();
+          timeout = null;
+        }, batchUpdatesInterval);
       }
     };
     const unsubscribeCallbacks = assetKeys.map((key) =>
