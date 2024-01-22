@@ -1,8 +1,5 @@
 import {ApolloClient, gql} from '@apollo/client';
 
-import {LiveDataForNode, tokenForAssetKey, buildLiveDataForNode} from '../asset-graph/Utils';
-import {AssetKeyInput} from '../graphql/types';
-
 import type {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
 import {
   AssetGraphLiveQuery,
@@ -10,6 +7,8 @@ import {
   AssetNodeLiveFragment,
 } from './types/AssetLiveDataThread.types';
 import {BATCHING_INTERVAL} from './util';
+import {LiveDataForNode, buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
 
 export type AssetLiveDataThreadID = 'default' | 'sidebar' | 'asset-graph';
 
