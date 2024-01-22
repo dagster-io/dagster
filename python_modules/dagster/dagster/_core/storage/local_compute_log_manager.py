@@ -227,10 +227,10 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             filename = f"{filename}.partial"
         if len(filename) > MAX_FILENAME_LENGTH:
             filename = "{}.{}".format(non_secure_md5_hash_str(filebase.encode("utf-8")), extension)
-        baseDirLocation = Path(self._base_dir)
+        baseDirLocation = Path(self._base_dir).resolve()
         location = baseDirLocation.joinpath(*namespace, filename)
-        location = location.absolute().resolve()
-        if location not in baseDirLocation.parents:
+        location = location.resolve()
+        if baseDirLocation not in location.parents:
             raise ValueError("Invalid path")
         return location
 
