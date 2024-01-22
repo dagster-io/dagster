@@ -83,7 +83,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
-    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
@@ -321,10 +320,6 @@ class AssetDaemonScenarioState(NamedTuple):
         return self._replace(automation_policy_sensors=sensors)
 
     def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
-        if self.is_daemon:
-            self.instance.daemon_cursor_storage.set_cursor_values(
-                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialized_cursor}
-            )
         return self._replace(serialized_cursor=serialized_cursor)
 
     def with_all_eager(
