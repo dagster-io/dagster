@@ -1,3 +1,4 @@
+import logging
 from typing import Mapping
 
 import click
@@ -19,23 +20,44 @@ from dagster._utils.hosted_user_process import (
     recon_repository_from_origin,
 )
 from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.log import configure_loggers
 
 from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 
 @click.group(name="asset")
-def asset_cli():
+@click.option(
+    "--log-level",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="info",
+    help="Level at which to log output from `dagster asset` commands",
+)
+@click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from `dagster asset` commands",
+)
+@click.pass_context
+def asset_cli(ctx: click.Context, log_format="colored", log_level="INFO") -> None:
     """Commands for working with Dagster assets."""
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
+    ctx.logger = logging.getLogger("dagster.asset")
 
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
 @python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
-def asset_materialize_command(**kwargs):
+@click.pass_obj
+def asset_materialize_command(logger, **kwargs) -> None:
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli(
-            "``dagster asset materialize``",
+            cli_command="``dagster asset materialize``", logger=logger
         ) as instance:
             execute_materialize_command(instance, kwargs)
 
@@ -88,7 +110,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 @asset_cli.command(name="list", help="List assets")
 @python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=False)
-def asset_list_command(**kwargs):
+def asset_list_command(**kwargs) -> None:
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
@@ -116,7 +138,8 @@ def asset_list_command(**kwargs):
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
 @click.option("--noprompt", is_flag=True)
-def asset_wipe_command(key, **cli_args):
+@click.pass_obj
+def asset_wipe_command(logger, key, **cli_args) -> None:
     r"""Eliminate asset key indexes from event logs.
 
     Warning: Cannot be undone.
@@ -137,7 +160,7 @@ def asset_wipe_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with get_instance_for_cli() as instance:
+    with get_instance_for_cli(logger=logger) as instance:
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
             prompt = (
@@ -167,7 +190,8 @@ def asset_wipe_command(key, **cli_args):
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Wipe partitions status cache of all asset keys")
 @click.option("--noprompt", is_flag=True)
-def asset_wipe_cache_command(key, **cli_args):
+@click.pass_obj
+def asset_wipe_cache_command(logger, key, **cli_args) -> None:
     r"""Clears the asset partitions status cache, which is used by the webserver to load partition
     pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
     if caching is enabled.
@@ -189,7 +213,7 @@ def asset_wipe_cache_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with get_instance_for_cli() as instance:
+    with get_instance_for_cli(logger=logger) as instance:
         if instance.can_cache_asset_status_data() is False:
             raise click.UsageError(
                 "Error, the instance does not support caching asset status. Wiping the cache is not"
