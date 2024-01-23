@@ -538,14 +538,7 @@ def test_scheduler_name(template: HelmTemplate):
 
 
 def test_init_container_resources(template: HelmTemplate):
-    init_container_resources = {
-        "limits": {
-            "cpu": "200m"
-        },
-        "requests": {
-            "memory": "1Gi"
-        }
-    }
+    init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(initContainerResources=init_container_resources)
     )
@@ -558,10 +551,14 @@ def test_init_container_resources(template: HelmTemplate):
         container.resources
         == k8s_model_from_dict(
             k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
-            k8s_snake_case_dict(k8s_client.models.v1_resource_requirements.V1ResourceRequirements, init_container_resources),
+            k8s_snake_case_dict(
+                k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
+                init_container_resources,
+            ),
         )
         for container in webserver_deployment.spec.template.spec.init_containers
     )
+
 
 def test_env(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
