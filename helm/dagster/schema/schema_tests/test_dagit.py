@@ -474,14 +474,12 @@ def test_webserver_scheduler_name_override(deployment_template: HelmTemplate):
 
 
 def test_automount_svc_acct_token(deployment_template: HelmTemplate):
-    helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(
-        )
-    )
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
 
     [deployment] = deployment_template.render(helm_values)
 
     assert deployment.spec.template.spec.automount_service_account_token
+
 
 def test_webserver_security_context(deployment_template: HelmTemplate):
     security_context = {

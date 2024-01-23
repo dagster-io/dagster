@@ -1137,6 +1137,7 @@ def test_automount_svc_acct_token(template: HelmTemplate):
 
     assert daemon_deployment.spec.template.spec.automount_service_account_token
 
+
 def test_env(template: HelmTemplate, user_deployment_configmap_template):
     # new env: list. Gets written to container
     deployment = UserDeployment.construct(

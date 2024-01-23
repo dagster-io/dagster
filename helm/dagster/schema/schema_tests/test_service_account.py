@@ -51,6 +51,7 @@ def test_service_account_automount(template: HelmTemplate):
 
     assert not service_account_template.automount_service_account_token
 
+
 def test_service_account_name(template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterHelmValues.construct(
