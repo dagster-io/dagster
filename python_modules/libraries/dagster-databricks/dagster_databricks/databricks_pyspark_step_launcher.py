@@ -589,7 +589,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         return f"/dbfs/{path}"
 
     def get_run_url(self, run_id: int) -> str:
-        return self.databricks_runner(run_id)
+        return self.databricks_runner.get_run_url(run_id)
 
 
 class DatabricksConfig:
