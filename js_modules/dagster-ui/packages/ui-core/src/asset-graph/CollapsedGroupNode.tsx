@@ -138,11 +138,11 @@ const GroupNodeAssetStatusCounts = ({
           <>
             {statuses.successful.length ? (
               <Tooltip
-                content={`${statuses.successful.length} asset${ifPlural(
+                content={`${statuses.successful.length} materialized asset${ifPlural(
                   statuses.successful.length,
                   '',
                   's',
-                )} are up to date`}
+                )}`}
               >
                 <Tag icon="dot_filled" intent="success">
                   {statuses.successful.length}
@@ -154,9 +154,9 @@ const GroupNodeAssetStatusCounts = ({
             <Tooltip
               content={`${statuses.missing.length} asset${ifPlural(
                 statuses.missing.length,
-                '',
-                's',
-              )} are missing or have changed`}
+                ' has',
+                's have',
+              )} never been materialized`}
             >
               <Tag icon="dot_filled" intent="warning">
                 {statuses.missing.length}
@@ -165,11 +165,11 @@ const GroupNodeAssetStatusCounts = ({
           ) : null}
           {statuses.failed.length ? (
             <Tooltip
-              content={`${statuses.failed.length} asset${ifPlural(
+              content={`${statuses.failed.length} failed asset${ifPlural(
                 statuses.failed.length,
                 '',
                 's',
-              )} have failed or are overdue`}
+              )}`}
             >
               <Tag icon="dot_filled" intent="danger">
                 {statuses.failed.length}
@@ -180,9 +180,9 @@ const GroupNodeAssetStatusCounts = ({
             <Tooltip
               content={`${statuses.inprogress.length} asset${ifPlural(
                 statuses.inprogress.length,
-                '',
-                's',
-              )} are executing`}
+                ' is',
+                's are',
+              )} executing`}
             >
               <Tag icon="spinner" intent="primary">
                 {statuses.inprogress.length}
