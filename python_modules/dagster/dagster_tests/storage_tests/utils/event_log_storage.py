@@ -55,7 +55,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
-from dagster._core.event_api import EventLogCursor, EventRecordsResult
+from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     AssetMaterializationPlannedData,
@@ -1500,6 +1500,17 @@ class TestEventLogStorage:
                 )
                 == 1
             )
+            assert (
+                len(
+                    storage.fetch_run_status_changes(
+                        RunStatusChangeRecordsFilter(
+                            DagsterEventType.RUN_SUCCESS,
+                            after_storage_id=all_success_events[1].storage_id,
+                        ),
+                        limit=100,
+                    ).records
+                )
+            ) == 1
             assert [
                 i.storage_id
                 for i in storage.fetch_run_status_changes(
