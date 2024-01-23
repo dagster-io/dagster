@@ -454,7 +454,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def _format_permissions(
         self, input_permissions: Mapping[str, Sequence[Mapping[str, str]]]
-    ) -> Sequence[Mapping[str, str]]:
+    ) -> Sequence[jobs.JobAccessControlRequest]:
         access_control_list = []
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
