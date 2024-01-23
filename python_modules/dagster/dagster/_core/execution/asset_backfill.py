@@ -677,7 +677,10 @@ def _submit_runs_and_update_backfill_in_chunks(
         asset_backfill_iteration_result.backfill_data.replace_requested_subset(submitted_partitions)
     )
 
-    mid_iteration_cancel_requested = False
+    # Fetch backfill status
+    backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+    mid_iteration_cancel_requested = backfill.status != BulkActionStatus.REQUESTED
+
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
@@ -691,12 +694,6 @@ def _submit_runs_and_update_backfill_in_chunks(
         logger=logger,
         debug_crash_flags={},
     ):
-        # Refetch backfill status
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        if backfill.status != BulkActionStatus.REQUESTED:
-            mid_iteration_cancel_requested = True
-            break
-
         if run_requests_chunk is None:
             # allow the daemon to heartbeat
             yield None
@@ -725,6 +722,12 @@ def _submit_runs_and_update_backfill_in_chunks(
             asset_graph=asset_graph,
         )
         instance.update_backfill(updated_backfill)
+
+        # Refetch backfill status
+        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+        if backfill.status != BulkActionStatus.REQUESTED:
+            mid_iteration_cancel_requested = True
+            break
 
     if not mid_iteration_cancel_requested:
         if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:

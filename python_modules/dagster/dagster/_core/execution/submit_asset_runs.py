@@ -168,9 +168,6 @@ def _create_asset_run(
                 asset_job_partitions_def=partitions_def,
             )
 
-            check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
-            check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
-
             return run
 
         logger.warning(
@@ -244,6 +241,9 @@ def submit_asset_run(
             logger,
         )
 
+    check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
+
     instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
@@ -281,6 +281,8 @@ def submit_asset_runs_in_chunks(
     for chunk_start in range(0, len(run_requests), chunk_size):
         run_request_chunk = run_requests[chunk_start : chunk_start + chunk_size]
         chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
+
+        logger.critical(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
 
         # submit each run in the chunk
         for chunk_idx, run_request in enumerate(run_request_chunk):

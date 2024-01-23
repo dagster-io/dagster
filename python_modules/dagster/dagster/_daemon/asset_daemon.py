@@ -32,7 +32,7 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
 )
-from dagster._core.execution.submit_asset_runs import submit_asset_runs_in_chunks
+from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.host_representation import (
     ExternalSensor,
 )
@@ -771,34 +771,29 @@ class AssetDaemon(DagsterDaemon):
             check.invariant(len(run_requests) == len(reserved_run_ids))
             updated_evaluation_asset_keys = set()
 
-            for run_request_chunk in submit_asset_runs_in_chunks(
-                run_requests=[
-                    rr._replace(
+            run_request_execution_data_cache = {}
+            for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
+                submitted_run = submit_asset_run(
+                    run_id=reserved_run_id,
+                    run_request=run_request._replace(
                         tags={
-                            **rr.tags,
+                            **run_request.tags,
                             AUTO_MATERIALIZE_TAG: "true",
                             ASSET_EVALUATION_ID_TAG: str(evaluation_id),
                         }
-                    )
-                    for rr in run_requests
-                ],
-                reserved_run_ids=reserved_run_ids,
-                chunk_size=1,
-                instance=instance,
-                workspace_process_context=workspace_process_context,
-                asset_graph=asset_graph,
-                debug_crash_flags=debug_crash_flags,
-                logger=self._logger,
-            ):
-                # heartbeat after each run is submitted
-                if run_request_chunk is None:
-                    yield
-                    continue
+                    ),
+                    run_request_index=i,
+                    instance=instance,
+                    workspace_process_context=workspace_process_context,
+                    run_request_execution_data_cache=run_request_execution_data_cache,
+                    asset_graph=asset_graph,
+                    debug_crash_flags=debug_crash_flags,
+                    logger=self._logger,
+                )
+                # heartbeat after each submitted runs
+                yield
 
-                check.invariant(len(run_request_chunk) == 1)
-                run_request, submitted_run = run_request_chunk[0]
                 asset_keys = check.not_none(run_request.asset_selection)
-
                 tick_context.add_run_info(run_id=submitted_run.run_id)
 
                 # write the submitted run ID to any evaluations
