@@ -1,0 +1,177 @@
+---
+title: Managing multiple projects & teams in Dagster Cloud
+description: "How to set up and manage multiple projects with Dagster Cloud Hybrid deployments."
+---
+
+# Managing multiple projects & teams in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+Whether to manage complexity or to divide your work in areas of responsibility, you may want to isolate your code bases into multiple projects. See [Strategies for code separation](#strategies-for-code-separation) for more information.
+
+If you require isolation between your execution context, see [Strategies for execution context isolation](#strategies-for-execution-context-isolation).
+
+## Strategies for code separation
+
+### Multiple directories in a single VCS repository
+
+You can use a single VCS repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each projects.
+
+Pro:
+
+- simple to implement
+- facilitates code sharing between projects
+
+Con:
+
+- all projects share the same CI/CD pipeline and cannot be deployed independently
+- shared dependencies between projects may cause conflicts and require coordination between teams
+
+#### Deployment configuration
+
+A [dagster_cloud.yml configuration file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in the root of the repository can be used to expose each project to Dagster Cloud as a distinct code repository.
+
+### Multiple VCS repositories (git, hg, etc.)
+
+For stronger isolation, you can use multiple VCS repositories to manage multiple projects.
+
+Pro:
+
+- stronger isolation between projects and teams
+- each project has its own CI/CD pipeline and be deployed independently
+- dependencies between projects can be managed independently
+
+Con:
+
+- code sharing between projects require additional coordination to publish and reuse packages between projects
+
+#### Deployment configuration
+
+Each project can be exposed to Dagster Cloud as a distinct code repository. For each repository, follow the [steps appropriate to your CI/CD provider](https://docs.dagster.io/dagster-cloud/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+
+Example with GitHub CI/CD on Hybrid deployment:
+
+1. For each VCS repository, use the CI/CD workflow provided in [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
+
+2. For each project in the repository, you can configure the [code location to deploy in the `dagster_cloud.yml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) and configure it accordingly to your project structure.
+
+   ```yaml
+   # File: dagster_cloud.yml
+   locations:
+     - location_name: project_a
+       code_source:
+         package_name: project_a
+       build:
+         # ...
+     - location_name: project_b
+       code_source:
+         package_name: project_b
+       build:
+         # ...
+   ```
+
+3. Modify the CI/CD workflow to deploy every code locations for this repository.
+
+   ```yaml
+   # File: .github/workflows/dagster-cloud-deploy.yml
+   # ...
+   jobs:
+     dagster-cloud-deploy:
+       # ...
+       steps:
+         - name: Update build session with image tag for "project_a" code location
+           id: ci-set-build-output-project-a
+           if: steps.prerun.outputs.result != 'skip'
+           uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+           with:
+             command: "ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG"
+
+         - name: Update build session with image tag for "project_b" code location
+           id: ci-set-build-output-project-b
+           if: steps.prerun.outputs.result != 'skip'
+           uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+           with:
+             command: "ci set-build-output --location-name=project_b --image-tag=$IMAGE_TAG"
+         # ...
+   ```
+
+## Strategies for execution context isolation
+
+Separating execution context between projects can have several motivations:
+
+- facilitate separation of duty between teams to prevent access to sensitive data
+- different compute environments and requirements (different architecture, cloud provider, etc.)
+- prevent noisy neighbors effects (e.g. a project with a large number of runs can impact the performance of other projects)
+
+There are three isolation levels you may want to consider:
+
+### Code location isolation
+
+<Image
+alt="Diagram of isolation at the code location level"
+src="/images/dagster-cloud/managing-deployments/isolation-level-code-locations.png"
+width={1167}
+height={384}
+/>
+
+If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
+
+Pro:
+
+- simplest and most cost-effective solution
+- user access control can be set at the code location level
+- single glass pane to view all assets
+
+Con:
+
+- no isolation between execution environments
+
+### Agent isolation
+
+<Note>Agent queues are a Dagster Cloud Enterprise feature.</Note>
+
+<Image
+alt="Diagram of isolation at the agent level"
+src="/images/dagster-cloud/managing-deployments/isolation-level-agents.png"
+width={1331}
+height={537}
+/>
+
+Using the [agent routing feature](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
+
+Motivations for such a choice would include different compute requirements (e.g. different cloud providers, different architectures, etc.), optimizing for locality or access (running the data processing closer or in environment with access to the storage locations), etc.
+
+Pro:
+
+- isolation between execution environments
+- user access control can be set at the code location level
+- single glass pane to view all assets
+
+Con:
+
+- extra work to setup additional agents and agent queues
+
+### Deployment isolation
+
+<Note>
+  Multiple deployments are only available in Dagster Cloud Enterprise.
+</Note>
+
+<Image
+alt="Diagram of isolation at the Dagster Cloud deployment level"
+src="/images/dagster-cloud/managing-deployments/isolation-level-deployments.png"
+width={1152}
+height={349}
+/>
+
+This is the most isolated solution, each project is deployed to its own Dagster Cloud deployment, which typically incurs additional costs. There is usually no need and caveats to isolate at this level unless you have specific requirements for isolation between deployments.
+
+Pro:
+
+- isolation between assets and execution environments
+- user access control can be set at the code location and deployment level
+
+Con:
+
+- no single glass pane to view all assets (requires switching between multiple deployments in the UI)
+- requires multiple Dagster Cloud deployments

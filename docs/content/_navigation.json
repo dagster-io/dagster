@@ -642,6 +642,10 @@
             ]
           },
           {
+            "title": "Managing multiple projects & teams",
+            "path": "/dagster-cloud/managing-deployments/managing-multiple-projects-and-teams"
+          },
+          {
             "title": "Insights",
             "path": "/dagster-cloud/insights",
             "children": [
