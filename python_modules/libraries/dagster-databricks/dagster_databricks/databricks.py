@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from enum import Enum
+from importlib.metadata import version
 from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
@@ -21,7 +22,6 @@ from databricks.sdk.core import (
     pat_auth,
 )
 from databricks.sdk.service import compute, jobs
-from importlib.metadata import version
 from typing_extensions import Final
 
 import dagster_databricks
