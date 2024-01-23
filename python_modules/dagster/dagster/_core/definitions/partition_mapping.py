@@ -201,7 +201,9 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        return downstream_partitions_def.subset_with_all_partitions(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
 
     @property
     def description(self) -> str:

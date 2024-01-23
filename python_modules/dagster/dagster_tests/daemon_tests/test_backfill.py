@@ -9,6 +9,7 @@ import mock
 import pendulum
 import pytest
 from dagster import (
+    AllPartitionMapping,
     Any,
     AssetIn,
     AssetKey,
@@ -248,6 +249,8 @@ partitions_b = StaticPartitionsDefinition(["foo_b"])
 
 partitions_c = StaticPartitionsDefinition(["foo_c"])
 
+partitions_d = StaticPartitionsDefinition(["foo_d"])
+
 
 @asset(partitions_def=partitions_a)
 def asset_a():
@@ -267,6 +270,14 @@ def asset_b(asset_a):
     ins={"asset_a": AssetIn(partition_mapping=StaticPartitionMapping({"foo_a": "foo_c"}))},
 )
 def asset_c(asset_a):
+    pass
+
+
+@asset(
+    partitions_def=partitions_d,
+    ins={"asset_a": AssetIn(partition_mapping=AllPartitionMapping())},
+)
+def asset_d(asset_a):
     pass
 
 
@@ -323,6 +334,7 @@ def the_repo():
         asset_a,
         asset_b,
         asset_c,
+        asset_d,
         daily_1,
         daily_2,
         asset_with_single_run_backfill_policy,
@@ -813,7 +825,12 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+    asset_selection = [
+        AssetKey("asset_a"),
+        AssetKey("asset_b"),
+        AssetKey("asset_c"),
+        AssetKey("asset_d"),
+    ]
 
     partition_keys = partitions_a.get_partition_keys()
 
@@ -860,7 +877,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
             )
         )
     )
-    assert instance.get_runs_count() == 3
+    assert instance.get_runs_count() == 4
     wait_for_all_runs_to_start(instance, timeout=30)
     wait_for_all_runs_to_finish(instance, timeout=30)
 
@@ -868,6 +885,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
 
     assert any([run.asset_selection == {AssetKey(["asset_b"])}] for run in runs)
     assert any([run.asset_selection == {AssetKey(["asset_c"])}] for run in runs)
+    assert any([run.asset_selection == {AssetKey(["asset_d"])}] for run in runs)
 
     assert all([run.status == DagsterRunStatus.SUCCESS] for run in runs)
 
