@@ -15,6 +15,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster._core.storage.tags import NONE_OUTPUT_TAG
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -323,12 +324,15 @@ class UPathIOManager(MemoizableIOManager):
 
         if not inspect.iscoroutinefunction(self.load_from_path):
             for partition_key in context.asset_partition_keys:
-                obj = self._load_partition_from_path(
-                    context,
-                    partition_key,
-                    paths[partition_key],
-                    backcompat_paths.get(partition_key),
-                )
+                if self._load_none_based_on_tags(context, partition_key=partition_key):
+                    obj = None
+                else:
+                    obj = self._load_partition_from_path(
+                        context,
+                        partition_key,
+                        paths[partition_key],
+                        backcompat_paths.get(partition_key),
+                    )
                 if obj is not None:  # in case some partitions were skipped
                     objs[partition_key] = obj
             return objs
@@ -340,10 +344,22 @@ class UPathIOManager(MemoizableIOManager):
 
                 tasks = []
 
+                def _load_partition_from_path_or_none(
+                    context, partition_key, path, backcompat_path
+                ) -> Any:
+                    if self._load_none_based_on_tags(context, partition_key=partition_key):
+                        return None
+                    return self._load_partition_from_path(
+                        context,
+                        partition_key,
+                        path,
+                        backcompat_path,
+                    )
+
                 for partition_key in context.asset_partition_keys:
                     tasks.append(
                         loop.create_task(
-                            self._load_partition_from_path(
+                            _load_partition_from_path_or_none(
                                 context,
                                 partition_key,
                                 paths[partition_key],
@@ -395,20 +411,30 @@ class UPathIOManager(MemoizableIOManager):
                 if awaited_object is not None
             }
 
-    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        if context.upstream_output and context.upstream_output.has_asset_key:
+    def _load_none_based_on_tags(
+        self, context: InputContext, partition_key: Optional[str] = None
+    ) -> bool:
+        if context.has_asset_key:
             # If the upstream step is an asset and the output value was None, then there will
-            # be metadata marking that. If that metadata exists, we want to provide None to the
+            # be a tag marking that. If that tag exists, we want to provide None to the
             # materializing asset.
-            latest_materialization = context.step_context.upstream_asset_materialization_events.get(
+            materialization_tags = context.step_context._upstream_asset_tags.get(  # noqa: SLF001
                 context.asset_key
             )
-            if latest_materialization and latest_materialization.metadata.get(
-                "output_is_none", False
-            ):
-                return None
+            if materialization_tags:
+                if partition_key:
+                    partition_tags = materialization_tags.get(partition_key, {})
+                    if isinstance(partition_tags, str):  # TODO - better way to do this?
+                        return False
+                    return partition_tags.get(NONE_OUTPUT_TAG) == "True"
+                return materialization_tags.get(NONE_OUTPUT_TAG) == "True"
+        return False
+
+    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
+            if self._load_none_based_on_tags(context):
+                return None
             path = self._get_path(context)
             return self._load_single_input(path, context)
         else:
@@ -416,6 +442,8 @@ class UPathIOManager(MemoizableIOManager):
             if len(asset_partition_keys) == 0:
                 return None
             elif len(asset_partition_keys) == 1:
+                if self._load_none_based_on_tags(context, partition_key=asset_partition_keys[0]):
+                    return None
                 paths = self._get_paths_for_partitions(context)
                 check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                 path = next(iter(paths.values()))
@@ -438,10 +466,20 @@ class UPathIOManager(MemoizableIOManager):
 
     def handle_output(self, context: OutputContext, obj: Any):
         if obj is None and context.has_asset_key:
-            # If the step returns None and is an asset, mark via metadata so that we can check
-            # this metadata at load time to know to provide None
-            context.add_output_metadata({"output_is_none": True})
-            return
+            # If the step returns None and is an asset, mark via tag on the AssetMaterialization so
+            # that we can check this tag at load time to know to provide None
+            # context.add_output_metadata({"output_is_none": True})
+
+            # Adding the tags here does nothing since we manually make the AssetMaterialization for hte
+            # asset in execute_step line 846. We need to find a way to tell execute step to add this tag
+
+            # options:
+            # special metadata that we add here and then remove in execute step, then convert to tag
+
+            # return AssetMaterialization(asset_key=context.asset_key, tags={NONE_OUTPUT_TAG: "True"})
+
+            context.add_output_metadata({NONE_OUTPUT_TAG: True})
+            return None
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
 
