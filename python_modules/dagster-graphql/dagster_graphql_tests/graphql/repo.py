@@ -186,9 +186,7 @@ def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalReposi
         yield location.get_repository(main_repo_name())
 
 
-from python_modules.dagster.dagster._core.definitions.decorators.op_decorator import (
-    do_not_attach_code_origin,
-)
+from dagster._core.definitions.decorators.op_decorator import do_not_attach_code_origin
 
 with do_not_attach_code_origin():
 
