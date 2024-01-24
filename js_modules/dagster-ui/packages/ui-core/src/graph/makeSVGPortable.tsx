@@ -130,16 +130,14 @@ export async function makeSVGPortable(svg: SVGElement) {
     document.querySelectorAll('style,link[rel=stylesheet]'),
   );
   const fontFaces = cssSources.flatMap((el) => {
+    let sheetRules: CSSRule[];
     try {
-      return el.sheet
-        ? Array.from(el.sheet.cssRules)
-            .filter((r) => r instanceof CSSFontFaceRule)
-            .map((r) => r.cssText)
-        : [];
+      sheetRules = el.sheet ? Array.from(el.sheet.cssRules) : [];
     } catch (err) {
       // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
-      return [];
+      sheetRules = [];
     }
+    return sheetRules.filter((r) => r instanceof CSSFontFaceRule).map((r) => r.cssText);
   });
 
   const styleEl = document.createElement('style');
