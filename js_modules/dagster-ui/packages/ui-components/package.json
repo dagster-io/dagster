@@ -92,6 +92,7 @@
     "react-docgen-typescript-plugin": "^1.0.5",
     "react-dom": "^18.2.0",
     "regenerator-runtime": "^0.13.9",
+    "rgb-hex": "^4.0.0",
     "rollup": "^2.70.1",
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
