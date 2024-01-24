@@ -27,6 +27,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -42,6 +43,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
+from dagster._core.storage.event_log.schema import AssetRunsTable
 from dagster._core.storage.sql import SqlAlchemyQuery
 from dagster._core.storage.sqlalchemy_compat import (
     db_fetch_mappings,
@@ -272,6 +274,9 @@ class SqlRunStorage(RunStorage):
         if filters.tags:
             query = self._apply_tags_table_filters(query, filters.tags)
 
+        if filters.asset_keys:
+            query = self._apply_asset_filter(query, filters.asset_keys)
+
         return query
 
     def _runs_query(
@@ -338,6 +343,29 @@ class SqlRunStorage(RunStorage):
                 db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
             )
             query = query.where(RunsTable.c.run_id.in_(subquery))
+        return query
+
+    def _apply_asset_filter(
+        self,
+        query: SqlAlchemyQuery,
+        asset_keys: Sequence[AssetKey],
+        created_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+    ) -> SqlAlchemyQuery:
+        """Filter runs by multiple asset keys."""
+        subquery = db_select([AssetRunsTable.c.run_id]).where(
+            AssetRunsTable.c.asset_key.in_([asset_key.to_string() for asset_key in asset_keys])
+        )
+
+        if created_before:
+            subquery = subquery.where(AssetRunsTable.c.run_start_time < created_before.timestamp())
+
+        if updated_after:
+            subquery = subquery.where(AssetRunsTable.c.run_end_time > updated_after.timestamp())
+        else:
+            subquery = subquery.where(AssetRunsTable.c.run_end_time.is_(None))
+
+        query = query.where(RunsTable.c.run_id.in_(subquery))
         return query
 
     def get_runs(

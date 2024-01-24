@@ -3823,6 +3823,7 @@ export type Runs = PipelineRuns & {
 };
 
 export type RunsFilter = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   createdBefore?: InputMaybe<Scalars['Float']>;
   mode?: InputMaybe<Scalars['String']>;
   pipelineName?: InputMaybe<Scalars['String']>;
@@ -11724,6 +11725,7 @@ export const buildRunsFilter = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('RunsFilter');
   return {
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',

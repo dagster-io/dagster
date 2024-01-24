@@ -103,6 +103,7 @@ from .schema import (
     AssetCheckExecutionsTable,
     AssetEventTagsTable,
     AssetKeyTable,
+    AssetRunsTable,
     ConcurrencyLimitsTable,
     ConcurrencySlotsTable,
     DynamicPartitionsTable,
@@ -259,6 +260,9 @@ class SqlEventLogStorage(EventLogStorage):
             except db_exc.IntegrityError:
                 conn.execute(update_statement)
 
+        # asset runs insertion
+        self._insert_asset_run(event, event_id)
+
     def _get_asset_entry_values(
         self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
     ) -> Dict[str, Any]:
@@ -390,6 +394,59 @@ class SqlEventLogStorage(EventLogStorage):
                     ],
                 )
 
+    def _insert_asset_run(self, event: EventLogEntry, event_id: int) -> None:
+        assert event.dagster_event
+        assert event.dagster_event.is_asset_materialization_planned
+        assert event.dagster_event.asset_key
+        with self.index_connection() as conn:
+            try:
+                conn.execute(
+                    AssetRunsTable.insert().values(
+                        event_id=event_id,
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        run_id=event.run_id,
+                    )
+                )
+            except db_exc.IntegrityError:
+                # ignore dups
+                pass
+
+    def _update_asset_runs(self, event: EventLogEntry) -> None:
+        if event.dagster_event_type == DagsterEventType.PIPELINE_START:
+            with self.index_connection() as conn:
+                try:
+                    conn.execute(
+                        AssetRunsTable.update()
+                        .values(
+                            run_start_time=event.timestamp,
+                        )
+                        .where(
+                            AssetRunsTable.c.run_id == event.run_id,
+                        )
+                    )
+                except db_exc.IntegrityError:
+                    # ignore dups
+                    pass
+        elif event.dagster_event_type in {
+            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.PIPELINE_FAILURE,
+            DagsterEventType.PIPELINE_SUCCESS,
+        }:
+            with self.index_connection() as conn:
+                try:
+                    conn.execute(
+                        AssetRunsTable.update()
+                        .values(
+                            run_end_time=event.timestamp,
+                        )
+                        .where(
+                            AssetRunsTable.c.run_id == event.run_id,
+                        )
+                    )
+                except db_exc.IntegrityError:
+                    # ignore dups
+                    pass
+
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
@@ -457,6 +514,9 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
             self.store_asset_event_tags(event, event_id)
+
+        if event.dagster_event and event.dagster_event.is_job_event:
+            self._update_asset_runs(event)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)

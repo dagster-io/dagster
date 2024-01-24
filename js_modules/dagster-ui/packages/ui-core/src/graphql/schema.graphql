@@ -2243,6 +2243,7 @@ input RunsFilter {
   updatedAfter: Float
   createdBefore: Float
   mode: String
+  assetKeys: [AssetKeyInput!]
 }
 
 input PipelineSelector {
