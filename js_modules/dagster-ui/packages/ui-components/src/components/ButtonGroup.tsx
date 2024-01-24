@@ -1,10 +1,9 @@
 import * as React from 'react';
 
-import {colorBackgroundLighterHover, colorTextLight, colorTextDefault} from '../theme/color';
-
 import {BaseButton} from './BaseButton';
 import {JoinedButtons, buildColorSet} from './Button';
-import {IconName, Icon} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName} from './Icon';
 import {Tooltip} from './Tooltip';
 
 export type ButtonGroupItem<T> = {
@@ -34,9 +33,9 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
         const buttonElement = (
           <BaseButton
             key={id}
-            fillColor={isActive ? colorBackgroundLighterHover() : fillColor}
-            fillColorHover={isActive ? colorBackgroundLighterHover() : fillColorHover}
-            textColor={isActive ? colorTextDefault() : colorTextLight()}
+            fillColor={isActive ? Colors.backgroundLighterHover() : fillColor}
+            fillColorHover={isActive ? Colors.backgroundLighterHover() : fillColorHover}
+            textColor={isActive ? Colors.textDefault() : Colors.textLight()}
             iconColor={iconColor}
             strokeColor={isActive ? strokeColorHover : strokeColor}
             strokeColorHover={strokeColorHover}

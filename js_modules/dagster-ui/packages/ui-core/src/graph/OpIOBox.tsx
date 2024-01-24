@@ -1,25 +1,15 @@
-import {
-  FontFamily,
-  colorAccentBlue,
-  colorAccentGray,
-  colorBackgroundBlue,
-  colorBackgroundDefault,
-  colorTextBlue,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import styled from 'styled-components';
-
-import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
 import {
-  OpNodeInputDefinitionFragment,
-  OpNodeOutputDefinitionFragment,
   OpNodeDefinitionFragment,
+  OpNodeInputDefinitionFragment,
   OpNodeInvocationFragment,
+  OpNodeOutputDefinitionFragment,
 } from './types/OpNode.types';
+import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
@@ -97,7 +87,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   align-items: center;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  background: ${(p) => (p.$highlighted ? colorBackgroundDefault() : colorBackgroundDefault())};
+  background: ${(p) => (p.$highlighted ? Colors.backgroundDefault() : Colors.backgroundDefault())};
   font-size: 12px;
 
   &:first-child {
@@ -111,7 +101,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? colorAccentBlue() : colorAccentGray())};
+    background: ${(p) => (p.$highlighted ? Colors.accentBlue() : Colors.accentGray())};
     display: inline-block;
     margin: 6px;
   }
@@ -125,15 +115,15 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   }
   .type {
     padding: 1px 6px;
-    background: ${colorBackgroundBlue()};
+    background: ${Colors.backgroundBlue()};
     margin-right: 4px;
-    color: ${colorTextBlue()};
+    color: ${Colors.textBlue()};
     font-family: ${FontFamily.monospace};
     font-weight: 700;
     border-radius: 4px;
   }
   .collapsedCount {
-    color: ${(p) => (p.$highlighted ? colorTextBlue() : colorTextLight())};
+    color: ${(p) => (p.$highlighted ? Colors.textBlue() : Colors.textLight())};
     font-weight: 600;
     margin-left: -3px;
     padding-right: 4px;

@@ -74,9 +74,14 @@ from ..runs import (
     parse_run_config_input,
 )
 from ..schedule_dry_run import GrapheneScheduleDryRunMutation
-from ..schedules import GrapheneStartScheduleMutation, GrapheneStopRunningScheduleMutation
+from ..schedules import (
+    GrapheneResetScheduleMutation,
+    GrapheneStartScheduleMutation,
+    GrapheneStopRunningScheduleMutation,
+)
 from ..sensor_dry_run import GrapheneSensorDryRunMutation
 from ..sensors import (
+    GrapheneResetSensorMutation,
     GrapheneSetSensorCursorMutation,
     GrapheneStartSensorMutation,
     GrapheneStopSensorMutation,
@@ -831,6 +836,24 @@ class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
         return True
 
 
+class GrapheneDeleteConcurrencyLimitMutation(graphene.Mutation):
+    """Sets the concurrency limit for a given concurrency key."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "DeleteConcurrencyLimitMutation"
+
+    class Arguments:
+        concurrencyKey = graphene.Argument(graphene.NonNull(graphene.String))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, concurrencyKey: str):
+        graphene_info.context.instance.event_log_storage.delete_concurrency_limit(concurrencyKey)
+        return True
+
+
 class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
     """Frees concurrency slots."""
 
@@ -884,9 +907,11 @@ class GrapheneMutation(graphene.ObjectType):
     launchRunReexecution = GrapheneLaunchRunReexecutionMutation.Field()
     startSchedule = GrapheneStartScheduleMutation.Field()
     stopRunningSchedule = GrapheneStopRunningScheduleMutation.Field()
+    resetSchedule = GrapheneResetScheduleMutation.Field()
     startSensor = GrapheneStartSensorMutation.Field()
     setSensorCursor = GrapheneSetSensorCursorMutation.Field()
     stopSensor = GrapheneStopSensorMutation.Field()
+    resetSensor = GrapheneResetSensorMutation.Field()
     sensorDryRun = GrapheneSensorDryRunMutation.Field()
     scheduleDryRun = GrapheneScheduleDryRunMutation.Field()
     terminatePipelineExecution = GrapheneTerminateRunMutation.Field()
@@ -907,5 +932,6 @@ class GrapheneMutation(graphene.ObjectType):
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
+    deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()
     freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
     freeConcurrencySlots = GrapheneFreeConcurrencySlotsMutation.Field()

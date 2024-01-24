@@ -2,18 +2,25 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
   Icon,
   JoinedButtons,
   MiddleTruncate,
   Tag,
   Tooltip,
-  colorBackgroundDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {CodeLocationMenu} from './CodeLocationMenu';
+import {RepositoryCountTags} from './RepositoryCountTags';
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
+import {workspacePathFromAddress} from './workspacePath';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -26,15 +33,6 @@ import {
 } from '../nav/useRepositoryLocationReload';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
-import {CodeLocationMenu} from './CodeLocationMenu';
-import {RepositoryCountTags} from './RepositoryCountTags';
-import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
-import {workspacePathFromAddress} from './workspacePath';
-
 interface Props {
   locationNode: WorkspaceRepositoryLocationNode;
 }
@@ -45,7 +43,7 @@ export const CodeLocationRowSet = ({locationNode}: Props) => {
   if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
     return (
       <tr>
-        <td style={{maxWidth: '400px', color: colorTextLight()}}>
+        <td style={{maxWidth: '400px', color: Colors.textLight()}}>
           <MiddleTruncate text={name} />
         </td>
         <td>
@@ -114,7 +112,7 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
-  const onClick = React.useCallback(async () => {
+  const onClick = useCallback(async () => {
     copy(value);
     await showSharedToaster({
       intent: 'success',
@@ -140,7 +138,7 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
 
 const ImageNameBox = styled(Box)`
   width: 100%;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 12px;
 
   .bp4-popover2-target {
@@ -148,9 +146,9 @@ const ImageNameBox = styled(Box)`
   }
 
   button {
-    background: ${colorBackgroundDefault()};
+    background: ${Colors.backgroundDefault()};
     border: none;
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     cursor: pointer;
     font-size: 12px;
     overflow: hidden;
@@ -176,7 +174,7 @@ export const ModuleOrPackageOrFile = ({
     return (
       <Box
         flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: colorTextLight(), fontSize: 12}}
+        style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
         <MiddleTruncate text={imageKV.value} />
@@ -191,9 +189,9 @@ export const LocationStatus = (props: {
   locationOrError: WorkspaceRepositoryLocationNode;
 }) => {
   const {location, locationOrError} = props;
-  const [showDialog, setShowDialog] = React.useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,

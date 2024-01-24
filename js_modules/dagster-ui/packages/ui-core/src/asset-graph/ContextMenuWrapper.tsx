@@ -1,5 +1,5 @@
-import {colorPopoverBackground} from '@dagster-io/ui-components';
-import React from 'react';
+import {Colors} from '@dagster-io/ui-components';
+import * as React from 'react';
 import ReactDOM from 'react-dom';
 
 const CONTEXT_MENU_EVENT = 'context-menu-event';
@@ -80,7 +80,7 @@ export const ContextMenuWrapper = ({
                 position: 'absolute',
                 top: menuPosition.top,
                 left: menuPosition.left,
-                backgroundColor: colorPopoverBackground(),
+                backgroundColor: Colors.popoverBackground(),
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                 zIndex: 10,
                 borderRadius: '4px',

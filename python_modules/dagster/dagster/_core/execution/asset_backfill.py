@@ -1378,10 +1378,10 @@ def execute_asset_backfill_iteration_inner(
 
         parent_materialized_asset_partitions = set().union(
             *(
-                instance_queryer.asset_partitions_with_newly_updated_parents(
+                instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
                     latest_storage_id=asset_backfill_data.latest_storage_id,
                     child_asset_key=asset_key,
-                )
+                )[0]
                 for asset_key in asset_backfill_data.target_subset.asset_keys
             )
         )

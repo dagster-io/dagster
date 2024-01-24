@@ -2,33 +2,32 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
   DialogBody,
-  colorTextLight,
-  NonIdealState,
+  DialogFooter,
   ExternalAnchorButton,
   Icon,
+  NonIdealState,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {InstigationSelector} from '../graphql/types';
-import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
-import {EventTypeColumn, TimestampColumn, Row} from '../runs/LogsRowComponents';
-import {
-  ColumnWidthsProvider,
-  ColumnWidthsContext,
-  HeadersContainer,
-  HeaderContainer,
-  Header,
-} from '../runs/LogsScrollingTableHeader';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {useContext} from 'react';
 
 import {
+  TickLogEventFragment,
   TickLogEventsQuery,
   TickLogEventsQueryVariables,
-  TickLogEventFragment,
 } from './types/TickLogDialog.types';
+import {InstigationSelector} from '../graphql/types';
+import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
+import {EventTypeColumn, Row, TimestampColumn} from '../runs/LogsRowComponents';
+import {
+  ColumnWidthsContext,
+  ColumnWidthsProvider,
+  Header,
+  HeaderContainer,
+  HeadersContainer,
+} from '../runs/LogsScrollingTableHeader';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const TickLogDialog = ({
   tick,
@@ -63,7 +62,7 @@ export const TickLogDialog = ({
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: colorTextLight()}}
+            style={{flex: 1, color: Colors.textLight()}}
           >
             No logs available
           </Box>
@@ -177,7 +176,7 @@ const TickLogsTable = ({events}: {events: TickLogEventFragment[]}) => {
 };
 
 const Headers = () => {
-  const widths = React.useContext(ColumnWidthsContext);
+  const widths = useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
       <Header

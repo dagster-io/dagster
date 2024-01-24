@@ -413,3 +413,311 @@ def test_merge(empty_container_context, container_context, other_container_conte
             "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
         },
     )
+
+
+@pytest.mark.parametrize(
+    "only_allow_user_defined_k8s_config_fields",
+    [
+        {"pod_spec_config": {"image_pull_secrets": True}},
+        {"pod_spec_config": {"imagePullSecrets": True}},
+    ],
+)
+def test_only_allow_pod_spec_config(only_allow_user_defined_k8s_config_fields):
+    # can set on run_k8s_config.pod_spec_config
+    K8sContainerContext(
+        run_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_spec_config={"image_pull_secrets": [{"name": "foo"}]}
+        )
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # can set image_pull_secrets as top-level field on K8sContainerContext
+    K8sContainerContext(image_pull_secrets=["foo"]).validate_user_k8s_config(
+        only_allow_user_defined_k8s_config_fields, None
+    )
+
+    # can set on server_k8s_config
+    K8sContainerContext(
+        server_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_spec_config={"image_pull_secrets": [{"name": "foo"}]}
+        )
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # Cannot set other top-level fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(namespace="foo").validate_user_k8s_config(
+            only_allow_user_defined_k8s_config_fields, None
+        )
+
+    # Cannot set other server_k8s_config fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(
+            server_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                {"container_config": {"command": ["echo", "HI"]}}
+            )
+        ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # Cannot set other run_k8s_config fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(
+            run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                {"container_config": {"command": ["echo", "HI"]}}
+            )
+        ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+
+def test_only_allow_container_config():
+    only_allow_user_defined_k8s_config_fields = {"container_config": {"resources": True}}
+
+    resources = {"limits": {"cpu": "500m"}}
+
+    # can set on run_k8s_config.pod_spec_config
+    K8sContainerContext(
+        run_k8s_config=UserDefinedDagsterK8sConfig(container_config={"resources": resources})
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # can set as top-level field on K8sContainerContext
+    K8sContainerContext(resources=resources).validate_user_k8s_config(
+        only_allow_user_defined_k8s_config_fields, None
+    )
+
+    # can set on server_k8s_config
+    K8sContainerContext(
+        server_k8s_config=UserDefinedDagsterK8sConfig(container_config={"resources": resources})
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # Cannot set other top-level fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(namespace="foo").validate_user_k8s_config(
+            only_allow_user_defined_k8s_config_fields, None
+        )
+
+    # Cannot set other server_k8s_config fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(
+            server_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                {"container_config": {"command": ["echo", "HI"]}}
+            )
+        ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # Cannot set other run_k8s_config fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(
+            run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                {"container_config": {"command": ["echo", "HI"]}}
+            )
+        ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+
+def test_only_allows_pod_template_spec_metadata():
+    only_allow_user_defined_k8s_config_fields = {"pod_template_spec_metadata": {"labels": True}}
+    labels = {"foo": "bar"}
+
+    # can set on run_k8s_config.pod_spec_config
+    K8sContainerContext(
+        run_k8s_config=UserDefinedDagsterK8sConfig(pod_template_spec_metadata={"labels": labels})
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # cannot set as top-level field on K8sContainerContext becuase it also sets job_metadata
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(labels=labels).validate_user_k8s_config(
+            only_allow_user_defined_k8s_config_fields, None
+        )
+
+    K8sContainerContext(labels=labels).validate_user_k8s_config(
+        {
+            **only_allow_user_defined_k8s_config_fields,
+            "job_metadata": {"labels": True},
+        },
+        None,
+    )
+
+    # can set on server_k8s_config
+    K8sContainerContext(
+        server_k8s_config=UserDefinedDagsterK8sConfig(pod_template_spec_metadata={"labels": labels})
+    ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
+
+    # Cannot set other top-level fields on K8sContainerContext
+    with pytest.raises(
+        Exception, match="Attempted to create a pod with fields that violated the allowed list"
+    ):
+        K8sContainerContext(namespace="foo").validate_user_k8s_config(
+            only_allow_user_defined_k8s_config_fields, None
+        )
+
+
+@pytest.mark.parametrize(
+    "container_context_with_top_level_field,bad_field",
+    [
+        (K8sContainerContext(image_pull_policy="Never"), "container_config.image_pull_policy"),
+        (
+            K8sContainerContext(image_pull_secrets=[{"name": "your_secret"}]),
+            "pod_spec_config.image_pull_secrets",
+        ),
+        (
+            K8sContainerContext(
+                service_account_name="your_service_account",
+            ),
+            "pod_spec_config.service_account_name",
+        ),
+        (K8sContainerContext(env_config_maps=["your_config_map"]), "container_config.env_from"),
+        (
+            K8sContainerContext(
+                env_secrets=["your_secret"],
+            ),
+            "container_config.env_from",
+        ),
+        (
+            K8sContainerContext(
+                env_vars=["YOUR_ENV_VAR"],
+            ),
+            "container_config.env",
+        ),
+        (
+            K8sContainerContext(
+                volume_mounts=[
+                    {
+                        "mount_path": "your_mount_path",
+                        "mount_propagation": "your_mount_propagation",
+                        "name": "b_volume_mount_one",
+                        "read_only": True,
+                        "sub_path": "your_path/",
+                    }
+                ]
+            ),
+            "container_config.volume_mounts",
+        ),
+        (
+            K8sContainerContext(
+                volumes=[{"name": "bar", "config_map": {"name": "your-settings-cm"}}]
+            ),
+            "pod_spec_config.volumes",
+        ),
+        (
+            K8sContainerContext(labels={"bar_label": "baz_value", "foo_label": "override_value"}),
+            "pod_template_spec_metadata.labels",
+        ),
+        (K8sContainerContext(namespace="your_namespace"), "namespace"),
+        (
+            K8sContainerContext(
+                resources={
+                    "limits": {"memory": "64Mi", "cpu": "250m"},
+                }
+            ),
+            "container_config.resources",
+        ),
+        (
+            K8sContainerContext(scheduler_name="my_other_scheduler"),
+            "pod_spec_config.scheduler_name",
+        ),
+        (
+            K8sContainerContext(security_context={"capabilities": {"add": ["SYS_PTRACE"]}}),
+            "container_config.security_context",
+        ),
+    ],
+)
+def test_top_level_fields_considered(
+    container_context_with_top_level_field: K8sContainerContext, bad_field: str
+):
+    nothing_allowed = {}
+
+    all_top_level_fields_allowed = {
+        "container_config": {
+            "image_pull_policy": True,
+            "env_from": True,
+            "volume_mounts": True,
+            "security_context": True,
+            "env": True,
+            "resources": True,
+        },
+        "pod_spec_config": {
+            "image_pull_secrets": True,
+            "service_account_name": True,
+            "volumes": True,
+            "scheduler_name": True,
+        },
+        "pod_template_spec_metadata": {
+            "labels": True,
+            "namespace": True,
+        },
+        "job_metadata": {
+            "labels": True,
+            "namespace": True,
+        },
+    }
+    container_context_with_top_level_field.validate_user_k8s_config(
+        all_top_level_fields_allowed, None
+    )
+
+    with pytest.raises(Exception, match=bad_field):
+        container_context_with_top_level_field.validate_user_k8s_config(nothing_allowed, None)
+
+
+def test_only_allow_user_defined_env_vars():
+    allowed_env_vars = ["foo"]
+
+    validated_context = K8sContainerContext(
+        env_vars=["foo", "bar"],
+        env=[
+            {"name": "foo", "value": "baz"},
+            {"name": "zup", "value": "quul"},
+        ],
+    ).validate_user_k8s_config(None, allowed_env_vars)
+
+    assert validated_context.env_vars == ["foo"]
+    assert validated_context.env == [{"name": "foo", "value": "baz"}]
+
+    validated_context = K8sContainerContext(
+        server_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+            {
+                "container_config": {
+                    "env": [
+                        {"name": "foo", "value": "baz"},
+                        {"name": "zup", "value": "quul"},
+                    ]
+                }
+            }
+        ),
+        run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+            {
+                "container_config": {
+                    "env": [
+                        {"name": "foo", "value": "gling"},
+                        {"name": "lorp", "value": "quul"},
+                    ]
+                }
+            }
+        ),
+    ).validate_user_k8s_config(None, allowed_env_vars)
+
+    assert validated_context.run_k8s_config == UserDefinedDagsterK8sConfig.from_dict(
+        {
+            "container_config": {
+                "env": [
+                    {"name": "foo", "value": "gling"},
+                ]
+            }
+        }
+    )
+    assert validated_context.server_k8s_config == UserDefinedDagsterK8sConfig.from_dict(
+        {
+            "container_config": {
+                "env": [
+                    {"name": "foo", "value": "baz"},
+                ]
+            }
+        }
+    )

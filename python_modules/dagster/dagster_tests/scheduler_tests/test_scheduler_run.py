@@ -888,7 +888,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert instigator_state
             assert isinstance(instigator_state.instigator_data, ScheduleInstigatorData)
 
-            assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
+            assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
             assert (
                 instigator_state.instigator_data.start_timestamp == pendulum.now("UTC").timestamp()
             )
@@ -904,6 +904,38 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
                 )
                 == 0
             )
+
+            # The instigator state status can be manually updated, as well as reset.
+            instance.stop_schedule(
+                always_running_origin.get_id(), running_schedule.selector_id, running_schedule
+            )
+            stopped_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_schedule.selector_id
+            )
+
+            assert stopped_instigator_state
+            assert stopped_instigator_state.status == InstigatorStatus.STOPPED
+
+            instance.reset_schedule(running_schedule)
+            reset_instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_schedule.selector_id
+            )
+
+            assert reset_instigator_state
+            assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+
+            running_to_not_running_schedule = ExternalSchedule(
+                external_schedule_data=running_schedule._external_schedule_data._replace(  # noqa: SLF001
+                    default_status=DefaultScheduleStatus.STOPPED
+                ),
+                handle=running_schedule.handle.repository_handle,
+            )
+            current_state = running_to_not_running_schedule.get_current_instigator_state(
+                stored_state=reset_instigator_state
+            )
+
+            assert current_state.status == InstigatorStatus.STOPPED
+            assert current_state.instigator_data == reset_instigator_state.instigator_data
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
@@ -1005,7 +1037,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         schedule_state = InstigatorState(
             not_running_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
-            InstigatorStatus.AUTOMATICALLY_RUNNING,
+            InstigatorStatus.DECLARED_IN_CODE,
             ScheduleInstigatorData(
                 not_running_schedule.cron_schedule,
                 freeze_datetime.timestamp(),
@@ -1023,7 +1055,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
             )
             assert len(ticks) == 0
 
-            # AUTOMATICALLY_RUNNING row has been removed from the database
+            # DECLARED_IN_CODE row has been removed from the database
             instigator_state = instance.get_instigator_state(
                 never_running_origin.get_id(), not_running_schedule.selector_id
             )

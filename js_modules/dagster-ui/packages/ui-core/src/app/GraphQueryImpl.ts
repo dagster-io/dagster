@@ -1,4 +1,4 @@
-import {isPlannedDynamicStep, dynamicKeyWithoutIndex} from '../gantt/DynamicStepSupport';
+import {dynamicKeyWithoutIndex, isPlannedDynamicStep} from '../gantt/DynamicStepSupport';
 
 export interface GraphQueryItem {
   name: string;

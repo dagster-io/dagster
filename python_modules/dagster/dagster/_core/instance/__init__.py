@@ -34,7 +34,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -164,6 +164,7 @@ if TYPE_CHECKING:
         EventLogRecord,
         EventRecordsFilter,
         EventRecordsResult,
+        PlannedMaterializationInfo,
     )
     from dagster._core.storage.partition_status_cache import (
         AssetPartitionStatus,
@@ -2009,8 +2010,8 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
-    @public
     @traced
+    @deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],
@@ -2031,9 +2032,31 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.fetch_planned_materializations(
-            records_filter, limit, cursor, ascending
+        from dagster._core.event_api import EventLogCursor
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import (
+            EventRecordsFilter,
+            EventRecordsResult,
         )
+
+        event_records_filter = (
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, records_filter)
+            if isinstance(records_filter, AssetKey)
+            else records_filter.to_event_records_filter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, cursor=cursor, ascending=ascending
+            )
+        )
+        records = self._event_storage.get_event_records(
+            event_records_filter, limit=limit, ascending=ascending
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
     @public
     @traced
@@ -2204,6 +2227,14 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns a mapping of partition to storage id.
         """
         return self._event_storage.get_latest_storage_id_by_partition(asset_key, event_type)
+
+    @traced
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional["PlannedMaterializationInfo"]:
+        return self._event_storage.get_latest_planned_materialization_info(asset_key, partition)
 
     @public
     @traced
@@ -2640,6 +2671,9 @@ class DagsterInstance(DynamicPartitionsStore):
             self, schedule_origin_id, schedule_selector_id, external_schedule
         )
 
+    def reset_schedule(self, external_schedule: "ExternalSchedule") -> "InstigatorState":
+        return self._scheduler.reset_schedule(self, external_schedule)  # type: ignore
+
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler import SchedulerDebugInfo
@@ -2743,6 +2777,46 @@ class DagsterInstance(DynamicPartitionsStore):
             )
         else:
             return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
+
+    def reset_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
+        """If the given sensor has a default sensor status, then update the status to
+        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_sensor (ExternalSensor): The sensor to reset.
+        """
+        from dagster._core.definitions.run_request import InstigatorType
+        from dagster._core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            SensorInstigatorData,
+        )
+
+        stored_state = self.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        new_instigator_data = SensorInstigatorData(
+            min_interval=external_sensor.min_interval_seconds,
+            sensor_type=external_sensor.sensor_type,
+        )
+        new_status = InstigatorStatus.DECLARED_IN_CODE
+
+        if not stored_state:
+            reset_state = self.add_instigator_state(
+                state=InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    new_status,
+                    new_instigator_data,
+                )
+            )
+        else:
+            reset_state = self.update_instigator_state(
+                state=stored_state.with_status(new_status).with_data(new_instigator_data)
+            )
+
+        return reset_state
 
     @traced
     def all_instigator_state(

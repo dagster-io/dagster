@@ -1,17 +1,13 @@
 import {gql} from '@apollo/client';
-import {
-  NonIdealState,
-  colorBackgroundDefault,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Colors, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {
-  CellMeasurer as _CellMeasurer,
   CellMeasurerCache,
-  List as _List,
   ListRowProps,
   ScrollParams,
+  CellMeasurer as _CellMeasurer,
+  List as _List,
 } from 'react-virtualized';
 import styled from 'styled-components';
 
@@ -301,7 +297,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${colorKeylineDefault()}`,
+          borderBottom: `1px solid ${Colors.keylineDefault()}`,
         }
       : {};
 
@@ -414,7 +410,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${Colors.backgroundDefault()};
   z-index: 100;
   position: absolute;
   width: 100%;

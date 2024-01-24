@@ -1,11 +1,13 @@
 import datetime
 import hashlib
+import itertools
 import json
 import logging
 import os
 import sys
 import threading
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -38,25 +40,29 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetSubsetWithMetadata,
+)
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.automation_policy_sensor_definition import (
     AutomationPolicySensorDefinition,
 )
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -73,6 +79,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
@@ -80,8 +87,11 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     _get_pre_sensor_auto_materialize_serialized_cursor,
+    asset_daemon_cursor_from_instigator_serialized_cursor,
+    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
     get_current_evaluation_id,
 )
+from dagster._serdes.serdes import serialize_value
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -163,17 +173,20 @@ class AssetRuleEvaluationSpec(NamedTuple):
             rule_evaluation_data=data_type(**transformed_kwargs),
         )
 
-    def resolve(self) -> Tuple[AutoMaterializeRuleEvaluation, Optional[Sequence[str]]]:
+    def resolve(self, asset_key: AssetKey, asset_graph: AssetGraph) -> AssetSubsetWithMetadata:
         """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
         partitions that it applies to.
         """
-        return (
-            AutoMaterializeRuleEvaluation(
-                rule_snapshot=self.rule.to_snapshot(),
-                evaluation_data=self.rule_evaluation_data,
-            ),
-            sorted(self.partitions) if self.partitions else None,
+        subset = AssetSubset.from_asset_partitions_set(
+            asset_key,
+            asset_graph.get_partitions_def(asset_key),
+            {
+                AssetKeyPartitionKey(asset_key, partition_key)
+                for partition_key in self.partitions or [None]
+            },
         )
+        metadata = self.rule_evaluation_data.metadata if self.rule_evaluation_data else {}
+        return AssetSubsetWithMetadata(subset=subset, metadata=metadata)
 
 
 class AssetSpecWithPartitionsDef(
@@ -184,6 +197,12 @@ class AssetSpecWithPartitionsDef(
     )
 ):
     ...
+
+
+class MultiAssetSpec(NamedTuple):
+    specs: Sequence[AssetSpec]
+    partitions_def: Optional[PartitionsDefinition] = None
+    can_subset: bool = False
 
 
 class AssetDaemonScenarioState(NamedTuple):
@@ -200,17 +219,19 @@ class AssetDaemonScenarioState(NamedTuple):
         current_time (datetime): The current time of the scenario.
     """
 
-    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
+    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
     current_time: datetime.datetime = pendulum.now("UTC")
     run_requests: Sequence[RunRequest] = []
-    serialized_cursor: str = AssetDaemonCursor.empty().serialize()
-    evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
+    serialized_cursor: str = serialize_value(AssetDaemonCursor.empty(0))
+    evaluations: Sequence[AssetConditionEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
+    tick_index: int = 1
     # this is set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
     is_daemon: bool = False
     sensor_name: Optional[str] = None
     automation_policy_sensors: Optional[Sequence[AutomationPolicySensorDefinition]] = None
+    threadpool_executor: Optional[ThreadPoolExecutor] = None
 
     @property
     def instance(self) -> DagsterInstance:
@@ -223,26 +244,35 @@ class AssetDaemonScenarioState(NamedTuple):
                 AssetKey.from_coercible(s)
                 for s in json.loads(context.run.tags.get(FAIL_TAG) or "[]")
             }
-            if context.asset_key in fail_keys:
-                raise Exception("Asset failed")
+            for asset_key in context.selected_asset_keys:
+                if asset_key in fail_keys:
+                    raise Exception("Asset failed")
 
         assets = []
-        params = {
-            "key",
-            "deps",
-            "group_name",
-            "code_version",
-            "auto_materialize_policy",
-            "freshness_policy",
-            "partitions_def",
-        }
         for spec in self.asset_specs:
-            assets.append(
-                asset(
-                    compute_fn=compute_fn,
-                    **{k: v for k, v in spec._asdict().items() if k in params},
+            if isinstance(spec, MultiAssetSpec):
+
+                @multi_asset(**spec._asdict())
+                def _multi_asset(context: AssetExecutionContext):
+                    return compute_fn(context)
+
+                assets.append(_multi_asset)
+            else:
+                params = {
+                    "key",
+                    "deps",
+                    "group_name",
+                    "code_version",
+                    "auto_materialize_policy",
+                    "freshness_policy",
+                    "partitions_def",
+                }
+                assets.append(
+                    asset(
+                        compute_fn=compute_fn,
+                        **{k: v for k, v in spec._asdict().items() if k in params},
+                    )
                 )
-            )
         return assets
 
     @property
@@ -259,16 +289,28 @@ class AssetDaemonScenarioState(NamedTuple):
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
         for spec in self.asset_specs:
-            if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                if "partitions_def" in kwargs:
-                    # partitions_def is not a field on AssetSpec, so we need to do this hack
-                    new_asset_specs.append(
-                        AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
-                    )
-                else:
-                    new_asset_specs.append(spec._replace(**kwargs))
+            if isinstance(spec, MultiAssetSpec):
+                partitions_def = kwargs.get("partitions_def", spec.partitions_def)
+                new_multi_specs = [
+                    s._replace(**{k: v for k, v in kwargs.items() if k != "partitions_def"})
+                    if keys is None or s.key in keys
+                    else s
+                    for s in spec.specs
+                ]
+                new_asset_specs.append(
+                    spec._replace(partitions_def=partitions_def, specs=new_multi_specs)
+                )
             else:
-                new_asset_specs.append(spec)
+                if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
+                    if "partitions_def" in kwargs:
+                        # partitions_def is not a field on AssetSpec, so we need to do this hack
+                        new_asset_specs.append(
+                            AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
+                        )
+                    else:
+                        new_asset_specs.append(spec._replace(**kwargs))
+                else:
+                    new_asset_specs.append(spec)
         return self._replace(asset_specs=new_asset_specs)
 
     def with_automation_policy_sensors(
@@ -276,6 +318,9 @@ class AssetDaemonScenarioState(NamedTuple):
         sensors: Optional[Sequence[AutomationPolicySensorDefinition]],
     ):
         return self._replace(automation_policy_sensors=sensors)
+
+    def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
+        return self._replace(serialized_cursor=serialized_cursor)
 
     def with_all_eager(
         self, max_materializations_per_minute: int = 1
@@ -346,8 +391,10 @@ class AssetDaemonScenarioState(NamedTuple):
 
     def _evaluate_tick_fast(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
-        cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+        cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+            self.serialized_cursor, self.asset_graph
+        )
 
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             evaluation_id=cursor.evaluation_id + 1,
@@ -414,7 +461,7 @@ class AssetDaemonScenarioState(NamedTuple):
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
-        Sequence[AutoMaterializeAssetEvaluation],
+        Sequence[AssetConditionEvaluation],
     ]:
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
@@ -434,15 +481,22 @@ class AssetDaemonScenarioState(NamedTuple):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
+            amp_tick_futures = {}
+
             list(
                 AssetDaemon(  # noqa: SLF001
                     pre_sensor_interval_seconds=42
                 )._run_iteration_impl(
                     workspace_context,
+                    threadpool_executor=self.threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    last_submit_times={},
                     debug_crash_flags={},
                     sensor_state_lock=threading.Lock(),
                 )
             )
+
+            wait_for_futures(amp_tick_futures)
 
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
@@ -450,29 +504,17 @@ class AssetDaemonScenarioState(NamedTuple):
                         sensor.get_external_origin_id(), sensor.selector_id
                     )
                 )
-                compressed_cursor = (
+                new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast(
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
-                    ).cursor
-                    or AssetDaemonCursor.empty().serialize()
-                )
-                new_cursor = (
-                    LegacyAssetDaemonCursorWrapper.from_compressed(
-                        compressed_cursor
-                    ).get_asset_daemon_cursor(self.asset_graph)
-                    if compressed_cursor
-                    else AssetDaemonCursor.empty()
+                    ).cursor,
+                    self.asset_graph,
                 )
             else:
                 raw_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(self.instance)
-                new_cursor = (
-                    AssetDaemonCursor.from_serialized(
-                        raw_cursor,
-                        self.asset_graph,
-                    )
-                    if raw_cursor
-                    else AssetDaemonCursor.empty()
+                new_cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                    raw_cursor, self.asset_graph
                 )
             new_run_requests = [
                 run_request(
@@ -486,14 +528,19 @@ class AssetDaemonScenarioState(NamedTuple):
                 )
             ]
             new_evaluations = [
-                e.evaluation
+                e.get_evaluation_with_run_ids(
+                    self.asset_graph.get_partitions_def(e.asset_key)
+                ).evaluation
                 for e in check.not_none(
                     self.instance.schedule_storage
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
             ]
-        return new_run_requests, new_cursor, new_evaluations
+            return new_run_requests, new_cursor, new_evaluations
 
-    def evaluate_tick(self) -> "AssetDaemonScenarioState":
+    def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
+        self.logger.critical("********************************")
+        self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
+        self.logger.critical("********************************")
         with pendulum.test(self.current_time):
             if self.is_daemon:
                 (
@@ -506,8 +553,9 @@ class AssetDaemonScenarioState(NamedTuple):
 
         return self._replace(
             run_requests=new_run_requests,
-            serialized_cursor=new_cursor.serialize(),
+            serialized_cursor=serialize_value(new_cursor),
             evaluations=new_evaluations,
+            tick_index=self.tick_index + 1,
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
@@ -594,7 +642,7 @@ class AssetDaemonScenarioState(NamedTuple):
         return self
 
     def _assert_evaluation_daemon(
-        self, key: AssetKey, actual_evaluation: AutoMaterializeAssetEvaluation
+        self, key: AssetKey, actual_evaluation: AssetConditionEvaluation
     ) -> None:
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
@@ -610,15 +658,29 @@ class AssetDaemonScenarioState(NamedTuple):
             )
             if key in (run.asset_selection or set())
         }
-        assert new_run_ids_for_asset == actual_evaluation.run_ids
+        evaluation_record = next(
+            iter(
+                [
+                    e
+                    for e in check.not_none(
+                        self.instance.schedule_storage
+                    ).get_auto_materialize_evaluations_for_evaluation_id(current_evaluation_id)
+                    if e.asset_key == key
+                ]
+            )
+        )
+        assert (
+            new_run_ids_for_asset
+            == evaluation_record.get_evaluation_with_run_ids(
+                self.asset_graph.get_partitions_def(key)
+            ).run_ids
+        )
 
     def assert_evaluation(
         self,
         key: CoercibleToAssetKey,
         expected_evaluation_specs: Sequence[AssetRuleEvaluationSpec],
         num_requested: Optional[int] = None,
-        num_skipped: Optional[int] = None,
-        num_discarded: Optional[int] = None,
     ) -> "AssetDaemonScenarioState":
         """Asserts that AutoMaterializeRuleEvaluations on the AutoMaterializeAssetEvaluation for the
         given asset key match the given expected_evaluation_specs.
@@ -632,7 +694,7 @@ class AssetDaemonScenarioState(NamedTuple):
         if actual_evaluation is None:
             try:
                 assert len(expected_evaluation_specs) == 0
-                assert all(n is None for n in (num_requested, num_skipped, num_discarded))
+                assert num_requested is None
             except:
                 self.logger.error(
                     "\nAll Evaluations: \n\n" + "\n\n".join("\t" + str(e) for e in self.evaluations)
@@ -640,41 +702,56 @@ class AssetDaemonScenarioState(NamedTuple):
                 raise
             return self
         if num_requested is not None:
-            assert actual_evaluation.num_requested == num_requested
-        if num_skipped is not None:
-            assert actual_evaluation.num_skipped == num_skipped
-        if num_discarded is not None:
-            assert actual_evaluation.num_discarded == num_discarded
+            assert actual_evaluation.true_subset.size == num_requested
 
-        # unpack the serialized partition subsets into an easier format
-        actual_rule_evaluations = [
-            (
-                rule_evaluation,
-                sorted(
-                    serialized_subset.deserialize(
-                        check.not_none(self.asset_graph.get_partitions_def(asset_key))
-                    ).get_partition_keys()
-                )
-                if serialized_subset is not None
-                else None,
+        def get_leaf_evaluations(
+            e: AssetConditionEvaluation,
+        ) -> Sequence[AssetConditionEvaluation]:
+            if len(e.child_evaluations) == 0:
+                return [e]
+            leaf_evals = []
+            for child_eval in e.child_evaluations:
+                leaf_evals.extend(get_leaf_evaluations(child_eval))
+            return leaf_evals
+
+        actual_subsets_with_metadata = list(
+            itertools.chain(
+                *[
+                    leaf_eval.subsets_with_metadata
+                    # backcompat as previously we stored None metadata for any true evaluation
+                    or (
+                        [AssetSubsetWithMetadata(leaf_eval.true_subset, {})]
+                        if leaf_eval.true_subset.size
+                        else []
+                    )
+                    for leaf_eval in get_leaf_evaluations(actual_evaluation)
+                ]
             )
-            for rule_evaluation, serialized_subset in actual_evaluation.partition_subsets_by_condition
+        )
+        expected_subsets_with_metadata = [
+            ees.resolve(asset_key, self.asset_graph) for ees in expected_evaluation_specs
         ]
-        expected_rule_evaluations = [ees.resolve() for ees in expected_evaluation_specs]
 
         try:
-            for (actual_data, actual_partitions), (expected_data, expected_partitions) in zip(
-                sorted(actual_rule_evaluations), sorted(expected_rule_evaluations)
+            for actual_sm, expected_sm in zip(
+                sorted(
+                    actual_subsets_with_metadata,
+                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                ),
+                sorted(
+                    expected_subsets_with_metadata,
+                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                ),
             ):
-                assert actual_data.rule_snapshot == expected_data.rule_snapshot
-                assert actual_partitions == expected_partitions
+                assert actual_sm.subset.asset_partitions == expected_sm.subset.asset_partitions
                 # only check evaluation data if it was set on the expected evaluation spec
-                if expected_data.evaluation_data is not None:
-                    assert actual_data.evaluation_data == expected_data.evaluation_data
+                if expected_sm.metadata:
+                    assert actual_sm.metadata == expected_sm.metadata
 
         except:
             self._log_assertion_error(
-                sorted(expected_rule_evaluations), sorted(actual_rule_evaluations)
+                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
             )
             raise
 
@@ -701,11 +778,14 @@ class AssetDaemonScenario(NamedTuple):
         )
 
     def evaluate_daemon(
-        self, instance: DagsterInstance, sensor_name: Optional[str] = None
+        self, instance: DagsterInstance, sensor_name: Optional[str] = None, threadpool_executor=None
     ) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
         return self.execution_fn(
             self.initial_state._replace(
-                scenario_instance=instance, is_daemon=True, sensor_name=sensor_name
+                scenario_instance=instance,
+                is_daemon=True,
+                sensor_name=sensor_name,
+                threadpool_executor=threadpool_executor,
             )
         )

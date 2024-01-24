@@ -100,7 +100,7 @@ def _k8s_snake_case_value(val: Any, attr_type: str, attr_name: str) -> Any:
             return k8s_snake_case_dict(klass, val)
 
 
-def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
+def k8s_snake_case_keys(model_class, model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
     snake_case_to_camel_case = model_class.attribute_map
     camel_case_to_snake_case = dict((v, k) for k, v in snake_case_to_camel_case.items())
 
@@ -120,6 +120,12 @@ def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -
 
     if len(invalid_keys):
         raise Exception(f"Unexpected keys in model class {model_class.__name__}: {invalid_keys}")
+
+    return snake_case_dict
+
+
+def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
+    snake_case_dict = k8s_snake_case_keys(model_class, model_dict)
 
     final_dict = {}
     for key, val in snake_case_dict.items():

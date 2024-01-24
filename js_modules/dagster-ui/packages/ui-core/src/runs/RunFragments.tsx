@@ -1,10 +1,9 @@
 import {gql} from '@apollo/client';
 
-import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
-
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 import {RUN_TIMING_FRAGMENT} from './RunTimingDetails';
+import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 
 export const RUN_FRAGMENT = gql`
   fragment RunFragment on Run {
@@ -24,12 +23,6 @@ export const RUN_FRAGMENT = gql`
     tags {
       key
       value
-    }
-    assets {
-      id
-      key {
-        path
-      }
     }
     rootRunId
     parentRunId

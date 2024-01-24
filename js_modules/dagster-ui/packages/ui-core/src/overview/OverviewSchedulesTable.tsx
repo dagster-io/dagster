@@ -2,6 +2,8 @@ import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
+import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
+import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
@@ -13,9 +15,6 @@ import {
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
-import {BasicInstigationStateFragment} from './types/BasicInstigationStateFragment.types';
 
 type ScheduleInfo = {name: string; scheduleState: BasicInstigationStateFragment};
 

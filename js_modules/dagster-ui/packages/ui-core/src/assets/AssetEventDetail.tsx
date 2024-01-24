@@ -1,25 +1,5 @@
-import {
-  Box,
-  Group,
-  Heading,
-  Icon,
-  Mono,
-  Subheading,
-  colorAccentGray,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, Colors, Group, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {AssetKeyInput} from '../graphql/types';
-import {Description} from '../pipelines/Description';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
@@ -31,6 +11,15 @@ import {
   AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
+import {Timestamp} from '../app/time/Timestamp';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
+import {Description} from '../pipelines/Description';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetEventDetail = ({
   event,
@@ -107,7 +96,7 @@ export const AssetEventDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={colorAccentGray()} />
+                <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(run, event)}>{event.stepKey}</Link>
               </Group>
             </Box>
@@ -158,7 +147,7 @@ export const AssetEventDetailEmpty = () => (
       border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading color={colorTextLight()}>No event selected</Heading>
+      <Heading color={Colors.textLight()}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}

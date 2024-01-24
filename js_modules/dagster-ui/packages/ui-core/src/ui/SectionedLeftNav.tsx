@@ -1,24 +1,18 @@
 import {
   BaseTag,
   Box,
+  Colors,
   Icon,
   IconWrapper,
   MiddleTruncate,
   StyledTag,
-  colorBackgroundDisabled,
-  colorBackgroundGray,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
-  colorTextLighter,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {Inner, Row} from './VirtualizedTable';
 import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -32,12 +26,10 @@ import {
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
-
-import {Inner, Row} from './VirtualizedTable';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
 const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
@@ -307,7 +299,7 @@ export const SectionedLeftNav = () => {
 const Container = styled.div`
   height: 100%;
   overflow: auto;
-  background-color: ${colorBackgroundLight()};
+  background-color: ${Colors.backgroundLight()};
 `;
 
 interface CodeLocationNameRowProps {
@@ -353,8 +345,8 @@ const CodeLocationNameRow = (props: CodeLocationNameRowProps) => {
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
-                fillColor={colorBackgroundGray()}
-                textColor={colorTextDefault()}
+                fillColor={Colors.backgroundGray()}
+                textColor={Colors.textDefault()}
                 label={itemCount.toLocaleString()}
               />
             </div>
@@ -432,9 +424,9 @@ const ItemRow = (props: ItemRowProps) => {
 };
 
 const CodeLocationTooltipStyles = JSON.stringify({
-  background: colorBackgroundLightHover(),
+  background: Colors.backgroundLightHover(),
   filter: `brightness(97%)`,
-  color: colorTextDefault(),
+  color: Colors.textDefault(),
   fontWeight: 500,
   border: 'none',
   borderRadius: 7,
@@ -491,7 +483,7 @@ const usePathMatch = () => {
 };
 
 const ItemTypeLabel = styled.div`
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   padding: 0 12px 4px;
   font-size: 12px;
 `;
@@ -500,7 +492,7 @@ const SectionHeader = styled.button<{
   $open: boolean;
   $showRepoLocation: boolean;
 }>`
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   border: 0;
   border-radius: 0;
   cursor: pointer;
@@ -517,7 +509,7 @@ const SectionHeader = styled.button<{
   width: 100%;
   margin: 0;
   
-  box-shadow: inset 0px 1px 0 ${colorKeylineDefault()}, inset 0px -1px 0 ${colorKeylineDefault()};
+  box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
   :disabled {
     cursor: default;
@@ -525,12 +517,12 @@ const SectionHeader = styled.button<{
 
   :hover,
   :active {
-    background-color: ${colorBackgroundLightHover()};
+    background-color: ${Colors.backgroundLightHover()};
   }
 
   :disabled:hover,
   :disabled:active {
-    background-color: ${colorBackgroundDisabled()};
+    background-color: ${Colors.backgroundDisabled()};
   }
 
   :focus,
@@ -544,7 +536,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${colorTextDisabled()};
+    background-color: ${Colors.textDisabled()};
   }
 
   ${StyledTag} {
@@ -557,7 +549,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${StyledTag} {
-    color: ${colorTextDisabled()};
+    color: ${Colors.textDisabled()};
   }
 }`;
 

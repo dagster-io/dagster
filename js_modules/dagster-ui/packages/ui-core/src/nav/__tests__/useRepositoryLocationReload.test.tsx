@@ -1,6 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {TestProvider} from '../../testing/TestProvider';
 import {
@@ -28,7 +28,7 @@ describe('useRepositoryReloadLocation', () => {
   };
 
   const Test = () => {
-    const reloadFn = React.useMemo(() => buildReloadFnForLocation(LOCATION), []);
+    const reloadFn = useMemo(() => buildReloadFnForLocation(LOCATION), []);
     const {reloading, error, tryReload} = useRepositoryLocationReload({
       scope: 'location',
       reloadFn,

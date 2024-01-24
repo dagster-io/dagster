@@ -405,7 +405,7 @@ def execute_sensor_iteration(
             sensor_state = InstigatorState(
                 external_sensor.get_external_origin(),
                 InstigatorType.SENSOR,
-                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
                 SensorInstigatorData(
                     min_interval=external_sensor.min_interval_seconds,
                     last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),

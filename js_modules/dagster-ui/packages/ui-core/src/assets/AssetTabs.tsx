@@ -1,11 +1,9 @@
 import {Tab, Tabs} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
-
-import {TabLink} from '../ui/TabLink';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {TabLink} from '../ui/TabLink';
 
 interface Props {
   selectedTab: string;
@@ -36,7 +34,7 @@ export const DEFAULT_ASSET_TAB_ORDER = [
   'plots',
   'definition',
   'lineage',
-  'auto-materialize-history',
+  'automation',
 ];
 
 export type AssetTabConfigInput = {
@@ -91,10 +89,10 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
     },
-    'auto-materialize-history': {
-      id: 'auto-materialize-history',
-      title: 'Auto-materialize history',
-      to: buildAssetViewParams({...params, view: 'auto-materialize-history'}),
+    automation: {
+      id: 'automation',
+      title: 'Automation',
+      to: buildAssetViewParams({...params, view: 'automation'}),
       disabled: !definition,
       hidden: !definition?.autoMaterializePolicy,
     },

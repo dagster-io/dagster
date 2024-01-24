@@ -190,7 +190,11 @@ class DbtCliEventMessage:
 
             if has_asset_def and is_asset_check and is_generic_test:
                 is_test_successful = node_status == TestStatus.Pass
-                severity = AssetCheckSeverity(test_resource_props["config"]["severity"].upper())
+                severity = (
+                    AssetCheckSeverity.WARN
+                    if node_status == TestStatus.Warn
+                    else AssetCheckSeverity.ERROR
+                )
 
                 attached_node_resource_props: Dict[str, Any] = manifest["nodes"].get(
                     attached_node_unique_id

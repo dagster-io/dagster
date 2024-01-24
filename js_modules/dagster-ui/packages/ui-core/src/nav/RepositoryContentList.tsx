@@ -1,15 +1,9 @@
-import {
-  colorBackgroundBlue,
-  colorBackgroundLighter,
-  colorBorderDefault,
-  colorTextBlue,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 export const Item = styled(Link)<{$active: boolean}>`
-  background-color: ${({$active}) => ($active ? colorBackgroundBlue() : 'transparent')};
+  background-color: ${({$active}) => ($active ? Colors.backgroundBlue() : 'transparent')};
   border-radius: 8px;
   font-size: 14px;
   text-overflow: ellipsis;
@@ -18,7 +12,7 @@ export const Item = styled(Link)<{$active: boolean}>`
   display: flex;
   gap: 6px;
   align-items: center;
-  color: ${({$active}) => ($active ? colorTextBlue() : colorTextDefault())} !important;
+  color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())} !important;
   user-select: none;
   transition:
     background 50ms linear,
@@ -27,7 +21,7 @@ export const Item = styled(Link)<{$active: boolean}>`
   &:hover {
     text-decoration: none;
     background-color: ${({$active}) =>
-      $active ? colorBackgroundBlue() : colorBackgroundLighter()};
+      $active ? Colors.backgroundBlue() : Colors.backgroundLighter()};
   }
 
   &:focus {
@@ -35,6 +29,6 @@ export const Item = styled(Link)<{$active: boolean}>`
   }
 
   &.focused {
-    border-left: 4px solid ${colorBorderDefault()};
+    border-left: 4px solid ${Colors.borderDefault()};
   }
 `;

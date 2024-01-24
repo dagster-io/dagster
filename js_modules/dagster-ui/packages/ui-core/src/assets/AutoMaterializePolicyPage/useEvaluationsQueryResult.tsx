@@ -1,8 +1,7 @@
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {AssetKey} from '../types';
-
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
+import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {AssetKey} from '../types';
 
 export const PAGE_SIZE = 30;
 
@@ -11,10 +10,10 @@ export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
   return useCursorPaginatedQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>({
     nextCursorForResult: (data) => {
       if (
-        data.autoMaterializeAssetEvaluationsOrError?.__typename ===
-        'AutoMaterializeAssetEvaluationRecords'
+        data.assetConditionEvaluationRecordsOrError?.__typename ===
+        'AssetConditionEvaluationRecords'
       ) {
-        return data.autoMaterializeAssetEvaluationsOrError.records[
+        return data.assetConditionEvaluationRecordsOrError.records[
           PAGE_SIZE - 1
         ]?.evaluationId.toString();
       }
@@ -22,10 +21,10 @@ export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
     },
     getResultArray: (data) => {
       if (
-        data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-        'AutoMaterializeAssetEvaluationRecords'
+        data?.assetConditionEvaluationRecordsOrError?.__typename ===
+        'AssetConditionEvaluationRecords'
       ) {
-        return data.autoMaterializeAssetEvaluationsOrError.records;
+        return data.assetConditionEvaluationRecordsOrError.records;
       }
       return [];
     },

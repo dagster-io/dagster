@@ -15,7 +15,8 @@
       },
       {
         "title": "Installation",
-        "path": "/getting-started/install"
+        "path": "/getting-started/install",
+        "nonMdx": true
       },
       {
         "title": "Creating a new project",
@@ -99,10 +100,6 @@
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Auto-materializing assets",
-            "path": "/concepts/assets/asset-auto-execution"
-          },
-          {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
           },
@@ -112,10 +109,14 @@
           }
         ]
       },
-
       {
-        "title": "Schedules & Sensors",
+        "title": "Automation",
+        "path": "/concepts/automation",
         "children": [
+          {
+            "title": "Overview",
+            "path": "/concepts/automation"
+          },
           {
             "title": "Schedules",
             "path": "/concepts/partitions-schedules-sensors/schedules"
@@ -123,6 +124,10 @@
           {
             "title": "Sensors",
             "path": "/concepts/partitions-schedules-sensors/sensors"
+          },
+          {
+            "title": "Auto-materialization policies",
+            "path": "/concepts/assets/asset-auto-execution"
           },
           {
             "title": "Asset Sensors",
@@ -996,10 +1001,6 @@
           {
             "title": "Structuring your project",
             "path": "/guides/dagster/recommended-project-structure"
-          },
-          {
-            "title": "Automating your pipelines",
-            "path": "/guides/dagster/automating-pipelines"
           },
           {
             "title": "Building machine learning pipelines",
