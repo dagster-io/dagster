@@ -73,8 +73,8 @@ def find_dbt_profiles_path(dbt_project_dir: Path) -> Path:
 
     if not existing_profiles_paths:
         console.print(
-            f"A {DBT_PROJECT_YML_NAME} file was not found in either {dbt_project_dir} or "
-            f"{dot_dbt_dir}. Please ensure that a valid {DBT_PROJECT_YML_NAME} exists in your "
+            f"A {DBT_PROFILES_YML_NAME} file was not found in either {dbt_project_dir} or "
+            f"{dot_dbt_dir}. Please ensure that a valid {DBT_PROFILES_YML_NAME} exists in your "
             "environment."
         )
         raise typer.Exit(1)

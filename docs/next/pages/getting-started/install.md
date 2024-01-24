@@ -7,9 +7,7 @@ description: Install Dagster
 
 ## Requirements
 
-<!-- Lives in: /next/components/mdx/includes/dagster/DagsterVersion.mdx -->
-
-<DagsterVersion />
+{% partial file="DagsterVersion.md" /%}
 
 To check that Python and the pip package manager are already installed in your environment, you can run:
 
@@ -22,11 +20,11 @@ pip --version
 
 ## Installing Dagster into an existing Python environment
 
-<Note>
-  <strong>Note</strong>: We strongly recommend installing Dagster inside a
-  Python virtualenv. If running Anaconda, install Dagster inside a Conda
-  environment.
-</Note>
+{% note %}
+**Note**: We strongly recommend installing Dagster inside a
+Python virtualenv. If running Anaconda, install Dagster inside a Conda
+environment.
+{% /note %}
 
 To install the latest stable version of the core Dagster packages in your current Python environment, run:
 
@@ -67,21 +65,16 @@ poetry add dagster dagster-webserver
 
 ## Related
 
-<ArticleList>
-  <ArticleListItem
-    title="Creating a new Dagster project"
-    href="/getting-started/create-new-project"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dagster project files"
-    href="/getting-started/project-file-reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Running Dagster locally"
-    href="/guides/running-dagster-locally"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Contributing to Dagster"
-    href="/community/contributing"
-  ></ArticleListItem>
-</ArticleList>
+{% table %}
+
+---
+
+- [Creating a new Dagster project](/getting-started/create-new-project)
+- [Dagster project files](/guides/understanding-dagster-project-files)
+
+---
+
+- [Running Dagster locally](/guides/running-dagster-locally)
+- [Contributing to Dagster](/community/contributing)
+
+{% /table %}

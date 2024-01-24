@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {AppTopNav} from '../AppTopNav';

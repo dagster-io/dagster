@@ -1,27 +1,13 @@
-import {
-  Box,
-  ButtonLink,
-  colorAccentGray,
-  colorAccentPrimary,
-  colorAccentPrimaryHover,
-  colorBackgroundDefault,
-  colorBackgroundLight,
-  colorBackgroundLighter,
-  colorTextLight,
-  colorTextLighter,
-  colorTextRed,
-  Icon,
-  IconWrapper,
-} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
+  IStorageData,
   applyChangesToSession,
   applyRemoveSession,
   applySelectSession,
-  IStorageData,
 } from '../app/ExecutionSessionStorage';
 
 interface ExecutationTabProps {
@@ -89,7 +75,7 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <Icon name="close" color={colorAccentPrimary()} />
+          <Icon name="close" color={Colors.accentPrimary()} />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -160,17 +146,17 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
         <LaunchpadTab title="+ Add..." onClick={onCreate} />
         {sessionKeys.length > REMOVE_ALL_THRESHOLD ? (
           <Box
-            background={colorBackgroundDefault()}
+            background={Colors.backgroundDefault()}
             padding={{top: 8, left: 8, right: 12}}
             border="bottom"
             style={{position: 'sticky', right: 0}}
           >
-            <ButtonLink color={colorTextRed()} onClick={onRemoveAll}>
+            <ButtonLink color={Colors.textRed()} onClick={onRemoveAll}>
               <Box
                 flex={{direction: 'row', gap: 4, alignItems: 'center'}}
                 style={{whiteSpace: 'nowrap'}}
               >
-                <Icon name="delete" color={colorTextRed()} />
+                <Icon name="delete" color={Colors.textRed()} />
                 <div>Remove all</div>
               </Box>
             </ButtonLink>
@@ -211,20 +197,20 @@ const TabContainer = styled.div<{$active: boolean}>`
     $active
       ? css`
           font-weight: 600;
-          background-color: ${colorBackgroundLighter()};
-          color: ${colorAccentPrimary()};
-          box-shadow: ${colorAccentPrimary()} 0 -2px 0 inset;
+          background-color: ${Colors.backgroundLighter()};
+          color: ${Colors.accentPrimary()};
+          box-shadow: ${Colors.accentPrimary()} 0 -2px 0 inset;
         `
       : css`
           font-weight: normal;
-          background-color: ${colorBackgroundLight()};
-          color: ${colorTextLighter()};
-          box-shadow: ${colorAccentGray()} 0 -1px 0 inset;
+          background-color: ${Colors.backgroundLight()};
+          color: ${Colors.textLighter()};
+          box-shadow: ${Colors.accentGray()} 0 -1px 0 inset;
 
           &:hover {
-            background-color: ${colorBackgroundLight()};
-            box-shadow: ${colorAccentGray()} 0 -1px 0 inset;
-            color: ${colorTextLight()};
+            background-color: ${Colors.backgroundLight()};
+            box-shadow: ${Colors.accentGray()} 0 -1px 0 inset;
+            color: ${Colors.textLight()};
           }
         `}
 
@@ -254,6 +240,6 @@ const RemoveButton = styled.button`
   }
 
   &:hover ${IconWrapper} {
-    background-color: ${colorAccentPrimaryHover()};
+    background-color: ${Colors.accentPrimaryHover()};
   }
 `;

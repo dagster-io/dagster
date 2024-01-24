@@ -1,28 +1,17 @@
-import {
-  Box,
-  Caption,
-  Icon,
-  Tag,
-  colorAccentBlue,
-  colorBackgroundBlue,
-  colorBackgroundLight,
-  colorTextBlue,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
+import {RunlessEventTag} from './RunlessEventTag';
+import {AssetEventGroup} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetKeyInput} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
-import {RunlessEventTag} from './RunlessEventTag';
-import {AssetEventGroup} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
@@ -39,8 +28,8 @@ export const AssetEventList = ({
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
 }) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const focusedRowRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: groups.length,
@@ -51,7 +40,7 @@ export const AssetEventList = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusedRowRef.current) {
       const el = focusedRowRef.current;
       if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
@@ -105,7 +94,7 @@ export const AssetEventList = ({
 export const AssetListContainer = styled(Container)`
   outline: none;
   &:focus {
-    box-shadow: 0 -1px ${colorAccentBlue()};
+    box-shadow: 0 -1px ${Colors.accentBlue()};
   }
 `;
 
@@ -117,14 +106,14 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
   :active,
   :hover {
     outline: none;
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
   }
   ${(p) =>
     p.$focused &&
-    `background: ${colorBackgroundBlue()};
-     color: ${colorTextBlue()};
+    `background: ${Colors.backgroundBlue()};
+     color: ${Colors.textBlue()};
      :hover {
-       background: ${colorBackgroundBlue()};
+       background: ${Colors.backgroundBlue()};
      }
     `}
 `;
@@ -140,7 +129,7 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
         {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
       </Box>
 
-      <Caption color={colorTextLight()} style={{userSelect: 'none'}}>
+      <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
         {timestamp ? (
           <span>
             Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />

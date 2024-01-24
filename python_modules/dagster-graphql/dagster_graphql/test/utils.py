@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
+import graphene
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -54,9 +55,12 @@ SCHEMA = create_schema()
 
 
 def execute_dagster_graphql(
-    context: WorkspaceRequestContext, query: str, variables: Optional[GqlVariables] = None
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
 ) -> GqlResult:
-    result = SCHEMA.execute(
+    result = schema.execute(
         query,
         context_value=context,
         variable_values=variables,
@@ -76,10 +80,11 @@ def execute_dagster_graphql_subscription(
     context: WorkspaceRequestContext,
     query: str,
     variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
 ) -> Sequence[GqlResult]:
     results = []
 
-    subscription = SCHEMA.subscribe(
+    subscription = schema.subscribe(
         query,
         context_value=context,
         variable_values=variables,

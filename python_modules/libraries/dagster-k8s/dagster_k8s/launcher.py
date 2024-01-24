@@ -67,6 +67,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         scheduler_name=None,
         security_context=None,
         run_k8s_config=None,
+        only_allow_user_defined_k8s_config_fields=None,
+        only_allow_user_defined_env_vars=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -118,6 +120,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
         self._security_context = check.opt_dict_param(security_context, "security_context")
         self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
+
+        self._only_allow_user_defined_k8s_config_fields = only_allow_user_defined_k8s_config_fields
+        self._only_allow_user_defined_env_vars = only_allow_user_defined_env_vars
         super().__init__()
 
     @property
@@ -179,6 +184,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def fail_pod_on_run_failure(self) -> Optional[bool]:
         return self._fail_pod_on_run_failure
+
+    @property
+    def only_allow_user_defined_k8s_config_fields(self) -> Optional[Mapping[str, Any]]:
+        return self._only_allow_user_defined_k8s_config_fields
+
+    @property
+    def only_allow_user_defined_env_vars(self) -> Optional[Sequence[str]]:
+        return self._only_allow_user_defined_env_vars
 
     @classmethod
     def config_type(cls):
@@ -353,7 +366,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_run_worker_crash_recovery(self):
         return True
 
-    def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
+    def get_run_worker_debug_info(
+        self, run: DagsterRun, include_container_logs: Optional[bool] = True
+    ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
         if self.supports_run_worker_crash_recovery:
             resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
@@ -366,7 +381,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         full_msg = ""
         try:
             pod_debug_info = [
-                self._api_client.get_pod_debug_info(pod_name, namespace) for pod_name in pod_names
+                self._api_client.get_pod_debug_info(
+                    pod_name, namespace, include_container_logs=include_container_logs
+                )
+                for pod_name in pod_names
             ]
             full_msg = "\n".join(pod_debug_info)
         except Exception:

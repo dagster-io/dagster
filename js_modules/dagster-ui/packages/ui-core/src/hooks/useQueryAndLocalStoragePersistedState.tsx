@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 import {QueryPersistedDataType, useQueryPersistedState} from './useQueryPersistedState';
 import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';

@@ -12,6 +12,7 @@ from dagster import (
     BoolSource,
     Enum as DagsterEnum,
     Field,
+    Map,
     Noneable,
     StringSource,
 )
@@ -446,6 +447,38 @@ class DagsterK8sJobConfig(
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
                 "job_namespace": Field(StringSource, is_required=False, default_value="default"),
+                "only_allow_user_defined_k8s_config_fields": Field(
+                    Shape(
+                        {
+                            "container_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "pod_spec_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "pod_template_spec_metadata": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "job_metadata": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                            "job_spec_config": Field(
+                                Map(key_type=str, inner_type=bool), is_required=False
+                            ),
+                        }
+                    ),
+                    is_required=False,
+                    description="Dictionary of fields that are allowed to be configured on a "
+                    "per-run or per-code-location basis - e.g. using tags on the run. "
+                    "Can be used to prevent user code from being able to set arbitrary kubernetes "
+                    "config on the pods launched by the run launcher.",
+                ),
+                "only_allow_user_defined_env_vars": Field(
+                    Array(str),
+                    is_required=False,
+                    description="List of environment variable names that are allowed to be set on "
+                    "a per-run or per-code-location basis - e.g. using tags on the run. ",
+                ),
             },
         )
 

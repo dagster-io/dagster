@@ -5,13 +5,12 @@ import {
   CursorPaginationProps,
   NonIdealState,
 } from '@dagster-io/ui-components';
-import React from 'react';
-
-import {RepositorySelector} from '../graphql/types';
-import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
-import {Loading} from '../ui/Loading';
+import {useEffect, useState} from 'react';
 
 import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';
+import {RepositorySelector} from '../graphql/types';
+import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from '../instance/backfill/BackfillTable';
+import {Loading} from '../ui/Loading';
 
 const BACKFILL_PAGE_SIZE = 10;
 
@@ -26,8 +25,8 @@ export const JobBackfillsTable = ({
   repositorySelector: RepositorySelector;
   refetchCounter: number;
 }) => {
-  const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
-  const [cursor, setCursor] = React.useState<string | undefined>();
+  const [cursorStack, setCursorStack] = useState<string[]>(() => []);
+  const [cursor, setCursor] = useState<string | undefined>();
   const queryResult = useQuery<JobBackfillsQuery, JobBackfillsQueryVariables>(JOB_BACKFILLS_QUERY, {
     variables: {
       partitionSetName,
@@ -38,7 +37,7 @@ export const JobBackfillsTable = ({
   });
 
   const refetch = queryResult.refetch;
-  React.useEffect(() => {
+  useEffect(() => {
     refetchCounter && refetch();
   }, [refetch, refetchCounter]);
 

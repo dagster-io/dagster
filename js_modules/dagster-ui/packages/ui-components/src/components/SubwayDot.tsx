@@ -2,8 +2,7 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorAccentReversed} from '../theme/color';
-
+import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
 
 const SECONDARY_COLORS = {
@@ -59,7 +58,7 @@ export const SubwayDot = React.memo(
         <Icon
           size={iconSize}
           name={icon}
-          color={colorAccentReversed()}
+          color={Colors.accentReversed()}
           style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
         />
       ) : (
@@ -79,7 +78,7 @@ const Blob = styled.div<BlobProps>`
   align-items: center;
   background-color: ${({$color}) => $color};
   border-radius: 50%;
-  color: ${colorAccentReversed()};
+  color: ${Colors.accentReversed()};
   cursor: pointer;
   display: flex;
   flex-shrink: 0;

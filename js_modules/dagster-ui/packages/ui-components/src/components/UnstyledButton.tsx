@@ -1,6 +1,6 @@
 import styled, {css} from 'styled-components';
 
-import {colorTextDefault} from '../theme/color';
+import {Colors} from './Color';
 
 interface Props {
   $expandedClickPx?: number;
@@ -10,7 +10,7 @@ export const UnstyledButton = styled.button<Props>`
   border: 0;
   background-color: transparent;
   border-radius: 4px;
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   cursor: pointer;
   padding: 0;
   text-align: start;

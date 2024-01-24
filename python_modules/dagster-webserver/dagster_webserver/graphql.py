@@ -182,7 +182,7 @@ class GraphQLServer(ABC):
         """
         tasks: Dict[str, Task] = {}
 
-        await websocket.accept(subprotocol=GraphQLWS.PROTOCOL)
+        await websocket.accept(subprotocol=GraphQLWS.PROTOCOL.value)
 
         try:
             while (

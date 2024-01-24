@@ -3,30 +3,27 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
   Tooltip,
-  colorAccentRed,
-  colorBackgroundDefault,
-  colorTextDisabled,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 
+import {AssetWipeDialog} from './AssetWipeDialog';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {AssetViewType} from './useAssetView';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
-
-import {AssetWipeDialog} from './AssetWipeDialog';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {AssetViewType} from './useAssetView';
 
 type Asset = AssetTableFragment;
 
@@ -151,7 +148,7 @@ export const AssetTable = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={colorBackgroundDefault()}
+          background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
           padding={{vertical: 8, left: 24, right: 12}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
@@ -226,7 +223,7 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
               icon={
-                <Icon name="delete" color={disabled ? colorTextDisabled() : colorAccentRed()} />
+                <Icon name="delete" color={disabled ? Colors.textDisabled() : Colors.accentRed()} />
               }
               disabled={disabled}
               intent="danger"

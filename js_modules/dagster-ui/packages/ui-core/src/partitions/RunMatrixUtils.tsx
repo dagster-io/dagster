@@ -1,33 +1,15 @@
-import {
-  colorAccentBlue,
-  colorAccentBlueHover,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentPrimary,
-  colorAccentRed,
-  colorAccentRedHover,
-  colorAccentReversed,
-  colorAccentYellow,
-  colorBackgroundDefaultHover,
-  colorBackgroundGray,
-  colorBackgroundGrayHover,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const BOX_SIZE = 32;
 
 const STEP_STATUS_COLORS = {
-  SUCCESS: colorAccentGreen(),
-  SUCCESS_SKIPPED: colorAccentGreenHover(),
-  FAILURE: colorAccentRed(),
-  FAILURE_SKIPPED: colorAccentRedHover(),
-  SKIPPED: colorAccentYellow(),
-  IN_PROGRESS: colorAccentBlue(),
+  SUCCESS: Colors.accentGreen(),
+  SUCCESS_SKIPPED: Colors.accentGreenHover(),
+  FAILURE: Colors.accentRed(),
+  FAILURE_SKIPPED: Colors.accentRedHover(),
+  SKIPPED: Colors.accentYellow(),
+  IN_PROGRESS: Colors.accentBlue(),
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -52,12 +34,12 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-      background: ${colorBackgroundDefaultHover()};
+      background: ${Colors.backgroundDefaultHover()};
       cursor: default;
       ${TopLabelTiltedInner} {
-        background: ${colorBackgroundDefaultHover()};
+        background: ${Colors.backgroundDefaultHover()};
         .tilted {
-          background: ${colorBackgroundLight()};
+          background: ${Colors.backgroundLight()};
         }
       }
       .square {
@@ -69,36 +51,36 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${colorTextLight()}
+        color: ${Colors.textLight()}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${colorAccentBlue()};
+    `background: ${Colors.accentBlue()};
     ${LeftLabel} {
-      color: ${colorAccentReversed()};
+      color: ${Colors.accentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${colorAccentPrimary()};
-      color: ${colorAccentReversed()};
+      background: ${Colors.accentPrimary()};
+      color: ${Colors.accentReversed()};
       .tilted {
-        background: ${colorAccentBlue()};
+        background: ${Colors.accentBlue()};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${colorAccentBlueHover()};
+    `background: ${Colors.accentBlueHover()};
     ${LeftLabel} {
-      color: ${colorAccentReversed()};
+      color: ${Colors.accentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${colorAccentPrimary()};
-      color: ${colorAccentReversed()};
+      background: ${Colors.accentPrimary()};
+      color: ${Colors.accentReversed()};
       .tilted {
-        background: ${colorAccentBlueHover()};
+        background: ${Colors.accentBlueHover()};
       }
     }
   }`}
@@ -122,11 +104,11 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:hover:not(.empty):before {
-      box-shadow: ${colorAccentBlue()} 0 0 0 3px;
+      box-shadow: ${Colors.accentBlue()} 0 0 0 3px;
     }
     &:before {
       content: ' ';
-      background: ${colorAccentGray()};
+      background: ${Colors.accentGray()};
       border-radius: 10px;
       display: inline-block;
       width: 20px;
@@ -135,9 +117,9 @@ export const GridColumn = styled.div<{
     &.loading {
       &:before {
         background: radial-gradient(
-          ${colorBackgroundGray()} 0%,
-          ${colorBackgroundGray()} 45%,
-          ${colorBackgroundGrayHover()} 60%
+          ${Colors.backgroundGray()} 0%,
+          ${Colors.backgroundGray()} 45%,
+          ${Colors.backgroundGrayHover()} 60%
         );
       }
     }
@@ -189,7 +171,7 @@ export const LeftLabel = styled.div<{hovered?: boolean}>`
   text-overflow: ellipsis;
   position: relative;
   background: ${({hovered}) =>
-    flatGradientStack([hovered ? colorBackgroundLight() : 'transparent'])};
+    flatGradientStack([hovered ? Colors.backgroundLight() : 'transparent'])};
 `;
 
 export const TopLabel = styled.div`
@@ -247,7 +229,7 @@ export const GRID_FLOATING_CONTAINER_WIDTH = 330;
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${colorBorderDefault()};
+  border-right: 1px solid ${Colors.borderDefault()};
   padding-bottom: 16px;
   width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;

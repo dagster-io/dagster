@@ -1,10 +1,7 @@
-import {Box, JoinedButtons, MiddleTruncate, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {TimeFromNow} from '../ui/TimeFromNow';
-import {HeaderCell, RowCell} from '../ui/VirtualizedTable';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
@@ -17,6 +14,8 @@ import {
   WorkspaceRepositoryFragment,
 } from './types/WorkspaceContext.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {TimeFromNow} from '../ui/TimeFromNow';
+import {HeaderCell, RowCell} from '../ui/VirtualizedTable';
 
 export type CodeLocationRowType =
   | {
@@ -128,7 +127,7 @@ export const VirtualizedCodeLocationHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Name</HeaderCell>

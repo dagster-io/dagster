@@ -1,9 +1,9 @@
 import {Box, ButtonGroup, Spinner, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {useGroupedEvents} from './groupByPartition';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
@@ -18,7 +18,7 @@ export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setPara
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
+  const activeItems = useMemo(() => new Set([xAxis]), [xAxis]);
 
   if (loading) {
     return (

@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   ErrorBoundary,
   Icon,
   Menu,
@@ -10,40 +11,12 @@ import {
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
-  colorAccentWhite,
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorKeylineDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
-import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
-import {AssetKey} from '../assets/types';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
-import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector} from '../graphql/types';
-import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
-import {useStartTrace} from '../performance';
-import {
-  GraphExplorerOptions,
-  OptionsOverlay,
-  RightInfoPanel,
-  RightInfoPanelContent,
-} from '../pipelines/GraphExplorer';
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Loading} from '../ui/Loading';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {AssetEdges} from './AssetEdges';
 import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
@@ -68,6 +41,28 @@ import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
+import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
+import {AssetKey} from '../assets/types';
+import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {AssetGroupSelector} from '../graphql/types';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useStartTrace} from '../performance';
+import {
+  GraphExplorerOptions,
+  OptionsOverlay,
+  RightInfoPanel,
+  RightInfoPanelContent,
+} from '../pipelines/GraphExplorer';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Loading} from '../ui/Loading';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
@@ -118,6 +113,8 @@ export const AssetGraphExplorer = (props: Props) => {
     );
   }, [visibleRepos]);
 
+  const {explorerPath, onChangeExplorerPath} = props;
+
   const {button, filterBar} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
@@ -138,6 +135,16 @@ export const AssetGraphExplorer = (props: Props) => {
         }),
       [props],
     ),
+    explorerPath: explorerPath.opsQuery,
+    clearExplorerPath: React.useCallback(() => {
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opsQuery: '',
+        },
+        'push',
+      );
+    }, [explorerPath, onChangeExplorerPath]),
   });
 
   return (
@@ -468,7 +475,7 @@ const AssetGraphExplorerWithData = ({
             title="Expand all groups"
             icon={<Icon name="unfold_more" />}
             onClick={() => setExpandedGroups(allGroups)}
-            style={{background: colorBackgroundDefault()}}
+            style={{background: Colors.backgroundDefault()}}
           />
         </Tooltip>
       ) : (
@@ -483,7 +490,7 @@ const AssetGraphExplorerWithData = ({
             title="Collapse all groups"
             icon={<Icon name="unfold_less" />}
             onClick={() => setExpandedGroups([])}
-            style={{background: colorBackgroundDefault()}}
+            style={{background: Colors.backgroundDefault()}}
           />
         </Tooltip>
       )}
@@ -774,13 +781,6 @@ const AssetGraphExplorerWithData = ({
                     popoverPosition="bottom-left"
                   />
                 </GraphQueryInputFlexWrap>
-                <Button
-                  onClick={() => {
-                    onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
-                  }}
-                >
-                  Clear query
-                </Button>
                 <AssetLiveDataRefresh />
                 <LaunchAssetObservationButton
                   preferredJobName={explorerPath.pipelineName}
@@ -865,9 +865,9 @@ interface KeyboardTagProps {
 
 const KeyboardTag = styled.div<KeyboardTagProps>`
   ${(props) => {
-    return props.$withinTooltip ? `color: ${colorAccentWhite()}` : `color: ${colorTextLight()}`;
+    return props.$withinTooltip ? `color: ${Colors.accentWhite()}` : `color: ${Colors.textLight()}`;
   }};
-  background: ${colorBackgroundGray()};
+  background: ${Colors.backgroundGray()};
   border-radius: 4px;
   padding: 2px 4px;
   margin-left: 6px;
@@ -889,10 +889,10 @@ const TopbarWrapper = styled.div`
   left: 0;
   right: 0;
   display: flex;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   gap: 12px;
   align-items: center;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

@@ -1,21 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import {Body2, Box, Tag} from '@dagster-io/ui-components';
-import React, {useContext} from 'react';
+import {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {Timestamp} from '../../app/time/Timestamp';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {LoadingSpinner} from '../../ui/Loading';
-import {AssetFeatureContext} from '../AssetFeatureContext';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
-import {AssetKey} from '../types';
-
 import {
+  AgentUpgradeRequired,
   AssetCheckDetailModal,
   MigrationRequired,
   NeedsUserCodeUpgrade,
-  AgentUpgradeRequired,
   NoChecks,
 } from './AssetCheckDetailModal';
 import {
@@ -25,6 +17,13 @@ import {
 } from './ExecuteChecksButton';
 import {ASSET_CHECK_TABLE_FRAGMENT, VirtualizedAssetCheckTable} from './VirtualizedAssetCheckTable';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {Timestamp} from '../../app/time/Timestamp';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {LoadingSpinner} from '../../ui/Loading';
+import {AssetFeatureContext} from '../AssetFeatureContext';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {AssetKey} from '../types';
 
 export const AssetChecks = ({
   lastMaterializationTimestamp,

@@ -5,10 +5,8 @@ import pendulum
 
 from dagster import (
     AssetKey,
-    DagsterEventType,
     DagsterInstance,
     DagsterRunStatus,
-    EventRecordsFilter,
     _check as check,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -226,14 +224,11 @@ def get_validated_partition_keys(
 
 
 def _get_last_planned_storage_id(instance: DagsterInstance, asset_key: AssetKey):
-    planned_event_records = instance.get_event_records(
-        event_records_filter=EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-            asset_key=asset_key,
-        ),
-        limit=1,
-    )
-    return next(iter(planned_event_records)).storage_id if planned_event_records else 0
+    info = instance.get_latest_planned_materialization_info(asset_key)
+    if not info:
+        return 0
+
+    return info.storage_id
 
 
 def _build_status_cache(

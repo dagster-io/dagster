@@ -1,6 +1,5 @@
 import {waitFor} from '@testing-library/dom';
-import {renderHook, act} from '@testing-library/react-hooks';
-import React from 'react';
+import {act, renderHook} from '@testing-library/react-hooks';
 
 import {useSuggestionFilter} from '../useSuggestionFilter';
 

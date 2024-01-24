@@ -1,15 +1,20 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useMemo} from 'react';
 
+import {OverviewJobsTable} from './OverviewJobsTable';
+import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
+import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -23,17 +28,11 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {OverviewJobsTable} from './OverviewJobsTable';
-import {OverviewTabs} from './OverviewTabs';
-import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
-import {visibleRepoKeys} from './visibleRepoKeys';
-
 export const OverviewJobsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Jobs');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -53,7 +52,7 @@ export const OverviewJobsRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
-  const repoBuckets = React.useMemo(() => {
+  const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
@@ -63,7 +62,7 @@ export const OverviewJobsRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return repoBuckets
       .map(({repoAddress, jobs}) => ({
@@ -79,7 +78,7 @@ export const OverviewJobsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading jobs…</div>
+            <div style={{color: Colors.textLight()}}>Loading jobs…</div>
           </Box>
         </Box>
       );

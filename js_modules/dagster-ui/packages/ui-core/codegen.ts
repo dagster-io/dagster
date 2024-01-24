@@ -18,6 +18,7 @@ const config: CodegenConfig = {
         namingConvention: {
           enumValues: 'keep',
         },
+        useImplementingTypes: true,
       },
       plugins: [
         'typescript',
@@ -34,6 +35,7 @@ const config: CodegenConfig = {
             typeNames: 'keep',
             enumValues: 'keep',
             terminateCircularRelationships: true,
+            useImplementingTypes: true,
           },
         },
       ],
