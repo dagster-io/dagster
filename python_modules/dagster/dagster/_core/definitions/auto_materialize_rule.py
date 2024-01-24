@@ -139,6 +139,15 @@ class RuleEvaluationContext:
         if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
             return self.empty_subset()
         newly_materialized = set()
+
+        # asset has gone from partitioned <> unpartitioned since storage time
+        if (
+            self.partitions_def
+            is not None
+            != self.cursor.materialized_requested_or_discarded_subset.is_partitioned
+        ):
+            return self.empty_subset()
+
         for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
             self.partitions_def,
             dynamic_partitions_store=self.instance_queryer,
