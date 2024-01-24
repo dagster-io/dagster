@@ -56,10 +56,19 @@ class AssetDaemonAssetCursor(NamedTuple):
             asset_graph.get_partitions_def(self.asset_key),
             newly_materialized_requested_or_discarded_asset_partitions,
         )
-        return self._replace(
-            materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset
-            | newly_materialized_requested_or_discarded_subset
-        )
+
+        if (
+            self.materialized_requested_or_discarded_subset.is_partitioned
+            != newly_materialized_requested_or_discarded_subset.is_partitioned
+        ):
+            return self._replace(
+                materialized_requested_or_discarded_subset=newly_materialized_requested_or_discarded_subset
+            )
+        else:
+            return self._replace(
+                materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset
+                | newly_materialized_requested_or_discarded_subset
+            )
 
 
 class AssetDaemonCursor(NamedTuple):
