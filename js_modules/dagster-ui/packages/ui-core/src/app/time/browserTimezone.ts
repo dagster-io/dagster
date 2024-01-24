@@ -1,6 +1,13 @@
 import memoize from 'lodash/memoize';
 
-export const browserTimezone = memoize(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+export const browserTimezone = memoize(() => {
+  const {timeZone} = Intl.DateTimeFormat().resolvedOptions();
+  if (timeZone === 'Etc/Unknown') {
+    return 'UTC';
+  }
+  return timeZone;
+});
+
 export const browserTimezoneAbbreviation = memoize(() => timezoneAbbreviation(browserTimezone()));
 export const timezoneAbbreviation = memoize((timeZone: string) => {
   const dateString = new Date().toLocaleDateString('en-US', {
