@@ -86,3 +86,22 @@ models:
         description: Amount of the order (AUD) paid for by gift card
         tests:
           - not_null
+
+  - name: fail_tests_model
+    columns:
+      - name: id
+        tests:
+          - unique:
+              config:
+                # will always warn
+                warn_if: ">0"
+                error_if: "=-1"
+
+      - name: first_name
+        tests:
+          - accepted_values:
+              values: ["foo", "bar", "baz"]
+              config:
+                # will always error
+                error_if: ">3"
+                warn_if: "=-1"
