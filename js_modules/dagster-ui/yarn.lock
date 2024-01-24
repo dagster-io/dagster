@@ -2378,7 +2378,6 @@ __metadata:
     typescript: "npm:5.3.2"
     uuid: "npm:^9.0.0"
     validator: "npm:^13.7.0"
-    web-vitals: "npm:^2.1.3"
     webpack: "npm:^5.88.1"
     webpack-bundle-analyzer: "npm:^4.7.0"
     webpack-stats-plugin: "npm:^1.1.3"
@@ -2574,7 +2573,6 @@ __metadata:
     chart.js: "npm:^3.4.1"
     chartjs-adapter-date-fns: "npm:^2.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
-    child-process: "npm:^1.0.2"
     codemirror: "npm:^5.65.2"
     color: "npm:^3.0.0"
     cronstrue: "npm:^1.84.0"
@@ -10248,13 +10246,6 @@ __metadata:
   peerDependencies:
     chart.js: ^3.2.0
   checksum: 9c5cce81330aecf9521c8e2aa3141604046ec37277bfaa65a2ab594a166c79bbc57231fc28bb9a4af62b252ae0799326b3199c662ef2979f9161b36c5947a6b4
-  languageName: node
-  linkType: hard
-
-"child-process@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "child-process@npm:1.0.2"
-  checksum: dfbce629d6e660d2beab0e31b6ed049f5c8795539175b8568d4c4d636202b5dbc79282b2253be5610f9612ef459390dde76f172d8ef31d57965a6148d0a5cd1f
   languageName: node
   linkType: hard
 
@@ -23460,13 +23451,6 @@ __metadata:
   version: 3.2.1
   resolution: "web-streams-polyfill@npm:3.2.1"
   checksum: 08fcf97b7883c1511dd3da794f50e9bde75a660884783baaddb2163643c21a94086f394dc4bd20dff0f55c98d98d60c4bea05a5809ef5005bdf835b63ada8900
-  languageName: node
-  linkType: hard
-
-"web-vitals@npm:^2.1.3":
-  version: 2.1.4
-  resolution: "web-vitals@npm:2.1.4"
-  checksum: 8d6fae84d0e4f2ea1d6da40067d8e6fd560df2a06a9f9484dbbd7a25eb5c961b97f66f2043c941866753465e0f00748773f33d3c88d8fd191e901a7207711ff1
   languageName: node
   linkType: hard
 
