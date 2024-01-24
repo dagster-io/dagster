@@ -13,6 +13,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
+import {StatusCase} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
@@ -164,13 +165,7 @@ const GroupNodeAssetStatusCounts = ({
             </Tooltip>
           ) : null}
           {statuses.failed.length ? (
-            <Tooltip
-              content={`${statuses.failed.length} failed asset${ifPlural(
-                statuses.failed.length,
-                '',
-                's',
-              )}`}
-            >
+            <Tooltip content={<FailedStatusTooltip statuses={statuses.failed} />}>
               <Tag icon="dot_filled" intent="danger">
                 {statuses.failed.length}
               </Tag>
@@ -247,6 +242,39 @@ export const useGroupNodeContextMenu = ({
   );
 
   return {menu, dialog};
+};
+
+const FailedStatusTooltip = ({
+  statuses,
+}: {
+  statuses: ReturnType<typeof groupAssetsByStatus<any>>['failed'];
+}) => {
+  const checksFailed = statuses.filter(
+    ({status}) => status.case === StatusCase.CHECKS_FAILED,
+  ).length;
+  const overdue = statuses.filter(({status}) => status.case === StatusCase.OVERDUE).length;
+
+  const failed = statuses.length - checksFailed - overdue;
+
+  return (
+    <>
+      {failed ? (
+        <div>
+          {failed} failed asset{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {checksFailed ? (
+        <div>
+          {checksFailed} failed asset check{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {overdue ? (
+        <div>
+          {overdue} overdue asset{ifPlural(overdue, '', 's')}
+        </div>
+      ) : null}
+    </>
+  );
 };
 
 export const GroupNameTooltipStyle = JSON.stringify({

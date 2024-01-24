@@ -1,5 +1,6 @@
 import {StatusCase, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, tokenForAssetKey} from './Utils';
+import {assertUnreachable} from '../app/Util';
 import {AssetKeyInput} from '../graphql/types';
 
 export function groupAssetsByStatus<
@@ -36,7 +37,8 @@ export function groupAssetsByStatus<
       liveData: assetLiveData,
       expanded: true,
     });
-    switch (status.case) {
+    const statusCase = status.case;
+    switch (statusCase) {
       case StatusCase.LOADING:
         statuses.loading = true;
         break;
@@ -55,7 +57,9 @@ export function groupAssetsByStatus<
       case StatusCase.MATERIALIZING:
         statuses.inprogress.push({asset, status});
         break;
-      case StatusCase.LATE_OR_FAILED:
+      case StatusCase.FAILED_MATERIALIZATION:
+      case StatusCase.OVERDUE:
+      case StatusCase.CHECKS_FAILED:
         statuses.failed.push({asset, status});
         break;
       case StatusCase.NEVER_MATERIALIZED:
@@ -73,6 +77,8 @@ export function groupAssetsByStatus<
       case StatusCase.PARTITIONS_MATERIALIZED:
         statuses.successful.push({asset, status});
         break;
+      default:
+        assertUnreachable(statusCase);
     }
   });
   return statuses;
