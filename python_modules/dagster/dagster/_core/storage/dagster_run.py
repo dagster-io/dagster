@@ -454,6 +454,7 @@ class RunsFilter(
             ("updated_before", Optional[datetime]),
             ("created_after", Optional[datetime]),
             ("created_before", Optional[datetime]),
+            ("asset_keys", Optional[List[AssetKey]]),
         ],
     )
 ):
@@ -489,6 +490,7 @@ class RunsFilter(
         updated_before: Optional[datetime] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
+        asset_keys: Optional[List[AssetKey]] = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -503,6 +505,7 @@ class RunsFilter(
             updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
             created_after=check.opt_inst_param(created_after, "created_after", datetime),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
+            asset_keys=check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey),
         )
 
     @staticmethod
