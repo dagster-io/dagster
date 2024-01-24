@@ -139,8 +139,11 @@ class AssetSubset(NamedTuple):
             return self._replace(value=value)
 
     def _oper(self, other: "AssetSubset", oper: Callable) -> "AssetSubset":
-        value = oper(self.value, other.value)
-        return self._replace(value=value)
+        if self.is_partitioned == other.is_partitioned:
+            value = oper(self.value, other.value)
+            return self._replace(value=value)
+        else:
+            return self
 
     def __sub__(self, other: "AssetSubset") -> "AssetSubset":
         if not self.is_partitioned:
