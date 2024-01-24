@@ -402,12 +402,12 @@ class AssetSelection(ABC, BaseModel, frozen=True):
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return AssetSelection.keys(*self.resolve(asset_graph))
 
-    def replace(self, update: dict):
+    def replace(self, **kwargs):
         if pydantic.__version__ >= "2":
             func = getattr(BaseModel, "model_copy")
         else:
             func = getattr(BaseModel, "copy")
-        return func(self, update=update)
+        return func(self, update=kwargs)
 
 
 @whitelist_for_serdes
@@ -494,12 +494,9 @@ class AndAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            {
-                "operands": [
-                    operand.to_serializable_asset_selection(asset_graph)
-                    for operand in self.operands
-                ]
-            }
+            operands=[
+                operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
+            ]
         )
 
 
@@ -524,12 +521,9 @@ class OrAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            {
-                "operands": [
-                    operand.to_serializable_asset_selection(asset_graph)
-                    for operand in self.operands
-                ]
-            }
+            operands=[
+                operand.to_serializable_asset_selection(asset_graph) for operand in self.operands
+            ]
         )
 
 
@@ -552,10 +546,8 @@ class SubtractAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(
-            {
-                "left": self.left.to_serializable_asset_selection(asset_graph),
-                "right": self.right.to_serializable_asset_selection(asset_graph),
-            }
+            left=self.left.to_serializable_asset_selection(asset_graph),
+            right=self.right.to_serializable_asset_selection(asset_graph),
         )
 
 
@@ -572,7 +564,7 @@ class SinksAssetSelection(
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -591,7 +583,7 @@ class RequiredNeighborsAssetSelection(
         return output
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -607,7 +599,7 @@ class RootsAssetSelection(
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -640,7 +632,7 @@ class DownstreamAssetSelection(
         )
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -763,7 +755,7 @@ class UpstreamAssetSelection(
         return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -782,4 +774,4 @@ class ParentSourcesAssetSelection(
         return {key for key in all_upstream if key in asset_graph.source_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
-        return self.replace({"child": self.child.to_serializable_asset_selection(asset_graph)})
+        return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
