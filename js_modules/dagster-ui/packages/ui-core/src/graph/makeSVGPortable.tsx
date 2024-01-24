@@ -129,13 +129,18 @@ export async function makeSVGPortable(svg: SVGElement) {
   const cssSources = Array.from<HTMLStyleElement | HTMLLinkElement>(
     document.querySelectorAll('style,link[rel=stylesheet]'),
   );
-  const fontFaces = cssSources.flatMap((el) =>
-    el.sheet
-      ? Array.from(el.sheet.cssRules)
-          .filter((r) => r instanceof CSSFontFaceRule)
-          .map((r) => r.cssText)
-      : [],
-  );
+  const fontFaces = cssSources.flatMap((el) => {
+    try {
+      return el.sheet
+        ? Array.from(el.sheet.cssRules)
+            .filter((r) => r instanceof CSSFontFaceRule)
+            .map((r) => r.cssText)
+        : [];
+    } catch (err) {
+      // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
+      return [];
+    }
+  });
 
   const styleEl = document.createElement('style');
   styleEl.textContent = fontFaces.join('\n\n');
