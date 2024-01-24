@@ -375,10 +375,18 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   );
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
+  if (!asset) {
+    return {
+      definitionQueryResult: result,
+      definition: null,
+      lastMaterialization: null,
+    };
+  }
+
   return {
     definitionQueryResult: result,
-    definition: asset?.definition || null,
-    lastMaterialization: asset?.assetMaterializations[0],
+    definition: asset.definition,
+    lastMaterialization: asset.assetMaterializations[0],
   };
 };
 
