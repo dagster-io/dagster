@@ -32,6 +32,7 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
+    "@hpcc-js/wasm": "^2.15.3",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
     "@vx/shape": "^0.0.192",

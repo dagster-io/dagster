@@ -1,81 +1,34 @@
-import * as dagre from 'dagre';
+import {Graphviz} from '@hpcc-js/wasm/graphviz';
 
-import {IBounds, IPoint} from '../graph/common';
+import {IBounds} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, groupIdForNode, isGroupId} from './Utils';
+import {GraphData, GraphNode, groupIdForNode, isGroupId} from './Utils';
+import {
+  LayoutAssetGraphOptions,
+  AssetGraphLayout,
+  GroupLayout,
+  AssetLayout,
+  AssetLayoutEdge,
+} from './layout';
 
-export interface AssetLayout {
-  id: GraphId;
-  bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
-}
-
-export interface GroupLayout {
-  id: GraphId;
-  groupName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
-  bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
-  expanded: boolean;
-}
-export type AssetLayoutEdge = {
-  from: IPoint;
-  fromId: string;
-  to: IPoint;
-  toId: string;
-};
-
-export type AssetGraphLayout = {
-  width: number;
-  height: number;
-  edges: AssetLayoutEdge[];
-  nodes: {[id: string]: AssetLayout};
-  groups: {[name: string]: GroupLayout};
-};
 const MARGIN = 100;
 
-export type LayoutAssetGraphOptions = {
-  horizontalDAGs: boolean;
-  graphviz: boolean;
-};
+let graphviz: any;
 
-export const layoutAssetGraph = (
+export const layoutAssetGraphGraphviz = async (
   graphData: GraphData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   opts: LayoutAssetGraphOptions,
-): AssetGraphLayout => {
-  const g = new dagre.graphlib.Graph({compound: true});
+): Promise<AssetGraphLayout> => {
+  graphviz = graphviz || (await Graphviz.load());
 
-  const ranker = 'tight-tree';
-
-  g.setGraph(
-    opts.horizontalDAGs
-      ? {
-          rankdir: 'LR',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: -10,
-          edgesep: 90,
-          ranksep: 60,
-          ranker,
-        }
-      : {
-          rankdir: 'TB',
-          marginx: MARGIN,
-          marginy: MARGIN,
-          nodesep: 40,
-          edgesep: 10,
-          ranksep: 10,
-          ranker,
-        },
-  );
-  g.setDefaultEdgeLabel(() => ({}));
-
-  // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
   const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
   const expandedGroups = graphData.expandedGroups || [];
 
   // Identify all the groups
   const groups: {[id: string]: GroupLayout} = {};
+
   for (const node of renderedNodes) {
     if (node.definition.groupName) {
       const id = groupIdForNode(node);
@@ -89,26 +42,44 @@ export const layoutAssetGraph = (
       };
     }
   }
-
-  // Add all the group boxes to the graph
   const groupsPresent = Object.keys(groups).length > 1;
+
+  // Add all the nodes inside expanded groups to the graph
+  let dotIdMax = 0;
+  const dotSubgraphs: {[name: string]: string} = {};
+  const dotIds: {[dagsterId: string]: string} = {};
+  const dagsterIds: {[dotIds: string]: string} = {};
+  const dotId = (dagsterId: string): string => {
+    if (dotIds[dagsterId]) {
+      return dotIds[dagsterId]!;
+    }
+    const id = `n${dotIdMax++}`;
+    dotIds[dagsterId] = id;
+    dagsterIds[id] = dagsterId;
+    return id;
+  };
+  let dotRoot = '';
+
+  // Add all the collapsed group boxes to the graph
   if (groupsPresent) {
     Object.keys(groups).forEach((groupId) => {
-      if (expandedGroups.includes(groupId)) {
-        g.setNode(groupId, {}); // sized based on it's children
-      } else {
-        g.setNode(groupId, {width: 270, height: 110});
+      if (!expandedGroups.includes(groupId)) {
+        dotRoot += `${dotId(groupId)} [width=2.7 height=1.2];\n`;
       }
     });
   }
 
-  // Add all the nodes inside expanded groups to the graph
   renderedNodes.forEach((node) => {
-    if (!groupsPresent || expandedGroups.includes(groupIdForNode(node))) {
-      g.setNode(node.id, getAssetNodeDimensions(node.definition));
-      if (groupsPresent && node.definition.groupName) {
-        g.setParent(node.id, groupIdForNode(node));
-      }
+    const groupId = groupIdForNode(node);
+    const d = getAssetNodeDimensions(node.definition);
+
+    if (expandedGroups.includes(groupId)) {
+      dotSubgraphs[groupId] = dotSubgraphs[groupId] || '';
+      dotSubgraphs[groupId] += `${dotId(node.id)} [width=${d.width / 100} height=${
+        d.height / 100
+      }];`;
+    } else if (!groupsPresent) {
+      dotRoot += `${dotId(node.id)} [width=${d.width / 100} height=${d.height / 100}];`;
     }
   });
 
@@ -119,6 +90,8 @@ export const layoutAssetGraph = (
 
   // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
   // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
+  const renderedEdges: [string, string][] = [];
+
   Object.entries(graphData.downstream).forEach(([upstreamId, graphDataDownstream]) => {
     const downstreamIds = Object.keys(graphDataDownstream);
     downstreamIds.forEach((downstreamId) => {
@@ -143,7 +116,8 @@ export const layoutAssetGraph = (
         return;
       }
 
-      g.setEdge({v, w}, {weight: 1});
+      dotRoot += `${dotId(v)} -> ${dotId(w)};\n`;
+      renderedEdges.push([v, w]);
 
       if (!shouldRender(graphData.nodes[downstreamId])) {
         linksToAssetsOutsideGraphedSet[downstreamId] = true;
@@ -155,28 +129,54 @@ export const layoutAssetGraph = (
 
   // Add all the link nodes to the graph
   Object.keys(linksToAssetsOutsideGraphedSet).forEach((id) => {
-    const path = JSON.parse(id);
-    const label = path[path.length - 1] || '';
-    g.setNode(id, getAssetLinkDimensions(label, opts));
+    // const path = JSON.parse(id);
+    // const label = path[path.length - 1] || '';
+    dotRoot += `${dotId(id)};\n`;
   });
 
-  dagre.layout(g);
+  const graphdot = `digraph G {
+    rankdir="LR";
+    ranksep=1.5;
+    nodesep=0.3;
+    node [shape=box fixedsize=true];
+    edge [style="invis"]
+    ${dotRoot}
 
+    ${Object.entries(dotSubgraphs)
+      .map(
+        ([k, text]) => `subgraph cluster_${dotId(k)} {
+          label="a\\na\\na";
+          margin=20;
+         ${text}
+      }`,
+      )
+      .join('\n\n')}
+  }`;
+
+  console.log(graphdot);
+  const graphjson = graphviz.dot(graphdot, 'json0' as any);
+  const graphobjects = Object.fromEntries(
+    JSON.parse(graphjson).objects.map((o: any) => [
+      o.name,
+      o.name.startsWith('cluster_') ? o.bb : `${o.pos},${o.width},${o.height}`,
+    ]),
+  );
+
+  console.log(graphobjects);
   let maxWidth = 1;
   let maxHeight = 1;
 
   const nodes: {[id: string]: AssetLayout} = {};
-
-  g.nodes().forEach((id) => {
-    const dagreNode = g.node(id);
-    if (!dagreNode?.x || !dagreNode?.width) {
-      return;
-    }
+  Object.entries(graphobjects).forEach(([dotid, pos]) => {
+    const id = dagsterIds[dotid.replace('cluster_', '')]!;
+    const [x, y, _w, _h] = pos.split(',').map(Number);
+    const w = dotid.startsWith('cluster') ? _w : _w * 100;
+    const h = dotid.startsWith('cluster') ? _h : _h * 100;
     const bounds = {
-      x: dagreNode.x - dagreNode.width / 2,
-      y: dagreNode.y - dagreNode.height / 2,
-      width: dagreNode.width,
-      height: dagreNode.height,
+      x,
+      y,
+      width: w,
+      height: h,
     };
     if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
@@ -185,8 +185,8 @@ export const layoutAssetGraph = (
       group.bounds = bounds;
     }
 
-    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
-    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
+    maxWidth = Math.max(maxWidth, x);
+    maxHeight = Math.max(maxHeight, y);
   });
 
   // Apply bounds to the groups based on the nodes inside them
@@ -211,31 +211,19 @@ export const layoutAssetGraph = (
 
   const edges: AssetLayoutEdge[] = [];
 
-  g.edges().forEach((e) => {
-    const v = g.node(e.v);
-    const w = g.node(e.w);
+  renderedEdges.forEach(([vid, wid]) => {
+    const v = nodes[vid]?.bounds || groups[vid]?.bounds;
+    const w = nodes[wid]?.bounds || groups[vid]?.bounds;
     if (!v || !w) {
       return;
     }
-    const vXInset = !!linksToAssetsOutsideGraphedSet[e.v] ? 16 : 24;
-    const wXInset = !!linksToAssetsOutsideGraphedSet[e.w] ? 16 : 24;
-
     // Ignore the coordinates from dagre and use the top left + bottom left of the
-    edges.push(
-      opts.horizontalDAGs
-        ? {
-            from: {x: v.x + v.width / 2, y: v.y},
-            fromId: e.v,
-            to: {x: w.x - w.width / 2 - 5, y: w.y},
-            toId: e.w,
-          }
-        : {
-            from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
-            fromId: e.v,
-            to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
-            toId: e.w,
-          },
-    );
+    edges.push({
+      from: {x: v.x + w.width, y: v.y + v.height / 2},
+      fromId: vid,
+      to: {x: w.x, y: w.y + v.height / 2},
+      toId: wid,
+    });
   });
 
   return {

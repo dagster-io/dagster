@@ -12,13 +12,13 @@ export default class MockWorker {
   onmessage = (_: any) => {};
 
   // mock expects data: { } instead of e: { data: { } }
-  postMessage(data: WorkerMessageData) {
+  async postMessage(data: WorkerMessageData) {
     if (data.type === 'layoutOpGraph') {
       const {ops, opts} = data;
       this.onmessage({data: layoutOpGraph(ops, opts)});
     } else if (data.type === 'layoutAssetGraph') {
       const {graphData, opts} = data;
-      this.onmessage({data: layoutAssetGraph(graphData, opts)});
+      this.onmessage({data: await layoutAssetGraph(graphData, opts)});
     }
   }
 }

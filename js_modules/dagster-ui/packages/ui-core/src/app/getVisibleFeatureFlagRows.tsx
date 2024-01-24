@@ -5,6 +5,10 @@ import {FeatureFlag} from './Flags';
  */
 export const getVisibleFeatureFlagRows = () => [
   {
+    key: 'Experimental DAG layout algorithm',
+    flagType: FeatureFlag.flagGraphvizRendering,
+  },
+  {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
   },

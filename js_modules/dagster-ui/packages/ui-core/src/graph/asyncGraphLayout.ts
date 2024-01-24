@@ -11,7 +11,7 @@ import {ILayoutOp, layoutOpGraph, LayoutOpGraphOptions, OpGraphLayout} from './l
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
 // If you're working on the layout logic, set to false so hot-reloading re-computes the layout
-const CACHING_ENABLED = true;
+const CACHING_ENABLED = false;
 
 // Op Graph
 
@@ -185,10 +185,13 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
     [expandedGroups, _graphData],
   );
 
-  const opts = React.useMemo(() => ({horizontalDAGs: true}), []);
+  const opts = React.useMemo(
+    () => ({horizontalDAGs: true, graphviz: flags.flagGraphvizRendering}),
+    [flags.flagGraphvizRendering],
+  );
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
-  const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
+  const runAsync = flags.flagGraphvizRendering || nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   React.useEffect(() => {
     async function runAsyncLayout() {
