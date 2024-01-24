@@ -27,11 +27,10 @@ interface Props {
   onToggleTagPin?: (key: string) => void;
 }
 
-export const RunTags = memo((props: Props) => {
-  const {tags, onAddTag, onToggleTagPin, mode} = props;
+export const useCopyAction = () => {
   const copy = useCopyToClipboard();
 
-  const copyAction = useMemo(
+  return useMemo(
     () => ({
       label: 'Copy tag',
       onClick: async (tag: TagType) => {
@@ -41,6 +40,11 @@ export const RunTags = memo((props: Props) => {
     }),
     [copy],
   );
+};
+
+export const RunTags = memo((props: Props) => {
+  const {tags, onAddTag, onToggleTagPin, mode} = props;
+  const copyAction = useCopyAction();
 
   const addToFilterAction = useMemo(
     () =>
