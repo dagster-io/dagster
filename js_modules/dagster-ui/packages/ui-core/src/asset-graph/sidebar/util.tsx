@@ -36,7 +36,9 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
         return 'missing' as const;
       case StatusCase.MATERIALIZING:
         return 'inprogress' as const;
-      case StatusCase.LATE_OR_FAILED:
+      case StatusCase.FAILED_MATERIALIZATION:
+      case StatusCase.OVERDUE:
+      case StatusCase.CHECKS_FAILED:
         return 'failed' as const;
       case StatusCase.NEVER_MATERIALIZED:
         return 'missing' as const;

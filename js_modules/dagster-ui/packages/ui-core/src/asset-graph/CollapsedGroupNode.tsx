@@ -13,6 +13,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
+import {StatusCase} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
@@ -138,11 +139,11 @@ const GroupNodeAssetStatusCounts = ({
           <>
             {statuses.successful.length ? (
               <Tooltip
-                content={`${statuses.successful.length} asset${ifPlural(
+                content={`${statuses.successful.length} materialized asset${ifPlural(
                   statuses.successful.length,
                   '',
                   's',
-                )} are up to date`}
+                )}`}
               >
                 <Tag icon="dot_filled" intent="success">
                   {statuses.successful.length}
@@ -154,9 +155,9 @@ const GroupNodeAssetStatusCounts = ({
             <Tooltip
               content={`${statuses.missing.length} asset${ifPlural(
                 statuses.missing.length,
-                '',
-                's',
-              )} are missing or have changed`}
+                ' has',
+                's have',
+              )} never been materialized`}
             >
               <Tag icon="dot_filled" intent="warning">
                 {statuses.missing.length}
@@ -164,13 +165,7 @@ const GroupNodeAssetStatusCounts = ({
             </Tooltip>
           ) : null}
           {statuses.failed.length ? (
-            <Tooltip
-              content={`${statuses.failed.length} asset${ifPlural(
-                statuses.failed.length,
-                '',
-                's',
-              )} have failed or are overdue`}
-            >
+            <Tooltip content={<FailedStatusTooltip statuses={statuses.failed} />}>
               <Tag icon="dot_filled" intent="danger">
                 {statuses.failed.length}
               </Tag>
@@ -180,9 +175,9 @@ const GroupNodeAssetStatusCounts = ({
             <Tooltip
               content={`${statuses.inprogress.length} asset${ifPlural(
                 statuses.inprogress.length,
-                '',
-                's',
-              )} are executing`}
+                ' is',
+                's are',
+              )} executing`}
             >
               <Tag icon="spinner" intent="primary">
                 {statuses.inprogress.length}
@@ -247,6 +242,39 @@ export const useGroupNodeContextMenu = ({
   );
 
   return {menu, dialog};
+};
+
+const FailedStatusTooltip = ({
+  statuses,
+}: {
+  statuses: ReturnType<typeof groupAssetsByStatus<any>>['failed'];
+}) => {
+  const checksFailed = statuses.filter(
+    ({status}) => status.case === StatusCase.CHECKS_FAILED,
+  ).length;
+  const overdue = statuses.filter(({status}) => status.case === StatusCase.OVERDUE).length;
+
+  const failed = statuses.length - checksFailed - overdue;
+
+  return (
+    <>
+      {failed ? (
+        <div>
+          {failed} failed asset{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {checksFailed ? (
+        <div>
+          {checksFailed} failed asset check{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {overdue ? (
+        <div>
+          {overdue} overdue asset{ifPlural(overdue, '', 's')}
+        </div>
+      ) : null}
+    </>
+  );
 };
 
 export const GroupNameTooltipStyle = JSON.stringify({
