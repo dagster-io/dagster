@@ -143,7 +143,7 @@ class RuleEvaluationContext:
         # asset has gone from partitioned <> unpartitioned since storage time
         if (
             self.partitions_def
-            is None
+            is not None
             != self.cursor.materialized_requested_or_discarded_subset.is_partitioned
         ):
             return self.empty_subset()
