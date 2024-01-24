@@ -17,6 +17,7 @@ export type SidebarOpFragment_CompositeSolidDefinition_ = {
             id: string;
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -35,7 +36,6 @@ export type SidebarOpFragment_CompositeSolidDefinition_ = {
                 solid: {__typename: 'Solid'; name: string};
               };
             }>;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -95,6 +95,7 @@ export type SidebarOpFragment_CompositeSolidDefinition_ = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -650,7 +651,6 @@ export type SidebarOpFragment_CompositeSolidDefinition_ = {
                     >;
                   };
             } | null;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -791,6 +791,7 @@ export type SidebarOpFragment_Graph_ = {
             id: string;
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -809,7 +810,6 @@ export type SidebarOpFragment_Graph_ = {
                 solid: {__typename: 'Solid'; name: string};
               };
             }>;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -869,6 +869,7 @@ export type SidebarOpFragment_Graph_ = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -1424,7 +1425,6 @@ export type SidebarOpFragment_Graph_ = {
                     >;
                   };
             } | null;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -1565,6 +1565,7 @@ export type SidebarOpFragment_Job_ = {
             id: string;
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -1583,7 +1584,6 @@ export type SidebarOpFragment_Job_ = {
                 solid: {__typename: 'Solid'; name: string};
               };
             }>;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -1643,6 +1643,7 @@ export type SidebarOpFragment_Job_ = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -2198,7 +2199,6 @@ export type SidebarOpFragment_Job_ = {
                     >;
                   };
             } | null;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -2339,6 +2339,7 @@ export type SidebarOpFragment_Pipeline_ = {
             id: string;
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -2357,7 +2358,6 @@ export type SidebarOpFragment_Pipeline_ = {
                 solid: {__typename: 'Solid'; name: string};
               };
             }>;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -2417,6 +2417,7 @@ export type SidebarOpFragment_Pipeline_ = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -2972,7 +2973,6 @@ export type SidebarOpFragment_Pipeline_ = {
                     >;
                   };
             } | null;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -3113,6 +3113,7 @@ export type SidebarOpFragment_PipelineSnapshot_ = {
             id: string;
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             inputMappings: Array<{
               __typename: 'InputMapping';
               definition: {__typename: 'InputDefinition'; name: string};
@@ -3131,7 +3132,6 @@ export type SidebarOpFragment_PipelineSnapshot_ = {
                 solid: {__typename: 'Solid'; name: string};
               };
             }>;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -3191,6 +3191,7 @@ export type SidebarOpFragment_PipelineSnapshot_ = {
             __typename: 'SolidDefinition';
             name: string;
             description: string | null;
+            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
             configField: {
               __typename: 'ConfigTypeField';
@@ -3746,7 +3747,6 @@ export type SidebarOpFragment_PipelineSnapshot_ = {
                     >;
                   };
             } | null;
-            metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
             assetNodes: Array<{
               __typename: 'AssetNode';
               id: string;
@@ -3903,6 +3903,11 @@ export type SidebarPipelineOpQuery = {
                   id: string;
                   name: string;
                   description: string | null;
+                  metadata: Array<{
+                    __typename: 'MetadataItemDefinition';
+                    key: string;
+                    value: string;
+                  }>;
                   inputMappings: Array<{
                     __typename: 'InputMapping';
                     definition: {__typename: 'InputDefinition'; name: string};
@@ -3920,11 +3925,6 @@ export type SidebarPipelineOpQuery = {
                       definition: {__typename: 'OutputDefinition'; name: string};
                       solid: {__typename: 'Solid'; name: string};
                     };
-                  }>;
-                  metadata: Array<{
-                    __typename: 'MetadataItemDefinition';
-                    key: string;
-                    value: string;
                   }>;
                   assetNodes: Array<{
                     __typename: 'AssetNode';
@@ -3985,6 +3985,11 @@ export type SidebarPipelineOpQuery = {
                   __typename: 'SolidDefinition';
                   name: string;
                   description: string | null;
+                  metadata: Array<{
+                    __typename: 'MetadataItemDefinition';
+                    key: string;
+                    value: string;
+                  }>;
                   requiredResources: Array<{
                     __typename: 'ResourceRequirement';
                     resourceKey: string;
@@ -4543,11 +4548,6 @@ export type SidebarPipelineOpQuery = {
                           >;
                         };
                   } | null;
-                  metadata: Array<{
-                    __typename: 'MetadataItemDefinition';
-                    key: string;
-                    value: string;
-                  }>;
                   assetNodes: Array<{
                     __typename: 'AssetNode';
                     id: string;
@@ -4699,6 +4699,11 @@ export type SidebarGraphOpQuery = {
                   id: string;
                   name: string;
                   description: string | null;
+                  metadata: Array<{
+                    __typename: 'MetadataItemDefinition';
+                    key: string;
+                    value: string;
+                  }>;
                   inputMappings: Array<{
                     __typename: 'InputMapping';
                     definition: {__typename: 'InputDefinition'; name: string};
@@ -4716,11 +4721,6 @@ export type SidebarGraphOpQuery = {
                       definition: {__typename: 'OutputDefinition'; name: string};
                       solid: {__typename: 'Solid'; name: string};
                     };
-                  }>;
-                  metadata: Array<{
-                    __typename: 'MetadataItemDefinition';
-                    key: string;
-                    value: string;
                   }>;
                   assetNodes: Array<{
                     __typename: 'AssetNode';
@@ -4781,6 +4781,11 @@ export type SidebarGraphOpQuery = {
                   __typename: 'SolidDefinition';
                   name: string;
                   description: string | null;
+                  metadata: Array<{
+                    __typename: 'MetadataItemDefinition';
+                    key: string;
+                    value: string;
+                  }>;
                   requiredResources: Array<{
                     __typename: 'ResourceRequirement';
                     resourceKey: string;
@@ -5339,11 +5344,6 @@ export type SidebarGraphOpQuery = {
                           >;
                         };
                   } | null;
-                  metadata: Array<{
-                    __typename: 'MetadataItemDefinition';
-                    key: string;
-                    value: string;
-                  }>;
                   assetNodes: Array<{
                     __typename: 'AssetNode';
                     id: string;

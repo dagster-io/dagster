@@ -5,6 +5,7 @@ import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';
 import {SidebarOpInvocationFragment} from './types/SidebarOpInvocation.types';
 import {breakOnUnderscores} from '../app/Util';
+import {CodeLink} from '../code-links/CodeLink';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 
@@ -18,10 +19,29 @@ export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
   const showInputs = solid.inputs.some((o) => o.dependsOn.length);
   const showOutputs = solid.outputs.some((o) => o.dependedBy.length);
 
+  const codeLinkMetadata = solid.definition.metadata.find((m) => m.key === '__code_origin')?.value;
+  let codeLink = null;
+  if (codeLinkMetadata) {
+    const [codeLinkPathToModule, codeLinkPathInModule, codeLinkLineNumber] =
+      codeLinkMetadata.split(':');
+    if (codeLinkPathToModule && codeLinkPathInModule && codeLinkLineNumber) {
+      codeLink = (
+        <CodeLink
+          file={codeLinkPathToModule + codeLinkPathInModule}
+          lineNumber={parseInt(codeLinkLineNumber)}
+        />
+      );
+    }
+  }
+
   return (
     <div>
       <SidebarSection title="Invocation">
         <Box padding={{vertical: 16, horizontal: 24}}>
+          <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
+            <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
+            {codeLink}
+          </Box>
           <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
           {showInputs || showOutputs ? (
             <DependencyTable>
@@ -112,6 +132,12 @@ export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
         solid {
           name
         }
+      }
+    }
+    definition {
+      metadata {
+        key
+        value
       }
     }
   }

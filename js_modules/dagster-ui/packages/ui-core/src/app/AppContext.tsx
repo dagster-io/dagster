@@ -7,6 +7,7 @@ export type AppContextValue = {
   basePath: string;
   rootServerURI: string;
   telemetryEnabled: boolean;
+  codeLinksEnabled: boolean;
   statusPolling?: Set<DeploymentStatusType>;
 };
 
@@ -14,4 +15,5 @@ export const AppContext = createContext<AppContextValue>({
   basePath: '',
   rootServerURI: '',
   telemetryEnabled: false,
+  codeLinksEnabled: false,
 });

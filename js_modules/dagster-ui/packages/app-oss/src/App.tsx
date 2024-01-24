@@ -13,7 +13,8 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled, liveDataPollRate} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, liveDataPollRate, codeLinksEnabled} =
+  extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
@@ -29,6 +30,7 @@ const config = {
   basePath: pathPrefix,
   origin: process.env.NEXT_PUBLIC_BACKEND_ORIGIN || document.location.origin,
   telemetryEnabled,
+  codeLinksEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
 };
 
