@@ -275,7 +275,12 @@ class SqlRunStorage(RunStorage):
             query = self._apply_tags_table_filters(query, filters.tags)
 
         if filters.asset_keys:
-            query = self._apply_asset_filter(query, filters.asset_keys)
+            query = self._apply_asset_filter(
+                query,
+                asset_keys=filters.asset_keys,
+                created_before=filters.created_before,
+                updated_after=filters.updated_after,
+            )
 
         return query
 
