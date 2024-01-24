@@ -11,8 +11,8 @@ from dagster._core.storage.migration.utils import has_table
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
-revision = '49c5113727e3'
-down_revision = '46b412388816'
+revision = "49c5113727e3"
+down_revision = "46b412388816"
 branch_labels = None
 depends_on = None
 

@@ -262,7 +262,8 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(update_statement)
 
         # asset runs insertion
-        self._insert_asset_run(event, event_id)
+        if event.dagster_event.is_asset_materialization_planned:
+            self._insert_asset_run(event, event_id)
 
     def _get_asset_entry_values(
         self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
