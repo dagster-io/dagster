@@ -527,15 +527,17 @@ def is_generic_test_on_attached_node_from_dbt_resource_props(
 
 
 def default_asset_check_fn(
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
     unique_id: str,
-    dagster_dbt_translator: "DagsterDbtTranslator",
-    dbt_resource_props: Mapping[str, Any],
-    dbt_nodes: Mapping[str, Any],
-    parent_ids: List[str],
+    test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
+    test_resource_props = manifest["nodes"][test_unique_id]
+    parent_ids = manifest["parent_map"].get(test_unique_id, [])
+
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
-        unique_id, dbt_resource_props
+        unique_id, test_resource_props
     )
 
     if not all(
@@ -547,15 +549,15 @@ def default_asset_check_fn(
         return None
 
     additional_deps = [
-        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
+        dagster_dbt_translator.get_asset_key(manifest["nodes"][parent_id])
         for parent_id in parent_ids
         if parent_id != unique_id
     ]
 
     return AssetCheckSpec(
-        name=dbt_resource_props["name"],
+        name=test_resource_props["name"],
         asset=asset_key,
-        description=dbt_resource_props["description"],
+        description=test_resource_props["description"],
         additional_deps=additional_deps,
     )
 
@@ -727,17 +729,9 @@ def get_asset_deps(
             ]
 
             for test_unique_id in test_unique_ids:
-                test_resource_props = manifest["nodes"][test_unique_id]
-
                 check_spec = default_asset_check_fn(
-                    asset_key,
-                    unique_id,
-                    dagster_dbt_translator,
-                    test_resource_props,
-                    dbt_nodes,
-                    manifest["parent_map"].get(test_unique_id, []),
+                    manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
                 )
-
                 if check_spec:
                     check_specs.append(check_spec)
 

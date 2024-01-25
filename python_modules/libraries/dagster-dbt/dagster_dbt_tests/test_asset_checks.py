@@ -168,6 +168,16 @@ def test_with_asset_checks() -> None:
                 asset=AssetKey(["stg_payments"]),
                 description="",
             ),
+            "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
+                name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
+                asset=AssetKey(["fail_tests_model"]),
+                description="",
+            ),
+            "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
+                name="unique_fail_tests_model_id",
+                asset=AssetKey(["fail_tests_model"]),
+                description="",
+            ),
         }
 
         # dbt singular tests are not modeled as Dagster asset checks
