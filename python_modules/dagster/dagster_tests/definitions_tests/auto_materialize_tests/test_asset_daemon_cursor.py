@@ -2,8 +2,9 @@ import datetime
 import json
 
 from dagster import AssetKey, StaticPartitionsDefinition, asset
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_subset import AssetSubset
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
@@ -48,6 +49,54 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
     assert serdes_c2.evaluation_id == 1
 
     assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
+
+
+def test_asset_cursor_partitioned_to_unpartitioned():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(name="asset1", partitions_def=partitions_def)
+    def asset1_partitioned():
+        pass
+
+    @asset(name="asset1")
+    def asset1_unpartitioned():
+        pass
+
+    asset_key = AssetKey(["asset1"])
+
+    unpartitioned_subset = AssetSubset(asset_key=AssetKey(["asset1"]), value=True)
+
+    partitioned_subset = AssetSubset.empty(asset_key, partitions_def)
+
+    cursor = AssetDaemonAssetCursor(
+        asset_key=AssetKey(["asset1"]),
+        latest_storage_id=1,
+        latest_evaluation_timestamp=None,
+        latest_evaluation=None,
+        materialized_requested_or_discarded_subset=unpartitioned_subset,
+    )
+
+    # unpartitioned to partitioned
+
+    c2 = cursor.with_updates(
+        AssetGraph.from_assets([asset1_partitioned]),
+        newly_materialized_subset=partitioned_subset,
+        requested_asset_partitions=set(),
+        discarded_asset_partitions=set(),
+    )
+
+    assert c2.materialized_requested_or_discarded_subset == partitioned_subset
+
+    # partitioned back to unpartitioned
+
+    c3 = c2.with_updates(
+        AssetGraph.from_assets([asset1_unpartitioned]),
+        newly_materialized_subset=unpartitioned_subset,
+        requested_asset_partitions=set(),
+        discarded_asset_partitions=set(),
+    )
+
+    assert c3.materialized_requested_or_discarded_subset == unpartitioned_subset
 
 
 def test_asset_reconciliation_cursor_auto_observe_backcompat():
