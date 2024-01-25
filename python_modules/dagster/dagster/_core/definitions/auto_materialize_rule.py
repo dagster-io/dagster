@@ -141,11 +141,10 @@ class RuleEvaluationContext:
         newly_materialized = set()
 
         # asset has gone from partitioned <> unpartitioned since storage time
+        currently_partitioned = self.partitions_def is not None
         if (
-            self.partitions_def
-            is not None
-            != self.cursor.materialized_requested_or_discarded_subset.is_partitioned
-        ):
+            currently_partitioned
+        ) != self.cursor.materialized_requested_or_discarded_subset.is_partitioned:
             return self.empty_subset()
 
         for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
