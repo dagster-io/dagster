@@ -59,6 +59,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets=None,
         env_vars=None,
         k8s_client_batch_api=None,
+        k8s_client_core_api=None,
         volume_mounts=None,
         volumes=None,
         labels=None,
@@ -84,7 +85,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         self._api_client = DagsterKubernetesClient.production_client(
-            batch_api_override=k8s_client_batch_api
+            core_api_override=k8s_client_core_api,
+            batch_api_override=k8s_client_batch_api,
         )
 
         self._job_config = None
@@ -382,9 +384,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
             full_msg = (
                 full_msg
-                + "\nFor more information about the failure, try running `kubectl describe job"
+                + "\n\n" + job_debug_info
+                + "\n\nFor more information about the failure, try running `kubectl describe job"
                 f" {job_name}` in your cluster."
             )
 
