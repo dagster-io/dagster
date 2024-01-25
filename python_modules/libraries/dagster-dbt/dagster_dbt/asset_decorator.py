@@ -409,11 +409,9 @@ def get_dbt_multi_asset_args(
             if child_unique_id.startswith("test")
         ]
         for test_unique_id in test_unique_ids:
-            test_resource_props = manifest["nodes"][test_unique_id]
             check_spec = default_asset_check_fn(
-                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
             )
-
             if check_spec:
                 check_specs.append(check_spec)
 
