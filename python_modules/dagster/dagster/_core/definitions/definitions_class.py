@@ -14,16 +14,13 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._config.pythonic_config import (
-    attach_resource_id_to_key_mapping,
-)
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.build_resources import wrap_resources_for_execution
+from dagster._core.execution.build_resources import wrap_resources_for_execution, get_resource_key_mapping
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
@@ -269,21 +266,7 @@ def _create_repository_using_definitions_args(
         else ExecutorDefinition.hardcoded_executor(executor)
     )
 
-    # Generate a mapping from each top-level resource instance ID to its resource key
-    resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
-
-    # Provide this mapping to each resource instance so that it can be used to resolve
-    # nested resources
-    resources_with_key_mapping = (
-        {
-            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
-            for k, v in resources.items()
-        }
-        if resources
-        else {}
-    )
-
-    resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
+    resource_defs = wrap_resources_for_execution(resources)
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
@@ -299,7 +282,7 @@ def _create_repository_using_definitions_args(
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
-        _resource_key_mapping=resource_key_mapping,
+        _resource_key_mapping=get_resource_key_mapping(resources),
     )
     def created_repo():
         return [
