@@ -7,6 +7,7 @@ import pandas as pd
 import pandas_gbq
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
@@ -141,8 +142,8 @@ def test_time_window_partitioned_asset(io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> pd.DataFrame:
-            partition = pd.Timestamp(context.asset_partition_key_for_output())
+        def daily_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = pd.Timestamp(context.partition_key)
             value = context.op_config["value"]
 
             return pd.DataFrame(
@@ -220,8 +221,8 @@ def test_static_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> pd.DataFrame:
-            partition = context.asset_partition_key_for_output()
+        def static_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = context.partition_key
             value = context.op_config["value"]
             return pd.DataFrame(
                 {
@@ -394,8 +395,8 @@ def test_dynamic_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> pd.DataFrame:
-            partition = context.asset_partition_key_for_output()
+        def dynamic_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = context.partition_key
             value = context.op_config["value"]
             return pd.DataFrame(
                 {
@@ -488,8 +489,10 @@ def test_self_dependent_asset(io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
-            key = context.asset_partition_key_for_output()
+        def self_dependent_asset(
+            context: AssetExecutionContext, self_dependent_asset: pd.DataFrame
+        ) -> pd.DataFrame:
+            key = context.partition_key
 
             if not self_dependent_asset.empty:
                 assert len(self_dependent_asset.index) == 3

@@ -278,9 +278,7 @@ def dbt_assets(
                 partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
             )
             def partitionshop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-                time_window = context.asset_partitions_time_window_for_output(
-                    list(context.selected_output_names)[0]
-                )
+                time_window = context.partition_time_window
 
                 dbt_vars = {
                     "min_date": time_window.start.isoformat(),

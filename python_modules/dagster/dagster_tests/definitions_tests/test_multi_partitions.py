@@ -3,6 +3,7 @@ from datetime import datetime
 import pendulum
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DagsterEventType,
@@ -517,7 +518,7 @@ def test_context_partition_time_window():
     )
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context):
+    def my_asset(context: AssetExecutionContext):
         time_window = TimeWindow(
             start=pendulum.instance(
                 datetime(year=2020, month=1, day=1),
@@ -529,7 +530,6 @@ def test_context_partition_time_window():
             ),
         )
         assert context.partition_time_window == time_window
-        assert context.asset_partitions_time_window_for_output() == time_window
         return 1
 
     multipartitioned_job = define_asset_job(
@@ -638,14 +638,14 @@ def test_context_returns_multipartition_keys():
         assert isinstance(context.partition_key, MultiPartitionKey)
 
     @asset(partitions_def=partitions_def)
-    def downstream(context, upstream):
+    def downstream(context: AssetExecutionContext, upstream):
         assert isinstance(context.partition_key, MultiPartitionKey)
 
         input_range = context.asset_partition_key_range_for_input("upstream")
         assert isinstance(input_range.start, MultiPartitionKey)
         assert isinstance(input_range.end, MultiPartitionKey)
 
-        output = context.asset_partition_key_range_for_output("result")
+        output = context.partition_key_range
         assert isinstance(output.start, MultiPartitionKey)
         assert isinstance(output.end, MultiPartitionKey)
 

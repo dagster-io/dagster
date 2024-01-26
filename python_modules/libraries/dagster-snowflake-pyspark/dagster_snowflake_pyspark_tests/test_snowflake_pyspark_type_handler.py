@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
@@ -202,8 +203,8 @@ def test_time_window_partitioned_asset(spark, io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
+        def daily_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
             value = context.op_config["value"]
 
             schema = StructType(
@@ -311,8 +312,8 @@ def test_static_partitioned_asset(spark, io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
+        def static_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
             value = context.op_config["value"]
 
             schema = StructType(
@@ -544,8 +545,8 @@ def test_dynamic_partitions(spark, io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
+        def dynamic_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
             value = context.op_config["value"]
 
             schema = StructType(
@@ -666,8 +667,10 @@ def test_self_dependent_asset(spark, io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
-            key = context.asset_partition_key_for_output()
+        def self_dependent_asset(
+            context: AssetExecutionContext, self_dependent_asset: DataFrame
+        ) -> DataFrame:
+            key = context.partition_key
 
             if not self_dependent_asset.isEmpty():
                 pd_df = self_dependent_asset.toPandas()

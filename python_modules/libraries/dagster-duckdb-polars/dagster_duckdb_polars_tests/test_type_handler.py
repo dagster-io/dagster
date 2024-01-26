@@ -4,6 +4,7 @@ import duckdb
 import polars as pl
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
@@ -197,8 +198,8 @@ def test_not_supported_type(tmp_path, io_managers):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context) -> pl.DataFrame:
-    df = pl.DataFrame({"date": context.asset_partition_key_for_output()})
+def daily_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    df = pl.DataFrame({"date": context.partition_key})
     partition = df.with_columns(
         pl.col("date").str.strptime(pl.Date, format="%Y-%m-%d", strict=False).cast(pl.Datetime)
     )["date"][0]
@@ -269,8 +270,8 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
     metadata={"partition_expr": "color"},
     config_schema={"value": str},
 )
-def static_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
+def static_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = context.partition_key
     value = context.op_config["value"]
     return pl.DataFrame(
         {
@@ -427,8 +428,8 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
     metadata={"partition_expr": "fruit"},
     config_schema={"value": str},
 )
-def dynamic_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
+def dynamic_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = context.partition_key
     value = context.op_config["value"]
     return pl.DataFrame(
         {
@@ -513,8 +514,10 @@ def test_self_dependent_asset(tmp_path, io_managers):
         },
         config_schema={"value": str, "last_partition_key": str},
     )
-    def self_dependent_asset(context, self_dependent_asset: pl.DataFrame) -> pl.DataFrame:
-        key = context.asset_partition_key_for_output()
+    def self_dependent_asset(
+        context: AssetExecutionContext, self_dependent_asset: pl.DataFrame
+    ) -> pl.DataFrame:
+        key = context.partition_key
 
         if not self_dependent_asset.is_empty():
             assert len(self_dependent_asset["key"]) == 3
