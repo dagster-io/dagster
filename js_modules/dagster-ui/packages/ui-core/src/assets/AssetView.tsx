@@ -1,6 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
-import {useContext, useEffect, useMemo} from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  ErrorBoundary,
+  ExpandCollapseButton,
+  NonIdealState,
+  Spinner,
+  Tag,
+} from '@dagster-io/ui-components';
+import {ReactElement, useContext, useEffect, useMemo} from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -49,9 +58,10 @@ import {AssetNodeOverview} from './AssetNodeOverview';
 interface Props {
   assetKey: AssetKey;
   trace?: ReturnType<typeof useStartTrace>;
+  trayControlElement: ReactElement;
 }
 
-export const AssetView = ({assetKey, trace}: Props) => {
+export const AssetView = ({assetKey, trace, trayControlElement}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
@@ -264,15 +274,11 @@ export const AssetView = ({assetKey, trace}: Props) => {
       <AssetPageHeader
         assetKey={assetKey}
         tags={
-          <>
-            <AssetViewPageHeaderTags
-              definition={definition}
-              liveData={liveData}
-              onShowUpstream={() =>
-                setParams({...params, view: 'lineage', lineageScope: 'upstream'})
-              }
-            />
-          </>
+          <AssetViewPageHeaderTags
+            definition={definition}
+            liveData={liveData}
+            onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
+          />
         }
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -283,23 +289,27 @@ export const AssetView = ({assetKey, trace}: Props) => {
           </Box>
         }
         right={
-          <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}} style={{margin: '-4px 0'}}>
-            <AssetLiveDataRefresh />
-            <ReloadAllButton label="Reload definition" />
-            {definition && definition.isObservable ? (
-              <LaunchAssetObservationButton
-                intent="primary"
-                scope={{all: [definition], skipAllTerm: true}}
-              />
-            ) : definition && definition.jobNames.length > 0 && upstream ? (
-              <LaunchAssetExecutionButton
-                scope={{all: [definition]}}
-                showChangedAndMissingOption={false}
-                additionalDropdownOptions={reportEvents.dropdownOptions}
-              />
-            ) : undefined}
-            {reportEvents.element}
-          </Box>
+          trayControlElement ? (
+            trayControlElement
+          ) : (
+            <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}} style={{margin: '-4px 0'}}>
+              <AssetLiveDataRefresh />
+              <ReloadAllButton label="Reload definition" />
+              {definition && definition.isObservable ? (
+                <LaunchAssetObservationButton
+                  intent="primary"
+                  scope={{all: [definition], skipAllTerm: true}}
+                />
+              ) : definition && definition.jobNames.length > 0 && upstream ? (
+                <LaunchAssetExecutionButton
+                  scope={{all: [definition]}}
+                  showChangedAndMissingOption={false}
+                  additionalDropdownOptions={reportEvents.dropdownOptions}
+                />
+              ) : undefined}
+              {reportEvents.element}
+            </Box>
+          )
         }
       />
       {!viewingMostRecent && params.asOf && (

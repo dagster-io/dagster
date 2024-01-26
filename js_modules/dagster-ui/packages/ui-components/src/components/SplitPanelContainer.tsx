@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import {Button} from './Button';
 import {Colors} from './Color';
 import {Icon} from './Icon';
+import {Tooltip} from './Tooltip';
 
 const DIVIDER_THICKNESS = 2;
 
@@ -251,3 +252,63 @@ const Container = styled.div<{
     z-index: 0;
   }
 `;
+
+export const usePanelInteractions = ({resetTo}: {resetTo: number}) => {
+  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
+    null,
+  );
+  React.useEffect(() => {
+    const initialSize = splitPanelContainer?.getSize();
+    switch (initialSize) {
+      case 100:
+        setExpandedPanel('top');
+        return;
+      case 0:
+        setExpandedPanel('bottom');
+        return;
+    }
+  }, [splitPanelContainer]);
+
+  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
+  const isTopExpanded = expandedPanel === 'top';
+  const isBottomExpanded = expandedPanel === 'bottom';
+
+  const expandBottomPanel = () => {
+    splitPanelContainer?.onChangeSize(0);
+    setExpandedPanel('bottom');
+  };
+  const expandTopPanel = () => {
+    splitPanelContainer?.onChangeSize(100);
+    setExpandedPanel('top');
+  };
+  const resetPanels = () => {
+    splitPanelContainer?.onChangeSize(resetTo ?? 50);
+    setExpandedPanel(null);
+  };
+
+  return {
+    splitContainerRef: setSplitPanelContainer,
+    isTopExpanded,
+    isBottomExpanded,
+    expandBottomPanel,
+    expandTopPanel,
+    resetPanels,
+  };
+};
+
+export const ExpandCollapseButton = ({
+  expanded,
+  onCollapse,
+  onExpand,
+}: {
+  expanded: boolean;
+  onCollapse: () => void;
+  onExpand: () => void;
+}) => (
+  <Tooltip content={expanded ? 'Collapse' : 'Expand'}>
+    <Button
+      icon={<Icon name={expanded ? 'collapse_arrows' : 'expand_arrows'} />}
+      onClick={expanded ? onCollapse : onExpand}
+    />
+  </Tooltip>
+);

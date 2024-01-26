@@ -3,6 +3,7 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
+  ExpandCollapseButton,
   ExternalAnchorButton,
   Icon,
   IconName,
@@ -106,12 +107,11 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
       )}
       {children}
       {toggleExpanded ? (
-        <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
-          <Button
-            icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
-            onClick={toggleExpanded}
-          />
-        </Tooltip>
+        <ExpandCollapseButton
+          expanded={isSectionExpanded ?? false}
+          onCollapse={toggleExpanded}
+          onExpand={toggleExpanded}
+        />
       ) : null}
     </OptionsContainer>
   );

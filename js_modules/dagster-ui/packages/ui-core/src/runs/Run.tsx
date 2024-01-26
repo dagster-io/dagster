@@ -3,10 +3,12 @@ import {
   Button,
   Colors,
   ErrorBoundary,
+  ExpandCollapseButton,
   Icon,
   NonIdealState,
   SplitPanelContainer,
   Tooltip,
+  usePanelInteractions,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -249,37 +251,7 @@ const RunWithData = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
-    null,
-  );
-  React.useEffect(() => {
-    const initialSize = splitPanelContainer?.getSize();
-    switch (initialSize) {
-      case 100:
-        setExpandedPanel('top');
-        return;
-      case 0:
-        setExpandedPanel('bottom');
-        return;
-    }
-  }, [splitPanelContainer]);
-
-  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
-  const isTopExpanded = expandedPanel === 'top';
-  const isBottomExpanded = expandedPanel === 'bottom';
-
-  const expandBottomPanel = () => {
-    splitPanelContainer?.onChangeSize(0);
-    setExpandedPanel('bottom');
-  };
-  const expandTopPanel = () => {
-    splitPanelContainer?.onChangeSize(100);
-    setExpandedPanel('top');
-  };
-  const resetPanels = () => {
-    splitPanelContainer?.onChangeSize(50);
-    setExpandedPanel(null);
-  };
+  const panelInteractions = usePanelInteractions({resetTo: 50});
 
   const gantt = (metadata: IRunMetadataDict) => {
     if (!run) {
@@ -299,12 +271,11 @@ const RunWithData = ({
             }}
             toolbarActions={
               <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                <Tooltip content={isTopExpanded ? 'Collapse' : 'Expand'}>
-                  <Button
-                    icon={<Icon name={isTopExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
-                    onClick={isTopExpanded ? resetPanels : expandTopPanel}
-                  />
-                </Tooltip>
+                <ExpandCollapseButton
+                  expanded={panelInteractions.isTopExpanded}
+                  onExpand={panelInteractions.expandTopPanel}
+                  onCollapse={panelInteractions.resetPanels}
+                />
                 <RunActionButtons
                   run={run}
                   graph={runtimeGraph}
@@ -331,9 +302,7 @@ const RunWithData = ({
   return (
     <>
       <SplitPanelContainer
-        ref={(container) => {
-          setSplitPanelContainer(container);
-        }}
+        ref={panelInteractions.splitContainerRef}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
@@ -353,8 +322,12 @@ const RunWithData = ({
                 onSetComputeLogKey={setComputeLogFileKey}
                 computeLogUrl={computeLogUrl}
                 counts={logs.counts}
-                isSectionExpanded={isBottomExpanded}
-                toggleExpanded={isBottomExpanded ? resetPanels : expandBottomPanel}
+                isSectionExpanded={panelInteractions.isBottomExpanded}
+                toggleExpanded={
+                  panelInteractions.isBottomExpanded
+                    ? panelInteractions.resetPanels
+                    : panelInteractions.expandBottomPanel
+                }
               />
               {logType !== LogType.structured ? (
                 !computeLogFileKey ? (
