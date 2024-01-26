@@ -73,12 +73,20 @@ export const AssetSidebarNode = ({
     <>
       <Box ref={elementRef} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <ItemContainer padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
+          <ItemContainer
+            padding={{right: 12}}
+            flex={{direction: 'row', alignItems: 'center'}}
+            onClick={selectThisNode}
+            onDoubleClick={(e) => !e.metaKey && toggleOpen()}
+          >
             {showArrow ? (
               <UnstyledButton
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
                 }}
                 onKeyDown={(e) => {
                   if (e.code === 'Space') {
@@ -102,8 +110,6 @@ export const AssetSidebarNode = ({
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
-              onClick={selectThisNode}
-              onDoubleClick={(e) => !e.metaKey && toggleOpen()}
               style={{
                 width: '100%',
                 borderRadius: '8px',
@@ -119,9 +125,13 @@ export const AssetSidebarNode = ({
                   alignItems: 'center',
                 }}
               >
-                {isAssetNode ? <StatusDot node={node} /> : null}
-                {isGroupNode ? <Icon name="asset_group" /> : null}
-                {isLocationNode ? <Icon name="folder_open" /> : null}
+                {isAssetNode ? (
+                  <StatusDot node={node} />
+                ) : isGroupNode ? (
+                  <Icon name="asset_group" />
+                ) : isLocationNode ? (
+                  <Icon name="folder_open" />
+                ) : null}
                 <MiddleTruncate text={displayName} />
               </div>
             </GrayOnHoverBox>
@@ -195,7 +205,6 @@ const ExpandMore = styled.div`
 
 const GrayOnHoverBox = styled(UnstyledButton)`
   border-radius: 8px;
-  cursor: pointer;
   user-select: none;
   width: 100%;
   display: flex;
@@ -212,6 +221,7 @@ const GrayOnHoverBox = styled(UnstyledButton)`
 const ItemContainer = styled(Box)`
   height: 32px;
   position: relative;
+  cursor: pointer;
 
   &:hover,
   &:focus-within {
