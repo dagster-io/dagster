@@ -1280,14 +1280,17 @@ def test_multipartitioned_time_window_asset_invocation():
 
     @asset(partitions_def=partitions_def)
     def my_asset(context: AssetExecutionContext):
+        time_partition = get_time_partitions_def(partitions_def)
+        if time_partition is None:
+            assert False, "partitions def does not have a time component"
         time_window = TimeWindow(
             start=pendulum.instance(
                 datetime(year=2020, month=1, day=1),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
             end=pendulum.instance(
                 datetime(year=2020, month=1, day=2),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
         )
         assert context.partition_time_window == time_window
