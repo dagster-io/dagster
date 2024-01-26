@@ -945,17 +945,22 @@ class BlockingAssetCheckRule(AutoMaterializeRule, NamedTuple("_BlockingAssetchec
             AssetCheckExecutionRecordStatus,
         )
 
+        if context.candidate_subset.size == 0:
+            return AssetConditionResult.create(context, context.empty_subset())
+
         parent_assets = context.instance_queryer.asset_graph.get_parents(context.asset_key)
         checks_on_parent_assets = [
             key
             for key in context.instance_queryer.asset_graph.blocking_asset_check_keys
             if key.asset_key in parent_assets
         ]
-        check_executions = context.instance_queryer.instance.event_log_storage.get_latest_asset_check_execution_by_key(
-            checks_on_parent_assets
-        ).values()
-        for check_execution in check_executions:
-            if check_execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
-                return AssetConditionResult.create(context, context.candidate_subset)
+
+        if checks_on_parent_assets:
+            check_executions = context.instance_queryer.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+                checks_on_parent_assets
+            ).values()
+            for check_execution in check_executions:
+                if check_execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
+                    return AssetConditionResult.create(context, context.candidate_subset)
 
         return AssetConditionResult.create(context, context.empty_subset())
