@@ -3,7 +3,7 @@ import sys
 import threading
 from collections import defaultdict
 from types import TracebackType
-from typing import Dict, Optional, Sequence, Type, cast
+from typing import Optional, Sequence, Type, cast
 
 import pendulum
 
