@@ -635,6 +635,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
         ).time_window_for_partition_key(self.partition_key)
 
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        return self.asset_partitions_time_window_for_output()
+
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
