@@ -1358,6 +1358,7 @@ class AssetExecutionContext(OpExecutionContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
+        self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
 
     @staticmethod
     def get() -> "AssetExecutionContext":
