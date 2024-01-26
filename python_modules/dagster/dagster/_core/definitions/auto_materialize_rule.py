@@ -623,6 +623,16 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             else context.candidate_subset
         )
 
+        # to retain compatibility with the previous behavior of this rule, we only count a non-root
+        # asset as missing if at least one of its parents has updated since the previous tick
+        if (
+            context.asset_key
+            not in context.asset_graph.root_materializable_or_observable_asset_keys
+        ):
+            return AssetConditionResult.create(
+                context, unhandled_candidates & context.candidate_parent_has_or_will_update_subset
+            )
+
         return AssetConditionResult.create(
             context,
             true_subset=unhandled_candidates,
