@@ -17,10 +17,9 @@ import mock
 import pendulum
 import pytest
 from dagster import (
-    multi_asset,
-    AssetOut,
     AssetIn,
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInstance,
     DagsterRunStatus,
@@ -37,6 +36,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
     asset,
     materialize,
+    multi_asset,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -1530,3 +1530,6 @@ def test_multi_asset_internal_deps_asset_backfill():
     backfill_data = _single_backfill_iteration(
         "fake_id", asset_backfill_data, asset_graph, instance, repo_with_unpartitioned_root
     )
+    assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset

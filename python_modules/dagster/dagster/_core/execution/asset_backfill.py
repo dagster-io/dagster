@@ -1172,7 +1172,6 @@ def execute_asset_backfill_iteration_inner(
         initial_candidates.update(
             asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         )
-        print("initial candidates", initial_candidates)
 
         yield None
 
@@ -1235,13 +1234,6 @@ def execute_asset_backfill_iteration_inner(
         initial_asset_partitions=initial_candidates,
         evaluation_time=backfill_start_time,
     )
-
-
-    print("backfill policies by asset", {asset_key: asset_graph.get_backfill_policy(asset_key) for asset_key in {
-        asset_partition.asset_key for asset_partition in asset_partitions_to_request
-    }})
-
-    print("asset partitions", asset_partitions_to_request)
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
