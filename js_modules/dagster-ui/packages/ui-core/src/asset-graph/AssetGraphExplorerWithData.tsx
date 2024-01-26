@@ -8,6 +8,7 @@ import {
   Icon,
   Menu,
   MenuItem,
+  SPLIT_PANEL_ANIMATION_MS,
   SplitPanelContainer,
   Tooltip,
   usePanelInteractions,
@@ -673,26 +674,51 @@ export const AssetGraphExplorerWithData = ({
       }
       second={
         selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
-          <RightInfoPanel>
-            <RightInfoPanelContent>
-              <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
-                <AssetView
-                  assetKey={selectedGraphNodes[0].assetKey}
-                  trayControlElement={
-                    <ExpandCollapseButton
-                      expanded={panelInteractions.isBottomExpanded}
-                      onCollapse={() => {
-                        panelInteractions.resetPanels();
-                        if (selectedGraphNodes[0]) {
-                          zoomToNode(selectedGraphNodes[0].id);
-                        }
-                      }}
-                      onExpand={panelInteractions.expandBottomPanel}
-                    />
-                  }
-                />
-              </ErrorBoundary>
-            </RightInfoPanelContent>
+          <RightInfoPanel
+            onWheel={(e) => {
+              const scrollerEl = e.currentTarget.firstElementChild as HTMLElement;
+              if (!scrollerEl) {
+                return;
+              }
+
+              // If the panel is collapsed and you scroll down in it, expand it to full height.
+              // Do not allow the user to scroll while the panel is expanding, since opening
+              // feels like scrolling.
+              if (e.deltaY > 0 && !panelInteractions.isBottomExpanded) {
+                panelInteractions.expandBottomPanel();
+                e.preventDefault();
+                scrollerEl.scrollTop = 0;
+                scrollerEl.style.overflowY = 'hidden';
+                setTimeout(() => (scrollerEl.style.overflowY = 'auto'), SPLIT_PANEL_ANIMATION_MS);
+              }
+              // If the panel is expanded and you scroll up while already at the top, collapse the panel
+              if (
+                e.deltaY < 0 &&
+                panelInteractions.isBottomExpanded &&
+                scrollerEl.scrollTop === 0
+              ) {
+                e.preventDefault();
+                panelInteractions.resetPanels();
+              }
+            }}
+          >
+            <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
+              <AssetView
+                assetKey={selectedGraphNodes[0].assetKey}
+                trayControlElement={
+                  <ExpandCollapseButton
+                    expanded={panelInteractions.isBottomExpanded}
+                    onExpand={panelInteractions.expandBottomPanel}
+                    onCollapse={() => {
+                      panelInteractions.resetPanels();
+                      if (selectedGraphNodes[0]) {
+                        zoomToNode(selectedGraphNodes[0].id);
+                      }
+                    }}
+                  />
+                }
+              />
+            </ErrorBoundary>
           </RightInfoPanel>
         ) : fetchOptions.pipelineSelector ? (
           <RightInfoPanel>

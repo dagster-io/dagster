@@ -23,6 +23,8 @@ interface SplitPanelContainerState {
   resizing: boolean;
 }
 
+export const SPLIT_PANEL_ANIMATION_MS = 200;
+
 export class SplitPanelContainer extends React.Component<
   SplitPanelContainerProps,
   SplitPanelContainerState
@@ -245,7 +247,7 @@ const Container = styled.div<{
     position: relative;
     transition: ${({axis, resizing}) =>
       resizing ? 'none' : axis === 'horizontal' ? 'width' : 'height'}
-      200ms ease-out;
+      ${SPLIT_PANEL_ANIMATION_MS}ms ease-out;
     flex-direction: column;
     display: flex;
     min-${({axis}) => (axis === 'vertical' ? 'height' : 'width')}: 0;
