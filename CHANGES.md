@@ -1,5 +1,21 @@
 # Changelog
 
+# 1.6.2 (core) / 0.22.2 (libraries)
+
+### New
+
+- The warning in the Dagster UI to remove unloadable sensors and schedules has now been removed.
+- When viewing an individual sensor or schedule, the status of the sensor or schedule now be reset back to its default status as defined in code.
+
+### Experimental
+
+- [asset-checks] dbt asset checks now respect `warn_if`/ `error_if` severities
+
+### Dagster Cloud
+
+- Fixed a bug introduced in `1.6.0` where run status sensors did not cursor correctly when deployed on Dagster Cloud.
+- Schedule and sensor mutations are now tracked in the audit log.
+
 # 1.6.1 (core) / 0.22.1 (libraries)
 
 ### New
