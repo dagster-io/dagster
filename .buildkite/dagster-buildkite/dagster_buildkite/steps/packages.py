@@ -269,6 +269,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/with_airflow",
         unsupported_python_versions=[
+            AvailablePythonVersion.V3_8,
             AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
@@ -463,8 +464,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airflow",
-        # omit python 3.10 until we add support
+        # Airflow back-compat test issues
         unsupported_python_versions=[
+            AvailablePythonVersion.V3_8,
+            AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
         ],
