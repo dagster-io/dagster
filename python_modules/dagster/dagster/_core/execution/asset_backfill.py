@@ -1335,9 +1335,19 @@ def should_backfill_atomic_asset_partitions_unit(
                 (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and (
-                    parent.partition_key == candidate.partition_key
+                    (
+                        parent.partition_key == candidate.partition_key
+                        and not asset_graph.get_backfill_policy(parent.asset_key)
+                    )
                     # candidate shares a partition key that is already being requested by the parent
-                    or candidate.partition_key in asset_partitions_to_request_map[parent.asset_key]
+                    # and both candidate and parent have backfill policies and max_partitions_per_run is not 1
+                    or (
+                        asset_graph.get_backfill_policy(parent.asset_key)
+                        and asset_graph.get_backfill_policy(parent.asset_key).max_partitions_per_run
+                        != 1
+                        and candidate.partition_key
+                        in asset_partitions_to_request_map[parent.asset_key]
+                    )
                 )
                 and asset_graph.get_repository_handle(candidate.asset_key)
                 is asset_graph.get_repository_handle(parent.asset_key)
