@@ -4,6 +4,7 @@ import {
   Icon,
   MiddleTruncate,
   Popover,
+  Spinner,
   Tag,
   ToggleButton,
 } from '@dagster-io/ui-components';
@@ -156,6 +157,7 @@ export function AssetTimelineRow({
                   >
                     {icon}
                     <MiddleTruncate text={name} />
+                    {data.loading ? <Spinner purpose="body-text" /> : null}
                     {failureCount ? (
                       <Tag intent="danger">{numberFormatter.format(failureCount)}</Tag>
                     ) : null}

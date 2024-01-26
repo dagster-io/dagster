@@ -150,10 +150,6 @@ export const AssetsTimelineDataFetcher = ({
               assetToGroup,
             );
 
-            if (Object.keys(groupedRuns).length) {
-              console.log({groupedRuns});
-            }
-
             runsCache.current.locations[locationName] = {
               runs: [...Array.from(terminated.results), ...Array.from(unterminated.results)],
               loading: false,
@@ -163,18 +159,20 @@ export const AssetsTimelineDataFetcher = ({
               listener(runsCache.current.locations[locationName]!);
             }
 
-            Object.keys(groupedRuns).forEach((key) => {
-              runsCache.current.groups[key] = {
-                runs: Array.from(groupedRuns[key]!.runs),
+            Object.keys(groups).forEach((groupKey) => {
+              const runs = groupedRuns[groupKey]?.runs ?? [];
+              runsCache.current.groups[groupKey] = {
+                runs: Array.from(runs),
                 loading: false,
               };
-              const listener = groupSubscriptions.current[key];
+              const listener = groupSubscriptions.current[groupKey];
               if (listener) {
-                listener(runsCache.current.groups[key]!);
+                listener(runsCache.current.groups[groupKey]!);
               }
-              Object.keys(groupedRuns[key]!.assets).forEach((stringAssetKey) => {
+              assetKeys.forEach((key) => {
+                const stringAssetKey = tokenForAssetKey(key);
                 runsCache.current.assets[stringAssetKey] = {
-                  runs: groupedRuns[key]!.assets[stringAssetKey]!,
+                  runs: groupedRuns[groupKey]?.assets[stringAssetKey] ?? [],
                   loading: false,
                 };
                 const listener = assetSubscriptions.current[stringAssetKey];
