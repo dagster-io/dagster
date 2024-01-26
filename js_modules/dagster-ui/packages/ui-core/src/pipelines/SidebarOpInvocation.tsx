@@ -42,7 +42,6 @@ export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
             <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
             {codeLink}
           </Box>
-          <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
           {showInputs || showOutputs ? (
             <DependencyTable>
               <tbody>
