@@ -4,7 +4,7 @@
 
 ### New
 
-- The warning in the Dagster UI to remove unloadable sensors and schedules has now been removed.
+- The warning for unloadable sensors and schedules in the Dagster UI has now been removed.
 - When viewing an individual sensor or schedule, the status of the sensor or schedule now be reset back to its default status as defined in code.
 
 ### Experimental
