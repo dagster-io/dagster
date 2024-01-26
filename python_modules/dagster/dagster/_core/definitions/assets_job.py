@@ -298,7 +298,7 @@ def build_job_partitions_from_assets(
             first_asset_key = _key_for_asset(asset).to_string()
             second_asset_key = _key_for_asset(first_asset_with_partitions_def).to_string()
             raise DagsterInvalidDefinitionError(
-                "When an assets job contains multiple partitions assets, they must have the "
+                "When an assets job contains multiple partitioned assets, they must have the "
                 f"same partitions definitions, but asset '{first_asset_key}' and asset "
                 f"'{second_asset_key}' have different partitions definitions. "
             )
