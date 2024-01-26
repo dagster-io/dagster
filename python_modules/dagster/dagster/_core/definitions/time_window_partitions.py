@@ -1648,7 +1648,8 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         ).get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
-            check.failed("No partitions found")
+            # no partitions
+            return []
 
         last_tw_end_timestamp = last_tw.end.timestamp()
         first_tw_start_timestamp = first_tw.start.timestamp()
