@@ -2,12 +2,13 @@ import {useMutation} from '@apollo/client';
 import {Button, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {RESET_SENSOR_MUTATION, displaySensorMutationErrors} from './SensorMutations';
-import {SensorFragment} from './types/SensorFragment.types';
-import {ResetSensorMutation, ResetSensorMutationVariables} from './types/SensorMutations.types';
 import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+
+import {RESET_SENSOR_MUTATION, displaySensorMutationErrors} from './SensorMutations';
+import {SensorFragment} from './types/SensorFragment.types';
+import {ResetSensorMutation, ResetSensorMutationVariables} from './types/SensorMutations.types';
 
 interface Props {
   repoAddress: RepoAddress;
