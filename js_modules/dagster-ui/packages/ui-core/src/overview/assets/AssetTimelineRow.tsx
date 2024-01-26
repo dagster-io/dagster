@@ -11,7 +11,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {AssetTimelineRowDataState, DataFetcherContext} from './AssetTimelineDataFetcher';
-import {NodeType} from './OverviewAssetsRoot';
+import {NodeType} from './AssetTimelineRoot';
 import {RunWithAssetsFragment} from './types/AssetTimelineDataFetcher.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {SidebarItemContainer, SidebarItemWrapper} from '../../asset-graph/sidebar/AssetSidebarNode';

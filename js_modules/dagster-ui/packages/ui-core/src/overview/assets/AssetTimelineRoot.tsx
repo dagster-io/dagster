@@ -50,7 +50,7 @@ type Props = {
 };
 export const AssetTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
-  useDocumentTitle('Overview | Assets Timeline');
+  useDocumentTitle('Overview | Assets');
 
   const query = useQuery<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>(
     ASSET_CATALOG_TABLE_QUERY,
@@ -329,7 +329,7 @@ export const AssetTimelineRoot = ({Header, TabButton}: Props) => {
           padding={{horizontal: 24, vertical: 16}}
           flex={{alignItems: 'center', gap: 12, grow: 0, justifyContent: 'space-between'}}
         >
-          <TabButton selected="asset_timeline" />
+          <TabButton selected="asset-timeline" />
           <TimePageControls
             onPageEarlier={onPageEarlier}
             onPageLater={onPageLater}

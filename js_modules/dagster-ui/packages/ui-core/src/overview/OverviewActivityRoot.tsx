@@ -2,10 +2,10 @@ import {Box, Heading, JoinedButtons, PageHeader} from '@dagster-io/ui-components
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
+import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {AssetTimelineRoot} from './assets/AssetTimelineRoot';
-import {OverviewAssetsRoot} from './assets/OverviewAssetsRoot';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -27,7 +27,7 @@ export const OverviewActivityRoot = () => {
 
   const [defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets' | 'asset-timeline'>(
     'overview-activity-tab',
-    (json) => (['timeline', 'assets'].includes(json) ? json : 'timeline'),
+    (json) => (['timeline', 'assets', 'asset-timeline'].includes(json) ? json : 'timeline'),
   );
 
   const tabButton = React.useCallback(
@@ -73,8 +73,10 @@ export const OverviewActivityRoot = () => {
             () =>
               defaultTab === 'timeline' ? (
                 <Redirect to="/overview/activity/timeline" />
-              ) : (
+              ) : defaultTab === 'assets' ? (
                 <Redirect to="/overview/activity/assets" />
+              ) : (
+                <Redirect to="/overview/activity/assets-timeline" />
               ),
             [defaultTab],
           )}
