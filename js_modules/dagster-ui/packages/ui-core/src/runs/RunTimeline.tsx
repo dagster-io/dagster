@@ -49,7 +49,7 @@ export type TimelineRun = {
   id: string;
   status: RunStatus | 'SCHEDULED';
   startTime: number;
-  endTime: number;
+  endTime: number | null;
 };
 
 export type TimelineJob = {
@@ -157,7 +157,12 @@ export const RunTimeline = (props: Props) => {
         Jobs
       </Box>
       <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
+        <TimeDividers
+          interval={ONE_HOUR_MSEC}
+          range={range}
+          height={anyJobs ? height : 0}
+          tableHeight={anyJobs ? height : 0}
+        />
       </div>
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
@@ -313,11 +318,15 @@ type TimeMarker = {
   left: number;
 };
 
-interface TimeDividersProps {
+type TimeDividersProps = {
   height: number;
   interval: number;
   range: [number, number];
-}
+  left?: number;
+  now?: number;
+  top?: number;
+  tableHeight?: number;
+} & React.ComponentProps<typeof DividerContainer>;
 
 const dateTimeOptions: Intl.DateTimeFormatOptions = {
   month: 'numeric',
@@ -336,8 +345,17 @@ const timeOnlyOptions: Intl.DateTimeFormatOptions = {
   hour: 'numeric',
 };
 
-const TimeDividers = (props: TimeDividersProps) => {
-  const {interval, range, height} = props;
+export const TimeDividers = (props: TimeDividersProps) => {
+  const {
+    interval,
+    range,
+    height,
+    left = LEFT_SIDE_SPACE_ALLOTTED,
+    now = Date.now(),
+    top,
+    tableHeight,
+    ...rest
+  } = props;
   const [start, end] = range;
   const formatDateTime = useFormatDateTime();
 
@@ -399,11 +417,18 @@ const TimeDividers = (props: TimeDividersProps) => {
       .filter((marker) => marker.left > 0);
   }, [end, start, interval, formatDateTime]);
 
-  const now = Date.now();
   const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;
 
   return (
-    <DividerContainer style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}>
+    <DividerContainer
+      left={left}
+      {...rest}
+      style={{
+        height: `${height}px`,
+        top: `${top !== undefined ? top : -DATE_TIME_HEIGHT}px`,
+        ...rest.style,
+      }}
+    >
       <DividerLabels>
         {dateMarkers.map((marker) => (
           <DateLabel
@@ -435,7 +460,14 @@ const TimeDividers = (props: TimeDividersProps) => {
           <>
             <NowMarker style={{left: nowLeft}}>Now</NowMarker>
             <DividerLine
-              style={{left: nowLeft, backgroundColor: Colors.accentPrimary(), zIndex: 1}}
+              style={{
+                position: 'absolute',
+                left: nowLeft,
+                backgroundColor: Colors.accentPrimary(),
+                zIndex: 1,
+                height: `${tableHeight}px`,
+                top: 0,
+              }}
             />
           </>
         ) : null}
@@ -444,10 +476,10 @@ const TimeDividers = (props: TimeDividersProps) => {
   );
 };
 
-const DividerContainer = styled.div`
+const DividerContainer = styled.div<{left: number}>`
   position: absolute;
   top: 0;
-  left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
+  left: ${({left}) => left}px;
   right: 0;
   font-family: ${FontFamily.monospace};
   color: ${Colors.textLighter()};
@@ -696,10 +728,10 @@ const JobName = styled.div`
   width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
-export const RunChunks = styled.div`
+export const RunChunks = styled.div<{height?: number}>`
   flex: 1;
   position: relative;
-  height: ${ROW_HEIGHT}px;
+  height: ${({height}) => height || ROW_HEIGHT}px;
 `;
 
 interface ChunkProps {
@@ -710,10 +742,10 @@ interface ChunkProps {
 export const RunChunk = styled.div<ChunkProps>`
   align-items: center;
   background: ${({$background}) => $background};
-  border-radius: 1px;
-  height: ${ROW_HEIGHT - 8}px;
+  border-radius: 2px;
   position: absolute;
   top: 4px;
+  bottom: 4px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
 
   transition:
@@ -731,8 +763,8 @@ export const RunChunk = styled.div<ChunkProps>`
   }
 `;
 
-const BatchCount = styled.div`
-  color: ${Colors.accentReversed()};
+export const BatchCount = styled.div`
+  color: ${Colors.accentWhite()};
   cursor: default;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -745,7 +777,7 @@ interface RunHoverContentProps {
   batch: RunBatch<TimelineRun>;
 }
 
-const RunHoverContent = (props: RunHoverContentProps) => {
+export const RunHoverContent = (props: RunHoverContentProps) => {
   const {job, batch} = props;
   const sliced = batch.runs.slice(0, 50);
   const remaining = batch.runs.length - sliced.length;
@@ -777,7 +809,10 @@ const RunHoverContent = (props: RunHoverContentProps) => {
               {run.status === 'SCHEDULED' ? (
                 <TimestampDisplay timestamp={run.startTime / 1000} />
               ) : (
-                <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
+                <TimeElapsed
+                  startUnix={run.startTime / 1000}
+                  endUnix={run.endTime ? run.endTime / 1000 : run.endTime}
+                />
               )}
             </Mono>
           </Box>

@@ -4,6 +4,7 @@ import {
   Icon,
   MiddleTruncate,
   Popover,
+  ToggleButton,
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -71,28 +72,17 @@ export const AssetSidebarNode = ({
 
   return (
     <>
-      <Box ref={elementRef} padding={{left: 8}}>
-        <BoxWrapper level={level}>
+      <Box ref={elementRef} padding={{left: 24}}>
+        <SidebarItemWrapper level={level}>
           <ItemContainer padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
             {showArrow ? (
-              <UnstyledButton
-                onClick={(e) => {
+              <ToggleButton
+                isOpen={isOpen}
+                onToggle={(e) => {
                   e.stopPropagation();
                   toggleOpen();
                 }}
-                onKeyDown={(e) => {
-                  if (e.code === 'Space') {
-                    // Prevent the default scrolling behavior
-                    e.preventDefault();
-                  }
-                }}
-                style={{cursor: 'pointer', width: 18}}
-              >
-                <Icon
-                  name="arrow_drop_down"
-                  style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-                />
-              </UnstyledButton>
+              />
             ) : level === 1 && isAssetNode ? (
               // Special case for when asset nodes are at the root (level = 1) due to their being only a single group.
               // In this case we don't need the spacer div to align nodes because  none of the nodes will be collapsible/un-collapsible.
@@ -101,7 +91,7 @@ export const AssetSidebarNode = ({
               // Spacer div to align nodes with collapse/un-collapse arrows with nodes that don't have collapse/un-collapse arrows
               <div style={{width: 18}} />
             )}
-            <GrayOnHoverBox
+            <SidebarItemContainer
               onClick={selectThisNode}
               onDoubleClick={(e) => !e.metaKey && toggleOpen()}
               style={{
@@ -124,7 +114,7 @@ export const AssetSidebarNode = ({
                 {isLocationNode ? <Icon name="folder_open" /> : null}
                 <MiddleTruncate text={displayName} />
               </div>
-            </GrayOnHoverBox>
+            </SidebarItemContainer>
             {isAssetNode ? (
               <ExpandMore>
                 <AssetNodePopoverMenu
@@ -137,7 +127,7 @@ export const AssetSidebarNode = ({
               </ExpandMore>
             ) : null}
           </ItemContainer>
-        </BoxWrapper>
+        </SidebarItemWrapper>
       </Box>
     </>
   );
@@ -163,14 +153,20 @@ const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => 
   );
 };
 
-const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
+export const SidebarItemWrapper = ({
+  level,
+  children,
+}: {
+  level: number;
+  children: React.ReactNode;
+}) => {
   const wrapper = React.useMemo(() => {
     let sofar = children;
     for (let i = 0; i < level; i++) {
       sofar = (
         <Box
-          padding={{left: 8}}
-          margin={{left: 8}}
+          padding={{left: level === 1 ? 0 : 8}}
+          margin={{left: level === 1 ? 0 : 8}}
           border={
             i < level - 1 ? {side: 'left', width: 1, color: Colors.keylineDefault()} : undefined
           }
@@ -193,7 +189,7 @@ const ExpandMore = styled.div`
   visibility: hidden;
 `;
 
-const GrayOnHoverBox = styled(UnstyledButton)`
+export const SidebarItemContainer = styled(UnstyledButton)`
   border-radius: 8px;
   cursor: pointer;
   user-select: none;
@@ -215,7 +211,7 @@ const ItemContainer = styled(Box)`
 
   &:hover,
   &:focus-within {
-    ${GrayOnHoverBox} {
+    ${SidebarItemContainer} {
       background: ${Colors.backgroundLightHover()};
     }
 

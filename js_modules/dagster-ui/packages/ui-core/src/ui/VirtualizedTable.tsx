@@ -21,15 +21,17 @@ export const HeaderCell = ({
 export const RowCell = ({
   children,
   style,
+  ...rest
 }: {
   children?: React.ReactNode;
   style?: React.CSSProperties;
-}) => (
+} & React.ComponentProps<typeof CellBox>) => (
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
     style={{overflow: 'hidden', ...(style || {})}}
     border="right"
+    {...rest}
   >
     {children}
   </CellBox>

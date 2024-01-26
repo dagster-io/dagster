@@ -16,7 +16,7 @@ const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 60 * 1000;
 
-const hourWindowToOffset = (hourWindow: HourWindow) => {
+export const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {
     case '1':
       return ONE_HOUR;
@@ -123,27 +123,51 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
             style={{width: '200px'}}
           />
         </Box>
-        <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
-          <ButtonGroup<HourWindow>
-            activeItems={new Set([hourWindow])}
-            buttons={[
-              {id: '1', label: '1hr'},
-              {id: '6', label: '6hr'},
-              {id: '12', label: '12hr'},
-              {id: '24', label: '24hr'},
-            ]}
-            onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
-          />
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <Button onClick={onPageEarlier}>&larr;</Button>
-            <Button onClick={onPageNow}>Now</Button>
-            <Button onClick={onPageLater}>&rarr;</Button>
-          </Box>
-        </Box>
+        <TimePageControls
+          hourWindow={hourWindow}
+          setHourWindow={setHourWindow}
+          onPageEarlier={onPageEarlier}
+          onPageLater={onPageLater}
+          onPageNow={onPageNow}
+        />
       </Box>
       <ErrorBoundary region="timeline">
         <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
       </ErrorBoundary>
     </>
+  );
+};
+
+export const TimePageControls = ({
+  hourWindow,
+  onPageEarlier,
+  onPageNow,
+  onPageLater,
+  setHourWindow,
+}: {
+  hourWindow: HourWindow;
+  onPageEarlier: () => void;
+  onPageNow: () => void;
+  onPageLater: () => void;
+  setHourWindow: (value: HourWindow) => void;
+}) => {
+  return (
+    <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+      <ButtonGroup<HourWindow>
+        activeItems={new Set([hourWindow])}
+        buttons={[
+          {id: '1', label: '1hr'},
+          {id: '6', label: '6hr'},
+          {id: '12', label: '12hr'},
+          {id: '24', label: '24hr'},
+        ]}
+        onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
+      />
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Button onClick={onPageEarlier}>&larr;</Button>
+        <Button onClick={onPageNow}>Now</Button>
+        <Button onClick={onPageLater}>&rarr;</Button>
+      </Box>
+    </Box>
   );
 };

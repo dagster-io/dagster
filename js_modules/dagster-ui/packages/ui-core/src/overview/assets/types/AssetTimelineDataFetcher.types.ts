@@ -1,19 +1,28 @@
 // Generated GraphQL types, do not edit manually.
 
-import * as Types from '../../graphql/types';
+import * as Types from '../../../graphql/types';
 
-export type RunTimelineQueryVariables = Types.Exact<{
+export type AssetTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
   terminatedFilter: Types.RunsFilter;
   tickCursor?: Types.InputMaybe<Types.Scalars['Float']>;
   ticksUntil?: Types.InputMaybe<Types.Scalars['Float']>;
 }>;
 
-export type RunTimelineQuery = {
+export type AssetTimelineQuery = {
   __typename: 'Query';
   unterminated:
     | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {
         __typename: 'Runs';
         results: Array<{
@@ -30,21 +39,6 @@ export type RunTimelineQuery = {
             repositoryName: string;
             repositoryLocationName: string;
           } | null;
-        }>;
-      };
-  terminated:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {
-        __typename: 'Runs';
-        results: Array<{
-          __typename: 'Run';
-          id: string;
-          pipelineName: string;
-          status: Types.RunStatus;
-          startTime: number | null;
-          endTime: number | null;
-          updateTime: number | null;
           assets: Array<{
             __typename: 'Asset';
             id: string;
@@ -54,12 +48,45 @@ export type RunTimelineQuery = {
             __typename: 'MaterializationEvent';
             assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
           }>;
+        }>;
+      };
+  terminated:
+    | {__typename: 'InvalidPipelineRunsFilterError'}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'Runs';
+        results: Array<{
+          __typename: 'Run';
+          id: string;
+          pipelineName: string;
+          status: Types.RunStatus;
+          startTime: number | null;
+          endTime: number | null;
+          updateTime: number | null;
           repositoryOrigin: {
             __typename: 'RepositoryOrigin';
             id: string;
             repositoryName: string;
             repositoryLocationName: string;
           } | null;
+          assets: Array<{
+            __typename: 'Asset';
+            id: string;
+            key: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+          assetMaterializations: Array<{
+            __typename: 'MaterializationEvent';
+            assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
+          }>;
         }>;
       };
   workspaceOrError:
@@ -113,4 +140,29 @@ export type RunTimelineQuery = {
             | null;
         }>;
       };
+};
+
+export type RunWithAssetsFragment = {
+  __typename: 'Run';
+  id: string;
+  pipelineName: string;
+  status: Types.RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  } | null;
+  assets: Array<{
+    __typename: 'Asset';
+    id: string;
+    key: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
+  assetMaterializations: Array<{
+    __typename: 'MaterializationEvent';
+    assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
+  }>;
 };
