@@ -191,7 +191,7 @@ export const AppProvider = (props: AppProviderProps) => {
       basePath,
       rootServerURI,
       telemetryEnabled,
-      codeLinksEnabled,
+      codeLinksEnabled: true,
     }),
     [basePath, rootServerURI, telemetryEnabled, codeLinksEnabled],
   );

@@ -29,7 +29,7 @@ import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
 } from '../assets/usePartitionHealthData';
-import {CodeLink} from '../code-links/CodeLink';
+import {CodeLink, VersionControlCodeLink} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
@@ -72,18 +72,29 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const hasAssetMetadata = assetType || assetMetadata.length > 0;
   const assetConfigSchema = asset.configField?.configType;
   const codeLinkMetadata = asset.op?.metadata.find((e) => e.key === '__code_origin')?.value;
+  const gitPath = asset.repository?.displayMetadata.find((e) => e.key === 'url')?.value;
 
   let codeLink = null;
   if (codeLinkMetadata) {
     const [codeLinkPathToModule, codeLinkPathInModule, codeLinkLineNumber] =
       codeLinkMetadata.split(':');
     if (codeLinkPathToModule && codeLinkPathInModule && codeLinkLineNumber) {
-      codeLink = (
-        <CodeLink
-          file={codeLinkPathToModule + codeLinkPathInModule}
-          lineNumber={parseInt(codeLinkLineNumber)}
-        />
-      );
+      if (gitPath) {
+        codeLink = (
+          <VersionControlCodeLink
+            versionControlUrl={gitPath}
+            pathInModule={codeLinkPathInModule}
+            lineNumber={parseInt(codeLinkLineNumber)}
+          />
+        );
+      } else {
+        codeLink = (
+          <CodeLink
+            file={codeLinkPathToModule + codeLinkPathInModule}
+            lineNumber={parseInt(codeLinkLineNumber)}
+          />
+        );
+      }
     }
   }
 
@@ -286,6 +297,10 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     repository {
       id
       name
+      displayMetadata {
+        key
+        value
+      }
       location {
         id
         name

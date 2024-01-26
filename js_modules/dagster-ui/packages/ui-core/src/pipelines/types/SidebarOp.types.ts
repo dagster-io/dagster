@@ -3881,6 +3881,7 @@ export type SidebarOpFragment =
 
 export type SidebarPipelineOpQueryVariables = Types.Exact<{
   selector: Types.PipelineSelector;
+  repoSelector: Types.RepositorySelector;
   handleID: Types.Scalars['String'];
 }>;
 
@@ -4674,10 +4675,20 @@ export type SidebarPipelineOpQuery = {
       }
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
+  repositoryOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Repository';
+        id: string;
+        name: string;
+        displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+      }
+    | {__typename: 'RepositoryNotFoundError'};
 };
 
 export type SidebarGraphOpQueryVariables = Types.Exact<{
   selector: Types.GraphSelector;
+  repoSelector: Types.RepositorySelector;
   handleID: Types.Scalars['String'];
 }>;
 
@@ -5470,4 +5481,13 @@ export type SidebarGraphOpQuery = {
       }
     | {__typename: 'GraphNotFoundError'}
     | {__typename: 'PythonError'};
+  repositoryOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Repository';
+        id: string;
+        name: string;
+        displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+      }
+    | {__typename: 'RepositoryNotFoundError'};
 };

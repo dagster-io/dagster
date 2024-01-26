@@ -4,7 +4,11 @@ import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
+import {
+  SIDEBAR_OP_INVOCATION_FRAGMENT,
+  SIDEBAR_OP_REPOSITORY_FRAGMENT,
+  SidebarOpInvocation,
+} from './SidebarOpInvocation';
 import {
   SidebarGraphOpQuery,
   SidebarGraphOpQueryVariables,
@@ -12,6 +16,7 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
+import {SidebarOpRepositoryFragment} from './types/SidebarOpInvocation.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
@@ -43,6 +48,10 @@ const useSidebarOpQuery = (
           repositoryLocationName: repoAddress?.location || '',
           pipelineName: name,
         },
+        repoSelector: {
+          repositoryName: repoAddress?.name || '',
+          repositoryLocationName: repoAddress?.location || '',
+        },
         handleID,
       },
       skip: isGraph,
@@ -58,6 +67,10 @@ const useSidebarOpQuery = (
           repositoryLocationName: repoAddress?.location || '',
           graphName: name,
         },
+        repoSelector: {
+          repositoryName: repoAddress?.name || '',
+          repositoryLocationName: repoAddress?.location || '',
+        },
         handleID,
       },
       skip: !isGraph,
@@ -68,9 +81,12 @@ const useSidebarOpQuery = (
     const {error, data, loading} = graphResult;
     const solidContainer: SidebarOpFragment | undefined =
       data?.graphOrError.__typename === 'Graph' ? data.graphOrError : undefined;
+    const repository: SidebarOpRepositoryFragment | undefined =
+      data?.repositoryOrError.__typename === 'Repository' ? data.repositoryOrError : undefined;
     return {
       error,
       solidContainer,
+      repository,
       isLoading: !!loading,
     };
   }
@@ -78,9 +94,12 @@ const useSidebarOpQuery = (
   const {error, data, loading} = pipelineResult;
   const solidContainer: SidebarOpFragment | undefined =
     data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError : undefined;
+  const repository: SidebarOpRepositoryFragment | undefined =
+    data?.repositoryOrError.__typename === 'Repository' ? data.repositoryOrError : undefined;
   return {
     error,
     solidContainer,
+    repository,
     isLoading: !!loading,
   };
 };
@@ -173,27 +192,49 @@ const SIDEBAR_OP_FRAGMENT = gql`
 `;
 
 const SIDEBAR_PIPELINE_OP_QUERY = gql`
-  query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {
+  query SidebarPipelineOpQuery(
+    $selector: PipelineSelector!
+    $repoSelector: RepositorySelector!
+    $handleID: String!
+  ) {
     pipelineOrError(params: $selector) {
       ... on Pipeline {
         id
         ...SidebarOpFragment
       }
     }
+    repositoryOrError(repositorySelector: $repoSelector) {
+      ... on Repository {
+        id
+        ...SidebarOpRepositoryFragment
+      }
+    }
   }
 
+  ${SIDEBAR_OP_REPOSITORY_FRAGMENT}
   ${SIDEBAR_OP_FRAGMENT}
 `;
 
 const SIDEBAR_GRAPH_OP_QUERY = gql`
-  query SidebarGraphOpQuery($selector: GraphSelector!, $handleID: String!) {
+  query SidebarGraphOpQuery(
+    $selector: GraphSelector!
+    $repoSelector: RepositorySelector!
+    $handleID: String!
+  ) {
     graphOrError(selector: $selector) {
       ... on Graph {
         id
         ...SidebarOpFragment
       }
     }
+    repositoryOrError(repositorySelector: $repoSelector) {
+      ... on Repository {
+        id
+        ...SidebarOpRepositoryFragment
+      }
+    }
   }
 
+  ${SIDEBAR_OP_REPOSITORY_FRAGMENT}
   ${SIDEBAR_OP_FRAGMENT}
 `;

@@ -3,34 +3,50 @@ import {Box, Button, Icon} from '@dagster-io/ui-components';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';
-import {SidebarOpInvocationFragment} from './types/SidebarOpInvocation.types';
+import {
+  SidebarOpInvocationFragment,
+  SidebarOpRepositoryFragment,
+} from './types/SidebarOpInvocation.types';
 import {breakOnUnderscores} from '../app/Util';
-import {CodeLink} from '../code-links/CodeLink';
+import {CodeLink, VersionControlCodeLink} from '../code-links/CodeLink';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 
 interface ISidebarOpInvocationProps {
   solid: SidebarOpInvocationFragment;
+  repository: SidebarOpRepositoryFragment;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
 }
 
 export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
-  const {solid, onEnterSubgraph} = props;
+  const {solid, onEnterSubgraph, repository} = props;
   const showInputs = solid.inputs.some((o) => o.dependsOn.length);
   const showOutputs = solid.outputs.some((o) => o.dependedBy.length);
 
+  const gitPath = repository?.displayMetadata.find((e) => e.key === 'url')?.value;
   const codeLinkMetadata = solid.definition.metadata.find((m) => m.key === '__code_origin')?.value;
+
   let codeLink = null;
   if (codeLinkMetadata) {
     const [codeLinkPathToModule, codeLinkPathInModule, codeLinkLineNumber] =
       codeLinkMetadata.split(':');
     if (codeLinkPathToModule && codeLinkPathInModule && codeLinkLineNumber) {
-      codeLink = (
-        <CodeLink
-          file={codeLinkPathToModule + codeLinkPathInModule}
-          lineNumber={parseInt(codeLinkLineNumber)}
-        />
-      );
+      if (gitPath) {
+        codeLink = (
+          <VersionControlCodeLink
+            versionControlUrl={gitPath}
+            pathInModule={codeLinkPathInModule}
+            lineNumber={parseInt(codeLinkLineNumber)}
+          />
+        );
+      } else {
+        codeLink = (
+          <CodeLink
+            file={codeLinkPathToModule + codeLinkPathInModule}
+            lineNumber={parseInt(codeLinkLineNumber)}
+          />
+        );
+      }
     }
   }
 
@@ -93,6 +109,17 @@ export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
     </div>
   );
 };
+
+export const SIDEBAR_OP_REPOSITORY_FRAGMENT = gql`
+  fragment SidebarOpRepositoryFragment on Repository {
+    id
+    name
+    displayMetadata {
+      key
+      value
+    }
+  }
+`;
 
 export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
   fragment SidebarOpInvocationFragment on Solid {
