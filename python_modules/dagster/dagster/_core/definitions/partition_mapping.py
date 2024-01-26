@@ -201,6 +201,12 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
+        if upstream_partitions_subset is None:
+            check.failed("upstream asset is not partitioned")
+
+        if len(upstream_partitions_subset) == 0:
+            return downstream_partitions_def.empty_subset()
+
         return downstream_partitions_def.subset_with_all_partitions(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
