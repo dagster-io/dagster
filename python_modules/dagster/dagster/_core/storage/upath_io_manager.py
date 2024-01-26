@@ -414,7 +414,7 @@ class UPathIOManager(MemoizableIOManager):
     def _load_none_based_on_tags(
         self, context: InputContext, partition_key: Optional[str] = None
     ) -> bool:
-        if context.has_asset_key:
+        if context.has_asset_key and context.step_context is not None:
             # If the upstream step is an asset and the output value was None, then there will
             # be a tag marking that. If that tag exists, we want to provide None to the
             # materializing asset.
@@ -466,19 +466,9 @@ class UPathIOManager(MemoizableIOManager):
 
     def handle_output(self, context: OutputContext, obj: Any):
         if obj is None and context.has_asset_key:
-            # If the step returns None and is an asset, mark via tag on the AssetMaterialization so
-            # that we can check this tag at load time to know to provide None
-            # context.add_output_metadata({"output_is_none": True})
-
-            # Adding the tags here does nothing since we manually make the AssetMaterialization for hte
-            # asset in execute_step line 846. We need to find a way to tell execute step to add this tag
-
-            # options:
-            # special metadata that we add here and then remove in execute step, then convert to tag
-
-            # return AssetMaterialization(asset_key=context.asset_key, tags={NONE_OUTPUT_TAG: "True"})
-
-            context.add_output_metadata({NONE_OUTPUT_TAG: True})
+            # If the step returns None and is an asset, do not store the None in the file system
+            # The main execution path will add a tag to the AssetMaterialization that we can read
+            # at load time to provide a None
             return None
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
