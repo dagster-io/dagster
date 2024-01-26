@@ -675,7 +675,7 @@ def test_can_subset_select_only_check() -> None:
     result = materialize(
         [foo],
         selection=AssetCheckKeysSelection(
-            [AssetCheckKey(asset_key=AssetKey("asset1"), name="check1")]
+            selected_asset_check_keys=[AssetCheckKey(asset_key=AssetKey("asset1"), name="check1")]
         ),
     )
 

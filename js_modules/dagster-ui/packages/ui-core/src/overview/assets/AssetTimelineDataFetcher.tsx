@@ -80,12 +80,13 @@ export const AssetsTimelineDataFetcher = ({
   const client = useApolloClient();
   React.useEffect(() => {
     let isInProgress = false;
-    async function tick() {
+    let isCanceled = false;
+    async function tick(isRefresh: boolean = false) {
       if (isInProgress) {
         return;
       }
       isInProgress = true;
-      await Promise.all(
+      await Promise.allSettled(
         Object.keys(codeLocationSubscriptions.current).map((locationName) => {
           const node = codeLocationNodes[locationName];
           const groups = node?.groups;
@@ -105,6 +106,49 @@ export const AssetsTimelineDataFetcher = ({
 
           if (!assetKeys.length) {
             return Promise.resolve();
+          }
+
+          function triggerListeners() {
+            const listener = codeLocationSubscriptions.current[locationName];
+            if (listener) {
+              listener(runsCache.current.locations[locationName]!);
+            }
+
+            Object.keys(groups!).forEach((groupKey) => {
+              const listener = groupSubscriptions.current[groupKey];
+              if (listener) {
+                listener(runsCache.current.groups[groupKey]!);
+              }
+              assetKeys.forEach((key) => {
+                const stringAssetKey = tokenForAssetKey(key);
+                const listener = assetSubscriptions.current[stringAssetKey];
+                if (listener) {
+                  listener(runsCache.current.assets[stringAssetKey]!);
+                }
+              });
+            });
+          }
+
+          if (isRefresh) {
+            // Mark all of the assets as loading again
+            runsCache.current.locations[locationName] = {
+              runs: runsCache.current.locations[locationName]?.runs ?? [],
+              loading: true,
+            };
+            Object.keys(groups).forEach((groupKey) => {
+              runsCache.current.groups[groupKey] = {
+                runs: runsCache.current.groups[groupKey]?.runs ?? [],
+                loading: true,
+              };
+              assetKeys.forEach((key) => {
+                const stringAssetKey = tokenForAssetKey(key);
+                runsCache.current.assets[stringAssetKey] = {
+                  runs: runsCache.current.assets[stringAssetKey]?.runs ?? [],
+                  loading: true,
+                };
+              });
+            });
+            triggerListeners();
           }
 
           return new Promise(async (res) => {
@@ -127,6 +171,10 @@ export const AssetsTimelineDataFetcher = ({
               },
             });
             res(void 0);
+
+            if (isCanceled) {
+              return;
+            }
 
             const {terminated, unterminated} = data;
             if (terminated.__typename !== 'Runs' || unterminated.__typename !== 'Runs') {
@@ -154,33 +202,21 @@ export const AssetsTimelineDataFetcher = ({
               runs: [...Array.from(terminated.results), ...Array.from(unterminated.results)],
               loading: false,
             };
-            const listener = codeLocationSubscriptions.current[locationName];
-            if (listener) {
-              listener(runsCache.current.locations[locationName]!);
-            }
-
             Object.keys(groups).forEach((groupKey) => {
               const runs = groupedRuns[groupKey]?.runs ?? [];
               runsCache.current.groups[groupKey] = {
                 runs: Array.from(runs),
                 loading: false,
               };
-              const listener = groupSubscriptions.current[groupKey];
-              if (listener) {
-                listener(runsCache.current.groups[groupKey]!);
-              }
               assetKeys.forEach((key) => {
                 const stringAssetKey = tokenForAssetKey(key);
                 runsCache.current.assets[stringAssetKey] = {
                   runs: groupedRuns[groupKey]?.assets[stringAssetKey] ?? [],
                   loading: false,
                 };
-                const listener = assetSubscriptions.current[stringAssetKey];
-                if (listener) {
-                  listener(runsCache.current.assets[stringAssetKey]!);
-                }
               });
             });
+            triggerListeners();
           });
         }),
       );
@@ -188,8 +224,9 @@ export const AssetsTimelineDataFetcher = ({
     }
 
     const interval = setInterval(tick, FIFTEEN_SECONDS);
-    setTimeout(tick, 100);
+    setTimeout(() => tick(true), 100);
     return () => {
+      isCanceled = true;
       clearInterval(interval);
     };
   }, [client, codeLocationNodes, endSec, startSec]);

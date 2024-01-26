@@ -41,6 +41,7 @@ export * from './components/TagSelector';
 export * from './components/Text';
 export * from './components/TextInput';
 export * from './components/Toaster';
+export * from './components/ToggleButton';
 export * from './components/TokenizingField';
 export * from './components/Tooltip';
 export * from './components/Trace';

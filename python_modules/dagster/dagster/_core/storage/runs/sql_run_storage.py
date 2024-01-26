@@ -67,6 +67,7 @@ from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
 
 from ..dagster_run import (
+    FINISHED_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
@@ -278,6 +279,7 @@ class SqlRunStorage(RunStorage):
             query = self._apply_asset_filter(
                 query,
                 asset_keys=filters.asset_keys,
+                statuses=filters.statuses,
                 created_before=filters.created_before,
                 updated_after=filters.updated_after,
             )
@@ -354,6 +356,7 @@ class SqlRunStorage(RunStorage):
         self,
         query: SqlAlchemyQuery,
         asset_keys: Sequence[AssetKey],
+        statuses: Optional[Sequence[DagsterRunStatus]] = None,
         created_before: Optional[datetime] = None,
         updated_after: Optional[datetime] = None,
     ) -> SqlAlchemyQuery:
@@ -367,8 +370,12 @@ class SqlRunStorage(RunStorage):
 
         if updated_after:
             subquery = subquery.where(AssetRunsTable.c.run_end_time > updated_after.timestamp())
-        else:
-            subquery = subquery.where(AssetRunsTable.c.run_end_time.is_(None))
+
+        if statuses:
+            if all([status in FINISHED_STATUSES for status in statuses]):
+                subquery = subquery.where(AssetRunsTable.c.run_end_time.isnot(None))
+            elif all([status not in FINISHED_STATUSES for status in statuses]):
+                subquery = subquery.where(AssetRunsTable.c.run_end_time.is_(None))
 
         query = query.where(RunsTable.c.run_id.in_(subquery))
         return query

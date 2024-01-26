@@ -157,8 +157,9 @@ export function AssetTimelineRow({
                   >
                     {icon}
                     <MiddleTruncate text={name} />
-                    {data.loading ? <Spinner purpose="body-text" /> : null}
-                    {failureCount ? (
+                    {data.loading ? (
+                      <Spinner purpose="body-text" />
+                    ) : failureCount ? (
                       <Tag intent="danger">{numberFormatter.format(failureCount)}</Tag>
                     ) : null}
                   </div>

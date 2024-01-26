@@ -227,7 +227,7 @@ def build_dbt_asset_selection(
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-    return DbtManifestAssetSelection(
+    return DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
