@@ -53,7 +53,7 @@ from dagster_pipes import open_dagster_pipes
 
 with open_dagster_pipes() as pipes:
     # Stream log message back to Dagster
-    pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
+    pipes.log.info("Started computation")
 
     # ... your code that computes and persists the asset
 
@@ -63,7 +63,7 @@ with open_dagster_pipes() as pipes:
     # multi-assets you can pass an `asset_key` parameter.
     pipes.report_asset_materialization(
         metadata={
-            "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
+            "some_metric": {"raw_value": 1, "type": "int"}
         },
         data_version="alpha",
     )
@@ -88,15 +88,17 @@ Next, you'll package the script into a container image using a `Dockerfile`. For
 ```dockerfile
 FROM python:3.10-slim
 
-pip install dagster-pipes
+RUN pip install dagster-pipes
 
 COPY my_python_script.py .
+
+ENTRYPOINT [ "python","my_python_script.py" ]
 ```
 
 Then, build the image:
 
 ```shell
-docker build -t pipes-example:v1
+docker build -t pipes-example:v1 .
 ```
 
 **Note**: Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:v1`
@@ -193,7 +195,7 @@ from dagster_k8s import PipesK8sClient
 def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
   return k8s_pipes_client.run(
       context=context,
-      image="pipes-materialize:v1",
+      image="pipes-asset:v1",
   ).get_materialize_result()
 
 
