@@ -989,6 +989,8 @@ def execute_asset_backfill_iteration(
                 "Expected get_canceling_asset_backfill_iteration_data to return a PartitionBackfill"
             )
 
+        # Refetch, in case the backfill was forcibly marked as canceled in the meantime
+        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         updated_backfill = backfill.with_asset_backfill_data(
             updated_asset_backfill_data,
             dynamic_partitions_store=instance,
@@ -1024,6 +1026,9 @@ def execute_asset_backfill_iteration(
         logger.debug(
             f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
         )
+    elif backfill.status == BulkActionStatus.CANCELING:
+        # The backfill was forcibly canceled, skip iteration
+        pass
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 

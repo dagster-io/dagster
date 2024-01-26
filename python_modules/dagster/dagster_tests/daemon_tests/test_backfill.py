@@ -1150,6 +1150,72 @@ def test_asset_backfill_mid_iteration_cancel(
     assert instance.get_runs_count(RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)) == 0
 
 
+def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
+    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+
+    backfill_id = "backfill_id"
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=["2023-01-01"],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    ).with_status(BulkActionStatus.CANCELING)
+    instance.add_backfill(
+        # Add some partitions in a "requested" state to mock that certain partitions are hanging
+        backfill.with_asset_backfill_data(
+            backfill.asset_backfill_data._replace(
+                requested_subset=AssetGraphSubset(non_partitioned_asset_keys={AssetKey("daily_1")})
+            ),
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
+        )
+    )
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.CANCELING
+
+    override_get_backfill_num_calls = 0
+
+    def _override_get_backfill(_):
+        nonlocal override_get_backfill_num_calls
+        if override_get_backfill_num_calls == 1:
+            # Mark backfill as canceled during the middle of the cancellation iteration
+            override_get_backfill_num_calls += 1
+            return backfill.with_status(BulkActionStatus.CANCELED)
+        else:
+            override_get_backfill_num_calls += 1
+            return backfill
+
+    # After submitting the first chunk, update the backfill to be CANCELING
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.get_backfill",
+        side_effect=_override_get_backfill,
+    ):
+        # Mock that a run is still in progress. If we don't add this, then the backfill will be
+        # marked as failed
+        with mock.patch("dagster._core.instance.DagsterInstance.get_run_ids", side_effect=["fake"]):
+            assert all(
+                not error
+                for error in list(
+                    execute_backfill_iteration(
+                        workspace_context, get_default_daemon_logger("BackfillDaemon")
+                    )
+                )
+            )
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    # Assert that the backfill was indeed marked as canceled
+    assert updated_backfill.status == BulkActionStatus.CANCELED
+
+
 def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
