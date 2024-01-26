@@ -102,7 +102,7 @@ def _separate_args_and_kwargs(
 
 
 def _get_op_context(
-    context,  # TODO - type hint
+    context,
 ) -> "OpExecutionContext":
     from dagster._core.execution.context.compute import AssetExecutionContext
 
