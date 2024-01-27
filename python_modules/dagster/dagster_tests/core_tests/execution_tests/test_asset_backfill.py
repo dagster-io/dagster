@@ -1110,6 +1110,83 @@ def test_asset_backfill_cancellation():
     )
 
 
+def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partitions():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=HourlyPartitionsDefinition("2023-01-01-00:00"))
+    def upstream_hourly_partitioned_asset():
+        raise Exception("noo")
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+    def downstream_daily_partitioned_asset(
+        upstream_hourly_partitioned_asset,
+    ):
+        return upstream_hourly_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_hourly_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_id = "dummy_backfill_id"
+    backfill_start_time = pendulum.datetime(2023, 1, 10, 0, 0, 0)
+    asset_selection = [
+        upstream_hourly_partitioned_asset.key,
+        downstream_daily_partitioned_asset.key,
+    ]
+    targeted_partitions = ["2023-01-09-00:00"]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=targeted_partitions,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=backfill_start_time,
+    )
+
+    for _ in range(2):
+        # One iteration to submit a run targeting the partition
+        # Second iteration to update the asset backfill data
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+    assert (
+        AssetKeyPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
+        in asset_backfill_data.failed_and_downstream_subset
+    )
+    assert (
+        AssetKeyPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
+        in asset_backfill_data.failed_and_downstream_subset
+    )
+
+    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_time)
+
+    canceling_backfill_data = None
+    for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
+        backfill_id,
+        asset_backfill_data,
+        instance_queryer,
+        asset_graph,
+        backfill_start_time,
+    ):
+        pass
+
+    assert isinstance(canceling_backfill_data, AssetBackfillData)
+    assert (
+        AssetKeyPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
+        in canceling_backfill_data.failed_and_downstream_subset
+    )
+    assert (
+        AssetKeyPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
+        in canceling_backfill_data.failed_and_downstream_subset
+    )
+
+
 def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
     instance = DagsterInstance.ephemeral()
 
