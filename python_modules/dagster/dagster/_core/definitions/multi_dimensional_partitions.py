@@ -20,6 +20,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -218,6 +219,32 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return DefaultPartitionsSubset
+
+    def get_partition_keys_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> list[str]:
+        start: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.start)
+        end: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.end)
+
+        partition_key_sequences = [
+            partition_dim.partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(
+                    start.keys_by_dimension[partition_dim.name],
+                    end.keys_by_dimension[partition_dim.name],
+                ),
+                dynamic_partitions_store=dynamic_partitions_store,
+            )
+            for partition_dim in self._partitions_defs
+        ]
+
+        return [
+            MultiPartitionKey(
+                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
+            )
+            for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
 
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None

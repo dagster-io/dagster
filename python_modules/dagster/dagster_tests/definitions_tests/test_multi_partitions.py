@@ -654,3 +654,26 @@ def test_context_returns_multipartition_keys():
         assert isinstance(output.end, MultiPartitionKey)
 
     materialize([upstream, downstream], partition_key="1|a")
+
+
+def test_multipartitions_range_cartesian():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "a"}),
+            MultiPartitionKey({"a": "2024-01-02", "b": "a"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "a"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "a"}),
+    ]
