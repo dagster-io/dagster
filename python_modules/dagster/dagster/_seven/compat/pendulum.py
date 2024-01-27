@@ -10,6 +10,11 @@ _IS_PENDULUM_2_OR_NEWER = (
     and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") >= 2
 )
 
+_IS_PENDULUM_3_OR_NEWER = (
+    hasattr(pendulum, "__version__")
+    and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") >= 3
+)
+
 
 @contextmanager
 def mock_pendulum_timezone(override_timezone):
@@ -49,6 +54,8 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
 PendulumDateTime: TypeAlias = (
     pendulum.DateTime if _IS_PENDULUM_2_OR_NEWER else pendulum.Pendulum  # type: ignore[attr-defined]
 )
+
+Period: TypeAlias = pendulum.Interval if _IS_PENDULUM_3_OR_NEWER else pendulum.Period  # type: ignore[attr-defined]
 
 
 # Workaround for issue with .in_tz() in pendulum:
