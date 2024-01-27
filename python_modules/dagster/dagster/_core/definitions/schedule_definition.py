@@ -879,11 +879,6 @@ class ScheduleDefinition(IHasInternalInit):
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
             result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))
-            check.invariant(
-                not any(not request.run_key for request in result),
-                "Schedules that return multiple RunRequests must specify a run_key in each"
-                " RunRequest",
-            )
             run_requests = result
             skip_message = None
 
