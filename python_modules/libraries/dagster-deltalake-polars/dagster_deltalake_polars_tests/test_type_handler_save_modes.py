@@ -8,6 +8,7 @@ from dagster import (
     op,
 )
 from dagster_deltalake import LocalConfig
+from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
 from deltalake import DeltaTable
 
@@ -24,9 +25,6 @@ def io_manager_append(tmp_path) -> DeltaLakePolarsIOManager:
     return DeltaLakePolarsIOManager(
         root_uri=str(tmp_path), storage_options=LocalConfig(), mode=WriteMode.append
     )
-
-
-from dagster_deltalake.io_manager import WriteMode
 
 
 @pytest.fixture

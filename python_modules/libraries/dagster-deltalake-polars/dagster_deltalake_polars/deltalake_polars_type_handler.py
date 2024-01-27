@@ -46,7 +46,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
         table_slice: TableSlice,
         connection: TableConnection,
     ) -> PolarsTypes:
-        """Loads the input as a pyarrow Table or RecordBatchReader."""
+        """Loads the input as a Polars DataFrame or LazyFrame."""
         dataset = _table_reader(table_slice, connection)
 
         if table_slice.columns is not None:

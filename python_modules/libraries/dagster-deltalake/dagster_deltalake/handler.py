@@ -55,26 +55,26 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         connection: TableConnection,
     ):
         """Stores pyarrow types in Delta table."""
-        assert context.metadata is not None
-        assert context.resource_config is not None
+        metadata = context.metadata or {}
+        resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
 
-        engine = context.resource_config.get("writer_engine")
-        save_mode = context.metadata.get("mode")
-        main_save_mode = context.resource_config.get("mode")
-        main_custom_metadata = context.resource_config.get("custom_metadata")
-        overwrite_schema = context.resource_config.get("overwrite_schema")
-        writerprops = context.resource_config.get("writer_properties")
+        engine = resource_config.get("writer_engine")
+        save_mode = metadata.get("mode")
+        main_save_mode = resource_config.get("mode")
+        main_custom_metadata = resource_config.get("custom_metadata")
+        overwrite_schema = resource_config.get("overwrite_schema")
+        writerprops = resource_config.get("writer_properties")
 
         if save_mode is not None:
-            context.log.info(
+            context.log.debug(
                 "IO manager mode overridden with the asset metadata mode, %s -> %s",
                 main_save_mode,
                 save_mode,
             )
             main_save_mode = save_mode
-        context.log.info("Writing with mode: %s", main_save_mode)
+        context.log.debug("Writing with mode: %s", main_save_mode)
 
         partition_filters = None
         partition_columns = None
@@ -100,11 +100,11 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             partition_filters=partition_filters,
             partition_by=partition_columns,
             engine=engine,
-            overwrite_schema=context.metadata.get("overwrite_schema") or overwrite_schema,
-            custom_metadata=context.metadata.get("custom_metadata") or main_custom_metadata,
+            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
+            custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
             writer_properties=WriterProperties(**writerprops)
             if writerprops is not None
-            else writerprops,  # type: ignore
+            else writerprops,
             **delta_params,
         )
 
