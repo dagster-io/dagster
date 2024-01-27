@@ -114,7 +114,7 @@ export const SidebarOp = ({
   repoAddress,
   isGraph,
 }: SidebarOpProps) => {
-  const {error, solidContainer, isLoading} = useSidebarOpQuery(
+  const {error, solidContainer, isLoading, repository} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,
     isGraph,
@@ -150,6 +150,7 @@ export const SidebarOp = ({
             ? onEnterSubgraph
             : undefined
         }
+        repository={repository!}
       />
       {!isGraph && repoAddress && (
         <SidebarOpExecutionGraphs
