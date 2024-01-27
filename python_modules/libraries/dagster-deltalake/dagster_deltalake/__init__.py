@@ -16,6 +16,8 @@ from .io_manager import (
     DELTA_DATE_FORMAT as DELTA_DATE_FORMAT,
     DELTA_DATETIME_FORMAT as DELTA_DATETIME_FORMAT,
     DeltaLakeIOManager as DeltaLakeIOManager,
+    WriteMode as WriteMode,
+    WriterEngine as WriterEngine,
 )
 from .resource import DeltaTableResource as DeltaTableResource
 from .version import __version__
