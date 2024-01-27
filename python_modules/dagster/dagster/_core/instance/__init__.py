@@ -1373,7 +1373,8 @@ class DagsterInstance(DynamicPartitionsStore):
             if check.not_none(output.properties).is_asset_partitioned:
                 partitions_subset = job_partitions_def.subset_with_partition_keys(
                     job_partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end)
+                        PartitionKeyRange(partition_range_start, partition_range_end),
+                        dynamic_partitions_store=self
                     )
                 ).to_serializable_subset()
 
