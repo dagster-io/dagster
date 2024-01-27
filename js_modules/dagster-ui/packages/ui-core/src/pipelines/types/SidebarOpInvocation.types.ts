@@ -2,6 +2,13 @@
 
 import * as Types from '../../graphql/types';
 
+export type SidebarOpRepositoryFragment = {
+  __typename: 'Repository';
+  id: string;
+  name: string;
+  displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+};
+
 export type SidebarOpInvocationFragment = {
   __typename: 'Solid';
   name: string;

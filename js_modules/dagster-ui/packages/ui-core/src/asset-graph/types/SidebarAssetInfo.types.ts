@@ -148,6 +148,7 @@ export type SidebarAssetFragment = {
     __typename: 'Repository';
     id: string;
     name: string;
+    displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -15830,6 +15831,7 @@ export type SidebarAssetQuery = {
           __typename: 'Repository';
           id: string;
           name: string;
+          displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
         };
         requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;

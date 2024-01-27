@@ -22,3 +22,34 @@ export const CodeLink = ({file, lineNumber}: {file: string; lineNumber: number})
     </ExternalAnchorButton>
   );
 };
+
+export const VersionControlCodeLink = ({
+  versionControlUrl,
+  pathInModule,
+  lineNumber,
+}: {
+  versionControlUrl: string;
+  pathInModule: string;
+  lineNumber: number;
+}) => {
+  const codeLink = versionControlUrl + '/' + pathInModule + '#L' + lineNumber.toString();
+
+  if (versionControlUrl.includes('github.com')) {
+    return (
+      <ExternalAnchorButton icon={<Icon name="github" />} href={codeLink}>
+        Open in GitHub
+      </ExternalAnchorButton>
+    );
+  } else if (versionControlUrl.includes('gitlab.com')) {
+    return (
+      <ExternalAnchorButton icon={<Icon name="gitlab" />} href={codeLink}>
+        Open in GitLab
+      </ExternalAnchorButton>
+    );
+  }
+  return (
+    <ExternalAnchorButton icon={<Icon name="open_in_new" />} href={codeLink}>
+      Open source
+    </ExternalAnchorButton>
+  );
+};
