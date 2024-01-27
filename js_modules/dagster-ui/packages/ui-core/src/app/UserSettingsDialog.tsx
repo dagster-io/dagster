@@ -2,21 +2,25 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
   Icon,
   Subheading,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
 
+import {AppContext} from './AppContext';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {HourCycleSelect} from './time/HourCycleSelect';
 import {ThemeSelect} from './time/ThemeSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
+import {CodeLinkProtocolSelect} from '../code-links/CodeLinkProtocol';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
@@ -109,6 +113,56 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     }
   };
 
+  let experimentalSettings = visibleFlags.map(({key, label, flagType}) => (
+    <Box
+      padding={{vertical: 8}}
+      flex={{justifyContent: 'space-between', alignItems: 'center'}}
+      key={key}
+    >
+      <div>{label || key}</div>
+      <Checkbox
+        format="switch"
+        checked={flags.includes(flagType)}
+        onChange={() => toggleFlag(flagType)}
+      />
+    </Box>
+  ));
+
+  const {codeLinksEnabled} = React.useContext(AppContext);
+
+  if (codeLinksEnabled) {
+    experimentalSettings = experimentalSettings.concat([
+      <Box
+        padding={{vertical: 8}}
+        flex={{
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          direction: 'column',
+          gap: 8,
+        }}
+        key="code-link"
+      >
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          Code link protocol
+          <Tooltip
+            content={
+              <>
+                URL protocol to use when linking to definitions in code
+                <br /> <br />
+                {'{'}FILE{'}'} and {'{'}LINE{'}'} replaced by filepath and line
+                <br />
+                number, respectively
+              </>
+            }
+          >
+            <Icon name="info" color={Colors.accentGray()} />
+          </Tooltip>
+        </Box>
+        <CodeLinkProtocolSelect />
+      </Box>,
+    ]);
+  }
+
   return (
     <>
       <DialogBody>
@@ -144,20 +198,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
-          {visibleFlags.map(({key, label, flagType}) => (
-            <Box
-              padding={{vertical: 8}}
-              flex={{justifyContent: 'space-between', alignItems: 'center'}}
-              key={key}
-            >
-              <div>{label || key}</div>
-              <Checkbox
-                format="switch"
-                checked={flags.includes(flagType)}
-                onChange={() => toggleFlag(flagType)}
-              />
-            </Box>
-          ))}
+          {experimentalSettings}
         </Box>
       </DialogBody>
       <DialogFooter topBorder>

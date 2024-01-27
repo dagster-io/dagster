@@ -29,6 +29,7 @@ import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
 } from '../assets/usePartitionHealthData';
+import {CodeLink} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
@@ -70,12 +71,27 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(asset);
   const hasAssetMetadata = assetType || assetMetadata.length > 0;
   const assetConfigSchema = asset.configField?.configType;
+  const codeLinkMetadata = asset.op?.metadata.find((e) => e.key === '__code_origin')?.value;
+
+  let codeLink = null;
+  if (codeLinkMetadata) {
+    const [codeLinkPathToModule, codeLinkPathInModule, codeLinkLineNumber] =
+      codeLinkMetadata.split(':');
+    if (codeLinkPathToModule && codeLinkPathInModule && codeLinkLineNumber) {
+      codeLink = (
+        <CodeLink
+          file={codeLinkPathToModule + codeLinkPathInModule}
+          lineNumber={parseInt(codeLinkLineNumber)}
+        />
+      );
+    }
+  }
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 
   return (
     <>
-      <Header assetNode={definition} repoAddress={repoAddress} />
+      <Header assetNode={definition} repoAddress={repoAddress} codeLink={codeLink} />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
@@ -185,23 +201,27 @@ interface HeaderProps {
   assetNode: AssetNodeForGraphQueryFragment;
   opName?: string;
   repoAddress?: RepoAddress | null;
+  codeLink?: React.ReactNode;
 }
 
-const Header = ({assetNode, repoAddress}: HeaderProps) => {
+const Header = ({assetNode, repoAddress, codeLink}: HeaderProps) => {
   const displayName = displayNameForAssetKey(assetNode.assetKey);
 
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-      <SidebarTitle
-        style={{
-          marginBottom: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Box>{displayName}</Box>
-      </SidebarTitle>
+      <Box flex={{gap: 4, direction: 'row', justifyContent: 'space-between'}}>
+        <SidebarTitle
+          style={{
+            marginBottom: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+          }}
+        >
+          <Box>{displayName}</Box>
+        </SidebarTitle>
+        {codeLink}
+      </Box>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
           {'View in Asset Catalog '}

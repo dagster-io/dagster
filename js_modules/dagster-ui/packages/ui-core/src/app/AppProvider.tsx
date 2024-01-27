@@ -38,6 +38,7 @@ import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
+import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
@@ -122,6 +123,7 @@ export interface AppProviderProps {
     headers?: {[key: string]: string};
     origin: string;
     telemetryEnabled?: boolean;
+    codeLinksEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
   };
 }
@@ -134,6 +136,7 @@ export const AppProvider = (props: AppProviderProps) => {
     headers = {},
     origin,
     telemetryEnabled = false,
+    codeLinksEnabled = false,
     statusPolling,
   } = config;
 
@@ -188,8 +191,9 @@ export const AppProvider = (props: AppProviderProps) => {
       basePath,
       rootServerURI,
       telemetryEnabled,
+      codeLinksEnabled,
     }),
-    [basePath, rootServerURI, telemetryEnabled],
+    [basePath, rootServerURI, telemetryEnabled, codeLinksEnabled],
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);
@@ -218,22 +222,24 @@ export const AppProvider = (props: AppProviderProps) => {
               <BrowserRouter basename={basePath || ''}>
                 <CompatRouter>
                   <TimeProvider>
-                    <WorkspaceProvider>
-                      <DeploymentStatusProvider include={statusPolling}>
-                        <CustomConfirmationProvider>
-                          <AnalyticsContext.Provider value={analytics}>
-                            <InstancePageContext.Provider value={instancePageValue}>
-                              <JobFeatureProvider>
-                                <LayoutProvider>{props.children}</LayoutProvider>
-                              </JobFeatureProvider>
-                            </InstancePageContext.Provider>
-                          </AnalyticsContext.Provider>
-                        </CustomConfirmationProvider>
-                        <CustomTooltipProvider />
-                        <CustomAlertProvider />
-                        <AssetRunLogObserver />
-                      </DeploymentStatusProvider>
-                    </WorkspaceProvider>
+                    <CodeLinkProtocolProvider>
+                      <WorkspaceProvider>
+                        <DeploymentStatusProvider include={statusPolling}>
+                          <CustomConfirmationProvider>
+                            <AnalyticsContext.Provider value={analytics}>
+                              <InstancePageContext.Provider value={instancePageValue}>
+                                <JobFeatureProvider>
+                                  <LayoutProvider>{props.children}</LayoutProvider>
+                                </JobFeatureProvider>
+                              </InstancePageContext.Provider>
+                            </AnalyticsContext.Provider>
+                          </CustomConfirmationProvider>
+                          <CustomTooltipProvider />
+                          <CustomAlertProvider />
+                          <AssetRunLogObserver />
+                        </DeploymentStatusProvider>
+                      </WorkspaceProvider>
+                    </CodeLinkProtocolProvider>
                   </TimeProvider>
                 </CompatRouter>
               </BrowserRouter>

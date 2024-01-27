@@ -239,6 +239,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
                     )
                     .replace("NONCE-PLACEHOLDER", nonce)
+                    .replace(
+                        '"__CODE_LINKS_ENABLED__"', str(context.instance.code_links_enabled).lower()
+                    )
                 )
 
                 if self._live_data_poll_rate:
