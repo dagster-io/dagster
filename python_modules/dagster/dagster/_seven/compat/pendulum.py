@@ -16,6 +16,11 @@ _IS_PENDULUM_3_OR_NEWER = (
 )
 
 
+PRE_TRANSITION = pendulum.tz.PRE_TRANSITION if _IS_PENDULUM_3_OR_NEWER else pendulum.PRE_TRANSITION
+POST_TRANSITION = pendulum.tz.POST_TRANSITION if _IS_PENDULUM_3_OR_NEWER else pendulum.POST_TRANSITION
+TRANSITION_ERROR = pendulum.tz.TRANSITION_ERROR if _IS_PENDULUM_3_OR_NEWER else pendulum.TRANSITION_ERROR
+
+
 @contextmanager
 def mock_pendulum_timezone(override_timezone):
     if _IS_PENDULUM_2_OR_NEWER:
@@ -27,28 +32,53 @@ def mock_pendulum_timezone(override_timezone):
 
 
 def create_pendulum_time(year, month, day, *args, **kwargs):
-    if "tz" in kwargs and "dst_rule" in kwargs and not _IS_PENDULUM_2_OR_NEWER:
-        tz = pendulum.timezone(kwargs.pop("tz"))
-        dst_rule = kwargs.pop("dst_rule")
+    # pendulum <2.0
+    if not _IS_PENDULUM_2_OR_NEWER:
+        if "tz" in kwargs and "dst_rule" in kwargs:
+            tz = pendulum.timezone(kwargs.pop("tz"))
+            dst_rule = kwargs.pop("dst_rule")
 
-        return pendulum.instance(
-            tz.convert(
-                datetime.datetime(
-                    year,
-                    month,
-                    day,
-                    *args,
-                    **kwargs,
-                ),
-                dst_rule=dst_rule,
+            return pendulum.instance(
+                tz.convert(
+                    datetime.datetime(
+                        year,
+                        month,
+                        day,
+                        *args,
+                        **kwargs,
+                    ),
+                    dst_rule=dst_rule,
+                )
             )
+        else:
+            pendulum.create(year, month, day, *args, **kwargs)
+
+    # pendulum >=3.0
+    elif _IS_PENDULUM_3_OR_NEWER:
+        raise_on_unknown_times = False
+        fold = 1
+
+        if "dst_rule" in kwargs:
+            dst_rule = kwargs.pop("dst_rule")
+            raise_on_unknown_times = (dst_rule == TRANSITION_ERROR)
+            if dst_rule == PRE_TRANSITION:
+                fold = 0
+            elif dst_rule == POST_TRANSITION:
+                fold = 1
+
+        return pendulum.datetime(
+            year,
+            month,
+            day,
+            *args,
+            fold=fold,
+            raise_on_unknown_times=raise_on_unknown_times,
+            **kwargs,
         )
 
-    return (
-        pendulum.datetime(year, month, day, *args, **kwargs)
-        if _IS_PENDULUM_2_OR_NEWER
-        else pendulum.create(year, month, day, *args, **kwargs)
-    )
+    # pendulum >=2.0,<3.0
+    else:
+        return pendulum.datetime(year, month, day, *args, **kwargs)
 
 
 PendulumDateTime: TypeAlias = (

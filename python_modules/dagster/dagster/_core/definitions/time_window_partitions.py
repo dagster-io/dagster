@@ -46,6 +46,7 @@ from dagster._seven.compat.pendulum import (
     PendulumDateTime,
     create_pendulum_time,
     to_timezone,
+    PRE_TRANSITION,
 )
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
@@ -156,7 +157,7 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
             dt.second,
             dt_microsecond,
             tz=tz,
-            dst_rule=pendulum.PRE_TRANSITION,
+            dst_rule=PRE_TRANSITION,
         )
         if not _IS_PENDULUM_2_OR_NEWER:
             dt = dt.add(microseconds=-1)
