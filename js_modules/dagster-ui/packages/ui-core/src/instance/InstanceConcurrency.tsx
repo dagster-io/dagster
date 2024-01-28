@@ -141,7 +141,7 @@ export const RunConcurrencyContent = ({
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <Subheading>Run concurrency</Subheading>
         </Box>
-        <div>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
           limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
           <Mono>dagster.yaml</Mono>. See the{' '}
@@ -153,7 +153,7 @@ export const RunConcurrencyContent = ({
             QueuedRunCoordinator documentation
           </a>{' '}
           for more information.
-        </div>
+        </Box>
       </>
     );
   }
