@@ -30,11 +30,11 @@ jobs:
 
       - name: Checkout master branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Checkout PR branch
         if: github.event.pull_request
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
@@ -51,7 +51,7 @@ jobs:
       # Deploy to Vercel Production on push to master branch
       - name: Checkout docs-prod branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
