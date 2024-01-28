@@ -129,7 +129,6 @@ export const LiveDataProvider = <T,>({
   }, [manager]);
 
   React.useEffect(() => {
-    // manager.setOnSubscriptionsChangedCallback((keys) => setAllObservedKeys(keys));
     manager.setOnUpdatingOrUpdated(onUpdatingOrUpdated);
   }, [manager, onUpdatingOrUpdated]);
 
