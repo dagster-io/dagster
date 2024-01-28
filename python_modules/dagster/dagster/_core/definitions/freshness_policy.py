@@ -1,12 +1,11 @@
 import datetime
 from typing import AbstractSet, NamedTuple, Optional
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
+from dagster._seven.compat.pendulum import create_pendulum_timezone
 from dagster._utils.schedules import (
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
@@ -122,7 +121,7 @@ class FreshnessPolicy(
             )
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(cron_schedule_timezone)  # type: ignore
+                create_pendulum_timezone(cron_schedule_timezone)  # type: ignore
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "

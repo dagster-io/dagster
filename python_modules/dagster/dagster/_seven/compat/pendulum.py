@@ -81,6 +81,13 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
         return pendulum.datetime(year, month, day, *args, **kwargs)
 
 
+def create_pendulum_timezone(*args, **kwargs):
+    if _IS_PENDULUM_3_OR_NEWER:
+        return pendulum.timezone(*args, **kwargs)
+    else:
+        return pendulum.tz.timezone(*args, **kwargs)
+
+
 PendulumDateTime: TypeAlias = (
     pendulum.DateTime if _IS_PENDULUM_2_OR_NEWER else pendulum.Pendulum  # type: ignore[attr-defined]
 )
