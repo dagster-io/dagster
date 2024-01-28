@@ -43,10 +43,10 @@ from dagster._serdes.serdes import (
 )
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_2_OR_NEWER,
+    PRE_TRANSITION,
     PendulumDateTime,
     create_pendulum_time,
     to_timezone,
-    PRE_TRANSITION,
 )
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (

@@ -17,8 +17,12 @@ _IS_PENDULUM_3_OR_NEWER = (
 
 
 PRE_TRANSITION = pendulum.tz.PRE_TRANSITION if _IS_PENDULUM_3_OR_NEWER else pendulum.PRE_TRANSITION
-POST_TRANSITION = pendulum.tz.POST_TRANSITION if _IS_PENDULUM_3_OR_NEWER else pendulum.POST_TRANSITION
-TRANSITION_ERROR = pendulum.tz.TRANSITION_ERROR if _IS_PENDULUM_3_OR_NEWER else pendulum.TRANSITION_ERROR
+POST_TRANSITION = (
+    pendulum.tz.POST_TRANSITION if _IS_PENDULUM_3_OR_NEWER else pendulum.POST_TRANSITION
+)
+TRANSITION_ERROR = (
+    pendulum.tz.TRANSITION_ERROR if _IS_PENDULUM_3_OR_NEWER else pendulum.TRANSITION_ERROR
+)
 
 
 @contextmanager
@@ -70,7 +74,7 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
 
         if "dst_rule" in kwargs:
             dst_rule = kwargs.pop("dst_rule")
-            raise_on_unknown_times = (dst_rule == TRANSITION_ERROR)
+            raise_on_unknown_times = dst_rule == TRANSITION_ERROR
             if dst_rule == PRE_TRANSITION:
                 fold = 0
             elif dst_rule == POST_TRANSITION:

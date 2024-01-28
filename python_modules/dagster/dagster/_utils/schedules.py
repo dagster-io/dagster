@@ -10,11 +10,11 @@ from croniter import croniter as _croniter
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._seven.compat.pendulum import (
+    POST_TRANSITION,
+    PRE_TRANSITION,
+    TRANSITION_ERROR,
     PendulumDateTime,
     create_pendulum_time,
-    PRE_TRANSITION,
-    POST_TRANSITION,
-    TRANSITION_ERROR,
 )
 
 # Monthly schedules with 29-31 won't reliably run every month
