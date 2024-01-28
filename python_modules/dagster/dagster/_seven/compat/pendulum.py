@@ -31,6 +31,16 @@ def mock_pendulum_timezone(override_timezone):
             yield
 
 
+@contextmanager
+def pendulum_test(mock):
+    if _IS_PENDULUM_3_OR_NEWER:
+        with pendulum.travel_to(mock, freeze=True):
+            yield
+    else:
+        with pendulum.test(mock):
+            yield
+
+
 def create_pendulum_time(year, month, day, *args, **kwargs):
     # pendulum <2.0
     if not _IS_PENDULUM_2_OR_NEWER:

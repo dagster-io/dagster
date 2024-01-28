@@ -46,7 +46,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test, to_timezone
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1395,7 +1395,7 @@ class TestRunStorage:
                 create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
             )
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 result = my_job.execute_in_process(instance=instance)
                 records = instance.get_run_records(filters=RunsFilter(run_ids=[result.run_id]))
                 assert len(records) == 1

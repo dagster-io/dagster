@@ -17,7 +17,7 @@ from dagster._core.test_utils import (
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test, to_timezone
 
 from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 
@@ -27,7 +27,7 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
+            with pendulum_test(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=create_workspace_load_target(),
                 instance=instance,
             ) as workspace_context:
@@ -60,7 +60,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         "US/Central",
     )
 
-    with pendulum.test(frozen_datetime):
+    with pendulum_test(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -135,7 +135,7 @@ def test_failure_after_run_created_before_run_launched(
         create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0, tz="UTC"),
         "US/Central",
     )
-    with pendulum.test(frozen_datetime):
+    with pendulum_test(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -208,7 +208,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         ),
         "US/Central",
     )
-    with pendulum.test(frozen_datetime):
+    with pendulum_test(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(

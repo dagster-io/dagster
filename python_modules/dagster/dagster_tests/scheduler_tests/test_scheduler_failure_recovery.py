@@ -18,7 +18,7 @@ from dagster._core.test_utils import (
     get_crash_signals,
 )
 from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test
 from dagster._utils import DebugCrashFlags, get_terminate_signal
 
 from .conftest import workspace_load_target
@@ -61,7 +61,7 @@ def _test_launch_scheduled_runs_in_subprocess(
             with create_test_daemon_workspace_context(
                 workspace_load_target(), instance
             ) as workspace_context:
-                with pendulum.test(execution_datetime):
+                with pendulum_test(execution_datetime):
                     evaluate_schedules(
                         workspace_context,
                         executor,
@@ -91,7 +91,7 @@ def test_failure_recovery_before_run_created(
     freeze_datetime = initial_datetime.add()
 
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -114,7 +114,7 @@ def test_failure_recovery_before_run_created(
         assert instance.get_runs_count() == 0
 
     freeze_datetime = freeze_datetime.add(minutes=5)
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), freeze_datetime, None, executor],
@@ -161,7 +161,7 @@ def test_failure_recovery_after_run_created(
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -205,7 +205,7 @@ def test_failure_recovery_after_run_created(
             validate_run_exists(instance.get_runs()[0], freeze_datetime)
 
     freeze_datetime = freeze_datetime.add(minutes=5)
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         # Running again just launches the existing run and marks the tick as success
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
@@ -248,7 +248,7 @@ def test_failure_recovery_after_tick_success(
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -289,7 +289,7 @@ def test_failure_recovery_after_tick_success(
         )
 
     freeze_datetime = freeze_datetime.add(minutes=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         # Running again just marks the tick as success since the run has already started
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
@@ -331,7 +331,7 @@ def test_failure_recovery_between_multi_runs(
     initial_datetime = create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -355,7 +355,7 @@ def test_failure_recovery_between_multi_runs(
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime.add(minutes=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), freeze_datetime, None, executor],

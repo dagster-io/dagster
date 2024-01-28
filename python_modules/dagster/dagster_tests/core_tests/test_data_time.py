@@ -27,7 +27,7 @@ from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -276,7 +276,7 @@ scenarios = {
 
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_partitioned_data_time(scenario):
-    with DagsterInstance.ephemeral() as instance, pendulum.test(create_pendulum_time(2023, 1, 7)):
+    with DagsterInstance.ephemeral() as instance, pendulum_test(create_pendulum_time(2023, 1, 7)):
         _materialize_partitions(instance, scenario.before_partitions)
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)

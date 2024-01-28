@@ -29,7 +29,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test, to_timezone
 
 from .test_scheduler_run import evaluate_schedules, validate_tick, wait_for_all_runs_to_start
 
@@ -190,7 +190,7 @@ def test_resources(
         "US/Central",
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
         instance.start_schedule(external_schedule)
 
@@ -201,7 +201,7 @@ def test_resources(
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime.add(seconds=30)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         evaluate_schedules(workspace_context_struct_resources, None, pendulum.now("UTC"))
         wait_for_all_runs_to_start(instance)
 

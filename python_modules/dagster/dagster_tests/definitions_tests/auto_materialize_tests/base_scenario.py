@@ -86,6 +86,7 @@ from dagster._daemon.asset_daemon import (
     asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
 )
 from dagster._serdes.serdes import serialize_value
+from dagster._seven.compat.pendulum import pendulum_test
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -262,7 +263,7 @@ class AssetReconciliationScenario(
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time):
+        with pendulum_test(test_time):
 
             @repository
             def repo():
@@ -362,7 +363,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+            with pendulum_test(test_time), mock.patch("time.time", new=test_time_fn):
                 if run.is_observation:
                     observe(
                         instance=instance,
@@ -383,7 +384,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum.test(test_time):
+        with pendulum_test(test_time):
             # get asset_graph
             if not with_external_asset_graph:
                 asset_graph = repo.asset_graph
@@ -446,7 +447,7 @@ class AssetReconciliationScenario(
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum_test(test_time) if self.current_time else contextlib.nullcontext():
             if self.cursor_from is not None:
                 self.cursor_from.do_daemon_scenario(
                     instance,
@@ -462,7 +463,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+            with pendulum_test(test_time), mock.patch("time.time", new=test_time_fn):
                 assert not run.is_observation, "Observations not supported for daemon tests"
                 if self.assets:
                     do_run(
@@ -488,7 +489,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum.test(test_time):
+        with pendulum_test(test_time):
             assert scenario_name is not None, "scenario_name must be provided for daemon runs"
 
             if self.code_locations:

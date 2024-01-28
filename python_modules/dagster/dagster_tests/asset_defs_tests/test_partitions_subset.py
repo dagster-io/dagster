@@ -16,7 +16,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -165,7 +165,7 @@ def test_all_partitions_subset_static_partitions_def() -> None:
 
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
-    with pendulum.test(create_pendulum_time(2020, 1, 6, hour=10)):
+    with pendulum_test(create_pendulum_time(2020, 1, 6, hour=10)):
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
         all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), pendulum.now("UTC"))
         assert len(all_subset) == 5
