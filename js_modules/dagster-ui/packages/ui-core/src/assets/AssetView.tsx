@@ -31,7 +31,7 @@ import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   GraphData,
   LiveDataForNode,
@@ -263,7 +263,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <AssetTabs selectedTab={selectedTab} tabs={tabList} />
             <Box padding={{bottom: 8}}>
-              <AssetLiveDataRefresh />
+              <AssetLiveDataRefreshButton />
             </Box>
           </Box>
         }

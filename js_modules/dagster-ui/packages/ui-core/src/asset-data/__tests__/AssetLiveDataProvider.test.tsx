@@ -3,21 +3,19 @@ jest.useFakeTimers();
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
 import {GraphQLError} from 'graphql/error';
-import React from 'react';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
 import {getMockResultFn} from '../../testing/mocking';
-import {AssetLiveDataProvider, useAssetsLiveData} from '../AssetLiveDataProvider';
-import {AssetLiveDataThreadID} from '../AssetLiveDataThread';
-import {AssetLiveDataThreadManager} from '../AssetLiveDataThreadManager';
+import {AssetLiveDataProvider, __resetForJest, useAssetsLiveData} from '../AssetLiveDataProvider';
 import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
 afterEach(() => {
-  AssetLiveDataThreadManager.__resetForJest();
+  __resetForJest();
 });
 
 function Test({
@@ -27,7 +25,7 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
-    thread?: AssetLiveDataThreadID;
+    thread?: LiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }[];
 }) {
@@ -37,7 +35,7 @@ function Test({
     hookResult,
   }: {
     keys: AssetKeyInput[];
-    thread?: AssetLiveDataThreadID;
+    thread?: LiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }) {
     hookResult(useAssetsLiveData(keys, thread).liveDataByNode);

@@ -236,6 +236,10 @@ export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
 }
 
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
+}
+
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
