@@ -1,7 +1,6 @@
 import multiprocessing
 from typing import TYPE_CHECKING
 
-import pendulum
 import pytest
 from dagster import AssetKey
 from dagster._core.errors import DagsterUserCodeUnreachableError

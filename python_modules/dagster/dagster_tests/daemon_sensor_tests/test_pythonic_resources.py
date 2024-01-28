@@ -3,7 +3,6 @@ import sys
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,

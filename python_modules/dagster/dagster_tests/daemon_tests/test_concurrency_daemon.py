@@ -1,7 +1,6 @@
 import tempfile
 from logging import Logger
 
-import pendulum
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus

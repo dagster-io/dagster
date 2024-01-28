@@ -3,11 +3,10 @@ import calendar
 import pendulum
 import pytest
 from dagster._seven.compat.pendulum import (
-    create_pendulum_time,
-    to_timezone,
     POST_TRANSITION,
     PRE_TRANSITION,
-    TRANSITION_ERROR,
+    create_pendulum_time,
+    to_timezone,
 )
 from dagster._utils.schedules import (
     _croniter_string_iterator,
@@ -246,63 +245,33 @@ DST_PARAMS = [
         "US/Central",
         "0 1 5 * *",  # 5th of each month at 1AM
         [
-            create_pendulum_time(
-                2023, 9, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 10, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 11, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 12, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2024, 1, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
+            create_pendulum_time(2023, 9, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 10, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 11, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 12, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2024, 1, 5, 1, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
         ],
     ),
     (
         "US/Central",
         "30 1 5 * *",  # 5th of each month at 130AM
         [
-            create_pendulum_time(
-                2023, 9, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 10, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 11, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 12, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2024, 1, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
+            create_pendulum_time(2023, 9, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 10, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 11, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 12, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2024, 1, 5, 1, 30, 0, tz="US/Central", dst_rule=POST_TRANSITION),
         ],
     ),
     (
         "US/Central",
         "0 2 5 * *",  # 5th of each month at 2AM
         [
-            create_pendulum_time(
-                2023, 9, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 10, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 11, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2023, 12, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
-            create_pendulum_time(
-                2024, 1, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION
-            ),
+            create_pendulum_time(2023, 9, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 10, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 11, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2023, 12, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
+            create_pendulum_time(2024, 1, 5, 2, 0, 0, tz="US/Central", dst_rule=POST_TRANSITION),
         ],
     ),
     # Daily / spring forward

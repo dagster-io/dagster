@@ -92,7 +92,7 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
 )
 from dagster._serdes.serdes import serialize_value
-from  dagster._seven.compat.pendulum import pendulum_test
+from dagster._seven.compat.pendulum import pendulum_test
 
 from .base_scenario import FAIL_TAG, run_request
 

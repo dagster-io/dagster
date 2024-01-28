@@ -1,4 +1,3 @@
-import pendulum
 from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_test, to_timezone
