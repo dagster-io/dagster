@@ -294,7 +294,7 @@ def _find_weekly_schedule_time(
         )
 
         # Move to the correct day of the week
-        current_day_of_week = new_time.day_of_week
+        current_day_of_week = new_time.isoweekday() % 7
         if day_of_week != current_day_of_week:
             if ascending:
                 new_time = new_time.add(days=(day_of_week - current_day_of_week) % 7)
