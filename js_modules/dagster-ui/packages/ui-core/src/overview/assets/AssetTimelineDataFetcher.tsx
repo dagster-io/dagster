@@ -9,13 +9,15 @@ import {
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS} from '../../app/QueryRefresh';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetTableFragment} from '../../assets/types/AssetTableFragment.types';
 import {AssetKeyInput, RunStatus} from '../../graphql/types';
+import {usePredicateMemo} from '../../hooks/usePredicateMemo';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../../instance/NextTick';
 import {doneStatuses} from '../../runs/RunStatuses';
 import {RUN_TIME_FRAGMENT} from '../../runs/RunUtils';
+
+const POLL_INTERVAL = 60 * 1000;
 
 export type CodeLocationNodes = Record<
   string,
@@ -60,8 +62,10 @@ export const AssetsTimelineDataFetcher = ({
 }) => {
   const [start, end] = range;
 
-  const startSec = start;
-  const endSec = end;
+  const startSecRef = React.useRef(start);
+  const endSecRef = React.useRef(start);
+  startSecRef.current = start;
+  endSecRef.current = end;
 
   const runsCache = React.useRef<{
     locations: Record<string, {runs: RunWithAssetsFragment[]; loading: boolean}>;
@@ -76,6 +80,25 @@ export const AssetsTimelineDataFetcher = ({
   const codeLocationSubscriptions = React.useRef<Record<string, Listener>>({});
   const assetSubscriptions = React.useRef<Record<string, Listener>>({});
   const groupSubscriptions = React.useRef<Record<string, Listener>>({});
+
+  const didRangeMeaningfullyChange = usePredicateMemo(
+    (prevRange, currentRange) =>
+      Math.abs((prevRange?.[0] ?? Infinity) - currentRange[0]!) > 59999 ||
+      Math.abs((prevRange?.[1] ?? Infinity) - currentRange[1]!) > 59999,
+    [range[0], range[1]],
+  );
+
+  const didCodeLocationNodesChange = usePredicateMemo(
+    (prev, current) => {
+      if (prev?.[1] !== current[1]) {
+        return 'range' + didRangeMeaningfullyChange;
+      }
+      const prevKeys = new Set(Object.keys(prev?.[0] ?? {}));
+      const currentKeys = Object.keys(current[0]);
+      return currentKeys.every((key) => prevKeys.has(key));
+    },
+    [codeLocationNodes, didRangeMeaningfullyChange] as const,
+  );
 
   const client = useApolloClient();
   React.useEffect(() => {
@@ -157,17 +180,17 @@ export const AssetsTimelineDataFetcher = ({
               variables: {
                 inProgressFilter: {
                   statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-                  createdBefore: endSec / 1000,
+                  createdBefore: endSecRef.current / 1000,
                   assetKeys,
                 },
                 terminatedFilter: {
                   statuses: Array.from(doneStatuses),
-                  createdBefore: endSec / 1000,
-                  updatedAfter: startSec / 1000,
+                  createdBefore: endSecRef.current / 1000,
+                  updatedAfter: startSecRef.current / 1000,
                   assetKeys,
                 },
-                tickCursor: startSec / 1000,
-                ticksUntil: endSec / 1000,
+                tickCursor: startSecRef.current / 1000,
+                ticksUntil: endSecRef.current / 1000,
               },
             });
             res(void 0);
@@ -223,13 +246,14 @@ export const AssetsTimelineDataFetcher = ({
       isInProgress = false;
     }
 
-    const interval = setInterval(tick, FIFTEEN_SECONDS);
+    const interval = setInterval(tick, POLL_INTERVAL);
     setTimeout(() => tick(true), 100);
     return () => {
       isCanceled = true;
       clearInterval(interval);
     };
-  }, [client, codeLocationNodes, endSec, startSec]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, didCodeLocationNodesChange, didRangeMeaningfullyChange]);
 
   const value = React.useMemo(() => {
     return {

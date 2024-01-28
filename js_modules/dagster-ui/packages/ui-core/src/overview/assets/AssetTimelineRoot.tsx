@@ -160,6 +160,8 @@ export const AssetTimelineRoot = ({Header, TabButton}: Props) => {
     },
   );
 
+  const codelocationNodes = React.useMemo(() => {}, []);
+
   const {renderedNodes, codeLocationNodes} = React.useMemo(() => {
     const nodes: NodeType[] = [];
 
@@ -430,7 +432,16 @@ function VirtualHeaderRow({
       </HeaderCell>
       <Box border="bottom">
         <HeaderCell>
-          <div style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              pointerEvents: 'none',
+            }}
+          >
             <TimeDividers
               interval={ONE_HOUR_MSEC}
               range={range}
