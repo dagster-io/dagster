@@ -516,6 +516,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2886,6 +2897,17 @@
                     "anyOf": [
                         {
                             "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
                         },
                         {
                             "type": "null"
