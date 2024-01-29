@@ -275,17 +275,6 @@ def project_scaffold_command(
             lexer="bash",
             padding=1,
         ),
-        "Note: DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is an environment variable. If using Microsoft "
-        "Powershell, set it before running 'dagster dev' using this syntax:",
-        Syntax(
-            code="\n".join(
-                [
-                    '$env:DAGSTER_DBT_PARSE_PROJECT_ON_LOAD = "1"',
-                ]
-            ),
-            lexer="powershell",
-            padding=1,
-        ),
     )
 
 
