@@ -51,8 +51,11 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
 
   const setState = React.useCallback(
     (input: React.SetStateAction<T>) => {
-      const next =
+      let next: any =
         input instanceof Function ? input(validateRef.current(getJSONForKey(key))) : input;
+      if (next instanceof Set) {
+        next = Array.from(next);
+      }
       if (next === undefined) {
         window.localStorage.removeItem(key);
       } else {
@@ -70,5 +73,5 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
   );
 
   const value = React.useMemo(() => [state, setState], [state, setState]);
-  return value as [T, React.Dispatch<React.SetStateAction<T | undefined>>];
+  return value as [T, (state: React.SetStateAction<T | undefined>) => void];
 }

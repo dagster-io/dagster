@@ -27,6 +27,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -42,6 +43,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
+from dagster._core.storage.event_log.schema import AssetRunsTable
 from dagster._core.storage.sql import SqlAlchemyQuery
 from dagster._core.storage.sqlalchemy_compat import (
     db_fetch_mappings,
@@ -65,6 +67,7 @@ from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
 
 from ..dagster_run import (
+    FINISHED_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
@@ -272,6 +275,15 @@ class SqlRunStorage(RunStorage):
         if filters.tags:
             query = self._apply_tags_table_filters(query, filters.tags)
 
+        if filters.asset_keys:
+            query = self._apply_asset_filter(
+                query,
+                asset_keys=filters.asset_keys,
+                statuses=filters.statuses,
+                created_before=filters.created_before,
+                updated_after=filters.updated_after,
+            )
+
         return query
 
     def _runs_query(
@@ -338,6 +350,34 @@ class SqlRunStorage(RunStorage):
                 db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
             )
             query = query.where(RunsTable.c.run_id.in_(subquery))
+        return query
+
+    def _apply_asset_filter(
+        self,
+        query: SqlAlchemyQuery,
+        asset_keys: Sequence[AssetKey],
+        statuses: Optional[Sequence[DagsterRunStatus]] = None,
+        created_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+    ) -> SqlAlchemyQuery:
+        """Filter runs by multiple asset keys."""
+        subquery = db_select([AssetRunsTable.c.run_id]).where(
+            AssetRunsTable.c.asset_key.in_([asset_key.to_string() for asset_key in asset_keys])
+        )
+
+        if created_before:
+            subquery = subquery.where(AssetRunsTable.c.run_start_time < created_before.timestamp())
+
+        if updated_after:
+            subquery = subquery.where(AssetRunsTable.c.run_end_time > updated_after.timestamp())
+
+        if statuses:
+            if all([status in FINISHED_STATUSES for status in statuses]):
+                subquery = subquery.where(AssetRunsTable.c.run_end_time.isnot(None))
+            elif all([status not in FINISHED_STATUSES for status in statuses]):
+                subquery = subquery.where(AssetRunsTable.c.run_end_time.is_(None))
+
+        query = query.where(RunsTable.c.run_id.in_(subquery))
         return query
 
     def get_runs(

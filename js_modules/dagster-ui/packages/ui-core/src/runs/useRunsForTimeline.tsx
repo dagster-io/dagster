@@ -226,6 +226,17 @@ const RUN_TIMELINE_QUERY = gql`
     terminated: runsOrError(filter: $terminatedFilter) {
       ... on Runs {
         results {
+          assets {
+            id
+            key {
+              path
+            }
+          }
+          assetMaterializations {
+            assetKey {
+              path
+            }
+          }
           id
           pipelineName
           repositoryOrigin {

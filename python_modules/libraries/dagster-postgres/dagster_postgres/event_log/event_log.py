@@ -8,7 +8,7 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -21,6 +21,7 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
+from dagster._core.storage.event_log.schema import AssetRunsTable
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -204,6 +205,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             self.store_asset_event_tags(event, event_id)
 
+        if event.dagster_event and event.dagster_event.is_job_event:
+            self._update_asset_runs(event)
+
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
 
@@ -258,6 +262,52 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else:
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
+
+        if event.dagster_event.is_asset_materialization_planned:
+            self._insert_asset_run(event, event_id)
+
+    def _insert_asset_run(self, event: EventLogEntry, event_id: int) -> None:
+        assert event.dagster_event
+        assert event.dagster_event.is_asset_materialization_planned
+        assert event.dagster_event.asset_key
+        with self.index_connection() as conn:
+            conn.execute(
+                db_dialects.postgresql.insert(AssetRunsTable)
+                .values(
+                    event_id=event_id,
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    run_id=event.run_id,
+                )
+                .on_conflict_do_nothing()
+            )
+
+    def _update_asset_runs(self, event: EventLogEntry) -> None:
+        if event.dagster_event_type == DagsterEventType.PIPELINE_START:
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetRunsTable.update()
+                    .values(
+                        run_start_time=event.timestamp,
+                    )
+                    .where(
+                        AssetRunsTable.c.run_id == event.run_id,
+                    )
+                )
+        elif event.dagster_event_type in {
+            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.PIPELINE_FAILURE,
+            DagsterEventType.PIPELINE_SUCCESS,
+        }:
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetRunsTable.update()
+                    .values(
+                        run_end_time=event.timestamp,
+                    )
+                    .where(
+                        AssetRunsTable.c.run_id == event.run_id,
+                    )
+                )
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]

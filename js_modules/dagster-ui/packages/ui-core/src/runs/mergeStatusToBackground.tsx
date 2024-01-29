@@ -20,7 +20,7 @@ const statusToColor = (status: BackgroundStatus) => {
   }
 };
 
-export const mergeStatusToBackground = (runs: TimelineRun[]) => {
+export const mergeStatusToBackground = (runs: Pick<TimelineRun, 'status'>[]) => {
   const counts = {
     scheduled: 0,
     queued: 0,

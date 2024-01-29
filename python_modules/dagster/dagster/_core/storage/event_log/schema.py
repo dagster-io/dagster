@@ -180,6 +180,19 @@ AssetCheckExecutionsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+AssetRunsTable = db.Table(
+    "asset_runs",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "event_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+    ),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("run_id", db.String(255), nullable=False),
+    db.Column("run_start_time", db.Float),
+    db.Column("run_end_time", db.Float),
+)
 db.Index(
     "idx_asset_check_executions",
     AssetCheckExecutionsTable.c.asset_key,

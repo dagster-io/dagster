@@ -133,7 +133,6 @@ InstanceInfo = db.Table(
     ),
     db.Column("run_storage_id", db.Text),
 )
-
 KeyValueStoreTable = db.Table(
     "kvs",
     RunStorageSqlMetadata,

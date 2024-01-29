@@ -262,14 +262,20 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
 
 export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
 
-export const groupIdForNode = (node: GraphNode) =>
-  [
-    node.definition.repository.name,
-    '@',
-    node.definition.repository.location.name,
-    ':',
-    node.definition.groupName,
-  ].join('');
+export const groupIdForNode = (node: {
+  definition: {
+    repository: {name: string | null; location: {name: string} | null} | null;
+    groupName: string | null;
+  } | null;
+}) =>
+  toGroupId(
+    node.definition?.repository?.name || '',
+    node.definition?.repository?.location?.name || '',
+    node.definition?.groupName || '',
+  );
+
+export const toGroupId = (repositoryName: string, locationName: string, groupName: string | null) =>
+  [repositoryName, '@', locationName, ':', groupName].join('');
 
 // Inclusive
 export const getUpstreamNodes = memoize(

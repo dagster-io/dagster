@@ -5,6 +5,7 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
+import {AssetTimelineRoot} from './assets/AssetTimelineRoot';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -24,23 +25,29 @@ export const OverviewActivityRoot = () => {
     [],
   );
 
-  const [defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
+  const [defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets' | 'asset-timeline'>(
     'overview-activity-tab',
-    (json) => (['timeline', 'assets'].includes(json) ? json : 'timeline'),
+    (json) => (['timeline', 'assets', 'asset-timeline'].includes(json) ? json : 'timeline'),
   );
 
   const tabButton = React.useCallback(
-    ({selected}: {selected: 'timeline' | 'assets'}) => {
+    ({selected}: {selected: 'timeline' | 'assets' | 'asset-timeline'}) => {
       if (defaultTab !== selected) {
         setDefaultTab(selected);
       }
       return (
         <JoinedButtons>
           <ActivatableButton $active={selected === 'timeline'} to="/overview/activity/timeline">
-            Timeline
+            Jobs timeline
           </ActivatableButton>
           <ActivatableButton $active={selected === 'assets'} to="/overview/activity/assets">
-            Assets
+            Assets overview
+          </ActivatableButton>
+          <ActivatableButton
+            $active={selected === 'asset-timeline'}
+            to="/overview/activity/assets-timeline"
+          >
+            Assets timeline
           </ActivatableButton>
         </JoinedButtons>
       );
@@ -57,14 +64,19 @@ export const OverviewActivityRoot = () => {
         <Route path="/overview/activity/timeline">
           <OverviewTimelineRoot Header={header} TabButton={tabButton} />
         </Route>
+        <Route path="/overview/activity/assets-timeline">
+          <AssetTimelineRoot Header={header} TabButton={tabButton} />
+        </Route>
         <Route
           path="*"
           render={React.useCallback(
             () =>
               defaultTab === 'timeline' ? (
                 <Redirect to="/overview/activity/timeline" />
-              ) : (
+              ) : defaultTab === 'assets' ? (
                 <Redirect to="/overview/activity/assets" />
+              ) : (
+                <Redirect to="/overview/activity/assets-timeline" />
               ),
             [defaultTab],
           )}

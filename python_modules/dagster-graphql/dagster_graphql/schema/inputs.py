@@ -1,5 +1,6 @@
 import graphene
 import pendulum
+from dagster import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._utils import check
@@ -41,6 +42,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     updatedAfter = graphene.InputField(graphene.Float)
     createdBefore = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
+    assetKeys = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
@@ -60,7 +62,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
         created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
-
+        asset_keys = [AssetKey(key.path) for key in self.assetKeys] if self.assetKeys else None
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
             job_name=self.pipelineName,
@@ -69,6 +71,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             snapshot_id=self.snapshotId,
             updated_after=updated_after,
             created_before=created_before,
+            asset_keys=asset_keys,
         )
 
 

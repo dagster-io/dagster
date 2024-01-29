@@ -1,12 +1,12 @@
 export interface RunWithTime {
   startTime: number;
-  endTime: number;
+  endTime: number | null;
 }
 
 export type RunBatch<R extends RunWithTime> = {
   runs: R[];
   startTime: number;
-  endTime: number;
+  endTime: number | null;
   left: number;
   width: number;
 };
@@ -69,7 +69,7 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
         batches.shift();
         current.runs = [...current.runs, ...next.runs];
         current.startTime = Math.min(current.startTime, next.startTime);
-        current.endTime = Math.max(current.endTime, next.endTime);
+        current.endTime = Math.max(current.endTime || 0, next.endTime || 0);
 
         // Identify the rightmost point for these two items.
         const right = Math.max(
