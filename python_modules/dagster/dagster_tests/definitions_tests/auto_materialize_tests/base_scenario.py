@@ -518,7 +518,6 @@ class AssetReconciliationScenario(
                             workspace_context,
                             threadpool_executor=None,
                             amp_tick_futures={},
-                            last_submit_times={},
                             debug_crash_flags=(debug_crash_flags or {}),
                             sensor_state_lock=threading.Lock(),
                         )
