@@ -1,27 +1,6 @@
 import {createGlobalStyle} from 'styled-components';
 
-import {
-  colorAccentRed,
-  colorBorderDefault,
-  colorBackgroundDefault,
-  colorBackgroundBlue,
-  colorBackgroundCyan,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundOlive,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorTextLight,
-  colorTextBlue,
-  colorTextCyan,
-  colorTextGreen,
-  colorTextRed,
-  colorTextYellow,
-  colorTextDefault,
-  colorBackgroundLight,
-  colorBackgroundBlueHover,
-} from '../theme/color';
-
+import {Colors} from './Color';
 import {Icons} from './Icon';
 import {FontFamily} from './styles';
 
@@ -29,7 +8,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-gutter-elt {
     .CodeMirror-lint-marker-error {
       background-image: none;
-      background: ${colorAccentRed()};
+      background: ${Colors.accentRed()};
       mask-image: url(${Icons.error});
       mask-size: cover;
       margin-bottom: 2px;
@@ -37,7 +16,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   }
 
   .CodeMirror-cursor {
-    border-color: ${colorTextLight()};
+    border-color: ${Colors.textLight()};
   }
 
   .CodeMirror-hint,
@@ -50,55 +29,55 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   }
 
   .CodeMirror.cm-s-dagster {
-    background-color: ${colorBackgroundLight()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDefault()};
 
     font-family: ${FontFamily.monospace};
     font-size: 16px;
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {
-      color: ${colorTextLight()};
+      color: ${Colors.textLight()};
     }
 
     .cm-atom {
-      color: ${colorTextBlue()};
+      color: ${Colors.textBlue()};
     }
 
     .cm-comment {
-      color: ${colorTextLight()};
+      color: ${Colors.textLight()};
     }
 
     .cm-meta {
-      color: ${colorTextLight()};
+      color: ${Colors.textLight()};
     }
 
     .cm-number {
-      color: ${colorTextRed()};
+      color: ${Colors.textRed()};
     }
 
     .cm-string {
-      color: ${colorTextGreen()};
+      color: ${Colors.textGreen()};
     }
 
     .cm-string-2 {
-      color: ${colorTextCyan()};
+      color: ${Colors.textCyan()};
     }
 
     .cm-variable-2 {
-      color: ${colorTextBlue()};
+      color: ${Colors.textBlue()};
     }
 
     .cm-keyword {
-      color: ${colorTextYellow()};
+      color: ${Colors.textYellow()};
     }
 
     .CodeMirror-selected {
-      background-color: ${colorBackgroundBlueHover()};
+      background-color: ${Colors.backgroundBlueHover()};
     }
 
     .CodeMirror-gutters {
-      background-color: ${colorBackgroundDefault()};
+      background-color: ${Colors.backgroundDefault()};
       opacity: 0.6;
     }
 
@@ -106,38 +85,38 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
       display: inline-block;
 
       &.cm-zero {
-        box-shadow: -1px 0 0 ${colorBackgroundGreen()};
+        box-shadow: -1px 0 0 ${Colors.backgroundGreen()};
       }
 
       &.cm-one {
-        box-shadow: -1px 0 0 ${colorBackgroundBlue()};
+        box-shadow: -1px 0 0 ${Colors.backgroundBlue()};
       }
 
       &.cm-two {
-        box-shadow: -1px 0 0 ${colorBackgroundCyan()};
+        box-shadow: -1px 0 0 ${Colors.backgroundCyan()};
       }
 
       &.cm-three {
-        box-shadow: -1px 0 0 ${colorBackgroundRed()};
+        box-shadow: -1px 0 0 ${Colors.backgroundRed()};
       }
 
       &.cm-four {
-        box-shadow: -1px 0 0 ${colorBackgroundYellow()};
+        box-shadow: -1px 0 0 ${Colors.backgroundYellow()};
       }
 
       &.cm-five {
-        box-shadow: -1px 0 0 ${colorBackgroundOlive()};
+        box-shadow: -1px 0 0 ${Colors.backgroundOlive()};
       }
 
       &.cm-six {
-        box-shadow: -1px 0 0 ${colorBackgroundGray()};
+        box-shadow: -1px 0 0 ${Colors.backgroundGray()};
       }
     }
   }
 
   div.CodeMirror-lint-tooltip {
-    background: ${colorBackgroundDefault()};
-    border: 1px solid ${colorBorderDefault()};
+    background: ${Colors.backgroundDefault()};
+    border: 1px solid ${Colors.borderDefault()};
   }
 
   .CodeMirror-lint-message {

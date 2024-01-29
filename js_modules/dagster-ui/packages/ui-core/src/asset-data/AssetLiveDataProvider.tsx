@@ -1,137 +1,22 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
-import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
-import {LiveDataForNode, buildLiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
-import {AssetKeyInput} from '../graphql/types';
-import {isDocumentVisible, useDocumentVisibility} from '../hooks/useDocumentVisibility';
-import {useDidLaunchEvent} from '../runs/RunUtils';
-
 import {AssetDataRefreshButton} from './AssetDataRefreshButton';
-import {
-  AssetGraphLiveQuery,
-  AssetGraphLiveQueryVariables,
-  AssetNodeLiveFragment,
-} from './types/AssetLiveDataProvider.types';
-
-const _assetKeyListeners: Record<string, Array<DataForNodeListener>> = {};
-let providerListener = (_key: string, _data?: LiveDataForNode) => {};
-const _cache: Record<string, LiveDataForNode> = {};
-
-export function useAssetLiveData(assetKey: AssetKeyInput) {
-  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
-    React.useMemo(() => [assetKey], [assetKey]),
-  );
-  return {
-    liveData: liveDataByNode[tokenForAssetKey(assetKey)],
-    refresh,
-    refreshing,
-  };
-}
-
-export function useAssetsLiveData(assetKeys: AssetKeyInput[]) {
-  const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-
-  const {setNeedsImmediateFetch, onSubscribed, onUnsubscribed} =
-    React.useContext(AssetLiveDataContext);
-
-  React.useEffect(() => {
-    const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
-      setData((data) => {
-        const copy = {...data};
-        if (!assetData) {
-          delete copy[stringKey];
-        } else {
-          copy[stringKey] = assetData;
-        }
-        return copy;
-      });
-    };
-    assetKeys.forEach((key) => {
-      _subscribeToAssetKey(key, setDataSingle, setNeedsImmediateFetch);
-    });
-    onSubscribed();
-    return () => {
-      assetKeys.forEach((key) => {
-        _unsubscribeToAssetKey(key, setDataSingle);
-      });
-      onUnsubscribed();
-    };
-  }, [assetKeys, onSubscribed, onUnsubscribed, setNeedsImmediateFetch]);
-
-  return {
-    liveDataByNode: data,
-
-    refresh: React.useCallback(() => {
-      _resetLastFetchedOrRequested(assetKeys);
-      setNeedsImmediateFetch();
-      setIsRefreshing(true);
-    }, [setNeedsImmediateFetch, assetKeys]),
-
-    refreshing: React.useMemo(() => {
-      for (const key of assetKeys) {
-        const stringKey = tokenForAssetKey(key);
-        if (!lastFetchedOrRequested[stringKey]?.fetched) {
-          return true;
-        }
-      }
-      setTimeout(() => {
-        setIsRefreshing(false);
-      });
-      return false;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [assetKeys, data, isRefreshing]),
-  };
-}
-
-async function _queryAssetKeys(client: ApolloClient<any>, assetKeys: AssetKeyInput[]) {
-  const {data} = await client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
-    query: ASSETS_GRAPH_LIVE_QUERY,
-    fetchPolicy: 'network-only',
-    variables: {
-      assetKeys,
-    },
-  });
-  const nodesByKey: Record<string, AssetNodeLiveFragment> = {};
-  const liveDataByKey: Record<string, LiveDataForNode> = {};
-  data.assetNodes.forEach((assetNode) => {
-    const id = tokenForAssetKey(assetNode.assetKey);
-    nodesByKey[id] = assetNode;
-  });
-  data.assetsLatestInfo.forEach((assetLatestInfo) => {
-    const id = tokenForAssetKey(assetLatestInfo.assetKey);
-    liveDataByKey[id] = buildLiveDataForNode(nodesByKey[id]!, assetLatestInfo);
-  });
-  Object.assign(_cache, liveDataByKey);
-  return liveDataByKey;
-}
-
-// How many assets to fetch at once
-export const BATCH_SIZE = 10;
-
-// Milliseconds we wait until sending a batched query
-const BATCHING_INTERVAL = 250;
+import {AssetLiveDataThreadID} from './AssetLiveDataThread';
+import {AssetLiveDataThreadManager} from './AssetLiveDataThreadManager';
+import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
+import {LiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
+import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
+import {useDidLaunchEvent} from '../runs/RunUtils';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 
 export const LiveDataPollRateContext = React.createContext<number>(SUBSCRIPTION_IDLE_POLL_RATE);
 
-type DataForNodeListener = (stringKey: string, data?: LiveDataForNode) => void;
-
-const AssetLiveDataContext = React.createContext<{
-  setNeedsImmediateFetch: () => void;
-  onSubscribed: () => void;
-  onUnsubscribed: () => void;
-}>({
-  setNeedsImmediateFetch: () => {},
-  onSubscribed: () => {},
-  onUnsubscribed: () => {},
-});
-
-const AssetLiveDataRefreshContext = React.createContext<{
+export const AssetLiveDataRefreshContext = React.createContext<{
   isGloballyRefreshing: boolean;
   oldestDataTimestamp: number;
   refresh: () => void;
@@ -141,107 +26,147 @@ const AssetLiveDataRefreshContext = React.createContext<{
   refresh: () => {},
 });
 
-// Map of asset keys to their last fetched time and last requested time
-const lastFetchedOrRequested: Record<
-  string,
-  {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
-> = {};
-
-export const _resetLastFetchedOrRequested = (keys?: AssetKeyInput[]) => {
-  (keys?.map((key) => tokenForAssetKey(key)) ?? Object.keys(lastFetchedOrRequested)).forEach(
-    (key) => {
-      delete lastFetchedOrRequested[key];
-    },
+export function useAssetLiveData(
+  assetKey: AssetKeyInput,
+  thread: AssetLiveDataThreadID = 'default',
+) {
+  const {liveDataByNode, refresh, refreshing} = useAssetsLiveData(
+    React.useMemo(() => [assetKey], [assetKey]),
+    thread,
   );
-};
+  return {
+    liveData: liveDataByNode[tokenForAssetKey(assetKey)],
+    refresh,
+    refreshing,
+  };
+}
 
-export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [needsImmediateFetch, setNeedsImmediateFetch] = React.useState<boolean>(false);
-  const [allObservedKeys, setAllObservedKeys] = React.useState<AssetKeyInput[]>([]);
-  const [cache, setCache] = React.useState<Record<string, LiveDataForNode>>({});
+export function useAssetsLiveData(
+  assetKeys: AssetKeyInput[],
+  thread: AssetLiveDataThreadID = 'default',
+  batchUpdatesInterval: number = 1000,
+) {
+  const [data, setData] = React.useState<Record<string, LiveDataForNode>>({});
+
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const client = useApolloClient();
+  const manager = AssetLiveDataThreadManager.getInstance(client);
 
-  const isDocumentVisible = useDocumentVisibility();
+  React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let didUpdateOnce = false;
+    let didScheduleUpdateOnce = false;
+    let updates: {stringKey: string; assetData: LiveDataForNode | undefined}[] = [];
+
+    function processUpdates() {
+      setData((data) => {
+        const copy = {...data};
+        updates.forEach(({stringKey, assetData}) => {
+          if (assetData) {
+            copy[stringKey] = assetData;
+          } else {
+            delete copy[stringKey];
+          }
+        });
+        updates = [];
+        return copy;
+      });
+    }
+
+    const setDataSingle = (stringKey: string, assetData?: LiveDataForNode) => {
+      /**
+       * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
+       */
+      updates.push({stringKey, assetData});
+      if (!didUpdateOnce) {
+        if (!didScheduleUpdateOnce) {
+          didScheduleUpdateOnce = true;
+          requestAnimationFrame(() => {
+            processUpdates();
+            didUpdateOnce = true;
+          });
+        }
+      } else if (!timeout) {
+        timeout = setTimeout(() => {
+          processUpdates();
+          timeout = null;
+        }, batchUpdatesInterval);
+      }
+    };
+    const unsubscribeCallbacks = assetKeys.map((key) =>
+      manager.subscribe(key, setDataSingle, thread),
+    );
+    return () => {
+      unsubscribeCallbacks.forEach((cb) => {
+        cb();
+      });
+    };
+  }, [assetKeys, batchUpdatesInterval, manager, thread]);
+
+  return {
+    liveDataByNode: data,
+
+    refresh: React.useCallback(() => {
+      manager.refreshKeys(assetKeys);
+      setIsRefreshing(true);
+    }, [assetKeys, manager]),
+
+    refreshing: React.useMemo(() => {
+      if (isRefreshing && !manager.areKeysRefreshing(assetKeys)) {
+        setTimeout(() => {
+          setIsRefreshing(false);
+        });
+        return false;
+      }
+      return true;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [assetKeys, data, isRefreshing]),
+  };
+}
+
+export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
+  const [allObservedKeys, setAllObservedKeys] = React.useState<AssetKeyInput[]>([]);
+
+  const client = useApolloClient();
+  const manager = AssetLiveDataThreadManager.getInstance(client);
 
   const [isGloballyRefreshing, setIsGloballyRefreshing] = React.useState(false);
   const [oldestDataTimestamp, setOldestDataTimestamp] = React.useState(0);
 
   const onUpdatingOrUpdated = React.useCallback(() => {
-    const allAssetKeys = Object.keys(_assetKeyListeners).filter(
-      (key) => _assetKeyListeners[key]?.length,
-    );
-    let isRefreshing = allAssetKeys.length ? true : false;
-    let oldestDataTimestamp = Infinity;
-    for (const key of allAssetKeys) {
-      if (lastFetchedOrRequested[key]?.fetched) {
-        isRefreshing = false;
-      }
-      oldestDataTimestamp = Math.min(
-        oldestDataTimestamp,
-        lastFetchedOrRequested[key]?.fetched ?? Infinity,
-      );
-    }
+    const {isRefreshing, oldestDataTimestamp} = manager.getOldestDataTimestamp();
     setIsGloballyRefreshing(isRefreshing);
-    setOldestDataTimestamp(oldestDataTimestamp === Infinity ? 0 : oldestDataTimestamp);
-  }, []);
+    setOldestDataTimestamp(oldestDataTimestamp);
+  }, [manager]);
+
+  React.useEffect(() => {
+    manager.setOnSubscriptionsChangedCallback((keys) =>
+      setAllObservedKeys(keys.map((key) => ({path: key.split('/')}))),
+    );
+    manager.setOnUpdatingOrUpdated(onUpdatingOrUpdated);
+  }, [manager, onUpdatingOrUpdated]);
+
+  const isDocumentVisible = useDocumentVisibility();
 
   const pollRate = React.useContext(LiveDataPollRateContext);
 
   React.useEffect(() => {
-    if (!isDocumentVisible) {
-      return;
-    }
-    // Check for assets to fetch every 5 seconds to simplify logic
-    // This means assets will be fetched at most 5 + SUBSCRIPTION_IDLE_POLL_RATE after their first fetch
-    // but then will be fetched every SUBSCRIPTION_IDLE_POLL_RATE after that
-    const interval = setInterval(
-      () => fetchData(client, pollRate, onUpdatingOrUpdated),
-      Math.min(pollRate, 5000),
-    );
-    fetchData(client, pollRate, onUpdatingOrUpdated);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [client, pollRate, isDocumentVisible, onUpdatingOrUpdated]);
+    manager.onDocumentVisiblityChange(isDocumentVisible);
+  }, [manager, isDocumentVisible]);
 
   React.useEffect(() => {
-    if (!needsImmediateFetch) {
-      return;
-    }
-    const timeout = setTimeout(() => {
-      fetchData(client, pollRate, onUpdatingOrUpdated);
-      setNeedsImmediateFetch(false);
-      // Wait BATCHING_INTERVAL before doing fetch in case the component is unmounted quickly (eg. in the case of scrolling/filtering quickly)
-    }, BATCHING_INTERVAL);
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [client, needsImmediateFetch, pollRate, onUpdatingOrUpdated]);
-
-  React.useEffect(() => {
-    providerListener = (stringKey, assetData) => {
-      setCache((data) => {
-        const copy = {...data};
-        if (!assetData) {
-          delete copy[stringKey];
-        } else {
-          copy[stringKey] = assetData;
-        }
-        return copy;
-      });
-    };
-  }, []);
+    manager.setPollRate(pollRate);
+  }, [manager, pollRate]);
 
   useDidLaunchEvent(() => {
-    _resetLastFetchedOrRequested();
-    setNeedsImmediateFetch(true);
+    manager.refreshKeys();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
   React.useEffect(() => {
     const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
     const dataForObservedKeys = allObservedKeys
-      .map((key) => cache[tokenForAssetKey(key)])
+      .map((key) => manager.getCacheEntry(key))
       .filter((n) => n) as LiveDataForNode[];
 
     const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
@@ -265,214 +190,26 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
             (e.stepKey && assetStepKeys.has(e.stepKey)),
         )
       ) {
-        _resetLastFetchedOrRequested();
+        manager.refreshKeys();
       }
     });
     return unobserve;
-  }, [allObservedKeys, cache]);
+  }, [allObservedKeys, manager]);
 
   return (
-    <AssetLiveDataContext.Provider
-      value={React.useMemo(
-        () => ({
-          setNeedsImmediateFetch: () => {
-            setNeedsImmediateFetch(true);
-          },
-          onSubscribed: () => {
-            setAllObservedKeys(getAllAssetKeysWithListeners());
-          },
-          onUnsubscribed: () => {
-            setAllObservedKeys(getAllAssetKeysWithListeners());
-          },
-        }),
-        [],
-      )}
+    <AssetLiveDataRefreshContext.Provider
+      value={{
+        isGloballyRefreshing,
+        oldestDataTimestamp,
+        refresh: React.useCallback(() => {
+          manager.refreshKeys();
+        }, [manager]),
+      }}
     >
-      <AssetLiveDataRefreshContext.Provider
-        value={{
-          isGloballyRefreshing,
-          oldestDataTimestamp,
-          refresh: React.useCallback(() => {
-            setIsGloballyRefreshing(true);
-            _resetLastFetchedOrRequested();
-            setNeedsImmediateFetch(true);
-          }, [setNeedsImmediateFetch]),
-        }}
-      >
-        {children}
-      </AssetLiveDataRefreshContext.Provider>
-    </AssetLiveDataContext.Provider>
+      {children}
+    </AssetLiveDataRefreshContext.Provider>
   );
 };
-
-let isFetching = false;
-async function _batchedQueryAssets(
-  assetKeys: AssetKeyInput[],
-  client: ApolloClient<any>,
-  pollRate: number,
-  setData: (data: Record<string, LiveDataForNode>) => void,
-  onUpdatingOrUpdated: () => void,
-) {
-  // Bail if the document isn't visible
-  if (!assetKeys.length || isFetching) {
-    return;
-  }
-  isFetching = true;
-  // Use Date.now because it properly advances in jest with fakeTimers /shrug
-  const requestTime = Date.now();
-  assetKeys.forEach((key) => {
-    lastFetchedOrRequested[tokenForAssetKey(key)] = {
-      requested: requestTime,
-    };
-  });
-  onUpdatingOrUpdated();
-
-  function doNextFetch(pollRate: number) {
-    isFetching = false;
-    const nextAssets = _determineAssetsToFetch(pollRate);
-    if (nextAssets.length) {
-      _batchedQueryAssets(nextAssets, client, pollRate, setData, onUpdatingOrUpdated);
-    }
-  }
-  try {
-    const data = await _queryAssetKeys(client, assetKeys);
-    const fetchedTime = Date.now();
-    assetKeys.forEach((key) => {
-      lastFetchedOrRequested[tokenForAssetKey(key)] = {
-        fetched: fetchedTime,
-      };
-    });
-    setData(data);
-    onUpdatingOrUpdated();
-    doNextFetch(pollRate);
-  } catch (e) {
-    console.error(e);
-
-    if ((e as any)?.message?.includes('500')) {
-      // Mark these assets as fetched so that we don't retry them until after the poll interval rather than retrying them immediately.
-      // This is preferable because if the assets failed to fetch it's likely due to a timeout due to the query being too expensive and retrying it
-      // will not make it more likely to succeed and it would add more load to the database.
-      const fetchedTime = Date.now();
-      assetKeys.forEach((key) => {
-        lastFetchedOrRequested[tokenForAssetKey(key)] = {
-          fetched: fetchedTime,
-        };
-      });
-    } else {
-      // If it's not a timeout from the backend then lets keep retrying instead of moving on.
-      assetKeys.forEach((key) => {
-        delete lastFetchedOrRequested[tokenForAssetKey(key)];
-      });
-    }
-
-    setTimeout(
-      () => {
-        doNextFetch(pollRate);
-      },
-      // If the poll rate is faster than 5 seconds lets use that instead
-      Math.min(pollRate, 5000),
-    );
-  }
-}
-
-function _subscribeToAssetKey(
-  assetKey: AssetKeyInput,
-  setData: DataForNodeListener,
-  setNeedsImmediateFetch: () => void,
-) {
-  const stringKey = tokenForAssetKey(assetKey);
-  _assetKeyListeners[stringKey] = _assetKeyListeners[stringKey] || [];
-  _assetKeyListeners[stringKey]!.push(setData);
-  const cachedData = _cache[stringKey];
-  if (cachedData) {
-    setData(stringKey, cachedData);
-  } else {
-    setNeedsImmediateFetch();
-  }
-}
-
-function _unsubscribeToAssetKey(assetKey: AssetKeyInput, setData: DataForNodeListener) {
-  const stringKey = tokenForAssetKey(assetKey);
-  const listeners = _assetKeyListeners[stringKey];
-  if (!listeners) {
-    return;
-  }
-  const indexToRemove = listeners.indexOf(setData);
-  listeners.splice(indexToRemove, 1);
-  if (!listeners.length) {
-    delete _assetKeyListeners[stringKey];
-  }
-}
-
-// Determine assets to fetch taking into account the last time they were fetched and whether they are already being fetched.
-function _determineAssetsToFetch(pollRate: number) {
-  const assetsToFetch: AssetKeyInput[] = [];
-  const assetsWithoutData: AssetKeyInput[] = [];
-  const allKeys = Object.keys(_assetKeyListeners);
-  while (allKeys.length && assetsWithoutData.length < BATCH_SIZE) {
-    const key = allKeys.shift()!;
-    const isRequested = !!lastFetchedOrRequested[key]?.requested;
-    if (isRequested) {
-      continue;
-    }
-    const lastFetchTime = lastFetchedOrRequested[key]?.fetched ?? null;
-    if (lastFetchTime !== null && Date.now() - lastFetchTime < pollRate) {
-      continue;
-    }
-    if (lastFetchTime && isDocumentVisible()) {
-      assetsToFetch.push({path: key.split('/')});
-    } else {
-      assetsWithoutData.push({path: key.split('/')});
-    }
-  }
-
-  // Prioritize fetching assets for which there is no data in the cache
-  return assetsWithoutData.concat(assetsToFetch).slice(0, BATCH_SIZE);
-}
-
-function fetchData(client: ApolloClient<any>, pollRate: number, onUpdatingOrUpdated: () => void) {
-  _batchedQueryAssets(
-    _determineAssetsToFetch(pollRate),
-    client,
-    pollRate,
-    (data) => {
-      Object.entries(data).forEach(([key, assetData]) => {
-        const listeners = _assetKeyListeners[key];
-        providerListener(key, assetData);
-        if (!listeners) {
-          return;
-        }
-        listeners.forEach((listener) => {
-          listener(key, assetData);
-        });
-      });
-    },
-    onUpdatingOrUpdated,
-  );
-}
-
-function getAllAssetKeysWithListeners(): AssetKeyInput[] {
-  return Object.keys(_assetKeyListeners).map((key) => ({path: key.split('/')}));
-}
-
-export function _setCacheEntryForTest(assetKey: AssetKeyInput, data?: LiveDataForNode) {
-  if (process.env.STORYBOOK || typeof jest !== 'undefined') {
-    const stringKey = tokenForAssetKey(assetKey);
-    if (data) {
-      _cache[stringKey] = data;
-    } else {
-      delete _cache[stringKey];
-    }
-    const listeners = _assetKeyListeners[stringKey];
-    providerListener(stringKey, data);
-    if (!listeners) {
-      return;
-    }
-    listeners.forEach((listener) => {
-      listener(stringKey, data);
-    });
-  }
-}
 
 export function AssetLiveDataRefresh() {
   const {isGloballyRefreshing, oldestDataTimestamp, refresh} = React.useContext(
@@ -486,114 +223,3 @@ export function AssetLiveDataRefresh() {
     />
   );
 }
-
-export const ASSET_LATEST_INFO_FRAGMENT = gql`
-  fragment AssetLatestInfoFragment on AssetLatestInfo {
-    id
-    assetKey {
-      path
-    }
-    unstartedRunIds
-    inProgressRunIds
-    latestRun {
-      id
-      ...AssetLatestInfoRun
-    }
-  }
-
-  fragment AssetLatestInfoRun on Run {
-    status
-    endTime
-    id
-  }
-`;
-
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
-  fragment AssetNodeLiveFragment on AssetNode {
-    id
-    opNames
-    repository {
-      id
-    }
-    assetKey {
-      path
-    }
-    assetMaterializations(limit: 1) {
-      ...AssetNodeLiveMaterialization
-    }
-    assetObservations(limit: 1) {
-      ...AssetNodeLiveObservation
-    }
-    assetChecksOrError {
-      ... on AssetChecks {
-        checks {
-          ...AssetCheckLiveFragment
-        }
-      }
-    }
-    freshnessInfo {
-      ...AssetNodeLiveFreshnessInfo
-    }
-    staleStatus
-    staleCauses {
-      key {
-        path
-      }
-      reason
-      category
-      dependency {
-        path
-      }
-    }
-    partitionStats {
-      numMaterialized
-      numMaterializing
-      numPartitions
-      numFailed
-    }
-  }
-
-  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
-    currentMinutesLate
-  }
-
-  fragment AssetNodeLiveMaterialization on MaterializationEvent {
-    timestamp
-    runId
-  }
-
-  fragment AssetNodeLiveObservation on ObservationEvent {
-    timestamp
-    runId
-  }
-
-  fragment AssetCheckLiveFragment on AssetCheck {
-    name
-    canExecuteIndividually
-    executionForLatestMaterialization {
-      id
-      runId
-      status
-      timestamp
-      stepKey
-      evaluation {
-        severity
-      }
-    }
-  }
-`;
-
-export const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
-      id
-      ...AssetNodeLiveFragment
-    }
-    assetsLatestInfo(assetKeys: $assetKeys) {
-      ...AssetLatestInfoFragment
-    }
-  }
-
-  ${ASSET_NODE_LIVE_FRAGMENT}
-  ${ASSET_LATEST_INFO_FRAGMENT}
-`;

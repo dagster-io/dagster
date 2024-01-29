@@ -1,16 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {usePermissionsForLocation} from '../app/Permissions';
-import {InstigationStatus} from '../graphql/types';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
 
 import {
-  displaySensorMutationErrors,
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
+  displaySensorMutationErrors,
 } from './SensorMutations';
 import {
   StartSensorMutation,
@@ -19,6 +13,10 @@ import {
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
 import {SensorSwitchFragment} from './types/SensorSwitch.types';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {InstigationStatus} from '../graphql/types';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -110,5 +108,6 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
       selectorId
       status
     }
+    sensorType
   }
 `;

@@ -1,15 +1,6 @@
-import {
-  Box,
-  Table,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Table} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
-
-import {TimeElapsed} from '../../runs/TimeElapsed';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
@@ -21,6 +12,7 @@ import {
   PartitionedAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from './types';
+import {TimeElapsed} from '../../runs/TimeElapsed';
 
 interface Props<T> {
   rootEvaluation: T;
@@ -41,8 +33,8 @@ const UnpartitionedPolicyEvaluationTable = ({
 }: {
   rootEvaluation: UnpartitionedAssetConditionEvaluation;
 }) => {
-  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const [hoveredKey, setHoveredKey] = useState<number | null>(null);
+  const flattened = useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
   return (
     <VeryCompactTable>
       <thead>
@@ -96,8 +88,8 @@ const PartitionedPolicyEvaluationTable = ({
 }: {
   rootEvaluation: PartitionedAssetConditionEvaluation;
 }) => {
-  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const [hoveredKey, setHoveredKey] = useState<number | null>(null);
+  const flattened = useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
   return (
     <VeryCompactTable>
       <thead>
@@ -193,14 +185,14 @@ const VeryCompactTable = styled(Table)`
   & tr th:last-child,
   & tr td:last-child {
     box-shadow:
-      inset 1px 1px 0 ${colorKeylineDefault()},
-      inset -1px 0 0 ${colorKeylineDefault()} !important;
+      inset 1px 1px 0 ${Colors.keylineDefault()},
+      inset -1px 0 0 ${Colors.keylineDefault()} !important;
   }
 
   & tr:last-child td:last-child {
     box-shadow:
-      inset -1px -1px 0 ${colorKeylineDefault()},
-      inset 1px 1px 0 ${colorKeylineDefault()} !important;
+      inset -1px -1px 0 ${Colors.keylineDefault()},
+      inset 1px 1px 0 ${Colors.keylineDefault()} !important;
   }
 `;
 
@@ -210,11 +202,11 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
   background-color: ${({$highlight}) => {
     switch ($highlight) {
       case 'hovered':
-        return colorBackgroundLightHover();
+        return Colors.backgroundLightHover();
       case 'highlighted':
-        return colorBackgroundDefaultHover();
+        return Colors.backgroundDefaultHover();
       case 'none':
-        return colorBackgroundDefault();
+        return Colors.backgroundDefault();
     }
   }};
 
@@ -223,14 +215,14 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
       return css`
         && td {
           box-shadow:
-            inset 0 -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset 0 -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
 
         && td:last-child {
           box-shadow:
-            inset -1px -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset -1px -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
       `;
     }

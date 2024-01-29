@@ -1,26 +1,22 @@
 import {
   Box,
+  Colors,
   Icon,
   IconWrapper,
   MiddleTruncate,
   Spinner,
   Tooltip,
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const RepositoryLink = ({
   repoAddress,
@@ -36,7 +32,7 @@ export const RepositoryLink = ({
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}} title={repoString}>
-      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={colorAccentGray()} />}
+      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.accentGray()} />}
       <RepositoryName to={workspacePathFromAddress(repoAddress)} style={{flex: 1}}>
         <MiddleTruncate text={repoString} />
       </RepositoryName>
@@ -66,7 +62,7 @@ export const RepositoryLink = ({
                   <StyledButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? colorAccentGray() : colorAccentGrayHover()}
+                      color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                     />
                   </StyledButton>
                 )}
@@ -113,6 +109,6 @@ const StyledButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${colorAccentBlue()};
+    color: ${Colors.accentBlue()};
   }
 `;

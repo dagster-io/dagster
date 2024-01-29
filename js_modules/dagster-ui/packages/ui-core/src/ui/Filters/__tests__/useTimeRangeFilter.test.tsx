@@ -1,17 +1,16 @@
 import {IconName} from '@dagster-io/ui-components';
-import {render, act, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';
-import React from 'react';
 
 import {
-  calculateTimeRanges,
-  useTimeRangeFilter,
+  ActiveFilterState,
   CustomTimeRangeFilterDialog,
   TimeRangeState,
-  ActiveFilterState,
+  calculateTimeRanges,
+  useTimeRangeFilter,
 } from '../useTimeRangeFilter';
 
 let mockReactDates = jest.fn((_props) => <div />);

@@ -15,7 +15,7 @@ When a job begins, it kicks off a _run_. A run is a single execution of a job in
 
 Using jobs provides the following benefits:
 
-- **Automation**: With [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors), jobs can be used to automate the execution of your Dagster pipelines. Refer to the [Automating your data pipelines guide](/guides/dagster/automating-pipelines) for more info and examples.
+- **Automation**: With [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors), jobs can be used to automate the execution of your Dagster pipelines. Refer to the [Automation guide](/concepts/automation) for more info.
 - **Control job run priority**: If using a [run queue](/deployment/run-coordinator), you can apply custom prioritization rules to how job runs are prioritized and executed.
 - **Potential for improved efficency**: By applying concurrency limits to job runs, there may be benefits to your pipeline's efficiency. Refer to the [Limiting run concurrency guide](/guides/limiting-concurrency-in-data-pipelines) for more info and examples.
 
@@ -51,10 +51,6 @@ With jobs, you can:
   <ArticleListItem
     title="Re-executing failed jobs"
     href="/guides/dagster/re-execution"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Automating data pipelines"
-    href="/guides/dagster/automating-pipelines"
   ></ArticleListItem>
   <ArticleListItem
     title="Customizing run queue priority"

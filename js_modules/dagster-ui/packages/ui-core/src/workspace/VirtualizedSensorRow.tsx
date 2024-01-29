@@ -1,33 +1,24 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  Box,
-  Caption,
-  Checkbox,
-  MiddleTruncate,
-  Tooltip,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {RepoAddress} from './types';
+import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
+import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
-import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {RepoAddress} from './types';
-import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
-import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS = '1.5fr 1fr 76px 120px 148px 180px';
@@ -133,7 +124,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             >
               <Caption
                 style={{
-                  color: colorTextLight(),
+                  color: Colors.textLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -157,7 +148,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           {sensorData ? (
-            <div style={{color: colorTextDefault()}}>
+            <div style={{color: Colors.textDefault()}}>
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
@@ -201,7 +192,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       {checkbox ? (

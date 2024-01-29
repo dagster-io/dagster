@@ -1,28 +1,29 @@
 import {
   Box,
+  Colors,
   FontFamily,
   Icon,
   Menu,
   MenuItem,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorLineageGroupNodeBorder,
-  colorTextLight,
-  colorTextLighter,
+  Tag,
+  Tooltip,
+  ifPlural,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
+import {AssetDescription, NameTooltipCSS} from './AssetNode';
+import {StatusCase} from './AssetNodeStatusContent';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {GraphNode} from './Utils';
+import {GroupLayout} from './layout';
+import {groupAssetsByStatus} from './util';
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-
-import {AssetDescription, NameTooltipCSS} from './AssetNode';
-import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphNode} from './Utils';
-import {GroupLayout} from './layout';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
   const name = `${group.groupName} `;
@@ -55,7 +56,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: 22})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em', color: colorTextLight()}}>
+      <Box style={{lineHeight: '1em', color: Colors.textLight()}}>
         {withMiddleTruncation(location, {maxLength: 31})}
       </Box>
     </Box>
@@ -101,19 +102,91 @@ export const CollapsedGroupNode = ({
               <Icon name="unfold_more" />
             </Box>
           </Box>
-          {!minimal && (
-            <Box padding={{horizontal: 12, bottom: 4}}>
-              <AssetDescription $color={colorTextLighter()}>
-                {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'}
-              </AssetDescription>
-            </Box>
-          )}
+          {!minimal && <GroupNodeAssetStatusCounts group={group} />}
         </CollapsedGroupNodeBox>
         <GroupStackLine style={{width: '94%', marginLeft: '3%'}} />
         <GroupStackLine style={{width: '88%', marginLeft: '6%'}} />
       </CollapsedGroupNodeContainer>
       {dialog}
     </ContextMenuWrapper>
+  );
+};
+
+const GroupNodeAssetStatusCounts = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
+  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
+
+  const {liveDataByNode} = useAssetsLiveData(assetKeys, 'group-node');
+  const statuses = React.useMemo(
+    () =>
+      groupAssetsByStatus(
+        group.assets.map((asset) => ({...asset, key: asset.assetKey})),
+        liveDataByNode,
+      ),
+    [group.assets, liveDataByNode],
+  );
+  return (
+    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+      {Object.keys(liveDataByNode).length !== assetKeys.length ? (
+        <AssetDescription $color={Colors.textLighter()}>
+          {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
+        </AssetDescription>
+      ) : (
+        <>
+          <>
+            {statuses.successful.length ? (
+              <Tooltip
+                content={`${statuses.successful.length} materialized asset${ifPlural(
+                  statuses.successful.length,
+                  '',
+                  's',
+                )}`}
+              >
+                <Tag icon="dot_filled" intent="success">
+                  {statuses.successful.length}
+                </Tag>
+              </Tooltip>
+            ) : null}
+          </>
+          {statuses.missing.length ? (
+            <Tooltip
+              content={`${statuses.missing.length} asset${ifPlural(
+                statuses.missing.length,
+                ' has',
+                's have',
+              )} never been materialized`}
+            >
+              <Tag icon="dot_filled" intent="warning">
+                {statuses.missing.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses.failed.length ? (
+            <Tooltip content={<FailedStatusTooltip statuses={statuses.failed} />}>
+              <Tag icon="dot_filled" intent="danger">
+                {statuses.failed.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses.inprogress.length ? (
+            <Tooltip
+              content={`${statuses.inprogress.length} asset${ifPlural(
+                statuses.inprogress.length,
+                ' is',
+                's are',
+              )} executing`}
+            >
+              <Tag icon="spinner" intent="primary">
+                {statuses.inprogress.length}
+              </Tag>
+            </Tooltip>
+          ) : null}
+        </>
+      )}
+    </Box>
   );
 };
 
@@ -171,22 +244,55 @@ export const useGroupNodeContextMenu = ({
   return {menu, dialog};
 };
 
+const FailedStatusTooltip = ({
+  statuses,
+}: {
+  statuses: ReturnType<typeof groupAssetsByStatus<any>>['failed'];
+}) => {
+  const checksFailed = statuses.filter(
+    ({status}) => status.case === StatusCase.CHECKS_FAILED,
+  ).length;
+  const overdue = statuses.filter(({status}) => status.case === StatusCase.OVERDUE).length;
+
+  const failed = statuses.length - checksFailed - overdue;
+
+  return (
+    <>
+      {failed ? (
+        <div>
+          {failed} failed asset{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {checksFailed ? (
+        <div>
+          {checksFailed} failed asset check{ifPlural(failed, '', 's')}
+        </div>
+      ) : null}
+      {overdue ? (
+        <div>
+          {overdue} overdue asset{ifPlural(overdue, '', 's')}
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundLight(),
+  background: Colors.backgroundLight(),
   border: `none`,
   borderRadius: '4px',
 });
 
 const GroupStackLine = styled.div`
   background: transparent;
-  border-top: 2px solid ${colorLineageGroupNodeBorder()};
+  border-top: 2px solid ${Colors.lineageGroupNodeBorder()};
   border-radius: 2px;
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
-  background: ${colorBackgroundLight()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  background: ${Colors.backgroundLight()};
   border-radius: 8px;
   position: relative;
   margin-top: 8px;
@@ -208,7 +314,7 @@ const CollapsedGroupNodeContainer = styled.div`
     gap: 3px;
     ${CollapsedGroupNodeBox} {
       transition: background linear 200ms;
-      background: ${colorBackgroundLightHover()};
+      background: ${Colors.backgroundLightHover()};
     }
   }
 `;

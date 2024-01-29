@@ -1,12 +1,9 @@
-from itertools import chain
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import DAGSTER_META_KEY
-from dagster._core.scheduler.instigation import InstigatorStatus
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -15,41 +12,6 @@ if TYPE_CHECKING:
         GrapheneInstigationEventConnection,
         GrapheneInstigationState,
         GrapheneInstigationStateNotFoundError,
-        GrapheneInstigationStates,
-    )
-
-
-def get_unloadable_instigator_states_or_error(
-    graphene_info: "ResolveInfo", instigator_type: Optional[InstigatorType] = None
-) -> "GrapheneInstigationStates":
-    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
-
-    check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
-    instigator_states = graphene_info.context.instance.all_instigator_state(
-        instigator_type=instigator_type
-    )
-    external_instigators = [
-        instigator
-        for repository_location in graphene_info.context.code_locations
-        for repository in repository_location.get_repositories().values()
-        for instigator in chain(
-            repository.get_external_schedules(), repository.get_external_sensors()
-        )
-    ]
-
-    instigator_selector_ids = {instigator.selector_id for instigator in external_instigators}
-    unloadable_states = [
-        instigator_state
-        for instigator_state in instigator_states
-        if instigator_state.selector_id not in instigator_selector_ids
-        and instigator_state.status == InstigatorStatus.RUNNING
-    ]
-
-    return GrapheneInstigationStates(
-        results=[
-            GrapheneInstigationState(instigator_state=instigator_state)
-            for instigator_state in unloadable_states
-        ]
     )
 
 

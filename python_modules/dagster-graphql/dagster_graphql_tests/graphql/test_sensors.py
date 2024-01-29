@@ -162,6 +162,8 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on Sensor {
+      canReset
+      defaultStatus
       sensorState {
         id
         status
@@ -169,24 +171,6 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
         hasStartPermission
         hasStopPermission
       }
-    }
-  }
-}
-"""
-
-GET_UNLOADABLE_QUERY = """
-query getUnloadableSensors {
-  unloadableInstigationStatesOrError(instigationType: SENSOR) {
-    ... on InstigationStates {
-      results {
-        id
-        name
-        status
-      }
-    }
-    ... on PythonError {
-      message
-      stack
     }
   }
 }
@@ -227,6 +211,7 @@ mutation($sensorSelector: SensorSelector!) {
     ... on Sensor {
       id
       jobOriginId
+      canReset
       sensorState {
         selectorId
         status
@@ -266,6 +251,7 @@ mutation($sensorSelector: SensorSelector!) {
     ... on Sensor {
       id
       jobOriginId
+      canReset
       sensorState {
         selectorId
         status
@@ -820,6 +806,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        assert result.data["sensorOrError"]["defaultStatus"] == "RUNNING"
         assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
         sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
         sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
@@ -866,6 +853,8 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        assert result.data["sensorOrError"]["defaultStatus"] == "STOPPED"
+        assert result.data["sensorOrError"]["canReset"] is False
         assert result.data["sensorOrError"]["sensorState"]["status"] == "STOPPED"
 
         sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
@@ -877,6 +866,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        assert start_result.data["startSensor"]["canReset"] is True
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
         # Resetting a sensor that is already running stops it
@@ -891,7 +881,8 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         assert instigator_state
-        assert instigator_state.status == InstigatorStatus.STOPPED
+        assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+        assert reset_result.data["resetSensor"]["canReset"] is False
         assert reset_result.data["resetSensor"]["sensorState"]["status"] == "STOPPED"
 
         # Resetting a stopped sensor is a noop
@@ -906,7 +897,8 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         assert instigator_state
-        assert instigator_state.status == InstigatorStatus.STOPPED
+        assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+        assert reset_result.data["resetSensor"]["canReset"] is False
         assert reset_result.data["resetSensor"]["sensorState"]["status"] == "STOPPED"
 
     def test_reset_sensor_with_default_status(self, graphql_context: WorkspaceRequestContext):
@@ -917,6 +909,8 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        assert result.data["sensorOrError"]["defaultStatus"] == "RUNNING"
+        assert result.data["sensorOrError"]["canReset"] is False
         assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
         assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
         assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
@@ -932,6 +926,14 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         assert stop_result.data["stopSensor"]["instigationState"]["status"] == "STOPPED"
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["canReset"] is True
+
         # Now can be restarted
         start_result = execute_dagster_graphql(
             graphql_context,
@@ -945,6 +947,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         assert instigator_state
         assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+        assert start_result.data["resetSensor"]["canReset"] is False
         assert start_result.data["resetSensor"]["sensorState"]["status"] == "RUNNING"
 
 
@@ -1304,14 +1307,6 @@ def test_unloadable_sensor(graphql_context: WorkspaceRequestContext):
             InstigatorStatus.STOPPED,
             SensorInstigatorData(min_interval=30, cursor=None, sensor_type=SensorType.STANDARD),
         )
-    )
-
-    result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
-
-    assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
-    assert (
-        result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
-        == "unloadable_running"
     )
 
     # Verify that we can stop the unloadable sensor

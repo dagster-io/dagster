@@ -10,20 +10,7 @@ import {
   tokenToString,
 } from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useMergedRefresh,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {usePortalSlot} from '../hooks/usePortalSlot';
-import {useStartTrace} from '../performance';
-import {Loading} from '../ui/Loading';
-import {StickyTableContainer} from '../ui/StickyTableContainer';
+import {useCallback, useLayoutEffect, useMemo} from 'react';
 
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {useRunListTabs, useSelectedRunsTab} from './RunListTabs';
@@ -40,6 +27,18 @@ import {
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRoot.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {usePortalSlot} from '../hooks/usePortalSlot';
+import {useStartTrace} from '../performance';
+import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 const PAGE_SIZE = 25;
 
@@ -82,7 +81,7 @@ export const RunsRoot = () => {
     (token) => token.token === 'status',
   );
 
-  const setFilterTokensWithStatus = React.useCallback(
+  const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
       if (staticStatusTags) {
         setFilterTokens([...statusTokens, ...tokens]);
@@ -93,7 +92,7 @@ export const RunsRoot = () => {
     [setFilterTokens, staticStatusTags, statusTokens],
   );
 
-  const onAddTag = React.useCallback(
+  const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
       if (!nonStatusTokens.some((token) => tokenToString(token) === tokenAsString)) {
@@ -103,7 +102,7 @@ export const RunsRoot = () => {
     [nonStatusTokens, setFilterTokensWithStatus],
   );
 
-  const enabledFilters = React.useMemo(() => {
+  const enabledFilters = useMemo(() => {
     const filters: RunFilterTokenType[] = [
       'tag',
       'snapshotId',
@@ -121,7 +120,7 @@ export const RunsRoot = () => {
     return filters;
   }, [staticStatusTags]);
 
-  const mutableTokens = React.useMemo(() => {
+  const mutableTokens = useMemo(() => {
     if (staticStatusTags) {
       return filterTokens.filter((token) => token.token !== 'status');
     }
@@ -264,7 +263,7 @@ export const RunsRoot = () => {
 };
 
 const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof useStartTrace>}) => {
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     trace.endTrace();
   }, [trace]);
   return null;

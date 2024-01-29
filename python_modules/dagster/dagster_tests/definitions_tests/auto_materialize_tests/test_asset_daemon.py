@@ -35,6 +35,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     set_auto_materialize_paused,
 )
+from dagster._serdes.serdes import serialize_value
 
 from .asset_daemon_scenario import (
     AssetDaemonScenario,
@@ -327,9 +328,9 @@ def test_automation_policy_sensor_ticks(num_threads):
 
             instance.daemon_cursor_storage.set_cursor_values(
                 {
-                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: AssetDaemonCursor.empty()
-                    ._replace(evaluation_id=pre_sensor_evaluation_id)
-                    .serialize()
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                        AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
+                    )
                 }
             )
 

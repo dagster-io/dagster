@@ -107,7 +107,7 @@ def test_mixed_source_asset_observation_job():
         Definitions(
             assets=[foo, bar],
             jobs=[define_asset_job("mixed_job", [foo, bar])],
-        )
+        ).get_all_job_defs()
 
 
 @pytest.mark.parametrize(

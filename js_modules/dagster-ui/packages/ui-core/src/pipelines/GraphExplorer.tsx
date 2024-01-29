@@ -3,30 +3,29 @@ import {gql} from '@apollo/client';
 import {Breadcrumbs} from '@blueprintjs/core';
 import {
   Checkbox,
+  Colors,
+  ErrorBoundary,
   SplitPanelContainer,
   TextInput,
-  ErrorBoundary,
-  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
-import Color from 'color';
+import ColorLib from 'color';
 import qs from 'qs';
-import * as React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {filterByQuery} from '../app/GraphQueryImpl';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
-import {useOpLayout} from '../graph/asyncGraphLayout';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {RepoAddress} from '../workspace/types';
 
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
+import {useOpLayout} from '../graph/asyncGraphLayout';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {RepoAddress} from '../workspace/types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
@@ -59,13 +58,13 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     repoAddress,
     isGraph,
   } = props;
-  const [nameMatch, setNameMatch] = React.useState('');
+  const [nameMatch, setNameMatch] = useState('');
 
   const handleQueryChange = (opsQuery: string) => {
     onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
   };
 
-  const handleAdjustPath = React.useMemo(
+  const handleAdjustPath = useMemo(
     () => (fn: (opNames: string[]) => void) => {
       const opNames = [...explorerPath.opNames];
       const retValue = fn(opNames);
@@ -141,7 +140,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
   const invalidParent =
     parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (invalidSelection || invalidParent) {
       handleAdjustPath((opNames) => {
         opNames.pop();
@@ -149,7 +148,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     }
   }, [handleAdjustPath, invalidSelection, invalidParent]);
 
-  const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
+  const solids = useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
   const showAssetRenderingOption =
     !isGraph && solids.some((s) => s.definition.assetNodes.length > 0);
@@ -158,12 +157,12 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultOps = React.useMemo(
+  const queryResultOps = useMemo(
     () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
     [opsQuery, solids, solidsQueryEnabled],
   );
 
-  const highlightedOps = React.useMemo(
+  const highlightedOps = useMemo(
     () => queryResultOps.all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
     [nameMatch, queryResultOps.all],
   );
@@ -171,7 +170,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
   const parentOp = parentHandle && parentHandle.solid;
   const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
 
-  const breadcrumbs = React.useMemo(() => {
+  const breadcrumbs = useMemo(() => {
     const opNames = explorerPath.opNames;
     const breadcrumbs = opNames.map((name, idx) => ({
       text: name,
@@ -351,7 +350,7 @@ export const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
 `;
 
 export const RightInfoPanelContent = styled.div`
@@ -360,7 +359,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 20px;
   display: inline-flex;
@@ -373,7 +372,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 const HighlightOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
   display: inline-flex;
@@ -394,7 +393,7 @@ export const QueryOverlay = styled.div`
 `;
 
 const BreadcrumbsOverlay = styled.div`
-  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
+  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

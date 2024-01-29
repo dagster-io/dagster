@@ -1514,3 +1514,13 @@ def test_time_window_partitions_subset_add_partition_to_front():
     assert combined == PartitionKeysTimeWindowPartitionsSubset(
         partitions_def, {"2023-01-01", "2023-01-02"}
     )
+
+
+def test_get_partition_keys_not_in_subset_empty_subset() -> None:
+    # starts in the future
+    partitions_def = DailyPartitionsDefinition("2024-01-01")
+    time_windows_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=0, included_time_windows=[]
+    )
+    with pendulum.test(create_pendulum_time(2023, 1, 1)):
+        assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []

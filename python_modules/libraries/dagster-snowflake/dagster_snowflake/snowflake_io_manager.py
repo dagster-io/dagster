@@ -366,9 +366,12 @@ class SnowflakeDbClient(DbClient):
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
             connection.execute(_get_cleanup_statement(table_slice))
-        except ProgrammingError:
-            # table doesn't exist yet, so ignore the error
-            pass
+        except ProgrammingError as e:
+            if "does not exist" in e._message():  # type: ignore # noqa: SLF001
+                # table doesn't exist yet, so ignore the error
+                return
+            else:
+                raise
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

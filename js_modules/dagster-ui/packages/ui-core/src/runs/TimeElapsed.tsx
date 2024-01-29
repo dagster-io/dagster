@@ -1,5 +1,5 @@
-import {Group, Icon, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, Group, Icon} from '@dagster-io/ui-components';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Util';
 
@@ -12,16 +12,16 @@ export interface Props {
 export const TimeElapsed = (props: Props) => {
   const {startUnix, endUnix, showMsec} = props;
 
-  const [endTime, setEndTime] = React.useState(() => (endUnix ? endUnix * 1000 : null));
-  const interval = React.useRef<ReturnType<typeof setInterval>>();
-  const timeout = React.useRef<ReturnType<typeof setTimeout>>();
+  const [endTime, setEndTime] = useState(() => (endUnix ? endUnix * 1000 : null));
+  const interval = useRef<ReturnType<typeof setInterval>>();
+  const timeout = useRef<ReturnType<typeof setTimeout>>();
 
-  const clearTimers = React.useCallback(() => {
+  const clearTimers = useCallback(() => {
     interval.current && clearInterval(interval.current);
     timeout.current && clearTimeout(timeout.current);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // An end time has been supplied. Simply set a static value.
     if (endUnix) {
       setEndTime(endUnix * 1000);
@@ -43,7 +43,7 @@ export const TimeElapsed = (props: Props) => {
 
   return (
     <Group direction="row" spacing={4} alignItems="center">
-      <Icon name="timer" color={colorTextLight()} />
+      <Icon name="timer" color={Colors.textLight()} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
         {startTime
           ? showMsec

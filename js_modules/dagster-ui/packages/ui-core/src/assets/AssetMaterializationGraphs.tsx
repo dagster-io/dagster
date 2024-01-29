@@ -1,14 +1,14 @@
 import {
   Box,
-  NonIdealState,
   Caption,
-  Subheading,
+  Colors,
   ExternalAnchorButton,
-  colorTextLight,
+  NonIdealState,
+  Subheading,
 } from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetEventGroup} from './groupByPartition';
@@ -19,9 +19,9 @@ export const AssetMaterializationGraphs = (props: {
   asSidebarSection?: boolean;
   columnCount?: number;
 }) => {
-  const [xHover, setXHover] = React.useState<string | number | null>(null);
+  const [xHover, setXHover] = useState<string | number | null>(null);
 
-  const reversed = React.useMemo(() => {
+  const reversed = useMemo(() => {
     return [...props.groups].reverse();
   }, [props.groups]);
 
@@ -74,7 +74,7 @@ export const AssetMaterializationGraphs = (props: {
         props.asSidebarSection ? (
           <Box
             margin={{horizontal: 24, vertical: 12}}
-            style={{color: colorTextLight(), fontSize: '0.8rem'}}
+            style={{color: Colors.textLight(), fontSize: '0.8rem'}}
           >
             No numeric metadata entries available to be graphed.
           </Box>
@@ -95,7 +95,7 @@ export const AssetMaterializationGraphs = (props: {
         )
       ) : (
         props.xAxis === 'partition' && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: colorTextLight()}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.textLight()}}>
             When graphing values by partition, the highest data point for each materialized event
             label is displayed.
           </Box>

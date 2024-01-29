@@ -50,19 +50,20 @@ from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -80,7 +81,11 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._daemon.asset_daemon import (
+    AssetDaemon,
+    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
+)
+from dagster._serdes.serdes import serialize_value
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -127,33 +132,6 @@ class AssetEvaluationSpec(NamedTuple):
             num_requested=1 if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE else 0,
             num_skipped=1 if rule.decision_type == AutoMaterializeDecisionType.SKIP else 0,
             num_discarded=1 if rule.decision_type == AutoMaterializeDecisionType.DISCARD else 0,
-        )
-
-    def to_evaluation(
-        self, asset_graph: AssetGraph, instance: DagsterInstance
-    ) -> AutoMaterializeAssetEvaluation:
-        asset_key = AssetKey.from_coercible(self.asset_key)
-        return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
-            asset_graph=asset_graph,
-            asset_key=asset_key,
-            asset_partitions_by_rule_evaluation=[
-                (
-                    rule_evaluation,
-                    (
-                        {
-                            AssetKeyPartitionKey(asset_key, partition_key)
-                            for partition_key in partition_keys
-                        }
-                        if partition_keys
-                        else set()
-                    ),
-                )
-                for rule_evaluation, partition_keys in self.rule_evaluations
-            ],
-            num_requested=self.num_requested,
-            num_skipped=self.num_skipped,
-            num_discarded=self.num_discarded,
-            dynamic_partitions_store=instance,
         )
 
 
@@ -368,7 +346,9 @@ class AssetReconciliationScenario(
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
+                cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                    serialize_value(cursor), repo.asset_graph
+                )
 
             else:
                 cursor = AssetDaemonCursor.empty()

@@ -1,4 +1,3 @@
-import atexit
 import json
 import os
 import shutil
@@ -16,6 +15,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
@@ -113,27 +113,24 @@ def test_dbt_cli_failure() -> None:
         dbt.cli(["parse"]).wait()
 
 
-def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
+def test_dbt_cli_subprocess_cleanup(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"])
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # noqa: SLF001
+    with pytest.raises(DagsterExecutionInterruptedError):
+        mock_stdout = mocker.patch.object(dbt_cli_invocation_1.process, "stdout")
+        mock_stdout.__enter__.side_effect = DagsterExecutionInterruptedError()
 
-    assert "Terminating the execution of dbt command." in caplog.text
+        dbt_cli_invocation_1.wait()
+
+    assert "Forwarding interrupt signal to dbt command" in caplog.text
     assert not dbt_cli_invocation_1.is_successful()
     assert dbt_cli_invocation_1.process.returncode < 0
-
-    caplog.clear()
-
-    dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
-
-    atexit._run_exitfuncs()  # noqa: SLF001
-
-    assert "Terminating the execution of dbt command." not in caplog.text
-    assert dbt_cli_invocation_2.is_successful()
-    assert dbt_cli_invocation_2.process.returncode == 0
 
 
 def test_dbt_cli_get_artifact() -> None:

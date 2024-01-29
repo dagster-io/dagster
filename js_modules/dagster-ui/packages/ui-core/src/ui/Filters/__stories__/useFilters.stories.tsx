@@ -1,6 +1,6 @@
 import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import React from 'react';
+import {useMemo} from 'react';
 
 import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
 import {FilterDropdown} from '../FilterDropdown';
@@ -86,7 +86,7 @@ const TestComponent = () => {
     icon: 'date',
   });
 
-  const filters = React.useMemo(
+  const filters = useMemo(
     () => [userFilter, deploymentFilter, timeRangeFilter, testFilter],
     [userFilter, deploymentFilter, timeRangeFilter, testFilter],
   );

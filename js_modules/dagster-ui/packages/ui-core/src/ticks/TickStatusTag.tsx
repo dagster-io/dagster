@@ -1,17 +1,17 @@
 import {
-  Tag,
+  BaseTag,
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Button,
-  BaseTag,
-  Box,
-  ButtonLink,
+  Tag,
   Tooltip,
   ifPlural,
-  colorBackgroundLighter,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo, useState} from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
@@ -27,8 +27,8 @@ export const TickStatusTag = ({
     | Pick<HistoryTickFragment, 'status' | 'skipReason' | 'runIds' | 'runKeys' | 'error'>;
   isStuckStarted?: boolean;
 }) => {
-  const [showErrors, setShowErrors] = React.useState(false);
-  const tag = React.useMemo(() => {
+  const [showErrors, setShowErrors] = useState(false);
+  const tag = useMemo(() => {
     const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
     const requestedItem = isAssetDaemonTick ? 'materialization' : 'run';
     switch (tick.status) {
@@ -41,7 +41,7 @@ export const TickStatusTag = ({
       case InstigationTickStatus.SKIPPED:
         const tag = (
           <BaseTag
-            fillColor={colorBackgroundLighter()}
+            fillColor={Colors.backgroundLighter()}
             label={isAssetDaemonTick ? '0 materializations requested' : '0 runs requested'}
           />
         );

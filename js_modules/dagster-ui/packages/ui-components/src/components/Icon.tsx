@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {Colors} from './Color';
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
@@ -47,6 +48,7 @@ import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
+import dot_filled from '../icon-svgs/dot_filled.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
@@ -115,6 +117,7 @@ import replay from '../icon-svgs/replay.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import search from '../icon-svgs/search.svg';
+import send from '../icon-svgs/send.svg';
 import sensors from '../icon-svgs/sensors.svg';
 import settings from '../icon-svgs/settings.svg';
 import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
@@ -152,7 +155,6 @@ import wysiwyg from '../icon-svgs/wysiwyg.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
-import {colorAccentPrimary} from '../theme/color';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
@@ -255,6 +257,7 @@ export const Icons = {
   delete: deleteSVG,
   done,
   dot,
+  dot_filled,
   download_for_offline,
   dynamic_feed,
   drag_handle,
@@ -292,6 +295,7 @@ export const Icons = {
   replay,
   schema,
   search,
+  send,
   settings,
   settings_backup_restore,
   sort_by_alpha,
@@ -350,7 +354,7 @@ export const Icon = React.memo((props: Props) => {
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
   const color: string | null =
-    props.color || (SVGS_WITH_COLORS.has(img) ? null : colorAccentPrimary());
+    props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.accentPrimary());
   return (
     <IconWrapper
       role="img"

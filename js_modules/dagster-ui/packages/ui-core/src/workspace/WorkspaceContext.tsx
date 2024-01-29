@@ -2,12 +2,6 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {PipelineSelector} from '../graphql/types';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
@@ -21,6 +15,11 @@ import {
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
 } from './types/WorkspaceContext.types';
+import {AppContext} from '../app/AppContext';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {PipelineSelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
@@ -171,6 +170,7 @@ export const ROOT_WORKSPACE_QUERY = gql`
       selectorId
       status
     }
+    sensorType
   }
 
   ${PYTHON_ERROR_FRAGMENT}

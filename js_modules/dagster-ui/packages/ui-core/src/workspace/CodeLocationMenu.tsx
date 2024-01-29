@@ -9,7 +9,7 @@ import {
   StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
@@ -19,8 +19,8 @@ export const CodeLocationMenu = ({
 }: {
   locationNode: WorkspaceRepositoryLocationNode;
 }) => {
-  const [configIsOpen, setConfigIsOpen] = React.useState(false);
-  const [libsIsOpen, setLibsIsOpen] = React.useState(false);
+  const [configIsOpen, setConfigIsOpen] = useState(false);
+  const [libsIsOpen, setLibsIsOpen] = useState(false);
 
   let libsMenuItem = null;
   let libsDialog = null;
@@ -137,7 +137,7 @@ const CodeLocationConfig = ({
 }: {
   displayMetadata: WorkspaceRepositoryLocationNode['displayMetadata'];
 }) => {
-  const yamlString = React.useMemo(() => {
+  const yamlString = useMemo(() => {
     const kvPairs = displayMetadata.reduce((accum, item) => {
       return {...accum, [item.key]: item.value};
     }, {});

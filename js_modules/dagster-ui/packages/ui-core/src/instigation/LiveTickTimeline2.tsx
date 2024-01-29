@@ -1,50 +1,31 @@
-import {
-  Caption,
-  Tooltip,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentLavender,
-  colorAccentLavenderHover,
-  colorAccentPrimary,
-  colorAccentRed,
-  colorAccentRedHover,
-  colorAccentReversed,
-  colorBackgroundDefault,
-  colorBackgroundDisabled,
-  colorKeylineDefault,
-  colorTextLight,
-  ifPlural,
-  useViewport,
-} from '@dagster-io/ui-components';
+import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {memo, useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {isStuckStartedTick} from './util';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {isStuckStartedTick} from './util';
-
 dayjs.extend(relativeTime);
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: colorAccentGreen(),
-  [InstigationTickStatus.FAILURE]: colorAccentRed(),
-  [InstigationTickStatus.STARTED]: colorAccentLavender(),
-  [InstigationTickStatus.SKIPPED]: colorBackgroundDisabled(),
+  [InstigationTickStatus.SUCCESS]: Colors.accentGreen(),
+  [InstigationTickStatus.FAILURE]: Colors.accentRed(),
+  [InstigationTickStatus.STARTED]: Colors.accentLavender(),
+  [InstigationTickStatus.SKIPPED]: Colors.backgroundDisabled(),
 };
 
 const HoverColorMap = {
-  [InstigationTickStatus.SUCCESS]: colorAccentGreenHover(),
-  [InstigationTickStatus.FAILURE]: colorAccentRedHover(),
-  [InstigationTickStatus.STARTED]: colorAccentLavenderHover(),
-  [InstigationTickStatus.SKIPPED]: colorAccentGrayHover(),
+  [InstigationTickStatus.SUCCESS]: Colors.accentGreenHover(),
+  [InstigationTickStatus.FAILURE]: Colors.accentRedHover(),
+  [InstigationTickStatus.STARTED]: Colors.accentLavenderHover(),
+  [InstigationTickStatus.SKIPPED]: Colors.accentGrayHover(),
 };
 
 const REFRESH_INTERVAL = 100;
@@ -80,10 +61,10 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   tickGrid?: number;
   timeAfter?: number;
 }) => {
-  const [now, setNow] = React.useState<number>(Date.now());
-  const [isPaused, setPaused] = React.useState<boolean>(false);
+  const [now, setNow] = useState<number>(Date.now());
+  const [isPaused, setPaused] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isPaused && !exactRange) {
       const interval = setInterval(() => {
         setNow(Date.now());
@@ -100,12 +81,12 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const {viewport, containerProps} = useViewport();
 
-  const ticksReversed = React.useMemo(() => {
+  const ticksReversed = useMemo(() => {
     // Reverse ticks to make tab order correct
     return ticks.filter((tick) => !tick.endTimestamp || tick.endTimestamp * 1000 > minX).reverse();
   }, [ticks, minX]);
 
-  const ticksToDisplay = React.useMemo(() => {
+  const ticksToDisplay = useMemo(() => {
     return ticksReversed.map((tick, i) => {
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
       const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
@@ -126,7 +107,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
   const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
-  const gridTicks = React.useMemo(() => {
+  const gridTicks = useMemo(() => {
     const ticks = [];
     for (let i = startTickGridX; i <= maxX; i += tickGridDelta) {
       ticks.push({
@@ -140,7 +121,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const {
     timezone: [timezone],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
 
   return (
     <div style={{marginRight: '8px'}}>
@@ -206,8 +187,8 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   );
 };
 
-const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
-  const status = React.useMemo(() => {
+const TickTooltip = memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
+  const status = useMemo(() => {
     if (tick.status === InstigationTickStatus.FAILURE) {
       return 'Evaluation failed';
     }
@@ -234,7 +215,7 @@ const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemon
         {status} ({elapsedTime})
       </Caption>
       {tick.status === InstigationTickStatus.STARTED ? null : (
-        <Caption color={colorTextLight()}>Click for details</Caption>
+        <Caption color={Colors.textLight()}>Click for details</Caption>
       )}
     </div>
   );
@@ -244,7 +225,7 @@ const TicksWrapper = styled.div`
   position: relative;
   height: 100px;
   padding: 10px 2px;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const TimeAxisWrapper = styled.div`
@@ -262,7 +243,7 @@ const Tick = styled.div<{status: InstigationTickStatus}>`
     place-content: center;
     display: grid;
   }
-  color: ${colorBackgroundDefault()};
+  color: ${Colors.backgroundDefault()};
   ${({status}) => `
     background: ${COLOR_MAP[status]};
     &:hover {
@@ -282,7 +263,7 @@ const GridTickLine = styled.div`
   top: 0;
   height: 108px;
   width: 1px;
-  background: ${colorKeylineDefault()};
+  background: ${Colors.keylineDefault()};
 `;
 const GridTickTime = styled.div`
   height: 16px;
@@ -297,13 +278,13 @@ const NowIndicator = styled.div`
   top: 0;
   height: 126px;
   width: 2px;
-  background: ${colorAccentPrimary()};
+  background: ${Colors.accentPrimary()};
   &:after {
     content: 'Now';
     position: absolute;
     left: 0;
-    background: ${colorAccentPrimary()};
-    color: ${colorAccentReversed()};
+    background: ${Colors.accentPrimary()};
+    color: ${Colors.accentReversed()};
     bottom: 0;
     font-size: 12px;
     padding: 3px 4px;

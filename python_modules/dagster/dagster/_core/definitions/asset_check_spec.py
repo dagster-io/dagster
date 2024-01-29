@@ -98,6 +98,13 @@ class AssetCheckSpec(
             additional_deps, AssetCheckKey(asset_key, name)
         )
 
+        for dep in additional_asset_deps:
+            if dep.asset_key == asset_key:
+                raise ValueError(
+                    f"Asset check {name} for asset {asset_key.to_string()} cannot have an additional "
+                    f"dependency on asset {asset_key.to_string()}."
+                )
+
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),

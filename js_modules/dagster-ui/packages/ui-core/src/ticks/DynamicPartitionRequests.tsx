@@ -1,9 +1,8 @@
-import {Box, Icon, Subheading, Table, Tag, colorKeylineDefault} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {DynamicPartitionsRequestType} from '../graphql/types';
+import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {DynamicPartitionRequestFragment} from './types/SensorDryRunDialog.types';
+import {DynamicPartitionsRequestType} from '../graphql/types';
 
 export function DynamicPartitionRequests({
   includeTitle = true,
@@ -12,7 +11,7 @@ export function DynamicPartitionRequests({
   includeTitle?: boolean;
   requests: Pick<DynamicPartitionRequestFragment, 'partitionKeys' | 'partitionsDefName' | 'type'>[];
 }) {
-  const rows = React.useMemo(() => {
+  const rows = useMemo(() => {
     if (!requests.length) {
       return [];
     }
@@ -41,7 +40,7 @@ export function DynamicPartitionRequests({
           <Subheading>Dynamic Partition Requests</Subheading>
         </Box>
       ) : null}
-      <Table style={{borderRight: `1px solid ${colorKeylineDefault()}`}}>
+      <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}}>
         <thead>
           <tr>
             <th>Partition</th>

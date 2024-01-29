@@ -56,7 +56,7 @@ type GroupChildProps = {
   empty: boolean;
 };
 
-const GroupChild = styled(({empty, ...rest}) => <Box {...rest} />)<GroupChildProps>`
+const GroupChild = styled(({empty: _empty, ...rest}) => <Box {...rest} />)<GroupChildProps>`
   ${({empty}) => (empty ? 'display: none;' : '')}
   pointer-events: auto;
 `;
@@ -77,7 +77,9 @@ const Outer = styled(Box)`
   pointer-events: none;
 `;
 
-const Inner = styled(({direction, spacing, ...rest}) => <Box {...rest} />)<InnerProps>`
+const Inner = styled(({direction: _direction, spacing: _spacing, ...rest}) => (
+  <Box {...rest} />
+))<InnerProps>`
   ${marginAdjustment}
 
   > div:empty {

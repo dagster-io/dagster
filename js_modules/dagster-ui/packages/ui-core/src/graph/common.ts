@@ -1,6 +1,5 @@
-import {AssetGraphLayout, AssetLayout} from '../asset-graph/layout';
-
 import {OpGraphLayout, OpLayout} from './layout';
+import {AssetGraphLayout, AssetLayout} from '../asset-graph/layout';
 
 export type Edge = {a: string; b: string};
 
@@ -43,7 +42,11 @@ export const closestNodeInDirection = (
     return;
   }
 
-  const current = layout.nodes[selectedNodeKey]!;
+  const current = layout.nodes[selectedNodeKey];
+  if (!current) {
+    return;
+  }
+
   const center = (op: OpLayout | AssetLayout): {x: number; y: number} => ({
     x: op.bounds.x + op.bounds.width / 2,
     y: op.bounds.y + op.bounds.height / 2,

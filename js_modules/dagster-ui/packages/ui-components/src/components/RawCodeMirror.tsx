@@ -1,7 +1,7 @@
 import 'codemirror/lib/codemirror.css';
 
 import CodeMirror from 'codemirror';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 
 type CodeMirrorHandlers = {
   onReady?: (instance: CodeMirror.Editor) => void;
@@ -21,16 +21,16 @@ interface Props {
 
 export const RawCodeMirror = (props: Props) => {
   const {value, options, handlers} = props;
-  const target = React.useRef<HTMLDivElement>(null);
-  const cm = React.useRef<CodeMirror.Editor | null>(null);
+  const target = useRef<HTMLDivElement>(null);
+  const cm = useRef<CodeMirror.Editor | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (value !== cm.current?.getValue()) {
       cm.current?.setValue(value);
     }
   }, [value]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!target.current || cm.current) {
       return;
     }
@@ -69,7 +69,7 @@ export const RawCodeMirror = (props: Props) => {
     }
   }, [handlers, options, value]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Check current options and update if necessary.
     if (cm.current && options) {
       Object.entries(options).forEach(([key, value]) => {

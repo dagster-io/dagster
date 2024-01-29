@@ -3,6 +3,7 @@ import shutil
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from pathlib import Path
 from typing import IO, TYPE_CHECKING, Generator, Iterator, Mapping, Optional, Sequence, Tuple
 
 from typing_extensions import Final
@@ -226,11 +227,11 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             filename = f"{filename}.partial"
         if len(filename) > MAX_FILENAME_LENGTH:
             filename = "{}.{}".format(non_secure_md5_hash_str(filebase.encode("utf-8")), extension)
-        location = os.path.join(self._base_dir, *namespace, filename)
-        location = os.path.abspath(location)
-        if not location.startswith(self._base_dir):
+        base_dir_path = Path(self._base_dir).resolve()
+        log_path = base_dir_path.joinpath(*namespace, filename).resolve()
+        if base_dir_path not in log_path.parents:
             raise ValueError("Invalid path")
-        return location
+        return str(log_path)
 
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None
