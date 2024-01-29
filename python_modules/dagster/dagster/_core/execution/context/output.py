@@ -376,6 +376,7 @@ class OutputContext:
 
         return self._partition_key is not None
 
+    # TODO: Deprecate `partition_key` and use `step_context.partition_key` instead.
     @public
     @property
     def partition_key(self) -> str:
@@ -422,6 +423,7 @@ class OutputContext:
         """Returns True if the asset being stored is partitioned."""
         return self.has_partitions
 
+    # TODO: Deprecate `asset_partition_key` and use `partition_key` instead.
     @public
     @property
     def asset_partition_key(self) -> str:
