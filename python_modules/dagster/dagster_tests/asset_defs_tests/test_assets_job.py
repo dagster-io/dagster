@@ -1411,7 +1411,7 @@ def test_job_preserved_with_asset_subset():
 
     @op(config_schema={"foo": int})
     def one(context):
-        assert context.op_config["foo"] == 1
+        assert context.op_execution_context.op_config["foo"] == 1
 
     asset_one = AssetsDefinition.from_op(one)
 
@@ -1446,7 +1446,7 @@ def test_job_default_config_preserved_with_asset_subset():
 
     @op(config_schema={"foo": Field(int, default_value=1)})
     def one(context):
-        assert context.op_config["foo"] == 1
+        assert context.op_execution_context.op_config["foo"] == 1
 
     asset_one = AssetsDefinition.from_op(one)
 
