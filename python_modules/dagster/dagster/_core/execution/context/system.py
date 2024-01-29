@@ -1250,7 +1250,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
-        """The time window for the partitions of the asset correponding to the given input.
+        """The time window for the partitions of the asset corresponding to the given input.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.

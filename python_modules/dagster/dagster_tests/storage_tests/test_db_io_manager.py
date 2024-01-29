@@ -1,7 +1,16 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
+from dagster import (
+    AssetKey,
+    BackfillPolicy,
+    Definitions,
+    InputContext,
+    MonthlyPartitionsDefinition,
+    OutputContext,
+    asset,
+    build_output_context,
+)
 from dagster._check import CheckError
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
@@ -574,3 +583,28 @@ def test_default_load_type_determination():
         default_load_type=int,
     )
     assert manager._default_load_type == int  # noqa: SLF001
+
+
+def test_load_asset_value():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+
+    @asset(
+        partitions_def=MonthlyPartitionsDefinition("2015-01-01"),
+        metadata={"partition_expr": "DATE"},
+        backfill_policy=BackfillPolicy.single_run(),
+    )
+    def my_asset():
+        ...
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={"io_manager": manager},
+    )
+
+    asset_value = defs.load_asset_value(
+        asset_key="my_asset",
+        partition_key="2015-01-01",
+    )
+    assert asset_value
