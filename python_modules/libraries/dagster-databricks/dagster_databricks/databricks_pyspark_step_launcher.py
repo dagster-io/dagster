@@ -290,7 +290,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             with raise_execution_interrupts():
                 yield from self.step_events_iterator(step_context, step_key, databricks_run_id)
         except:
-            # if executon is interrupted before the step is completed, cancel the run
+            # if execution is interrupted before the step is completed, cancel the run
             self.databricks_runner.client.workspace_client.jobs.cancel_run(databricks_run_id)
             raise
         finally:

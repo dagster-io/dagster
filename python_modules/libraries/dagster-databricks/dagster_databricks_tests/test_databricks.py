@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from unittest import mock
 
 import dagster
@@ -43,6 +44,9 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )
+        ),
+        compute.Library(
+            pypi=compute.PythonPyPiLibrary(package=f"databricks-sdk=={version('databricks-sdk')}")
         ),
     ]
     expected_health = [
@@ -137,6 +141,9 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )
+        ),
+        compute.Library(
+            pypi=compute.PythonPyPiLibrary(package=f"databricks-sdk=={version('databricks-sdk')}")
         ),
     ]
 
