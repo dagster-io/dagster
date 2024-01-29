@@ -1327,7 +1327,7 @@ def should_backfill_atomic_asset_partitions_unit(
 
         for parent in parent_partitions_result.parent_partitions:
             can_run_with_parent = (
-                parent in asset_partitions_to_request
+                (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and parent.partition_key == candidate.partition_key
                 and asset_graph.get_repository_handle(candidate.asset_key)
