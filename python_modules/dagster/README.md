@@ -64,7 +64,7 @@ The graph loaded into Dagster's web UI:
   <img width="432" alt="An example asset graph as rendered in the Dagster UI" src="https://github.com/dagster-io/dagster/assets/654855/5b302b1b-4cc9-49bf-8689-232f7de87d31">
 </p>
 
-Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, acceptance testing, staging environments, all the way up to production.
 
 ## Quick Start:
 
