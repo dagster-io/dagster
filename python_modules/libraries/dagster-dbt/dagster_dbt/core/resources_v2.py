@@ -16,7 +16,9 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Union,
+    cast,
 )
 
 import dateutil.parser
@@ -282,7 +284,6 @@ class DbtCliInvocation:
             shutil.copy(partial_parse_file_path, partial_parse_destination_target_path)
 
         # Create a subprocess that runs the dbt CLI command.
-        logger.info(f"Running dbt command: `{' '.join(args)}`.")
         process = subprocess.Popen(
             args=args,
             stdout=subprocess.PIPE,
@@ -304,7 +305,7 @@ class DbtCliInvocation:
 
         atexit.register(cleanup_dbt_subprocess, process)
 
-        return cls(
+        dbt_cli_invocation = cls(
             process=process,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
@@ -313,6 +314,9 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
             context=context,
         )
+        logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
+
+        return dbt_cli_invocation
 
     @public
     def wait(self) -> "DbtCliInvocation":
@@ -465,6 +469,11 @@ class DbtCliInvocation:
 
         return orjson.loads(artifact_path.read_bytes())
 
+    @property
+    def dbt_command(self) -> str:
+        """The dbt CLI command that was invoked."""
+        return " ".join(cast(Sequence[str], self.process.args))
+
     def _format_error_messages(self) -> str:
         """Format the error messages from the dbt CLI process."""
         if not self._error_messages:
@@ -478,7 +487,11 @@ class DbtCliInvocation:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
         completed, then optionally raise an error.
         """
-        if not self.is_successful() and self.raise_on_error:
+        is_successful = self.is_successful()
+
+        logger.info(f"Finished dbt command: `{self.dbt_command}`.")
+
+        if not is_successful and self.raise_on_error:
             log_path = self.target_path.joinpath("dbt.log")
             extra_description = ""
 
@@ -487,9 +500,9 @@ class DbtCliInvocation:
 
             raise DagsterDbtCliRuntimeError(
                 description=(
-                    f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
-                    " the stdout in the Dagster compute logs for the full information about the"
-                    f" error{extra_description}."
+                    f"The dbt CLI process with command `{self.dbt_command}` failed with exit code"
+                    f" {self.process.returncode}. Check the stdout in the Dagster compute logs for"
+                    f" the full information about the error{extra_description}."
                     f"{self._format_error_messages()}"
                 ),
             )
