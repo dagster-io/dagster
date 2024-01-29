@@ -6,7 +6,7 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .test_scheduler_run import (
     evaluate_schedules,
@@ -28,7 +28,7 @@ def test_non_utc_timezone_run(
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 23, 59, 59, tz="US/Central"), "US/Pacific"
     )
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
 
         schedule_origin = external_schedule.get_external_origin()
@@ -46,7 +46,7 @@ def test_non_utc_timezone_run(
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
@@ -91,7 +91,7 @@ def test_differing_timezones(
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 23, 59, 59, tz="US/Eastern"), "US/Pacific"
     )
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
         external_eastern_schedule = external_repo.get_external_schedule(
             "daily_eastern_time_schedule"
@@ -120,7 +120,7 @@ def test_differing_timezones(
 
     # Past midnight eastern time, the eastern timezone schedule will run, but not the central timezone
     freeze_datetime = freeze_datetime.add(minutes=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
@@ -151,7 +151,7 @@ def test_differing_timezones(
 
     # Past midnight central time, the central timezone schedule will now run
     freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 2
@@ -204,7 +204,7 @@ def test_different_days_in_different_timezones(
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 22, 59, 59, tz="US/Central"), "US/Pacific"
     )
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         # Runs every day at 11PM (CST)
         external_schedule = external_repo.get_external_schedule("daily_late_schedule")
         schedule_origin = external_schedule.get_external_origin()
@@ -220,7 +220,7 @@ def test_different_days_in_different_timezones(
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
@@ -269,7 +269,7 @@ def test_hourly_dst_spring_forward(
 
     external_schedule = external_repo.get_external_schedule("hourly_central_time_schedule")
     schedule_origin = external_schedule.get_external_origin()
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
@@ -278,13 +278,13 @@ def test_hourly_dst_spring_forward(
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     # DST has now happened, 2 hours later it is 4AM CST
     # Should be 3 runs: 1AM CST, 3AM CST, 4AM CST
     freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
@@ -336,7 +336,7 @@ def test_hourly_dst_fall_back(
 
     external_schedule = external_repo.get_external_schedule("hourly_central_time_schedule")
     schedule_origin = external_schedule.get_external_origin()
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
@@ -346,13 +346,13 @@ def test_hourly_dst_fall_back(
 
     for _ in range(3):
         freeze_datetime = freeze_datetime.add(hours=1)
-        with pendulum.test(freeze_datetime):
+        with pendulum_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     # DST has now happened, 4 hours later it is 3:30AM CST
     # Should be 4 runs: 1AM CDT, 2AM CDT, 2AM CST, 3AM CST
     freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
@@ -417,7 +417,7 @@ def test_daily_dst_spring_forward(
 
     external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
     schedule_origin = external_schedule.get_external_origin()
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
@@ -426,11 +426,11 @@ def test_daily_dst_spring_forward(
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
@@ -482,7 +482,7 @@ def test_daily_dst_fall_back(
         create_pendulum_time(2019, 11, 3, 0, 0, 0, tz="US/Central"), "US/Pacific"
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
         schedule_origin = external_schedule.get_external_origin()
         instance.start_schedule(external_schedule)
@@ -493,11 +493,11 @@ def test_daily_dst_fall_back(
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
@@ -550,7 +550,7 @@ def test_execute_during_dst_transition_spring_forward(
         create_pendulum_time(2019, 3, 9, 0, 0, 0, tz="US/Central"), "US/Pacific"
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo.get_external_schedule(
             "daily_dst_transition_schedule_skipped_time"
         )
@@ -564,11 +564,11 @@ def test_execute_during_dst_transition_spring_forward(
 
     for _ in range(4):
         freeze_datetime = freeze_datetime.add(days=1)
-        with pendulum.test(freeze_datetime):
+        with pendulum_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
@@ -620,7 +620,7 @@ def test_execute_during_dst_transition_fall_back(
         create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
     )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         external_schedule = external_repo.get_external_schedule(
             "daily_dst_transition_schedule_doubled_time"
         )
@@ -634,11 +634,11 @@ def test_execute_during_dst_transition_fall_back(
 
     for _ in range(2):
         freeze_datetime = freeze_datetime.add(days=1)
-        with pendulum.test(freeze_datetime):
+        with pendulum_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum.test(freeze_datetime):
+    with pendulum_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
