@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
     install_requires=[
-        "dagster==1.6.1",
+        "dagster==1.6.2",
         "snowflake-connector-python>=2.1.0,<3.5.0",
     ],
     extras_require={

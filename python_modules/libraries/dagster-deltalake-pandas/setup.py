@@ -35,8 +35,8 @@ setup(
     packages=find_packages(exclude=["dagster_deltalake_pandas_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.6.1",
-        "dagster-deltalake==0.22.1",
+        "dagster==1.6.2",
+        "dagster-deltalake==0.22.2",
         "pandas",
     ],
     zip_safe=False,

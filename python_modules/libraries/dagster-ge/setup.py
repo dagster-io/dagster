@@ -31,8 +31,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
     install_requires=[
-        "dagster==1.6.1",
-        "dagster-pandas==0.22.1",
+        "dagster==1.6.2",
+        "dagster-pandas==0.22.2",
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
     ],
