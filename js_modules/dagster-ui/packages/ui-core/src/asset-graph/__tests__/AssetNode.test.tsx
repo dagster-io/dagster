@@ -1,10 +1,8 @@
-import {useApolloClient} from '@apollo/client';
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
-import {AssetLiveDataThreadManager} from '../../asset-data/AssetLiveDataThreadManager';
+import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
 import {AssetNode} from '../AssetNode';
 import {tokenForAssetKey} from '../Utils';
 import {
@@ -34,8 +32,7 @@ describe('AssetNode', () => {
         : JSON.parse(scenario.definition.id);
 
       function SetCacheEntry() {
-        const client = useApolloClient();
-        AssetLiveDataThreadManager.getInstance(client)._updateCache({
+        factory.manager._updateCache({
           [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
         });
         return null;

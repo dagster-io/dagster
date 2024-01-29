@@ -47,7 +47,7 @@ function makeFactory() {
     },
   );
 }
-const factory = makeFactory();
+export const factory = makeFactory();
 
 export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
   return factory.useLiveDataSingle(tokenForAssetKey(assetKey), thread);

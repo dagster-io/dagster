@@ -13,7 +13,7 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from '../asset-data/types/AssetLiveDataThread.types';
+} from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
 /**
