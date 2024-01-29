@@ -518,7 +518,15 @@
                     ]
                 },
                 "initContainerResources": {
-                    "$ref": "#/definitions/Resources"
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -542,8 +550,7 @@
                 "livenessProbe",
                 "startupProbe",
                 "annotations",
-                "enableReadOnly",
-                "initContainerResources"
+                "enableReadOnly"
             ],
             "additionalProperties": false
         },
@@ -2897,7 +2904,15 @@
                     ]
                 },
                 "initContainerResources": {
-                    "$ref": "#/definitions/Resources"
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2923,8 +2938,7 @@
                 "runMonitoring",
                 "runRetries",
                 "sensors",
-                "schedules",
-                "initContainerResources"
+                "schedules"
             ],
             "additionalProperties": false
         },

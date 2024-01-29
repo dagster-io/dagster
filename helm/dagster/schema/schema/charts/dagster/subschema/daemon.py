@@ -101,7 +101,7 @@ class Daemon(BaseModel):
     schedulerName: Optional[str]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
-    initContainerResources: kubernetes.Resources
+    initContainerResources: Optional[kubernetes.Resources]
 
     class Config:
         extra = Extra.forbid
