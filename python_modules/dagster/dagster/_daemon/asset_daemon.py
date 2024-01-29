@@ -301,6 +301,7 @@ class AssetDaemon(DagsterDaemon):
         self._next_evaluation_id = None
 
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
+        self._last_pre_sensor_submit_time = None
 
         super().__init__()
 
@@ -375,7 +376,6 @@ class AssetDaemon(DagsterDaemon):
 
         sensor_state_lock = threading.Lock()
         amp_tick_futures: Dict[Optional[str], Future] = {}
-        last_submit_times = {}
         threadpool_executor = None
         with ExitStack() as stack:
             settings = instance.get_settings("auto_materialize")
@@ -394,7 +394,6 @@ class AssetDaemon(DagsterDaemon):
                     threadpool_executor=threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
-                    last_submit_times=last_submit_times,
                     sensor_state_lock=sensor_state_lock,
                 )
                 yield None
@@ -409,7 +408,6 @@ class AssetDaemon(DagsterDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: Dict[Optional[str], Future],
-        last_submit_times: Dict[Optional[str], float],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         sensor_state_lock: threading.Lock,
     ):
@@ -478,10 +476,13 @@ class AssetDaemon(DagsterDaemon):
             if not sensor:
                 # make sure we are only running every pre_sensor_interval_seconds
                 if (
-                    selector_id in last_submit_times
-                    and now < last_submit_times[selector_id] + self._pre_sensor_interval_seconds
+                    self._last_pre_sensor_submit_time
+                    and now - self._last_pre_sensor_submit_time < self._pre_sensor_interval_seconds
                 ):
                     continue
+
+                self._last_pre_sensor_submit_time = now
+
             elif not auto_materialize_state:
                 assert sensor.default_status == DefaultSensorStatus.RUNNING
                 auto_materialize_state = InstigatorState(
@@ -504,7 +505,6 @@ class AssetDaemon(DagsterDaemon):
                 if selector_id in amp_tick_futures and not amp_tick_futures[selector_id].done():
                     continue
 
-                last_submit_times[selector_id] = now
                 future = threadpool_executor.submit(
                     self._process_auto_materialize_tick,
                     workspace_process_context,
@@ -515,8 +515,6 @@ class AssetDaemon(DagsterDaemon):
                 amp_tick_futures[selector_id] = future
                 yield
             else:
-                last_submit_times[selector_id] = now
-
                 yield from self._process_auto_materialize_tick_generator(
                     workspace_process_context,
                     sensor,

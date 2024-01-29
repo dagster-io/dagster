@@ -490,7 +490,6 @@ class AssetDaemonScenarioState(NamedTuple):
                     workspace_context,
                     threadpool_executor=self.threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
-                    last_submit_times={},
                     debug_crash_flags={},
                     sensor_state_lock=threading.Lock(),
                 )
