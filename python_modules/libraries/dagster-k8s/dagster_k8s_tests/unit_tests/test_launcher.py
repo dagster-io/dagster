@@ -73,9 +73,7 @@ def test_launcher_from_config(kubeconfig_file):
             "run_launcher": {
                 "module": "dagster_k8s",
                 "class": "K8sRunLauncher",
-                "config": merge_dicts(
-                    default_config, {"fail_pod_on_run_failure": True}
-                ),
+                "config": merge_dicts(default_config, {"fail_pod_on_run_failure": True}),
             }
         }
     ) as instance:
@@ -712,9 +710,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
     mock_k8s_client_batch_api = mock.Mock(
         spec_set=["read_namespaced_job_status", "list_namespaced_job"]
     )
-    mock_k8s_client_core_api = mock.Mock(
-        spec_set=["list_namespaced_pod", "list_namespaced_event"]
-    )
+    mock_k8s_client_core_api = mock.Mock(spec_set=["list_namespaced_pod", "list_namespaced_event"])
 
     k8s_run_launcher = K8sRunLauncher(
         service_account_name="webserver-admin",
@@ -740,25 +736,21 @@ def test_get_run_worker_debug_info(kubeconfig_file):
 
     list_namespaced_pod_response = mock.Mock(spec_set=["items"])
     list_namespaced_pod_response.items = []
-    mock_k8s_client_core_api.list_namespaced_pod.return_value = (
-        list_namespaced_pod_response
-    )
+    mock_k8s_client_core_api.list_namespaced_pod.return_value = list_namespaced_pod_response
 
     list_namespaced_job_response = mock.Mock(spec_set=["items"])
     list_namespaced_job_response.items = [
         V1Job(
             metadata=V1ObjectMeta(name="hello-world"),
             status=V1JobStatus(
-                failed=None, 
-                succeeded=None, 
-                active=None, 
+                failed=None,
+                succeeded=None,
+                active=None,
                 start_time=datetime.now(),
             ),
         ),
     ]
-    mock_k8s_client_batch_api.list_namespaced_job.return_value = (
-        list_namespaced_job_response
-    )
+    mock_k8s_client_batch_api.list_namespaced_job.return_value = list_namespaced_job_response
 
     list_namespaced_job_event_response = mock.Mock(spec_set=["items"])
     list_namespaced_job_event_response.items = [
@@ -769,9 +761,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             involved_object=job_name,
         )
     ]
-    mock_k8s_client_core_api.list_namespaced_event.return_value = (
-        list_namespaced_job_event_response
-    )
+    mock_k8s_client_core_api.list_namespaced_event.return_value = list_namespaced_job_event_response
 
     with instance_for_test() as instance:
         k8s_run_launcher.register_instance(instance)

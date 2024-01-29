@@ -405,7 +405,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
             full_msg = (
                 full_msg
-                + "\n\n" + job_debug_info
+                + "\n\n"
+                + job_debug_info
                 + "\n\nFor more information about the failure, try running `kubectl describe job"
                 f" {job_name}` in your cluster."
             )
