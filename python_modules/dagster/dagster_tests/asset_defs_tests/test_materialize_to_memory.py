@@ -1,5 +1,6 @@
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -252,8 +253,8 @@ def test_materialize_to_memory_partition_key():
 
 def test_materialize_tags():
     @asset
-    def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+    def the_asset(context: AssetExecutionContext):
+        assert context.run.tags.get("key1") == "value1"
 
     result = materialize_to_memory([the_asset], tags={"key1": "value1"})
     assert result.success
