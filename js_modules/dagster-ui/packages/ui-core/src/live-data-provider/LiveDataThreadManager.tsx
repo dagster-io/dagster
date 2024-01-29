@@ -94,7 +94,7 @@ export class LiveDataThreadManager<T> {
    * Removes the lastFetchedOrRequested entries for the keys specified or all keys if none are specified
    * so that the keys are re-eligible for fetching again despite the pollRate.
    */
-  public refreshKeys(keys?: string[]) {
+  public invalidateCache(keys?: string[]) {
     (keys ?? Object.keys(this.lastFetchedOrRequested)).forEach((key) => {
       delete this.lastFetchedOrRequested[key];
     });

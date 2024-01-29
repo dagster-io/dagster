@@ -79,7 +79,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   }, [pollRate]);
 
   useDidLaunchEvent(() => {
-    factory.manager.refreshKeys();
+    factory.manager.invalidateCache();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
   React.useEffect(() => {
@@ -109,7 +109,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
             (e.stepKey && assetStepKeys.has(e.stepKey)),
         )
       ) {
-        factory.manager.refreshKeys();
+        factory.manager.invalidateCache();
       }
     });
     return unobserve;

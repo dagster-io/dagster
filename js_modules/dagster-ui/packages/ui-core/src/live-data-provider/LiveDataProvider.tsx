@@ -89,7 +89,7 @@ export function useLiveData<T>(
     liveDataByNode: data,
 
     refresh: React.useCallback(() => {
-      manager.refreshKeys(keys);
+      manager.invalidateCache(keys);
       setIsRefreshing(true);
     }, [keys, manager]),
 
@@ -143,7 +143,7 @@ export const LiveDataProvider = <T,>({
         isGloballyRefreshing,
         oldestDataTimestamp,
         refresh: React.useCallback(() => {
-          manager.refreshKeys();
+          manager.invalidateCache();
         }, [manager]),
       }}
     >
