@@ -266,6 +266,8 @@ class TimeWindowPartitionsDefinition(
     or after the given start datetime. The last partition in the set will end before the current
     time, unless the end_offset argument is set to a positive number.
 
+    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+
     Args:
         cron_schedule (str): Determines the bounds of the time windows.
         start (datetime): The first partition in the set will start on at the first cron_schedule
