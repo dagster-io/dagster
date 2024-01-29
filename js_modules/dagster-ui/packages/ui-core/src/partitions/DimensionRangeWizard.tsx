@@ -91,6 +91,7 @@ export const DimensionRangeWizard = ({
             onClick={() => {
               setShowCreatePartition(true);
             }}
+            data-testid={testId('add-partition-link')}
           >
             <StyledIcon name="add" size={24} />
             <div>Add a partition</div>
