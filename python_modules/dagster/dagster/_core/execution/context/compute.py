@@ -125,10 +125,10 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
             deprecation_warning(
                 subject="AssetExecutionContext",
                 additional_warn_text=(
-                    "Starting in version 1.7.0 AssetExecutionContext will no longer be a subclass"
+                    "Starting in version 1.8.0 AssetExecutionContext will no longer be a subclass"
                     " of OpExecutionContext."
                 ),
-                breaking_version="1.7.0",
+                breaking_version="1.8.0",
                 stacklevel=1,
             )
         return super().__instancecheck__(instance)
@@ -1363,6 +1363,7 @@ ALTERNATE_METHODS = {
     "dagster_run": "run",
     "run_config": "run.run_config",
     "run_tags": "run.tags",
+    "get_op_execution_context": "op_execution_context",
 }
 
 ALTERNATE_EXPRESSIONS = {
@@ -1495,6 +1496,10 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def get_tag(self, key: str) -> Optional[str]:
         return self.op_execution_context.get_tag(key)
+
+    @deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
+    def get_op_execution_context(self) -> "OpExecutionContext":
+        return self.op_execution_context
 
     ########## pass-through to op context
 
@@ -1808,9 +1813,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
-
-    def get_op_execution_context(self) -> "OpExecutionContext":
-        return self.op_execution_context
 
 
 @contextmanager
