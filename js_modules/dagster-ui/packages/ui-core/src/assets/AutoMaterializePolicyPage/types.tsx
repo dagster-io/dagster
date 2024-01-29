@@ -1,7 +1,6 @@
 import {PartitionKeyRange} from '../../graphql/types';
+import {AutoMaterializeEvaluationRecordItemFragment} from '../AutoMaterializePolicyPageOld/types/GetEvaluationsQuery.types';
 import {AssetKey} from '../types';
-
-import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 
 export type NoConditionsMetEvaluation = {
   __typename: 'no_conditions_met';

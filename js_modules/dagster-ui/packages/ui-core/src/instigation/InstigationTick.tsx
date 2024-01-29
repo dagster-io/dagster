@@ -1,21 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
 import {
+  Body,
   Box,
+  Colors,
   Group,
   Icon,
   NonIdealState,
   Spinner,
-  Body,
   Tooltip,
-  colorTextLighter,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
@@ -62,11 +59,11 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', color: colorTextLighter()}}>
+      <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <Icon name="info" color={colorTextLight()} />
+            <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
         </Body>
 
@@ -76,7 +73,7 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <Icon name="info" color={colorTextLight()} />
+            <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
         </Body>
         <NonIdealState

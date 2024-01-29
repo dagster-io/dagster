@@ -588,6 +588,7 @@ class ExternalSensorData(
                 target_dict, "target_dict", str, ExternalTargetData
             ),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultSensorStatus.RUNNING
                 if default_status == DefaultSensorStatus.RUNNING

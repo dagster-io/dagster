@@ -105,6 +105,22 @@ deployments:
     #   - name: secret
     envSecrets: []
 
+    # Init containers to run before the main container. See:
+    # https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+    initContainers: []
+
+    # Additional containers (i.e. sidecars) to run alongside the main container. See:
+    # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+    #
+    # Example:
+    #
+    # sidecarContainers:
+    #   - name: my-sidecar
+    #     image: ...
+    #     volumeMounts: []
+    #     env: []
+    sidecarContainers: []
+
     annotations: {}
     nodeSelector: {}
     affinity: {}

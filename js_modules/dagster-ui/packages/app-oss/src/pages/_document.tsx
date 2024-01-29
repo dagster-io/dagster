@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {Html, Head, Main, NextScript} from 'next/document';
-import React from 'react';
+import {Head, Html, Main, NextScript} from 'next/document';
 
 function getSecurityPolicy() {
   return fs.readFileSync(path.join(__dirname, '../../../csp-header-dev.txt'), {encoding: 'utf8'});

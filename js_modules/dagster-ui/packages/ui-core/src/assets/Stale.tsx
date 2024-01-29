@@ -5,21 +5,18 @@ import {
   ButtonLink,
   Caption,
   CaptionMono,
+  Colors,
   Icon,
   Popover,
-  colorBackgroundYellow,
-  colorTextYellow,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey, LiveDataForNode} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;
 
@@ -56,7 +53,7 @@ export const StaleReasonsLabel = ({
   }
 
   return (
-    <Body color={colorTextYellow()}>
+    <Body color={Colors.textYellow()}>
       <Popover
         position="top"
         content={<StaleCausesPopoverSummary causes={liveData.staleCauses} />}
@@ -95,13 +92,13 @@ export const StaleReasonsTags = ({
           className="chunk-popover-target"
         >
           <BaseTag
-            fillColor={colorBackgroundYellow()}
-            textColor={colorTextYellow()}
+            fillColor={Colors.backgroundYellow()}
+            textColor={Colors.textYellow()}
             interactive={!!onClick}
-            icon={<Icon name="changes_present" color={colorTextYellow()} />}
+            icon={<Icon name="changes_present" color={Colors.textYellow()} />}
             label={
               onClick ? (
-                <ButtonLink underline="never" onClick={onClick} color={colorTextYellow()}>
+                <ButtonLink underline="never" onClick={onClick} color={Colors.textYellow()}>
                   {label}
                 </ButtonLink>
               ) : (

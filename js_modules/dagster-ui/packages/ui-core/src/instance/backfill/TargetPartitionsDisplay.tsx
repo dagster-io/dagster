@@ -1,5 +1,5 @@
 import {Box, Button, ButtonLink, Dialog, DialogFooter, Tag} from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 
 import {AssetBackfillTargetPartitions} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
@@ -15,7 +15,7 @@ export const TargetPartitionsDisplay = ({
   targetPartitionCount?: number;
   targetPartitions?: Pick<AssetBackfillTargetPartitions, 'partitionKeys' | 'ranges'> | null;
 }) => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const {partitionKeys, ranges} = targetPartitions || {};
 

@@ -70,5 +70,6 @@ export type ScheduledRunsListQuery = {
             };
           }>;
         }>;
-      };
+      }
+    | {__typename: 'RepositoryNotFoundError'};
 };

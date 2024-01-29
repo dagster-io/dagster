@@ -1,21 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogFooter,
-  Spinner,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import {useMemo, useRef} from 'react';
 import styled from 'styled-components';
-
-import {tokenForAssetKey} from '../asset-graph/Utils';
-import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
-import {testId} from '../testing/testId';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {AssetLink} from './AssetLink';
 import {asAssetKeyInput} from './asInput';
@@ -28,6 +15,10 @@ import {
   BackfillPolicyForLaunchAssetFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
+import {testId} from '../testing/testId';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 interface BackfillPreviewModalProps {
   isOpen: boolean;
@@ -47,8 +38,8 @@ export const BackfillPreviewModal = ({
   assets,
   keysFiltered,
 }: BackfillPreviewModalProps) => {
-  const assetKeys = React.useMemo(() => assets.map(asAssetKeyInput), [assets]);
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const assetKeys = useMemo(() => assets.map(asAssetKeyInput), [assets]);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: assets.length,
@@ -67,7 +58,7 @@ export const BackfillPreviewModal = ({
     },
   );
 
-  const partitionsByAssetToken = React.useMemo(() => {
+  const partitionsByAssetToken = useMemo(() => {
     return Object.fromEntries(
       (data?.assetBackfillPreview || []).map((d) => [tokenForAssetKey(d.assetKey), d.partitions]),
     );
@@ -103,20 +94,20 @@ export const BackfillPreviewModal = ({
                     <AssetLink path={assetKey.path} textStyle="middle-truncate" icon="asset" />
                   </RowCell>
                   {backfillPolicy ? (
-                    <RowCell style={{color: colorTextDefault()}}>
+                    <RowCell style={{color: Colors.textDefault()}}>
                       {backfillPolicy?.description}
                     </RowCell>
                   ) : (
                     <RowCell>{'\u2013'}</RowCell>
                   )}
                   {partitionDefinition ? (
-                    <RowCell style={{color: colorTextDefault()}}>
+                    <RowCell style={{color: Colors.textDefault()}}>
                       {partitionDefinition?.description}
                     </RowCell>
                   ) : (
                     <RowCell>{'\u2013'}</RowCell>
                   )}
-                  <RowCell style={{color: colorTextDefault(), alignItems: 'flex-start'}}>
+                  <RowCell style={{color: Colors.textDefault(), alignItems: 'flex-start'}}>
                     {partitions ? (
                       <TargetPartitionsDisplay targetPartitions={partitions} />
                     ) : (
@@ -153,7 +144,7 @@ export const BackfillPreviewTableHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       <HeaderCell>Asset key</HeaderCell>

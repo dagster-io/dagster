@@ -1,12 +1,5 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {showSharedToaster} from '../app/DomUtils';
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {ReexecutionStrategy} from '../graphql/types';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
+import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -17,6 +10,12 @@ import {TerminationDialog, TerminationDialogResult} from './TerminationDialog';
 import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
+import {showSharedToaster} from '../app/DomUtils';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {ReexecutionStrategy} from '../graphql/types';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 interface RunActionButtonsProps {
   run: RunPageFragment;
@@ -27,10 +26,10 @@ interface RunActionButtonsProps {
 
 export const CancelRunButton = ({run}: {run: RunFragment}) => {
   const {id: runId, canTerminate} = run;
-  const [showDialog, setShowDialog] = React.useState<boolean>(false);
-  const closeDialog = React.useCallback(() => setShowDialog(false), []);
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const closeDialog = useCallback(() => setShowDialog(false), []);
 
-  const onComplete = React.useCallback(
+  const onComplete = useCallback(
     async (result: TerminationDialogResult) => {
       const {errors} = result;
       const error = runId && errors[runId];

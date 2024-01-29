@@ -1,12 +1,11 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
-import React from 'react';
 
 import {
   buildAssetKey,
-  buildSubscription,
   buildMaterializationEvent,
   buildPipelineRunLogsSubscriptionSuccess,
+  buildSubscription,
 } from '../../graphql/types';
 import {
   ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,

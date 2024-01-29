@@ -1,18 +1,11 @@
-import {
-  Icon,
-  Tooltip,
-  Spinner,
-  colorAccentGray,
-  colorAccentYellow,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
+import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {memo, useContext} from 'react';
 
 import {WarningTooltip} from './WarningTooltip';
+import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
-export const WorkspaceStatus = React.memo(({placeholder}: {placeholder: boolean}) => {
-  const {codeLocations} = React.useContext(DeploymentStatusContext);
+export const WorkspaceStatus = memo(({placeholder}: {placeholder: boolean}) => {
+  const {codeLocations} = useContext(DeploymentStatusContext);
 
   if (!codeLocations) {
     return placeholder ? <div style={{width: '16px'}} /> : null;
@@ -21,7 +14,7 @@ export const WorkspaceStatus = React.memo(({placeholder}: {placeholder: boolean}
   if (codeLocations.type === 'spinner') {
     return (
       <Tooltip content={codeLocations.content} placement="bottom">
-        <Spinner purpose="body-text" fillColor={colorAccentGray()} />
+        <Spinner purpose="body-text" fillColor={Colors.accentGray()} />
       </Tooltip>
     );
   }
@@ -32,7 +25,7 @@ export const WorkspaceStatus = React.memo(({placeholder}: {placeholder: boolean}
       position="bottom"
       modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
     >
-      <Icon name="warning" color={colorAccentYellow()} />
+      <Icon name="warning" color={Colors.accentYellow()} />
     </WarningTooltip>
   );
 });

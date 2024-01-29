@@ -730,6 +730,8 @@ def test_intersecting_partitions_on_repo_invalid():
                 d,
             ]
 
+        my_repo.get_all_jobs()
+
 
 def test_intersecting_partitions_on_repo_valid():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")

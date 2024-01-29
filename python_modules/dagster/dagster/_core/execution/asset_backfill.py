@@ -7,7 +7,6 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Dict,
     Iterable,
     List,
     Mapping,
@@ -21,10 +20,7 @@ from typing import (
 
 import pendulum
 
-from dagster import (
-    PartitionKeyRange,
-    _check as check,
-)
+import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import (
     build_run_requests,
     build_run_requests_with_backfill_policies,
@@ -32,15 +28,12 @@ from dagster._core.definitions.asset_daemon_context import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
+from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partitions import (
     DatetimeFieldSerializer,
     TimeWindowPartitionsSubset,
@@ -53,12 +46,7 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import (
-    ExternalExecutionPlan,
-    ExternalJob,
-)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     IN_PROGRESS_RUN_STATUSES,
@@ -77,8 +65,10 @@ from dagster._core.workspace.context import (
 )
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import hash_collection, utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+from .submit_asset_runs import submit_asset_runs_in_chunks
 
 if TYPE_CHECKING:
     from .backfill import PartitionBackfill
@@ -677,7 +667,6 @@ def _submit_runs_and_update_backfill_in_chunks(
     logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillData]]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-    from dagster._daemon.controller import RELOAD_WORKSPACE_INTERVAL
 
     run_requests = asset_backfill_iteration_result.run_requests
     submitted_partitions = previous_asset_backfill_data.requested_subset
@@ -688,79 +677,30 @@ def _submit_runs_and_update_backfill_in_chunks(
         asset_backfill_iteration_result.backfill_data.replace_requested_subset(submitted_partitions)
     )
 
-    mid_iteration_cancel_requested = False
+    # Fetch backfill status
+    backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+    mid_iteration_cancel_requested = backfill.status != BulkActionStatus.REQUESTED
 
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
-    unsubmitted_run_request_idx = 0
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData] = {}
-    num_retries_allowed = 1
-    while unsubmitted_run_request_idx < len(run_requests):
-        chunk_end_idx = min(unsubmitted_run_request_idx + RUN_CHUNK_SIZE, len(run_requests))
-        run_requests_chunk = run_requests[unsubmitted_run_request_idx:chunk_end_idx]
-
-        # Refetch, in case the backfill was requested for cancellation in the meantime
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        if backfill.status != BulkActionStatus.REQUESTED:
-            mid_iteration_cancel_requested = True
-            break
-
-        # Submit runs in the chunk
-        run_requests_i = 0
-        while run_requests_i < len(run_requests_chunk):
-            run_request = run_requests_chunk[run_requests_i]
+    for run_requests_chunk in submit_asset_runs_in_chunks(
+        run_requests=run_requests,
+        reserved_run_ids=None,
+        chunk_size=RUN_CHUNK_SIZE,
+        instance=instance,
+        workspace_process_context=workspace_process_context,
+        asset_graph=asset_graph,
+        logger=logger,
+        debug_crash_flags={},
+    ):
+        if run_requests_chunk is None:
+            # allow the daemon to heartbeat
             yield None
-
-            # create a new request context for each run in case the code location server
-            # is swapped out in the middle of the backfill
-            workspace = workspace_process_context.create_request_context()
-            execution_data = get_job_execution_data_from_run_request(
-                asset_graph,
-                run_request,
-                instance,
-                workspace=workspace,
-                run_request_execution_data_cache=run_request_execution_data_cache,
-            )
-
-            if _execution_plan_targets_asset_selection(
-                execution_data.external_execution_plan.execution_plan_snapshot,
-                check.not_none(run_request.asset_selection),
-            ):
-                submit_run_request(
-                    run_request=run_request,
-                    workspace=workspace,
-                    instance=instance,
-                    run_request_execution_data=execution_data,
-                )
-                run_requests_i += 1
-
-            elif num_retries_allowed > 0:
-                logger.warning(
-                    "Execution plan is out of sync with the workspace. Pausing the backfill for "
-                    f"{RELOAD_WORKSPACE_INTERVAL} to allow the execution plan to rebuild with the updated workspace."
-                )
-                # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
-                # at most once every interval
-                time.sleep(RELOAD_WORKSPACE_INTERVAL)
-                # Clear the execution plan cache as this data is no longer valid
-                run_request_execution_data_cache = {}
-                num_retries_allowed -= 1
-                # If the execution plan does not targets the asset selection, the asset graph
-                # likely is outdated and targeting the wrong job, refetch the asset
-                # graph from the workspace
-                workspace = workspace_process_context.create_request_context()
-                asset_graph = ExternalAssetGraph.from_workspace(workspace)
-
-            else:  # Already hit the max number of retries
-                check.failed(
-                    f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
-                )
-
-        unsubmitted_run_request_idx = chunk_end_idx
+            continue
 
         requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            run_requests_chunk, asset_graph, instance_queryer
+            [rr for (rr, _) in run_requests_chunk], asset_graph, instance_queryer
         )
         submitted_partitions = submitted_partitions | AssetGraphSubset.from_asset_partition_set(
             set(requested_partitions_in_chunk), asset_graph=asset_graph
@@ -782,6 +722,12 @@ def _submit_runs_and_update_backfill_in_chunks(
             asset_graph=asset_graph,
         )
         instance.update_backfill(updated_backfill)
+
+        # Refetch backfill status
+        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+        if backfill.status != BulkActionStatus.REQUESTED:
+            mid_iteration_cancel_requested = True
+            break
 
     if not mid_iteration_cancel_requested:
         if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
@@ -1043,6 +989,8 @@ def execute_asset_backfill_iteration(
                 "Expected get_canceling_asset_backfill_iteration_data to return a PartitionBackfill"
             )
 
+        # Refetch, in case the backfill was forcibly marked as canceled in the meantime
+        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         updated_backfill = backfill.with_asset_backfill_data(
             updated_asset_backfill_data,
             dynamic_partitions_store=instance,
@@ -1078,6 +1026,9 @@ def execute_asset_backfill_iteration(
         logger.debug(
             f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
         )
+    elif backfill.status == BulkActionStatus.CANCELING:
+        # The backfill was forcibly canceled, skip iteration
+        pass
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
@@ -1104,147 +1055,21 @@ def get_canceling_asset_backfill_iteration_data(
             " AssetGraphSubset object"
         )
 
-    failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
-        backfill_id,
-        asset_backfill_data,
-        asset_graph,
-        instance_queryer,
-        backfill_start_time,
+    failed_subset = AssetGraphSubset.from_asset_partition_set(
+        set(_get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph)), asset_graph
     )
     updated_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
         latest_storage_id=asset_backfill_data.latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots,
         materialized_subset=updated_materialized_subset,
-        failed_and_downstream_subset=failed_and_downstream_subset,
+        failed_and_downstream_subset=asset_backfill_data.failed_and_downstream_subset
+        | failed_subset,
         requested_subset=asset_backfill_data.requested_subset,
         backfill_start_time=backfill_start_time,
     )
 
     yield updated_backfill_data
-
-
-class RunRequestExecutionData(NamedTuple):
-    external_job: ExternalJob
-    external_execution_plan: ExternalExecutionPlan
-    partitions_def: Optional[PartitionsDefinition]
-
-
-def get_job_execution_data_from_run_request(
-    asset_graph: ExternalAssetGraph,
-    run_request: RunRequest,
-    instance: DagsterInstance,
-    workspace: BaseWorkspaceRequestContext,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
-) -> RunRequestExecutionData:
-    """Creates and submits a run for the given run request."""
-    repo_handle = asset_graph.get_repository_handle(
-        cast(Sequence[AssetKey], run_request.asset_selection)[0]
-    )
-    location_name = repo_handle.code_location_origin.location_name
-    job_name = _get_implicit_job_name_for_assets(
-        asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
-    )
-    if job_name is None:
-        check.failed(
-            "Could not find an implicit asset job for the given assets:"
-            f" {run_request.asset_selection}"
-        )
-
-    if not run_request.asset_selection:
-        check.failed("Expected RunRequest to have an asset selection")
-
-    pipeline_selector = JobSubsetSelector(
-        location_name=location_name,
-        repository_name=repo_handle.repository_name,
-        job_name=job_name,
-        asset_selection=run_request.asset_selection,
-        op_selection=None,
-    )
-
-    selector_id = hash_collection(pipeline_selector)
-
-    if selector_id not in run_request_execution_data_cache:
-        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
-        external_job = code_location.get_external_job(pipeline_selector)
-
-        external_execution_plan = code_location.get_external_execution_plan(
-            external_job,
-            {},
-            step_keys_to_execute=None,
-            known_state=None,
-            instance=instance,
-        )
-
-        partitions_def = code_location.get_asset_job_partitions_def(external_job)
-
-        run_request_execution_data_cache[selector_id] = RunRequestExecutionData(
-            external_job,
-            external_execution_plan,
-            partitions_def,
-        )
-
-    return run_request_execution_data_cache[selector_id]
-
-
-def submit_run_request(
-    run_request: RunRequest,
-    instance: DagsterInstance,
-    workspace: BaseWorkspaceRequestContext,
-    run_request_execution_data: RunRequestExecutionData,
-) -> None:
-    external_job = run_request_execution_data.external_job
-    external_execution_plan = run_request_execution_data.external_execution_plan
-    partitions_def = run_request_execution_data.partitions_def
-
-    if not run_request.asset_selection:
-        check.failed("Expected RunRequest to have an asset selection")
-
-    run = instance.create_run(
-        job_snapshot=external_job.job_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        job_name=external_job.name,
-        run_id=None,
-        resolved_op_selection=None,
-        op_selection=None,
-        run_config={},
-        step_keys_to_execute=None,
-        tags=run_request.tags,
-        root_run_id=None,
-        parent_run_id=None,
-        status=DagsterRunStatus.NOT_STARTED,
-        external_job_origin=external_job.get_external_origin(),
-        job_code_origin=external_job.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection),
-        asset_check_selection=None,
-        asset_job_partitions_def=partitions_def,
-    )
-
-    instance.submit_run(run.run_id, workspace)
-
-
-def _execution_plan_targets_asset_selection(
-    execution_plan_snapshot: ExecutionPlanSnapshot, asset_selection: Sequence[AssetKey]
-) -> bool:
-    output_asset_keys = set()
-    for step in execution_plan_snapshot.steps:
-        if step.key in execution_plan_snapshot.step_keys_to_execute:
-            for output in step.outputs:
-                asset_key = check.not_none(output.properties).asset_key
-                if asset_key:
-                    output_asset_keys.add(asset_key)
-    return all(key in output_asset_keys for key in asset_selection)
-
-
-def _get_implicit_job_name_for_assets(
-    asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
-) -> Optional[str]:
-    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
-    for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
-
-    return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 
 
 def get_asset_backfill_iteration_materialized_partitions(
@@ -1378,10 +1203,10 @@ def execute_asset_backfill_iteration_inner(
 
         parent_materialized_asset_partitions = set().union(
             *(
-                instance_queryer.asset_partitions_with_newly_updated_parents(
+                instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
                     latest_storage_id=asset_backfill_data.latest_storage_id,
                     child_asset_key=asset_key,
-                )
+                )[0]
                 for asset_key in asset_backfill_data.target_subset.asset_keys
             )
         )
@@ -1502,7 +1327,7 @@ def should_backfill_atomic_asset_partitions_unit(
 
         for parent in parent_partitions_result.parent_partitions:
             can_run_with_parent = (
-                parent in asset_partitions_to_request
+                (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and parent.partition_key == candidate.partition_key
                 and asset_graph.get_repository_handle(candidate.asset_key)

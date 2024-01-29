@@ -6,8 +6,8 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.storage.config import MySqlStorageConfig, mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
@@ -174,7 +174,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
     ):
         if not asset_evaluations:
             return
@@ -187,8 +187,6 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                     "asset_key": evaluation.asset_key.to_string(),
                     "asset_evaluation_body": serialize_value(evaluation),
                     "num_requested": evaluation.num_requested,
-                    "num_skipped": evaluation.num_skipped,
-                    "num_discarded": evaluation.num_discarded,
                 }
                 for evaluation in asset_evaluations
             ]
@@ -198,8 +196,6 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         upsert_stmt = insert_stmt.on_duplicate_key_update(
             asset_evaluation_body=insert_stmt.inserted.asset_evaluation_body,
             num_requested=insert_stmt.inserted.num_requested,
-            num_skipped=insert_stmt.inserted.num_skipped,
-            num_discarded=insert_stmt.inserted.num_discarded,
         )
 
         with self.connect() as conn:

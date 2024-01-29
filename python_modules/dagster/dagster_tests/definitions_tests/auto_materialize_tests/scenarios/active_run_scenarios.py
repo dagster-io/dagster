@@ -63,7 +63,9 @@ def create_materialization_event_log_entry(
 active_run_scenarios = {
     "downstream_still_in_progress": AssetReconciliationScenario(
         assets=partitioned_assets,
-        unevaluated_runs=[],
+        unevaluated_runs=[
+            run(["upstream_daily", "downstream_daily"], partition_key="2020-01-01"),
+        ],
         current_time=create_pendulum_time(year=2020, month=1, day=2, hour=0),
         # manually populate entries here to create an in-progress run for both daily assets
         dagster_runs=[

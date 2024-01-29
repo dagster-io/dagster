@@ -5,6 +5,7 @@ import {
   Button,
   ButtonLink,
   Checkbox,
+  Colors,
   ConfigEditorHandle,
   ConfigEditorHelp,
   ConfigEditorHelpContext,
@@ -16,9 +17,6 @@ import {
   SecondPanelToggle,
   SplitPanelContainer,
   TextInput,
-  colorAccentYellow,
-  colorBorderDefault,
-  colorTextDefault,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
 import merge from 'deepmerge';
@@ -26,35 +24,6 @@ import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components';
 import * as yaml from 'yaml';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {
-  IExecutionSession,
-  IExecutionSessionChanges,
-  PipelineRunTag,
-  SessionBase,
-} from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
-import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
-import {
-  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
-  CONFIG_EDITOR_VALIDATION_FRAGMENT,
-  responseToYamlValidationResult,
-} from '../configeditor/ConfigEditorUtils';
-import {
-  AssetCheckCanExecuteIndividually,
-  ExecutionParams,
-  PipelineSelector,
-  RepositorySelector,
-} from '../graphql/types';
-import {DagsterTag} from '../runs/RunTag';
-import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
 
 import {
   CONFIG_PARTITION_SELECTION_QUERY,
@@ -84,6 +53,35 @@ import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
 } from './types/LaunchpadSession.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {
+  IExecutionSession,
+  IExecutionSessionChanges,
+  PipelineRunTag,
+  SessionBase,
+} from '../app/ExecutionSessionStorage';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
+import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
+import {
+  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
+  CONFIG_EDITOR_VALIDATION_FRAGMENT,
+  responseToYamlValidationResult,
+} from '../configeditor/ConfigEditorUtils';
+import {
+  AssetCheckCanExecuteIndividually,
+  ExecutionParams,
+  PipelineSelector,
+  RepositorySelector,
+} from '../graphql/types';
+import {DagsterTag} from '../runs/RunTag';
+import {useCopyAction} from '../runs/RunTags';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
@@ -628,6 +626,8 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const {LaunchRootExecutionButton} = useLaunchPadHooks();
 
+  const copyAction = useCopyAction();
+
   return (
     <>
       <Dialog
@@ -685,7 +685,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                     }
                   />
                   {includedChecks.length > 0 ? (
-                    <Body color={colorTextDefault()}>
+                    <Body color={Colors.textDefault()}>
                       {`Including `}
                       <ButtonLink onClick={() => setShowChecks(includedChecks)}>
                         {`${includedChecks.length.toLocaleString()} ${
@@ -769,22 +769,23 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', color: colorBorderDefault()}}
+                border={{side: 'bottom', color: Colors.borderDefault()}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
                   tagsFromSession={tagsFromSession}
                   onRequestEdit={openTagEditor}
+                  actions={[copyAction]}
                 />
               </Box>
             ) : null}
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', color: colorBorderDefault()}}
+                border={{side: 'bottom', color: Colors.borderDefault()}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <Icon name="warning" color={colorAccentYellow()} />
+                  <Icon name="warning" color={Colors.accentYellow()} />
                   <div>
                     {repoAddressAsHumanString(repoAddress)} has been manually refreshed, and this
                     configuration may now be out of date.

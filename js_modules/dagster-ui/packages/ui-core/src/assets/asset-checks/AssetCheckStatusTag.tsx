@@ -1,14 +1,4 @@
-import {
-  BaseTag,
-  Box,
-  Icon,
-  Spinner,
-  Tag,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {BaseTag, Box, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 
 import {assertUnreachable} from '../../app/Util';
 import {
@@ -33,9 +23,9 @@ export const AssetCheckStatusTag = ({
   if (!execution) {
     return (
       <BaseTag
-        textColor={colorTextLight()}
-        fillColor={colorBackgroundLight()}
-        icon={<Icon name="dot" color={colorAccentGray()} />}
+        textColor={Colors.textLight()}
+        fillColor={Colors.backgroundLight()}
+        icon={<Icon name="dot" color={Colors.accentGray()} />}
         label="Not evaluated"
       />
     );

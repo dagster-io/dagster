@@ -2,73 +2,56 @@
 import {Tag as BlueprintTag} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundBlue,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorTextBlue,
-  colorTextDefault,
-  colorTextGreen,
-  colorTextRed,
-  colorTextYellow,
-} from '../theme/color';
-
 import {BaseTag} from './BaseTag';
-import {IconName, Icon} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
     case 'primary':
-      return colorBackgroundBlue();
+      return Colors.backgroundBlue();
     case 'danger':
-      return colorBackgroundRed();
+      return Colors.backgroundRed();
     case 'success':
-      return colorBackgroundGreen();
+      return Colors.backgroundGreen();
     case 'warning':
-      return colorBackgroundYellow();
+      return Colors.backgroundYellow();
     case 'none':
     default:
-      return colorBackgroundGray();
+      return Colors.backgroundGray();
   }
 };
 
 const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
     case 'primary':
-      return colorTextBlue();
+      return Colors.textBlue();
     case 'danger':
-      return colorTextRed();
+      return Colors.textRed();
     case 'success':
-      return colorTextGreen();
+      return Colors.textGreen();
     case 'warning':
-      return colorTextYellow();
+      return Colors.textYellow();
     case 'none':
     default:
-      return colorTextDefault();
+      return Colors.textDefault();
   }
 };
 
 const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
     case 'primary':
-      return colorAccentBlue();
+      return Colors.accentBlue();
     case 'danger':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'success':
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case 'warning':
-      return colorAccentYellow();
+      return Colors.accentYellow();
     case 'none':
     default:
-      return colorAccentGray();
+      return Colors.accentGray();
   }
 };
 

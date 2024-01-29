@@ -3,29 +3,36 @@ import {
   Box,
   Button,
   ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
+  ExternalAnchorButton,
   Group,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
   NonIdealState,
   Popover,
   Spinner,
-  Table,
-  Subheading,
-  ExternalAnchorButton,
   StyledRawCodeMirror,
-  colorTextLight,
-  colorAccentYellow,
-  colorBackgroundYellow,
+  Subheading,
+  Table,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {memo, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {TimestampDisplay} from './TimestampDisplay';
+import {
+  RepositoryForNextTicksFragment,
+  ScheduleFutureTickEvaluationResultFragment,
+  ScheduleFutureTickRunRequestFragment,
+  ScheduleNextFiveTicksFragment,
+  ScheduleTickConfigQuery,
+  ScheduleTickConfigQueryVariables,
+} from './types/SchedulesNextTicks.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -44,16 +51,6 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {TimestampDisplay} from './TimestampDisplay';
-import {
-  RepositoryForNextTicksFragment,
-  ScheduleFutureTickEvaluationResultFragment,
-  ScheduleFutureTickRunRequestFragment,
-  ScheduleNextFiveTicksFragment,
-  ScheduleTickConfigQuery,
-  ScheduleTickConfigQueryVariables,
-} from './types/SchedulesNextTicks.types';
-
 interface ScheduleTick {
   schedule: ScheduleNextFiveTicksFragment;
   timestamp: number;
@@ -64,7 +61,7 @@ interface Props {
   repos: RepositoryForNextTicksFragment[];
 }
 
-export const SchedulesNextTicks = React.memo(({repos}: Props) => {
+export const SchedulesNextTicks = memo(({repos}: Props) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
   let anySchedules = false;
@@ -197,12 +194,12 @@ interface NextTickMenuProps {
   tickTimestamp: number;
 }
 
-const NextTickMenu = React.memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
+const NextTickMenu = memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName: schedule.name,
   };
-  const [isOpen, setOpen] = React.useState<boolean>(false);
+  const [isOpen, setOpen] = useState<boolean>(false);
   const [loadTickConfig, {called, loading, data}] = useLazyQuery<
     ScheduleTickConfigQuery,
     ScheduleTickConfigQueryVariables
@@ -337,7 +334,7 @@ const NextTickDialog = ({
   tickTimestamp: number;
 }) => {
   const [selectedRunRequest, setSelectedRunRequest] =
-    React.useState<ScheduleFutureTickRunRequestFragment | null>(
+    useState<ScheduleFutureTickRunRequestFragment | null>(
       evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
         ? evaluationResult.runRequests[0]!
         : null,
@@ -348,7 +345,7 @@ const NextTickDialog = ({
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       evaluationResult &&
       evaluationResult.runRequests &&
@@ -424,7 +421,7 @@ const NextTickDialog = ({
                         underline={false}
                       >
                         <Group direction="row" spacing={8} alignItems="center">
-                          <Icon name="open_in_new" color={colorTextLight()} />
+                          <Icon name="open_in_new" color={Colors.textLight()} />
                           <span>View config</span>
                         </Group>
                       </ButtonLink>
@@ -580,7 +577,7 @@ const RunRequestBody = styled.div`
 `;
 
 const SkipWrapper = styled.div`
-  background-color: ${colorBackgroundYellow()};
-  border: 1px solid ${colorAccentYellow()};
+  background-color: ${Colors.backgroundYellow()};
+  border: 1px solid ${Colors.accentYellow()};
   border-radius: 3px;
 `;

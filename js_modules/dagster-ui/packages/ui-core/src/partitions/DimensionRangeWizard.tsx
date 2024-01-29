@@ -2,33 +2,28 @@ import {
   Box,
   Button,
   Checkbox,
-  TagSelectorDropdownProps,
+  Colors,
   Icon,
   Menu,
   MenuDivider,
   MenuItem,
-  TagSelectorWithSearch,
-  TagSelectorDropdownItemProps,
   MiddleTruncate,
-  colorLinkDefault,
-  colorTextLight,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
+  TagSelectorDropdownItemProps,
+  TagSelectorDropdownProps,
+  TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {CreatePartitionDialog} from './CreatePartitionDialog';
+import {DimensionRangeInput} from './DimensionRangeInput';
+import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
-
-import {CreatePartitionDialog} from './CreatePartitionDialog';
-import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
 
 export const DimensionRangeWizard = ({
   selected,
@@ -96,6 +91,7 @@ export const DimensionRangeWizard = ({
             onClick={() => {
               setShowCreatePartition(true);
             }}
+            data-testid={testId('add-partition-link')}
           >
             <StyledIcon name="add" size={24} />
             <div>Add a partition</div>
@@ -250,7 +246,7 @@ const OrdinalPartitionSelector = ({
                       {dropdown}
                     </>
                   ) : (
-                    <div style={{padding: '6px 6px 0px 6px', color: colorTextLight()}}>
+                    <div style={{padding: '6px 6px 0px 6px', color: Colors.textLight()}}>
                       No matching partitions found
                     </div>
                   )}
@@ -277,7 +273,7 @@ const StyledIcon = styled(Icon)`
 `;
 
 const LinkText = styled(Box)`
-  color: ${colorLinkDefault()};
+  color: ${Colors.linkDefault()};
   cursor: pointer;
   &:hover {
     text-decoration: underline;
@@ -290,8 +286,8 @@ const LinkText = styled(Box)`
 `;
 
 const DropdownItemTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
   fontSize: '14px',
 });
