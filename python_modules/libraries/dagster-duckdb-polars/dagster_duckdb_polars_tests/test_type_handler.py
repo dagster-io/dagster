@@ -203,7 +203,7 @@ def daily_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
     partition = df.with_columns(
         pl.col("date").str.strptime(pl.Date, format="%Y-%m-%d", strict=False).cast(pl.Datetime)
     )["date"][0]
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
 
     return pl.DataFrame(
         {
@@ -272,7 +272,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
 )
 def static_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "color": [partition, partition, partition],
@@ -345,7 +345,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
 )
 def multi_partitioned(context) -> pl.DataFrame:
     partition = context.partition_key.keys_by_dimension
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
@@ -430,7 +430,7 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 )
 def dynamic_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "fruit": [partition, partition, partition],
@@ -521,10 +521,13 @@ def test_self_dependent_asset(tmp_path, io_managers):
 
         if not self_dependent_asset.is_empty():
             assert len(self_dependent_asset["key"]) == 3
-            assert (self_dependent_asset["key"] == context.op_config["last_partition_key"]).all()
+            assert (
+                self_dependent_asset["key"]
+                == context.op_execution_context.op_config["last_partition_key"]
+            ).all()
         else:
-            assert context.op_config["last_partition_key"] == "NA"
-        value = context.op_config["value"]
+            assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+        value = context.op_execution_context.op_config["value"]
         pd_df = pl.DataFrame(
             {
                 "key": [key, key, key],

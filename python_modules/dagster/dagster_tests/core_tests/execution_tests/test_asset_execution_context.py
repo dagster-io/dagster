@@ -79,6 +79,7 @@ def test_deprecation_warnings():
         "set_requires_typed_event_stream",
         "typed_event_stream_error_message",
         "describe_op",
+        "op_def",
         "has_assets_def",
         "get_step_execution_context",
         "step_launcher",

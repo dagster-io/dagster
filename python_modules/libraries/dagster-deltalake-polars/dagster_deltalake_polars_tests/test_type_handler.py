@@ -174,7 +174,7 @@ def test_not_supported_type(tmp_path, io_manager):
 )
 def daily_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
     partition = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
 
     return pl.DataFrame(
         {
@@ -265,7 +265,7 @@ def test_load_partitioned_asset(tmp_path, io_manager):
 )
 def static_partitioned(context) -> pl.DataFrame:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
 
     return pl.DataFrame(
         {
@@ -327,7 +327,7 @@ def test_static_partitioned_asset(tmp_path, io_manager):
 def multi_partitioned(context) -> pl.DataFrame:
     partition = context.partition_key.keys_by_dimension
     time_partition = datetime.strptime(partition["time"], DELTA_DATE_FORMAT).date()
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
@@ -416,7 +416,7 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 )
 def dynamic_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "fruit": [partition, partition, partition],

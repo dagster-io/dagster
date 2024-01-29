@@ -205,7 +205,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
         )
         def daily_partitioned(context: AssetExecutionContext) -> DataFrame:
             partition = context.partition_key
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -314,7 +314,7 @@ def test_static_partitioned_asset(spark, io_manager):
         )
         def static_partitioned(context: AssetExecutionContext) -> DataFrame:
             partition = context.partition_key
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -421,7 +421,7 @@ def test_multi_partitioned_asset(spark, io_manager):
         )
         def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -547,7 +547,7 @@ def test_dynamic_partitions(spark, io_manager):
         )
         def dynamic_partitioned(context: AssetExecutionContext) -> DataFrame:
             partition = context.partition_key
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -675,10 +675,12 @@ def test_self_dependent_asset(spark, io_manager):
             if not self_dependent_asset.isEmpty():
                 pd_df = self_dependent_asset.toPandas()
                 assert len(pd_df.index) == 3
-                assert (pd_df["key"] == context.op_config["last_partition_key"]).all()
+                assert (
+                    pd_df["key"] == context.op_execution_context.op_config["last_partition_key"]
+                ).all()
             else:
-                assert context.op_config["last_partition_key"] == "NA"
-            value = context.op_config["value"]
+                assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+            value = context.op_execution_context.op_config["value"]
             schema = StructType(
                 [
                     StructField("KEY", StringType()),

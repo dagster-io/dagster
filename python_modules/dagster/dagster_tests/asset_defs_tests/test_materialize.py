@@ -58,7 +58,7 @@ def test_basic_materialize():
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         assert materialize(
@@ -71,7 +71,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):

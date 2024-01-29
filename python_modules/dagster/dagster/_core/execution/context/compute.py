@@ -1381,7 +1381,6 @@ USE_OP_CONTEXT = [
     "node_handle",
     "op_handle",
     "op",
-    "op_def",
     "get_mapping_key",
     "selected_output_names",
 ]
@@ -1578,13 +1577,6 @@ class AssetExecutionContext(OpExecutionContext):
     def op(self) -> Node:
         return self.op_execution_context.op
 
-    @deprecated(**_get_deprecation_kwargs("op_def"))
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def op_def(self) -> OpDefinition:
-        return self.op_execution_context.op_def
-
     @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
     @public
     @_copy_docs_from_op_execution_context
@@ -1610,6 +1602,12 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def describe_op(self) -> str:
         return self.op_execution_context.describe_op()
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_def(self) -> OpDefinition:
+        return self.op_execution_context.op_def
 
     #### job related
 
