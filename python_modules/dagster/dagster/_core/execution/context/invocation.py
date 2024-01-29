@@ -234,7 +234,6 @@ class DirectOpExecutionContext(OpExecutionContext):
         self._execution_properties = DirectExecutionProperties()
 
         # update the bound context with properties relevant to the execution of the op
-
         invocation_tags = (
             pending_invocation.tags
             if isinstance(pending_invocation, PendingNodeInvocation)
@@ -291,10 +290,7 @@ class DirectOpExecutionContext(OpExecutionContext):
             raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
         op_config = resolve_bound_config(config_from_args or self._op_config, op_def)
 
-        if isinstance(op_def, OpDefinition):
-            step_description = f'op "{op_def.name}"'
-        else:
-            step_description = f'solid "{op_def.name}"'
+        step_description = f'op "{op_def.name}"'
 
         self._bound_properties = BoundProperties(
             op_def=op_def,
