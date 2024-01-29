@@ -1505,7 +1505,7 @@ class AssetExecutionContext(OpExecutionContext):
     @deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
     def get_op_execution_context(self) -> "OpExecutionContext":
         return self.op_execution_context
-    
+
     @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
     @public
     @_copy_docs_from_op_execution_context
