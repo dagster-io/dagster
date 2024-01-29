@@ -1,19 +1,23 @@
 import datetime
 from contextlib import contextmanager
+from unittest import mock
 
 import packaging.version
 import pendulum
 from typing_extensions import TypeAlias
 
-_IS_PENDULUM_1 = (
+_IS_PENDULUM_2 = (
     hasattr(pendulum, "__version__")
-    and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") == 1
+    and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") == 2
 )
 
 _IS_PENDULUM_3 = (
     hasattr(pendulum, "__version__")
     and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major") == 3
 )
+
+# pendulum 1 has no __version__ property
+_IS_PENDULUM_1 = not _IS_PENDULUM_2 and not _IS_PENDULUM_3
 
 POST_TRANSITION = pendulum.tz.POST_TRANSITION if _IS_PENDULUM_3 else pendulum.POST_TRANSITION
 PRE_TRANSITION = pendulum.tz.PRE_TRANSITION if _IS_PENDULUM_3 else pendulum.PRE_TRANSITION
@@ -98,7 +102,8 @@ PendulumInterval: TypeAlias = (
 @contextmanager
 def pendulum_freeze_time(t):
     if _IS_PENDULUM_3:
-        yield from pendulum.travel_to(t, freeze=True)
+        with mock.patch("pendulum.now", return_value=t):
+            yield
     else:
         with pendulum.test(t) as frozen_time:
             yield frozen_time
@@ -112,3 +117,11 @@ def to_timezone(dt: PendulumDateTime, tz: str):
     if timestamp < 0:
         return pendulum.from_timestamp(0, tz=tz) + datetime.timedelta(seconds=timestamp)
     return pendulum.from_timestamp(dt.timestamp(), tz=tz)
+
+
+def get_crontab_day_of_week(dt: PendulumDateTime) -> int:
+    if _IS_PENDULUM_3:
+        # In pendulum 3, 0-6 is Monday-Sunday (unlike crontab, where 0-6 is Sunday-Saturday)
+        return (dt.day_of_week + 1) % 7
+    else:
+        return dt.day_of_week

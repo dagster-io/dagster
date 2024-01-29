@@ -182,7 +182,7 @@ class DatetimeFieldSerializer(FieldSerializer):
         self, datetime: Optional[datetime], whitelist_map: WhitelistMap, descent_path: str
     ) -> Optional[Mapping[str, Any]]:
         if datetime:
-            check.invariant(datetime.tzinfo is not None)
+            check.invariant(datetime.tzinfo is not None, "No timezone set")
             pendulum_datetime = pendulum.instance(datetime, tz=datetime.tzinfo)
             timezone_name = pendulum_datetime.timezone.name
 

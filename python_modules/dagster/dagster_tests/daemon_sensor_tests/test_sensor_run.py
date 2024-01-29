@@ -84,7 +84,12 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._seven.compat.pendulum import (
+    _IS_PENDULUM_3,
+    create_pendulum_time,
+    pendulum_freeze_time,
+    to_timezone,
+)
 
 from .conftest import create_workspace_load_target
 
@@ -1541,6 +1546,7 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
         validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
+@pytest.mark.skipif(_IS_PENDULUM_3, reason="pendulum.set_test_now not supported in pendulum 3")
 def test_custom_interval_sensor_with_offset(
     monkeypatch, executor, instance, workspace_context, external_repo
 ):

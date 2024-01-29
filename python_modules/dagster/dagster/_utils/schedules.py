@@ -15,6 +15,7 @@ from dagster._seven.compat.pendulum import (
     TRANSITION_ERROR,
     PendulumDateTime,
     create_pendulum_time,
+    get_crontab_day_of_week,
 )
 
 # Monthly schedules with 29-31 won't reliably run every month
@@ -292,9 +293,9 @@ def _find_weekly_schedule_time(
             minute,
             pendulum_date.day,
         )
-
         # Move to the correct day of the week
-        current_day_of_week = new_time.day_of_week
+        current_day_of_week = get_crontab_day_of_week(new_time)
+
         if day_of_week != current_day_of_week:
             if ascending:
                 new_time = new_time.add(days=(day_of_week - current_day_of_week) % 7)
