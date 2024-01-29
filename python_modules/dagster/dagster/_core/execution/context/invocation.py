@@ -83,8 +83,8 @@ class BaseDirectExecutionContext:
 
     @property
     @abstractmethod
-    def bound_properties(self) -> "BoundProperties":
-        """Subclasses of BaseDirectExecutionContext must contain a BoundProperties object."""
+    def per_invocation_properties(self) -> "PerInvocationProperties":
+        """Subclasses of BaseDirectExecutionContext must contain a PerInvocationProperties object."""
 
     @property
     @abstractmethod
@@ -754,8 +754,6 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
     def __init__(self, op_execution_context: DirectOpExecutionContext):
         self._op_execution_context = op_execution_context
 
-        self._run_props = None
-
     def __enter__(self):
         self.op_execution_context._cm_scope_entered = True  # noqa: SLF001
         return self
@@ -766,8 +764,8 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
     def __del__(self):
         self.op_execution_context._exit_stack.close()  # noqa: SLF001
 
-    def _check_bound(self, fn_name: str, fn_type: str):
-        if not self._op_execution_context._bound_properties:  # noqa: SLF001
+    def _check_bound_to_invocation(self, fn_name: str, fn_type: str):
+        if not self._op_execution_context._per_invocation_properties:  # noqa: SLF001
             raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
 
     def bind(
@@ -782,7 +780,7 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
             raise DagsterInvariantViolationError(
                 "DirectAssetExecutionContext can only being used to invoke an asset."
             )
-        if self._op_execution_context._bound_properties is not None:  # noqa: SLF001
+        if self._op_execution_context._per_invocation_properties is not None:  # noqa: SLF001
             raise DagsterInvalidInvocationError(
                 f"This context is currently being used to execute {self.op_execution_context.alias}."
                 " The context cannot be used to execute another asset until"
@@ -803,8 +801,8 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
         self._op_execution_context.unbind()
 
     @property
-    def bound_properties(self) -> BoundProperties:
-        return self.op_execution_context.bound_properties
+    def per_invocation_properties(self) -> PerInvocationProperties:
+        return self.op_execution_context.per_invocation_properties
 
     @property
     def is_bound(self) -> bool:
