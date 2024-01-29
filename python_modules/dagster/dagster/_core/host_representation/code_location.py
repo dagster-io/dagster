@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -584,7 +584,7 @@ class GrpcServerCodeLocation(CodeLocation):
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
-        grpc_metadata: Optional[Sequence[Tuple[str, str]]] = None,
+        grpc_metadata: Optional[Mapping[str, str]] = None,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
@@ -627,7 +627,7 @@ class GrpcServerCodeLocation(CodeLocation):
                 socket=self._socket,
                 host=self._host,
                 use_ssl=self._use_ssl,
-                metadata=grpc_metadata,
+                metadata_dict=grpc_metadata,
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 

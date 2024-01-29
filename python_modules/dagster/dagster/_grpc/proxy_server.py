@@ -186,16 +186,28 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def _get_grpc_client(self):
         return self._client
 
-    def _query(self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT):
+    def _get_metadata_timeout(self, context):
+        metadict = dict(context.invocation_metadata())
+        if "timeout" in metadict:
+            return int(metadict["timeout"])
+        return None
+
+    def _query(self, api_name: str, request, context, timeout: Optional[int] = None):
         if not self._client:
             raise Exception("No available client to code serer")
+
+        if timeout is None:
+            timeout = self._get_metadata_timeout(context) or DEFAULT_GRPC_TIMEOUT
+
         return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
 
-    def _streaming_query(
-        self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
-    ):
+    def _streaming_query(self, api_name: str, request, context, timeout: Optional[int] = None):
         if not self._client:
             raise Exception("No available client to code serer")
+
+        if timeout is None:
+            timeout = self._get_metadata_timeout(context) or DEFAULT_GRPC_TIMEOUT
+
         return check.not_none(self._client)._get_streaming_response(api_name, request, timeout)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):

@@ -2,7 +2,7 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Dict, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, Iterator, Mapping, NoReturn, Optional, Sequence, Tuple, Type, cast
 
 import google.protobuf.message
 import grpc
@@ -69,7 +69,7 @@ class DagsterGrpcClient:
         socket: Optional[str] = None,
         host: str = "localhost",
         use_ssl: bool = False,
-        metadata: Optional[Sequence[Tuple[str, str]]] = None,
+        metadata_dict: Optional[Mapping[str, str]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
 
@@ -79,7 +79,7 @@ class DagsterGrpcClient:
 
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
 
-        self._metadata = check.opt_sequence_param(metadata, "metadata")
+        self._metadata_dict = check.opt_mapping_param(metadata_dict, "metadata_dict")
 
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -100,9 +100,10 @@ class DagsterGrpcClient:
             socket = check.not_none(socket)
             self._server_address = "unix:" + os.path.abspath(socket)
 
-    @property
-    def metadata(self) -> Sequence[Tuple[str, str]]:
-        return self._metadata
+    def get_metadata(self, timeout: int) -> Sequence[Tuple[str, str]]:
+        return [(key, val) for key, val in self._metadata_dict.items()] + [
+            ("timeout", str(timeout))
+        ]
 
     @property
     def use_ssl(self) -> bool:
@@ -138,7 +139,9 @@ class DagsterGrpcClient:
     ):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
-            return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+            return getattr(stub, method)(
+                request, metadata=self.get_metadata(timeout), timeout=timeout
+            )
 
     def _raise_grpc_exception(
         self,
@@ -182,7 +185,9 @@ class DagsterGrpcClient:
     ) -> Iterator[Any]:
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
-            yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+            yield from getattr(stub, method)(
+                request, metadata=self.get_metadata(timeout), timeout=timeout
+            )
 
     def _streaming_query(
         self,
