@@ -7,7 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Dict, Optional, Sequence, Type, cast
+from typing import Dict, Optional, Sequence, Set, Type, cast
 
 import pendulum
 
@@ -19,6 +19,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
@@ -249,7 +250,6 @@ class AutoMaterializeLaunchContext:
                     ) from exception_value
                 except:
                     error_data = serializable_error_info_from_exc_info(sys.exc_info())
-                    self._logger.exception("Auto-materialize daemon caught an error")
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -258,7 +258,6 @@ class AutoMaterializeLaunchContext:
                     )
             else:
                 error_data = serializable_error_info_from_exc_info(sys.exc_info())
-                self._logger.exception("Auto-materialize daemon caught an error")
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -308,6 +307,19 @@ class AssetDaemon(DagsterDaemon):
     @classmethod
     def daemon_type(cls) -> str:
         return "ASSET"
+
+    def _get_print_sensor_name(self, sensor: Optional[ExternalSensor]) -> str:
+        if not sensor:
+            return ""
+        repo_origin = sensor.get_external_origin().external_repository_origin
+        repo_name = repo_origin.repository_name
+        location_name = repo_origin.code_location_origin.location_name
+        repo_name = (
+            location_name
+            if repo_name == SINGLETON_REPOSITORY_NAME
+            else f"{repo_name}@{location_name}"
+        )
+        return f" for {sensor.name} in {repo_name}"
 
     def _initialize_evaluation_id(
         self,
@@ -551,7 +563,7 @@ class AssetDaemon(DagsterDaemon):
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
 
         instance: DagsterInstance = workspace_process_context.instance
-        schedule_storage = check.not_none(instance.schedule_storage)
+        error_info = None
 
         if sensor:
             with sensor_state_lock:
@@ -570,309 +582,342 @@ class AssetDaemon(DagsterDaemon):
         else:
             auto_materialize_instigator_state = None
 
-        if sensor:
-            repo_origin = sensor.get_external_origin().external_repository_origin
-            repo_name = repo_origin.repository_name
-            location_name = repo_origin.code_location_origin.location_name
-            repo_name = (
-                location_name
-                if repo_name == SINGLETON_REPOSITORY_NAME
-                else f"{repo_name}@{location_name}"
-            )
-            print_group_name = f" for {sensor.name} in {repo_name}"
-        else:
-            print_group_name = ""
+        try:
+            print_group_name = self._get_print_sensor_name(sensor)
 
-        if sensor:
-            eligible_keys = check.not_none(sensor.asset_selection).resolve(asset_graph)
-        else:
-            eligible_keys = {*asset_graph.materializable_asset_keys, *asset_graph.source_asset_keys}
-
-        auto_materialize_asset_keys = {
-            target_key
-            for target_key in eligible_keys
-            if asset_graph.get_auto_materialize_policy(target_key) is not None
-        }
-        num_target_assets = len(auto_materialize_asset_keys)
-
-        auto_observe_asset_keys = {
-            key
-            for key in eligible_keys
-            if asset_graph.get_auto_observe_interval_minutes(key) is not None
-        }
-        num_auto_observe_assets = len(auto_observe_asset_keys)
-
-        if not auto_materialize_asset_keys and not auto_observe_asset_keys:
-            self._logger.debug("No assets that require auto-materialize checks{print_group_name}")
-            yield
-            return
-
-        self._logger.info(
-            f"Checking {num_target_assets} asset{'' if num_target_assets == 1 else 's'} and"
-            f" {num_auto_observe_assets} observable source"
-            f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
-        )
-
-        if sensor:
-            stored_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
-                cast(
-                    SensorInstigatorData,
-                    check.not_none(auto_materialize_instigator_state).instigator_data,
-                ).cursor,
-                asset_graph,
-            )
-
-            instigator_origin_id = sensor.get_external_origin().get_id()
-            instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
-            instigator_name = sensor.name
-        else:
-            serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-            stored_cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-                serialized_cursor, asset_graph
-            )
-            instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
-            instigator_selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
-            instigator_name = _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME
-
-        tick_retention_settings = instance.get_tick_retention_settings(
-            InstigatorType.SENSOR if sensor else InstigatorType.AUTO_MATERIALIZE
-        )
-
-        ticks = instance.get_ticks(instigator_origin_id, instigator_selector_id, limit=1)
-        latest_tick = ticks[0] if ticks else None
-
-        max_retries = instance.auto_materialize_max_tick_retries
-
-        # Determine if the most recent tick requires retrying
-        retry_tick: Optional[InstigatorTick] = None
-
-        if latest_tick:
-            # If the previous tick matches the stored cursor's evaluation ID, check if it failed
-            # or crashed partway through execution and needs to be resumed
-            # Don't resume very old ticks though in case the daemon crashed for a long time and
-            # then restarted
-            if (
-                pendulum.now("UTC").timestamp() - latest_tick.timestamp
-                <= MAX_TIME_TO_RESUME_TICK_SECONDS
-                and latest_tick.tick_data.auto_materialize_evaluation_id
-                == stored_cursor.evaluation_id
-            ):
-                if latest_tick.status == TickStatus.STARTED:
-                    self._logger.warn(
-                        f"Tick for evaluation {stored_cursor.evaluation_id}{print_group_name} was interrupted part-way through, resuming"
-                    )
-                    retry_tick = latest_tick
-                elif (
-                    latest_tick.status == TickStatus.FAILURE
-                    and latest_tick.tick_data.failure_count <= max_retries
-                ):
-                    self._logger.info(
-                        f"Retrying failed tick for evaluation {stored_cursor.evaluation_id}{print_group_name}"
-                    )
-                    retry_tick = instance.create_tick(
-                        latest_tick.tick_data.with_status(
-                            TickStatus.STARTED,
-                            error=None,
-                            timestamp=evaluation_time.timestamp(),
-                            end_timestamp=None,
-                        ),
-                    )
+            if sensor:
+                eligible_keys = check.not_none(sensor.asset_selection).resolve(asset_graph)
             else:
-                # (The evaluation IDs not matching indicates that the tick failed or crashed before
-                # the cursor could be written, so no runs have been launched and it's safe to
-                # re-evaluate things from scratch in a new tick without retrying anything)
-                if latest_tick.status == TickStatus.STARTED:
-                    # Old tick that won't be resumed - move it into a SKIPPED state so it isn't
-                    # left dangling in STARTED
-                    self._logger.warn(
-                        f"Moving dangling STARTED tick from evaluation {latest_tick.tick_data.auto_materialize_evaluation_id}{print_group_name} into SKIPPED"
-                    )
-                    latest_tick = latest_tick.with_status(status=TickStatus.SKIPPED)
-                    instance.update_tick(latest_tick)
-
-        if retry_tick:
-            tick = retry_tick
-        else:
-            # Evaluation ID will always be monotonically increasing, but will not always
-            # be auto-incrementing by 1 once there are multiple AMP evaluations happening in
-            # parallel
-            next_evaluation_id = self._get_next_evaluation_id()
-            tick = instance.create_tick(
-                TickData(
-                    instigator_origin_id=instigator_origin_id,
-                    instigator_name=instigator_name,
-                    instigator_type=(
-                        InstigatorType.SENSOR if sensor else InstigatorType.AUTO_MATERIALIZE
-                    ),
-                    status=TickStatus.STARTED,
-                    timestamp=evaluation_time.timestamp(),
-                    selector_id=instigator_selector_id,
-                    auto_materialize_evaluation_id=next_evaluation_id,
-                )
-            )
-
-        evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
-
-        with AutoMaterializeLaunchContext(
-            tick,
-            sensor,
-            instance,
-            self._logger,
-            tick_retention_settings,
-        ) as tick_context:
-            if retry_tick:
-                # Unfinished or retried tick already generated evaluations and run requests and cursor, now
-                # need to finish it
-                run_requests = tick.tick_data.run_requests or []
-                reserved_run_ids = tick.tick_data.reserved_run_ids or []
-
-                if schedule_storage.supports_auto_materialize_asset_evaluations:
-                    evaluation_records = (
-                        schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
-                            evaluation_id
-                        )
-                    )
-                    evaluations_by_asset_key = {
-                        evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids(
-                            partitions_def=asset_graph.get_partitions_def(
-                                evaluation_record.asset_key
-                            )
-                        )
-                        for evaluation_record in evaluation_records
-                    }
-                else:
-                    evaluations_by_asset_key = {}
-            else:
-                sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
-
-                run_requests, new_cursor, evaluations = AssetDaemonContext(
-                    evaluation_id=evaluation_id,
-                    asset_graph=asset_graph,
-                    auto_materialize_asset_keys=auto_materialize_asset_keys,
-                    instance=instance,
-                    cursor=stored_cursor,
-                    materialize_run_tags={
-                        **instance.auto_materialize_run_tags,
-                        **sensor_tags,
-                    },
-                    observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
-                    auto_observe_asset_keys=auto_observe_asset_keys,
-                    respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
-                    logger=self._logger,
-                ).evaluate()
-
-                check.invariant(new_cursor.evaluation_id == evaluation_id)
-
-                check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
-
-                evaluations_by_asset_key = {
-                    evaluation.asset_key: evaluation.with_run_ids(set())
-                    for evaluation in evaluations
+                eligible_keys = {
+                    *asset_graph.materializable_asset_keys,
+                    *asset_graph.source_asset_keys,
                 }
 
-                # Write the asset evaluations without run IDs first
-                if schedule_storage.supports_auto_materialize_asset_evaluations:
-                    schedule_storage.add_auto_materialize_asset_evaluations(
-                        evaluation_id,
-                        list(evaluations_by_asset_key.values()),
-                    )
-                    check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
+            auto_materialize_asset_keys = {
+                target_key
+                for target_key in eligible_keys
+                if asset_graph.get_auto_materialize_policy(target_key) is not None
+            }
+            num_target_assets = len(auto_materialize_asset_keys)
 
-                reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
+            auto_observe_asset_keys = {
+                key
+                for key in eligible_keys
+                if asset_graph.get_auto_observe_interval_minutes(key) is not None
+            }
+            num_auto_observe_assets = len(auto_observe_asset_keys)
 
-                # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
-                tick = tick_context.set_run_requests(
-                    run_requests=run_requests,
-                    reserved_run_ids=reserved_run_ids,
+            if not auto_materialize_asset_keys and not auto_observe_asset_keys:
+                self._logger.debug(
+                    f"No assets that require auto-materialize checks{print_group_name}"
                 )
-                tick_context.write()
-                check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
-
-                # Write out the persistent cursor, which ensures that future ticks will move on once
-                # they determine that nothing needs to be retried
-                if sensor:
-                    with sensor_state_lock:
-                        state = instance.get_instigator_state(
-                            sensor.get_external_origin_id(), sensor.selector_id
-                        )
-                        instance.update_instigator_state(
-                            check.not_none(state).with_data(
-                                SensorInstigatorData(
-                                    last_tick_timestamp=tick.timestamp,
-                                    min_interval=sensor.min_interval_seconds,
-                                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
-                                        new_cursor
-                                    ),
-                                    sensor_type=SensorType.AUTOMATION_POLICY,
-                                )
-                            )
-                        )
-                else:
-                    instance.daemon_cursor_storage.set_cursor_values(
-                        {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
-                    )
-
-                check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
+                yield
+                return
 
             self._logger.info(
-                "Tick produced"
-                f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-                f" {len(evaluations_by_asset_key)} asset"
-                f" evaluation{'s' if len(evaluations_by_asset_key) != 1 else ''} for evaluation ID"
-                f" {evaluation_id}{print_group_name}"
+                f"Checking {num_target_assets} asset{'' if num_target_assets == 1 else 's'} and"
+                f" {num_auto_observe_assets} observable source"
+                f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
             )
 
-            check.invariant(len(run_requests) == len(reserved_run_ids))
-            updated_evaluation_asset_keys = set()
-
-            run_request_execution_data_cache = {}
-            for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
-                submitted_run = submit_asset_run(
-                    run_id=reserved_run_id,
-                    run_request=run_request._replace(
-                        tags={
-                            **run_request.tags,
-                            AUTO_MATERIALIZE_TAG: "true",
-                            ASSET_EVALUATION_ID_TAG: str(evaluation_id),
-                        }
-                    ),
-                    run_request_index=i,
-                    instance=instance,
-                    workspace_process_context=workspace_process_context,
-                    run_request_execution_data_cache=run_request_execution_data_cache,
-                    asset_graph=asset_graph,
-                    debug_crash_flags=debug_crash_flags,
-                    logger=self._logger,
+            if sensor:
+                stored_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
+                    cast(
+                        SensorInstigatorData,
+                        check.not_none(auto_materialize_instigator_state).instigator_data,
+                    ).cursor,
+                    asset_graph,
                 )
-                # heartbeat after each submitted runs
-                yield
 
-                asset_keys = check.not_none(run_request.asset_selection)
-                tick_context.add_run_info(run_id=submitted_run.run_id)
+                instigator_origin_id = sensor.get_external_origin().get_id()
+                instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
+                instigator_name = sensor.name
+            else:
+                serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+                stored_cursor = (
+                    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                        serialized_cursor, asset_graph
+                    )
+                )
+                instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
+                instigator_selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
+                instigator_name = _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME
 
-                # write the submitted run ID to any evaluations
-                for asset_key in asset_keys:
-                    # asset keys for observation runs don't have evaluations
-                    if asset_key in evaluations_by_asset_key:
-                        evaluation = evaluations_by_asset_key[asset_key]
-                        evaluations_by_asset_key[asset_key] = evaluation._replace(
-                            run_ids=evaluation.run_ids | {submitted_run.run_id}
+            tick_retention_settings = instance.get_tick_retention_settings(
+                InstigatorType.SENSOR if sensor else InstigatorType.AUTO_MATERIALIZE
+            )
+
+            ticks = instance.get_ticks(instigator_origin_id, instigator_selector_id, limit=1)
+            latest_tick = ticks[0] if ticks else None
+
+            max_retries = instance.auto_materialize_max_tick_retries
+
+            # Determine if the most recent tick requires retrying
+            retry_tick: Optional[InstigatorTick] = None
+
+            if latest_tick:
+                # If the previous tick matches the stored cursor's evaluation ID, check if it failed
+                # or crashed partway through execution and needs to be resumed
+                # Don't resume very old ticks though in case the daemon crashed for a long time and
+                # then restarted
+                if (
+                    pendulum.now("UTC").timestamp() - latest_tick.timestamp
+                    <= MAX_TIME_TO_RESUME_TICK_SECONDS
+                    and latest_tick.tick_data.auto_materialize_evaluation_id
+                    == stored_cursor.evaluation_id
+                ):
+                    if latest_tick.status == TickStatus.STARTED:
+                        self._logger.warn(
+                            f"Tick for evaluation {stored_cursor.evaluation_id}{print_group_name} was interrupted part-way through, resuming"
                         )
-                        updated_evaluation_asset_keys.add(asset_key)
+                        retry_tick = latest_tick
+                    elif (
+                        latest_tick.status == TickStatus.FAILURE
+                        and latest_tick.tick_data.failure_count <= max_retries
+                    ):
+                        self._logger.info(
+                            f"Retrying failed tick for evaluation {stored_cursor.evaluation_id}{print_group_name}"
+                        )
+                        retry_tick = instance.create_tick(
+                            latest_tick.tick_data.with_status(
+                                TickStatus.STARTED,
+                                error=None,
+                                timestamp=evaluation_time.timestamp(),
+                                end_timestamp=None,
+                            ),
+                        )
+                else:
+                    # (The evaluation IDs not matching indicates that the tick failed or crashed before
+                    # the cursor could be written, so no runs have been launched and it's safe to
+                    # re-evaluate things from scratch in a new tick without retrying anything)
+                    if latest_tick.status == TickStatus.STARTED:
+                        # Old tick that won't be resumed - move it into a SKIPPED state so it isn't
+                        # left dangling in STARTED
+                        self._logger.warn(
+                            f"Moving dangling STARTED tick from evaluation {latest_tick.tick_data.auto_materialize_evaluation_id}{print_group_name} into SKIPPED"
+                        )
+                        latest_tick = latest_tick.with_status(status=TickStatus.SKIPPED)
+                        instance.update_tick(latest_tick)
 
-            evaluations_to_update = [
-                evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
-            ]
-            if evaluations_to_update:
-                schedule_storage.add_auto_materialize_asset_evaluations(
-                    evaluation_id, evaluations_to_update
+            if retry_tick:
+                tick = retry_tick
+            else:
+                # Evaluation ID will always be monotonically increasing, but will not always
+                # be auto-incrementing by 1 once there are multiple AMP evaluations happening in
+                # parallel
+                next_evaluation_id = self._get_next_evaluation_id()
+                tick = instance.create_tick(
+                    TickData(
+                        instigator_origin_id=instigator_origin_id,
+                        instigator_name=instigator_name,
+                        instigator_type=(
+                            InstigatorType.SENSOR if sensor else InstigatorType.AUTO_MATERIALIZE
+                        ),
+                        status=TickStatus.STARTED,
+                        timestamp=evaluation_time.timestamp(),
+                        selector_id=instigator_selector_id,
+                        auto_materialize_evaluation_id=next_evaluation_id,
+                    )
                 )
 
-            check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
+            with AutoMaterializeLaunchContext(
+                tick,
+                sensor,
+                instance,
+                self._logger,
+                tick_retention_settings,
+            ) as tick_context:
+                yield from self._evaluate_auto_materialize_tick(
+                    tick_context,
+                    tick,
+                    sensor,
+                    workspace_process_context,
+                    asset_graph,
+                    auto_materialize_asset_keys,
+                    stored_cursor,
+                    auto_observe_asset_keys,
+                    debug_crash_flags,
+                    sensor_state_lock,
+                    is_retry=(retry_tick is not None),
+                )
+        except Exception:
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            self._logger.exception("Auto-materialize daemon caught an error")
 
-            tick_context.update_state(
-                TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
+        yield error_info
+
+    def _evaluate_auto_materialize_tick(
+        self,
+        tick_context: AutoMaterializeLaunchContext,
+        tick: InstigatorTick,
+        sensor: Optional[ExternalSensor],
+        workspace_process_context: IWorkspaceProcessContext,
+        asset_graph: ExternalAssetGraph,
+        auto_materialize_asset_keys: Set[AssetKey],
+        stored_cursor: AssetDaemonCursor,
+        auto_observe_asset_keys: Set[AssetKey],
+        debug_crash_flags: SingleInstigatorDebugCrashFlags,
+        sensor_state_lock: threading.Lock,
+        is_retry: bool,
+    ):
+        evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
+
+        instance = workspace_process_context.instance
+
+        schedule_storage = check.not_none(instance.schedule_storage)
+
+        if is_retry:
+            # Unfinished or retried tick already generated evaluations and run requests and cursor, now
+            # need to finish it
+            run_requests = tick.tick_data.run_requests or []
+            reserved_run_ids = tick.tick_data.reserved_run_ids or []
+
+            if schedule_storage.supports_auto_materialize_asset_evaluations:
+                evaluation_records = (
+                    schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+                        evaluation_id
+                    )
+                )
+                evaluations_by_asset_key = {
+                    evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids(
+                        partitions_def=asset_graph.get_partitions_def(evaluation_record.asset_key)
+                    )
+                    for evaluation_record in evaluation_records
+                }
+            else:
+                evaluations_by_asset_key = {}
+        else:
+            sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
+
+            run_requests, new_cursor, evaluations = AssetDaemonContext(
+                evaluation_id=evaluation_id,
+                asset_graph=asset_graph,
+                auto_materialize_asset_keys=auto_materialize_asset_keys,
+                instance=instance,
+                cursor=stored_cursor,
+                materialize_run_tags={
+                    **instance.auto_materialize_run_tags,
+                    **sensor_tags,
+                },
+                observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
+                auto_observe_asset_keys=auto_observe_asset_keys,
+                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+                logger=self._logger,
+            ).evaluate()
+
+            check.invariant(new_cursor.evaluation_id == evaluation_id)
+
+            check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
+
+            evaluations_by_asset_key = {
+                evaluation.asset_key: evaluation.with_run_ids(set()) for evaluation in evaluations
+            }
+
+            # Write the asset evaluations without run IDs first
+            if schedule_storage.supports_auto_materialize_asset_evaluations:
+                schedule_storage.add_auto_materialize_asset_evaluations(
+                    evaluation_id,
+                    list(evaluations_by_asset_key.values()),
+                )
+                check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
+
+            reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
+
+            # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
+            tick = tick_context.set_run_requests(
+                run_requests=run_requests,
+                reserved_run_ids=reserved_run_ids,
             )
+            tick_context.write()
+            check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
+
+            # Write out the persistent cursor, which ensures that future ticks will move on once
+            # they determine that nothing needs to be retried
+            if sensor:
+                with sensor_state_lock:
+                    state = instance.get_instigator_state(
+                        sensor.get_external_origin_id(), sensor.selector_id
+                    )
+                    instance.update_instigator_state(
+                        check.not_none(state).with_data(
+                            SensorInstigatorData(
+                                last_tick_timestamp=tick.timestamp,
+                                min_interval=sensor.min_interval_seconds,
+                                cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
+                                    new_cursor
+                                ),
+                                sensor_type=SensorType.AUTOMATION_POLICY,
+                            )
+                        )
+                    )
+            else:
+                instance.daemon_cursor_storage.set_cursor_values(
+                    {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
+                )
+
+            check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
+
+        print_group_name = self._get_print_sensor_name(sensor)
+
+        self._logger.info(
+            "Tick produced"
+            f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
+            f" {len(evaluations_by_asset_key)} asset"
+            f" evaluation{'s' if len(evaluations_by_asset_key) != 1 else ''} for evaluation ID"
+            f" {evaluation_id}{print_group_name}"
+        )
+
+        check.invariant(len(run_requests) == len(reserved_run_ids))
+        updated_evaluation_asset_keys = set()
+
+        run_request_execution_data_cache = {}
+        for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
+            submitted_run = submit_asset_run(
+                run_id=reserved_run_id,
+                run_request=run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        AUTO_MATERIALIZE_TAG: "true",
+                        ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                    }
+                ),
+                run_request_index=i,
+                instance=instance,
+                workspace_process_context=workspace_process_context,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+                asset_graph=asset_graph,
+                debug_crash_flags=debug_crash_flags,
+                logger=self._logger,
+            )
+            # heartbeat after each submitted runs
+            yield
+
+            asset_keys = check.not_none(run_request.asset_selection)
+            tick_context.add_run_info(run_id=submitted_run.run_id)
+
+            # write the submitted run ID to any evaluations
+            for asset_key in asset_keys:
+                # asset keys for observation runs don't have evaluations
+                if asset_key in evaluations_by_asset_key:
+                    evaluation = evaluations_by_asset_key[asset_key]
+                    evaluations_by_asset_key[asset_key] = evaluation._replace(
+                        run_ids=evaluation.run_ids | {submitted_run.run_id}
+                    )
+                    updated_evaluation_asset_keys.add(asset_key)
+
+        evaluations_to_update = [
+            evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
+        ]
+        if evaluations_to_update:
+            schedule_storage.add_auto_materialize_asset_evaluations(
+                evaluation_id, evaluations_to_update
+            )
+
+        check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
+
+        tick_context.update_state(
+            TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
+        )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
             schedule_storage.purge_asset_evaluations(
