@@ -387,7 +387,9 @@ class SensorResult(
         dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest,
             AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
             partition addition and deletion. Run requests will be evaluated using the state of the
-            partitions with these changes applied.
+            partitions with these changes applied. We recommend limiting partition additions
+            and deletions to a maximum of 25K partitions per sensor evaluation, as this is the maximum
+            recommended partition limit per asset.
         asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]):  (Experimental) A
             list of materializations, observations, and asset check evaluations that the system
             will persist on your behalf at the end of sensor evaluation. These events will be not
