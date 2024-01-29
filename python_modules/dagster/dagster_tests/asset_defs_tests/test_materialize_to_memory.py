@@ -23,7 +23,6 @@ from dagster import (
     with_resources,
 )
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.execution.context.compute import AssetExecutionContext
 
 
 def test_basic_materialize_to_memory():
