@@ -43,10 +43,7 @@ from dagster._utils.warnings import deprecation_warning
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import (
-        DagsterDbtTranslator,
-        DbtManifestWrapper,
-    )
+    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
 MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -557,7 +554,7 @@ def default_asset_check_fn(
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
-        description=test_resource_props["description"],
+        description=test_resource_props.get("meta", {}).get("description"),
         additional_deps=additional_deps,
     )
 
