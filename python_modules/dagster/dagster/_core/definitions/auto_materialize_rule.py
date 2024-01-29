@@ -635,12 +635,12 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                     {
                         ap
                         for ap in context.candidate_parent_has_or_will_update_subset.asset_partitions
-                        if context.instance_queryer.asset_partition_has_materialization_or_observation(
+                        if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                             ap
                         )
                     },
                 )
-            )
+            ) - context.previous_tick_requested_subset
 
         return AssetConditionResult.create(
             context,
