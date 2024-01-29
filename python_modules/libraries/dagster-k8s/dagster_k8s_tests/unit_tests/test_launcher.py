@@ -24,10 +24,9 @@ from dagster_k8s.job import (
 )
 from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
-from kubernetes.client.models.v1_pod import V1Pod
-from kubernetes.client.models.v1_object_meta import V1ObjectMeta
-from kubernetes.client.models.v1_pod_status import V1PodStatus
 from kubernetes.client.models.v1_job_status import V1JobStatus
+from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event
 else:

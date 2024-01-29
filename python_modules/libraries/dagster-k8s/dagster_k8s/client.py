@@ -737,7 +737,7 @@ class DagsterKubernetesClient:
 
         job_status = (
             "Job status:"
-            + f"\n - starttime: {job.status.start_time.isoformat()}"
+            + f"\n - start_time: {job.status.start_time.isoformat()}"
             + f"\n - active={job.status.active or 'None'}"
             + f"\n - succeeded={job.status.succeeded or 'None'}"
             + f"\n - failed={job.status.failed or 'None'}"
@@ -747,15 +747,13 @@ class DagsterKubernetesClient:
 
     def get_job_debug_info(
         self,
-        job_name,
-        namespace,
-        job: Optional[kubernetes.client.V1Job] = None,  # the already fetched job
+        job_name: str,
+        namespace: str,
     ) -> str:
-        if job is None:
-            jobs = self.batch_api.list_namespaced_job(
-                namespace=namespace, field_selector=f"metadata.name={job_name}"
-            ).items
-            job = jobs[0] if jobs else None
+        jobs = self.batch_api.list_namespaced_job(
+            namespace=namespace, field_selector=f"metadata.name={job_name}"
+        ).items
+        job = jobs[0] if jobs else None
 
         job_status_str = self._get_job_status_str(job) if job else f"Could not find job {job_name}"
 
