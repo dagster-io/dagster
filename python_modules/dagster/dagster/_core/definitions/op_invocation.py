@@ -270,7 +270,7 @@ def _resolve_inputs(
 
         node_label = op_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for {node_label} '{context.bound_properties.alias}'."
+            f"Too many input arguments were provided for {node_label} '{context.per_invocation_properties.alias}'."
             f" {suggestion}"
         )
 
@@ -313,7 +313,7 @@ def _resolve_inputs(
             input_dict[k] = v
 
     # Type check inputs
-    op_label = context.bound_properties.step_description
+    op_label = context.per_invocation_properties.step_description
 
     for input_name, val in input_dict.items():
         input_def = input_defs_by_name[input_name]
@@ -334,19 +334,22 @@ def _resolve_inputs(
 
 
 def _key_for_result(result: MaterializeResult, context: "DirectOpExecutionContext") -> AssetKey:
-    if not context.bound_properties.assets_def:
+    if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
-            f"Op {context.bound_properties.alias} does not have an assets definition."
+            f"Op {context.per_invocation_properties.alias} does not have an assets definition."
         )
     if result.asset_key:
         return result.asset_key
 
-    if context.bound_properties.assets_def and len(context.bound_properties.assets_def.keys) == 1:
-        return next(iter(context.bound_properties.assets_def.keys))
+    if (
+        context.per_invocation_properties.assets_def
+        and len(context.per_invocation_properties.assets_def.keys) == 1
+    ):
+        return next(iter(context.per_invocation_properties.assets_def.keys))
 
     raise DagsterInvariantViolationError(
         "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
-        f" asset_key, options are: {context.bound_properties.assets_def.keys}"
+        f" asset_key, options are: {context.per_invocation_properties.assets_def.keys}"
     )
 
 
@@ -354,12 +357,12 @@ def _output_name_for_result_obj(
     event: MaterializeResult,
     context: "DirectOpExecutionContext",
 ):
-    if not context.bound_properties.assets_def:
+    if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
-            f"Op {context.bound_properties.alias} does not have an assets definition."
+            f"Op {context.per_invocation_properties.alias} does not have an assets definition."
         )
     asset_key = _key_for_result(event, context)
-    return context.bound_properties.assets_def.get_output_name_for_asset_key(asset_key)
+    return context.per_invocation_properties.assets_def.get_output_name_for_asset_key(asset_key)
 
 
 def _handle_gen_event(
@@ -391,7 +394,7 @@ def _handle_gen_event(
                 output_def, DynamicOutputDefinition
             ):
                 raise DagsterInvariantViolationError(
-                    f"Invocation of {op_def.node_type_str} '{context.bound_properties.alias}' yielded"
+                    f"Invocation of {op_def.node_type_str} '{context.per_invocation_properties.alias}' yielded"
                     f" an output '{output_def.name}' multiple times."
                 )
             outputs_seen.add(output_def.name)
@@ -434,7 +437,7 @@ def _type_check_output_wrapper(
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f"Invocation of {op_def.node_type_str} '{context.bound_properties.alias}' did not"
+                            f"Invocation of {op_def.node_type_str} '{context.per_invocation_properties.alias}' did not"
                             f" return an output for non-optional output '{output_def.name}'"
                         )
             context.unbind()
@@ -481,7 +484,7 @@ def _type_check_output_wrapper(
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f'Invocation of {op_def.node_type_str} "{context.bound_properties.alias}" did not'
+                            f'Invocation of {op_def.node_type_str} "{context.per_invocation_properties.alias}" did not'
                             f' return an output for non-optional output "{output_def.name}"'
                         )
             context.unbind()
@@ -524,7 +527,7 @@ def _type_check_output(
     """
     from ..execution.plan.execute_step import do_type_check
 
-    op_label = context.bound_properties.step_description
+    op_label = context.per_invocation_properties.step_description
     dagster_type = output_def.dagster_type
     type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
     if not type_check.success:

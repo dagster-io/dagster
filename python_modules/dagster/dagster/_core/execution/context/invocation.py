@@ -66,9 +66,9 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class BoundProperties(
+class PerInvocationProperties(
     NamedTuple(
-        "_BoundProperties",
+        "_PerInvocationProperties",
         [
             ("op_def", OpDefinition),
             ("tags", Mapping[Any, Any]),
@@ -82,8 +82,8 @@ class BoundProperties(
     )
 ):
     """Maintains properties that are only available once the context has been bound to a particular
-    asset or op execution. By splitting these out into a separate object, it is easier to ensure that
-    all properties bound to an execution are cleared once the execution is complete.
+    asset or op invocation. By splitting these out into a separate object, it is easier to ensure that
+    all properties bound to an invocation are cleared once the execution is complete.
     """
 
     def __new__(
@@ -97,7 +97,7 @@ class BoundProperties(
         op_config: Any,
         step_description: str,
     ):
-        return super(BoundProperties, cls).__new__(
+        return super(PerInvocationProperties, cls).__new__(
             cls,
             op_def=check.inst_param(op_def, "op_def", OpDefinition),
             tags=check.dict_param(tags, "tags"),
@@ -180,12 +180,12 @@ class DirectOpExecutionContext(OpExecutionContext):
         # of an op
         # @op
         # def my_op(context):
-        #     # context._bound_properties.alias is "my_op"
+        #     # context._per_invocation_properties.alias is "my_op"
         #     ...
-        # ctx = build_op_context() # ctx._bound_properties is None
+        # ctx = build_op_context() # ctx._per_invocation_properties is None
         # my_op(ctx)
-        # ctx._bound_properties is None # ctx is unbound at the end of invocation
-        self._bound_properties = None
+        # ctx._per_invocation_properties is None # ctx is unbound at the end of invocation
+        self._per_invocation_properties = None
 
         # Maintains the properties on the context that are modified during invocation
         # @op
@@ -208,12 +208,12 @@ class DirectOpExecutionContext(OpExecutionContext):
     def __del__(self):
         self._exit_stack.close()
 
-    def _check_bound(self, fn_name: str, fn_type: str) -> BoundProperties:
-        if self._bound_properties is None:
+    def _check_bound_to_invocation(self, fn_name: str, fn_type: str) -> PerInvocationProperties:
+        if self._per_invocation_properties is None:
             raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
-        # return self._bound_properties so that the calling function can access properties
-        # of self._bound_properties without causing pyright errors
-        return self._bound_properties
+        # return self._per_invocation_properties so that the calling function can access properties
+        # of self._per_invocation_properties without causing pyright errors
+        return self._per_invocation_properties
 
     def bind(
         self,
@@ -225,7 +225,7 @@ class DirectOpExecutionContext(OpExecutionContext):
     ) -> "DirectOpExecutionContext":
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        if self._bound_properties is not None:
+        if self._per_invocation_properties is not None:
             raise DagsterInvalidInvocationError(
                 f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing."
             )
@@ -233,7 +233,7 @@ class DirectOpExecutionContext(OpExecutionContext):
         # reset execution_properties
         self._execution_properties = DirectExecutionProperties()
 
-        # update the bound context with properties relevant to the execution of the op
+        # update the bound context with properties relevant to the invocation of the op
         invocation_tags = (
             pending_invocation.tags
             if isinstance(pending_invocation, PendingNodeInvocation)
@@ -292,7 +292,7 @@ class DirectOpExecutionContext(OpExecutionContext):
 
         step_description = f'op "{op_def.name}"'
 
-        self._bound_properties = BoundProperties(
+        self._per_invocation_properties = PerInvocationProperties(
             op_def=op_def,
             tags=tags,
             hook_defs=hook_defs,
@@ -306,25 +306,27 @@ class DirectOpExecutionContext(OpExecutionContext):
         return self
 
     def unbind(self):
-        self._bound_properties = None
+        self._per_invocation_properties = None
 
     @property
     def is_bound(self) -> bool:
-        return self._bound_properties is not None
+        return self._per_invocation_properties is not None
 
     @property
     def execution_properties(self) -> DirectExecutionProperties:
         return self._execution_properties
 
     @property
-    def bound_properties(self) -> BoundProperties:
-        return self._check_bound(fn_name="bound_properties", fn_type="property")
+    def per_invocation_properties(self) -> PerInvocationProperties:
+        return self._check_bound_to_invocation(
+            fn_name="_per_invocation_properties", fn_type="property"
+        )
 
     @property
     def op_config(self) -> Any:
-        if self._bound_properties is None:
+        if self._per_invocation_properties is None:
             return self._op_config
-        return self._bound_properties.op_config
+        return self._per_invocation_properties.op_config
 
     @property
     def resource_keys(self) -> AbstractSet[str]:
@@ -332,8 +334,8 @@ class DirectOpExecutionContext(OpExecutionContext):
 
     @property
     def resources(self) -> Resources:
-        if self._bound_properties is not None:
-            return self._bound_properties.resources
+        if self._per_invocation_properties is not None:
+            return self._per_invocation_properties.resources
         if self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
@@ -378,12 +380,16 @@ class DirectOpExecutionContext(OpExecutionContext):
 
     @property
     def run_config(self) -> dict:
-        bound_properties = self._check_bound(fn_name="run_config", fn_type="property")
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="run_config", fn_type="property"
+        )
 
         run_config: Dict[str, object] = {}
-        if self._op_config and bound_properties.op_def:
+        if self._op_config and per_invocation_properties.op_def:
             run_config["ops"] = {
-                bound_properties.op_def.name: {"config": bound_properties.op_config}
+                per_invocation_properties.op_def.name: {
+                    "config": per_invocation_properties.op_config
+                }
             }
         run_config["resources"] = self._resources_config
         return run_config
@@ -415,23 +421,29 @@ class DirectOpExecutionContext(OpExecutionContext):
 
     @property
     def op_def(self) -> OpDefinition:
-        bound_properties = self._check_bound(fn_name="op_def", fn_type="property")
-        return cast(OpDefinition, bound_properties.op_def)
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="op_def", fn_type="property"
+        )
+        return cast(OpDefinition, per_invocation_properties.op_def)
 
     @property
     def has_assets_def(self) -> bool:
-        bound_properties = self._check_bound(fn_name="has_assets_def", fn_type="property")
-        return bound_properties.assets_def is not None
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="has_assets_def", fn_type="property"
+        )
+        return per_invocation_properties.assets_def is not None
 
     @property
     def assets_def(self) -> AssetsDefinition:
-        bound_properties = self._check_bound(fn_name="assets_def", fn_type="property")
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="assets_def", fn_type="property"
+        )
 
-        if bound_properties.assets_def is None:
+        if per_invocation_properties.assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op {self.op_def.name} does not have an assets definition."
             )
-        return bound_properties.assets_def
+        return per_invocation_properties.assets_def
 
     @property
     def has_partition_key(self) -> bool:
@@ -461,17 +473,23 @@ class DirectOpExecutionContext(OpExecutionContext):
         return self.partition_key
 
     def has_tag(self, key: str) -> bool:
-        bound_properties = self._check_bound(fn_name="has_tag", fn_type="method")
-        return key in bound_properties.tags
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="has_tag", fn_type="method"
+        )
+        return key in per_invocation_properties.tags
 
     def get_tag(self, key: str) -> Optional[str]:
-        bound_properties = self._check_bound(fn_name="get_tag", fn_type="method")
-        return bound_properties.tags.get(key)
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="get_tag", fn_type="method"
+        )
+        return per_invocation_properties.tags.get(key)
 
     @property
     def alias(self) -> str:
-        bound_properties = self._check_bound(fn_name="alias", fn_type="property")
-        return cast(str, bound_properties.alias)
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="alias", fn_type="property"
+        )
+        return cast(str, per_invocation_properties.alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
@@ -522,7 +540,7 @@ class DirectOpExecutionContext(OpExecutionContext):
         return self._mapping_key
 
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
-        self._check_bound(fn_name="for_type", fn_type="method")
+        self._check_bound_to_invocation(fn_name="for_type", fn_type="method")
         resources = cast(NamedTuple, self.resources)
         return TypeCheckContext(
             self.run_id,
@@ -532,11 +550,13 @@ class DirectOpExecutionContext(OpExecutionContext):
         )
 
     def describe_op(self) -> str:
-        bound_properties = self._check_bound(fn_name="describe_op", fn_type="method")
-        return bound_properties.step_description
+        per_invocation_properties = self._check_bound_to_invocation(
+            fn_name="describe_op", fn_type="method"
+        )
+        return per_invocation_properties.step_description
 
     def log_event(self, event: UserEvent) -> None:
-        self._check_bound(fn_name="log_event", fn_type="method")
+        self._check_bound_to_invocation(fn_name="log_event", fn_type="method")
         check.inst_param(
             event,
             "event",
@@ -545,7 +565,7 @@ class DirectOpExecutionContext(OpExecutionContext):
         self._execution_properties.user_events.append(event)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
-        self._check_bound(fn_name="observe_output", fn_type="method")
+        self._check_bound_to_invocation(fn_name="observe_output", fn_type="method")
         if mapping_key:
             if output_name not in self._execution_properties.seen_outputs:
                 self._execution_properties.seen_outputs[output_name] = set()
@@ -562,7 +582,9 @@ class DirectOpExecutionContext(OpExecutionContext):
         return output_name in self._execution_properties.seen_outputs
 
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        self._check_bound(fn_name="asset_partitions_time_window_for_output", fn_type="method")
+        self._check_bound_to_invocation(
+            fn_name="asset_partitions_time_window_for_output", fn_type="method"
+        )
         partitions_def = self.assets_def.partitions_def
         if partitions_def is None:
             check.failed("Tried to access partition_key for a non-partitioned asset")
@@ -611,7 +633,7 @@ class DirectOpExecutionContext(OpExecutionContext):
                 return ("dog", 5)
 
         """
-        self._check_bound(fn_name="add_output_metadata", fn_type="method")
+        self._check_bound_to_invocation(fn_name="add_output_metadata", fn_type="method")
         metadata = check.mapping_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
@@ -668,16 +690,18 @@ class DirectOpExecutionContext(OpExecutionContext):
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        self._check_bound(fn_name="requires_typed_event_stream", fn_type="property")
+        self._check_bound_to_invocation(fn_name="requires_typed_event_stream", fn_type="property")
         return self._execution_properties.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        self._check_bound(fn_name="typed_event_stream_error_message", fn_type="property")
+        self._check_bound_to_invocation(
+            fn_name="typed_event_stream_error_message", fn_type="property"
+        )
         return self._execution_properties.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
-        self._check_bound(fn_name="set_requires_typed_event_stream", fn_type="method")
+        self._check_bound_to_invocation(fn_name="set_requires_typed_event_stream", fn_type="method")
         self._execution_properties.requires_typed_event_stream = True
         self._execution_properties.typed_event_stream_error_message = error_message
 
