@@ -31,7 +31,7 @@ from kubernetes.client.models.v1_object_meta import V1ObjectMeta
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event
 else:
-    # Ignore type error here due to differen module structures in 
+    # Ignore type error here due to differen module structures in
     # older kubernetes library versions.
     from kubernetes.client.models.v1_event import V1Event as CoreV1Event  # type: ignore
 
