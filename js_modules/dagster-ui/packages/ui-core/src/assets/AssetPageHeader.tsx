@@ -70,14 +70,14 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
               </Heading>
             )}
           />
-          {/* <Tooltip placement="bottom" content="Copy asset key">
+          <Tooltip placement="bottom" content="Copy asset key">
             <CopyButton onClick={performCopy}>
               <Icon
                 name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
                 color={Colors.accentGray()}
               />
             </CopyButton>
-          </Tooltip> */}
+          </Tooltip>
         </Box>
       }
       {...extra}

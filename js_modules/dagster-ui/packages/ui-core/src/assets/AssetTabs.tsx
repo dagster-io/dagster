@@ -4,6 +4,7 @@ import qs from 'qs';
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {TabLink} from '../ui/TabLink';
+import {FeatureFlag, featureEnabled} from '../app/Flags';
 
 interface Props {
   selectedTab: string;
@@ -27,17 +28,9 @@ export const AssetTabs = (props: Props) => {
   );
 };
 
-export const DEFAULT_ASSET_TAB_ORDER = [
-  'overview',
-  'launchpad',
-  'executions',
-  'automation',
-  'checks',
-  'insights',
-  'plots',
-  'lineage',
-  'partitions',
-];
+export const DEFAULT_ASSET_TAB_ORDER = featureEnabled(FeatureFlag.flagUseNewAssetOverviewPage)
+  ? ['overview', 'executions', 'automation', 'checks', 'insights', 'plots', 'lineage', 'partitions']
+  : ['partitions', 'events', 'checks', 'plots', 'definition', 'lineage', 'automation'];
 
 export type AssetTabConfigInput = {
   definition: AssetViewDefinitionNodeFragment | null;
@@ -56,6 +49,8 @@ export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringif
 
 export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, AssetTabConfig> => {
   const {definition, params} = input;
+  const experimental = featureEnabled(FeatureFlag.flagUseNewAssetOverviewPage);
+
   return {
     partitions: {
       id: 'partitions',
@@ -67,11 +62,12 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       id: 'checks',
       title: 'Checks',
       to: buildAssetViewParams({...params, view: 'checks'}),
+      hidden: !definition?.hasAssetChecks && !experimental,
     },
-    executions: {
-      id: 'executions',
-      title: 'Executions',
-      to: buildAssetViewParams({...params, view: 'executions', partition: undefined}),
+    events: {
+      id: 'events',
+      title: experimental ? 'Executions' : 'Events',
+      to: buildAssetViewParams({...params, view: 'events', partition: undefined}),
     },
     overview: {
       id: 'overview',
@@ -81,8 +77,20 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
     },
     plots: {
       id: 'plots',
-      title: 'Insights',
+      title: experimental ? 'Insights' : 'Plots',
       to: buildAssetViewParams({...params, view: 'plots'}),
+    },
+    definition: {
+      id: 'definition',
+      title: 'Definition',
+      to: buildAssetViewParams({...params, view: 'definition'}),
+      disabled: !definition,
+    },
+    lineage: {
+      id: 'lineage',
+      title: 'Lineage',
+      to: buildAssetViewParams({...params, view: 'lineage'}),
+      disabled: !definition,
     },
     automation: {
       id: 'automation',
@@ -91,17 +99,12 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       disabled: !definition,
       hidden: !definition?.autoMaterializePolicy,
     },
-    launchpad: {
-      id: 'launchpad',
-      title: 'Launchpad',
-      to: buildAssetViewParams({...params, view: 'launchpad'}),
-      disabled: !definition,
-    },
   };
 };
 
 export const buildAssetTabs = (input: AssetTabConfigInput): AssetTabConfig[] => {
   const tabConfigs = buildAssetTabMap(input);
+
   return DEFAULT_ASSET_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
     (tab): tab is AssetTabConfig => !!tab && !tab.hidden,
   );

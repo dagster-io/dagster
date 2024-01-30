@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import {Button} from './Button';
 import {Colors} from './Color';
 import {Icon} from './Icon';
-import {Tooltip} from './Tooltip';
 
 const DIVIDER_THICKNESS = 2;
 
@@ -255,7 +254,7 @@ const Container = styled.div<{
   }
 `;
 
-export const usePanelInteractions = ({resetTo}: {resetTo: number}) => {
+export const useSplitPanelInteractions = ({resetTo}: {resetTo: number}) => {
   const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
     null,
   );
@@ -297,20 +296,3 @@ export const usePanelInteractions = ({resetTo}: {resetTo: number}) => {
     resetPanels,
   };
 };
-
-export const ExpandCollapseButton = ({
-  expanded,
-  onCollapse,
-  onExpand,
-}: {
-  expanded: boolean;
-  onCollapse: () => void;
-  onExpand: () => void;
-}) => (
-  <Tooltip content={expanded ? 'Collapse' : 'Expand'}>
-    <Button
-      icon={<Icon name={expanded ? 'collapse_arrows' : 'expand_arrows'} />}
-      onClick={expanded ? onCollapse : onExpand}
-    />
-  </Tooltip>
-);

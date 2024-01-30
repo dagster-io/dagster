@@ -19,17 +19,19 @@ export const Markdown = (props: Props) => {
 };
 
 const Container = styled.div`
-  &&& table {
-    border: none;
-    font-family: ${FontFamily.monospace};
-    font-size: 16px;
-  }
   &&& pre {
     background: ${Colors.backgroundLight()};
     padding: 16px;
     border-radius: 12px;
     border: 1px solid ${Colors.keylineDefault()};
   }
+
+  &&& table {
+    border: none;
+    font-family: ${FontFamily.monospace};
+    font-size: 16px;
+  }
+
   &&& table tr th {
     box-shadow: none !important;
     color: ${Colors.textLight()};

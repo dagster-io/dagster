@@ -35,19 +35,18 @@ import {
   AssetMetadataTable,
   metadataForAssetNode,
 } from './AssetMetadata';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {OverdueTag} from './OverdueTag';
 import {StaleReasonsTags} from './Stale';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {useAutomaterializeDaemonStatus} from './useAutomaterializeDaemonStatus';
 
 export const AssetNodeOverview = ({
   assetNode,
   liveData,
   upstream,
   downstream,
-  dependsOnSelf,
 }: {
   assetNode: AssetNodeDefinitionFragment;
   liveData: LiveDataForNode;
@@ -63,8 +62,6 @@ export const AssetNodeOverview = ({
     assetNode.repository.name,
     assetNode.repository.location.name,
   );
-  console.log('LIVE DATA');
-  console.log(liveData);
   const latestMaterializationTimestamp = liveData?.lastMaterialization?.timestamp;
   return (
     <>
@@ -81,15 +78,37 @@ export const AssetNodeOverview = ({
           <ReconciliationCard liveData={liveData} definition={assetNode} />
           <AutomationCard definition={assetNode} />
         </Box>
-        <DescriptionCard assetNode={assetNode} />
-        <DefinitionCard assetNode={assetNode} />
-        <MetaDataCard assetNode={assetNode} />
-        <ColumnsCard assetNode={assetNode} />
-        <LineageCard assetNode={assetNode} upstream={upstream} downstream={downstream} />
+        <DescriptionSection assetNode={assetNode} />
+        <DefinitionSection assetNode={assetNode} />
+        <MetadataSection assetNode={assetNode} />
+        <ColumnSchemaSection assetNode={assetNode} />
+        <LineageSection assetNode={assetNode} upstream={upstream} downstream={downstream} />
       </Box>
     </>
   );
 };
+
+const BaseCard = ({children, header}: {children: React.ReactNode; header: React.ReactNode}) => (
+  <Box
+    border="all"
+    flex={{direction: 'row', gap: 24, alignItems: 'start'}}
+    padding={{vertical: 16, horizontal: 16}}
+    style={{width: '100%', background: Colors.backgroundLight(), borderRadius: 12}}
+  >
+    <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between'}}
+        border={'bottom'}
+        padding={{bottom: 4}}
+        margin={{bottom: 4}}
+        style={{flex: 1}}
+      >
+        {header}
+      </Box>
+      {children}
+    </Box>
+  </Box>
+);
 
 const LatestExecutionCard = ({liveData}: {liveData: LiveDataForNode}) => {
   const materializationInProgress = liveData?.inProgressRunIds[0];
@@ -97,106 +116,99 @@ const LatestExecutionCard = ({liveData}: {liveData: LiveDataForNode}) => {
   const materializationFailed = liveData?.runWhichFailedToMaterialize?.id;
   const latestMaterializationTimestamp = liveData?.lastMaterialization?.timestamp;
   const missing = liveData?.staleStatus === 'MISSING';
-  console.log(liveData);
+
   return (
-    <Box
-      flex={{direction: 'row', gap: 24, alignItems: 'start'}}
-      padding={{vertical: 16, horizontal: 16}}
-      style={{
-        width: '100%',
-        background: Colors.backgroundLight(),
-        borderRadius: 12,
-        border: `1px solid ${Colors.keylineDefault()}`,
-      }}
-    >
-      <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between'}}
-          style={{
-            flex: 1,
-            paddingBottom: '4px',
-            marginBottom: '4px',
-            borderBottom: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
+    <BaseCard
+      header={
+        <>
           <Subtitle2>Latest materialization</Subtitle2>
           <Link to={'?view=executions'}>Details</Link>
-        </Box>
-        <div>
-          {materializationInProgress && (
-            <Tag intent="primary" icon="spinner">
-              {titleForRun({id: materializationInProgress})}
-            </Tag>
-          )}
-          {unstartedRun && (
-            <Tag intent="primary" icon="spinner">
-              {titleForRun({id: unstartedRun})}
-            </Tag>
-          )}
-          {materializationFailed && (
-            <Tag intent="danger" icon="warning_outline">
-              {titleForRun({id: materializationFailed})}
-            </Tag>
-          )}
-          {missing && !materializationFailed && !materializationInProgress && !unstartedRun && (
-            <Tag intent="warning" icon="status">
-              Missing
-            </Tag>
-          )}
-          {!materializationFailed && !materializationInProgress && !unstartedRun && !missing && (
-            <Box flex={{direction: 'column', gap: 4}}>
-              <div>
-                <Tag intent="success" icon="check_circle">
-                  <Timestamp timestamp={{ms: Number(latestMaterializationTimestamp)}} />
-                </Tag>
-              </div>
-              <Caption style={{color: Colors.textLight()}}>
-                Launched by <Link to="/sensors">my_sensor_name</Link>
-              </Caption>
-            </Box>
-          )}
-        </div>
-      </Box>
-    </Box>
+        </>
+      }
+    >
+      <div>
+        {materializationInProgress && (
+          <Tag intent="primary" icon="spinner">
+            {titleForRun({id: materializationInProgress})}
+          </Tag>
+        )}
+        {unstartedRun && (
+          <Tag intent="primary" icon="spinner">
+            {titleForRun({id: unstartedRun})}
+          </Tag>
+        )}
+        {materializationFailed && (
+          <Tag intent="danger" icon="warning_outline">
+            {titleForRun({id: materializationFailed})}
+          </Tag>
+        )}
+        {missing && !materializationFailed && !materializationInProgress && !unstartedRun && (
+          <Tag intent="warning" icon="status">
+            Missing
+          </Tag>
+        )}
+        {!materializationFailed && !materializationInProgress && !unstartedRun && !missing && (
+          <Box flex={{direction: 'column', gap: 4}}>
+            <div>
+              <Tag intent="success" icon="check_circle">
+                <Timestamp timestamp={{ms: Number(latestMaterializationTimestamp)}} />
+              </Tag>
+            </div>
+            <Caption style={{color: Colors.textLight()}}>
+              Launched by <Link to="/sensors">my_sensor_name</Link>
+            </Caption>
+          </Box>
+        )}
+      </div>
+    </BaseCard>
   );
 };
 
 const AutomationCard = ({definition}: {definition: AssetNodeDefinitionFragment}) => {
   const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const {paused} = useAutomaterializeDaemonStatus();
+
   return (
-    <Box
-      flex={{direction: 'row', gap: 24, alignItems: 'start'}}
-      padding={{vertical: 16, horizontal: 16}}
-      style={{
-        width: '100%',
-        background: Colors.backgroundLight(),
-        borderRadius: 12,
-        border: `1px solid ${Colors.keylineDefault()}`,
-      }}
-    >
-      <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between'}}
-          style={{
-            flex: 1,
-            paddingBottom: '4px',
-            marginBottom: '4px',
-            borderBottom: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
+    <BaseCard
+      header={
+        <>
           <Subtitle2>Automation</Subtitle2>
           <Link to={'?view=automation'}>Details</Link>
+        </>
+      }
+    >
+      {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
+        <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
+          <Tooltip
+            content={
+              paused ? (
+                <Box flex={{direction: 'column'}}>
+                  <span>Sensor is paused.</span>{' '}
+                  <span>New materializations will not be triggered by automation policies.</span>
+                </Box>
+              ) : (
+                'asset_automation_sensor is running, evaluates every 30s'
+              )
+            }
+            canShow={paused}
+          >
+            <div>
+              <Tag icon="automator" animatedIcon={paused} intent={paused ? 'warning' : 'primary'}>
+                <Link to="/overview/automaterialize" style={{outline: 'none'}}>
+                  {' '}
+                  my_sensor_name{' '}
+                </Link>
+              </Tag>
+            </div>
+          </Tooltip>
+          <Caption style={{color: Colors.textDisabled()}}>
+            {paused ? 'Paused. Not evaluating' : 'Evaluating every 30 seconds'}
+          </Caption>
         </Box>
-        <Box>
-          {automaterializeSensorsFlagState === 'has-global-amp' &&
-          definition?.autoMaterializePolicy ? (
-            <AutomaterializeDaemonStatusTag />
-          ) : (
-            <Caption style={{color: Colors.textDisabled()}}>No automation policy defined</Caption>
-          )}
-        </Box>
-      </Box>
-    </Box>
+      ) : (
+        <Caption style={{color: Colors.textDisabled()}}>No automation policy defined</Caption>
+      )}
+    </BaseCard>
   );
 };
 
@@ -222,65 +234,49 @@ const ChecksCard = ({
     return value;
   });
   const checkResults: any = checkStatusByResultType ? checkStatusByResultType : null;
-  console.log(checkResults);
+
   return (
-    <Box
-      flex={{direction: 'row', gap: 24, alignItems: 'start'}}
-      padding={{vertical: 16, horizontal: 16}}
-      style={{
-        width: '100%',
-        background: Colors.backgroundLight(),
-        borderRadius: 12,
-        border: `1px solid ${Colors.keylineDefault()}`,
-      }}
-    >
-      <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between'}}
-          style={{
-            flex: 1,
-            paddingBottom: '4px',
-            marginBottom: '4px',
-            borderBottom: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
+    <BaseCard
+      header={
+        <>
           <Subtitle2>Checks</Subtitle2>
           <Link to={'?view=checks'}>Details</Link>
-        </Box>
-        <div>
-          {!definition?.hasAssetChecks && (
-            <Caption style={{color: Colors.textDisabled()}}>No checks defined</Caption>
+        </>
+      }
+    >
+      <div>
+        {!definition?.hasAssetChecks && (
+          <Caption style={{color: Colors.textDisabled()}}>No checks defined</Caption>
+        )}
+        <Box flex={{direction: 'row', gap: 4, wrap: 'wrap'}}>
+          {checkResults?.NOT_EVALUATED && (
+            <Tag icon="status" intent="none">
+              {checkResults.NOT_EVALUATED} not executed
+            </Tag>
           )}
-          <Box flex={{direction: 'row', gap: 4, wrap: 'wrap'}}>
-            {checkResults?.NOT_EVALUATED && (
-              <Tag icon="status" intent="none">
-                {checkResults.NOT_EVALUATED} not executed
-              </Tag>
-            )}
-            {checkResults?.IN_PROGRESS && (
-              <Tag icon="spinner" intent="primary">
-                {checkResults.IN_PROGRESS} running...
-              </Tag>
-            )}
-            {checkResults?.SUCCEEDED && (
-              <Tag icon="check_circle" intent="success">
-                {checkResults.SUCCEEDED} passed
-              </Tag>
-            )}
-            {checkResults?.WARN && (
-              <Tag icon="warning_outline" intent="warning">
-                {checkResults.WARN} warning
-              </Tag>
-            )}
-            {checkResults?.ERROR && (
-              <Tag icon="cancel" intent="danger">
-                {checkResults.ERROR} failed
-              </Tag>
-            )}
-          </Box>
-        </div>
-      </Box>
-    </Box>
+          {checkResults?.IN_PROGRESS && (
+            <Tag icon="spinner" intent="primary">
+              {checkResults.IN_PROGRESS} running...
+            </Tag>
+          )}
+          {checkResults?.SUCCEEDED && (
+            <Tag icon="check_circle" intent="success">
+              {checkResults.SUCCEEDED} passed
+            </Tag>
+          )}
+          {checkResults?.WARN && (
+            <Tag icon="warning_outline" intent="warning">
+              {checkResults.WARN} warning
+            </Tag>
+          )}
+          {checkResults?.ERROR && (
+            <Tag icon="cancel" intent="danger">
+              {checkResults.ERROR} failed
+            </Tag>
+          )}
+        </Box>
+      </div>
+    </BaseCard>
   );
 };
 
@@ -302,49 +298,32 @@ const DataFreshnessCard = ({
   const expired =
     liveData?.freshnessInfo?.currentMinutesLate && liveData?.freshnessInfo?.currentMinutesLate > 0;
   const missing = liveData?.staleStatus === 'MISSING';
+
   return (
-    <Box
-      flex={{direction: 'row', gap: 24, alignItems: 'start'}}
-      padding={{vertical: 16, horizontal: 16}}
-      style={{
-        width: '100%',
-        background: Colors.backgroundLight(),
-        borderRadius: 12,
-        border: `1px solid ${Colors.keylineDefault()}`,
-      }}
-    >
-      <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between'}}
-          style={{
-            flex: 1,
-            paddingBottom: '4px',
-            marginBottom: '4px',
-            borderBottom: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
-          <Subtitle2>Data freshness</Subtitle2>
-        </Box>
-        <div>
-          {definition && definition.freshnessPolicy && (
-            <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
-              <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
-              {!missing && (
-                <Caption style={{color: Colors.textDisabled()}}>
-                  {expired ? 'Expired ' : 'Expires '}
-                  <Timestamp timestamp={{ms: Number(expirationDate)}} />
-                </Caption>
-              )}
-            </Box>
-          )}
-          {definition && !definition.freshnessPolicy && (
-            <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
-              <Caption style={{color: Colors.textDisabled()}}>No freshness policy defined</Caption>
-            </Box>
-          )}
-        </div>
-      </Box>
-    </Box>
+    <BaseCard header={<Subtitle2>Data freshness</Subtitle2>}>
+      <div>
+        {definition && definition.freshnessPolicy && (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
+            <OverdueTag
+              policy={definition.freshnessPolicy}
+              assetKey={definition.assetKey}
+              includeFreshLabel
+            />
+            {!missing && (
+              <Caption style={{color: Colors.textDisabled()}}>
+                {expired ? 'Expired ' : 'Expires '}
+                <Timestamp timestamp={{ms: Number(expirationDate)}} />
+              </Caption>
+            )}
+          </Box>
+        )}
+        {definition && !definition.freshnessPolicy && (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
+            <Caption style={{color: Colors.textDisabled()}}>No freshness policy defined</Caption>
+          </Box>
+        )}
+      </div>
+    </BaseCard>
   );
 };
 
@@ -358,174 +337,73 @@ const ReconciliationCard = ({
   const stale = liveData?.staleStatus === 'STALE';
   const missing = liveData?.staleStatus === 'MISSING';
   return (
-    <Box
-      flex={{direction: 'row', gap: 24, alignItems: 'start'}}
-      padding={{vertical: 16, horizontal: 16}}
-      style={{
-        width: '100%',
-        background: Colors.backgroundLight(),
-        borderRadius: 12,
-        border: `1px solid ${Colors.keylineDefault()}`,
-      }}
-    >
-      <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between'}}
-          style={{
-            flex: 1,
-            paddingBottom: '4px',
-            marginBottom: '4px',
-            borderBottom: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
-          <Subtitle2>Reconciliation status</Subtitle2>
-        </Box>
-        <Box>
-          {definition && missing && (
-            <Box flex={{direction: 'column', gap: 4, wrap: 'wrap'}}>
-              <Caption style={{color: Colors.textDisabled()}}>
-                Asset has never been materialized
-              </Caption>
-            </Box>
-          )}
+    <BaseCard header={<Subtitle2>Reconciliation status</Subtitle2>}>
+      <Box>
+        {definition && missing && (
+          <Box flex={{direction: 'column', gap: 4, wrap: 'wrap'}}>
+            <Caption style={{color: Colors.textDisabled()}}>
+              Asset has never been materialized
+            </Caption>
+          </Box>
+        )}
 
-          {definition && !missing && stale && (
-            <Box flex={{direction: 'row', gap: 4, wrap: 'wrap'}}>
-              <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="all" />
-            </Box>
-          )}
-          {definition && !stale && !missing && (
-            <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
-              <Tag intent="success" icon="check_circle">
-                Up to date
-              </Tag>
-              <Caption style={{color: Colors.textDisabled()}}>No changes to reconcile</Caption>
-            </Box>
-          )}
-        </Box>
+        {definition && !missing && stale && (
+          <Box flex={{direction: 'row', gap: 4, wrap: 'wrap'}}>
+            <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="all" />
+          </Box>
+        )}
+        {definition && !stale && !missing && (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
+            <Tag intent="success" icon="check_circle">
+              Up to date
+            </Tag>
+            <Caption style={{color: Colors.textDisabled()}}>No changes to reconcile</Caption>
+          </Box>
+        )}
       </Box>
-    </Box>
+    </BaseCard>
   );
 };
 
-const StatusCard = ({
-  assetNode,
-  liveData,
-}: {
-  assetNode: AssetNodeDefinitionFragment;
-  liveData: LiveDataForNode;
-}) => (
-  <Box
-    flex={{direction: 'row', gap: 24}}
-    padding={{vertical: 16, horizontal: 16}}
-    style={{
-      background: Colors.backgroundLight(),
-      borderRadius: 12,
-      border: `1px solid ${Colors.keylineDefault()}`,
-    }}
-  >
-    <Box flex={{direction: 'column', gap: 4}} style={{flex: 1}}>
-      <Box flex={{direction: 'row', justifyContent: 'space-between'}} style={{flex: 1}}>
-        <Subtitle2>Latest execution</Subtitle2>
-        <Link to={'?view=executions'}>Details</Link>
-      </Box>
-      <div>
-        <Tag intent="success" icon="check_circle">
-          <Link to="?view=executions">{liveData?.lastMaterialization?.timestamp}</Link>
-        </Tag>
-      </div>
-    </Box>
-
-    <Box
-      flex={{direction: 'column', gap: 4}}
-      padding={{left: 24}}
-      style={{flex: 1, borderLeft: `1px solid ${Colors.keylineDefault()}`}}
-    >
-      <Box flex={{direction: 'row', justifyContent: 'space-between'}} style={{flex: 1}}>
-        <Subtitle2>Checks</Subtitle2>
-        <Link to={'?view=checks'}>Details</Link>
-      </Box>
-      <Box flex={{direction: 'row', gap: 4}}>
-        {assetNode?.hasAssetChecks ? (
-          'Checks'
-        ) : (
-          <Caption style={{color: Colors.textLight()}}>No checks defined</Caption>
-        )}
-      </Box>
-    </Box>
-
-    <Box
-      flex={{direction: 'column', gap: 4}}
-      padding={{left: 24}}
-      style={{flex: 1, borderLeft: `1px solid ${Colors.keylineDefault()}`}}
-    >
-      <Subtitle2>Freshness</Subtitle2>
-      <Box flex={{direction: 'row', gap: 4}}>
-        <Tag intent="success" icon="check_circle">
-          Data
-        </Tag>
-        <Tag intent="success" icon="check_circle">
-          Code
-        </Tag>
-        <Tag intent="success" icon="check_circle">
-          Deps
-        </Tag>
-      </Box>
-    </Box>
-
-    <Box
-      flex={{direction: 'column', gap: 4}}
-      padding={{left: 24}}
-      style={{flex: 1, borderLeft: `1px solid ${Colors.keylineDefault()}`}}
-    >
-      <Subtitle2>Upstream changes</Subtitle2>
-      <Box flex={{direction: 'row', gap: 4}}>
-        <Tag intent="warning" icon="warning_outline">
-          Data
-        </Tag>
-        <Tag intent="success" icon="check_circle">
-          Code
-        </Tag>
-        <Tag intent="success" icon="check_circle">
-          Deps
-        </Tag>
-      </Box>
-    </Box>
-  </Box>
-);
-
-const DescriptionCard = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
+const BaseSection = ({title, children}: {title: string; children: React.ReactNode}) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
   return (
     <Box flex={{direction: 'column', gap: 0}}>
       <Box
-        padding={{top: 12, horizontal: 12}}
         border="top"
+        padding={{top: 12, horizontal: 12}}
         flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        onClick={() => setIsOpen(!isOpen)}
         style={{cursor: 'pointer', userSelect: 'none'}}
+        onClick={() => setIsOpen(!isOpen)}
       >
         <Icon
           name="arrow_drop_down"
           style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
         />
-        <Subtitle1 style={{color: Colors.textLight()}}>Description</Subtitle1>
+        <Subtitle1 style={{color: Colors.textLight()}}>{title}</Subtitle1>
       </Box>
       <Box padding={{vertical: 0, horizontal: 16}} style={{display: isOpen ? 'block' : 'none'}}>
-        {assetNode.description ? (
-          <Description description={assetNode.description} maxHeight={10000} />
-        ) : (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            No description provided
-          </Body>
-        )}
+        {children}
       </Box>
     </Box>
   );
 };
+const DescriptionSection = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
+  return (
+    <BaseSection title="Description">
+      {assetNode.description ? (
+        <Description description={assetNode.description} maxHeight={10000} />
+      ) : (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          No description provided
+        </Body>
+      )}
+    </BaseSection>
+  );
+};
 
-const DefinitionCard = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
+const DefinitionSection = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
   const [isOpen, setIsOpen] = React.useState(true);
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
@@ -577,301 +455,251 @@ const DefinitionCard = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) =
       );
     });
   };
-  const autoMaterializePolicy2 = assetNode?.autoMaterializePolicy ? (
-    buildAutomationPolicyDescription(assetNode?.autoMaterializePolicy.rules)
-  ) : (
-    <Body2 style={{color: Colors.textDisabled()}}>Not set</Body2>
-  );
 
-  console.log(assetNode);
   return (
-    <Box flex={{direction: 'column', gap: 0}}>
-      <Box
-        padding={{top: 12, horizontal: 12}}
-        border="top"
-        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        onClick={() => setIsOpen(!isOpen)}
-        style={{cursor: 'pointer', userSelect: 'none'}}
+    <BaseSection title="Definition">
+      <table
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: Colors.backgroundLight(),
+          borderRadius: 12,
+          border: `1px solid ${Colors.keylineDefault()}`,
+        }}
       >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-        />
-        <Subtitle1 style={{color: Colors.textLight()}}>Definition</Subtitle1>
-      </Box>
-      <Box padding={{vertical: 12, horizontal: 0}} style={{display: isOpen ? 'block' : 'none'}}>
-        <table
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: Colors.backgroundLight(),
-            borderRadius: 12,
-            border: `1px solid ${Colors.keylineDefault()}`,
-          }}
-        >
-          <tbody>
-            <tr>
-              <td
-                style={{
-                  minWidth: '240px',
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Asset key</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                {assetNode.assetKey.path.join(' : ')}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                  verticalAlign: 'top',
-                }}
-              >
-                <Subtitle2>Automation policy</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center', wrap: 'wrap'}}>
-                  {autoMaterializePolicy2}
-                </Box>
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Backfill policy</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                {backfillPolicy}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Code location</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Tag icon="folder">
-                  <RepositoryLink repoAddress={repoAddress} />
-                </Tag>
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Code version</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                {codeVersion}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Computed by</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                {!assetNode.isExecutable && <Tag icon="source_asset">External</Tag>}
-                <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-                <AssetComputeKindTag
-                  style={{position: 'relative'}}
-                  definition={assetNode}
-                  reduceColor
-                />
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Freshness policy</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                {freshnessPolicy}
-              </td>
-            </tr>
-            <tr>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Subtitle2>Group</Subtitle2>
-              </td>
-              <td
-                style={{
-                  paddingBottom: '6px',
-                  paddingTop: '6px',
-                  borderBottom: `1px solid ${Colors.keylineDefault()}`,
-                }}
-              >
-                <Tag icon="asset_group">
-                  <Link
-                    to={workspacePathFromAddress(
-                      repoAddress,
-                      `/asset-groups/${assetNode.groupName}`,
-                    )}
-                  >
-                    {assetNode.groupName}
-                  </Link>
-                </Tag>
-              </td>
-            </tr>
-            <tr>
-              <td style={{paddingBottom: '6px', paddingTop: '6px'}}>
-                <Subtitle2>Partition definition</Subtitle2>
-              </td>
-              <td style={{paddingBottom: '6px', paddingTop: '6px'}}>{partitionDefinition}</td>
-            </tr>
-          </tbody>
-        </table>
-      </Box>
-    </Box>
+        <tbody>
+          <tr>
+            <td
+              style={{
+                minWidth: '240px',
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Asset key</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              {assetNode.assetKey.path.join(' : ')}
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+                verticalAlign: 'top',
+              }}
+            >
+              <Subtitle2>Automation policy</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center', wrap: 'wrap'}}>
+                {assetNode?.autoMaterializePolicy ? (
+                  buildAutomationPolicyDescription(assetNode?.autoMaterializePolicy.rules)
+                ) : (
+                  <Body2 style={{color: Colors.textDisabled()}}>Not set</Body2>
+                )}
+              </Box>
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Backfill policy</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              {backfillPolicy}
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Code location</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Tag icon="folder">
+                <RepositoryLink repoAddress={repoAddress} />
+              </Tag>
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Code version</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              {codeVersion}
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Computed by</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              {!assetNode.isExecutable && <Tag icon="source_asset">External</Tag>}
+              <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
+              <AssetComputeKindTag
+                style={{position: 'relative'}}
+                definition={assetNode}
+                reduceColor
+              />
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Freshness policy</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              {freshnessPolicy}
+            </td>
+          </tr>
+          <tr>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Subtitle2>Group</Subtitle2>
+            </td>
+            <td
+              style={{
+                paddingBottom: '6px',
+                paddingTop: '6px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+              }}
+            >
+              <Tag icon="asset_group">
+                <Link
+                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}
+                >
+                  {assetNode.groupName}
+                </Link>
+              </Tag>
+            </td>
+          </tr>
+          <tr>
+            <td style={{paddingBottom: '6px', paddingTop: '6px'}}>
+              <Subtitle2>Partition definition</Subtitle2>
+            </td>
+            <td style={{paddingBottom: '6px', paddingTop: '6px'}}>{partitionDefinition}</td>
+          </tr>
+        </tbody>
+      </table>
+    </BaseSection>
   );
 };
 
-const MetaDataCard = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
-  const [isOpen, setIsOpen] = React.useState(true);
-
+const MetadataSection = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
   return (
-    <Box flex={{direction: 'column', gap: 0}}>
-      <Box
-        padding={{top: 12, horizontal: 12}}
-        border="top"
-        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        onClick={() => setIsOpen(!isOpen)}
-        style={{cursor: 'pointer', userSelect: 'none'}}
-      >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+    <BaseSection title="Metadata">
+      {assetNode.metadataEntries.length > 0 ? (
+        <AssetMetadataTable
+          assetMetadata={assetNode.metadataEntries}
+          repoLocation={assetNode?.repository?.location.id}
         />
-        <Subtitle1 style={{color: Colors.textLight()}}>Metadata</Subtitle1>
-      </Box>
-      <Box padding={{vertical: 0, horizontal: 16}} style={{display: isOpen ? 'block' : 'none'}}>
-        {assetNode.metadataEntries.length > 0 ? (
-          <AssetMetadataTable
-            assetMetadata={assetNode.metadataEntries}
-            repoLocation={assetNode?.repository?.location.id}
-          />
-        ) : (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            No metadata provided
-          </Body>
-        )}
-      </Box>
-    </Box>
+      ) : (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          No metadata provided
+        </Body>
+      )}
+    </BaseSection>
   );
 };
 
-const ColumnsCard = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
-  const [isOpen, setIsOpen] = React.useState(true);
-  const metadataEntries = assetNode?.type?.metadataEntries ? assetNode.type.metadataEntries : [];
+const ColumnSchemaSection = ({assetNode}: {assetNode: AssetNodeDefinitionFragment}) => {
+  const {assetType} = metadataForAssetNode(assetNode);
+
+  // BG NOTE THIS IS NOT THE COLUMN SCHEMA!
+
   return (
-    <Box flex={{direction: 'column', gap: 0}}>
-      <Box
-        padding={{top: 12, horizontal: 12}}
-        border="top"
-        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        onClick={() => setIsOpen(!isOpen)}
-        style={{cursor: 'pointer', userSelect: 'none'}}
-      >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-        />
-        <Subtitle1 style={{color: Colors.textLight()}}>Column schema</Subtitle1>
-      </Box>
-      <Box padding={{vertical: 0, horizontal: 16}} style={{display: isOpen ? 'block' : 'none'}}>
-        {metadataEntries.length > 0 ? (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            <DagsterTypeSummary type={assetNode.type?.metadataEntries} />
-          </Body>
-        ) : (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            No schema provided
-          </Body>
-        )}
-      </Box>
-    </Box>
+    <BaseSection title="Column schema">
+      {assetType && assetType.displayName !== 'Any' ? (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          <DagsterTypeSummary type={assetType} />
+        </Body>
+      ) : (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          No schema provided
+        </Body>
+      )}
+    </BaseSection>
   );
 };
 
-const LineageCard = ({
+const LineageSection = ({
   assetNode,
   upstream,
   downstream,
@@ -880,36 +708,18 @@ const LineageCard = ({
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
 }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
-  console.log(upstream);
-  console.log(downstream);
   return (
-    <Box flex={{direction: 'column', gap: 0}}>
-      <Box
-        padding={{top: 12, horizontal: 12}}
-        border="top"
-        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-        onClick={() => setIsOpen(!isOpen)}
-        style={{cursor: 'pointer', userSelect: 'none'}}
-      >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-        />
-        <Subtitle1 style={{color: Colors.textLight()}}>Lineage</Subtitle1>
-      </Box>
-      <Box padding={{vertical: 0, horizontal: 16}} style={{display: isOpen ? 'block' : 'none'}}>
-        {assetNode.metadataEntries.length > 0 ? (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            Metadata
-          </Body>
-        ) : (
-          <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
-            No metadata provided
-          </Body>
-        )}
-      </Box>
-    </Box>
+    <BaseSection title="Lineage">
+      {assetNode.metadataEntries.length > 0 ? (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          Metadata
+        </Body>
+      ) : (
+        <Body style={{display: 'block', paddingTop: '12px', color: Colors.textDisabled()}}>
+          No metadata provided
+        </Body>
+      )}
+    </BaseSection>
   );
 };
 

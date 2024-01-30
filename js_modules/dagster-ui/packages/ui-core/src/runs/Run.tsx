@@ -1,14 +1,10 @@
 import {
   Box,
-  Button,
   Colors,
   ErrorBoundary,
-  ExpandCollapseButton,
-  Icon,
   NonIdealState,
   SplitPanelContainer,
-  Tooltip,
-  usePanelInteractions,
+  useSplitPanelInteractions,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -39,6 +35,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
+import {ExpandCollapseButton} from '../ui/ExpandCollapseButton';
 
 interface RunProps {
   runId: string;
@@ -251,7 +248,7 @@ const RunWithData = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const panelInteractions = usePanelInteractions({resetTo: 50});
+  const panels = useSplitPanelInteractions({resetTo: 50});
 
   const gantt = (metadata: IRunMetadataDict) => {
     if (!run) {
@@ -272,9 +269,9 @@ const RunWithData = ({
             toolbarActions={
               <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
                 <ExpandCollapseButton
-                  expanded={panelInteractions.isTopExpanded}
-                  onExpand={panelInteractions.expandTopPanel}
-                  onCollapse={panelInteractions.resetPanels}
+                  expanded={panels.isTopExpanded}
+                  onExpand={panels.expandTopPanel}
+                  onCollapse={panels.resetPanels}
                 />
                 <RunActionButtons
                   run={run}
@@ -302,7 +299,7 @@ const RunWithData = ({
   return (
     <>
       <SplitPanelContainer
-        ref={panelInteractions.splitContainerRef}
+        ref={panels.splitContainerRef}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
@@ -322,11 +319,9 @@ const RunWithData = ({
                 onSetComputeLogKey={setComputeLogFileKey}
                 computeLogUrl={computeLogUrl}
                 counts={logs.counts}
-                isSectionExpanded={panelInteractions.isBottomExpanded}
+                isSectionExpanded={panels.isBottomExpanded}
                 toggleExpanded={
-                  panelInteractions.isBottomExpanded
-                    ? panelInteractions.resetPanels
-                    : panelInteractions.expandBottomPanel
+                  panels.isBottomExpanded ? panels.resetPanels : panels.expandBottomPanel
                 }
               />
               {logType !== LogType.structured ? (

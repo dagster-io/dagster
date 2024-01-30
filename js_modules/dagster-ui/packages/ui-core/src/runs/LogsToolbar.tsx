@@ -3,7 +3,6 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
-  ExpandCollapseButton,
   ExternalAnchorButton,
   Icon,
   IconName,
@@ -23,6 +22,7 @@ import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {ExpandCollapseButton} from '../ui/ExpandCollapseButton';
 
 export enum LogType {
   structured = 'structured',

@@ -41,9 +41,11 @@ export const humanizedMinutesLateString = (minLate: number) =>
 export const OverdueTag = ({
   policy,
   assetKey,
+  includeFreshLabel = false,
 }: {
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
+  includeFreshLabel?: boolean;
 }) => {
   const {liveData} = useAssetLiveData(assetKey);
 
@@ -72,7 +74,9 @@ export const OverdueTag = ({
   if (freshnessInfo.currentMinutesLate === 0) {
     return (
       <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-        <Tag intent="success" icon="check_circle">Fresh</Tag>
+        <Tag intent="success" icon="check_circle">
+          {includeFreshLabel ? 'Fresh' : ''}
+        </Tag>
       </OverdueLineagePopover>
     );
   }

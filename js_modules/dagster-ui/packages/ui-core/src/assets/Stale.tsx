@@ -30,7 +30,7 @@ const LABELS = {
   self: {
     [StaleCauseCategory.CODE]: 'Code version',
     [StaleCauseCategory.DATA]: 'Data version',
-    [StaleCauseCategory.DEPENDENCIES]: 'Deps',
+    [StaleCauseCategory.DEPENDENCIES]: 'Dependencies',
   },
   upstream: {
     [StaleCauseCategory.CODE]: 'Upstream code',
