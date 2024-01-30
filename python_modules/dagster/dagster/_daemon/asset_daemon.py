@@ -61,7 +61,6 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon
 from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
 from dagster._serdes import serialize_value
-from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import (
     SingleInstigatorDebugCrashFlags,
@@ -69,7 +68,8 @@ from dagster._utils import (
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
+_LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
+_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
 _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 
 EVALUATIONS_TTL_DAYS = 30
@@ -101,22 +101,36 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     )
 
 
-def _get_pre_sensor_auto_materialize_serialized_cursor(instance: DagsterInstance) -> Optional[str]:
-    return instance.daemon_cursor_storage.get_cursor_values(
+def _get_pre_sensor_auto_materialize_cursor(
+    instance: DagsterInstance, asset_graph: Optional[AssetGraph]
+) -> AssetDaemonCursor:
+    """Gets a deserialized cursor by either reading from the new cursor key and simply deserializing
+    the value, or by reading from the old cursor key and converting the legacy cursor into the
+    updated format.
+    """
+    serialized_cursor = instance.daemon_cursor_storage.get_cursor_values(
         {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
     ).get(_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY)
+
+    if not serialized_cursor:
+        # check for legacy cursor
+        legacy_serialized_cursor = instance.daemon_cursor_storage.get_cursor_values(
+            {_LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
+        ).get(_LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY)
+        return (
+            backcompat_deserialize_asset_daemon_cursor_str(legacy_serialized_cursor, asset_graph, 0)
+            if legacy_serialized_cursor
+            else AssetDaemonCursor.empty()
+        )
+    else:
+        return deserialize_value(serialized_cursor, AssetDaemonCursor)
 
 
 def get_current_evaluation_id(
     instance: DagsterInstance, sensor_origin: Optional[ExternalInstigatorOrigin]
 ) -> Optional[int]:
     if not sensor_origin:
-        serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-        if not serialized_cursor:
-            return None
-        cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-            serialized_cursor, None
-        )
+        cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     else:
         instigator_state = check.not_none(instance.schedule_storage).get_instigator_state(
             sensor_origin.get_id(), sensor_origin.get_selector().get_id()
@@ -169,18 +183,6 @@ def asset_daemon_cursor_from_instigator_serialized_cursor(
     if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
         return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
     return deserialized_cursor
-
-
-def asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-    serialized_cursor: Optional[str], asset_graph: Optional[AssetGraph]
-) -> AssetDaemonCursor:
-    if serialized_cursor is None:
-        return AssetDaemonCursor.empty()
-
-    try:
-        return deserialize_value(serialized_cursor, AssetDaemonCursor)
-    except DeserializationError:
-        return backcompat_deserialize_asset_daemon_cursor_str(serialized_cursor, asset_graph, 0)
 
 
 class AutoMaterializeLaunchContext:
@@ -347,16 +349,8 @@ class AssetDaemon(DagsterDaemon):
                     ).evaluation_id
                     self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
 
-            serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-            if serialized_cursor:
-                stored_cursor = (
-                    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-                        serialized_cursor, asset_graph
-                    )
-                )
-                self._next_evaluation_id = max(
-                    self._next_evaluation_id, stored_cursor.evaluation_id
-                )
+            stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
+            self._next_evaluation_id = max(self._next_evaluation_id, stored_cursor.evaluation_id)
 
             self._initialized_evaluation_id = True
 
@@ -633,12 +627,7 @@ class AssetDaemon(DagsterDaemon):
                 instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
                 instigator_name = sensor.name
             else:
-                serialized_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-                stored_cursor = (
-                    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-                        serialized_cursor, asset_graph
-                    )
-                )
+                stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
                 instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
                 instigator_selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
                 instigator_name = _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME
