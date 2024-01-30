@@ -405,8 +405,8 @@ class RuleCondition(
         )
         evaluation_result = self.rule.evaluate_for_asset(context)
         context.root_context.daemon_context._verbose_log_fn(  # noqa
-            f"Rule returned {evaluation_result.true_subset.size} partitions:"
-            f"{evaluation_result.true_subset}"
+            f"Rule returned {evaluation_result.true_subset.size} partitions "
+            f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
         return evaluation_result
 
