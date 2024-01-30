@@ -152,6 +152,13 @@ class AssetSubset(NamedTuple):
             )
             return self._replace(value=value).as_valid
 
+    def _valid_empty_subset(self, valid: "ValidAssetSubset") -> "ValidAssetSubset":
+        return valid._replace(
+            # unfortunately, this is the best way to get an empty subset of an unknown type
+            # if you don't have access to the partitions definition
+            value=(valid.subset_value - valid.subset_value) if valid.is_partitioned else False
+        )
+
     def _oper(self, other: "ValidAssetSubset", oper: Callable) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
         return other._replace(value=value)
@@ -161,11 +168,7 @@ class AssetSubset(NamedTuple):
         returns an empty subset.
         """
         if not self.is_compatible_with(other):
-            return other._replace(
-                # unfortunately, this is the best way to get an empty subset of an unknown type
-                # if you don't have access to the partitions definition
-                value=(other.subset_value - other.subset_value) if other.is_partitioned else False
-            )
+            return self._valid_empty_subset(valid=other)
 
         if not self.is_partitioned:
             return other._replace(value=self.bool_value and not other.bool_value)
@@ -184,10 +187,10 @@ class AssetSubset(NamedTuple):
 
     def __and__(self, other: "ValidAssetSubset") -> "ValidAssetSubset":
         """Returns the intersection of this AssetSubset and another AssetSubset if they are compatible,
-        otherwise returns the other AssetSubset.
+        otherwise returns an empty AssetSubset.
         """
         if not self.is_compatible_with(other):
-            return other
+            return self._valid_empty_subset(valid=other)
         return self._oper(other, operator.and_)
 
     def __or__(self, other: "ValidAssetSubset") -> "ValidAssetSubset":
