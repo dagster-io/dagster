@@ -40,7 +40,7 @@ Now that cursors have been explained, let’s start writing the sensor.
    ```python
    from dagster import (
      RunRequest,
-   		SensorResult,
+   	 SensorResult,
      sensor
    )
 
@@ -132,10 +132,14 @@ Now that cursors have been explained, let’s start writing the sensor.
            ))
    ```
 
-   - Using `os.listdir` , iterate through the `data/requests` directory, look at every JSON file, and see if it’s been updated or looked at it before in `previous_state`
-   - If the file has been updated or a report hasn’t been run before, create a `RunRequest` for the file
-   - Construct a unique `run_key`, which includes the name of the file and when it was last modified
-   - Pass the `run_key` into the `RunRequest`'s configuration using the `run_config` argument. By using the `adhoc_request` key, you specify that the `adhoc_request` asset should use the config provided.
+   **Note**: When pasting this into the sensor, verify that the indentation is correct or you'll encounter a Python error.
+
+   This example:
+
+   - Uses `os.listdir`  to iterate through the `data/requests` directory, looking at every JSON file, and seeing if it’s been updated or looked at it before in `previous_state`
+   - Creates a `RunRequest` for the file if it's been updated or a report hasn’t been run before
+   - Constructs a unique `run_key`, which includes the name of the file and when it was last modified
+   - Passes the `run_key` into the `RunRequest`'s configuration using the `run_config` argument. By using the `adhoc_request` key, you specify that the `adhoc_request` asset should use the config provided.
 
 9. Sensors expect a `SensorResult` returned, which contains all the information for the sensor, such as which runs to trigger and what the new cursor is. Append the following to the end of the sensor function:
 
