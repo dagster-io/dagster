@@ -1,5 +1,6 @@
 from typing import Mapping, Optional, Sequence, Type
 
+import numpy as np
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -7,7 +8,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
-from pandas._libs import lib as pd_lib
 from snowflake.connector.pandas_tools import pd_writer
 
 
@@ -32,7 +32,8 @@ def _convert_timestamp_to_string(
     snowflake.
     """
     column_name = str(s.name)
-    if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
+    # if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
+    if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM":
         if column_types:
             if "VARCHAR" not in column_types[column_name]:
                 raise DagsterInvariantViolationError(
@@ -68,14 +69,15 @@ def _add_missing_timezone(
     s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
 ) -> pd.Series:
     column_name = str(s.name)
-    if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
+    # if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
+    if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM":
         if column_types:
             if "VARCHAR" in column_types[column_name]:
                 raise DagsterInvariantViolationError(
                     f"Snowflake I/O manager: The Snowflake column {column_name.upper()} in table"
                     f" {table_name} is of type {column_types[column_name]} and should be of type"
                     f" TIMESTAMP to store the time data in dataframe column {column_name}. Please"
-                    " migrate this column to be of time TIMESTAMP_NTZ(9) to store time data."
+                    " migrate this column to be of type TIMESTAMP_NTZ(9) to store time data."
                 )
         return s.dt.tz_localize("UTC")
     return s
