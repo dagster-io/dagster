@@ -2,10 +2,6 @@ import logging
 import time
 from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
 
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterUserCodeUnreachableError,
-)
 import dagster._check as check
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
@@ -13,6 +9,10 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.host_representation import ExternalExecutionPlan, ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot
@@ -267,6 +267,7 @@ class SubmitRunRequestChunkResult(NamedTuple):
     chunk_submitted_runs: Sequence[Tuple[RunRequest, DagsterRun]]
     code_unreachable_error_raised: bool
 
+
 def submit_asset_runs_in_chunks(
     run_requests: Sequence[RunRequest],
     reserved_run_ids: Optional[Sequence[str]],
@@ -276,7 +277,8 @@ def submit_asset_runs_in_chunks(
     asset_graph: ExternalAssetGraph,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
-    is_asset_backfill_iteration: bool=False,
+    backfill_id: Optional[str] = None,
+    catch_code_location_load_errors: bool = False,
 ) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
     """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
     None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
@@ -314,9 +316,16 @@ def submit_asset_runs_in_chunks(
                 # allow the daemon to heartbeat while runs are submitted
                 yield None
             except (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError) as e:
-                if not is_asset_backfill_iteration:
+                if not catch_code_location_load_errors:
                     raise e
                 else:
+                    logger.warning(
+                        f"Unable to reach the user code server for assets {run_request.asset_selection}."
+                        f" Backfill {backfill_id} will resume execution once the server is available."
+                    )
                     code_unreachable_error_raised = True
+                    # Stop submitting runs if the user code server is unreachable for any
+                    # given run request
+                    break
 
         yield SubmitRunRequestChunkResult(chunk_submitted_runs, code_unreachable_error_raised)

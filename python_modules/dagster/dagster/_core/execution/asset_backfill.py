@@ -693,6 +693,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     # Fetch backfill status
     backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
     mid_iteration_cancel_requested = backfill.status != BulkActionStatus.REQUESTED
+    code_unreachable_error_raised = False
 
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
@@ -706,17 +707,22 @@ def _submit_runs_and_update_backfill_in_chunks(
         asset_graph=asset_graph,
         logger=logger,
         debug_crash_flags={},
+        backfill_id=backfill_id,
+        catch_code_location_load_errors=True,
     ):
         if submit_run_request_chunk_result is None:
             # allow the daemon to heartbeat
             yield None
             continue
 
-        run_requests_chunk = submit_run_request_chunk_result.chunk_submitted_runs
-        code_unreachable_error_raised = submit_run_request_chunk_result.code_unreachable_error_raised
+        code_unreachable_error_raised = (
+            submit_run_request_chunk_result.code_unreachable_error_raised
+        )
 
         requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            [rr for (rr, _) in run_requests_chunk], asset_graph, instance_queryer
+            [rr for (rr, _) in submit_run_request_chunk_result.chunk_submitted_runs],
+            asset_graph,
+            instance_queryer,
         )
         submitted_partitions = submitted_partitions | AssetGraphSubset.from_asset_partition_set(
             set(requested_partitions_in_chunk), asset_graph=asset_graph
@@ -733,7 +739,11 @@ def _submit_runs_and_update_backfill_in_chunks(
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same
             # events.
-            backfill_data_with_submitted_runs.replace_latest_storage_id(previous_asset_backfill_data.latest_storage_id)
+            backfill_data_with_submitted_runs = (
+                backfill_data_with_submitted_runs.replace_latest_storage_id(
+                    previous_asset_backfill_data.latest_storage_id
+                )
+            )
 
         # Refetch, in case the backfill was requested for cancellation in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
@@ -750,7 +760,7 @@ def _submit_runs_and_update_backfill_in_chunks(
             mid_iteration_cancel_requested = True
             break
 
-    if not mid_iteration_cancel_requested:
+    if not mid_iteration_cancel_requested and not code_unreachable_error_raised:
         if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
             missing_partitions = list(
                 (
