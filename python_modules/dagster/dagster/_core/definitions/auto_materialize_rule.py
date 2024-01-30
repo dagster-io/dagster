@@ -613,15 +613,34 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """
         from .asset_condition import AssetConditionResult
 
-        handled_subset = self.get_handled_subset(context)
-        unhandled_candidates = (
-            context.candidate_subset
-            & handled_subset.inverse(
-                context.partitions_def, context.evaluation_time, context.instance_queryer
+        if context.asset_key in context.asset_graph.root_materializable_or_observable_asset_keys:
+            handled_subset = self.get_handled_subset(context)
+            unhandled_candidates = (
+                context.candidate_subset
+                & handled_subset.inverse(
+                    context.partitions_def, context.evaluation_time, context.instance_queryer
+                )
+                if handled_subset.size > 0
+                else context.candidate_subset
             )
-            if handled_subset.size > 0
-            else context.candidate_subset
-        )
+        else:
+            # to retain compatibility with the previous behavior of this rule, we only count a non-root
+            # asset as missing if at least one of its parents has updated since the previous tick
+            handled_subset = None
+            unhandled_candidates = (
+                context.previous_true_subset
+                | AssetSubset.from_asset_partitions_set(
+                    context.asset_key,
+                    context.partitions_def,
+                    {
+                        ap
+                        for ap in context.candidate_parent_has_or_will_update_subset.asset_partitions
+                        if not context.instance_queryer.asset_partition_has_materialization_or_observation(
+                            ap
+                        )
+                    },
+                )
+            ) - context.previous_tick_requested_subset
 
         return AssetConditionResult.create(
             context,
