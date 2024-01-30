@@ -197,7 +197,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             )
 
             # Cursor never writes since failure happens before cursor write
-            cursor = _get_pre_sensor_auto_materialize_cursor(instance)
+            cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
             assert not cursor.evaluation_id
 
     test_time = test_time.add(seconds=45)
@@ -564,7 +564,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     else:
         assert len(ticks[0].tick_data.reserved_run_ids) == 5
 
-    cursor = _get_pre_sensor_auto_materialize_cursor(instance)
+    cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     assert (cursor.evaluation_id > 0) == cursor_written
 
     freeze_datetime = scenario.current_time.add(seconds=1)
@@ -617,5 +617,5 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
         run.run_id for run in sorted_runs
     }
 
-    cursor = _get_pre_sensor_auto_materialize_cursor(instance)
+    cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     assert cursor.evaluation_id > 0
