@@ -205,7 +205,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         if serialized is None:
             # Confusingly, we used `None` to indicate "all of an unpartitioned asset" in the old
             # serialization scheme
-            return AssetSubset(asset_key, False)
+            return AssetSubset(asset_key, True)
         return deserialize_serialized_partitions_subset_to_asset_subset(
             serialized, asset_key, self.partitions_def
         )
