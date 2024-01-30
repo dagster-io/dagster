@@ -197,7 +197,9 @@ class AssetConditionEvaluation(NamedTuple):
         if discarded_subset is None:
             return self.true_subset
         else:
-            return self.true_subset | discarded_subset
+            # the true_subset and discarded_subset were created on the same tick, so they are
+            # guaranteed to be compatible with each other
+            return self.true_subset | discarded_subset.as_valid
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -428,7 +430,7 @@ class AndAssetCondition(
             child_context = context.for_child(condition=child, candidate_subset=true_subset)
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset &= child_result.true_subset
+            true_subset &= child_result.true_subset.as_valid
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
@@ -451,7 +453,7 @@ class OrAssetCondition(
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset |= child_result.true_subset
+            true_subset |= child_result.true_subset.as_valid
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
