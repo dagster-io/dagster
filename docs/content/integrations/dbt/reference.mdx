@@ -681,7 +681,7 @@ You can define a Dagster <PyObject module="dagster" object="PartitionDefinition"
 
 Partitioned assets will be able to access the <PyObject module="dagster" object="TimeWindow"/>'s start and end dates, and these can be passed to dbt's CLI as variables which can be used to filter incremental models.
 
-When a partition definition to passed to the <PyObject module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject module="dagster" object="partition_time_window"/> property in order to get the current start and end partitions.
+When a partition definition to passed to the <PyObject module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject module="dagster"  object="AssetExecutionContext" method="partition_time_window"/> property in order to get the current start and end partitions.
 
 ```python
 import json
