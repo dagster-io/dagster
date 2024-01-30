@@ -125,10 +125,10 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
             deprecation_warning(
                 subject="AssetExecutionContext",
                 additional_warn_text=(
-                    "Starting in version 1.7.0 AssetExecutionContext will no longer be a subclass"
+                    "Starting in version 1.8.0 AssetExecutionContext will no longer be a subclass"
                     " of OpExecutionContext."
                 ),
-                breaking_version="1.7.0",
+                breaking_version="1.8.0",
                 stacklevel=1,
             )
         return super().__instancecheck__(instance)
@@ -541,7 +541,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
-    def describe_op(self):
+    def describe_op(self) -> str:
         return self._step_execution_context.describe_op()
 
     @public
@@ -1345,12 +1345,49 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         ctx = _current_asset_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
-        return ctx.get_op_execution_context()
+        return ctx.op_execution_context
+
+
+###############################
+######## AssetExecutionContext
+###############################
 
 
 def _copy_docs_from_op_execution_context(obj):
     setattr(obj, "__doc__", getattr(OpExecutionContext, obj.__name__).__doc__)
     return obj
+
+
+ALTERNATE_METHODS = {
+    "run_id": "run.run_id",
+    "dagster_run": "run",
+    "run_config": "run.run_config",
+    "run_tags": "run.tags",
+    "get_op_execution_context": "op_execution_context",
+}
+
+ALTERNATE_EXPRESSIONS = {
+    "has_tag": "key in context.run.tags",
+    "get_tag": "context.run.tags.get(key)",
+}
+
+
+def _get_deprecation_kwargs(attr: str):
+    deprecation_kwargs = {"breaking_version": "1.8.0"}
+    deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
+
+    if attr in ALTERNATE_METHODS:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            f" context.{ALTERNATE_METHODS[attr]} instead."
+        )
+    elif attr in ALTERNATE_EXPRESSIONS:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            f" {ALTERNATE_EXPRESSIONS[attr]} instead."
+        )
+
+    return deprecation_kwargs
 
 
 class AssetExecutionContext(OpExecutionContext):
@@ -1371,42 +1408,100 @@ class AssetExecutionContext(OpExecutionContext):
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
-    #### Run related
+    ####### Top-level properties/methods on AssetExecutionContext
+
+    @public
+    @property
+    def log(self) -> DagsterLogManager:
+        """The log manager available in the execution context. Logs will be viewable in the Dagster UI.
+        Returns: DagsterLogManager.
+
+        Example:
+            .. code-block:: python
+
+                @asset
+                def logger(context):
+                    context.log.info("Info level message")
+        """
+        return self.op_execution_context.log
+
+    @public
+    @property
+    def pdb(self) -> ForkedPdb:
+        """Gives access to pdb debugging from within the asset. Materializing the asset via the
+        Dagster UI or CLI will enter the pdb debugging context in the process used to launch the UI or
+        run the CLI.
+
+        Returns: dagster.utils.forked_pdb.ForkedPdb
+
+        Example:
+            .. code-block:: python
+
+                @asset
+                def debug(context):
+                    context.pdb.set_trace()
+        """
+        return self.op_execution_context.pdb
 
     @property
-    @_copy_docs_from_op_execution_context
     def run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution. Information like run_id,
+        run configuration, and the assets selected for materialization can be found on the DagsterRun.
+        """
         return self.op_execution_context.run
 
+    @public
+    @property
+    def job_def(self) -> JobDefinition:
+        """The definition for the currently executing job. Information like the job name, and job tags
+        can be found on the JobDefinition.
+        Returns: JobDefinition.
+        """
+        return self.op_execution_context.job_def
+
+    ######## Deprecated methods
+
+    @deprecated(**_get_deprecation_kwargs("dagster_run"))
     @property
     @_copy_docs_from_op_execution_context
     def dagster_run(self) -> DagsterRun:
         return self.op_execution_context.dagster_run
 
+    @deprecated(**_get_deprecation_kwargs("run_id"))
     @property
     @_copy_docs_from_op_execution_context
     def run_id(self) -> str:
         return self.op_execution_context.run_id
 
+    @deprecated(**_get_deprecation_kwargs("run_config"))
     @property
     @_copy_docs_from_op_execution_context
     def run_config(self) -> Mapping[str, object]:
         return self.op_execution_context.run_config
 
+    @deprecated(**_get_deprecation_kwargs("run_tags"))
     @property
     @_copy_docs_from_op_execution_context
     def run_tags(self) -> Mapping[str, str]:
         return self.op_execution_context.run_tags
 
+    @deprecated(**_get_deprecation_kwargs("has_tag"))
     @public
     @_copy_docs_from_op_execution_context
     def has_tag(self, key: str) -> bool:
         return self.op_execution_context.has_tag(key)
 
+    @deprecated(**_get_deprecation_kwargs("get_tag"))
     @public
     @_copy_docs_from_op_execution_context
     def get_tag(self, key: str) -> Optional[str]:
         return self.op_execution_context.get_tag(key)
+
+    @deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
+    def get_op_execution_context(self) -> "OpExecutionContext":
+        return self.op_execution_context
+
+    ########## pass-through to op context
 
     #### op related
 
@@ -1464,12 +1559,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def job_name(self) -> str:
         return self.op_execution_context.job_name
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def job_def(self) -> JobDefinition:
-        return self.op_execution_context.job_def
 
     #### asset related
 
@@ -1704,18 +1793,6 @@ class AssetExecutionContext(OpExecutionContext):
     def resources(self) -> Any:
         return self.op_execution_context.resources
 
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def log(self) -> DagsterLogManager:
-        return self.op_execution_context.log
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def pdb(self) -> ForkedPdb:
-        return self.op_execution_context.pdb
-
     @property
     @_copy_docs_from_op_execution_context
     def is_subset(self):
@@ -1736,9 +1813,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
-
-    def get_op_execution_context(self) -> "OpExecutionContext":
-        return self.op_execution_context
 
 
 @contextmanager
