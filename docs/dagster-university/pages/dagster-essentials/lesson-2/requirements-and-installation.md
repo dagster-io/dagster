@@ -8,8 +8,8 @@ lesson: '2'
 
 To install Dagster, you’ll need:
 
-- Python 3.8+
-- A package manager like pip or poetry. If you need to install a package manager, refer to the following installation guides:
+- **To install Python**. Dagster supports Python 3.8 through 3.11.
+- **A package manager like pip or poetry**. If you need to install a package manager, refer to the following installation guides:
   - [pip](https://pip.pypa.io/en/stable/installation/)
   - [Poetry](https://python-poetry.org/docs/)
 
