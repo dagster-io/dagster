@@ -440,16 +440,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            "dbt_14X_legacy",
             "dbt_15X_legacy",
             "dbt_16X_legacy",
             "dbt_17X_legacy",
-            "dbt_14X",
             "dbt_15X",
             "dbt_16X",
             "dbt_17X",
-            "dbt_14X_pydantic1",
-            "dbt_14X_legacy_pydantic1",
+            "dbt_pydantic1",
+            "dbt_legacy_pydantic1",
         ],
     ),
     PackageSpec(
