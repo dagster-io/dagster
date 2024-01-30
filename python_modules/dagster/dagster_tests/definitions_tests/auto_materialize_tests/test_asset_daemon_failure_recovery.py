@@ -18,7 +18,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     MAX_TIME_TO_RESUME_TICK_SECONDS,
-    _get_pre_sensor_auto_materialize_serialized_cursor,
+    _get_pre_sensor_auto_materialize_cursor,
     set_auto_materialize_paused,
 )
 from dagster._seven.compat.pendulum import pendulum_freeze_time
@@ -197,8 +197,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             )
 
             # Cursor never writes since failure happens before cursor write
-            cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-            assert not cursor
+            cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
+            assert not cursor.evaluation_id
 
     test_time = test_time.add(seconds=45)
     with pendulum_freeze_time(test_time):
@@ -279,9 +279,9 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             error_asset_scenario.expected_run_requests, ticks[0].tick_data.run_requests
         )
 
-        cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+        cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
         # Same cursor due to the retry
-        assert cursor is not None
+        assert cursor.evaluation_id == 1
         last_cursor = cursor
 
     for trial_num in range(3):
@@ -319,7 +319,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             )
 
             # Same cursor due to the retry
-            retry_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+            retry_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
             assert retry_cursor == last_cursor
 
     # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
@@ -349,7 +349,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].tick_data.failure_count == 1  # starts over
 
         # Cursor has moved on
-        moved_on_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
+        moved_on_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
         assert moved_on_cursor != last_cursor
 
     test_time = test_time.add(seconds=45)
@@ -564,8 +564,8 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     else:
         assert len(ticks[0].tick_data.reserved_run_ids) == 5
 
-    cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-    assert bool(cursor) == cursor_written
+    cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
+    assert (cursor.evaluation_id > 0) == cursor_written
 
     freeze_datetime = scenario.current_time.add(seconds=1)
 
@@ -617,5 +617,5 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
         run.run_id for run in sorted_runs
     }
 
-    cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
-    assert cursor
+    cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
+    assert cursor.evaluation_id > 0
