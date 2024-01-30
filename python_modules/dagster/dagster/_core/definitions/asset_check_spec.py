@@ -81,7 +81,7 @@ class AssetCheckSpec(
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
-        blocking (Optional[bool]): When enabled, any assets downstream
+        blocking (bool): When enabled, any assets downstream
             of `asset` will wait for this check before executing. If the check fails with
             severity `AssetCheckSeverity.ERROR`, then the downstream assets won't execute.
     """
