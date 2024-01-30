@@ -133,6 +133,8 @@ class DbtCliEventMessage:
         if self.raw_event["info"]["name"] != "NodeFinished":
             return
 
+        adapter_response = self.raw_event["data"].get("run_result", {}).get("adapter_response", {})
+        adapter_response_metadata = self._process_adapter_response_metadata(adapter_response)
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
@@ -173,6 +175,7 @@ class DbtCliEventMessage:
                         "unique_id": unique_id,
                         "invocation_id": invocation_id,
                         "Execution Duration": duration_seconds,
+                        **adapter_response_metadata,
                     },
                 )
             else:
@@ -185,6 +188,7 @@ class DbtCliEventMessage:
                         "unique_id": unique_id,
                         "invocation_id": invocation_id,
                         "Execution Duration": duration_seconds,
+                        **adapter_response_metadata,
                     },
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
@@ -194,6 +198,7 @@ class DbtCliEventMessage:
                 "unique_id": unique_id,
                 "invocation_id": invocation_id,
                 "status": node_status,
+                **adapter_response_metadata,
             }
 
             is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
@@ -235,6 +240,46 @@ class DbtCliEventMessage:
                         asset_key=upstream_asset_key,
                         metadata=metadata,
                     )
+
+    def _process_adapter_response_metadata(
+        self, adapter_response: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process the adapter response metadata for a dbt CLI event.
+
+        The main interface for AdapterResponse is found at https://github.com/dbt-labs/dbt-adapters.
+
+        Currently, we pre-process the following dbt adapters, which have custom responses:
+
+        - https://github.com/dbt-labs/dbt-bigquery: BigQueryAdapterResponse
+        - https://github.com/databricks/dbt-databricks: DatabricksAdapterResponse
+        - https://github.com/dbt-labs/dbt-snowflake: SnowflakeAdapterResponse
+        - https://github.com/starburstdata/dbt-trino: TrinoAdapterResponse
+        """
+        allowlisted_adapter_response_keys = [
+            # AdapterResponse
+            *[
+                "rows_affected",
+            ],
+            # BigQueryAdapterResponse
+            *[
+                "bytes_processed",
+                "bytes_billed",
+                "job_id",
+                "slot_ms",
+            ],
+            # DatabricksAdapterResponse, SnowflakeAdapterResponse, TrinoAdapterResponse
+            *[
+                "query_id",
+            ],
+        ]
+
+        processed_adapter_response = {
+            key: value
+            for key, value in adapter_response.items()
+            if (key in allowlisted_adapter_response_keys and value)
+        }
+
+        return processed_adapter_response
 
 
 @dataclass
