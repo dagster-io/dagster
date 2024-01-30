@@ -580,17 +580,11 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         previous_handled_subset = (
             context.previous_evaluation_state.get_extra_state(context.condition, AssetSubset)
             if context.previous_evaluation_state
-            else context.instance_queryer.get_materialized_asset_subset(asset_key=context.asset_key)
-        )
-        return (
-            (
-                previous_handled_subset
-                or context.instance_queryer.get_materialized_asset_subset(
-                    asset_key=context.asset_key
-                )
-            )
-            | context.previous_tick_requested_subset
-            | context.materialized_since_previous_tick_subset
+            else None
+        ) or context.instance_queryer.get_materialized_asset_subset(asset_key=context.asset_key)
+
+        return previous_handled_subset | (
+            context.previous_tick_requested_subset | context.materialized_since_previous_tick_subset
         )
 
     def evaluate_for_asset(

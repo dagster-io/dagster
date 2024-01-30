@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
 )
 
 import pendulum
@@ -37,8 +38,10 @@ if TYPE_CHECKING:
     )
     from .asset_daemon_context import AssetDaemonContext
 
+T = TypeVar("T")
 
-def root_property(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+
+def root_property(fn: Callable[[Any], T]) -> Callable[[Any], T]:
     """Ensures that a given property is always accessed via the root context, ensuring that any
     cached properties are accessed correctly.
     """
@@ -167,7 +170,7 @@ class AssetConditionEvaluationContext:
 
     @functools.cached_property
     @root_property
-    def parent_will_update_subset(self) -> AssetSubset:
+    def parent_will_update_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions whose parents will be updated on this tick, and which
         can be materialized in the same run as this asset.
         """
@@ -185,7 +188,7 @@ class AssetConditionEvaluationContext:
 
     @functools.cached_property
     @root_property
-    def materialized_since_previous_tick_subset(self) -> AssetSubset:
+    def materialized_since_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
         return AssetSubset.from_asset_partitions_set(
             self.asset_key,
@@ -215,13 +218,13 @@ class AssetConditionEvaluationContext:
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.materialized_since_previous_tick_subset | self.previous_tick_requested_subset
+        return self.previous_tick_requested_subset | self.materialized_since_previous_tick_subset
 
     @functools.cached_property
     @root_property
     def _parent_has_updated_subset_and_new_latest_storage_id(
         self,
-    ) -> Tuple[AssetSubset, Optional[int]]:
+    ) -> Tuple[ValidAssetSubset, Optional[int]]:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
         """
@@ -239,13 +242,13 @@ class AssetConditionEvaluationContext:
 
     @property
     @root_property
-    def parent_has_updated_subset(self) -> AssetSubset:
+    def parent_has_updated_subset(self) -> ValidAssetSubset:
         subset, _ = self._parent_has_updated_subset_and_new_latest_storage_id
         return subset
 
     @property
     @root_property
-    def new_max_storage_id(self) -> AssetSubset:
+    def new_max_storage_id(self) -> Optional[int]:
         _, storage_id = self._parent_has_updated_subset_and_new_latest_storage_id
         return storage_id
 
