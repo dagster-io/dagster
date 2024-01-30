@@ -32,8 +32,8 @@ def _convert_timestamp_to_string(
     snowflake.
     """
     column_name = str(s.name)
-    # if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
-    if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM":
+    # if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM": # m: timedelta. M: datetime
+    if issubclass(s.dtype.type, (np.datetime64, np.timedelta64)):
         if column_types:
             if "VARCHAR" not in column_types[column_name]:
                 raise DagsterInvariantViolationError(
@@ -69,8 +69,8 @@ def _add_missing_timezone(
     s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
 ) -> pd.Series:
     column_name = str(s.name)
-    # if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
-    if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM":
+    # if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM": # m: timedelta. M: datetime
+    if issubclass(s.dtype.type, (np.datetime64, np.timedelta64)):
         if column_types:
             if "VARCHAR" in column_types[column_name]:
                 raise DagsterInvariantViolationError(
