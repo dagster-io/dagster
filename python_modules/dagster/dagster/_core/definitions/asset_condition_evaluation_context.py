@@ -1,7 +1,6 @@
 import dataclasses
 import datetime
 import functools
-import operator
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
@@ -27,7 +26,7 @@ from dagster._core.definitions.time_window_partition_mapping import TimeWindowPa
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_graph import AssetGraph
-from .asset_subset import AssetSubset
+from .asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
     from .asset_condition import (
@@ -60,7 +59,7 @@ class AssetConditionEvaluationContext:
     condition: "AssetCondition"
     previous_evaluation_state: Optional["AssetConditionEvaluationState"]
     previous_evaluation: Optional["AssetConditionEvaluation"]
-    candidate_subset: AssetSubset
+    candidate_subset: ValidAssetSubset
 
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
@@ -179,7 +178,8 @@ class AssetConditionEvaluationContext:
             parent_info = self.evaluation_state_by_key.get(parent_key)
             if not parent_info:
                 continue
-            parent_subset = parent_info.true_subset
+            # this parent subset was generated on this tick, so it is still valid
+            parent_subset = parent_info.true_subset.as_valid
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
@@ -213,7 +213,7 @@ class AssetConditionEvaluationContext:
         )
 
     @property
-    def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
+    def materialized_requested_or_discarded_since_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
         return self.materialized_since_previous_tick_subset | self.previous_tick_requested_subset
 
@@ -250,7 +250,7 @@ class AssetConditionEvaluationContext:
         return storage_id
 
     @property
-    def candidate_parent_has_or_will_update_subset(self) -> AssetSubset:
+    def candidate_parent_has_or_will_update_subset(self) -> ValidAssetSubset:
         """Returns the set of candidates for this tick which have parents that have updated since
         the previous tick, or will update on this tick.
         """
@@ -259,7 +259,7 @@ class AssetConditionEvaluationContext:
         )
 
     @property
-    def candidates_not_evaluated_on_previous_tick_subset(self) -> AssetSubset:
+    def candidates_not_evaluated_on_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
@@ -345,19 +345,16 @@ class AssetConditionEvaluationContext:
         from .asset_condition import AssetSubsetWithMetadata
 
         mapping = defaultdict(lambda: self.empty_subset())
+        has_new_metadata_subset = self.empty_subset()
         for frozen_metadata, asset_partitions in asset_partitions_by_frozen_metadata.items():
             mapping[frozen_metadata] = AssetSubset.from_asset_partitions_set(
                 self.asset_key, self.partitions_def, asset_partitions
             )
-
-        # get the set of all things we have metadata for
-        has_new_metadata_subset = functools.reduce(
-            operator.or_, mapping.values(), self.empty_subset()
-        )
+            has_new_metadata_subset |= mapping[frozen_metadata]
 
         # don't use information from the previous tick if we have explicit metadata for it or
         # we've explicitly said to ignore it
-        ignore_subset = has_new_metadata_subset | ignore_subset
+        ignore_subset = ignore_subset | has_new_metadata_subset
 
         for elt in self.previous_subsets_with_metadata:
             carry_forward_subset = elt.subset - ignore_subset
@@ -365,7 +362,9 @@ class AssetConditionEvaluationContext:
                 mapping[elt.frozen_metadata] |= carry_forward_subset
 
         # for now, an asset is in the "true" subset if and only if we have some metadata for it
-        true_subset = functools.reduce(operator.or_, mapping.values(), self.empty_subset())
+        true_subset = self.empty_subset()
+        for subset in mapping.values():
+            true_subset |= subset
 
         return (
             self.candidate_subset & true_subset,
@@ -375,5 +374,5 @@ class AssetConditionEvaluationContext:
             ],
         )
 
-    def empty_subset(self) -> AssetSubset:
+    def empty_subset(self) -> ValidAssetSubset:
         return AssetSubset.empty(self.asset_key, self.partitions_def)
