@@ -66,6 +66,17 @@ def _property_msg(prop_name: str, method_name: str) -> str:
 
 
 class BaseDirectExecutionContext:
+    """Base class for any direct invocation execution contexts. Each type of execution context
+    (ex. OpExecutionContext, AssetExecutionContext) needs to have a variant for direct invocation.
+    Those direct invocation contexts have some methods that are not available until the context
+    is bound to a particular op/asset. The "bound" properties are held in PerInvocationProperties.
+    There are also some properties that are specific to a particular execution of an op/asset, these
+    properties are held in DirectExecutionProperties. Direct invocation contexts must
+    be able to be bound and unbound from a particular op/asset. Additionally, there are some methods
+    that all direct invocation contexts must implement so that the will be usable in the execution
+    code path.
+    """
+
     @abstractmethod
     def bind(
         self,
