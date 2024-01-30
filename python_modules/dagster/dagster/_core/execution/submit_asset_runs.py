@@ -2,6 +2,10 @@ import logging
 import time
 from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
 
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 import dagster._check as check
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
@@ -259,6 +263,10 @@ def submit_asset_run(
     return run_to_submit
 
 
+class SubmitRunRequestChunkResult(NamedTuple):
+    chunk_submitted_runs: Sequence[Tuple[RunRequest, DagsterRun]]
+    code_unreachable_error_raised: bool
+
 def submit_asset_runs_in_chunks(
     run_requests: Sequence[RunRequest],
     reserved_run_ids: Optional[Sequence[str]],
@@ -268,7 +276,8 @@ def submit_asset_runs_in_chunks(
     asset_graph: ExternalAssetGraph,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
-) -> Iterator[Optional[Sequence[Tuple[RunRequest, DagsterRun]]]]:
+    is_asset_backfill_iteration: bool=False,
+) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
     """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
     None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
     of the run request and the submitted run after each chunk is submitted to allow the caller to
@@ -281,6 +290,7 @@ def submit_asset_runs_in_chunks(
     for chunk_start in range(0, len(run_requests), chunk_size):
         run_request_chunk = run_requests[chunk_start : chunk_start + chunk_size]
         chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
+        code_unreachable_error_raised = False
 
         logger.critical(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
 
@@ -288,19 +298,25 @@ def submit_asset_runs_in_chunks(
         for chunk_idx, run_request in enumerate(run_request_chunk):
             run_request_idx = chunk_start + chunk_idx
             run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
-            submitted_run = submit_asset_run(
-                run_id,
-                run_request,
-                run_request_idx,
-                instance,
-                workspace_process_context,
-                asset_graph,
-                run_request_execution_data_cache,
-                debug_crash_flags,
-                logger,
-            )
-            chunk_submitted_runs.append((run_request, submitted_run))
-            # allow the daemon to heartbeat while runs are submitted
-            yield None
+            try:
+                submitted_run = submit_asset_run(
+                    run_id,
+                    run_request,
+                    run_request_idx,
+                    instance,
+                    workspace_process_context,
+                    asset_graph,
+                    run_request_execution_data_cache,
+                    debug_crash_flags,
+                    logger,
+                )
+                chunk_submitted_runs.append((run_request, submitted_run))
+                # allow the daemon to heartbeat while runs are submitted
+                yield None
+            except (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError) as e:
+                if not is_asset_backfill_iteration:
+                    raise e
+                else:
+                    code_unreachable_error_raised = True
 
-        yield chunk_submitted_runs
+        yield SubmitRunRequestChunkResult(chunk_submitted_runs, code_unreachable_error_raised)
