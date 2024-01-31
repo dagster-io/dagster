@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Mapping, Optional
 
 import pytest
-from dagster import RunConfig
+from dagster import DefaultScheduleStatus, RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
@@ -21,6 +21,7 @@ with open(manifest_path, "r") as f:
         "tags",
         "config",
         "execution_timezone",
+        "default_status",
     ],
     [
         (
@@ -31,6 +32,7 @@ with open(manifest_path, "r") as f:
             None,
             None,
             None,
+            DefaultScheduleStatus.STOPPED,
         ),
         (
             "test_job",
@@ -40,6 +42,7 @@ with open(manifest_path, "r") as f:
             {"my": "tag"},
             RunConfig(ops={"my_op": {"config": "value"}}),
             "America/Vancouver",
+            DefaultScheduleStatus.RUNNING,
         ),
     ],
 )
@@ -51,6 +54,7 @@ def test_dbt_build_schedule(
     tags: Optional[Mapping[str, str]],
     config: Optional[RunConfig],
     execution_timezone: Optional[str],
+    default_status: DefaultScheduleStatus,
 ) -> None:
     @dbt_assets(manifest=manifest)
     def my_dbt_assets():
@@ -65,11 +69,13 @@ def test_dbt_build_schedule(
         tags=tags,
         config=config,
         execution_timezone=execution_timezone,
+        default_status=default_status,
     )
 
     assert test_daily_schedule.name == f"{job_name}_schedule"
     assert test_daily_schedule.job.name == job_name
     assert test_daily_schedule.execution_timezone == execution_timezone
+    assert test_daily_schedule.default_status == default_status
 
     job = test_daily_schedule.job
 
