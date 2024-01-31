@@ -16,6 +16,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.data_version import (
+    DATA_TIME_TAG,
     DATA_VERSION_TAG,
     DataVersion,
     DataVersionsByPartition,
@@ -97,7 +98,10 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: observe_fn_return_value.value},
+                    tags={
+                        DATA_VERSION_TAG: observe_fn_return_value.value,
+                        DATA_TIME_TAG: str(observe_fn_return_value.data_time),
+                    },
                 )
             )
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):

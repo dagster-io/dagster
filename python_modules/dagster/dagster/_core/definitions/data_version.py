@@ -43,7 +43,10 @@ UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 class DataVersion(
     NamedTuple(
         "_DataVersion",
-        [("value", str)],
+        [
+            ("value", str),
+            ("data_time", Optional[float]),
+        ],
     )
 ):
     """(Experimental) Represents a data version for an asset.
@@ -55,10 +58,12 @@ class DataVersion(
     def __new__(
         cls,
         value: str,
+        data_time: Optional[float] = None,
     ):
         return super(DataVersion, cls).__new__(
             cls,
             value=check.str_param(value, "value"),
+            data_time=check.opt_float_param(data_time, "data_time"),
         )
 
 
@@ -192,6 +197,8 @@ INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_data_version"
 _OLD_INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_logical_version"
 INPUT_EVENT_POINTER_TAG_PREFIX: Final[str] = "dagster/input_event_pointer"
 DATA_VERSION_IS_USER_PROVIDED_TAG = "dagster/data_version_is_user_provided"
+
+DATA_TIME_TAG = "dagster/data_time"
 
 
 def read_input_data_version_from_tags(
