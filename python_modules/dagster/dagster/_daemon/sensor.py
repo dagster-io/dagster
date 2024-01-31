@@ -316,7 +316,7 @@ def execute_sensor_iteration(
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
         if (
             not sensor_state.instigator_data
-            or sensor_state.instigator_data.sensor_type != SensorType.AUTOMATION_POLICY
+            or sensor_state.instigator_data.sensor_type != SensorType.AUTOMATION_POLICY  # type: ignore
         )
     }
 

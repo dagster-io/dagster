@@ -4,6 +4,7 @@ from typing import (
     Any,
     Dict,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -64,10 +65,10 @@ class DbTypeHandler(ABC, Generic[T]):
         pass
 
 
-class DbClient:
+class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection: T) -> None:
         ...
 
     @staticmethod
@@ -77,12 +78,17 @@ class DbClient:
 
     @staticmethod
     @abstractmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+    def ensure_schema_exists(
+        context: OutputContext, table_slice: TableSlice, connection: T
+    ) -> None:
         ...
 
     @staticmethod
+    @abstractmethod
     @contextmanager
-    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice):
+    def connect(
+        context: Union[OutputContext, InputContext], table_slice: TableSlice
+    ) -> Iterator[T]:
         ...
 
 

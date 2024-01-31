@@ -515,11 +515,12 @@ class AssetDaemon(DagsterDaemon):
             all_auto_materialize_states = {}
 
         for sensor in sensors:
-            selector_id = sensor.selector.get_id() if sensor else None
-
-            auto_materialize_state = (
-                all_auto_materialize_states.get(selector_id) if selector_id else None
-            )
+            if sensor:
+                selector_id = sensor.selector.get_id()
+                auto_materialize_state = all_auto_materialize_states.get(selector_id)
+            else:
+                selector_id = None
+                auto_materialize_state = None
 
             if not sensor:
                 # make sure we are only running every pre_sensor_interval_seconds

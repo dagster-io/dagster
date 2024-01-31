@@ -2685,7 +2685,7 @@ class DagsterInstance(DynamicPartitionsStore):
             schedule_info: Mapping[str, Mapping[str, object]] = {
                 schedule_state.instigator_name: {
                     "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.instigator_data.cron_schedule,
+                    "cron_schedule": schedule_state.instigator_data.cron_schedule,  # type: ignore
                     "schedule_origin_id": schedule_state.instigator_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }

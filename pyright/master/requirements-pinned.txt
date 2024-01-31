@@ -21,7 +21,7 @@ apache-airflow-providers-http==4.1.0
 apache-airflow-providers-imap==3.5.0
 apache-airflow-providers-sqlite==3.7.0
 apeye==1.4.1
-apeye-core==1.1.4
+apeye-core==1.1.5
 apispec==6.4.0
 appdirs==1.4.4
 appnope==0.1.3
@@ -57,10 +57,10 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.7.0
 bokeh==3.3.4
-boto3==1.34.30
-botocore==1.34.30
+boto3==1.34.33
+botocore==1.34.33
 buildkite-test-collector==0.1.7
-CacheControl==0.13.1
+CacheControl==0.14.0
 cached-property==1.5.2
 cachelib==0.9.0
 cachetools==5.3.2
@@ -68,7 +68,7 @@ caio==0.9.13
 callee==0.3.1
 cattrs==23.2.3
 celery==5.3.6
-certifi==2023.11.17
+certifi==2024.2.2
 cffi==1.16.0
 cfn-lint==0.85.0
 chardet==5.2.0
@@ -219,8 +219,8 @@ fsspec==2023.12.2
 future==0.18.3
 gitdb==4.0.11
 GitPython==3.1.41
-google-api-core==2.16.0
-google-api-python-client==2.115.0
+google-api-core==2.16.1
+google-api-python-client==2.116.0
 google-auth==2.27.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
@@ -238,10 +238,10 @@ graphql-core==3.2.3
 graphql-relay==3.2.0
 graphviz==0.20.1
 great-expectations==0.17.11
-grpcio==1.60.0
-grpcio-health-checking==1.60.0
-grpcio-status==1.60.0
-grpcio-tools==1.60.0
+grpcio==1.60.1
+grpcio-health-checking==1.60.1
+grpcio-status==1.60.1
+grpcio-tools==1.60.1
 gunicorn==21.2.0
 h11==0.14.0
 hologram==0.0.16
@@ -259,7 +259,7 @@ importlib-resources==6.1.1
 inflection==0.5.1
 iniconfig==2.0.0
 ipykernel==6.29.0
-ipython==8.20.0
+ipython==8.21.0
 ipython-genutils==0.2.0
 ipywidgets==8.1.1
 iso8601==2.1.0
@@ -329,7 +329,7 @@ mpmath==1.3.0
 msal==1.26.0
 msal-extensions==1.1.0
 msgpack==1.0.7
-multidict==6.0.4
+multidict==6.0.5
 multimethod==1.11
 mypy-extensions==1.0.0
 mypy-protobuf==3.5.0
@@ -351,7 +351,7 @@ oauthlib==3.2.2
 objgraph==3.6.0
 onnx==1.15.0
 onnxconverter-common==1.13.0
-onnxruntime==1.16.3
+onnxruntime==1.17.0
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.22.0
@@ -406,7 +406,7 @@ pure-eval==0.2.2
 py==1.11.0
 py-partiql-parser==0.5.0
 py4j==0.10.9.7
-pyarrow==10.0.1
+pyarrow==15.0.0
 pyarrow-hotfix==0.6
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
@@ -438,7 +438,7 @@ python-jose==3.3.0
 python-json-logger==2.0.7
 python-multipart==0.0.6
 python-nvd3==0.15.0
-python-slugify==8.0.2
+python-slugify==8.0.3
 python-utils==3.8.2
 pytimeparse==1.1.8
 pytz==2023.4
@@ -468,7 +468,7 @@ scikit-learn==1.4.0
 scipy==1.12.0
 scrapbook==0.5.0
 seaborn==0.13.2
-selenium==4.17.1
+selenium==4.16.0
 Send2Trash==1.8.2
 sending==0.3.0
 sentry-sdk==1.40.0
@@ -481,7 +481,7 @@ sling==1.0.72
 smmap==5.0.1
 sniffio==1.3.0
 snowballstemmer==2.2.0
-snowflake-connector-python==3.4.1
+snowflake-connector-python==3.7.0
 snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.5
@@ -549,14 +549,13 @@ types-pyOpenSSL==24.0.0.20240130
 types-python-dateutil==2.8.19.20240106
 types-pytz==2023.4.0.20240130
 types-PyYAML==6.0.12.12
-types-requests==2.31.0.6
+types-requests==2.31.0.20240125
 types-simplejson==3.19.0.2
 types-six==1.16.21.20240106
 types-SQLAlchemy==1.4.53.34
 types-tabulate==0.9.0.20240106
 types-toml==0.10.8.7
 types-tzlocal==5.1.0.1
-types-urllib3==1.26.25.14
 typing-inspect==0.9.0
 typing_extensions==4.5.0
 tzdata==2023.4
@@ -566,7 +565,7 @@ unicodecsv==0.14.1
 universal-pathlib==0.1.4
 uri-template==1.3.0
 uritemplate==4.1.1
-urllib3==1.26.18
+urllib3==2.0.7
 uvicorn==0.27.0.post1
 uvloop==0.19.0
 vine==5.1.0

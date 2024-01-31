@@ -289,7 +289,7 @@ def new_resources_env_vars() -> None:
         password: str
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={
             "credentials": CredentialsResource(
                 username=EnvVar("MY_USERNAME"),
@@ -375,7 +375,7 @@ def raw_github_resource_dep() -> None:
 
     engine = create_engine(...)
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={"db": DBResource(engine=engine)},
     )
 
@@ -475,7 +475,7 @@ def io_adapter() -> None:
             return old_file_io_manager
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={
             "io_manager": MyIOManager(base_path="/tmp/"),
         },
@@ -553,7 +553,7 @@ def new_io_manager() -> None:
             return read_csv(self._get_path(context.asset_key))
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={"io_manager": MyIOManager(root_path="/tmp/")},
     )
 
@@ -669,7 +669,7 @@ def with_complex_state_example() -> None:
         def query(self, body: str):
             ...
 
-    @contextmanager
+    @contextmanager  # type: ignore
     def get_database_connection(username: str, password: str):
         ...
 

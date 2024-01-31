@@ -70,7 +70,9 @@ def _id_range_for_time(start: int, end: int, hn_client: HNClient):
     min_item_id = hn_client.min_item_id()
 
     start_id = binary_search_nearest_left(_get_item_timestamp, min_item_id, max_item_id, start)
-    end_id = binary_search_nearest_right(_get_item_timestamp, min_item_id, max_item_id, end)
+    end_id = check.not_none(
+        binary_search_nearest_right(_get_item_timestamp, min_item_id, max_item_id, end)
+    )
 
     start_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(start_id), tz=timezone.utc))
     end_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(end_id), tz=timezone.utc))

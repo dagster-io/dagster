@@ -1173,7 +1173,7 @@ class ExternalAssetNode(
             ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
-            ("op_names", Optional[Sequence[str]]),
+            ("op_names", Sequence[str]),
             ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),

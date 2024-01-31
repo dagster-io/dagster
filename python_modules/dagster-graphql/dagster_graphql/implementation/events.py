@@ -335,9 +335,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneHandledOutputEvent(
             output_name=data.output_name,
             manager_key=data.manager_key,
-            metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata  # type: ignore
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.event_specific_data.metadata),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOADED_INPUT:

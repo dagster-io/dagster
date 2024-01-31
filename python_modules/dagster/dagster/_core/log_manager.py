@@ -31,7 +31,7 @@ class IDagsterMeta(Protocol):
 # `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
 # `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
 # defined via `extra`.
-class DagsterLogRecord(logging.LogRecord, IDagsterMeta):  # type: ignore
+class DagsterLogRecord(logging.LogRecord, IDagsterMeta):
     pass
 
 

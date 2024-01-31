@@ -478,12 +478,15 @@ class AirbyteResource(BaseAirbyteResource):
 
     def get_source_definition_by_name(self, name: str) -> Optional[str]:
         name_lower = name.lower()
-        definitions = self.make_request_cached(endpoint="/source_definitions/list", data={})
+        definitions = check.not_none(
+            self.make_request_cached(endpoint="/source_definitions/list", data={})
+        )
+        source_definitions = cast(List[Dict[str, Any]], definitions["sourceDefinitions"])
 
         return next(
             (
                 definition["sourceDefinitionId"]
-                for definition in definitions["sourceDefinitions"]
+                for definition in source_definitions
                 if definition["name"].lower() == name_lower
             ),
             None,

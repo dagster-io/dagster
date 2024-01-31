@@ -1,5 +1,7 @@
 from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Set, Tuple, Union
 
+from typing_extensions import TypeAlias
+
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._config import UserConfigSchema
@@ -28,8 +30,8 @@ from .asset_decorator import (
 )
 from .op_decorator import _Op
 
-AssetCheckFunctionReturn = AssetCheckResult
-AssetCheckFunction = Callable[..., AssetCheckFunctionReturn]
+AssetCheckFunctionReturn: TypeAlias = AssetCheckResult
+AssetCheckFunction: TypeAlias = Callable[..., AssetCheckFunctionReturn]
 
 
 def _build_asset_check_input(

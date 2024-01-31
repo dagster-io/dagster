@@ -571,7 +571,7 @@ def reconcile_connections_post(
             # Enable or disable basic normalization based on config
             normalization_operation_id = reconcile_normalization(
                 res,
-                existing_connections.get("name", {}).get("connectionId"),
+                existing_connections.get("name", {}).get("connectionId"),  # type: ignore  # (bad stubs)
                 destination,
                 config_conn.normalize_data,
                 workspace_id,

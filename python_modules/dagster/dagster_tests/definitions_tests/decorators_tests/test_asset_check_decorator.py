@@ -40,7 +40,7 @@ def execute_assets_and_checks(
 def test_asset_check_decorator():
     @asset_check(asset="asset1", description="desc")
     def check1():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert check1.name == "check1"
     assert check1.description == "desc"
@@ -50,7 +50,7 @@ def test_asset_check_decorator():
 def test_asset_check_decorator_name():
     @asset_check(asset="asset1", description="desc", name="check1")
     def _check():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert _check.name == "check1"
 
@@ -62,7 +62,7 @@ def test_asset_check_with_prefix():
 
     @asset_check(asset=asset1)
     def my_check():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
@@ -74,7 +74,7 @@ def test_asset_check_input_with_prefix():
 
     @asset_check(asset=asset1)
     def my_check(asset1):
-        ...
+        return AssetCheckResult(passed=True)
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
@@ -400,7 +400,7 @@ def test_definitions_same_name_different_asset():
     def make_check_for_asset(asset_key: str):
         @asset_check(asset=asset_key)
         def check1(context: AssetExecutionContext):
-            ...
+            return AssetCheckResult(passed=True)
 
         return check1
 
@@ -411,7 +411,7 @@ def test_definitions_same_asset_different_name():
     def make_check(check_name: str):
         @asset_check(asset="asset1", name=check_name)
         def _check(context: AssetExecutionContext):
-            ...
+            return AssetCheckResult(passed=True)
 
         return _check
 

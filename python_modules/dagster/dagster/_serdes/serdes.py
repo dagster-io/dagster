@@ -20,6 +20,7 @@ from enum import Enum
 from functools import partial
 from inspect import Parameter, signature
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -31,7 +32,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -52,15 +52,14 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 
+if TYPE_CHECKING:
+    # There is no actual class backing Dataclasses, _typeshed provides this
+    # protocol.
+    from _typeshed import DataclassInstance
+
 ###################################################################################################
 # Types
 ###################################################################################################
-
-
-# dataclasses don't have a backing class, so use a Protocol to type them
-class DataclassProtocol(Protocol):
-    __dict__: Mapping[str, Any]
-    __dataclass_fields__: Dict[str, dataclasses.Field]
 
 
 JsonSerializableValue: TypeAlias = Union[
@@ -83,7 +82,7 @@ PackableValue: TypeAlias = Union[
     None,
     NamedTuple,
     pydantic.BaseModel,
-    DataclassProtocol,
+    "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
@@ -99,7 +98,7 @@ UnpackedValue: TypeAlias = Union[
     None,
     NamedTuple,
     pydantic.BaseModel,
-    DataclassProtocol,
+    "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
@@ -655,7 +654,7 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
         return list(signature(self.klass.__new__).parameters.keys())
 
 
-T_Dataclass = TypeVar("T_Dataclass", bound=DataclassProtocol, default=DataclassProtocol)
+T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
 
 
 class DataclassSerializer(ObjectSerializer[T_Dataclass]):
@@ -760,7 +759,7 @@ def pack_value(
         Set[PackableValue],
         FrozenSet[PackableValue],
         NamedTuple,
-        DataclassProtocol,
+        "DataclassInstance",
         pydantic.BaseModel,
         Enum,
     ],
@@ -959,7 +958,7 @@ class UnknownSerdesValue:
         self.value = value
 
 
-def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext):
+def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
     if "__class__" in val:
         klass_name = cast(str, val["__class__"])
         if not whitelist_map.has_object_deserializer(klass_name):
@@ -998,7 +997,9 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
 
     if "__mapping_items__" in val:
         return {
-            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            cast(Any, _unpack_value(k, whitelist_map, context)): _unpack_value(
+                v, whitelist_map, context
+            )
             for k, v in val["__mapping_items__"]
         }
 

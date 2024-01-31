@@ -133,9 +133,7 @@ setup(
             "tox==3.25.0",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
-        "mypy": [
-            "mypy==0.991",
-        ],
+        "mypy": ["mypy==1.8.0"],
         "pyright": [
             "pyright==1.1.349",
             ### Stub packages
