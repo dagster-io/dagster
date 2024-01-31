@@ -4,18 +4,18 @@
 
 ### New
 
+- Added support for the 3.0 release of the `pendulum` library, for Python versions 3.9 and higher.
+- Performance improvements when starting run worker processes or step worker processes for runs in code locations with a large number of jobs.
+- `AllPartitionMapping` now supports mapping to downstream partitions, enabling asset backfills with these dependencies. Thanks [@craustin](https://github.com/craustin)!
+- [asset checks][experimental] `@asset_check` has new fields `additional_deps` and `additional_ins` to allow dependencies on assets other than the asset being checked.
 - [ui] Asset graph group nodes now show status counts.
   - [dagster-snowflake] The Snowflake I/O Manager now has more specific error handling when a table doesn’t exist.
 - [ui] [experimental] A new experimental UI for the auto-materialize history of a specific asset has been added. This view can be enabled under your user settings by setting “Use new asset auto-materialize history page”.
 - [ui] Command clicking on an asset group will now select or deselect all assets in that group.
-- Added support for the 3.0 release of the `pendulum` library, for Python versions 3.9 and higher.
-- Performance improvements when starting run worker processes or step worker processes for runs in code locations with a large number of jobs.
-- `AllPartitionMapping` now supports mapping to downstream partitions, enabling asset backfills with these dependencies. Thanks [@craustin](https://github.com/craustin)!
 - [dagster-k8s] Added the ability to customize resource limits for initContainers used by Dagster system components in the Dagster Helm chart. Thanks **[@MattyKuzyk](https://github.com/MattyKuzyk)**!
 - [dagster-k8s] Added the ability to specify additional containers and initContainers in code locations in the Helm chart. Thanks **[@craustin](https://github.com/craustin)**!
 - [dagster-k8s] Explicitly listed the set of RBAC permissions used by the agent Helm chart role instead of using a wildcard. Thanks **[@easontm](https://github.com/easontm)**!
 - [dagster-dbt] Support for `dbt-core==1.4.*` is now removed because [the version has reached end-of-life](https://docs.getdbt.com/docs/dbt-versions/core).
-- [asset checks][experimental] `@asset_check` has new fields `additional_deps` and `additional_ins` to allow dependencies on assets other than the asset being checked.
 
 ### Bugfixes
 
