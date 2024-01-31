@@ -393,7 +393,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                         "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
                     }
                 )
-                else []
+                else (
+                    [AvailablePythonVersion.V3_8]  # pendulum 3 not supported on python 3.8
+                    if tox_factor in {"scheduler_tests", "definitions_tests"}
+                    else []
+                )
             )
         ),
     ),
