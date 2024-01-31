@@ -322,17 +322,24 @@ class UPathIOManager(MemoizableIOManager):
 
         objs = {}
 
+        def _load_partition_from_path_or_none(context, partition_key, path, backcompat_path) -> Any:
+            if self._load_none_based_on_tags(context, partition_key=partition_key):
+                return None
+            return self._load_partition_from_path(
+                context,
+                partition_key,
+                path,
+                backcompat_path,
+            )
+
         if not inspect.iscoroutinefunction(self.load_from_path):
             for partition_key in context.asset_partition_keys:
-                if self._load_none_based_on_tags(context, partition_key=partition_key):
-                    obj = None
-                else:
-                    obj = self._load_partition_from_path(
-                        context,
-                        partition_key,
-                        paths[partition_key],
-                        backcompat_paths.get(partition_key),
-                    )
+                obj = _load_partition_from_path_or_none(
+                    context,
+                    partition_key=partition_key,
+                    path=paths[partition_key],
+                    backcompat_path=backcompat_paths.get(partition_key),
+                )
                 if obj is not None:  # in case some partitions were skipped
                     objs[partition_key] = obj
             return objs
@@ -343,18 +350,6 @@ class UPathIOManager(MemoizableIOManager):
                 loop = asyncio.get_running_loop()
 
                 tasks = []
-
-                def _load_partition_from_path_or_none(
-                    context, partition_key, path, backcompat_path
-                ) -> Any:
-                    if self._load_none_based_on_tags(context, partition_key=partition_key):
-                        return None
-                    return self._load_partition_from_path(
-                        context,
-                        partition_key,
-                        path,
-                        backcompat_path,
-                    )
 
                 for partition_key in context.asset_partition_keys:
                     tasks.append(
