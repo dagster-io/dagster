@@ -3,7 +3,6 @@ import re
 import pytest
 from dagster import (
     AssetCheckResult,
-    AssetCheckSeverity,
     AssetCheckSpec,
     AssetKey,
     AssetOut,
@@ -222,12 +221,8 @@ def test_asset_check_fails_downstream_still_executes():
     assert not check_eval.passed
 
 
-def test_error_severity_skip_downstream():
-    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
-
-    @asset(
-        check_specs=[AssetCheckSpec("check1", asset="asset1", severity=AssetCheckSeverity.ERROR)]
-    )
+def test_blocking_check_skips_downstream():
+    @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", blocking=True)])
     def asset1():
         yield Output(5)
         yield AssetCheckResult(passed=False)
@@ -247,11 +242,11 @@ def test_error_severity_skip_downstream():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
     error = result.failure_data_for_node("asset1").error
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 
@@ -331,6 +326,48 @@ def test_multi_asset_no_result_for_check():
         ),
     ):
         materialize(assets=[asset_1_and_2])
+
+
+def test_multi_asset_blocking_check_skips_downstream():
+    @multi_asset(
+        outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
+        check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True)],
+    )
+    def asset_1_and_2():
+        yield Output(None, output_name="one")
+        yield Output(None, output_name="two")
+        yield AssetCheckResult(check_name="check1", passed=False)
+
+    @asset(deps=[AssetKey(["asset1", "one"])])
+    def asset3():
+        pass
+
+    @asset(deps=[AssetKey(["asset2", "two"])])
+    def asset4():
+        pass
+
+    result = materialize(assets=[asset_1_and_2, asset3, asset4], raise_on_error=False)
+    assert not result.success
+
+    # note: currently asset4 won't run because asset_1_and_2 failed, but ideally it would run
+    # because only the check on asset1 failed.
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 2
+    assert materialization_events[0].asset_key == AssetKey(["asset1", "one"])
+    assert materialization_events[1].asset_key == AssetKey(["asset2", "two"])
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
+    assert check_eval.check_name == "check1"
+    assert not check_eval.passed
+
+    error = result.failure_data_for_node("asset_1_and_2").error
+    assert error.message.startswith(
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1/one'"
+        " failed with ERROR severity."
+    )
 
 
 def test_result_missing_asset_key():

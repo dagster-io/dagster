@@ -91,10 +91,11 @@ def _build_asset_check_input(
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
-    additional_ins: Optional[Mapping[str, AssetIn]] = None,
-    additional_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    blocking: bool = False,
+    additional_ins: Optional[Mapping[str, AssetIn]] = None,
+    additional_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -107,6 +108,12 @@ def asset_check(
     Args:
         asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The
             asset that the check applies to.
+        name (Optional[str]): The name of the check. If not specified, the name of the decorated
+            function will be used. Checks for the same asset must have unique names.
+        description (Optional[str]): The description of the check.
+        blocking (bool): When enabled, any assets downstream
+            of `asset` will wait for this check before executing. If the check fails with
+            severity `AssetCheckSeverity.ERROR`, then the downstream assets won't execute.
         additional_ins (Optional[Mapping[str, AssetIn]]): A mapping from input name to
             information about the input. These inputs will apply to the underlying op that
             executes the check. These should not include the `asset` parameter, which is
@@ -115,9 +122,6 @@ def asset_check(
             dependencies, but do not correspond to a parameter of the decorated function. These
             dependencies will apply to the underlying op that executes the check. These should not
             include the `asset` parameter, which is always included as a dependency.
-        name (Optional[str]): The name of the check. If not specified, the name of the decorated
-            function will be used. Checks for the same asset must have unique names.
-        description (Optional[str]): The description of the check.
         required_resource_keys (Optional[Set[str]]): A set of keys for resources that are required
             by the function that execute the check. These can alternatively be specified by
             including resource-typed parameters in the function signature.
@@ -192,6 +196,7 @@ def asset_check(
             description=description,
             asset=asset_key,
             additional_deps=additional_ins_and_deps,
+            blocking=blocking,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
