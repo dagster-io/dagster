@@ -572,6 +572,9 @@ def mark_sensor_state_for_tick(
                 cursor=instigator_data.cursor if instigator_data else None,
                 last_tick_start_timestamp=now.timestamp(),
                 sensor_type=external_sensor.sensor_type,
+                last_sensor_start_timestamp=instigator_data.last_sensor_start_timestamp
+                if instigator_data
+                else None,
             )
         )
     )
