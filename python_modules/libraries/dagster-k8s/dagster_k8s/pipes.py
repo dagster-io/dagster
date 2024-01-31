@@ -195,6 +195,7 @@ class _PipesK8sClient(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
+        wait_for_state: WaitForPodState = WaitForPodState.Terminated,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -270,7 +271,7 @@ class _PipesK8sClient(PipesClient):
                 client.wait_for_pod(
                     pod_name,
                     namespace,
-                    wait_for_state=WaitForPodState.Terminated,
+                    wait_for_state=wait_for_state,
                     wait_time_between_attempts=self.poll_interval,
                 )
             finally:
