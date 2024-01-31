@@ -242,9 +242,14 @@ class AssetDaemonContext:
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
 
-            (evaluation_state, expected_data_time) = self.evaluate_asset(
-                asset_key, evaluation_state_by_key, expected_data_time_mapping
-            )
+            try:
+                (evaluation_state, expected_data_time) = self.evaluate_asset(
+                    asset_key, evaluation_state_by_key, expected_data_time_mapping
+                )
+            except Exception as e:
+                raise Exception(
+                    f"Error while evaluating conditions for asset {asset_key.to_user_string()}"
+                ) from e
 
             num_requested = evaluation_state.true_subset.size
             log_fn = self._logger.info if num_requested > 0 else self._logger.debug

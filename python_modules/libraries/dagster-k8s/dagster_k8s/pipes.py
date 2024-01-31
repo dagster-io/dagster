@@ -144,7 +144,7 @@ class _PipesK8sClient(PipesClient):
 
         if load_incluster_config:
             check.invariant(
-                self.kube_context is None and self.kubeconfig_file is None,
+                kube_context is None and kubeconfig_file is None,
                 "kubeconfig_file and kube_context should not be set when load_incluster_config is"
                 " True ",
             )

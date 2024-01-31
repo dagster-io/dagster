@@ -35,7 +35,10 @@ the asset health bar you see is a flattened representation of the health of all 
 "show per-asset health" button beneath.
 
 */
-export function mergedAssetHealth(assetHealth: PartitionHealthData[]): PartitionHealthDataMerged {
+export function mergedAssetHealth(
+  assetHealth: PartitionHealthData[],
+  skipDimensionLengthsMatchingCheck: boolean = false,
+): PartitionHealthDataMerged {
   if (!assetHealth.length) {
     return {
       dimensions: [],
@@ -56,7 +59,8 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
       h.dimensions.every(
         (dim, idx) => dim.partitionKeys.length === dimensions[idx]!.partitionKeys.length,
       ),
-    )
+    ) &&
+    !skipDimensionLengthsMatchingCheck
   ) {
     throw new Error(
       'Attempting to show unified asset health for assets with dimension of different lengths',

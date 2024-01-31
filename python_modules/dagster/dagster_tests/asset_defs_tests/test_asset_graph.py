@@ -42,7 +42,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 
 
 def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
@@ -195,7 +195,7 @@ def test_get_parent_partitions_non_default_partition_mapping(asset_graph_from_as
 
     asset_graph = asset_graph_from_assets([parent, child])
 
-    with pendulum.test(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
+    with pendulum_freeze_time(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
         with instance_for_test() as instance:
             current_time = pendulum.now("UTC")
 

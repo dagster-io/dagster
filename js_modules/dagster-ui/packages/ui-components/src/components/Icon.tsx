@@ -117,6 +117,7 @@ import replay from '../icon-svgs/replay.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import search from '../icon-svgs/search.svg';
+import send from '../icon-svgs/send.svg';
 import sensors from '../icon-svgs/sensors.svg';
 import settings from '../icon-svgs/settings.svg';
 import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
@@ -294,6 +295,7 @@ export const Icons = {
   replay,
   schema,
   search,
+  send,
   settings,
   settings_backup_restore,
   sort_by_alpha,

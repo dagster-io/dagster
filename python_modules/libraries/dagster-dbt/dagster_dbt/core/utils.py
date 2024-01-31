@@ -41,25 +41,15 @@ class DbtCliEvent(NamedTuple):
             else:
                 # in rare cases, the loaded json line may be a string rather than a dictionary
                 if isinstance(parsed_json_line, dict):
-                    message = parsed_json_line.get(
-                        # Attempt to get the message from the dbt-core==1.3.* format
+                    message = parsed_json_line.get("info", {}).get(
                         "msg",
-                        # Otherwise, try to get the message from the dbt-core==1.4.* format
-                        parsed_json_line.get("info", {}).get(
-                            "msg",
-                            # If all else fails, default to the whole line
-                            line,
-                        ),
+                        # If all else fails, default to the whole line
+                        line,
                     )
-                    log_level = parsed_json_line.get(
-                        # Attempt to get the log level from the dbt-core==1.3.* format
+                    log_level = parsed_json_line.get("info", {}).get(
                         "level",
-                        # Otherwise, try to get the message from the dbt-core==1.4.* format
-                        parsed_json_line.get("info", {}).get(
-                            "level",
-                            # If all else fails, default to the `debug` level
-                            "debug",
-                        ),
+                        # If all else fails, default to the `debug` level
+                        "debug",
                     )
         # attempt to parse log level out of raw line
         elif "Done." not in line:

@@ -731,11 +731,54 @@ class DagsterKubernetesClient:
 
         return False
 
+    def _get_job_status_str(self, job):
+        if not job.status:
+            return "Could not determine job status."
+
+        job_status = (
+            "Job status:"
+            + f"\n - start_time: {job.status.start_time.isoformat()}"
+            + f"\n - active={job.status.active or 'None'}"
+            + f"\n - succeeded={job.status.succeeded or 'None'}"
+            + f"\n - failed={job.status.failed or 'None'}"
+        )
+
+        return job_status
+
+    def get_job_debug_info(
+        self,
+        job_name: str,
+        namespace: str,
+    ) -> str:
+        jobs = self.batch_api.list_namespaced_job(
+            namespace=namespace, field_selector=f"metadata.name={job_name}"
+        ).items
+        job = jobs[0] if jobs else None
+
+        job_status_str = self._get_job_status_str(job) if job else f"Could not find job {job_name}"
+
+        event_strs = []
+
+        if job:
+            events = self.core_api.list_namespaced_event(
+                namespace=namespace,
+                field_selector=f"involvedObject.name={job_name}",
+            ).items
+            for event in events:
+                event_strs.append(f"{event.reason}: {event.message}")
+
+        return (
+            f"Debug information for job {job_name}:"
+            + f"\n\n{job_status_str}"
+            + "".join(["\n\n" + event_str for event_str in event_strs])
+        )
+
     def get_pod_debug_info(
         self,
         pod_name,
         namespace,
         pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
+        include_container_logs: Optional[bool] = True,
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
@@ -755,42 +798,45 @@ class DagsterKubernetesClient:
             else {}
         )
 
-        for container in pod.spec.containers if (pod and pod.spec and pod.spec.containers) else []:
-            container_name = container.name
-            log_str = ""
+        if include_container_logs:
+            for container in (
+                pod.spec.containers if (pod and pod.spec and pod.spec.containers) else []
+            ):
+                container_name = container.name
+                log_str = ""
 
-            container_status = container_statuses_by_name.get(container_name)
+                container_status = container_statuses_by_name.get(container_name)
 
-            if not container_status or not self._has_container_logs(container_status):
-                log_str = f"No logs for container '{container_name}'."
-            else:
-                try:
-                    pod_logs = self.retrieve_pod_logs(
-                        pod_name,
-                        namespace,
-                        container_name,
-                        tail_lines=25,
-                        timestamps=True,
-                    )
-                    # Remove trailing newline if present
-                    pod_logs = pod_logs[:-1] if pod_logs.endswith("\n") else pod_logs
-
-                    if "exec format error" in pod_logs:
-                        specific_warnings.append(
-                            f"Logs for container '{container_name}' contained `exec format error`, which usually means that your"
-                            " Docker image was built using the wrong architecture.\nTry rebuilding your"
-                            " docker image with the `--platform linux/amd64` flag set."
+                if not container_status or not self._has_container_logs(container_status):
+                    log_str = f"No logs for container '{container_name}'."
+                else:
+                    try:
+                        pod_logs = self.retrieve_pod_logs(
+                            pod_name,
+                            namespace,
+                            container_name,
+                            tail_lines=25,
+                            timestamps=True,
                         )
-                    log_str = (
-                        f"Last 25 log lines for container '{container_name}':\n{pod_logs}"
-                        if pod_logs
-                        else f"No logs for container '{container_name}'."
-                    )
+                        # Remove trailing newline if present
+                        pod_logs = pod_logs[:-1] if pod_logs.endswith("\n") else pod_logs
 
-                except kubernetes.client.rest.ApiException as e:
-                    log_str = f"Failure fetching pod logs for container '{container_name}': {e}"
+                        if "exec format error" in pod_logs:
+                            specific_warnings.append(
+                                f"Logs for container '{container_name}' contained `exec format error`, which usually means that your"
+                                " Docker image was built using the wrong architecture.\nTry rebuilding your"
+                                " docker image with the `--platform linux/amd64` flag set."
+                            )
+                        log_str = (
+                            f"Last 25 log lines for container '{container_name}':\n{pod_logs}"
+                            if pod_logs
+                            else f"No logs for container '{container_name}'."
+                        )
 
-            log_strs.append(log_str)
+                    except kubernetes.client.rest.ApiException as e:
+                        log_str = f"Failure fetching pod logs for container '{container_name}': {e}"
+
+                log_strs.append(log_str)
 
         if not K8S_EVENTS_API_PRESENT:
             warning_str = (

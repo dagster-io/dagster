@@ -368,15 +368,17 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
             "daemon_tests",
-            "definitions_tests_old_pendulum",
+            "definitions_tests",
+            "definitions_tests_pendulum_1",
+            "definitions_tests_pendulum_2",
             "general_tests",
             "general_tests_old_protobuf",
             "scheduler_tests",
-            "scheduler_tests_old_pendulum",
+            "scheduler_tests_pendulum_1",
+            "scheduler_tests_pendulum_2",
             "execution_tests",
             "storage_tests",
             "type_signature_tests",
-            "definitions_tests",
             "asset_defs_tests",
             "launcher_tests",
             "logging_tests",
@@ -391,7 +393,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                         "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
                     }
                 )
-                else []
+                else (
+                    [AvailablePythonVersion.V3_8]  # pendulum 3 not supported on python 3.8
+                    if tox_factor in {"scheduler_tests", "definitions_tests"}
+                    else []
+                )
             )
         ),
     ),
@@ -438,16 +444,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            "dbt_14X_legacy",
             "dbt_15X_legacy",
             "dbt_16X_legacy",
             "dbt_17X_legacy",
-            "dbt_14X",
             "dbt_15X",
             "dbt_16X",
             "dbt_17X",
-            "dbt_14X_pydantic1",
-            "dbt_14X_legacy_pydantic1",
+            "dbt_pydantic1",
+            "dbt_legacy_pydantic1",
         ],
     ),
     PackageSpec(

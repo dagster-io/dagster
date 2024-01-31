@@ -9,7 +9,7 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-1. Install Python 3.8 or above.
+1. Install a version of Python that Dagster supports. <DagsterVersion />
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
@@ -74,7 +74,7 @@ Some notes on developing in Dagster:
 For development, run an instance of the webserver providing GraphQL service on a different port than the webapp, with any pipeline. For example:
 
 ```bash
-cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/
+cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/
 dagster-webserver -p 3333 -f complex_pipeline.py
 ```
 

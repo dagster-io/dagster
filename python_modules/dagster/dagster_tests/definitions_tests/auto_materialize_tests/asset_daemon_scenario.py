@@ -49,6 +49,7 @@ from dagster._core.definitions.asset_daemon_context import (
 )
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
+    backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -86,12 +87,12 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
-    _get_pre_sensor_auto_materialize_serialized_cursor,
+    _get_pre_sensor_auto_materialize_cursor,
     asset_daemon_cursor_from_instigator_serialized_cursor,
-    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
     get_current_evaluation_id,
 )
-from dagster._serdes.serdes import serialize_value
+from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -348,7 +349,7 @@ class AssetDaemonScenarioState(NamedTuple):
             # fake current_time on the scenario state
             return (self.current_time + (datetime.datetime.now() - start)).timestamp()
 
-        with pendulum.test(self.current_time), mock.patch("time.time", new=test_time_fn):
+        with pendulum_freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.assets,
@@ -392,9 +393,12 @@ class AssetDaemonScenarioState(NamedTuple):
     def _evaluate_tick_fast(
         self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
-        cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-            self.serialized_cursor, self.asset_graph
-        )
+        try:
+            cursor = deserialize_value(self.serialized_cursor, AssetDaemonCursor)
+        except DeserializationError:
+            cursor = backcompat_deserialize_asset_daemon_cursor_str(
+                self.serialized_cursor, self.asset_graph, 0
+            )
 
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             evaluation_id=cursor.evaluation_id + 1,
@@ -490,7 +494,6 @@ class AssetDaemonScenarioState(NamedTuple):
                     workspace_context,
                     threadpool_executor=self.threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
-                    last_submit_times={},
                     debug_crash_flags={},
                     sensor_state_lock=threading.Lock(),
                 )
@@ -512,9 +515,8 @@ class AssetDaemonScenarioState(NamedTuple):
                     self.asset_graph,
                 )
             else:
-                raw_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(self.instance)
-                new_cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
-                    raw_cursor, self.asset_graph
+                new_cursor = _get_pre_sensor_auto_materialize_cursor(
+                    self.instance, self.asset_graph
                 )
             new_run_requests = [
                 run_request(
@@ -541,7 +543,8 @@ class AssetDaemonScenarioState(NamedTuple):
         self.logger.critical("********************************")
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
-        with pendulum.test(self.current_time):
+
+        with pendulum_freeze_time(self.current_time):
             if self.is_daemon:
                 (
                     new_run_requests,

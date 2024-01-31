@@ -8,12 +8,14 @@ from typing import List
 
 import pytest
 from dagster import (
+    AssetCheckResult,
     AssetKey,
     AssetsDefinition,
     DynamicOut,
     DynamicOutput,
     Failure,
     Field,
+    Output,
     ResourceDefinition,
     RetryPolicy,
     RetryRequested,
@@ -29,6 +31,8 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -69,7 +73,7 @@ def make_run_config(scratch_dir: str, resource_set: str):
     else:
         step_launcher_resource_keys = ["second_step_launcher"]
     return deep_merge_dicts(
-        RUN_CONFIG_BASE,
+        RUN_CONFIG_BASE if resource_set != "no_base" else {},
         {
             "resources": merge_dicts(
                 {"io_manager": {"config": {"base_dir": scratch_dir}}},
@@ -301,14 +305,42 @@ def define_sleepy_job():
     return sleepy_job
 
 
-def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> IStepContext:
+def define_asset_check_job():
+    @asset(
+        check_specs=[
+            AssetCheckSpec(
+                asset="asset1",
+                name="check1",
+            )
+        ],
+        resource_defs={
+            "second_step_launcher": local_external_step_launcher,
+            "io_manager": fs_io_manager,
+        },
+    )
+    def asset1():
+        yield Output(1)
+        yield AssetCheckResult(passed=True)
+
+    return define_asset_job(name="asset_check_job", selection=[asset1]).resolve(
+        asset_graph=AssetGraph.from_assets([asset1])
+    )
+
+
+def initialize_step_context(
+    scratch_dir: str,
+    instance: DagsterInstance,
+    job_def_fn=define_basic_job_external,
+    resource_set="external",
+    step_name="return_two",
+) -> IStepContext:
     run = DagsterRun(
         job_name="foo_job",
         run_id=str(uuid.uuid4()),
-        run_config=make_run_config(scratch_dir, "external"),
+        run_config=make_run_config(scratch_dir, resource_set),
     )
 
-    recon_job = reconstructable(define_basic_job_external)
+    recon_job = reconstructable(job_def_fn)
 
     plan = create_execution_plan(recon_job, run.run_config)
 
@@ -325,7 +357,7 @@ def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> ISte
     job_context = initialization_manager.get_context()
 
     step_context = job_context.for_step(
-        plan.get_step_by_key("return_two"),  # type: ignore
+        plan.get_step_by_key(step_name),  # type: ignore
         KnownExecutionState(),
     )
     return step_context
@@ -354,6 +386,25 @@ def test_local_external_step_launcher():
     with tempfile.TemporaryDirectory() as tmpdir:
         with DagsterInstance.ephemeral() as instance:
             step_context = initialize_step_context(tmpdir, instance)
+
+            step_launcher = LocalExternalStepLauncher(tmpdir)
+            events = list(step_launcher.launch_step(step_context))
+            event_types = [event.event_type for event in events]
+            assert DagsterEventType.STEP_START in event_types
+            assert DagsterEventType.STEP_SUCCESS in event_types
+            assert DagsterEventType.STEP_FAILURE not in event_types
+
+
+def test_asset_check_step_launcher():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with DagsterInstance.ephemeral() as instance:
+            step_context = initialize_step_context(
+                tmpdir,
+                instance,
+                job_def_fn=define_asset_check_job,
+                resource_set="no_base",
+                step_name="asset1",
+            )
 
             step_launcher = LocalExternalStepLauncher(tmpdir)
             events = list(step_launcher.launch_step(step_context))

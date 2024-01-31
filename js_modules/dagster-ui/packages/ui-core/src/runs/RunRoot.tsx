@@ -5,6 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
+import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
 import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
@@ -135,14 +136,11 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetKeyTagCollection
-                  useTags
-                  assetKeys={
-                    isHiddenAssetGroupJob(run.pipelineName)
-                      ? assetKeysForRun(run)
-                      : run.assets.map((a) => a.key)
-                  }
-                />
+                {isHiddenAssetGroupJob(run.pipelineName) ? (
+                  <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />
+                ) : (
+                  <RunAssetTags run={run} />
+                )}
                 <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (

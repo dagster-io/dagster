@@ -70,7 +70,7 @@ from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"))
 def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
-    partition_date_str = context.asset_partition_key_for_output()
+    partition_date_str = context.partition_key
 
     url = f"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={partition_date_str}"
     target_location = f"nasa/{partition_date_str}.csv"
@@ -208,11 +208,15 @@ from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
 def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
-    partition_date_str = context.asset_partition_key_for_output()
+    partition_date_str = context.partition_key
     return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
 ```
 
 If using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
+
+### Recommended partition limits
+
+We recommend limiting the number of partitions for each asset to 25,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
 
 ---
 
