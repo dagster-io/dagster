@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -278,8 +279,8 @@ def test_materialize_tags():
 
 def test_materialize_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], partition_key="2022-02-02", instance=instance)

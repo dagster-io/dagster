@@ -244,8 +244,8 @@ def test_materialize_multi_asset():
 
 def test_materialize_to_memory_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     result = materialize_to_memory([the_asset], partition_key="2022-02-02")
     assert result.success

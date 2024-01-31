@@ -1259,8 +1259,8 @@ def test_partitions_time_window_asset_invocation():
     @asset(
         partitions_def=partitions_def,
     )
-    def partitioned_asset(context):
-        start, end = context.asset_partitions_time_window_for_output()
+    def partitioned_asset(context: AssetExecutionContext):
+        start, end = context.partition_time_window
         assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
         assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
 
@@ -1279,18 +1279,21 @@ def test_multipartitioned_time_window_asset_invocation():
     )
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context):
+    def my_asset(context: AssetExecutionContext):
+        time_partition = get_time_partitions_def(partitions_def)
+        if time_partition is None:
+            assert False, "partitions def does not have a time component"
         time_window = TimeWindow(
             start=pendulum.instance(
                 datetime(year=2020, month=1, day=1),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
             end=pendulum.instance(
                 datetime(year=2020, month=1, day=2),
-                tz=get_time_partitions_def(partitions_def).timezone,
+                tz=time_partition.timezone,
             ),
         )
-        assert context.asset_partitions_time_window_for_output() == time_window
+        assert context.partition_time_window == time_window
         return 1
 
     context = build_asset_context(
@@ -1306,12 +1309,12 @@ def test_multipartitioned_time_window_asset_invocation():
     )
 
     @asset(partitions_def=partitions_def)
-    def static_multipartitioned_asset(context):
+    def static_multipartitioned_asset(context: AssetExecutionContext):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="with a single time dimension",
         ):
-            context.asset_partitions_time_window_for_output()
+            _ = context.partition_time_window
 
     context = build_asset_context(
         partition_key="a|a",

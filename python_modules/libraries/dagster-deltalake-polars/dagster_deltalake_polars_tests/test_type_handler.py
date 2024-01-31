@@ -4,6 +4,7 @@ from datetime import datetime
 import polars as pl
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -171,10 +172,8 @@ def test_not_supported_type(tmp_path, io_manager):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context) -> pl.DataFrame:
-    partition = datetime.strptime(
-        context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
-    ).date()
+def daily_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
     value = context.op_config["value"]
 
     return pl.DataFrame(
@@ -265,7 +264,7 @@ def test_load_partitioned_asset(tmp_path, io_manager):
     config_schema={"value": str},
 )
 def static_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
+    partition = context.partition_key
     value = context.op_config["value"]
 
     return pl.DataFrame(
@@ -415,8 +414,8 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
     metadata={"partition_expr": "fruit"},
     config_schema={"value": str},
 )
-def dynamic_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
+def dynamic_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = context.partition_key
     value = context.op_config["value"]
     return pl.DataFrame(
         {

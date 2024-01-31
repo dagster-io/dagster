@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
@@ -173,10 +174,8 @@ def test_not_supported_type(tmp_path, io_manager):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context) -> pd.DataFrame:
-    partition = datetime.strptime(
-        context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
-    ).date()
+def daily_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    partition = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
     value = context.op_config["value"]
 
     return pd.DataFrame(
@@ -267,7 +266,7 @@ def test_load_partitioned_asset(tmp_path, io_manager):
     config_schema={"value": str},
 )
 def static_partitioned(context) -> pd.DataFrame:
-    partition = context.asset_partition_key_for_output()
+    partition = context.partition_key
     value = context.op_config["value"]
 
     return pd.DataFrame(
@@ -397,8 +396,8 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
     metadata={"partition_expr": "fruit"},
     config_schema={"value": str},
 )
-def dynamic_partitioned(context) -> pd.DataFrame:
-    partition = context.asset_partition_key_for_output()
+def dynamic_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    partition = context.partition_key
     value = context.op_config["value"]
     return pd.DataFrame(
         {
@@ -471,8 +470,10 @@ def test_self_dependent_asset(tmp_path, io_manager):
         },
         config_schema={"value": str, "last_partition_key": str},
     )
-    def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
-        key = datetime.strptime(context.asset_partition_key_for_output(), DELTA_DATE_FORMAT).date()
+    def self_dependent_asset(
+        context: AssetExecutionContext, self_dependent_asset: pd.DataFrame
+    ) -> pd.DataFrame:
+        key = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
 
         if self_dependent_asset.num_rows > 0:
             assert self_dependent_asset.num_rows == 3

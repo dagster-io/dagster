@@ -3,6 +3,7 @@ from typing import Callable, Optional, Sequence
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     DagsterUnknownPartitionError,
     IOManager,
@@ -147,14 +148,14 @@ def test_dynamic_partitions_mapping():
     partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     @asset(partitions_def=partitions_def)
-    def dynamic1(context):
-        assert context.asset_partition_key_for_output() == "apple"
+    def dynamic1(context: AssetExecutionContext):
+        assert context.partition_key == "apple"
         return 1
 
     @asset(partitions_def=partitions_def)
-    def dynamic2(context, dynamic1):
+    def dynamic2(context: AssetExecutionContext, dynamic1):
         assert context.asset_partition_keys_for_input("dynamic1") == ["apple"]
-        assert context.asset_partition_key_for_output() == "apple"
+        assert context.partition_key == "apple"
         return 1
 
     @asset
