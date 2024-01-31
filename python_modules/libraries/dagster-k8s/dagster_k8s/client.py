@@ -525,7 +525,7 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time=None,
-        ignore_containers: Set | None = None,
+        ignore_containers: Optional[Set] = None,
     ):
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
