@@ -117,11 +117,15 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         write_pandas(
             conn=connection,
             df=with_uppercase_cols,
+            # originally we used pd.to_sql with pd_writer method to write the df to snowflake. pd_writer
+            # forced the table name to be uppercase, so we mimic that behavior here for feature parity
+            # in the future we could allow non-uppercase table names
             table_name=table_slice.table.upper(),
             schema=table_slice.schema,
             database=table_slice.database,
             auto_create_table=True,
             use_logical_type=True,
+            quote_identifiers=False,  # In the future we can set this to True to allow lowercase identifiers
         )
 
         return {
