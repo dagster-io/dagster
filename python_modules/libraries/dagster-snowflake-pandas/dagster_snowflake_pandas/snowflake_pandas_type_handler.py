@@ -36,7 +36,6 @@ def _convert_timestamp_to_string(
     snowflake.
     """
     column_name = str(s.name)
-    # if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM": # m: timedelta. M: datetime
     if issubclass(s.dtype.type, (np.datetime64, np.timedelta64)):
         if column_types:
             if "VARCHAR" not in column_types[column_name]:
@@ -67,24 +66,6 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
             return s
     else:
         return s
-
-
-def _add_missing_timezone(
-    s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
-) -> pd.Series:
-    column_name = str(s.name)
-    # if isinstance(s.dtype, np.dtype) and s.dtype.kind in "mM": # m: timedelta. M: datetime
-    if issubclass(s.dtype.type, (np.datetime64, np.timedelta64)):
-        if column_types:
-            if "VARCHAR" in column_types[column_name]:
-                raise DagsterInvariantViolationError(
-                    f"Snowflake I/O manager: The Snowflake column {column_name.upper()} in table"
-                    f" {table_name} is of type {column_types[column_name]} and should be of type"
-                    f" TIMESTAMP to store the time data in dataframe column {column_name}. Please"
-                    " migrate this column to be of type TIMESTAMP_NTZ(9) to store time data."
-                )
-        return s.dt.tz_localize("UTC")
-    return s
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -132,19 +113,6 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 lambda x: _convert_timestamp_to_string(x, column_types, table_slice.table),
                 axis="index",
             )
-        # else:
-        #     with_uppercase_cols = with_uppercase_cols.apply(
-        #         lambda x: _add_missing_timezone(x, column_types, table_slice.table), axis="index"
-        #     )
-        # print("THIS IS THE DATA")
-        # print(with_uppercase_cols)
-        # with_uppercase_cols.to_sql(
-        #     table_slice.table,
-        #     con=connection.engine,
-        #     if_exists="append",
-        #     index=False,
-        #     method=pd_writer,
-        # )
 
         write_pandas(
             conn=connection,
