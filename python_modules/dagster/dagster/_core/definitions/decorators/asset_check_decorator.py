@@ -111,9 +111,10 @@ def asset_check(
         name (Optional[str]): The name of the check. If not specified, the name of the decorated
             function will be used. Checks for the same asset must have unique names.
         description (Optional[str]): The description of the check.
-        blocking (bool): When enabled, any assets downstream
-            of `asset` will wait for this check before executing. If the check fails with
-            severity `AssetCheckSeverity.ERROR`, then the downstream assets won't execute.
+        blocking (bool): When enabled, runs that include this check and any downstream assets that
+            depend on `asset` will wait for this check to complete before starting the downstream
+            assets. If the check fails with severity `AssetCheckSeverity.ERROR`, then the downstream
+            assets won't execute.
         additional_ins (Optional[Mapping[str, AssetIn]]): A mapping from input name to
             information about the input. These inputs will apply to the underlying op that
             executes the check. These should not include the `asset` parameter, which is
