@@ -409,7 +409,7 @@ class UPathIOManager(MemoizableIOManager):
     def _load_none_based_on_tags(
         self, context: InputContext, partition_key: Optional[str] = None
     ) -> bool:
-        if context.has_asset_key and context.step_context is not None:
+        if context.has_asset_key and context._step_context is not None:  # noqa: SLF001
             # If the upstream step is an asset and the output value was None, then there will
             # be a tag marking that. If that tag exists, we want to provide None to the
             # materializing asset.

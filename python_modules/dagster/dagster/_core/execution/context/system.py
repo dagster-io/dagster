@@ -64,6 +64,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
+    NONE_OUTPUT_TAG,
     PARTITION_NAME_TAG,
 )
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -1101,7 +1102,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # TODO: this needs to account for observations also
         event_type = DagsterEventType.ASSET_MATERIALIZATION
         tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
-            key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
+            key,
+            event_type,
+            [DATA_VERSION_TAG, NONE_OUTPUT_TAG],
+            asset_partitions=list(partition_keys),
         )
         # collect the tags on the latest AssetMaterialization for an asset/partition so that the
         # UPath I/O manager can handle loading None inputs
