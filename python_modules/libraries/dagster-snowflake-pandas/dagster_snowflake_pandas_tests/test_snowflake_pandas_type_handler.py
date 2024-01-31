@@ -92,18 +92,19 @@ def test_handle_output():
         resource_config={**resource_config, "time_data_to_string": False}
     )
 
-    metadata = handler.handle_output(
-        output_context,
-        TableSlice(
-            table="my_table",
-            schema="my_schema",
-            database="my_db",
-            columns=None,
-            partition_dimensions=[],
-        ),
-        df,
-        connection,
-    )
+    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler.write_pandas", MagicMock()):
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=[],
+            ),
+            df,
+            connection,
+        )
 
     assert metadata == {
         "dataframe_columns": MetadataValue.table_schema(
