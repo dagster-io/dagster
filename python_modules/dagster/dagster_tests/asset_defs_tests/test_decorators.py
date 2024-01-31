@@ -107,7 +107,7 @@ def test_asset_with_inputs_direct_call():
 def test_asset_with_config_schema():
     @asset(config_schema={"foo": int})
     def my_asset(context):
-        assert context.op_config["foo"] == 5
+        assert context.op_execution_context.op_config["foo"] == 5
 
     materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
 
@@ -118,7 +118,7 @@ def test_asset_with_config_schema():
 def test_multi_asset_with_config_schema():
     @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
     def my_asset(context):
-        assert context.op_config["foo"] == 5
+        assert context.op_execution_context.op_config["foo"] == 5
 
     materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
 

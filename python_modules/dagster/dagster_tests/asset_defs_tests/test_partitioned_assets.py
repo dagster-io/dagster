@@ -541,7 +541,7 @@ def test_job_config_with_asset_partitions():
 
     @asset(config_schema={"a": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["a"] == 5
+        assert context.op_execution_context.op_config["a"] == 5
         assert context.partition_key == "2020-01-01"
 
     the_job = define_asset_job(
@@ -563,7 +563,7 @@ def test_job_partitioned_config_with_asset_partitions():
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @daily_partitioned_config(start_date="2020-01-01")
@@ -582,7 +582,7 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @hourly_partitioned_config(start_date="2020-01-01-00:00")

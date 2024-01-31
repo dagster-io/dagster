@@ -1376,6 +1376,15 @@ ALTERNATE_EXPRESSIONS = {
     "get_tag": "context.run.tags.get(key)",
 }
 
+USE_OP_CONTEXT = [
+    "op_config",
+    "node_handle",
+    "op_handle",
+    "op",
+    "get_mapping_key",
+    "selected_output_names",
+]
+
 
 def _get_deprecation_kwargs(attr: str):
     deprecation_kwargs = {"breaking_version": "1.8.0"}
@@ -1390,6 +1399,11 @@ def _get_deprecation_kwargs(attr: str):
         deprecation_kwargs["additional_warn_text"] = (
             f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
             f" {ALTERNATE_EXPRESSIONS[attr]} instead."
+        )
+    elif attr in USE_OP_CONTEXT:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            f" context.op_execution_context.{attr} instead."
         )
 
     return deprecation_kwargs
@@ -1538,6 +1552,44 @@ class AssetExecutionContext(OpExecutionContext):
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
 
+    @deprecated(**_get_deprecation_kwargs("op_config"))
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_config(self) -> Any:
+        return self.op_execution_context.op_config
+
+    @deprecated(**_get_deprecation_kwargs("node_handle"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def node_handle(self) -> NodeHandle:
+        return self.op_execution_context.node_handle
+
+    @deprecated(**_get_deprecation_kwargs("op_handle"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_handle(self) -> NodeHandle:
+        return self.op_execution_context.op_handle
+
+    @deprecated(**_get_deprecation_kwargs("op"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def op(self) -> Node:
+        return self.op_execution_context.op
+
+    @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_mapping_key(self) -> Optional[str]:
+        return self.op_execution_context.get_mapping_key()
+
+    @deprecated(**_get_deprecation_kwargs("selected_output_names"))
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_output_names(self) -> AbstractSet[str]:
+        return self.op_execution_context.selected_output_names
+
     ########## pass-through to op context
 
     #### op related
@@ -1547,47 +1599,15 @@ class AssetExecutionContext(OpExecutionContext):
     def retry_number(self):
         return self.op_execution_context.retry_number
 
-    @public
-    @property
     @_copy_docs_from_op_execution_context
-    def op_config(self) -> Any:
-        return self.op_execution_context.op_config
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def node_handle(self) -> NodeHandle:
-        return self.op_execution_context.node_handle
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def op_handle(self) -> NodeHandle:
-        return self.op_execution_context.op_handle
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def op(self) -> Node:
-        return self.op_execution_context.op
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
 
     @public
     @property
     @_copy_docs_from_op_execution_context
     def op_def(self) -> OpDefinition:
         return self.op_execution_context.op_def
-
-    @_copy_docs_from_op_execution_context
-    def describe_op(self) -> str:
-        return self.op_execution_context.describe_op()
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def get_mapping_key(self) -> Optional[str]:
-        return self.op_execution_context.get_mapping_key()
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def selected_output_names(self) -> AbstractSet[str]:
-        return self.op_execution_context.selected_output_names
 
     #### job related
 

@@ -175,7 +175,7 @@ def test_not_supported_type(tmp_path, io_manager):
 )
 def daily_partitioned(context: AssetExecutionContext) -> pa.Table:
     partition = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
 
     return pa.Table.from_pydict(
         {
@@ -266,7 +266,7 @@ def test_load_partitioned_asset(tmp_path, io_manager):
 )
 def static_partitioned(context: AssetExecutionContext) -> pa.Table:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
 
     return pa.Table.from_pydict(
         {
@@ -328,7 +328,7 @@ def test_static_partitioned_asset(tmp_path, io_manager):
 def multi_partitioned(context) -> pa.Table:
     partition = context.partition_key.keys_by_dimension
     time_partition = datetime.strptime(partition["time"], DELTA_DATE_FORMAT).date()
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pa.Table.from_pydict(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
@@ -397,7 +397,7 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 )
 def dynamic_partitioned(context: AssetExecutionContext) -> pa.Table:
     partition = context.partition_key
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pa.Table.from_pydict(
         {
             "fruit": [partition, partition, partition],
@@ -476,10 +476,10 @@ def test_self_dependent_asset(tmp_path, io_manager):
 
         if self_dependent_asset.num_rows > 0:
             assert self_dependent_asset.num_rows == 3
-            # assert (self_dependent_asset["key"] == context.op_config["last_partition_key"]).all()
+            # assert (self_dependent_asset["key"] == context.op_execution_context.op_config["last_partition_key"]).all()
         else:
-            assert context.op_config["last_partition_key"] == "NA"
-        value = context.op_config["value"]
+            assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+        value = context.op_execution_context.op_config["value"]
         pd_df = pa.Table.from_pydict(
             {
                 "key": [key, key, key],

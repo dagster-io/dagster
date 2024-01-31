@@ -39,7 +39,7 @@ def test_basic_materialize_to_memory():
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     assert materialize_to_memory(
         [the_asset_reqs_config],
@@ -50,7 +50,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
         materialize_to_memory(
@@ -264,7 +264,7 @@ def test_materialize_tags():
 def test_materialize_to_memory_partition_key_and_run_config():
     @asset(config_schema={"value": str})
     def configurable(context):
-        assert context.op_config["value"] == "a"
+        assert context.op_execution_context.op_config["value"] == "a"
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
     def partitioned(context):
