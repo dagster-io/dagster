@@ -2,8 +2,8 @@ import os
 import random
 import string
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 from pathlib import Path
+from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import kubernetes
 from dagster import (
@@ -278,7 +278,9 @@ class _PipesK8sClient(PipesClient):
         return PipesClientCompletedInvocation(pipes_session)
 
 
-def _detect_current_namespace(kubeconfig_file: str, namespace_secret_path: Path = _NAMESPACE_SECRET_PATH) -> Optional[str]:
+def _detect_current_namespace(
+    kubeconfig_file: str, namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
+) -> Optional[str]:
     """Get the current in-cluster namespace when operating within the cluster.
 
     First attempt to read it from the `serviceaccount` secret or get it from the kubeconfig_file if it is possible.

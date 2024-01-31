@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_k8s.pipes import build_pod_body, _detect_current_namespace
+from dagster_k8s.pipes import _detect_current_namespace, build_pod_body
 
 
 def test_pod_building():
@@ -190,9 +190,11 @@ def test_pod_building():
             base_pod_meta=None,
         )
 
+
 def _kubeconfig(tmpdir: str, current_context: str) -> str:
     kubeconfig = Path(tmpdir) / "kubeconfig"
-    kubeconfig.write_text("""\
+    kubeconfig.write_text(
+        f"""\
 ---
 apiVersion: v1
 clusters:
@@ -218,24 +220,30 @@ users:
   user:
     client-certificate-data: deadbeef==
     client-key-data: deadbeef==
-""".format(current_context=current_context))
+"""
+    )
     return str(kubeconfig)
+
 
 @pytest.fixture
 def kubeconfig_dummy(tmpdir) -> str:
     return _kubeconfig(tmpdir, "ctx")
 
+
 @pytest.fixture
 def kubeconfig_with_namespace(tmpdir) -> str:
     return _kubeconfig(tmpdir, "ctx-with-namespace")
+
 
 def test_namespace_autodetect_fails(kubeconfig_dummy):
     got = _detect_current_namespace(kubeconfig_dummy)
     assert got is None
 
+
 def test_namespace_autodetect_from_kubeconfig_active_context(kubeconfig_with_namespace):
     got = _detect_current_namespace(kubeconfig_with_namespace)
     assert got == "my-namespace"
+
 
 def test_pipes_client_namespace_autodetection_from_secret(tmpdir, kubeconfig_dummy):
     namespace_secret_path = Path(tmpdir) / "namespace_secret"
