@@ -245,7 +245,10 @@ def run_cursor_sensor(context):
 
 
 @sensor(job_name="the_job")
-def start_skip_sensor(context):
+def start_skip_sensor(context: SensorEvaluationContext):
+    context.update_cursor(
+        str(context.last_sensor_start_time) if context.last_sensor_start_time else None
+    )
     # skips the first tick after a start
     if context.is_first_tick_since_sensor_start:
         return SkipReason()
@@ -3399,22 +3402,17 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
         start_skip_sensor = external_repo.get_external_sensor("start_skip_sensor")
         instance.start_sensor(start_skip_sensor)
         evaluate_sensors(workspace_context, executor)
-        validate_tick(
-            _get_last_tick(instance, start_skip_sensor),
-            start_skip_sensor,
-            freeze_datetime,
-            TickStatus.SKIPPED,
-        )
+        last_tick = _get_last_tick(instance, start_skip_sensor)
+        validate_tick(last_tick, start_skip_sensor, freeze_datetime, TickStatus.SKIPPED)
+        last_sensor_start_time = last_tick.tick_data.cursor
+        assert last_sensor_start_time
 
     freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
-        validate_tick(
-            _get_last_tick(instance, start_skip_sensor),
-            start_skip_sensor,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-        )
+        last_tick = _get_last_tick(instance, start_skip_sensor)
+        validate_tick(last_tick, start_skip_sensor, freeze_datetime, TickStatus.SUCCESS)
+        assert last_sensor_start_time == last_tick.cursor
 
     freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum_freeze_time(freeze_datetime):
@@ -3425,22 +3423,18 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
         )
         instance.start_sensor(start_skip_sensor)
         evaluate_sensors(workspace_context, executor)
-        validate_tick(
-            _get_last_tick(instance, start_skip_sensor),
-            start_skip_sensor,
-            freeze_datetime,
-            TickStatus.SKIPPED,
-        )
+        last_tick = _get_last_tick(instance, start_skip_sensor)
+        validate_tick(last_tick, start_skip_sensor, freeze_datetime, TickStatus.SKIPPED)
+        assert last_tick.cursor  # last sensor start time is still set
+        assert last_tick.cursor != last_sensor_start_time
+        last_sensor_start_time = last_tick.cursor
 
     freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum_freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context, executor)
-        validate_tick(
-            _get_last_tick(instance, start_skip_sensor),
-            start_skip_sensor,
-            freeze_datetime,
-            TickStatus.SUCCESS,
-        )
+        last_tick = _get_last_tick(instance, start_skip_sensor)
+        validate_tick(last_tick, start_skip_sensor, freeze_datetime, TickStatus.SUCCESS)
+        assert last_sensor_start_time == last_tick.cursor
 
 
 def _get_last_tick(instance, sensor):
