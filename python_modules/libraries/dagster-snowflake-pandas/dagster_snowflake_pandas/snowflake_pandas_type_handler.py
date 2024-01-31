@@ -8,20 +8,24 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
-from snowflake.connector.pandas_tools import pd_writer
+from snowflake.connector.pandas_tools import write_pandas
 
 
 def _table_exists(table_slice: TableSlice, connection):
-    tables = connection.execute(
-        f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
-        f" {table_slice.database}.{table_slice.schema}"
-    ).fetchall()
+    tables = (
+        connection.cursor()
+        .execute(
+            f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
+            f" {table_slice.database}.{table_slice.schema}"
+        )
+        .fetchall()
+    )
     return len(tables) > 0
 
 
 def _get_table_column_types(table_slice: TableSlice, connection) -> Optional[Mapping[str, str]]:
     if _table_exists(table_slice, connection):
-        schema_list = connection.execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
+        schema_list = connection.cursor().execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
         return {item[0]: item[1] for item in schema_list}
 
 
@@ -128,16 +132,28 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 lambda x: _convert_timestamp_to_string(x, column_types, table_slice.table),
                 axis="index",
             )
-        else:
-            with_uppercase_cols = with_uppercase_cols.apply(
-                lambda x: _add_missing_timezone(x, column_types, table_slice.table), axis="index"
-            )
-        with_uppercase_cols.to_sql(
-            table_slice.table,
-            con=connection.engine,
-            if_exists="append",
-            index=False,
-            method=pd_writer,
+        # else:
+        #     with_uppercase_cols = with_uppercase_cols.apply(
+        #         lambda x: _add_missing_timezone(x, column_types, table_slice.table), axis="index"
+        #     )
+        # print("THIS IS THE DATA")
+        # print(with_uppercase_cols)
+        # with_uppercase_cols.to_sql(
+        #     table_slice.table,
+        #     con=connection.engine,
+        #     if_exists="append",
+        #     index=False,
+        #     method=pd_writer,
+        # )
+
+        write_pandas(
+            conn=connection,
+            df=with_uppercase_cols,
+            table_name=table_slice.table.upper(),
+            schema=table_slice.schema,
+            database=table_slice.database,
+            auto_create_table=True,
+            use_logical_type=True,
         )
 
         return {
