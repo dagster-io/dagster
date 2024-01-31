@@ -7,15 +7,17 @@ description: "How to set up and manage multiple projects with Dagster Cloud Hybr
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Whether to manage complexity or to divide your work in areas of responsibility, you may want to isolate your code bases into multiple projects. See [Strategies for code separation](#strategies-for-code-separation) for more information.
+Whether to manage complexity or to divide your work into areas of responsibility, you may want to isolate your code bases into multiple projects. See [Strategies for code separation](#strategies-for-code-separation) for more information.
 
 If you require isolation between your execution context, see [Strategies for execution context isolation](#strategies-for-execution-context-isolation).
 
 ## Strategies for code separation
 
-### Multiple directories in a single VCS repository
+<Note>Disambiguation: In this section, repository refers to a depot under a version control system such as Git or Mercurial.</Note>
 
-You can use a single VCS repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each projects.
+### Multiple directories in a single repository
+
+You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each projects.
 
 Pro:
 
@@ -27,9 +29,9 @@ Con:
 - all projects share the same CI/CD pipeline and cannot be deployed independently
 - shared dependencies between projects may cause conflicts and require coordination between teams
 
-### Multiple VCS repositories (git, hg, etc.)
+### Multiple repositories
 
-For stronger isolation, you can use multiple VCS repositories to manage multiple projects.
+For stronger isolation, you can use multiple repositories to manage multiple projects.
 
 Pro:
 
@@ -43,11 +45,11 @@ Con:
 
 ### Deployment configuration
 
-Whether you use a single VCS repository or multiple VCS repositories, you can use the [Dagster Cloud deployment configuration](/dagster-cloud/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](https://docs.dagster.io/dagster-cloud/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single or multiple repositories, you can use the [Dagster Cloud deployment configuration](/dagster-cloud/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](https://docs.dagster.io/dagster-cloud/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
-Example with GitHub CI/CD on Hybrid deployment:
+#### Example with GitHub CI/CD on Hybrid deployment
 
-1. For each VCS repository, use the CI/CD workflow provided in [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
+1. For each repository, use the CI/CD workflow provided in [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
 2. For each project in the repository, you can configure the [code location to deploy in the `dagster_cloud.yml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) and configure it accordingly to your project structure.
 
@@ -97,7 +99,7 @@ Separating execution context between projects can have several motivations:
 
 - facilitate separation of duty between teams to prevent access to sensitive data
 - different compute environments and requirements (different architecture, cloud provider, etc.)
-- prevent noisy neighbors effects (e.g. a project with a large number of runs can impact the performance of other projects)
+- prevent noisy neighbors effects (a project with a large number of runs can impact the performance of other projects)
 
 There are three isolation levels you may want to consider:
 
@@ -135,7 +137,7 @@ height={537}
 
 Using the [agent routing feature](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
 
-Motivations for such a choice would include different compute requirements (e.g. different cloud providers, different architectures, etc.), optimizing for locality or access (running the data processing closer or in environment with access to the storage locations), etc.
+Motivations for such a choice would include different compute requirements (different cloud providers, different architectures, etc.), optimizing for locality or access (running the data processing closer or in environment with access to the storage locations), etc.
 
 Pro:
 
@@ -145,7 +147,7 @@ Pro:
 
 Con:
 
-- extra work to setup additional agents and agent queues
+- extra work to set up additional agents and agent queues
 
 ### Deployment isolation
 
@@ -160,7 +162,7 @@ width={1152}
 height={349}
 />
 
-This is the most isolated solution, each project is deployed to its own Dagster Cloud deployment, which typically incurs additional costs. There is usually no need and caveats to isolate at this level unless you have specific requirements for isolation between deployments.
+This is the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
 
 Pro:
 
@@ -170,4 +172,3 @@ Pro:
 Con:
 
 - no single glass pane to view all assets (requires switching between multiple deployments in the UI)
-- requires multiple Dagster Cloud deployments
