@@ -27,10 +27,6 @@ Con:
 - all projects share the same CI/CD pipeline and cannot be deployed independently
 - shared dependencies between projects may cause conflicts and require coordination between teams
 
-#### Deployment configuration
-
-A [dagster_cloud.yml configuration file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) in the root of the repository can be used to expose each project to Dagster Cloud as a distinct code repository.
-
 ### Multiple VCS repositories (git, hg, etc.)
 
 For stronger isolation, you can use multiple VCS repositories to manage multiple projects.
@@ -45,9 +41,9 @@ Con:
 
 - code sharing between projects require additional coordination to publish and reuse packages between projects
 
-#### Deployment configuration
+### Deployment configuration
 
-Each project can be exposed to Dagster Cloud as a distinct code repository. For each repository, follow the [steps appropriate to your CI/CD provider](https://docs.dagster.io/dagster-cloud/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single VCS repository or multiple VCS repositories, you can use the [Dagster Cloud deployment configuration](/dagster-cloud/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](https://docs.dagster.io/dagster-cloud/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 Example with GitHub CI/CD on Hybrid deployment:
 
