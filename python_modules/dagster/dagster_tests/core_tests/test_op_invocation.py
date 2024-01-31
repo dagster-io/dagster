@@ -1383,7 +1383,7 @@ def test_async_assets_with_shared_context():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=r"This context is currently being used to execute .* The context"
-        r" cannot be used to execute another op until .* has finished executing",
+        r" cannot be used to execute another asset until .* has finished executing",
     ):
         asyncio.run(main())
 

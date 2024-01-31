@@ -32,7 +32,8 @@ from .output import DynamicOutputDefinition, OutputDefinition
 from .result import MaterializeResult
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import DirectOpExecutionContext
+    from ..execution.context.compute import OpExecutionContext
+    from ..execution.context.invocation import BaseDirectExecutionContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
@@ -100,6 +101,16 @@ def _separate_args_and_kwargs(
     )
 
 
+def _get_op_context(
+    context,
+) -> "OpExecutionContext":
+    from dagster._core.execution.context.compute import AssetExecutionContext
+
+    if isinstance(context, AssetExecutionContext):
+        return context.op_execution_context
+    return context
+
+
 def direct_invocation_result(
     def_or_invocation: Union[
         "OpDefinition", "PendingNodeInvocation[OpDefinition]", "AssetsDefinition"
@@ -109,7 +120,7 @@ def direct_invocation_result(
 ) -> Any:
     from dagster._config.pythonic_config import Config
     from dagster._core.execution.context.invocation import (
-        DirectOpExecutionContext,
+        BaseDirectExecutionContext,
         build_op_context,
     )
 
@@ -149,12 +160,12 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(args[0], DirectOpExecutionContext):
+            if args[0] is not None and not isinstance(args[0], BaseDirectExecutionContext):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            context = cast(DirectOpExecutionContext, args[0])
+            context = args[0]
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -165,14 +176,14 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            context = cast(DirectOpExecutionContext, kwargs[context_param_name])
+            context = kwargs[context_param_name]
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(args[0], DirectOpExecutionContext):
-        context = cast(DirectOpExecutionContext, args[0])
+    elif len(args) > 0 and isinstance(args[0], BaseDirectExecutionContext):
+        context = args[0]
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
@@ -230,7 +241,7 @@ def direct_invocation_result(
 
 
 def _resolve_inputs(
-    op_def: "OpDefinition", args, kwargs, context: "DirectOpExecutionContext"
+    op_def: "OpDefinition", args, kwargs, context: "BaseDirectExecutionContext"
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -333,7 +344,7 @@ def _resolve_inputs(
     return input_dict
 
 
-def _key_for_result(result: MaterializeResult, context: "DirectOpExecutionContext") -> AssetKey:
+def _key_for_result(result: MaterializeResult, context: "BaseDirectExecutionContext") -> AssetKey:
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
             f"Op {context.per_invocation_properties.alias} does not have an assets definition."
@@ -355,7 +366,7 @@ def _key_for_result(result: MaterializeResult, context: "DirectOpExecutionContex
 
 def _output_name_for_result_obj(
     event: MaterializeResult,
-    context: "DirectOpExecutionContext",
+    context: "BaseDirectExecutionContext",
 ):
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
@@ -368,7 +379,7 @@ def _output_name_for_result_obj(
 def _handle_gen_event(
     event: T,
     op_def: "OpDefinition",
-    context: "DirectOpExecutionContext",
+    context: "BaseDirectExecutionContext",
     output_defs: Mapping[str, OutputDefinition],
     outputs_seen: Set[str],
 ) -> T:
@@ -402,7 +413,7 @@ def _handle_gen_event(
 
 
 def _type_check_output_wrapper(
-    op_def: "OpDefinition", result: Any, context: "DirectOpExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "BaseDirectExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a op.
 
@@ -496,12 +507,13 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    op_def: "OpDefinition", result: T, context: "DirectOpExecutionContext"
+    op_def: "OpDefinition", result: T, context: "BaseDirectExecutionContext"
 ) -> T:
     from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
     output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
-    for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
+    op_context = _get_op_context(context)
+    for event in validate_and_coerce_op_result_to_iterator(result, op_context, op_def.output_defs):
         if isinstance(event, (Output, DynamicOutput)):
             _type_check_output(output_defs_by_name[event.output_name], event, context)
         elif isinstance(event, (MaterializeResult)):
@@ -515,14 +527,14 @@ def _type_check_function_output(
 def _type_check_output(
     output_def: "OutputDefinition",
     output: Union[Output, DynamicOutput],
-    context: "DirectOpExecutionContext",
+    context: "BaseDirectExecutionContext",
 ) -> None:
     """Validates and performs core type check on a provided output.
 
     Args:
         output_def (OutputDefinition): The output definition to validate against.
         output (Any): The output to validate.
-        context (DirectOpExecutionContext): Context containing resources to be used for type
+        context (BaseDirectExecutionContext): Context containing resources to be used for type
             check.
     """
     from ..execution.plan.execute_step import do_type_check

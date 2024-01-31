@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -56,14 +57,60 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .compute import OpExecutionContext
+from .compute import AssetExecutionContext, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
-    return (
-        f"The {prop_name} {method_name} is not set on the context when an op is directly invoked."
-    )
+    return f"The {prop_name} {method_name} is not set on the context when an asset or op is directly invoked."
+
+
+class BaseDirectExecutionContext:
+    """Base class for any direct invocation execution contexts. Each type of execution context
+    (ex. OpExecutionContext, AssetExecutionContext) needs to have a variant for direct invocation.
+    Those direct invocation contexts have some methods that are not available until the context
+    is bound to a particular op/asset. The "bound" properties are held in PerInvocationProperties.
+    There are also some properties that are specific to a particular execution of an op/asset, these
+    properties are held in DirectExecutionProperties. Direct invocation contexts must
+    be able to be bound and unbound from a particular op/asset. Additionally, there are some methods
+    that all direct invocation contexts must implement so that the will be usable in the execution
+    code path.
+    """
+
+    @abstractmethod
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ):
+        """Subclasses of BaseDirectExecutionContext must implement bind."""
+
+    @abstractmethod
+    def unbind(self):
+        """Subclasses of BaseDirectExecutionContext must implement unbind."""
+
+    @property
+    @abstractmethod
+    def per_invocation_properties(self) -> "PerInvocationProperties":
+        """Subclasses of BaseDirectExecutionContext must contain a PerInvocationProperties object."""
+
+    @property
+    @abstractmethod
+    def execution_properties(self) -> "DirectExecutionProperties":
+        """Subclasses of BaseDirectExecutionContext must contain a DirectExecutionProperties object."""
+
+    @abstractmethod
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        """Subclasses of BaseDirectExecutionContext must implement for_type."""
+        pass
+
+    @abstractmethod
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        """Subclasses of BaseDirectExecutionContext must implement observe_output."""
+        pass
 
 
 class PerInvocationProperties(
@@ -127,7 +174,7 @@ class DirectExecutionProperties:
         self.typed_event_stream_error_message: Optional[str] = None
 
 
-class DirectOpExecutionContext(OpExecutionContext):
+class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -706,6 +753,83 @@ class DirectOpExecutionContext(OpExecutionContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
+class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionContext):
+    """The ``context`` object available as the first argument to an asset's compute function when
+    being invoked directly. Can also be used as a context manager.
+    """
+
+    def __init__(self, op_execution_context: DirectOpExecutionContext):
+        self._op_execution_context = op_execution_context
+
+    def __enter__(self):
+        self.op_execution_context._cm_scope_entered = True  # noqa: SLF001
+        return self
+
+    def __exit__(self, *exc):
+        self.op_execution_context._exit_stack.close()  # noqa: SLF001
+
+    def __del__(self):
+        self.op_execution_context._exit_stack.close()  # noqa: SLF001
+
+    def _check_bound_to_invocation(self, fn_name: str, fn_type: str):
+        if not self._op_execution_context._per_invocation_properties:  # noqa: SLF001
+            raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
+
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ) -> "DirectAssetExecutionContext":
+        if assets_def is None:
+            raise DagsterInvariantViolationError(
+                "DirectAssetExecutionContext can only being used to invoke an asset."
+            )
+        if self._op_execution_context._per_invocation_properties is not None:  # noqa: SLF001
+            raise DagsterInvalidInvocationError(
+                f"This context is currently being used to execute {self.op_execution_context.alias}."
+                " The context cannot be used to execute another asset until"
+                f" {self.op_execution_context.alias} has finished executing."
+            )
+
+        self._op_execution_context = self._op_execution_context.bind(
+            op_def=op_def,
+            pending_invocation=pending_invocation,
+            assets_def=assets_def,
+            config_from_args=config_from_args,
+            resources_from_args=resources_from_args,
+        )
+
+        return self
+
+    def unbind(self):
+        self._op_execution_context.unbind()
+
+    @property
+    def per_invocation_properties(self) -> PerInvocationProperties:
+        return self.op_execution_context.per_invocation_properties
+
+    @property
+    def is_bound(self) -> bool:
+        return self.op_execution_context.is_bound
+
+    @property
+    def execution_properties(self) -> DirectExecutionProperties:
+        return self.op_execution_context.execution_properties
+
+    @property
+    def op_execution_context(self) -> DirectOpExecutionContext:
+        return self._op_execution_context
+
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        return self.op_execution_context.for_type(dagster_type)
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
+
+
 def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
@@ -796,7 +920,7 @@ def build_asset_context(
     instance: Optional[DagsterInstance] = None,
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
-):
+) -> DirectAssetExecutionContext:
     """Builds asset execution context from provided parameters.
 
     ``build_asset_context`` can be used as either a function or context manager. If there is a
@@ -823,7 +947,7 @@ def build_asset_context(
             with build_asset_context(resources={"foo": context_manager_resource}) as context:
                 asset_to_invoke(context)
     """
-    return build_op_context(
+    op_context = build_op_context(
         op_config=asset_config,
         resources=resources,
         resources_config=resources_config,
@@ -831,3 +955,5 @@ def build_asset_context(
         partition_key_range=partition_key_range,
         instance=instance,
     )
+
+    return DirectAssetExecutionContext(op_execution_context=op_context)
