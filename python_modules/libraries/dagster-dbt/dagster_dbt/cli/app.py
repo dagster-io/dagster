@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
-from ..include import STARTER_PROJECT_PATH
+from ..include.starter_project import DAGSTER_DBT_STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
 
 app = typer.Typer(
@@ -121,7 +121,7 @@ def copy_scaffold(
         for target in profile["outputs"].values()
     ]
 
-    shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
+    shutil.copytree(src=DAGSTER_DBT_STARTER_PROJECT_PATH, dst=dagster_project_dir)
     dagster_project_dir.joinpath("__init__.py").unlink()
 
     if use_dbt_project_package_data_dir:
