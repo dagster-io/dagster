@@ -13,7 +13,7 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from '../asset-data/types/AssetLiveDataThread.types';
+} from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
 /**
@@ -234,6 +234,10 @@ export const buildLiveDataForNode = (
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
+}
+
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
