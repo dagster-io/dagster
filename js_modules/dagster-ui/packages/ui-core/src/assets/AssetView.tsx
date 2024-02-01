@@ -31,7 +31,7 @@ import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   GraphData,
   LiveDataForNode,
@@ -263,7 +263,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <AssetTabs selectedTab={selectedTab} tabs={tabList} />
             <Box padding={{bottom: 8}}>
-              <AssetLiveDataRefresh />
+              <AssetLiveDataRefreshButton />
             </Box>
           </Box>
         }
@@ -375,10 +375,18 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   );
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
+  if (!asset) {
+    return {
+      definitionQueryResult: result,
+      definition: null,
+      lastMaterialization: null,
+    };
+  }
+
   return {
     definitionQueryResult: result,
-    definition: asset?.definition || null,
-    lastMaterialization: asset?.assetMaterializations[0],
+    definition: asset.definition,
+    lastMaterialization: asset.assetMaterializations[0],
   };
 };
 

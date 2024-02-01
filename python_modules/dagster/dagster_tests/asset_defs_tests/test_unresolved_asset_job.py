@@ -127,7 +127,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "abc"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -161,7 +163,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "def"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -544,11 +548,11 @@ def test_config():
 
     @asset(config_schema={"val": int})
     def config_asset(context, foo):
-        return foo + context.op_config["val"]
+        return foo + context.op_execution_context.op_config["val"]
 
     @asset(config_schema={"val": int})
     def other_config_asset(context, config_asset):
-        return config_asset + context.op_config["val"]
+        return config_asset + context.op_execution_context.op_config["val"]
 
     job = define_asset_job(
         "config_job",
@@ -588,11 +592,11 @@ def test_subselect_config(selection, config):
 
     @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def config_asset(context, foo):
-        return foo + context.op_config["val"]
+        return foo + context.op_execution_context.op_config["val"]
 
     @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def other_config_asset(context, config_asset):
-        return config_asset + context.op_config["val"]
+        return config_asset + context.op_execution_context.op_config["val"]
 
     io_manager_obj, io_manager_def = asset_aware_io_manager()
     io_manager_obj.db[AssetKey("foo")] = 1

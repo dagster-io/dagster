@@ -55,7 +55,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
-from dagster._core.event_api import EventLogCursor, EventRecordsResult
+from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     AssetMaterializationPlannedData,
@@ -1500,6 +1500,17 @@ class TestEventLogStorage:
                 )
                 == 1
             )
+            assert (
+                len(
+                    storage.fetch_run_status_changes(
+                        RunStatusChangeRecordsFilter(
+                            DagsterEventType.RUN_SUCCESS,
+                            after_storage_id=all_success_events[1].storage_id,
+                        ),
+                        limit=100,
+                    ).records
+                )
+            ) == 1
             assert [
                 i.storage_id
                 for i in storage.fetch_run_status_changes(
@@ -2737,6 +2748,134 @@ class TestEventLogStorage:
             assert record.partition_key is None
             assert record.event_log_entry.dagster_event.partitions_subset == partitions_subset
 
+            info = storage.get_latest_planned_materialization_info(asset_key=a)
+            assert info
+            assert info.run_id == run_id_1
+
+    def test_get_latest_planned_materialization_info(self, storage, instance):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
+            # store planned event for a
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a),
+                    ),
+                )
+            )
+            # store unplanned mat for b
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_2,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=a)
+                        ),
+                    ),
+                )
+            )
+
+            info = storage.get_latest_planned_materialization_info(asset_key=a)
+            assert info and info.storage_id
+            info = storage.get_latest_planned_materialization_info(asset_key=b)
+            assert not info
+
+    def test_get_latest_planned_materialization_info_partitioned(self, storage, instance):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
+            # store planned event for a
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, partition="foo"),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, partition="bar"),
+                    ),
+                )
+            )
+            # store unplanned mat for b
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_2,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=a, partition="foo")
+                        ),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_2,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=a, partition="bar")
+                        ),
+                    ),
+                )
+            )
+
+            foo_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="foo")
+            assert foo_info and foo_info.storage_id
+            bar_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="bar")
+            assert bar_info and bar_info.storage_id
+            assert bar_info.storage_id != foo_info.storage_id
+
+            # assert unplanned materializations don't affect planned materializations
+            assert not storage.get_latest_planned_materialization_info(asset_key=b, partition="foo")
+
     def test_partitions_methods_on_materialization_planned_event_with_partitions_subset(
         self, storage, instance
     ) -> None:
@@ -3016,15 +3155,69 @@ class TestEventLogStorage:
             )
         )
         assert len(records) == 1
+        assert records[0].partition_key == "foo"
+        foo_record = records[0]
 
-        # new API
-        result = storage.fetch_planned_materializations(a, limit=100)
-        assert isinstance(result, EventRecordsResult)
-        assert len(result.records) == 1
-        record = result.records[0]
-        assert record.event_log_entry.dagster_event
-        assert record.event_log_entry.dagster_event.asset_key == a
-        assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
+        # unpartitioned query
+        unpartitioned_info = storage.get_latest_planned_materialization_info(asset_key=a)
+        assert unpartitioned_info
+        assert unpartitioned_info.run_id == test_run_id
+        assert unpartitioned_info.storage_id == foo_record.storage_id
+
+        # matching partitioned query
+        foo_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="foo")
+        assert foo_info
+        assert foo_info.run_id == test_run_id
+        assert foo_info.storage_id == unpartitioned_info.storage_id
+
+        # unmatched partitioned query
+        bar_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="bar")
+        assert bar_info is None
+
+        # store "bar" partition
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(a, "bar"),
+                ),
+            )
+        )
+
+        # legacy API
+        records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=a,
+            )
+        )
+        assert len(records) == 2
+        assert records[0].partition_key == "bar"
+        bar_record = records[0]
+
+        # unpartitioned query
+        unpartitioned_info = storage.get_latest_planned_materialization_info(asset_key=a)
+        assert unpartitioned_info
+        assert unpartitioned_info.run_id == test_run_id
+        assert unpartitioned_info.storage_id == bar_record.storage_id
+
+        # foo partitioned query
+        foo_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="foo")
+        assert foo_info
+        assert foo_info.run_id == test_run_id
+        assert foo_info.storage_id == foo_record.storage_id
+
+        # bar partitioned query
+        bar_info = storage.get_latest_planned_materialization_info(asset_key=a, partition="bar")
+        assert bar_info
+        assert bar_info.run_id == test_run_id
+        assert bar_info.storage_id == bar_record.storage_id
 
     def test_asset_key_exists_on_observation(
         self,

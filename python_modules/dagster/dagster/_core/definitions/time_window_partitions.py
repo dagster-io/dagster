@@ -42,7 +42,8 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._seven.compat.pendulum import (
-    _IS_PENDULUM_2,
+    _IS_PENDULUM_1,
+    PRE_TRANSITION,
     PendulumDateTime,
     create_pendulum_time,
     to_timezone,
@@ -146,7 +147,7 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         # Pendulum 1.x erroneously believes that there are two instances of the *second* hour after
         # a datetime transition, so to work around this we calculate the timestamp of the next
         # microsecond of the given datetime.
-        dt_microsecond = dt.microsecond + 1 if not _IS_PENDULUM_2 else dt.microsecond
+        dt_microsecond = dt.microsecond + 1 if _IS_PENDULUM_1 else dt.microsecond
         dt = create_pendulum_time(
             dt.year,
             dt.month,
@@ -156,9 +157,9 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
             dt.second,
             dt_microsecond,
             tz=tz,
-            dst_rule=pendulum.PRE_TRANSITION,
+            dst_rule=PRE_TRANSITION,
         )
-        if not _IS_PENDULUM_2:
+        if _IS_PENDULUM_1:
             dt = dt.add(microseconds=-1)
         return dt
 
@@ -181,7 +182,7 @@ class DatetimeFieldSerializer(FieldSerializer):
         self, datetime: Optional[datetime], whitelist_map: WhitelistMap, descent_path: str
     ) -> Optional[Mapping[str, Any]]:
         if datetime:
-            check.invariant(datetime.tzinfo is not None)
+            check.invariant(datetime.tzinfo is not None, "No timezone set")
             pendulum_datetime = pendulum.instance(datetime, tz=datetime.tzinfo)
             timezone_name = pendulum_datetime.timezone.name
 
@@ -264,6 +265,8 @@ class TimeWindowPartitionsDefinition(
     The first partition in the set will start on at the first cron_schedule tick that is equal to
     or after the given start datetime. The last partition in the set will end before the current
     time, unless the end_offset argument is set to a positive number.
+
+    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
 
     Args:
         cron_schedule (str): Determines the bounds of the time windows.
@@ -1648,7 +1651,8 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         ).get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
-            check.failed("No partitions found")
+            # no partitions
+            return []
 
         last_tw_end_timestamp = last_tw.end.timestamp()
         first_tw_start_timestamp = first_tw.start.timestamp()

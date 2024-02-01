@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -8,7 +6,7 @@ from dagster import (
     asset,
     op,
 )
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.invocation import build_asset_context, build_op_context
 
 
@@ -431,50 +429,20 @@ def test_direct_asset_invocation_many_resource_args_context() -> None:
     executed.clear()
 
 
-def test_direct_invocation_output_metadata():
-    @asset
+def test_direct_invocation_resource_context_manager():
+    from dagster import resource
+
+    class YieldedResource:
+        def get_value(self):
+            return 1
+
+    @resource
+    def yielding_resource(context):
+        yield YieldedResource()
+
+    @asset(required_resource_keys={"yielded_resource"})
     def my_asset(context):
-        context.add_output_metadata({"foo": "bar"})
+        assert context.resources.yielded_resource.get_value() == 1
 
-    @asset
-    def my_other_asset(context):
-        context.add_output_metadata({"baz": "qux"})
-
-    ctx = build_asset_context()
-
-    my_asset(ctx)
-    assert ctx.get_output_metadata("result") == {"foo": "bar"}
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="attempted to log metadata for output 'result' more than once",
-    ):
-        my_other_asset(ctx)
-
-
-def test_async_assets_with_shared_context():
-    @asset
-    async def async_asset_one(context):
-        assert context.asset_key.to_user_string() == "async_asset_one"
-        await asyncio.sleep(0.01)
-        return "one"
-
-    @asset
-    async def async_asset_two(context):
-        assert context.asset_key.to_user_string() == "async_asset_two"
-        await asyncio.sleep(0.01)
-        return "two"
-
-    # test that we can run two ops/assets with the same context at the same time without
-    # overriding op/asset specific attributes
-    ctx = build_asset_context()
-
-    async def main():
-        return await asyncio.gather(
-            async_asset_one(ctx),
-            async_asset_two(ctx),
-        )
-
-    result = asyncio.run(main())
-    assert result[0] == "one"
-    assert result[1] == "two"
+    with build_op_context(resources={"yielded_resource": yielding_resource}) as ctx:
+        my_asset(ctx)

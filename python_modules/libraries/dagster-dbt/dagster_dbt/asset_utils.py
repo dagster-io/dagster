@@ -43,11 +43,7 @@ from dagster._utils.warnings import deprecation_warning
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import (
-        DagsterDbtTranslator,
-        DagsterDbtTranslatorSettings,
-        DbtManifestWrapper,
-    )
+    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
 MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -227,7 +223,7 @@ def build_dbt_asset_selection(
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-    return DbtManifestAssetSelection(
+    return DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
@@ -528,27 +524,38 @@ def is_generic_test_on_attached_node_from_dbt_resource_props(
 
 
 def default_asset_check_fn(
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
     unique_id: str,
-    dagster_dbt_translator_settings: "DagsterDbtTranslatorSettings",
-    dbt_resource_props: Mapping[str, Any],
+    test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
+    test_resource_props = manifest["nodes"][test_unique_id]
+    parent_ids = manifest["parent_map"].get(test_unique_id, [])
+
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
-        unique_id, dbt_resource_props
+        unique_id, test_resource_props
     )
 
     if not all(
         [
-            dagster_dbt_translator_settings.enable_asset_checks,
+            dagster_dbt_translator.settings.enable_asset_checks,
             is_generic_test_on_attached_node,
         ]
     ):
         return None
 
+    additional_deps = [
+        dagster_dbt_translator.get_asset_key(manifest["nodes"][parent_id])
+        for parent_id in parent_ids
+        if parent_id != unique_id
+    ]
+
     return AssetCheckSpec(
-        name=dbt_resource_props["name"],
+        name=test_resource_props["name"],
         asset=asset_key,
-        description=dbt_resource_props["description"],
+        description=test_resource_props.get("meta", {}).get("description"),
+        additional_deps=additional_deps,
     )
 
 
@@ -719,11 +726,9 @@ def get_asset_deps(
             ]
 
             for test_unique_id in test_unique_ids:
-                test_resource_props = manifest["nodes"][test_unique_id]
                 check_spec = default_asset_check_fn(
-                    asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                    manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
                 )
-
                 if check_spec:
                     check_specs.append(check_spec)
 

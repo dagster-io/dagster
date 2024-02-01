@@ -281,7 +281,7 @@ def test_asset_with_structured_config():
     def the_asset(context, config: AnAssetConfig, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
-        assert context.op_config["a_string"] == "foo"
+        assert context.op_execution_context.op_config["a_string"] == "foo"
         assert config.a_string == "foo"
         assert config.an_int == 2
         executed["the_asset"] = True

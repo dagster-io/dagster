@@ -41,6 +41,8 @@ ALL_ASSET_KEYS = {
         "stg_customers",
         "stg_orders",
         "stg_payments",
+        "raw_fail_tests_model",
+        "fail_tests_model",
     ]
 }
 
@@ -77,6 +79,8 @@ ALL_CHECK_KEYS = {
         ),
         ("stg_payments", "not_null_stg_payments_payment_id"),
         ("stg_payments", "unique_stg_payments_payment_id"),
+        ("fail_tests_model", "accepted_values_fail_tests_model_first_name__foo__bar__baz"),
+        ("fail_tests_model", "unique_fail_tests_model_id"),
     ]
 }
 

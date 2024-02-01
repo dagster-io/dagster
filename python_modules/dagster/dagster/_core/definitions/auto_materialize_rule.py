@@ -30,7 +30,6 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
 from dagster._core.storage.dagster_run import RunsFilter
@@ -582,27 +581,10 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             context.previous_evaluation_state.get_extra_state(context.condition, AssetSubset)
             if context.previous_evaluation_state
             else None
-        )
-        if previous_handled_subset:
-            # partitioned -> unpartitioned or vice versa
-            if previous_handled_subset.is_partitioned != (context.partitions_def is not None):
-                previous_handled_subset = None
-            # time partitions def changed
-            elif (
-                previous_handled_subset.is_partitioned
-                and isinstance(previous_handled_subset.subset_value, TimeWindowPartitionsSubset)
-                and previous_handled_subset.subset_value.partitions_def != context.partitions_def
-            ):
-                previous_handled_subset = None
-        return (
-            (
-                previous_handled_subset
-                or context.instance_queryer.get_materialized_asset_subset(
-                    asset_key=context.asset_key
-                )
-            )
-            | context.previous_tick_requested_subset
-            | context.materialized_since_previous_tick_subset
+        ) or context.instance_queryer.get_materialized_asset_subset(asset_key=context.asset_key)
+
+        return previous_handled_subset | (
+            context.previous_tick_requested_subset | context.materialized_since_previous_tick_subset
         )
 
     def evaluate_for_asset(
@@ -613,15 +595,34 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """
         from .asset_condition import AssetConditionResult
 
-        handled_subset = self.get_handled_subset(context)
-        unhandled_candidates = (
-            context.candidate_subset
-            & handled_subset.inverse(
-                context.partitions_def, context.evaluation_time, context.instance_queryer
+        if context.asset_key in context.asset_graph.root_materializable_or_observable_asset_keys:
+            handled_subset = self.get_handled_subset(context)
+            unhandled_candidates = (
+                context.candidate_subset
+                & handled_subset.inverse(
+                    context.partitions_def, context.evaluation_time, context.instance_queryer
+                )
+                if handled_subset.size > 0
+                else context.candidate_subset
             )
-            if handled_subset.size > 0
-            else context.candidate_subset
-        )
+        else:
+            # to retain compatibility with the previous behavior of this rule, we only count a non-root
+            # asset as missing if at least one of its parents has updated since the previous tick
+            handled_subset = None
+            unhandled_candidates = (
+                context.previous_true_subset
+                | AssetSubset.from_asset_partitions_set(
+                    context.asset_key,
+                    context.partitions_def,
+                    {
+                        ap
+                        for ap in context.candidate_parent_has_or_will_update_subset.asset_partitions
+                        if not context.instance_queryer.asset_partition_has_materialization_or_observation(
+                            ap
+                        )
+                    },
+                )
+            ) - context.previous_tick_requested_subset
 
         return AssetConditionResult.create(
             context,
@@ -884,8 +885,12 @@ class SkipOnBackfillInProgressRule(
         from .asset_condition import AssetConditionResult
 
         backfilling_subset = (
-            context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-        ).get_asset_subset(context.asset_key, context.asset_graph)
+            # this backfilling subset is aware of the current partitions definitions, and so will
+            # be valid
+            (context.instance_queryer.get_active_backfill_target_asset_graph_subset())
+            .get_asset_subset(context.asset_key, context.asset_graph)
+            .as_valid
+        )
 
         if backfilling_subset.size == 0:
             true_subset = context.empty_subset()

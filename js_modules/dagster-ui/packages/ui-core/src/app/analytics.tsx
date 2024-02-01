@@ -12,7 +12,7 @@ export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 
 const PAGEVIEW_DELAY = 300;
 
-const usePageContext = () => {
+export const usePageContext = () => {
   const match = useRouteMatch();
   const {pathname: specificPath} = useLocation();
   const {path} = match;

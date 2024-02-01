@@ -42,7 +42,7 @@ import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
@@ -781,7 +781,7 @@ const AssetGraphExplorerWithData = ({
                     popoverPosition="bottom-left"
                   />
                 </GraphQueryInputFlexWrap>
-                <AssetLiveDataRefresh />
+                <AssetLiveDataRefreshButton />
                 <LaunchAssetObservationButton
                   preferredJobName={explorerPath.pipelineName}
                   scope={

@@ -29,8 +29,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
-from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -1483,11 +1482,14 @@ def test_datetime_field_serializer():
     class Foo(NamedTuple):
         dt: datetime
 
-    utc_datetime_with_no_timezone = Foo(
-        dt=utc_datetime_from_timestamp(pendulum.now("UTC").timestamp())
-    )
-    with pytest.raises(CheckError, match="not a valid IANA timezone"):
+    utc_datetime_with_no_timezone = Foo(dt=datetime.now())
+    with pytest.raises(CheckError, match="No timezone set"):
         serialize_value(utc_datetime_with_no_timezone)
+
+    assert (
+        deserialize_value(serialize_value(Foo(dt=pendulum.now("US/Pacific")))).dt.timezone_name
+        == "US/Pacific"
+    )
 
 
 def test_cannot_pickle_time_window_partitions_def():
@@ -1514,3 +1516,13 @@ def test_time_window_partitions_subset_add_partition_to_front():
     assert combined == PartitionKeysTimeWindowPartitionsSubset(
         partitions_def, {"2023-01-01", "2023-01-02"}
     )
+
+
+def test_get_partition_keys_not_in_subset_empty_subset() -> None:
+    # starts in the future
+    partitions_def = DailyPartitionsDefinition("2024-01-01")
+    time_windows_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=0, included_time_windows=[]
+    )
+    with pendulum_freeze_time(create_pendulum_time(2023, 1, 1)):
+        assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []

@@ -6,20 +6,16 @@ import {GraphQLError} from 'graphql/error';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
 import {getMockResultFn} from '../../testing/mocking';
-import {
-  AssetLiveDataProvider,
-  BATCH_SIZE,
-  SUBSCRIPTION_IDLE_POLL_RATE,
-  _resetLastFetchedOrRequested,
-  useAssetsLiveData,
-} from '../AssetLiveDataProvider';
+import {AssetLiveDataProvider, __resetForJest, useAssetsLiveData} from '../AssetLiveDataProvider';
+import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
 afterEach(() => {
-  _resetLastFetchedOrRequested();
+  __resetForJest();
 });
 
 function Test({
@@ -29,24 +25,27 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
+    thread?: LiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }[];
 }) {
   function Hook({
     keys,
+    thread,
     hookResult,
   }: {
     keys: AssetKeyInput[];
+    thread?: LiveDataThreadID;
     hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
   }) {
-    hookResult(useAssetsLiveData(keys).liveDataByNode);
+    hookResult(useAssetsLiveData(keys, thread).liveDataByNode);
     return <div />;
   }
   return (
     <MockedProvider mocks={mocks}>
       <AssetLiveDataProvider>
-        {hooks.map(({keys, hookResult}, idx) => (
-          <Hook key={idx} keys={keys} hookResult={hookResult} />
+        {hooks.map(({keys, thread, hookResult}, idx) => (
+          <Hook key={idx} keys={keys} hookResult={hookResult} thread={thread} />
         ))}
       </AssetLiveDataProvider>
     </MockedProvider>
@@ -81,6 +80,7 @@ describe('AssetLiveDataProvider', () => {
     await waitFor(() => {
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
+
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -378,9 +378,6 @@ describe('AssetLiveDataProvider', () => {
     });
 
     expect(resultFn).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
-    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect no fetches to be made
@@ -413,5 +410,45 @@ describe('AssetLiveDataProvider', () => {
     });
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
+  });
+
+  it('Has multiple threads', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']})];
+    const assetKeys2 = [buildAssetKey({path: ['key2']})];
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys2);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
+
+    render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[
+          {keys: assetKeys, thread: 'default', hookResult},
+          {keys: assetKeys2, thread: 'asset-graph', hookResult: hookResult2},
+        ]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(resultFn2).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+      expect(hookResult2.mock.calls[1]!.value).not.toEqual({});
+    });
   });
 });

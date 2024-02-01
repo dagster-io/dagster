@@ -1,8 +1,10 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
+import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
 import {AssetNode} from '../AssetNode';
+import {tokenForAssetKey} from '../Utils';
 import {
   AssetNodeScenariosBase,
   AssetNodeScenariosPartitioned,
@@ -28,11 +30,22 @@ describe('AssetNode', () => {
       definitionCopy.assetKey.path = scenario.liveData
         ? [scenario.liveData.stepKey]
         : JSON.parse(scenario.definition.id);
-      _setCacheEntryForTest(definitionCopy.assetKey, scenario.liveData);
+
+      function SetCacheEntry() {
+        factory.manager._updateCache({
+          [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
+        });
+        return null;
+      }
 
       render(
         <MemoryRouter>
-          <AssetNode definition={definitionCopy} selected={false} />
+          <MockedProvider>
+            <AssetLiveDataProvider>
+              <SetCacheEntry />
+              <AssetNode definition={definitionCopy} selected={false} />
+            </AssetLiveDataProvider>
+          </MockedProvider>
         </MemoryRouter>,
       );
 

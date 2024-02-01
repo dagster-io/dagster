@@ -1008,19 +1008,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene_info: ResolveInfo,
         partition: str,
     ) -> Optional[GrapheneRun]:
-        event_records = list(
-            graphene_info.context.instance.event_log_storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=self._external_asset_node.asset_key,
-                    asset_partitions=[partition],
-                ),
-                limit=1,
-            )
+        planned_info = graphene_info.context.instance.get_latest_planned_materialization_info(
+            asset_key=self._external_asset_node.asset_key, partition=partition
         )
-        if not event_records:
+        if not planned_info:
             return None
-        run_record = graphene_info.context.instance.get_run_record_by_id(event_records[0].run_id)
+        run_record = graphene_info.context.instance.get_run_record_by_id(planned_info.run_id)
         return GrapheneRun(run_record) if run_record else None
 
     def resolve_assetPartitionStatuses(

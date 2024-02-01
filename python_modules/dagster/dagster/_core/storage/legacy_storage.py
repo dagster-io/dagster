@@ -31,6 +31,7 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
     EventRecordsResult,
+    PlannedMaterializationInfo,
 )
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
@@ -477,17 +478,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
 
-    def fetch_planned_materializations(
-        self,
-        filters: Union[AssetKey, "AssetRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        return self._storage.event_log_storage.fetch_planned_materializations(
-            filters, limit, cursor, ascending
-        )
-
     def fetch_run_status_changes(
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
@@ -497,6 +487,15 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_run_status_changes(
             filters, limit, cursor, ascending
+        )
+
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
+        return self._storage.event_log_storage.get_latest_planned_materialization_info(
+            asset_key, partition
         )
 
     def get_asset_records(
