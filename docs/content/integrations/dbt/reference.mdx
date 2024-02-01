@@ -532,6 +532,39 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
+## Emit dbt table schema as materialization metadata <Experimental />
+
+Dagster allows you to emit table schema [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata), which includes the column names and data types of your materialized dbt models, seeds, and snapshots.
+
+Similar to dbt, you don't need to define this table schema up front in your dbt project. Instead, Dagster will automatically emit this metadata when you materialize your dbt assets.
+
+To enable this for your dbt project, you'll need to define a <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have table schema metadata enabled. The following example enables table schema metadata when using <PyObject module="dagster_dbt" object="dbt_assets" decorator/>:
+
+```python startafter=start_enable_table_schema_metadata_dagster_dbt_translator endbefore=end_enable_table_schema_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    DbtCliResource,
+    dbt_assets,
+)
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+dagster_dbt_translator = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_table_schema_metadata=True)
+)
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=dagster_dbt_translator,
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+---
+
 ## Defining dependencies
 
 - [Upstream dependencies](#upstream-dependencies)
