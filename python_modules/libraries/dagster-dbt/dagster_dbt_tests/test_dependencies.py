@@ -8,7 +8,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 
 manifest_path = (
     Path(__file__)
-    .joinpath("..", "dbt_projects", "test_dagster_metadata", "manifest.json")
+    .joinpath("..", "dbt_projects", "test_dagster_meta_config", "manifest.json")
     .resolve()
 )
 manifest = json.loads(manifest_path.read_bytes())
