@@ -25,6 +25,8 @@ _LEASE_DURATION = 60  # One minute
 
 
 class PickledObjectADLS2IOManager(UPathIOManager):
+    extension = ".pkl"
+
     def __init__(
         self,
         file_system: Any,
@@ -74,11 +76,12 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return True
 
     def _uri_for_path(self, path: UPath, protocol: str = "abfss://") -> str:
-        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}".format(
+        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}{extension}".format(
             protocol=protocol,
             filesystem=self.file_system_client.file_system_name,
             account=self.file_system_client.account_name,
             key=path.as_posix(),
+            extension=self.extension,
         )
 
     @contextmanager
