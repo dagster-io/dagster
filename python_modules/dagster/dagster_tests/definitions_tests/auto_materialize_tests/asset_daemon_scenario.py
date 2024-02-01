@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import sys
-import threading
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -495,7 +494,6 @@ class AssetDaemonScenarioState(NamedTuple):
                     threadpool_executor=self.threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
-                    sensor_state_lock=threading.Lock(),
                 )
             )
 
