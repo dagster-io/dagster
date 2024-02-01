@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 test_dagster_metadata_dbt_project_path = (
-    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_metadata").resolve()
+    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_meta_config").resolve()
 )
 
 runner = CliRunner()
