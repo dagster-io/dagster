@@ -2,6 +2,7 @@ import os
 import random
 import string
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import kubernetes
@@ -46,6 +47,7 @@ def get_pod_name(run_id: str, op_name: str):
 
 
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
+_NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 
 
 @experimental
@@ -202,7 +204,8 @@ class _PipesK8sClient(PipesClient):
             command (Optional[Union[str, Sequence[str]]]):
                 The command to set the first container in the pod spec to use.
             namespace (Optional[str]):
-                Which kubernetes namespace to use, defaults to "default"
+                Which kubernetes namespace to use, defaults to the current namespace if
+                running inside a kubernetes cluster or falling back to "default".
             env (Optional[Mapping[str,str]]):
                 A mapping of environment variable names to values to set on the first
                 container in the pod spec, on top of those configured on resource.
@@ -234,7 +237,7 @@ class _PipesK8sClient(PipesClient):
             context_injector=self.context_injector,
             message_reader=self.message_reader,
         ) as pipes_session:
-            namespace = namespace or "default"
+            namespace = namespace or _detect_current_namespace(self.kubeconfig_file) or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
                 pod_name=pod_name,
@@ -273,6 +276,29 @@ class _PipesK8sClient(PipesClient):
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
         return PipesClientCompletedInvocation(pipes_session)
+
+
+def _detect_current_namespace(
+    kubeconfig_file: Optional[str], namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
+) -> Optional[str]:
+    """Get the current in-cluster namespace when operating within the cluster.
+
+    First attempt to read it from the `serviceaccount` secret or get it from the kubeconfig_file if it is possible.
+    It will attempt to take from the active context if it exists and returns None if it does not exist.
+    """
+    if namespace_secret_path.exists():
+        with namespace_secret_path.open() as f:
+            # We only need to read the first line, this guards us against bad input.
+            return f.read().strip()
+
+    if not kubeconfig_file:
+        return None
+
+    try:
+        _, active_context = kubernetes.config.list_kube_config_contexts(kubeconfig_file)
+        return active_context["context"]["namespace"]
+    except KeyError:
+        return None
 
 
 def build_pod_body(
