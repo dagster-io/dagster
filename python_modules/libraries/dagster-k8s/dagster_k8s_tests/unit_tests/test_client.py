@@ -659,7 +659,7 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
 
     assert (
         str(exc_info.value)
-        == f'Pod {pod_name} did not exit successfully. Container "{container_name}" failed with message: "error_message" '
+        == f'Pod {pod_name} terminated but some containers exited with errors:\nContainer "{container_name}" failed with message: "error_message" '
         'and pod logs: "raw_logs_ret_val"'
     )
 

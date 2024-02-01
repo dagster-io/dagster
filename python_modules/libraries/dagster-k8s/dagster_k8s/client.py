@@ -30,11 +30,7 @@ DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
 
 class WaitForPodState(Enum):
     Ready = "READY"
-    # Wait for the successful termination of all containers in the pod. Fail upon first failure.
     Terminated = "TERMINATED"
-    # Wait for termination of all containers in the pod. Fail if at least one container was not successful in
-    # terminating.
-    TerminatedAll = "TERMINATED_ALL"
 
 
 class DagsterK8sError(Exception):
@@ -616,9 +612,7 @@ class DagsterKubernetesClient:
                         break
                 else:
                     check.invariant(
-                        wait_for_state
-                        in [WaitForPodState.Terminated, WaitForPodState.TerminatedAll],
-                        "New invalid WaitForPodState",
+                        wait_for_state == WaitForPodState.Terminated, "New invalid WaitForPodState"
                     )
                     self.sleeper(wait_time_between_attempts)
                     continue
@@ -663,16 +657,12 @@ class DagsterKubernetesClient:
                     )
                     message = state.terminated.message
                     msg = (
-                        f"Pod {pod_name} did not exit successfully. "
                         f'Container "{container_name}" failed with message: "{message}" '
                         f'and pod logs: "{raw_logs}"'
                     )
 
-                    if wait_for_state == WaitForPodState.TerminatedAll:
-                        self.logger(msg)
-                        error_logs.append(msg)
-                    else:
-                        raise DagsterK8sError(msg)
+                    self.logger(msg)
+                    error_logs.append(msg)
                 else:
                     self.logger(f"Container {container_name} in {pod_name} has exited successfully")
 
@@ -683,7 +673,7 @@ class DagsterKubernetesClient:
                 if error_logs:
                     logs = "\n\n".join(error_logs)
                     raise DagsterK8sError(
-                        f"Pod {pod_name} has exited but some containers exited with errors: {logs}"
+                        f"Pod {pod_name} terminated but some containers exited with errors:\n{logs}"
                     )
                 else:
                     self.logger(f"Pod {pod_name} exited successfully")
