@@ -20,7 +20,7 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -39,6 +39,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvalidDefinitionError,
 )
+from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
@@ -612,9 +613,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     }
                     break
                 # the set of asset partitions which have been updated since the latest storage id
-                parent_partitions_subset = self.get_partitions_subset_updated_after_cursor(
+                parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key, after_cursor=latest_storage_id
-                )
+                ).subset_value
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
@@ -813,32 +814,65 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
     @cached_method
-    def get_partitions_subset_updated_after_cursor(
+    def get_asset_subset_updated_after_cursor(
         self, *, asset_key: AssetKey, after_cursor: Optional[int]
-    ) -> PartitionsSubset:
-        """Returns a PartitionsSubset representing the set of partitions that have been updated
-        after the given cursor. This subset will contain only valid partition keys for the given
-        asset.
-        """
-        new_asset_partitions = self.get_asset_partitions_updated_after_cursor(
-            asset_key,
-            asset_partitions=None,
-            after_cursor=after_cursor,
-            respect_materialization_data_versions=False,
-        )
-        partitions_def = check.not_none(self.asset_graph.get_partitions_def(asset_key))
-        return partitions_def.subset_with_partition_keys(
-            [
-                asset_partition.partition_key
-                for asset_partition in new_asset_partitions
-                if asset_partition.partition_key is not None
+    ) -> ValidAssetSubset:
+        """Returns the AssetSubset of the given asset that has been updated after the given cursor."""
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        if partitions_def is None:
+            return AssetSubset(
+                asset_key,
+                value=self.asset_partition_has_materialization_or_observation(
+                    AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
+                ),
+            ).as_valid
+        else:
+            new_asset_partitions = {
+                ap
+                for ap in self.get_asset_partitions_updated_after_cursor(
+                    asset_key,
+                    asset_partitions=None,
+                    after_cursor=after_cursor,
+                    respect_materialization_data_versions=False,
+                )
+                if ap.partition_key is not None
                 and partitions_def.has_partition_key(
-                    partition_key=asset_partition.partition_key,
+                    partition_key=ap.partition_key,
                     dynamic_partitions_store=self,
                     current_time=self.evaluation_time,
                 )
-            ]
+            }
+            return AssetSubset.from_asset_partitions_set(
+                asset_key, partitions_def, new_asset_partitions
+            )
+
+    @cached_method
+    def get_asset_subset_updated_after_time(
+        self, *, asset_key: AssetKey, after_time: datetime
+    ) -> ValidAssetSubset:
+        """Returns the AssetSubset of the given asset that has been updated after the given time."""
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+
+        first_event_after_time = next(
+            iter(
+                self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=self._event_type_for_key(asset_key),
+                        asset_key=asset_key,
+                        after_timestamp=after_time.timestamp(),
+                    ),
+                    limit=1,
+                    ascending=True,
+                )
+            ),
+            None,
         )
+        if not first_event_after_time:
+            return AssetSubset.empty(asset_key, partitions_def=partitions_def)
+        else:
+            return self.get_asset_subset_updated_after_cursor(
+                asset_key=asset_key, after_cursor=first_event_after_time.storage_id - 1
+            )
 
     def get_parent_asset_partitions_updated_after_child(
         self,

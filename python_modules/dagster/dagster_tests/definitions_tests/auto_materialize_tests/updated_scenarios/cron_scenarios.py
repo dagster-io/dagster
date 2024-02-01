@@ -1,7 +1,9 @@
 import pytest
 from dagster import AutoMaterializePolicy, AutoMaterializeRule
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.auto_materialize_rule import WaitingOnAssetsRuleEvaluationData
+from dagster._core.definitions.auto_materialize_rule import (
+    WaitingOnAssetsRuleEvaluationData,
+)
 
 from ..asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec, hour_partition_key
 from ..base_scenario import run_request
@@ -17,24 +19,35 @@ from .asset_daemon_scenario_states import (
 
 
 def get_cron_policy(
-    cron_rule: AutoMaterializeRule,
+    cron_schedule: str,
+    cron_timezone: str = "UTC",
+    all_partitions: bool = False,
     max_materializations_per_minute: int = 1,
+    use_cron_skip_rule: bool = False,
 ):
     return AutoMaterializePolicy(
-        rules={cron_rule, AutoMaterializeRule.skip_on_not_all_parents_updated()},
+        rules={
+            AutoMaterializeRule.materialize_on_cron(cron_schedule, cron_timezone, all_partitions),
+            AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
+                cron_schedule, cron_timezone
+            )
+            if use_cron_skip_rule
+            else AutoMaterializeRule.skip_on_not_all_parents_updated(),
+        },
         max_materializations_per_minute=max_materializations_per_minute,
     )
 
 
+basic_hourly_cron_schedule = "0 * * * *"
 basic_hourly_cron_rule = AutoMaterializeRule.materialize_on_cron(
-    cron_schedule="0 * * * *", timezone="UTC"
+    cron_schedule=basic_hourly_cron_schedule, timezone="UTC"
 )
 
 cron_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_state=one_asset.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
@@ -60,7 +73,7 @@ cron_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_multi_asset",
         initial_state=three_assets_not_subsettable.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A", "B", "C"]))
@@ -78,7 +91,7 @@ cron_scenarios = [
         id="basic_hourly_cron_partitioned",
         initial_state=one_asset.with_asset_properties(
             partitions_def=hourly_partitions_def,
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule),
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule),
         )
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, minutes=5),
@@ -108,11 +121,7 @@ cron_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned_with_timezone",
         initial_state=one_asset.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(
-                AutoMaterializeRule.materialize_on_cron(
-                    cron_schedule="@daily", timezone="America/Los_Angeles"
-                )
-            ),
+            auto_materialize_policy=get_cron_policy("@daily", cron_timezone="America/Los_Angeles"),
             partitions_def=daily_partitions_def,
         ).with_current_time("2020-01-02T12:00"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -133,7 +142,7 @@ cron_scenarios = [
     AssetDaemonScenario(
         id="hourly_cron_unpartitioned_wait_for_parents",
         initial_state=one_asset_depends_on_two.with_asset_properties(
-            keys="C", auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            keys="C", auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
         # don't materialize C because we're waiting for A and B
@@ -201,7 +210,7 @@ cron_scenarios = [
         .with_asset_properties(
             keys="C",
             auto_materialize_policy=get_cron_policy(
-                basic_hourly_cron_rule, max_materializations_per_minute=100
+                basic_hourly_cron_schedule, max_materializations_per_minute=100
             ),
         )
         .with_current_time(time_partitions_start_str),
@@ -356,7 +365,8 @@ cron_scenarios = [
         id="hourly_cron_all_partitions",
         initial_state=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(
-                basic_hourly_cron_rule._replace(all_partitions=True),
+                basic_hourly_cron_schedule,
+                all_partitions=True,
                 max_materializations_per_minute=100,
             ),
             partitions_def=hourly_partitions_def,
@@ -383,7 +393,8 @@ cron_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=dynamic_partitions_def,
             auto_materialize_policy=get_cron_policy(
-                basic_hourly_cron_rule._replace(all_partitions=True),
+                basic_hourly_cron_schedule,
+                all_partitions=True,
                 max_materializations_per_minute=100,
             ),
         ),
@@ -414,7 +425,7 @@ cron_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=dynamic_partitions_def,
             auto_materialize_policy=get_cron_policy(
-                basic_hourly_cron_rule._replace(all_partitions=False),
+                basic_hourly_cron_schedule,
                 max_materializations_per_minute=100,
             ),
         ),
@@ -434,6 +445,139 @@ cron_scenarios = [
         .assert_requested_runs(
             run_request("A", partition_key="5"),
         ),
+    ),
+    AssetDaemonScenario(
+        id="hourly_cron_unpartitioned_wait_for_parents_with_cron_skip",
+        initial_state=one_asset_depends_on_two.with_asset_properties(
+            keys="C",
+            auto_materialize_policy=get_cron_policy(
+                basic_hourly_cron_schedule, use_cron_skip_rule=True
+            ),
+        ).with_current_time("2020-01-01T00:05"),
+        execution_fn=lambda state: state.evaluate_tick()
+        # don't materialize C because we're waiting for A and B
+        .assert_requested_runs()
+        .with_runs(run_request("A"))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        # now just waiting on B
+        .assert_requested_runs()
+        .with_runs(run_request("B"))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["C"]))
+        # next tick should not request any more runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        .assert_evaluation("C", [])
+        # even if both parents update, still on the same cron schedule tick
+        .with_runs(run_request(["A", "B"]))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # moved to a new cron schedule tick, still do not request run, because parents have not
+        # been updated since cron schedule tick
+        .with_current_time_advanced(minutes=60)
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_runs(run_request("B"))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        # still waiting on A
+        .assert_requested_runs()
+        .with_runs(run_request("A"))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        # now C can go
+        .assert_requested_runs(run_request("C"))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        # no more runs
+        .assert_requested_runs(),
+    ),
+    AssetDaemonScenario(
+        id="hourly_cron_unpartitioned_wait_for_parents_with_cron_skip_single_run",
+        initial_state=one_asset_depends_on_two.with_asset_properties(
+            # all assets get this policy
+            auto_materialize_policy=get_cron_policy(
+                basic_hourly_cron_schedule, use_cron_skip_rule=True
+            ),
+        ).with_current_time("2020-01-01T00:05"),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B", "C"]))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B", "C"]))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    AssetDaemonScenario(
+        id="hourly_cron_partitioned_wait_for_parents_with_cron_skip",
+        initial_state=one_asset_depends_on_two.with_asset_properties(
+            partitions_def=hourly_partitions_def,
+        )
+        .with_asset_properties(
+            keys="C",
+            auto_materialize_policy=get_cron_policy(
+                # this instructs the system to materialize new partitions 15 minutes after they come
+                # into being, so that we can test the waiting behavior
+                "15 * * * *",
+                max_materializations_per_minute=100,
+                use_cron_skip_rule=True,
+            ),
+        )
+        .with_current_time(time_partitions_start_str),
+        execution_fn=lambda state: state.evaluate_tick()
+        # no partitions exist yet
+        .assert_requested_runs()
+        .assert_evaluation("C", [])
+        # don't materialize C because we're waiting for A and B
+        .with_current_time_advanced(hours=1, minutes=5)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # A is materialized, but it's not 15 minutes after the partition was created, so this
+        # doesn't count
+        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
+        # now it is 15 minutes after the partition was created
+        .with_current_time_advanced(minutes=10)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # B is materialized after the required time, but still waiting on A
+        .with_runs(run_request("B", hour_partition_key(state.current_time, delta=1)))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now A is rematerialized, so C can go
+        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(run_request("C", hour_partition_key(state.current_time, delta=1)))
+        # next tick should not request any more runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # next tick happens, 1 hour later, no runs requested
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now A and B are materialized, so C is too
+        .with_current_time_advanced(seconds=30)
+        .with_runs(
+            run_request(["A", "B"], hour_partition_key(state.current_time, delta=2)),
+        )
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("C", hour_partition_key(state.current_time, delta=2)),
+        )
+        # next tick should not request any more runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
     ),
 ]
 
