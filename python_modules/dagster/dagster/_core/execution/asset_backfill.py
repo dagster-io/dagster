@@ -2,11 +2,13 @@ import json
 import logging
 import os
 import time
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -1325,9 +1327,9 @@ def should_backfill_atomic_asset_partitions_unit(
                 f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
             )
 
-        asset_partitions_to_request_map: Dict[AssetKey, Set[str]] = {}
+        asset_partitions_to_request_map: Dict[AssetKey, Set[Optional[str]]] = defaultdict(set)
         for asset_partition in asset_partitions_to_request:
-            asset_partitions_to_request_map.setdefault(asset_partition.asset_key, set()).add(
+            asset_partitions_to_request_map[asset_partition.asset_key].add(
                 asset_partition.partition_key
             )
         candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
@@ -1343,10 +1345,9 @@ def should_backfill_atomic_asset_partitions_unit(
                     parent_backfill_policy.max_partitions_per_run is None
                     # multi-run backfill policy
                     or parent_backfill_policy.max_partitions_per_run
-                    >= len(asset_partitions_to_request_map.get(parent.asset_key, set()))
+                    >= len(asset_partitions_to_request_map[parent.asset_key])
                 )
-                and candidate.partition_key
-                in asset_partitions_to_request_map.get(parent.asset_key, set())
+                and candidate.partition_key in asset_partitions_to_request_map[parent.asset_key]
             )
             can_run_with_parent = (
                 (parent in asset_partitions_to_request or parent in candidates_unit)
