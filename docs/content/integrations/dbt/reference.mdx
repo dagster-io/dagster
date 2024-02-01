@@ -711,7 +711,7 @@ With the variables defined, we can now reference `min_date` and `max_date` in ou
 
 ```sql
 -- Configure the model as incremental
-{{ config(materialized='incremental') }}
+{{ config(materialized='incremental', unique_key='order_date', incremental_strategy="delete+insert") }}
 
 select * from {{ ref('my_model') }}
 
