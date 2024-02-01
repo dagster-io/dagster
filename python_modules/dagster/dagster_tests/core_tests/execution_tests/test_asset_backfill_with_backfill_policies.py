@@ -704,14 +704,15 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
     )
     assert len(result.run_requests) == 2
 
-    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
-    assert result.run_requests[0].partition_key == "2023-03-02"
-    # downstream_b's 03-03 partition should be skipped because upstream_a's 03-02 partition is not materialized
-    assert set(result.run_requests[1].asset_selection) == {upstream_a.key}
-    assert result.run_requests[1].partition_key == "2023-03-03"
+    for run_request in result.run_requests:
+        if run_request.partition_key == "2023-03-02":
+            assert set(run_request.asset_selection) == {upstream_a.key, downstream_b.key}
+        elif run_request.partition_key == "2023-03-03":
+            # downstream_b's 03-03 partition should be skipped because upstream_a's 03-02 partition is not materialized
+            assert set(run_request.asset_selection) == {upstream_a.key}
 
 
-def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run():
+def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     time_now = pendulum.now("UTC")
 
@@ -763,9 +764,128 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run():
     )
     assert len(result.run_requests) == 2
 
-    assert set(result.run_requests[0].asset_selection) == {upstream_a.key}
+
+def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(2),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(2),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+            "2023-03-04",
+            "2023-03-05",
+            "2023-03-06",
+            "2023-03-07",
+            "2023-03-08",
+            "2023-03-09",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 4
+
+    for run_request in result.run_requests:
+        # there is no parallel runs for downstream_b before upstream_a's targeted partitions are materialized
+        assert set(run_request.asset_selection) == {upstream_a.key}
+
+
+def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+            "2023-03-04",
+            "2023-03-05",
+            "2023-03-06",
+            "2023-03-07",
+            "2023-03-08",
+            "2023-03-09",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    assert len(result.run_requests) == 1
+    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-02"
-    assert set(result.run_requests[1].asset_selection) == {upstream_a.key}
-    assert result.run_requests[1].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-03"
-    assert result.run_requests[1].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"

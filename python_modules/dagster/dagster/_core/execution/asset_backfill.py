@@ -1330,29 +1330,36 @@ def should_backfill_atomic_asset_partitions_unit(
             asset_partitions_to_request_map.setdefault(asset_partition.asset_key, set()).add(
                 asset_partition.partition_key
             )
+        candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
         for parent in parent_partitions_result.parent_partitions:
+            parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
+            # checks if this parent with partitions mapped has a backfill policy which would allow
+            # partition mappings which are not one-one with the child to be executed in a way
+            # that respects the dependencies
+            has_partition_mapping_safe_backfill_policy = (
+                parent_backfill_policy
+                and (
+                    # single run backfill policy can incorporate all partitions in one run
+                    parent_backfill_policy.max_partitions_per_run is None
+                    # multi-run backfill policy
+                    or parent_backfill_policy.max_partitions_per_run
+                    >= len(asset_partitions_to_request_map.get(parent.asset_key, set()))
+                )
+                and candidate.partition_key
+                in asset_partitions_to_request_map.get(parent.asset_key, set())
+            )
             can_run_with_parent = (
                 (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and (
-                    (
-                        parent.partition_key == candidate.partition_key
-                        and not asset_graph.get_backfill_policy(parent.asset_key)
-                    )
+                    (parent.partition_key == candidate.partition_key and not parent_backfill_policy)
                     # candidate shares a partition key that is already being requested by the parent
                     # and both candidate and parent have backfill policies and max_partitions_per_run is not 1
-                    or (
-                        asset_graph.get_backfill_policy(parent.asset_key)
-                        and asset_graph.get_backfill_policy(parent.asset_key).max_partitions_per_run
-                        != 1
-                        and candidate.partition_key
-                        in asset_partitions_to_request_map[parent.asset_key]
-                    )
+                    or has_partition_mapping_safe_backfill_policy
                 )
                 and asset_graph.get_repository_handle(candidate.asset_key)
                 is asset_graph.get_repository_handle(parent.asset_key)
-                and asset_graph.get_backfill_policy(parent.asset_key)
-                == asset_graph.get_backfill_policy(candidate.asset_key)
+                and parent_backfill_policy == candidate_backfill_policy
             )
 
             if (
