@@ -102,7 +102,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             engine=engine,
             overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
             custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
-            writer_properties=WriterProperties(**writerprops)
+            writer_properties=WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
             else writerprops,
             **delta_params,
