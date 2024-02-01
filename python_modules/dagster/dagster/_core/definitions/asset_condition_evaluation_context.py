@@ -181,8 +181,7 @@ class AssetConditionEvaluationContext:
             parent_info = self.evaluation_state_by_key.get(parent_key)
             if not parent_info:
                 continue
-            # this parent subset was generated on this tick, so it is still valid
-            parent_subset = parent_info.true_subset.as_valid
+            parent_subset = parent_info.true_subset.as_valid(self.partitions_def)
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
@@ -218,7 +217,7 @@ class AssetConditionEvaluationContext:
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.previous_tick_requested_subset | self.materialized_since_previous_tick_subset
+        return self.materialized_since_previous_tick_subset | self.previous_tick_requested_subset
 
     @functools.cached_property
     @root_property
@@ -357,10 +356,10 @@ class AssetConditionEvaluationContext:
 
         # don't use information from the previous tick if we have explicit metadata for it or
         # we've explicitly said to ignore it
-        ignore_subset = ignore_subset | has_new_metadata_subset
+        ignore_subset = has_new_metadata_subset | ignore_subset
 
         for elt in self.previous_subsets_with_metadata:
-            carry_forward_subset = elt.subset - ignore_subset
+            carry_forward_subset = elt.subset.as_valid(self.partitions_def) - ignore_subset
             if carry_forward_subset.size > 0:
                 mapping[elt.frozen_metadata] |= carry_forward_subset
 
