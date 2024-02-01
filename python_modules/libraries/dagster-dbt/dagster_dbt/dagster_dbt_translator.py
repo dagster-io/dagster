@@ -31,9 +31,12 @@ class DagsterDbtTranslatorSettings:
     Args:
         enable_asset_checks (bool): Whether to load dbt tests as Dagster asset checks.
             Defaults to False.
+        enable_table_schema_metadata (bool): Whether to emit table schema metadata when
+            materializing dbt models, seeds, or snapshots. Defaults to False.
     """
 
     enable_asset_checks: bool = False
+    enable_table_schema_metadata: bool = False
 
 
 class DagsterDbtTranslator:

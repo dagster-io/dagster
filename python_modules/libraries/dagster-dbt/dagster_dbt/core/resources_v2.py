@@ -22,6 +22,7 @@ from typing import (
 
 import dateutil.parser
 import orjson
+import yaml
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
@@ -44,6 +45,7 @@ from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
+    default_metadata_from_dbt_resource_props,
     get_manifest_and_translator_from_dbt_assets,
     output_name_fn,
 )
@@ -57,6 +59,11 @@ from ..dbt_manifest import (
     validate_manifest,
 )
 from ..errors import DagsterDbtCliRuntimeError
+from ..include.macros import (
+    DAGSTER_DBT_TABLE_SCHEMA_MACRO_INVOCATION,
+    DAGSTER_DBT_TABLE_SCHEMA_MACRO_NAME,
+    DAGSTER_DBT_TABLE_SCHEMA_MACRO_PATH,
+)
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
 logger = get_dagster_logger()
@@ -141,10 +148,12 @@ class DbtCliEventMessage:
                 "No dbt manifest was provided. Dagster events for dbt tests will not be created."
             )
 
+        unique_id: str = event_node_info["unique_id"]
+        dbt_resource_props = manifest["nodes"][unique_id]
+        metadata = default_metadata_from_dbt_resource_props(dbt_resource_props.get("dagster", {}))
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         invocation_id: str = self.raw_event["info"]["invocation_id"]
-        unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
 
@@ -160,18 +169,19 @@ class DbtCliEventMessage:
                     value=None,
                     output_name=output_name_fn(event_node_info),
                     metadata={
+                        **metadata,
                         "unique_id": unique_id,
                         "invocation_id": invocation_id,
                         "Execution Duration": duration_seconds,
                     },
                 )
             else:
-                dbt_resource_props = manifest["nodes"][unique_id]
                 asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     metadata={
+                        **metadata,
                         "unique_id": unique_id,
                         "invocation_id": invocation_id,
                         "Execution Duration": duration_seconds,
@@ -285,6 +295,28 @@ class DbtCliInvocation:
 
             partial_parse_destination_target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(partial_parse_file_path, partial_parse_destination_target_path)
+
+        # Attempt to edit the dbt_project.yml file to include the macro to generate table schema
+        # information.
+        if dagster_dbt_translator.settings.enable_table_schema_metadata:
+            dbt_project_yml_path = project_dir.joinpath(DBT_PROJECT_YML_NAME)
+            dbt_project_yml = yaml.safe_load(dbt_project_yml_path.read_bytes())
+
+            macro_destination_path = project_dir.joinpath(
+                "macros", DAGSTER_DBT_TABLE_SCHEMA_MACRO_NAME
+            )
+
+            macro_destination_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(DAGSTER_DBT_TABLE_SCHEMA_MACRO_PATH, macro_destination_path)
+
+            for resource_type in ["models", "seeds", "snapshots"]:
+                resource = dbt_project_yml.setdefault(resource_type, {})
+                post_hooks = resource.setdefault("+post-hook", [])
+
+                if DAGSTER_DBT_TABLE_SCHEMA_MACRO_INVOCATION not in post_hooks:
+                    post_hooks.append(DAGSTER_DBT_TABLE_SCHEMA_MACRO_INVOCATION)
+
+            dbt_project_yml_path.write_text(yaml.dump(dbt_project_yml))
 
         # Create a subprocess that runs the dbt CLI command.
         process = subprocess.Popen(
@@ -410,6 +442,23 @@ class DbtCliInvocation:
                         is_error_message = event.raw_event["info"]["level"] == "error"
                         if is_error_message:
                             self._error_messages.append(str(event))
+
+                        if (
+                            self.dagster_dbt_translator.settings.enable_table_schema_metadata
+                            and event.raw_event["info"]["name"] == "JinjaLogInfo"
+                        ):
+                            unique_id: str = event.raw_event["data"]["node_info"]["unique_id"]
+                            dbt_resource_props = self.manifest["nodes"][unique_id]
+
+                            # Attempt to parse the table schema from the event message.
+                            # If it exists, then save it as metadata for the dbt node in the
+                            # manifest.
+                            with contextlib.suppress(orjson.JSONDecodeError):
+                                table_schema = orjson.loads(event.raw_event["info"]["msg"])
+                                dbt_resource_props["dagster"] = {"columns": table_schema}
+
+                                # Don't show this message in stdout
+                                continue
 
                         # Re-emit the logs from dbt CLI process into stdout.
                         sys.stdout.write(str(event) + "\n")

@@ -473,7 +473,7 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
             },
             "data": data,
         }
-    ).to_default_asset_events(manifest={})
+    ).to_default_asset_events(manifest={"nodes": {"a.b.c": {}}})
 
     assert list(asset_events) == []
 
