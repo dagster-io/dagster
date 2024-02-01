@@ -279,7 +279,7 @@ class _PipesK8sClient(PipesClient):
 
 
 def _detect_current_namespace(
-    kubeconfig_file: str, namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
+    kubeconfig_file: Optional[str], namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
 ) -> Optional[str]:
     """Get the current in-cluster namespace when operating within the cluster.
 
@@ -290,6 +290,9 @@ def _detect_current_namespace(
         with namespace_secret_path.open() as f:
             # We only need to read the first line, this guards us against bad input.
             return f.read().strip()
+
+    if not kubeconfig_file:
+        return None
 
     try:
         _, active_context = kubernetes.config.list_kube_config_contexts(kubeconfig_file)
