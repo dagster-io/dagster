@@ -2032,7 +2032,7 @@ class TestSchedulerRun:
         initial_datetime = create_pendulum_time(
             year=2019, month=2, day=27, hour=0, minute=0, second=0
         )
-        with pendulum.test(initial_datetime):
+        with pendulum_freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
