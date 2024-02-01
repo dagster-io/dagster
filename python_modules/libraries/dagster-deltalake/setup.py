@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "deltalake>=0.12",
-        f"dagster{pin}",
+        "dagster==1.6.3",
     ],
     extras_require={
         "pandas": ["pandas"],
