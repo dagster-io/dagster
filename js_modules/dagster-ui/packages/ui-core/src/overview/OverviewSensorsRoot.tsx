@@ -24,7 +24,9 @@ import {
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {assertUnreachable} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
+import {SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -37,44 +39,51 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
-import {SensorType} from '../graphql/types';
-import {assertUnreachable} from '../app/Util';
 
 function sensorTypeToName(type: SensorType) {
-  switch(type) {
+  switch (type) {
     case SensorType.ASSET:
       return 'Asset';
-      case SensorType.AUTOMATION_POLICY:
-      case SensorType.FRESHNESS_POLICY:
-      case SensorType.MULTI_ASSET:
-      case SensorType.RUN_STATUS:
-      case SensorType.STANDARD:
-
+    case SensorType.AUTOMATION_POLICY:
+    case SensorType.FRESHNESS_POLICY:
+    case SensorType.MULTI_ASSET:
+    case SensorType.RUN_STATUS:
+    case SensorType.STANDARD:
   }
 }
 
 function sensorTypeToIcon(type: SensorType): IconName {
-  case SensorType.ASSET:
-      return 'Asset';
-      case SensorType.AUTOMATION_POLICY:
-      case SensorType.FRESHNESS_POLICY:
-        return 
-      case SensorType.MULTI_ASSET:
-          return 'asset_group'
-      case SensorType.RUN_STATUS:
-        return 'alternate_email'
-      case SensorType.STANDARD:
-        return 'sensors'
-      case SensorType.UNKNOWN:
-        return 'sensors'
-      default:
-        return assertUnreachable(type); 
+  switch (type) {
+    case SensorType.ASSET:
+      return 'asset';
+    case SensorType.AUTOMATION_POLICY:
+    case SensorType.FRESHNESS_POLICY:
+      return 'hourglass';
+    case SensorType.MULTI_ASSET:
+      return 'multi_asset';
+    case SensorType.RUN_STATUS:
+      return 'alternate_email';
+    case SensorType.STANDARD:
+      return 'sensors';
+    case SensorType.UNKNOWN:
+      return 'sensors';
+    default:
+      return assertUnreachable(type);
+  }
+}
+
+function toSetFilterValue(type: SensorType, label: string) {
+  return {
+    label,
+    value: type,
+    match: [label],
+  };
 }
 
 export const OverviewSensorsRoot = () => {
@@ -91,9 +100,12 @@ export const OverviewSensorsRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
   const sensorTypeFilter = useStaticSetFilter<string>({
-    name: "Sensor type",
-    'allValues': [SensorType.ASSET]
-  })
+    name: 'Sensor type',
+    allValues: [toSetFilterValue(SensorType.ASSET, 'Asset')],
+    icon: 'sensors',
+    getStringValue: (value) => value,
+    renderLabel: ({value}) => <span>{value}</span>,
+  });
 
   const filters = useMemo(
     () => [codeLocationFilter, runningStateFilter],
