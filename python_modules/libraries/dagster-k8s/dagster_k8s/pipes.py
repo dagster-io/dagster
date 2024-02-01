@@ -273,7 +273,7 @@ class _PipesK8sClient(PipesClient):
                 client.wait_for_pod(
                     pod_name,
                     namespace,
-                    wait_for_state=WaitForPodState.Terminate,
+                    wait_for_state=WaitForPodState.Terminated,
                     ignore_containers=ignore_containers,
                     wait_time_between_attempts=self.poll_interval,
                 )
