@@ -172,7 +172,7 @@ dbt-extractor==0.4.1
 debugpy==1.8.0
 decorator==5.1.1
 defusedxml==0.7.1
-deltalake==0.14.0
+deltalake==0.15.0
 Deprecated==1.2.14
 -e examples/development_to_production
 dict2css==0.3.0.post1
