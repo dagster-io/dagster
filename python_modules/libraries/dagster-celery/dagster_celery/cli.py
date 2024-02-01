@@ -75,17 +75,17 @@ def get_config_dir(config_yaml=None):
 
     validated_config = get_validated_config(config_yaml)
     with open(config_path, "w", encoding="utf8") as fd:
-        if "broker" in validated_config and validated_config["broker"]:
+        if validated_config.get("broker"):
             fd.write(
                 "broker_url = '{broker_url}'\n".format(broker_url=str(validated_config["broker"]))
             )
-        if "backend" in validated_config and validated_config["backend"]:
+        if validated_config.get("backend"):
             fd.write(
                 "result_backend = '{result_backend}'\n".format(
                     result_backend=str(validated_config["backend"])
                 )
             )
-        if "config_source" in validated_config and validated_config["config_source"]:
+        if validated_config.get("config_source"):
             for key, value in validated_config["config_source"].items():
                 fd.write(f"{key} = {value!r}\n")
 

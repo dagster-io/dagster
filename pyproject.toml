@@ -105,6 +105,15 @@ extend-exclude = [
   "*/snapshots/*",
 ]
 
+# Codebase-wide default line length. Override in package-specific pyproject.toml where a different
+# length is desired.
+line-length = 100
+
+# Fail if Ruff is not running this version.
+required-version = "0.1.7"
+
+[tool.ruff.lint]
+
 ignore = [
 
   # (missing public docstrings) These work off of the Python sense of "public", rather than our
@@ -164,10 +173,6 @@ ignore = [
   "PERF401", # (manual-list-comprehension)
   "PERF402", # (manual-list-copy)
 ]
-
-# Codebase-wide default line length. Override in package-specific pyproject.toml where a different
-# length is desired.
-line-length = 100
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
 # Here we append to the defaults.
@@ -230,19 +235,16 @@ select = [
   "W605",
 ]
 
-# Fail if Ruff is not running this version.
-required-version = "0.1.7"
-
-[tool.ruff.flake8-builtins]
+[tool.ruff.lint.flake8-builtins]
 
 # We use `id` in many places and almost never want to use the python builtin.
 builtins-ignorelist = ["id"]
 
-[tool.ruff.flake8-tidy-imports.banned-api]
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
 
 "__future__.annotations".msg = "Directly quote annotations instead."
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 
 # Combine multiple `from foo import bar as baz` statements with the same source
 # (`foo`) into a single statement.
@@ -252,12 +254,12 @@ combine-as-imports = true
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 
 # Enforce google-style docstrings. This is equivalent to ignoring a large number of pydocstyle (D)
 # rules incompatible with google-style docstrings. See:
