@@ -79,7 +79,9 @@ def get_source_asset_with_key(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]], key: AssetKey
 ) -> SourceAsset:
     source_assets_by_key = {
-        key: source_asset for source_asset in assets if isinstance(source_asset, SourceAsset)
+        source_asset.key: source_asset
+        for source_asset in assets
+        if isinstance(source_asset, SourceAsset)
     }
     return source_assets_by_key[key]
 

@@ -8,6 +8,7 @@ module_name = "dagster_university"
 [tool.ruff]
 extend = "../../pyproject.toml"
 
+[tool.ruff.lint]
 extend-ignore = [
 
   # (Unused import): We stub some files with just imports to help people get started

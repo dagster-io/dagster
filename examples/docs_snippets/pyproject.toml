@@ -6,6 +6,8 @@ extend = "../pyproject.toml"
 # Shorter line length for docs snippets for better browser formatting.
 line-length = 88
 
+[tool.ruff.lint]
+
 # Use extend-ignore so that we ignore all the same codes ignored in root.
 extend-ignore = [
 
@@ -26,7 +28,7 @@ extend-ignore = [
   "TCH",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 
 # Ensures ruff classifies imports from `dagster` as first-party. Keeps snippet imports relatively
 # compressed.
