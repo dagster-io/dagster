@@ -1,7 +1,6 @@
-import pendulum
 from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .test_run_status_sensors import (
     instance_with_single_code_location_multiple_repos_with_sensors,
@@ -25,7 +24,7 @@ def test_monitor_source_asset_sensor(executor):
         repos,
     ):
         asset_sensor_repo = repos["asset_sensor_repo"]
-        with pendulum.test(freeze_datetime):
+        with pendulum_freeze_time(freeze_datetime):
             the_sensor = asset_sensor_repo.get_external_sensor("monitor_source_asset_sensor")
             instance.start_sensor(the_sensor)
 
@@ -41,7 +40,7 @@ def test_monitor_source_asset_sensor(executor):
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
-        with pendulum.test(freeze_datetime):
+        with pendulum_freeze_time(freeze_datetime):
             materialize([a_source_asset], instance=instance)
 
             evaluate_sensors(workspace_ctx, executor)

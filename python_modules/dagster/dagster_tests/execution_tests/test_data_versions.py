@@ -212,7 +212,7 @@ def test_multi_asset():
         b = a + 1
         c = a + 2
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = sorted(context.selected_output_names)
+        outputs_to_return = sorted(context.op_execution_context.selected_output_names)
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -756,12 +756,12 @@ def test_stale_status_self_partitioned(num_partitions: int, expected_status: Sta
 def test_stale_status_manually_versioned() -> None:
     @asset(config_schema={"value": Field(int)})
     def asset1(context):
-        value = context.op_config["value"]
+        value = context.op_execution_context.op_config["value"]
         return Output(value, data_version=DataVersion(str(value)))
 
     @asset(config_schema={"value": Field(int)})
     def asset2(context, asset1):
-        value = context.op_config["value"] + asset1
+        value = context.op_execution_context.op_config["value"] + asset1
         return Output(value, data_version=DataVersion(str(value)))
 
     all_assets = [asset1, asset2]
@@ -964,7 +964,7 @@ def test_get_data_provenance_inside_op():
 
     @asset(config_schema={"check_provenance": Field(bool, default_value=False)})
     def asset2(context: AssetExecutionContext, asset1):
-        if context.op_config["check_provenance"]:
+        if context.op_execution_context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance
             assert provenance.input_data_versions[AssetKey("asset1")] == DataVersion("foo")

@@ -98,23 +98,25 @@ export const Suggest = <T,>(props: Props<T>) => {
         }
 
         return (
-          <List
-            style={{outline: 'none', marginRight: -5, paddingRight: 5}}
-            rowCount={props.filteredItems.length}
-            scrollToIndex={
-              props.activeItem && !isCreateNewItem(props.activeItem)
-                ? props.filteredItems.indexOf(props.activeItem)
-                : undefined
-            }
-            rowHeight={itemHeight}
-            rowRenderer={(a: any) => (
-              <div key={a.index} style={a.style}>
-                {props.renderItem(props.filteredItems[a.index] as T, a.index)}
-              </div>
-            )}
-            width={menuWidth}
-            height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
-          />
+          <div style={{overscrollBehavior: 'contain'}}>
+            <List
+              style={{outline: 'none', marginRight: -5, paddingRight: 5}}
+              rowCount={props.filteredItems.length}
+              scrollToIndex={
+                props.activeItem && !isCreateNewItem(props.activeItem)
+                  ? props.filteredItems.indexOf(props.activeItem)
+                  : undefined
+              }
+              rowHeight={itemHeight}
+              rowRenderer={(a: any) => (
+                <div key={a.index} style={a.style}>
+                  {props.renderItem(props.filteredItems[a.index] as T, a.index)}
+                </div>
+              )}
+              width={menuWidth}
+              height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
+            />
+          </div>
         );
       }}
       popoverProps={allPopoverProps}

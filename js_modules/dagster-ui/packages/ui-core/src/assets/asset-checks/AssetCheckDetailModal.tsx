@@ -327,7 +327,7 @@ export function NoChecks() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={Color.linkDefault()} />
+              <Icon name="open_in_new" color={Colors.linkDefault()} />
             </Box> */}
           </Box>
         }
@@ -354,7 +354,7 @@ function NoExecutions() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={Color.linkDefault()} />
+              <Icon name="open_in_new" color={Colors.linkDefault()} />
             </Box> */}
           </Box>
         }

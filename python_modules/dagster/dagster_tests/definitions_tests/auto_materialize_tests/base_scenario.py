@@ -50,19 +50,20 @@ from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -81,6 +82,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -127,33 +129,6 @@ class AssetEvaluationSpec(NamedTuple):
             num_requested=1 if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE else 0,
             num_skipped=1 if rule.decision_type == AutoMaterializeDecisionType.SKIP else 0,
             num_discarded=1 if rule.decision_type == AutoMaterializeDecisionType.DISCARD else 0,
-        )
-
-    def to_evaluation(
-        self, asset_graph: AssetGraph, instance: DagsterInstance
-    ) -> AutoMaterializeAssetEvaluation:
-        asset_key = AssetKey.from_coercible(self.asset_key)
-        return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
-            asset_graph=asset_graph,
-            asset_key=asset_key,
-            asset_partitions_by_rule_evaluation=[
-                (
-                    rule_evaluation,
-                    (
-                        {
-                            AssetKeyPartitionKey(asset_key, partition_key)
-                            for partition_key in partition_keys
-                        }
-                        if partition_keys
-                        else set()
-                    ),
-                )
-                for rule_evaluation, partition_keys in self.rule_evaluations
-            ],
-            num_requested=self.num_requested,
-            num_skipped=self.num_skipped,
-            num_discarded=self.num_discarded,
-            dynamic_partitions_store=instance,
         )
 
 
@@ -284,7 +259,7 @@ class AssetReconciliationScenario(
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time):
+        with pendulum_freeze_time(test_time):
 
             @repository
             def repo():
@@ -367,9 +342,6 @@ class AssetReconciliationScenario(
                         tags=run_request.tags,
                     )
 
-                # make sure we can deserialize it using the new asset graph
-                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
-
             else:
                 cursor = AssetDaemonCursor.empty()
 
@@ -382,7 +354,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+            with pendulum_freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
                 if run.is_observation:
                     observe(
                         instance=instance,
@@ -403,7 +375,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum.test(test_time):
+        with pendulum_freeze_time(test_time):
             # get asset_graph
             if not with_external_asset_graph:
                 asset_graph = repo.asset_graph
@@ -466,7 +438,7 @@ class AssetReconciliationScenario(
 
         test_time = self.current_time or pendulum.now()
 
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
+        with pendulum_freeze_time(test_time) if self.current_time else contextlib.nullcontext():
             if self.cursor_from is not None:
                 self.cursor_from.do_daemon_scenario(
                     instance,
@@ -482,7 +454,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+            with pendulum_freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
                 assert not run.is_observation, "Observations not supported for daemon tests"
                 if self.assets:
                     do_run(
@@ -508,7 +480,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum.test(test_time):
+        with pendulum_freeze_time(test_time):
             assert scenario_name is not None, "scenario_name must be provided for daemon runs"
 
             if self.code_locations:
@@ -538,7 +510,6 @@ class AssetReconciliationScenario(
                             workspace_context,
                             threadpool_executor=None,
                             amp_tick_futures={},
-                            last_submit_times={},
                             debug_crash_flags=(debug_crash_flags or {}),
                             sensor_state_lock=threading.Lock(),
                         )
@@ -668,7 +639,7 @@ def asset_def(
     def _asset(context, **kwargs):
         del kwargs
 
-        if context.op_config["fail"]:
+        if context.op_execution_context.op_config["fail"]:
             raise ValueError("")
 
     return _asset
@@ -705,7 +676,7 @@ def multi_asset_def(
     )
     def _assets(context):
         for output in keys:
-            if output in context.selected_output_names:
+            if output in context.op_execution_context.selected_output_names:
                 yield Output(output, output)
 
     return _assets

@@ -15,6 +15,7 @@ import styled from 'styled-components';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
+import {useCopyAction} from '../runs/RunTags';
 import {TagAction} from '../ui/TagActions';
 
 interface ITagEditorProps {
@@ -91,6 +92,8 @@ export const TagEditor = ({
     setEditState((current) => [...current, {key: '', value: ''}]);
   };
 
+  const copyAction = useCopyAction();
+
   return (
     <Dialog
       icon="info"
@@ -119,7 +122,7 @@ export const TagEditor = ({
                       </Tooltip>
                     );
                   }
-                  return <RunTag tag={tag} key={key} />;
+                  return <RunTag tag={tag} key={key} actions={[copyAction]} />;
                 })}
               </TagList>
             </Group>

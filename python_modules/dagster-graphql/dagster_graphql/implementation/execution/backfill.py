@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, List, Sequence, Union, cast
 
 import dagster._check as check
 import pendulum
@@ -18,7 +18,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from ..utils import (
     AssetBackfillPreviewParams,
     BackfillParams,
-    assert_permission,
+    assert_permission_for_asset_graph,
     assert_permission_for_location,
 )
 
@@ -35,42 +35,6 @@ if TYPE_CHECKING:
         GrapheneResumeBackfillSuccess,
     )
     from ...schema.errors import GraphenePartitionSetNotFoundError
-
-
-def _assert_permission_for_asset_graph(
-    graphene_info: "ResolveInfo",
-    asset_graph: ExternalAssetGraph,
-    asset_selection: Optional[Sequence[AssetKey]],
-    permission: str,
-) -> None:
-    asset_keys = set(asset_selection or [])
-
-    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
-    # graph) need deployment-wide permissions - no valid code location to check
-    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
-        assert_permission(
-            graphene_info,
-            permission,
-        )
-        return
-
-    if asset_keys:
-        repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
-    else:
-        repo_handles = asset_graph.repository_handles_by_key.values()
-
-    location_names = set(
-        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
-    )
-
-    if not location_names:
-        assert_permission(
-            graphene_info,
-            permission,
-        )
-    else:
-        for location_name in location_names:
-            assert_permission_for_location(graphene_info, permission, location_name)
 
 
 def get_asset_backfill_preview(
@@ -236,7 +200,7 @@ def create_and_launch_partition_backfill(
 
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
-        _assert_permission_for_asset_graph(
+        assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
 
@@ -264,7 +228,7 @@ def create_and_launch_partition_backfill(
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
-        _assert_permission_for_asset_graph(
+        assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
         backfill = PartitionBackfill.from_partitions_by_assets(
@@ -302,7 +266,7 @@ def cancel_partition_backfill(
 
     if backfill.is_asset_backfill:
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
-        _assert_permission_for_asset_graph(
+        assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
             backfill.asset_selection,

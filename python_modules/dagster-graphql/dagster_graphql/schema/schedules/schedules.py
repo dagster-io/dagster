@@ -2,8 +2,9 @@ from typing import List, Optional
 
 import dagster._check as check
 import graphene
+from dagster import DefaultScheduleStatus
 from dagster._core.host_representation import ExternalSchedule
-from dagster._core.scheduler.instigation import InstigatorState
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -17,6 +18,7 @@ from ..instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneDryRunInstigationTicks,
     GrapheneInstigationState,
+    GrapheneInstigationStatus,
 )
 from ..util import ResolveInfo, non_null_list
 
@@ -30,6 +32,8 @@ class GrapheneSchedule(graphene.ObjectType):
     mode = graphene.NonNull(graphene.String)
     execution_timezone = graphene.Field(graphene.String)
     description = graphene.String()
+    defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
+    canReset = graphene.NonNull(graphene.Boolean)
     scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
@@ -67,6 +71,7 @@ class GrapheneSchedule(graphene.ObjectType):
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
 
+        self._stored_state = schedule_state
         self._schedule_state = self._external_schedule.get_current_instigator_state(schedule_state)
 
         super().__init__(
@@ -87,6 +92,19 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_schedule.get_external_origin_id()
+
+    def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
+        default_schedule_status = self._external_schedule.default_status
+
+        if default_schedule_status == DefaultScheduleStatus.RUNNING:
+            return GrapheneInstigationStatus.RUNNING
+        elif default_schedule_status == DefaultScheduleStatus.STOPPED:
+            return GrapheneInstigationStatus.STOPPED
+
+    def resolve_canReset(self, _graphene_info: ResolveInfo):
+        return bool(
+            self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
+        )
 
     def resolve_scheduleState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the schedule runs

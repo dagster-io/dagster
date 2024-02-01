@@ -106,6 +106,16 @@ class AssetRecord(NamedTuple):
     asset_entry: AssetEntry
 
 
+class PlannedMaterializationInfo(NamedTuple):
+    """Internal representation of an planned materialization event, containing storage_id / run_id.
+
+    Users should not invoke this class directly.
+    """
+
+    storage_id: int
+    run_id: str
+
+
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing structured event logs from pipeline runs.
 
@@ -499,16 +509,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_planned_materializations(
-        self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        raise NotImplementedError()
-
-    @abstractmethod
     def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
@@ -516,4 +516,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
         raise NotImplementedError()

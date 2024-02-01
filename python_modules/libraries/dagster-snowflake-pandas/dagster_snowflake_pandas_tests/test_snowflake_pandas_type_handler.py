@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pandas
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
@@ -39,7 +40,6 @@ from dagster_snowflake_pandas import (
     snowflake_pandas_io_manager,
 )
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
-    _add_missing_timezone,
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
@@ -93,18 +93,19 @@ def test_handle_output():
         resource_config={**resource_config, "time_data_to_string": False}
     )
 
-    metadata = handler.handle_output(
-        output_context,
-        TableSlice(
-            table="my_table",
-            schema="my_schema",
-            database="my_db",
-            columns=None,
-            partition_dimensions=[],
-        ),
-        df,
-        connection,
-    )
+    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler.write_pandas", MagicMock()):
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=[],
+            ),
+            df,
+            connection,
+        )
 
     assert metadata == {
         "dataframe_columns": MetadataValue.table_schema(
@@ -164,25 +165,6 @@ def test_type_conversions():
     string_data = pandas.Series(["not", "a", "timestamp"])
 
     assert (_convert_string_to_timestamp(string_data) == string_data).all()
-
-
-def test_timezone_conversions():
-    # no timestamp data
-    no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _add_missing_timezone(no_time, None, "foo")
-    assert (converted == no_time).all()
-
-    # timestamp data
-    with_time = pandas.Series(
-        [
-            pandas.Timestamp("2017-01-01T12:30:45.35"),
-            pandas.Timestamp("2017-02-01T12:30:45.35"),
-            pandas.Timestamp("2017-03-01T12:30:45.35"),
-        ]
-    )
-    time_converted = _add_missing_timezone(with_time, None, "foo")
-
-    assert (with_time.dt.tz_localize("UTC") == time_converted).all()
 
 
 def test_build_snowflake_pandas_io_manager():
@@ -313,9 +295,9 @@ def test_time_window_partitioned_asset(io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> DataFrame:
-            partition = Timestamp(context.asset_partition_key_for_output())
-            value = context.op_config["value"]
+        def daily_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = Timestamp(context.partition_key)
+            value = context.op_execution_context.op_config["value"]
 
             return DataFrame(
                 {
@@ -400,9 +382,9 @@ def test_static_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def static_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
             return DataFrame(
                 {
                     "COLOR": [partition, partition, partition],
@@ -493,7 +475,7 @@ def test_multi_partitioned_asset(io_manager):
         )
         def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
             return DataFrame(
                 {
                     "color": [partition["color"], partition["color"], partition["color"]],
@@ -591,9 +573,9 @@ def test_dynamic_partitions(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def dynamic_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
             return DataFrame(
                 {
                     "fruit": [partition, partition, partition],
@@ -705,17 +687,20 @@ def test_self_dependent_asset(io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
-            key = context.asset_partition_key_for_output()
+        def self_dependent_asset(
+            context: AssetExecutionContext, self_dependent_asset: DataFrame
+        ) -> DataFrame:
+            key = context.partition_key
 
             if not self_dependent_asset.empty:
                 assert len(self_dependent_asset.index) == 3
                 assert (
-                    self_dependent_asset["key"] == context.op_config["last_partition_key"]
+                    self_dependent_asset["key"]
+                    == context.op_execution_context.op_config["last_partition_key"]
                 ).all()
             else:
-                assert context.op_config["last_partition_key"] == "NA"
-            value = context.op_config["value"]
+                assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+            value = context.op_execution_context.op_config["value"]
             pd_df = DataFrame(
                 {
                     "key": [key, key, key],

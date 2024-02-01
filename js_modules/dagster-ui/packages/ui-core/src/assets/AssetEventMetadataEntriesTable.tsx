@@ -19,7 +19,11 @@ export const AssetEventMetadataEntriesTable = ({
   event,
   observations,
 }: {
-  event: AssetObservationFragment | AssetMaterializationFragment | null;
+  event:
+    | (Pick<AssetObservationFragment | AssetMaterializationFragment, 'metadataEntries'> & {
+        timestamp?: string | number;
+      })
+    | null;
   observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
 }) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {

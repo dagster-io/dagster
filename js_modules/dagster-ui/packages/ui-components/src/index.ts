@@ -6,7 +6,6 @@ export * from './components/Button';
 export * from './components/ButtonGroup';
 export * from './components/ButtonLink';
 export * from './components/Checkbox';
-export * from './components/LegacyColors';
 export * from './components/ConfigEditorDialog';
 export * from './components/ConfigEditorWithSchema';
 export * from './components/ConfigTypeSchema';

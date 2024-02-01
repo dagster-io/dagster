@@ -7,7 +7,7 @@ import {
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  Color,
+  Colors,
 } from '../src';
 
 import {MemoryRouter} from 'react-router-dom';
@@ -22,8 +22,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    background-color: ${Color.backgroundDefault()};
-    color: ${Color.textDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -31,7 +31,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${Color.linkDefault()};
+    color: ${Colors.linkDefault()};
   }
 
   body {
@@ -40,8 +40,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, input, select, textarea {
-    background-color: ${Color.backgroundDefault()};
-    color: ${Color.textDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-family: ${FontFamily.default};
   }
 

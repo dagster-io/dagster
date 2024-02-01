@@ -77,6 +77,7 @@ import {
   RepositorySelector,
 } from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
+import {useCopyAction} from '../runs/RunTags';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -625,6 +626,8 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const {LaunchRootExecutionButton} = useLaunchPadHooks();
 
+  const copyAction = useCopyAction();
+
   return (
     <>
       <Dialog
@@ -772,6 +775,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                   tagsFromDefinition={pipeline.tags}
                   tagsFromSession={tagsFromSession}
                   onRequestEdit={openTagEditor}
+                  actions={[copyAction]}
                 />
               </Box>
             ) : null}

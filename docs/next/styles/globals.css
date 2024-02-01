@@ -11,7 +11,7 @@
 @layer base {
   html {
     font-feature-settings: "ss02";
-    font-size: 15px;
+    letter-spacing: 0.0175em;
   }
 
   ::selection {

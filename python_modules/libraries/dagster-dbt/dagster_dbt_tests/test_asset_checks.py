@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     AssetCheckKey,
     AssetCheckResult,
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetSelection,
@@ -18,12 +19,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from pytest_mock import MockerFixture
-
-is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
-
 
 test_asset_checks_dbt_project_dir = (
     Path(__file__).joinpath("..", "dbt_projects", "test_dagster_asset_checks").resolve()
@@ -73,6 +69,101 @@ def test_with_asset_checks() -> None:
         assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
         assert asset_def.check_specs_by_output_name
 
+        assert asset_def.check_specs_by_output_name == {
+            "customers_not_null_customers_customer_id": AssetCheckSpec(
+                name="not_null_customers_customer_id",
+                asset=AssetKey(["customers"]),
+            ),
+            "customers_unique_customers_customer_id": AssetCheckSpec(
+                name="unique_customers_customer_id",
+                asset=AssetKey(["customers"]),
+            ),
+            "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+                name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
+                asset=AssetKey(["orders"]),
+                description="Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']",
+            ),
+            "orders_not_null_orders_amount": AssetCheckSpec(
+                name="not_null_orders_amount",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
+                name="not_null_orders_bank_transfer_amount",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_coupon_amount": AssetCheckSpec(
+                name="not_null_orders_coupon_amount",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
+                name="not_null_orders_credit_card_amount",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_customer_id": AssetCheckSpec(
+                name="not_null_orders_customer_id",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
+                name="not_null_orders_gift_card_amount",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_not_null_orders_order_id": AssetCheckSpec(
+                name="not_null_orders_order_id",
+                asset=AssetKey(["orders"]),
+            ),
+            "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
+                name="relationships_orders_customer_id__customer_id__ref_customers_",
+                asset=AssetKey(["orders"]),
+                additional_deps=[
+                    AssetKey(["customers"]),
+                ],
+            ),
+            "orders_unique_orders_order_id": AssetCheckSpec(
+                name="unique_orders_order_id",
+                asset=AssetKey(["orders"]),
+            ),
+            "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
+                name="not_null_stg_customers_customer_id",
+                asset=AssetKey(["stg_customers"]),
+            ),
+            "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
+                name="unique_stg_customers_customer_id",
+                asset=AssetKey(["stg_customers"]),
+            ),
+            "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+                name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
+                asset=AssetKey(["stg_orders"]),
+            ),
+            "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
+                name="not_null_stg_orders_order_id",
+                asset=AssetKey(["stg_orders"]),
+            ),
+            "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
+                name="unique_stg_orders_order_id",
+                asset=AssetKey(["stg_orders"]),
+            ),
+            "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
+                name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
+                asset=AssetKey(["stg_payments"]),
+            ),
+            "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
+                name="not_null_stg_payments_payment_id",
+                asset=AssetKey(["stg_payments"]),
+            ),
+            "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
+                name="unique_stg_payments_payment_id",
+                asset=AssetKey(["stg_payments"]),
+            ),
+            "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
+                name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
+                asset=AssetKey(["fail_tests_model"]),
+            ),
+            "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
+                name="unique_fail_tests_model_id",
+                asset=AssetKey(["fail_tests_model"]),
+            ),
+        }
+
         # dbt singular tests are not modeled as Dagster asset checks
         for check_spec in asset_def.check_specs_by_output_name.values():
             assert "assert_singular_test_is_not_asset_check" != check_spec.name
@@ -117,7 +208,7 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
 
 def _materialize_dbt_assets(
-    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+    dbt_commands: List[List[str]], selection: Optional[AssetSelection], raise_on_error: bool = True
 ) -> ExecuteInProcessResult:
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
@@ -132,32 +223,28 @@ def _materialize_dbt_assets(
             "dbt": dbt,
         },
         selection=selection,
+        raise_on_error=raise_on_error,
     )
 
-    assert result.success
+    if raise_on_error:
+        assert result.success
+
     return result
 
 
 def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
-    result = _materialize_dbt_assets(dbt_commands, selection=None)
-    assert len(result.get_asset_materialization_events()) == 8
-    assert len(result.get_asset_check_evaluations()) == 20
+    result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
+    assert not result.success  # fail_tests_model fails
+    assert len(result.get_asset_materialization_events()) == 10
+    assert len(result.get_asset_check_evaluations()) == 22
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, AssetSelection.keys(AssetKey(["customers"])))
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 2
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 def test_materialize_asset_no_checks(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(
         dbt_commands, AssetSelection.keys(AssetKey(["customers"])).without_checks()
@@ -194,6 +281,7 @@ def test_asset_checks_are_logged_from_resource(
             dagster_dbt_translator=dagster_dbt_translator_with_checks,
             context=mock_context,
             target_path=Path("target"),
+            raise_on_error=False,
         )
 
         events += list(dbt_cli_invocation.stream())
@@ -213,7 +301,6 @@ def test_asset_checks_are_logged_from_resource(
                 "invocation_id": invocation_id,
                 "status": "pass",
             },
-            severity=AssetCheckSeverity.WARN,
         )
         in events
     )
@@ -229,16 +316,35 @@ def test_asset_checks_are_logged_from_resource(
                 "invocation_id": invocation_id,
                 "status": "pass",
             },
-            severity=AssetCheckSeverity.ERROR,
         )
         in events
     )
+    assert AssetCheckResult(
+        passed=False,
+        asset_key=AssetKey(["fail_tests_model"]),
+        check_name="unique_fail_tests_model_id",
+        severity=AssetCheckSeverity.WARN,
+        metadata={
+            "unique_id": ("test.test_dagster_asset_checks.unique_fail_tests_model_id.1619308eb1"),
+            "invocation_id": invocation_id,
+            "status": "warn",
+        },
+    )
+    assert AssetCheckResult(
+        passed=False,
+        asset_key=AssetKey(["fail_tests_model"]),
+        check_name="unique_fail_tests_model_id",
+        severity=AssetCheckSeverity.ERROR,
+        metadata={
+            "unique_id": (
+                "test.test_dagster_asset_checks.accepted_values_fail_tests_model_first_name__foo__bar__baz.5f958cf018"
+            ),
+            "invocation_id": invocation_id,
+            "status": "error",
+        },
+    )
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 @pytest.mark.parametrize(
     "selection",
     [

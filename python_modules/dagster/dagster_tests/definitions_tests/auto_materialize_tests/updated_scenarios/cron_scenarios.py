@@ -11,6 +11,7 @@ from .asset_daemon_scenario_states import (
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
+    three_assets_not_subsettable,
     time_partitions_start_str,
 )
 
@@ -52,6 +53,23 @@ cron_scenarios = [
         .assert_requested_runs(run_request(["A"]))
         .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
         # next tick should not request any more runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    AssetDaemonScenario(
+        id="basic_hourly_cron_unpartitioned_multi_asset",
+        initial_state=three_assets_not_subsettable.with_asset_properties(
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+        ).with_current_time("2020-01-01T00:05"),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B", "C"]))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B", "C"]))
         .with_current_time_advanced(seconds=30)
         .evaluate_tick()
         .assert_requested_runs(),
@@ -131,7 +149,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("A"))
         .with_current_time_advanced(seconds=30)
@@ -149,7 +166,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("B"))
         .with_current_time_advanced(seconds=30)
@@ -211,7 +227,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
         .with_current_time_advanced(seconds=30)
@@ -232,7 +247,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("B", hour_partition_key(state.current_time, delta=1)))
         .with_current_time_advanced(seconds=30)

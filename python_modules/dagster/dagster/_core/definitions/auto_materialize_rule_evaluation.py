@@ -1,4 +1,6 @@
-from abc import ABC
+import hashlib
+from abc import ABC, abstractproperty
+from collections import defaultdict
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -8,27 +10,36 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Tuple,
+    Union,
     cast,
 )
 
 import dagster._check as check
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
+    _WHITELIST_MAP,
     NamedTupleSerializer,
+    PackableValue,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
+    deserialize_value,
     whitelist_for_serdes,
 )
 
-from .asset_graph import AssetGraph
-from .partition import SerializedPartitionsSubset
+from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
+    from dagster._core.definitions.asset_condition import AssetSubsetWithMetadata
+
+    from .asset_condition import (
+        AssetConditionEvaluation,
+        AssetConditionEvaluationWithRunIds,
+        AssetConditionSnapshot,
+    )
 
 
 @whitelist_for_serdes
@@ -57,7 +68,13 @@ class AutoMaterializeRuleSnapshot(NamedTuple):
 
 
 class AutoMaterializeRuleEvaluationData(ABC):
-    pass
+    @abstractproperty
+    def metadata(self) -> MetadataMapping:
+        raise NotImplementedError()
+
+    @property
+    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+        return frozenset(self.metadata.items())
 
 
 @whitelist_for_serdes
@@ -65,7 +82,9 @@ class TextRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple("_TextRuleEvaluationData", [("text", str)]),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {"text": MetadataValue.text(self.text)}
 
 
 @whitelist_for_serdes
@@ -79,7 +98,18 @@ class ParentUpdatedRuleEvaluationData(
         ],
     ),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {
+            **{
+                f"updated_parent_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(sorted(self.updated_asset_keys))
+            },
+            **{
+                f"will_update_parent_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(sorted(self.will_update_asset_keys))
+            },
+        }
 
 
 @whitelist_for_serdes
@@ -90,12 +120,17 @@ class WaitingOnAssetsRuleEvaluationData(
         [("waiting_on_asset_keys", FrozenSet[AssetKey])],
     ),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {
+            **{
+                f"waiting_on_ancestor_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(sorted(self.waiting_on_asset_keys))
+            },
+        }
 
 
-RuleEvaluationResults = Sequence[
-    Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
-]
+RuleEvaluations = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
 
 
 @whitelist_for_serdes
@@ -104,192 +139,323 @@ class AutoMaterializeRuleEvaluation(NamedTuple):
     evaluation_data: Optional[AutoMaterializeRuleEvaluationData]
 
 
-@whitelist_for_serdes
-class AutoMaterializeAssetEvaluation(NamedTuple):
-    """Represents the results of the auto-materialize logic for a single asset.
+# BACKCOMPAT GRAVEYARD
 
-    Properties:
-        asset_key (AssetKey): The asset key that was evaluated.
-        partition_subsets_by_condition: The rule evaluations that impact if the asset should be
-            materialized, skipped, or discarded. If the asset is partitioned, this will be a list of
-            tuples, where the first element is the condition and the second element is the
-            serialized subset of partitions that the condition applies to. If it's not partitioned,
-            the second element will be None.
-        num_requested (int): The number of asset partitions that were requested to be materialized
-        num_skipped (int): The number of asset partitions that were skipped
-        num_discarded (int): The number of asset partitions that were discarded
-        run_ids (Set[str]): The set of run IDs created for this evaluation
-        rule_snapshots (Optional[Sequence[AutoMaterializeRuleSnapshot]]): The snapshots of the
-            rules on the policy at the time it was evaluated.
+
+def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+    serialized_evaluation: str, partitions_def: Optional[PartitionsDefinition]
+) -> "AssetConditionEvaluationWithRunIds":
+    """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
+    objects into the new AssetConditionEvaluationWithRunIds objects.
+    """
+    from .asset_condition import AssetConditionEvaluationWithRunIds
+
+    class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
+        @property
+        def partitions_def(self) -> Optional[PartitionsDefinition]:
+            return partitions_def
+
+    # create a new WhitelistMap that can deserialize SerializedPartitionSubset objects stored
+    # on the old cursor format
+    whitelist_map = WhitelistMap(
+        object_serializers=_WHITELIST_MAP.object_serializers,
+        object_deserializers={
+            **_WHITELIST_MAP.object_deserializers,
+            "AutoMaterializeAssetEvaluation": BackcompatDeserializer(
+                klass=AssetConditionEvaluationWithRunIds
+            ),
+        },
+        enum_serializers=_WHITELIST_MAP.enum_serializers,
+    )
+
+    return deserialize_value(
+        serialized_evaluation, AssetConditionEvaluationWithRunIds, whitelist_map=whitelist_map
+    )
+
+
+def deserialize_serialized_partitions_subset_to_asset_subset(
+    serialized: SerializedPartitionsSubset,
+    asset_key: AssetKey,
+    partitions_def: Optional[PartitionsDefinition],
+) -> AssetSubset:
+    if partitions_def is None or not serialized.can_deserialize(partitions_def):
+        # partitions def has changed since storage time
+        return AssetSubset.empty(asset_key, partitions_def)
+
+    return AssetSubset(asset_key, value=serialized.deserialize(partitions_def))
+
+
+class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
+    """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
+    AssetConditionEvaluationWithRunIds objects.
     """
 
-    asset_key: AssetKey
-    partition_subsets_by_condition: Sequence[
-        Tuple["AutoMaterializeRuleEvaluation", Optional[SerializedPartitionsSubset]]
-    ]
-    num_requested: int
-    num_skipped: int
-    num_discarded: int
-    run_ids: Set[str] = set()
-    rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = None
-
     @property
-    def is_empty(self) -> bool:
-        return (
-            sum([self.num_requested, self.num_skipped, self.num_discarded]) == 0
-            and len(self.partition_subsets_by_condition) == 0
-        )
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """This property gets overridden by subclasses at runtime, once the partitions_def for the
+        specific record we're deserializing is known.
+        """
+        raise NotImplementedError()
 
-    @staticmethod
-    def from_rule_evaluation_results(
-        asset_graph: AssetGraph,
-        asset_key: AssetKey,
-        asset_partitions_by_rule_evaluation: Sequence[
-            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
-        ],
-        num_requested: int,
-        num_skipped: int,
-        num_discarded: int,
-        dynamic_partitions_store: "DynamicPartitionsStore",
-    ) -> "AutoMaterializeAssetEvaluation":
-        auto_materialize_policy = asset_graph.auto_materialize_policies_by_key.get(asset_key)
-
-        if not auto_materialize_policy:
-            check.failed(f"Expected auto materialize policy on asset {asset_key}")
-
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is None:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (rule_evaluation, None)
-                    for rule_evaluation, _ in asset_partitions_by_rule_evaluation
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-                rule_snapshots=auto_materialize_policy.rule_snapshots,
-            )
-        else:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (
-                        rule_evaluation,
-                        SerializedPartitionsSubset.from_subset(
-                            subset=partitions_def.empty_subset().with_partition_keys(
-                                check.not_none(ap.partition_key) for ap in asset_partitions
-                            ),
-                            partitions_def=partitions_def,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        ),
-                    )
-                    for rule_evaluation, asset_partitions in asset_partitions_by_rule_evaluation
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-                rule_snapshots=auto_materialize_policy.rule_snapshots,
-            )
-
-    def _deserialize_rule_evaluation_result(
+    def deserialize_serialized_partitions_subset_or_none(
         self,
-        rule_evaluation: AutoMaterializeRuleEvaluation,
-        serialized_subset: Optional[SerializedPartitionsSubset],
-        asset_graph: AssetGraph,
-    ) -> Optional[Tuple[Optional[AutoMaterializeRuleEvaluationData], AssetSubset]]:
-        partitions_def = asset_graph.get_partitions_def(self.asset_key)
-        if serialized_subset is None:
-            if partitions_def is None:
-                return (rule_evaluation.evaluation_data, AssetSubset(self.asset_key, True))
-        elif serialized_subset.can_deserialize(partitions_def) and partitions_def is not None:
-            return (
-                rule_evaluation.evaluation_data,
-                AssetSubset(self.asset_key, serialized_subset.deserialize(partitions_def)),
-            )
-        # old serialized result is no longer valid
-        return None
-
-    def get_rule_evaluation_results(
-        self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph
-    ) -> RuleEvaluationResults:
-        """For a given rule snapshot, returns the calculated evaluations for that rule."""
-        results = []
-        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
-            # filter for the same rule
-            if rule_evaluation.rule_snapshot != rule_snapshot:
-                continue
-            deserialized_result = self._deserialize_rule_evaluation_result(
-                rule_evaluation, serialized_subset, asset_graph
-            )
-            if deserialized_result:
-                results.append((deserialized_result[0], deserialized_result[1].asset_partitions))
-        return results
-
-    def _get_subset_with_decision_type(
-        self, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph
+        asset_key: AssetKey,
+        serialized: Union[None, SerializedPartitionsSubset],
     ) -> AssetSubset:
-        """Returns the set of asset partitions with a given decision type applied to them."""
-        subset = AssetSubset.empty(self.asset_key, asset_graph.get_partitions_def(self.asset_key))
-        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
-            if rule_evaluation.rule_snapshot.decision_type != decision_type:
-                continue
-            deserialized_result = self._deserialize_rule_evaluation_result(
-                rule_evaluation, serialized_subset, asset_graph
+        if serialized is None:
+            # Confusingly, we used `None` to indicate "all of an unpartitioned asset" in the old
+            # serialization scheme
+            return AssetSubset(asset_key, True)
+        return deserialize_serialized_partitions_subset_to_asset_subset(
+            serialized, asset_key, self.partitions_def
+        )
+
+    def _asset_condition_snapshot_from_rule_snapshot(
+        self, rule_snapshot: AutoMaterializeRuleSnapshot
+    ) -> "AssetConditionSnapshot":
+        from .asset_condition import AssetConditionSnapshot, RuleCondition
+
+        unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+
+        return AssetConditionSnapshot(
+            class_name=RuleCondition.__name__,
+            description=rule_snapshot.description,
+            unique_id=unique_id,
+        )
+
+    def _get_child_rule_evaluation(
+        self,
+        asset_key: AssetKey,
+        partition_subsets_by_condition: Sequence[
+            Tuple["AutoMaterializeRuleEvaluation", Optional[SerializedPartitionsSubset]]
+        ],
+        is_partitioned: bool,
+        rule_snapshot: AutoMaterializeRuleSnapshot,
+    ) -> "AssetConditionEvaluation":
+        from .asset_condition import (
+            AssetConditionEvaluation,
+            AssetSubsetWithMetadata,
+            HistoricalAllPartitionsSubsetSentinel,
+        )
+
+        condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
+
+        subsets_with_metadata = [
+            AssetSubsetWithMetadata(
+                subset=self.deserialize_serialized_partitions_subset_or_none(asset_key, serialized),
+                metadata=rule_evaluation.evaluation_data.metadata,
             )
-            if deserialized_result is None:
-                continue
-            subset |= deserialized_result[1]
-        return subset
+            for rule_evaluation, serialized in partition_subsets_by_condition
+            if rule_evaluation.evaluation_data
+        ]
 
-    def get_requested_or_discarded_subset(self, asset_graph: AssetGraph) -> AssetSubset:
-        """Returns the set of asset partitions which were either requested or discarded on this
-        evaluation.
-        """
-        to_materialize = self._get_subset_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE,
-            asset_graph,
+        true_subset = AssetSubset.empty(asset_key, self.partitions_def)
+        for _, serialized in partition_subsets_by_condition:
+            true_subset = (
+                self.deserialize_serialized_partitions_subset_or_none(asset_key, serialized)
+                | true_subset
+            )
+
+        return AssetConditionEvaluation(
+            condition_snapshot=condition_snapshot,
+            true_subset=true_subset,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.all(asset_key, None),
+            start_timestamp=None,
+            end_timestamp=None,
+            subsets_with_metadata=subsets_with_metadata,
+            child_evaluations=[],
         )
-        to_skip = self._get_subset_with_decision_type(
+
+    def _get_child_decision_type_evaluation(
+        self,
+        asset_key: AssetKey,
+        partition_subsets_by_condition: Sequence[
+            Tuple["AutoMaterializeRuleEvaluation", Optional[SerializedPartitionsSubset]]
+        ],
+        rule_snapshots: Sequence[AutoMaterializeRuleSnapshot],
+        is_partitioned: bool,
+        decision_type: AutoMaterializeDecisionType,
+    ) -> Optional["AssetConditionEvaluation"]:
+        from .asset_condition import (
+            AssetConditionEvaluation,
+            AssetConditionSnapshot,
+            HistoricalAllPartitionsSubsetSentinel,
+            NotAssetCondition,
+            OrAssetCondition,
+        )
+
+        partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
+        for elt in partition_subsets_by_condition:
+            partition_subsets_by_condition_by_rule_snapshot[elt[0].rule_snapshot].append(elt)
+
+        child_evaluations = [
+            self._get_child_rule_evaluation(
+                asset_key,
+                partition_subsets_by_condition_by_rule_snapshot[rule_snapshot],
+                is_partitioned,
+                rule_snapshot,
+            )
+            for rule_snapshot in (
+                set(rule_snapshots) | set(partition_subsets_by_condition_by_rule_snapshot.keys())
+            )
+            if rule_snapshot.decision_type == decision_type
+        ]
+
+        if decision_type == AutoMaterializeDecisionType.DISCARD:
+            # for the discard type, we don't have an OrAssetCondition
+            if len(child_evaluations) != 1:
+                return None
+            evaluation = child_evaluations[0]
+        else:
+            unique_id_parts = [
+                OrAssetCondition.__name__,
+                *[e.condition_snapshot.unique_id for e in child_evaluations],
+            ]
+            unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+            decision_type_snapshot = AssetConditionSnapshot(
+                class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
+            )
+            true_subset = AssetSubset.empty(asset_key, self.partitions_def)
+            for e in child_evaluations:
+                true_subset = e.true_subset | true_subset
+            evaluation = AssetConditionEvaluation(
+                condition_snapshot=decision_type_snapshot,
+                true_subset=true_subset,
+                candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+                if is_partitioned
+                else AssetSubset.all(asset_key, None),
+                subsets_with_metadata=[],
+                child_evaluations=child_evaluations,
+                start_timestamp=None,
+                end_timestamp=None,
+            )
+
+        if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
+            return evaluation
+
+        # non-materialize conditions are inverted
+        unique_id_parts = [
+            NotAssetCondition.__name__,
+            evaluation.condition_snapshot.unique_id,
+        ]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+
+        if is_partitioned:
+            # In reality, we'd like to invert the inner true_subset here, but this is an
+            # expensive operation, and error-prone as the set of all partitions may have changed
+            # since the evaluation was stored. Instead, we just use an empty subset.
+            true_subset = AssetSubset.empty(asset_key, self.partitions_def)
+        else:
+            true_subset = evaluation.true_subset._replace(
+                value=not evaluation.true_subset.bool_value
+            )
+        return AssetConditionEvaluation(
+            condition_snapshot=AssetConditionSnapshot(
+                class_name=NotAssetCondition.__name__, description="Not", unique_id=unique_id
+            ),
+            true_subset=true_subset,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.all(asset_key, None),
+            subsets_with_metadata=[],
+            child_evaluations=[evaluation],
+            start_timestamp=None,
+            end_timestamp=None,
+        )
+
+    def unpack(
+        self,
+        unpacked_dict: Dict[str, UnpackedValue],
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> "AssetConditionEvaluationWithRunIds":
+        from .asset_condition import (
+            AndAssetCondition,
+            AssetConditionEvaluation,
+            AssetConditionSnapshot,
+            HistoricalAllPartitionsSubsetSentinel,
+        )
+
+        asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
+        partition_subsets_by_condition = cast(
+            Sequence[Tuple[AutoMaterializeRuleEvaluation, Optional[SerializedPartitionsSubset]]],
+            unpacked_dict.get("partition_subsets_by_condition"),
+        )
+        rule_snapshots = (
+            cast(Sequence[AutoMaterializeRuleSnapshot], unpacked_dict.get("rule_snapshots", []))
+            or []
+        )
+        is_partitioned = (
+            any(tup[1] is not None for tup in partition_subsets_by_condition)
+            if partition_subsets_by_condition
+            # if we don't have any partition_subsets_by_condition to look at, we can't tell if this
+            # asset was partitioned at the time that the evaluation was stored, so instead we assume
+            # that its current partition status is the same as its partition status at storage time.
+            else self.partitions_def is not None
+        )
+
+        # get the sub-evaluations for each decision type
+        materialize_evaluation = check.not_none(
+            self._get_child_decision_type_evaluation(
+                asset_key,
+                partition_subsets_by_condition,
+                rule_snapshots,
+                is_partitioned,
+                AutoMaterializeDecisionType.MATERIALIZE,
+            )
+        )
+        not_skip_evaluation = self._get_child_decision_type_evaluation(
+            asset_key,
+            partition_subsets_by_condition,
+            rule_snapshots,
+            is_partitioned,
             AutoMaterializeDecisionType.SKIP,
-            asset_graph,
         )
-        return to_materialize - to_skip
-
-    def get_evaluated_subset(self, asset_graph: AssetGraph) -> AssetSubset:
-        """Returns the set of asset partitions which were evaluated by any rule on this evaluation."""
-        # no asset partition can be evaluated by SKIP or DISCARD rules without having at least one
-        # materialize rule evaluation
-        return self._get_subset_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
+        not_discard_evaluation = self._get_child_decision_type_evaluation(
+            asset_key,
+            partition_subsets_by_condition,
+            rule_snapshots,
+            is_partitioned,
+            AutoMaterializeDecisionType.DISCARD,
         )
 
-    def equivalent_to_stored_evaluation(
-        self, stored_evaluation: Optional["AutoMaterializeAssetEvaluation"], asset_graph: AssetGraph
-    ) -> bool:
-        """This function returns if a stored record is equivalent to this one. To do so, we can't
-        just use regular namedtuple equality, as the serialized partition subsets will be
-        potentially have different string values.
-        """
-        if stored_evaluation is None:
-            # empty evaluations are not stored on the cursor
-            return self.is_empty
-        return (
-            self.asset_key == stored_evaluation.asset_key
-            and set(self.rule_snapshots or []) == set(stored_evaluation.rule_snapshots or [])
-            # if num_requested / num_discarded > 0 on the stored evaluation, then something changed
-            # in the global state on the previous tick
-            and stored_evaluation.num_requested == 0
-            and stored_evaluation.num_discarded == 0
-            and stored_evaluation.num_skipped == self.num_skipped
-            # when rule evaluation results are deserialized from json, they are lists instead of
-            # tuples, so we must convert them before comparing
-            and sorted(self.partition_subsets_by_condition)
-            == sorted([tuple(x) for x in stored_evaluation.partition_subsets_by_condition])
+        # filter out any None evaluations (should realistically only happen for discard)
+        child_evaluations = list(
+            filter(None, [materialize_evaluation, not_skip_evaluation, not_discard_evaluation])
         )
 
+        # the top level condition is the AND of all the sub-conditions
+        unique_id_parts = [
+            AndAssetCondition.__name__,
+            *[e.condition_snapshot.unique_id for e in child_evaluations],
+        ]
+        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        condition_snapshot = AssetConditionSnapshot(
+            class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
+        )
 
-# BACKCOMPAT GRAVEYARD
+        # all AssetSubsets generated here are created using the current partitions_def, so they
+        # will be valid
+        true_subset = materialize_evaluation.true_subset.as_valid
+        if not_skip_evaluation:
+            true_subset -= not_skip_evaluation.child_evaluations[0].true_subset
+        if not_discard_evaluation:
+            true_subset -= not_discard_evaluation.child_evaluations[0].true_subset
+
+        return AssetConditionEvaluation(
+            condition_snapshot=condition_snapshot,
+            true_subset=true_subset,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel()
+            if is_partitioned
+            else AssetSubset.all(asset_key, None),
+            subsets_with_metadata=[],
+            child_evaluations=child_evaluations,
+            start_timestamp=None,
+            end_timestamp=None,
+        ).with_run_ids(cast(AbstractSet[str], unpacked_dict.get("run_ids", set())))
 
 
 class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):

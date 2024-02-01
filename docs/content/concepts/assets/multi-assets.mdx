@@ -101,9 +101,9 @@ from dagster import AssetOut, Output, multi_asset
     can_subset=True,
 )
 def split_actions(context: AssetExecutionContext):
-    if "a" in context.selected_output_names:
+    if "a" in context.op_execution_context.selected_output_names:
         yield Output(value=123, output_name="a")
-    if "b" in context.selected_output_names:
+    if "b" in context.op_execution_context.selected_output_names:
         yield Output(value=456, output_name="b")
 ```
 
@@ -132,3 +132,21 @@ def my_complex_assets(a, b):
     # d only depends on b
     yield Output(value=b + 1, output_name="d")
 ```
+
+### Multi-asset code versions
+
+Multi-assets may assign different code versions for each of their outputs:
+
+```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
+@multi_asset(
+    outs={
+        "a": AssetOut(code_version="1"),
+        "b": AssetOut(code_version="2"),
+    }
+)
+def multi_asset_with_versions():
+    yield Output(100, "a")
+    yield Output(200, "b")
+```
+
+Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.

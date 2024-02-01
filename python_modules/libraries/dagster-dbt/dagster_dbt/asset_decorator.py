@@ -278,9 +278,7 @@ def dbt_assets(
                 partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
             )
             def partitionshop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-                time_window = context.asset_partitions_time_window_for_output(
-                    list(context.selected_output_names)[0]
-                )
+                time_window = context.partition_time_window
 
                 dbt_vars = {
                     "min_date": time_window.start.isoformat(),
@@ -409,11 +407,9 @@ def get_dbt_multi_asset_args(
             if child_unique_id.startswith("test")
         ]
         for test_unique_id in test_unique_ids:
-            test_resource_props = manifest["nodes"][test_unique_id]
             check_spec = default_asset_check_fn(
-                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
             )
-
             if check_spec:
                 check_specs.append(check_spec)
 

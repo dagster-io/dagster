@@ -13,9 +13,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-)
+from dagster._core.definitions.asset_condition import AssetConditionEvaluationWithRunIds
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
@@ -33,6 +31,7 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
     EventRecordsResult,
+    PlannedMaterializationInfo,
 )
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
@@ -479,17 +478,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
 
-    def fetch_planned_materializations(
-        self,
-        filters: Union[AssetKey, "AssetRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        return self._storage.event_log_storage.fetch_planned_materializations(
-            filters, limit, cursor, ascending
-        )
-
     def fetch_run_status_changes(
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
@@ -499,6 +487,15 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_run_status_changes(
             filters, limit, cursor, ascending
+        )
+
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
+        return self._storage.event_log_storage.get_latest_planned_materialization_info(
+            asset_key, partition
         )
 
     def get_asset_records(
@@ -788,7 +785,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
     ) -> None:
         return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
             evaluation_id, asset_evaluations

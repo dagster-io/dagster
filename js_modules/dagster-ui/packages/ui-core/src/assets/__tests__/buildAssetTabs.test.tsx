@@ -282,7 +282,7 @@ describe('buildAssetTabs', () => {
       'plots',
       'definition',
       'lineage',
-      'auto-materialize-history',
+      'automation',
     ]);
   });
 
@@ -301,13 +301,7 @@ describe('buildAssetTabs', () => {
       params,
     });
     const tabKeys = tabList.map(({id}) => id);
-    expect(tabKeys).toEqual([
-      'events',
-      'plots',
-      'definition',
-      'lineage',
-      'auto-materialize-history',
-    ]);
+    expect(tabKeys).toEqual(['events', 'plots', 'definition', 'lineage', 'automation']);
   });
 
   it('hides partitions and auto-materialize tabs if no partitions or auto-materializing', () => {

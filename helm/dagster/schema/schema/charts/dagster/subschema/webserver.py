@@ -48,6 +48,7 @@ class Webserver(BaseModel):
     schedulerName: Optional[str]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
+    initContainerResources: Optional[kubernetes.Resources]
 
     class Config:
         extra = Extra.forbid

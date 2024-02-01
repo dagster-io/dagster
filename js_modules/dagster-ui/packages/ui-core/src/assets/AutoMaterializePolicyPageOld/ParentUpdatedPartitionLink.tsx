@@ -33,14 +33,20 @@ export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKey
         return [
           partitionName,
           [
-            ...(updatedAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
-              assetKey,
-              detailType: AssetDetailType.Updated,
-            })),
-            ...(willUpdateAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
-              assetKey,
-              detailType: AssetDetailType.WillUpdate,
-            })),
+            ...(updatedAssetKeys[partitionName] || [])
+              .slice()
+              .sort(sortAssetKeys)
+              .map((assetKey) => ({
+                assetKey,
+                detailType: AssetDetailType.Updated,
+              })),
+            ...(willUpdateAssetKeys[partitionName] || [])
+              .slice()
+              .sort(sortAssetKeys)
+              .map((assetKey) => ({
+                assetKey,
+                detailType: AssetDetailType.WillUpdate,
+              })),
           ],
         ];
       }),

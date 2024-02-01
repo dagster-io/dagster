@@ -170,6 +170,7 @@ export const ROOT_WORKSPACE_QUERY = gql`
       selectorId
       status
     }
+    sensorType
   }
 
   ${PYTHON_ERROR_FRAGMENT}

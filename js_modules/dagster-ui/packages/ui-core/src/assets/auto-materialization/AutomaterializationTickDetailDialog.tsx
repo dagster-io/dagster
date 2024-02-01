@@ -234,7 +234,7 @@ const AssetDetailRow = ({
         <RowCell>
           <Link
             to={assetDetailsPathForKey(assetKey, {
-              view: 'auto-materialize-history',
+              view: 'automation',
               evaluation: `${evaluationId}`,
             })}
           >

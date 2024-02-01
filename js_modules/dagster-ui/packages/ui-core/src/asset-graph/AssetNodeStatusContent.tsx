@@ -25,7 +25,9 @@ export enum StatusCase {
   SOURCE_NEVER_OBSERVED = 'SOURCE_NEVER_OBSERVED',
   SOURCE_NO_STATE = 'SOURCE_NO_STATE',
   MATERIALIZING = 'MATERIALIZING',
-  LATE_OR_FAILED = 'LATE_OR_FAILED',
+  FAILED_MATERIALIZATION = 'FAILED_MATERIALIZATION',
+  OVERDUE = 'OVERDUE',
+  CHECKS_FAILED = 'CHECKS_FAILED',
   NEVER_MATERIALIZED = 'NEVER_MATERIALIZED',
   MATERIALIZED = 'MATERIALIZED',
   PARTITIONS_FAILED = 'PARTITIONS_FAILED',
@@ -278,8 +280,17 @@ export function _buildAssetNodeStatusContent({
   ) : undefined;
 
   if (runWhichFailedToMaterialize || overdue || checksFailed) {
+    const statusCase = (() => {
+      if (runWhichFailedToMaterialize) {
+        return StatusCase.FAILED_MATERIALIZATION as const;
+      } else if (overdue) {
+        return StatusCase.OVERDUE as const;
+      } else {
+        return StatusCase.CHECKS_FAILED as const;
+      }
+    })();
     return {
-      case: StatusCase.LATE_OR_FAILED as const,
+      case: statusCase,
       background: Colors.backgroundRed(),
       border: Colors.accentRed(),
       content: (
