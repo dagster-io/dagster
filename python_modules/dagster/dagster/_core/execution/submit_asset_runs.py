@@ -265,7 +265,7 @@ def submit_asset_run(
 
 class SubmitRunRequestChunkResult(NamedTuple):
     chunk_submitted_runs: Sequence[Tuple[RunRequest, DagsterRun]]
-    code_unreachable_error_raised: bool
+    retryable_error_raised: bool
 
 
 def submit_asset_runs_in_chunks(
@@ -278,7 +278,6 @@ def submit_asset_runs_in_chunks(
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
     backfill_id: Optional[str] = None,
-    catch_code_location_load_errors: bool = False,
 ) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
     """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
     None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
@@ -292,7 +291,7 @@ def submit_asset_runs_in_chunks(
     for chunk_start in range(0, len(run_requests), chunk_size):
         run_request_chunk = run_requests[chunk_start : chunk_start + chunk_size]
         chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
-        code_unreachable_error_raised = False
+        retryable_error_raised = False
 
         logger.critical(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
 
@@ -316,16 +315,14 @@ def submit_asset_runs_in_chunks(
                 # allow the daemon to heartbeat while runs are submitted
                 yield None
             except (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError) as e:
-                if not catch_code_location_load_errors:
-                    raise e
-                else:
-                    logger.warning(
-                        f"Unable to reach the user code server for assets {run_request.asset_selection}."
-                        f" Backfill {backfill_id} will resume execution once the server is available."
-                    )
-                    code_unreachable_error_raised = True
-                    # Stop submitting runs if the user code server is unreachable for any
-                    # given run request
-                    break
+                logger.warning(
+                    f"Unable to reach the user code server for assets {run_request.asset_selection}."
+                    f" Backfill {backfill_id} will resume execution once the server is available."
+                    f"User code server error: {e}"
+                )
+                retryable_error_raised = True
+                # Stop submitting runs if the user code server is unreachable for any
+                # given run request
+                break
 
-        yield SubmitRunRequestChunkResult(chunk_submitted_runs, code_unreachable_error_raised)
+        yield SubmitRunRequestChunkResult(chunk_submitted_runs, retryable_error_raised)
