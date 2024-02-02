@@ -113,21 +113,15 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
+        from dbt.cli.flags import (
+            Flags,
+            args_to_context,
+        )
+
         args = shlex.split(dbt_command)[1:]
-        try:
-            from dbt.cli.flags import (
-                Flags,
-                args_to_context,
-            )
 
-            # nasty hack to get dbt to parse the args
-            # dbt >= 1.5.0 requires that profiles-dir is set to an existing directory
-            return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
-        except ImportError:
-            # dbt < 1.5.0 compat
-            from dbt.main import parse_args  # type: ignore
-
-            return parse_args(args=args)
+        # nasty hack to get dbt to parse the args, profiles-dir must be set to an existing directory
+        return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
 
     @staticmethod
     def get_job_materialization_command_step(execute_steps: List[str]) -> int:
