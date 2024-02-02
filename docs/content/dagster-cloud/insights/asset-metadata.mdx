@@ -1,0 +1,66 @@
+---
+title: "Using asset metadata with Dagster Cloud Insights | Dagster Docs"
+description: "Integrating external metrics with Dagster Insights."
+
+platform_type: "cloud"
+---
+
+# Using asset metadata with Dagster Cloud Insights <Experimental />
+
+<Note>
+  This feature is considered <strong>experimental</strong>.
+</Note>
+
+Any numeric [asset materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata) attached to your assets can be viewed and aggregated in the Dagster Insights UI. This is a good way to track usage, cost, data size, or other characteristics of your data assets over time, and across different parts of your platform.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- A Dagster Cloud account on the Pro plan
+
+---
+
+## Step 1: Emit numeric values alongside your asset materializations
+
+In order to populate Insights with materialization metadata, you must first emit numeric metadata to be aggregated. In the below example, we attach a `num_rows` metadata value to the output of our `table1` asset. Insights will let us track this value over time, and aggregate it between any other assets which might provide a `num_rows` value.
+
+```python file=/concepts/assets/asset_materialization_metadata_none.py
+from dagster import Output, asset
+
+
+@asset
+def table1() -> Output[None]:
+    ...  # write out some data to table1
+    return Output(None, metadata={"num_rows": 25})
+```
+
+For more examples, see the [asset materialization metadata documentation](/concepts/assets/software-defined-assets#recording-materialization-metadata).
+
+---
+
+## Step 2: Enable viewing numeric metadata in Dagster Cloud Insights
+
+Once one or more assets are emitting numeric metadata values, you'll be able to enable viewing them in the Insights UI. **Note**: It may take up to 24 hours for new metadata types to be reflected in the UI.
+
+To modify the list of materialization metadata values shown in Insights, click the **Edit** button in the Insights sidebar next to the **User provided metrics** header.
+
+<Image
+alt="Insights sidebar showing the Edit button by the User provided metrics header"
+src="/images/dagster-cloud/insights/insights-sidebar.jpeg"
+width={2538}
+height={1616}
+/>
+
+In the dialog that appears, you can see a list of available metrics to check or uncheck.
+
+<Image
+alt="Metadata metrics selection dialog with checkboxes"
+src="/images/dagster-cloud/insights/insights-dialog.png"
+width={1408}
+height={674}
+/>
+
+Selected metrics will be immediately available to view in Insights in the sidebar and on individual asset pages.
