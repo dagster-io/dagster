@@ -58,11 +58,11 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
 4. Next, we’ll add the metadata with the specified type:
 
    ```python
-    return MaterializeResult(
-        metadata={
-            'Number of records': MetadataValue.int(num_rows)
-        }
-    )
+   return MaterializeResult(
+       metadata={
+           'Number of records': MetadataValue.int(num_rows)
+       }
+   )
    ```
 
    Let’s break down what’s happening here:
