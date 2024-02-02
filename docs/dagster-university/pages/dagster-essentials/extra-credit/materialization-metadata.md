@@ -14,8 +14,8 @@ Now that we’ve covered definition metadata, let’s dive into the other type o
 
 To add metadata to an asset, you need to do two things:
 
-- Use the `context.add_output_metadata` function to pass in the data
 - Use the `MetadataValue` utility class to wrap the data, ensuring it displays correctly in the UI
+- Return a `MaterializeResult` instance with the `metadata` parameter from your asset
 
 Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This will add the count of records to the asset’s materialization metadata.
 
@@ -34,19 +34,19 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
      group_name="raw_files",
    )
    def taxi_trips_file(context):
-     """
-       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
-     """
+       """
+         The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+       """
 
-     partition_date_str = context.asset_partition_key_for_output()
-     month_to_fetch = partition_date_str[:-3]
+       partition_date_str = context.asset_partition_key_for_output()
+       month_to_fetch = partition_date_str[:-3]
 
-     raw_trips = requests.get(
-       f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-     )
+       raw_trips = requests.get(
+           f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+       )
 
-     with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-         output_file.write(raw_trips.content)
+       with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+           output_file.write(raw_trips.content)
    ```
 
 3. First, we need to calculate the number of records contained in the file. Copy and paste the following after the last line in the asset:
@@ -55,15 +55,19 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
    num_rows = len(pd.read_parquet(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch)))
    ```
 
-4. Next, we’ll pass in and type the data:
+4. Next, we’ll add the metadata with the specified type:
 
    ```python
-   context.add_output_metadata({'Number of records':MetadataValue.int(num_rows)})
+    return MaterializeResult(
+        metadata={
+            'Number of records': MetadataValue.int(num_rows)
+        }
+    )
    ```
 
    Let’s break down what’s happening here:
 
-   - `context.add_output_metadata` accepts a `dict`, where the key is the label or name of the metadata being passed and the value is the data itself. In this case, the key is `Number of records`. The value in this example is everything after `Number of records`.
+   - The `metadata` parameter accepts a `dict`, where the key is the label or name of the metadata and the value is the data itself. In this case, the key is `Number of records`. The value in this example is everything after `Number of records`.
    - Using `MetadataValue.int`, the value of the `num_rows` variable is typed as an integer. This tells Dagster to render the data as an integer.
 
    At this point, the asset should look like this:
@@ -73,25 +77,31 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
    from dagster import asset, MetadataValue
 
    @asset(
-     partitions_def=monthly_partition,
-     group_name="raw_files",
+       partitions_def=monthly_partition,
+       group_name="raw_files",
    )
    def taxi_trips_file(context):
-     """
-       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
-     """
+       """
+         The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+       """
 
-     partition_date_str = context.asset_partition_key_for_output()
-     month_to_fetch = partition_date_str[:-3]
+       partition_date_str = context.asset_partition_key_for_output()
+       month_to_fetch = partition_date_str[:-3]
 
-     raw_trips = requests.get(
-       f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-     )
+       raw_trips = requests.get(
+           f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+       )
 
-     with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-         output_file.write(raw_trips.content)
-     num_rows = len(pd.read_parquet(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch)))
-     context.add_output_metadata({'Number of records':MetadataValue.int(num_rows)})
+       with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+           output_file.write(raw_trips.content)
+
+       num_rows = len(pd.read_parquet(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch)))
+
+       return MaterializeResult(
+           metadata={
+               'Number of records': MetadataValue.int(num_rows)
+           }
+       )
    ```
 
 ---

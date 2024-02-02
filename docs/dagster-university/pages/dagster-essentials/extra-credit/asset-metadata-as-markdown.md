@@ -93,31 +93,27 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
 
    ```python
    import base64
+   from dagster import MaterializeResult
    ```
 
-4. Because you need to use the `context` object, you’ll need to add it to the asset function’s argument as the first argument:
-
-   ```python
-   @asset
-   def adhoc_request(context, config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource):
-   ```
-
-5. After the last line in the asset, add the following code:
+4. After the last line in the asset, add the following code:
 
    ```python
    with open(file_path, 'rb') as file:
      image_data = file.read()
    ```
 
-6. Next, we’ll use base64 encoding to convert the chart to Markdown. After the `image_data` line, add the following code:
+5. Next, we’ll use base64 encoding to convert the chart to Markdown. After the `image_data` line, add the following code:
 
    ```python
    base64_data = base64.b64encode(image_data).decode('utf-8')
-     md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
+   md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
 
-    context.add_output_metadata({
-      "preview": MetadataValue.md(md_content)
-    })
+   return MaterializeResult(
+       metadata={
+           "preview": MetadataValue.md(md_content)
+       }
+   )
    ```
 
    Let’s break down what’s happening here:
@@ -126,13 +122,13 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
    2. `base64.b64encode` encodes the image’s binary data (`image_data`) into base64 format.
    3. Next, the encoded image data is converted to a UTF-8 encoded string using the `decode` function.
    4. Next, a variable named `md_content` is created. The value of this variable is a Markdown-formatted string containing a JPEG image, where the base64 representation of the image is inserted.
-   5. Using `context.add_output_metadata`, the image is passed in as metadata. The metadata will have a `preview` label in the Dagster UI.
+   5. We are able to include the metadata on the asset by returning a `MaterializeResult` instance with the image is passed in as metadata. The metadata will have a `preview` label in the Dagster UI.
    6. Using `MetadataValue.md`, the `md_content` is typed as Markdown. This ensures Dagster will correctly render the chart.
 
 At this point, the code for the `adhoc_request` asset should look like this:
 
 ```python
-from dagster import Config, asset, MetadataValue, get_dagster_logger
+from dagster import Config, asset, MaterializeResult, MetadataValue, get_dagster_logger
 from dagster_duckdb import DuckDBResource
 
 import plotly.express as px
@@ -148,7 +144,7 @@ class AdhocRequestConfig(Config):
   end_date: str
 
 @asset
-def adhoc_request(context**,** config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource):
+def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource):
   """
     The response to an request made in the `requests` directory.
     See `requests/README.md` for more information.
@@ -210,9 +206,11 @@ def adhoc_request(context**,** config: AdhocRequestConfig, taxi_zones, taxi_trip
   base64_data = base64.b64encode(image_data).decode('utf-8')
   md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
 
-  context.add_output_metadata({
-    "preview": MetadataValue.md(md_content)
-  })
+  return MaterializeResult(
+      metadata={
+          "preview": MetadataValue.md(md_content)
+      }
+  )
 ```
 
 ---

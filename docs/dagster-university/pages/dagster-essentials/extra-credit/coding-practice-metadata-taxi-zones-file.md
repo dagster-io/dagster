@@ -18,7 +18,7 @@ The metadata you built should look similar to the code contained in the **View a
 @asset(
     group_name="raw_files",
 )
-def taxi_zones_file(context):
+def taxi_zones_file():
   """
     The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
   """
@@ -29,5 +29,10 @@ def taxi_zones_file(context):
   with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
     output_file.write(raw_taxi_zones.content)
   num_rows = MetadataValue.int(len(pd.read_csv(constants.TAXI_ZONES_FILE_PATH)))
-  context.add_output_metadata({'Number of records': num_rows})
+
+  return MaterializeResult(
+      metadata={
+          'Number of records': MetadataValue.int(num_rows)
+      }
+  )
 ```
