@@ -39,14 +39,14 @@ import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
-import {sensorTypeToName} from '../workspace/VirtualizedSensorRow';
+import {SENSOR_TYPE_META} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 function toSetFilterValue(type: SensorType) {
-  const label = sensorTypeToName(type);
+  const label = SENSOR_TYPE_META[type].name;
   return {
     label,
     value: {type, label},

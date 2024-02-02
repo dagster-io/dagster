@@ -18,7 +18,6 @@ import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {assertUnreachable} from '../app/Util';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
@@ -105,6 +104,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   const tick = sensorData?.sensorState.ticks[0];
 
   const sensorType = sensorData?.sensorType;
+  const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
 
   return (
     <Row $height={height} $start={start}>
@@ -146,8 +146,14 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </Box>
         </RowCell>
         <RowCell>
-          {sensorType ? (
-            <Tag icon={sensorTypeToIcon(sensorType)}>{sensorTypeToName(sensorType)}</Tag>
+          {sensorInfo ? (
+            sensorInfo.description ? (
+              <Tooltip content={sensorInfo.description}>
+                <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+              </Tooltip>
+            ) : (
+              <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+            )
           ) : null}
         </RowCell>
         <RowCell>
@@ -235,46 +241,48 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   height: 100%;
 `;
 
-export function sensorTypeToName(type: SensorType) {
-  switch (type) {
-    case SensorType.ASSET:
-      return 'Asset';
-    case SensorType.AUTOMATION_POLICY:
-      return 'Automation';
-    case SensorType.FRESHNESS_POLICY:
-      return 'Freshness policy';
-    case SensorType.MULTI_ASSET:
-      return 'Multi-asset';
-    case SensorType.RUN_STATUS:
-      return 'Run status';
-    case SensorType.STANDARD:
-      return 'Standard';
-    case SensorType.UNKNOWN:
-      return 'Standard';
-    default:
-      return assertUnreachable(type);
-  }
-}
-
-export function sensorTypeToIcon(type: SensorType): IconName {
-  switch (type) {
-    case SensorType.ASSET:
-      return 'asset';
-    case SensorType.AUTOMATION_POLICY:
-    case SensorType.FRESHNESS_POLICY:
-      return 'hourglass';
-    case SensorType.MULTI_ASSET:
-      return 'multi_asset';
-    case SensorType.RUN_STATUS:
-      return 'alternate_email';
-    case SensorType.STANDARD:
-      return 'sensors';
-    case SensorType.UNKNOWN:
-      return 'sensors';
-    default:
-      return assertUnreachable(type);
-  }
-}
+export const SENSOR_TYPE_META: Record<
+  SensorType,
+  {name: string; icon: IconName; description: string | null}
+> = {
+  [SensorType.ASSET]: {
+    name: 'Asset',
+    icon: 'asset',
+    description: 'Asset sensors instigate runs when a materialization occurs',
+  },
+  [SensorType.AUTOMATION_POLICY]: {
+    name: 'Automation',
+    icon: 'hourglass',
+    description: 'Automation policy sensors react to defined automation policy conditions',
+  },
+  [SensorType.FRESHNESS_POLICY]: {
+    name: 'Freshness policy',
+    icon: 'hourglass',
+    description:
+      'Freshness sensors check the freshness of assets on each tick, then perform an action in response to that status',
+  },
+  [SensorType.MULTI_ASSET]: {
+    name: 'Multi-asset',
+    icon: 'multi_asset',
+    description:
+      'Multi asset sensors trigger job executions based on multiple asset materialization event streams',
+  },
+  [SensorType.RUN_STATUS]: {
+    name: 'Run status',
+    icon: 'alternate_email',
+    description: 'Run status sensors react to run status',
+  },
+  [SensorType.STANDARD]: {
+    name: 'Standard',
+    icon: 'sensors',
+    description: null,
+  },
+  [SensorType.UNKNOWN]: {
+    name: 'Standard',
+    icon: 'sensors',
+    description: null,
+  },
+};
 
 const SINGLE_SENSOR_QUERY = gql`
   query SingleSensorQuery($selector: SensorSelector!) {
