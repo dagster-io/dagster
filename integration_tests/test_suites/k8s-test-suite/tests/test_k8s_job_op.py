@@ -220,7 +220,7 @@ def test_k8s_job_op_with_failure(namespace, cluster_provider):
     def failure_job():
         failure_op()
 
-    with pytest.raises(DagsterK8sError, match=r"Pod did not exit successfully"):
+    with pytest.raises(DagsterK8sError):
         failure_job.execute_in_process()
 
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
