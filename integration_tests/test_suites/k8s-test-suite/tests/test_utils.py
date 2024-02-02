@@ -78,7 +78,7 @@ def test_wait_for_pod(cluster_provider, namespace):
             )
             api_client.wait_for_pod("sayhi3", namespace=namespace, wait_timeout=1)
 
-        with pytest.raises(DagsterK8sError) as exc_info:
+        with pytest.raises(DagsterK8sError):
             api_client.core_api.create_namespaced_pod(
                 body=construct_pod_manifest("failwaitforpod", 'echo "whoops!"; exit 1'),
                 namespace=namespace,
@@ -86,9 +86,6 @@ def test_wait_for_pod(cluster_provider, namespace):
             api_client.wait_for_pod(
                 "failwaitforpod", namespace=namespace, wait_for_state=WaitForPodState.Terminated
             )
-
-        # not doing total match because integration test. unit tests test full log message
-        assert "Pod did not exit successfully." in str(exc_info.value)
 
     finally:
         for pod_name in ["waitforpod1", "sayhi2", "sayhi3", "failwaitforpod"]:
