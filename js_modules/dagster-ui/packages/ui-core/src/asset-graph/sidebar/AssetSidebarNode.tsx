@@ -12,7 +12,9 @@ import styled from 'styled-components';
 import {StatusDot} from './StatusDot';
 import {FolderNodeNonAssetType, getDisplayName} from './util';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {AssetGroup} from '../AssetGraphExplorer';
 import {useAssetNodeMenu} from '../AssetNodeMenu';
+import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
 import {GraphData, GraphNode} from '../Utils';
 
 export const AssetSidebarNode = ({
@@ -27,6 +29,7 @@ export const AssetSidebarNode = ({
   onChangeExplorerPath,
   fullAssetGraphData,
   isLastSelected,
+  onFilterToGroup,
 }: {
   fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
@@ -39,8 +42,9 @@ export const AssetSidebarNode = ({
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onFilterToGroup: (group: AssetGroup) => void;
 }) => {
-  const isGroupNode = 'groupName' in node;
+  const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
@@ -48,7 +52,7 @@ export const AssetSidebarNode = ({
     if (isAssetNode) {
       return getDisplayName(node);
     } else if (isGroupNode) {
-      return node.groupName;
+      return node.groupNode.groupName;
     } else {
       return node.locationName;
     }
@@ -135,10 +139,35 @@ export const AssetSidebarNode = ({
                   onChangeExplorerPath={onChangeExplorerPath}
                 />
               </ExpandMore>
+            ) : isGroupNode ? (
+              <AssetGroupPopoverMenu
+                onFilterToGroup={() => onFilterToGroup(node.groupNode)}
+                assets={node.groupNode.assets}
+              />
             ) : null}
           </ItemContainer>
         </BoxWrapper>
       </Box>
+    </>
+  );
+};
+
+const AssetGroupPopoverMenu = (props: Parameters<typeof useGroupNodeContextMenu>[0]) => {
+  const {menu, dialog} = useGroupNodeContextMenu(props);
+  return (
+    <>
+      {dialog}
+      <Popover
+        content={menu}
+        placement="right"
+        shouldReturnFocusOnClose
+        canEscapeKeyClose
+        modifiers={{offset: {enabled: true, options: {offset: [0, 12]}}}}
+      >
+        <UnstyledButton>
+          <Icon name="more_horiz" color={Colors.accentGray()} />
+        </UnstyledButton>
+      </Popover>
     </>
   );
 };
