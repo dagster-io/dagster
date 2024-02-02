@@ -114,7 +114,7 @@ describe('useStaticSetFilter', () => {
     select(filter, 'banana');
     expect(filter.result.current.state).toEqual(new Set(['apple']));
 
-    props.initialState = ['cherry'];
+    props.state = ['cherry'];
 
     filter.rerender();
 

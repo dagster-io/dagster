@@ -35,7 +35,7 @@ describe('useTimeRangeFilter', () => {
 
     expect(filter.name).toBe(mockFilterProps.name);
     expect(filter.icon).toBe(mockFilterProps.icon);
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should reset filter state', () => {
@@ -47,14 +47,14 @@ describe('useTimeRangeFilter', () => {
     });
 
     filter = result.current;
-    expect(filter.state).not.toEqual(mockFilterProps.initialState);
+    expect(filter.state).not.toEqual(mockFilterProps.state);
 
     act(() => {
       filter.setState([null, null]);
     });
     filter = result.current;
 
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should handle pre-defined time ranges', () => {
