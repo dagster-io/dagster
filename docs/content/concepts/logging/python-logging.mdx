@@ -123,7 +123,7 @@ python_logs:
 
 Handler, filter and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers`, `formatters` and `filters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
-From there, standard `context.log` calls will output with the configured handlers, formatters and filter. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
+From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
 
 <Image
 alt="log-file-output"
