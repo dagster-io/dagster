@@ -39,14 +39,17 @@ def _has_integer_id_column(inspector, table):
     return id_col_type and str(id_col_type) == str(db.Integer())
 
 
-def _convert_id_from_int_to_bigint(conn, table):
+def _convert_id_from_int_to_bigint(conn, table, should_autoincrement):
     # Since we are not using alembic (which might mess up the versioning system), we need to
     # manually handle the dialect differences for running the migration
     dialect = db.inspect(conn).dialect.name
     if dialect == "postgresql":
         statement = db.text(f"ALTER TABLE {table.name} ALTER COLUMN id TYPE BIGINT")
     elif dialect == "mysql":
-        statement = db.text(f"ALTER TABLE {table.name} MODIFY COLUMN id BIGINT")
+        if should_autoincrement:
+            statement = db.text(f"ALTER TABLE {table.name} MODIFY COLUMN id BIGINT AUTO_INCREMENT")
+        else:
+            statement = db.text(f"ALTER TABLE {table.name} MODIFY COLUMN id BIGINT")
     else:
         raise Exception(f"Unsupported dialect {dialect}")
     conn.execute(statement)
@@ -83,13 +86,15 @@ def _migrate_storage(conn, tables_to_migrate, print_fn):
 
     for table in tables_to_migrate:
         if _has_integer_id_column(inspector, table):
+            should_autoincrement = table.columns["id"].autoincrement
+
             if table.name == "event_logs" and "asset_event_tags" in all_table_names:
                 # the asset event tags table has a foreign key on the event_logs id that has to be
                 # removed before the event logs col can be converted to bigint
                 _remove_asset_event_tags_foreign_key(conn, inspector, print_fn)
 
             print_fn(f"Altering {table} to use bigint for id column")
-            _convert_id_from_int_to_bigint(conn, table)
+            _convert_id_from_int_to_bigint(conn, table, should_autoincrement)
             print_fn(f"Completed {table} migration")
 
         # restore the foreign key on the asset event tags table if needed, even if we did not just
