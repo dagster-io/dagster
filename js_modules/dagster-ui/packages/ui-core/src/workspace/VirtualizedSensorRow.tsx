@@ -1,5 +1,14 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Checkbox,
+  Colors,
+  IconName,
+  MiddleTruncate,
+  Tag,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -9,7 +18,8 @@ import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {InstigationStatus} from '../graphql/types';
+import {assertUnreachable} from '../app/Util';
+import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
@@ -20,8 +30,8 @@ import {SensorTargetList} from '../sensors/SensorTargetList';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 1fr 76px 120px 148px 180px';
-const TEMPLATE_COLUMNS = '1.5fr 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 120px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 120px 1fr 76px 120px 148px 180px';
 
 interface SensorRowProps {
   name: string;
@@ -94,6 +104,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   const tick = sensorData?.sensorState.ticks[0];
 
+  const sensorType = sensorData?.sensorType;
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -132,6 +144,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               </Caption>
             </div>
           </Box>
+        </RowCell>
+        <RowCell>
+          {sensorType ? (
+            <Tag icon={sensorTypeToIcon(sensorType)}>{sensorTypeToName(sensorType)}</Tag>
+          ) : null}
         </RowCell>
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
@@ -201,6 +218,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         </HeaderCell>
       ) : null}
       <HeaderCell>Name</HeaderCell>
+      <HeaderCell>Type</HeaderCell>
       <HeaderCell>Target</HeaderCell>
       <HeaderCell>Running</HeaderCell>
       <HeaderCell>Frequency</HeaderCell>
@@ -216,6 +234,47 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
     $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
   height: 100%;
 `;
+
+export function sensorTypeToName(type: SensorType) {
+  switch (type) {
+    case SensorType.ASSET:
+      return 'Asset';
+    case SensorType.AUTOMATION_POLICY:
+      return 'Automation';
+    case SensorType.FRESHNESS_POLICY:
+      return 'Freshness policy';
+    case SensorType.MULTI_ASSET:
+      return 'Multi-asset';
+    case SensorType.RUN_STATUS:
+      return 'Run status';
+    case SensorType.STANDARD:
+      return 'Standard';
+    case SensorType.UNKNOWN:
+      return 'Standard';
+    default:
+      return assertUnreachable(type);
+  }
+}
+
+export function sensorTypeToIcon(type: SensorType): IconName {
+  switch (type) {
+    case SensorType.ASSET:
+      return 'asset';
+    case SensorType.AUTOMATION_POLICY:
+    case SensorType.FRESHNESS_POLICY:
+      return 'hourglass';
+    case SensorType.MULTI_ASSET:
+      return 'multi_asset';
+    case SensorType.RUN_STATUS:
+      return 'alternate_email';
+    case SensorType.STANDARD:
+      return 'sensors';
+    case SensorType.UNKNOWN:
+      return 'sensors';
+    default:
+      return assertUnreachable(type);
+  }
+}
 
 const SINGLE_SENSOR_QUERY = gql`
   query SingleSensorQuery($selector: SensorSelector!) {

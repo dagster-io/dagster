@@ -3,14 +3,13 @@ import {
   Box,
   Colors,
   Heading,
-  IconName,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {useContext, useMemo, useState} from 'react';
 
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
@@ -24,7 +23,6 @@ import {
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {assertUnreachable} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -41,50 +39,30 @@ import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
+import {sensorTypeToName} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-function sensorTypeToName(type: SensorType) {
-  switch (type) {
-    case SensorType.ASSET:
-      return 'Asset';
-    case SensorType.AUTOMATION_POLICY:
-    case SensorType.FRESHNESS_POLICY:
-    case SensorType.MULTI_ASSET:
-    case SensorType.RUN_STATUS:
-    case SensorType.STANDARD:
-  }
-}
-
-function sensorTypeToIcon(type: SensorType): IconName {
-  switch (type) {
-    case SensorType.ASSET:
-      return 'asset';
-    case SensorType.AUTOMATION_POLICY:
-    case SensorType.FRESHNESS_POLICY:
-      return 'hourglass';
-    case SensorType.MULTI_ASSET:
-      return 'multi_asset';
-    case SensorType.RUN_STATUS:
-      return 'alternate_email';
-    case SensorType.STANDARD:
-      return 'sensors';
-    case SensorType.UNKNOWN:
-      return 'sensors';
-    default:
-      return assertUnreachable(type);
-  }
-}
-
-function toSetFilterValue(type: SensorType, label: string) {
+function toSetFilterValue(type: SensorType) {
+  const label = sensorTypeToName(type);
   return {
     label,
-    value: type,
+    value: {type, label},
     match: [label],
   };
 }
+
+const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetFilterValue>>> = {
+  [SensorType.ASSET]: toSetFilterValue(SensorType.ASSET),
+  [SensorType.AUTOMATION_POLICY]: toSetFilterValue(SensorType.AUTOMATION_POLICY),
+  [SensorType.FRESHNESS_POLICY]: toSetFilterValue(SensorType.FRESHNESS_POLICY),
+  [SensorType.MULTI_ASSET]: toSetFilterValue(SensorType.MULTI_ASSET),
+  [SensorType.RUN_STATUS]: toSetFilterValue(SensorType.RUN_STATUS),
+  [SensorType.STANDARD]: toSetFilterValue(SensorType.STANDARD),
+};
+const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
@@ -99,17 +77,27 @@ export const OverviewSensorsRoot = () => {
 
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
-  const sensorTypeFilter = useStaticSetFilter<string>({
+
+  const [sensorTypes, setSensorTypes] = useState<Set<SensorType>>(() => new Set());
+
+  const sensorTypeFilter = useStaticSetFilter({
     name: 'Sensor type',
-    allValues: [toSetFilterValue(SensorType.ASSET, 'Asset')],
+    allValues: ALL_SENSOR_TYPE_FILTERS,
     icon: 'sensors',
-    getStringValue: (value) => value,
-    renderLabel: ({value}) => <span>{value}</span>,
+    getStringValue: (value) => value.label,
+    initialState: useMemo(() => {
+      return new Set(Array.from(sensorTypes).map((type) => SENSOR_TYPE_TO_FILTER[type]!.value));
+    }, [sensorTypes]),
+
+    renderLabel: ({value}) => <span>{value.label}</span>,
+    onStateChanged: (state) => {
+      setSensorTypes(new Set(Array.from(state).map((value) => value.type)));
+    },
   });
 
   const filters = useMemo(
-    () => [codeLocationFilter, runningStateFilter],
-    [codeLocationFilter, runningStateFilter],
+    () => [codeLocationFilter, runningStateFilter, sensorTypeFilter],
+    [codeLocationFilter, runningStateFilter, sensorTypeFilter],
   );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
@@ -132,16 +120,23 @@ export const OverviewSensorsRoot = () => {
   }, [data, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
+
   const filteredBuckets = useMemo(() => {
     return repoBuckets.map(({sensors, ...rest}) => {
       return {
         ...rest,
-        sensors: runningState.size
-          ? sensors.filter(({sensorState}) => runningState.has(sensorState.status))
-          : sensors,
+        sensors: sensors.filter(({sensorState, sensorType}) => {
+          if (runningState.size && !runningState.has(sensorState.status)) {
+            return false;
+          }
+          if (sensorTypes.size && !sensorTypes.has(sensorType)) {
+            return false;
+          }
+          return true;
+        }),
       };
     });
-  }, [repoBuckets, runningState]);
+  }, [repoBuckets, runningState, sensorTypes]);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -357,7 +352,7 @@ export const OverviewSensorsRoot = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  sensors: {name: string; sensorState: BasicInstigationStateFragment}[];
+  sensors: {name: string; sensorType: SensorType; sensorState: BasicInstigationStateFragment}[];
 };
 
 const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
