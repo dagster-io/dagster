@@ -11,7 +11,9 @@ from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
+    List,
     NamedTuple,
     Optional,
     Sequence,
@@ -790,3 +792,54 @@ class AssetDaemonScenario(NamedTuple):
                 threadpool_executor=threadpool_executor,
             )
         )
+
+
+
+class AssetConditionInspector:
+    def __init__(self, state: AssetDaemonScenarioState):
+        self.state = state
+        self.condition_evals_by_key: Dict[AssetKey, List[AssetConditionEvaluation]] = {}
+
+    def has_eval_with_key(self, asset_key: CoercibleToAssetKey) -> bool:
+        return bool(
+            (e for e in self.state.evaluations if e.asset_key == AssetKey.from_coercible(asset_key))
+        )
+
+    def eval_for_key(self, asset_key: CoercibleToAssetKey) -> AssetConditionEvaluation:
+        return check.not_none(self.try_eval_for_key(asset_key))
+
+    def try_eval_for_key(
+        self, asset_key: CoercibleToAssetKey
+    ) -> Optional[AssetConditionEvaluation]:
+        return next(
+            (e for e in self.state.evaluations if e.asset_key == AssetKey.from_coercible(asset_key)), None
+        )
+
+    def _get_evals(self, asset_key: AssetKey) -> List[AssetConditionEvaluation]:
+        if asset_key in self.condition_evals_by_key:
+            return self.condition_evals_by_key[asset_key]
+
+        evals = []
+        def _recurse(condition_eval: AssetConditionEvaluation):
+            evals.append(condition_eval)
+            for child_condition_eval in condition_eval.child_evaluations:
+                _recurse(child_condition_eval)
+        _recurse(self.eval_for_key(asset_key))
+        self.condition_evals_by_key[asset_key] = evals
+        return evals
+
+    def get_eval_for_legacy_rule(self, key: CoercibleToAssetKey, legacy_rule: str) -> AssetConditionEvaluation:
+        asset_key = AssetKey.from_coercible(key)
+        evals = self._get_evals(asset_key)
+        for condition_eval in evals:
+            if condition_eval.condition_snapshot.class_name == "RuleCondition":
+                auto_mat_rule = check.not_none(
+                    condition_eval.condition_snapshot.underlying_auto_materialize_rule
+                )
+                if auto_mat_rule.class_name == legacy_rule:
+                    return condition_eval 
+
+        check.failed(f"No eval found for legacy rule {legacy_rule} on asset {asset_key.to_string()}")
+
+    def eval_result_for_legacy_rule(self, key: AssetKey, legacy_rule: str):
+        return self.get_eval_for_legacy_rule(key, legacy_rule).true_subset.bool_value
