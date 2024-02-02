@@ -89,13 +89,11 @@ class SensorLaunchContext(AbstractContextManager):
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
-        sensor_state_lock: threading.Lock,
     ):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
         self._tick = tick
-        self._sensor_state_lock = sensor_state_lock
         self._should_update_cursor_on_failure = False
         self._purge_settings = defaultdict(set)
         for status, day_offset in tick_retention_settings.items():
@@ -178,41 +176,40 @@ class SensorLaunchContext(AbstractContextManager):
             self._tick.status != TickStatus.FAILURE
         ) or self._should_update_cursor_on_failure
 
-        with self._sensor_state_lock:
-            # fetch the most recent state.  we do this as opposed to during context initialization time
-            # because we want to minimize the window of clobbering the sensor state upon updating the
-            # sensor state data.
-            state = self._instance.get_instigator_state(
-                self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
-            )
-            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
-            last_sensor_start_timestamp = (
-                state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
-            )
-            if self._tick.run_keys and should_update_cursor_and_last_run_key:
-                last_run_key = self._tick.run_keys[-1]
+        # fetch the most recent state.  we do this as opposed to during context initialization time
+        # because we want to minimize the window of clobbering the sensor state upon updating the
+        # sensor state data.
+        state = self._instance.get_instigator_state(
+            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
+        )
+        last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
+        last_sensor_start_timestamp = (
+            state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+        )
+        if self._tick.run_keys and should_update_cursor_and_last_run_key:
+            last_run_key = self._tick.run_keys[-1]
 
-            cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
-            if should_update_cursor_and_last_run_key:
-                cursor = self._tick.cursor
+        cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
+        if should_update_cursor_and_last_run_key:
+            cursor = self._tick.cursor
 
-            marked_timestamp = max(
-                self._tick.timestamp,
-                state.instigator_data.last_tick_start_timestamp or 0,  # type: ignore  # (possible none)
-            )
-            self._instance.update_instigator_state(
-                state.with_data(  # type: ignore  # (possible none)
-                    SensorInstigatorData(
-                        last_tick_timestamp=self._tick.timestamp,
-                        last_run_key=last_run_key,
-                        min_interval=self._external_sensor.min_interval_seconds,
-                        cursor=cursor,
-                        last_tick_start_timestamp=marked_timestamp,
-                        last_sensor_start_timestamp=last_sensor_start_timestamp,
-                        sensor_type=self._external_sensor.sensor_type,
-                    )
+        marked_timestamp = max(
+            self._tick.timestamp,
+            state.instigator_data.last_tick_start_timestamp or 0,  # type: ignore  # (possible none)
+        )
+        self._instance.update_instigator_state(
+            state.with_data(  # type: ignore  # (possible none)
+                SensorInstigatorData(
+                    last_tick_timestamp=self._tick.timestamp,
+                    last_run_key=last_run_key,
+                    min_interval=self._external_sensor.min_interval_seconds,
+                    cursor=cursor,
+                    last_tick_start_timestamp=marked_timestamp,
+                    last_sensor_start_timestamp=last_sensor_start_timestamp,
+                    sensor_type=self._external_sensor.sensor_type,
                 )
             )
+        )
 
     def __enter__(self) -> Self:
         return self
@@ -260,7 +257,6 @@ def execute_sensor_iteration_loop(
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
     last_verbose_time = None
     while True:
@@ -279,7 +275,6 @@ def execute_sensor_iteration_loop(
             threadpool_executor=threadpool_executor,
             submit_threadpool_executor=submit_threadpool_executor,
             sensor_tick_futures=sensor_tick_futures,
-            sensor_state_lock=sensor_state_lock,
             log_verbose_checks=verbose_logs_iteration,
         )
         # Yield to check for heartbeats in case there were no yields within
@@ -304,14 +299,10 @@ def execute_sensor_iteration(
     threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
-    sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
-
-    if not sensor_state_lock:
-        sensor_state_lock = threading.Lock()
 
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
@@ -433,7 +424,6 @@ def execute_sensor_iteration(
                 logger,
                 external_sensor,
                 sensor_state,
-                sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
                 submit_threadpool_executor,
@@ -449,7 +439,6 @@ def execute_sensor_iteration(
                 logger,
                 external_sensor,
                 sensor_state,
-                sensor_state_lock,
                 sensor_debug_crash_flags,
                 tick_retention_settings,
                 submit_threadpool_executor=None,
@@ -461,7 +450,6 @@ def _process_tick(
     logger: logging.Logger,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
@@ -474,7 +462,6 @@ def _process_tick(
             logger,
             external_sensor,
             sensor_state,
-            sensor_state_lock,
             sensor_debug_crash_flags,
             tick_retention_settings,
             submit_threadpool_executor,
@@ -487,28 +474,23 @@ def _process_tick_generator(
     logger: logging.Logger,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
     instance = workspace_process_context.instance
     error_info = None
-    with sensor_state_lock:
-        # acquire the lock to avoid a race condition where we're updating the recently touched
-        # timestamp on the sensor state, but clobbering it with an older timestamp which might open
-        # us up to a new evaluation being delegated within the minimum interval
-        now = pendulum.now("UTC")
-        sensor_state = check.not_none(
-            instance.get_instigator_state(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
+    now = pendulum.now("UTC")
+    sensor_state = check.not_none(
+        instance.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
-        if is_under_min_interval(sensor_state, external_sensor):
-            # check the since we might have been queued before processing
-            return
-        else:
-            mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
+    )
+    if is_under_min_interval(sensor_state, external_sensor):
+        # check the since we might have been queued before processing
+        return
+    else:
+        mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
 
     try:
         tick = instance.create_tick(
@@ -525,7 +507,11 @@ def _process_tick_generator(
         check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
         with SensorLaunchContext(
-            external_sensor, tick, instance, logger, tick_retention_settings, sensor_state_lock
+            external_sensor,
+            tick,
+            instance,
+            logger,
+            tick_retention_settings,
         ) as tick_context:
             check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             tick_context.add_log_key(tick_context.log_key)

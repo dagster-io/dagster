@@ -6,7 +6,6 @@ import logging
 import os
 import random
 import sys
-import threading
 from typing import (
     AbstractSet,
     Iterable,
@@ -511,7 +510,6 @@ class AssetReconciliationScenario(
                             threadpool_executor=None,
                             amp_tick_futures={},
                             debug_crash_flags=(debug_crash_flags or {}),
-                            sensor_state_lock=threading.Lock(),
                         )
                     )
 

@@ -380,7 +380,6 @@ class AssetDaemon(DagsterDaemon):
                 " migrate` to enable."
             )
 
-        sensor_state_lock = threading.Lock()
         amp_tick_futures: Dict[Optional[str], Future] = {}
         threadpool_executor = None
         with ExitStack() as stack:
@@ -400,7 +399,6 @@ class AssetDaemon(DagsterDaemon):
                     threadpool_executor=threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
-                    sensor_state_lock=sensor_state_lock,
                 )
                 yield None
                 end_time = pendulum.now("UTC").timestamp()
@@ -415,7 +413,6 @@ class AssetDaemon(DagsterDaemon):
         threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: Dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        sensor_state_lock: threading.Lock,
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
@@ -515,7 +512,6 @@ class AssetDaemon(DagsterDaemon):
                     self._process_auto_materialize_tick,
                     workspace_process_context,
                     sensor,
-                    sensor_state_lock,
                     debug_crash_flags,
                 )
                 amp_tick_futures[selector_id] = future
@@ -524,7 +520,6 @@ class AssetDaemon(DagsterDaemon):
                 yield from self._process_auto_materialize_tick_generator(
                     workspace_process_context,
                     sensor,
-                    sensor_state_lock,
                     debug_crash_flags,
                 )
 
@@ -532,14 +527,12 @@ class AssetDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         sensor: Optional[ExternalSensor],
-        sensor_state_lock: threading.Lock,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         return list(
             self._process_auto_materialize_tick_generator(
                 workspace_process_context,
                 sensor,
-                sensor_state_lock,
                 debug_crash_flags,
             )
         )
@@ -548,7 +541,6 @@ class AssetDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         sensor: Optional[ExternalSensor],
-        sensor_state_lock: threading.Lock,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
         evaluation_time = pendulum.now("UTC")
@@ -560,19 +552,16 @@ class AssetDaemon(DagsterDaemon):
         error_info = None
 
         if sensor:
-            with sensor_state_lock:
-                auto_materialize_instigator_state = check.not_none(
-                    instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
-                    )
+            auto_materialize_instigator_state = check.not_none(
+                instance.get_instigator_state(sensor.get_external_origin_id(), sensor.selector_id)
+            )
+            if is_under_min_interval(auto_materialize_instigator_state, sensor):
+                # check the since we might have been queued before processing
+                return
+            else:
+                mark_sensor_state_for_tick(
+                    instance, sensor, auto_materialize_instigator_state, evaluation_time
                 )
-                if is_under_min_interval(auto_materialize_instigator_state, sensor):
-                    # check the since we might have been queued before processing
-                    return
-                else:
-                    mark_sensor_state_for_tick(
-                        instance, sensor, auto_materialize_instigator_state, evaluation_time
-                    )
         else:
             auto_materialize_instigator_state = None
 
@@ -726,7 +715,6 @@ class AssetDaemon(DagsterDaemon):
                     stored_cursor,
                     auto_observe_asset_keys,
                     debug_crash_flags,
-                    sensor_state_lock,
                     is_retry=(retry_tick is not None),
                 )
         except Exception:
@@ -746,7 +734,6 @@ class AssetDaemon(DagsterDaemon):
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        sensor_state_lock: threading.Lock,
         is_retry: bool,
     ):
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
@@ -823,22 +810,19 @@ class AssetDaemon(DagsterDaemon):
             # Write out the persistent cursor, which ensures that future ticks will move on once
             # they determine that nothing needs to be retried
             if sensor:
-                with sensor_state_lock:
-                    state = instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
-                    )
-                    instance.update_instigator_state(
-                        check.not_none(state).with_data(
-                            SensorInstigatorData(
-                                last_tick_timestamp=tick.timestamp,
-                                min_interval=sensor.min_interval_seconds,
-                                cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
-                                    new_cursor
-                                ),
-                                sensor_type=SensorType.AUTOMATION_POLICY,
-                            )
+                state = instance.get_instigator_state(
+                    sensor.get_external_origin_id(), sensor.selector_id
+                )
+                instance.update_instigator_state(
+                    check.not_none(state).with_data(
+                        SensorInstigatorData(
+                            last_tick_timestamp=tick.timestamp,
+                            min_interval=sensor.min_interval_seconds,
+                            cursor=asset_daemon_cursor_to_instigator_serialized_cursor(new_cursor),
+                            sensor_type=SensorType.AUTOMATION_POLICY,
                         )
                     )
+                )
             else:
                 instance.daemon_cursor_storage.set_cursor_values(
                     {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
