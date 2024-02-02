@@ -19,8 +19,8 @@ Dagster Cloud uses a hierarchical model for RBAC, meaning that the most permissi
 - Organization Admin
 - Admin
 - Editor
-- Launcher (Enterprise plans only)
-- Viewer (Enterprise plans only)
+- Launcher (Pro plans only)
+- Viewer
 
 For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster Cloud.
 
@@ -30,7 +30,7 @@ All user roles are enforced both in Dagster Cloud and the [GraphQL API](/concept
 
 ### Teams
 
-Dagster Cloud Enterprise users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster Cloud](/dagster-cloud/account/managing-users/managing-teams) guide for more info.
+Dagster Cloud Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster Cloud](/dagster-cloud/account/managing-users/managing-teams) guide for more info.
 
 ---
 
@@ -67,12 +67,12 @@ Organization Admins have access to the entire organization, including all [full 
     </tr>
     <tr>
       <td>Code location</td>
-      <td>Enterprise</td>
+      <td>Pro</td>
       <td>
         Defines the level of access for a given code location in a deployment.
         <br />
         <br />
-        Dagster Cloud Enterprise users can <a href="#code-locations">
+        Dagster Cloud Pro users can <a href="#code-locations">
           override the default deployment-level role for individual code
           locations
         </a>. For example, if the <strong>Deployment</strong> role is <strong>
@@ -81,8 +81,8 @@ Organization Admins have access to the entire organization, including all [full 
         as <strong>Editor</strong> or <strong>Admin</strong>.
         <br />
         <br />
-        For non-Enterprise users, users will have the same level of access for
-        all code locations in a deployment.
+        For non-Pro users, users will have the same level of access for all code
+        locations in a deployment.
       </td>
     </tr>
     <tr>
@@ -98,7 +98,7 @@ Organization Admins have access to the entire organization, including all [full 
 
 ### Applying role overrides
 
-<Note>This section is applicable to Dagster Cloud Enterprise.</Note>
+<Note>This section is applicable to Dagster Cloud Pro plans.</Note>
 
 As previously mentioned, you can define individual user roles for users in your organization. You can also apply permission overrides to grant specific exceptions.
 
