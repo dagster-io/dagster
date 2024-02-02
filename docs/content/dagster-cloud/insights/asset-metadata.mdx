@@ -19,14 +19,13 @@ Any numeric [asset materialization metadata](/concepts/assets/software-defined-a
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account on the Enterprise plan
-- Access to the [Dagster Cloud Insights feature](/dagster-cloud/insights)
+- A Dagster Cloud account on the Pro plan
 
 ---
 
 ## Step 1: Emit numeric values alongside your asset materializations
 
-In order to populate Insights with materialization metadata, you must first emit numeric metadata to be aggregated.
+In order to populate Insights with materialization metadata, you must first emit numeric metadata to be aggregated. In the below example, we attach a `num_rows` metadata value to the output of our `table1` asset. Insights will let us track this value over time, and aggregate it between any other assets which might provide a `num_rows` value.
 
 ```python file=/concepts/assets/asset_materialization_metadata_none.py
 from dagster import Output, asset
