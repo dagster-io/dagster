@@ -185,7 +185,7 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
     assert manager.load_input(context) == data
 
 
-def test_upath_io_manager_with_none_return(tmp_path: Path):
+def test_upath_io_manager_with_none_return():
     class MyIOManager(UPathIOManager):
         def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
             # this function should not get called because we skip storing None
@@ -194,8 +194,6 @@ def test_upath_io_manager_with_none_return(tmp_path: Path):
         def load_from_path(self, context: InputContext, path: UPath) -> List:
             # this function should not get called because we skip loading None
             assert False
-
-    # manager = my_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
 
     @asset
     def my_asset():
@@ -206,6 +204,69 @@ def test_upath_io_manager_with_none_return(tmp_path: Path):
         assert my_asset is None
 
     materialize([my_asset, downstream], resources={"io_manager": MyIOManager()})
+
+
+def test_upath_io_manager_with_none_return_partitioned():
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            # this function should not get called because we skip storing None
+            assert False
+
+        def load_from_path(self, context: InputContext, path: UPath) -> List:
+            # this function should not get called because we skip loading None
+            assert False
+
+    partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        return None
+
+    @asset(partitions_def=partitions_def)
+    def downstream(my_asset):
+        assert my_asset is None
+
+    materialize(
+        [my_asset, downstream], resources={"io_manager": MyIOManager()}, partition_key="2024-01-02"
+    )
+
+
+def test_upath_io_manager_with_none_return_multi_partitioned():
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            # this function should not get called because we skip storing None
+            assert False
+
+        def load_from_path(self, context: InputContext, path: UPath) -> List:
+            # this function should not get called because we skip loading None
+            assert False
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        return None
+
+    @asset(partitions_def=partitions_def)
+    def downstream(my_asset):
+        assert my_asset is None
+
+    materialize(
+        [my_asset, downstream],
+        resources={"io_manager": MyIOManager()},
+        partition_key=MultiPartitionKey({"date": "2024-01-02", "color": "blue"}),
+    )
+
+
+# tests to add:
+# none return partitioned, time window, static, multi
+# partition that was filled by a run, then was None for a backfill, ensure that the next standalone run
+# gets the tags from the backfill
 
 
 def test_upath_io_manager_multiple_time_partitions(

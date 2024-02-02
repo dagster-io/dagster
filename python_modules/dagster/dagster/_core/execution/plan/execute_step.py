@@ -459,6 +459,8 @@ def core_dagster_event_sequence_for_step(
 
     if step_context.is_sda_step:
         step_context.fetch_external_input_asset_materialization_and_version_info()
+    # the above doesn't account for asset checks, where we still want to have access to the tags
+    # maybe we add a second function that just gets the tags here?
 
     for step_input in step_context.step.step_inputs:
         input_def = step_context.op_def.input_def_named(step_input.name)
