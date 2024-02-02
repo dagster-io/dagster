@@ -85,9 +85,7 @@ export function useTimeRangeFilter({name, icon, state, onStateChanged}: Args): T
   const [innerState, setState] = useState<TimeRangeState>(state || [null, null]);
 
   useEffect(() => {
-    if (!state) {
-      onStateChanged?.(innerState);
-    }
+    onStateChanged?.(innerState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [innerState[0], innerState[1]]);
 

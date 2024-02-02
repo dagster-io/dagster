@@ -65,8 +65,6 @@ export function useStaticSetFilter<TValue>({
   // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
   const [innerState, setState] = useState(() => new Set(state || []));
 
-  console.log({innerState});
-
   useEffect(() => {
     onStateChanged?.(innerState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +114,6 @@ export function useStaticSetFilter<TValue>({
           }));
       },
       onSelect: ({value, close}) => {
-        console.log('selectImpl', value);
         let newState = new Set(filterObjRef.current.state);
         if (newState.has(value)) {
           newState.delete(value);
@@ -127,7 +124,6 @@ export function useStaticSetFilter<TValue>({
             newState.add(value);
           }
         }
-        console.log('new state', newState);
         setState(newState);
         if (closeOnSelect) {
           close();
