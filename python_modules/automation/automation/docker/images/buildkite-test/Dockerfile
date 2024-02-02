@@ -157,9 +157,13 @@ FROM system_base AS snapshot_builder
 # package. We also install `awscli` (used in Buildkite) at this stage so that it can be installed
 # together with Dagster dependencies. This allows pip's dependency resolver to account for
 # everything.
-RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
+RUN git clone https://github.com/dagster-io/dagster.git
 
 WORKDIR dagster
+
+# Will remove this before landing
+
+RUN git checkout origin/python312
 
 RUN python scripts/install_dev_python_modules.py awscli \
     && pip freeze --exclude-editable > /snapshot-reqs.txt

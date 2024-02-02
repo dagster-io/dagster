@@ -86,9 +86,11 @@ setup(
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
-        "pendulum>=0.7.0,<4; python_version>='3.9'",
+        "pendulum>=3,<4; python_version>='3.12'",
+        "pendulum>=0.7.0,<4; python_version>='3.9' and python_version<'3.12'",
         "pendulum>=0.7.0,<3; python_version<'3.9'",  # https://github.com/dagster-io/dagster/issues/19500
-        "protobuf>=3.20.0,<5",  # min protobuf version to be compatible with both protobuf 3 and 4
+        "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
+        "protobuf>=4,<5; python_version>='3.11'",
         "python-dateutil",
         "python-dotenv",
         "pytz",
@@ -106,7 +108,8 @@ setup(
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32!=226; platform_system=="Windows"',
         "docstring-parser",
-        "universal_pathlib",
+        "universal_pathlib; python_version<'3.12'",
+        "universal_pathlib>=0.2.0; python_version>='3.12'",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic>1.10.0,!= 1.10.7,<3",
         "rich",

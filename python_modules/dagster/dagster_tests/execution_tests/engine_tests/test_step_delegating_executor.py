@@ -1,3 +1,4 @@
+import os
 import subprocess
 import tempfile
 import threading
@@ -346,6 +347,7 @@ def test_execute_using_repository_data():
         recon_repo = ReconstructableRepository.for_module(
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
             fn_name="pending_repo",
+            working_directory=os.path.join(os.path.dirname(__file__), "..", "..", ".."),
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
