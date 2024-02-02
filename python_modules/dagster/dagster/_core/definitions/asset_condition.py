@@ -32,7 +32,7 @@ from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
-    from .auto_materialize_rule import AutoMaterializeRule
+    from .auto_materialize_rule import AutoMaterializeRule, AutoMaterializeRuleSnapshot
 
 
 T = TypeVar("T")
@@ -52,6 +52,7 @@ class AssetConditionSnapshot(NamedTuple):
     class_name: str
     description: str
     unique_id: str
+    underlying_auto_materialize_rule: Optional["AutoMaterializeRuleSnapshot"]
 
 
 @whitelist_for_serdes
@@ -383,6 +384,7 @@ class AssetCondition(ABC):
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=self.unique_id,
+            underlying_auto_materialize_rule=None,
         )
 
 
@@ -411,6 +413,16 @@ class RuleCondition(
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
         return evaluation_result
+
+    @functools.cached_property
+    def snapshot(self) -> AssetConditionSnapshot:
+        """Returns a snapshot of this condition that can be used for serialization."""
+        return AssetConditionSnapshot(
+            class_name=self.__class__.__name__,
+            description=self.description,
+            unique_id=self.unique_id,
+            underlying_auto_materialize_rule=self.rule.to_snapshot(),
+        )
 
 
 class AndAssetCondition(

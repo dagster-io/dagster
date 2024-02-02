@@ -238,7 +238,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         if not latest_evaluation_result:
             partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
             latest_evaluation_result = AssetConditionEvaluation(
-                condition_snapshot=AssetConditionSnapshot("", "", ""),
+                condition_snapshot=AssetConditionSnapshot("", "", "", None),
                 true_subset=AssetSubset.empty(asset_key, partitions_def),
                 candidate_subset=AssetSubset.empty(asset_key, partitions_def),
                 start_timestamp=None,

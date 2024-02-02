@@ -222,6 +222,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             class_name=RuleCondition.__name__,
             description=rule_snapshot.description,
             unique_id=unique_id,
+            underlying_auto_materialize_rule=rule_snapshot,
         )
 
     def _get_child_rule_evaluation(
@@ -316,7 +317,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             ]
             unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
             decision_type_snapshot = AssetConditionSnapshot(
-                class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
+                class_name=OrAssetCondition.__name__,
+                description="Any of",
+                unique_id=unique_id,
+                underlying_auto_materialize_rule=None,
             )
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
             for e in child_evaluations:
@@ -354,7 +358,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             )
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
-                class_name=NotAssetCondition.__name__, description="Not", unique_id=unique_id
+                class_name=NotAssetCondition.__name__,
+                description="Not",
+                unique_id=unique_id,
+                underlying_auto_materialize_rule=None,
             ),
             true_subset=true_subset,
             candidate_subset=HistoricalAllPartitionsSubsetSentinel()
@@ -434,7 +441,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         ]
         unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
         condition_snapshot = AssetConditionSnapshot(
-            class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
+            class_name=AndAssetCondition.__name__,
+            description="All of",
+            unique_id=unique_id,
+            underlying_auto_materialize_rule=None,
         )
 
         # all AssetSubsets generated here are created using the current partitions_def, so they

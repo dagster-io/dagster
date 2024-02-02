@@ -31,6 +31,10 @@ from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.error import SerializableErrorInfo
 
 
+def dummy_condition_snapshot() -> AssetConditionSnapshot:
+    return AssetConditionSnapshot("foo", "bar", "", None)
+
+
 class TestScheduleStorage:
     """You can extend this class to easily run these set of tests on any schedule storage. When extending,
     you simply need to override the `schedule_storage` fixture and return your implementation of
@@ -519,7 +523,12 @@ class TestScheduleStorage:
             storage.add_instigator_state(state)
 
     def build_sensor_tick(
-        self, current_time, status=TickStatus.STARTED, run_id=None, error=None, name="my_sensor"
+        self,
+        current_time,
+        status=TickStatus.STARTED,
+        run_id=None,
+        error=None,
+        name="my_sensor",
     ):
         return TickData(
             name,
@@ -664,7 +673,10 @@ class TestScheduleStorage:
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
         storage.purge_ticks(
-            "my_sensor", "my_sensor", now.subtract(minutes=2).timestamp(), [TickStatus.SKIPPED]
+            "my_sensor",
+            "my_sensor",
+            now.subtract(minutes=2).timestamp(),
+            [TickStatus.SKIPPED],
         )
 
         ticks = storage.get_ticks("my_sensor", "my_sensor")
@@ -732,7 +744,7 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AssetConditionSnapshot("foo", "bar", "")
+        condition_snapshot = dummy_condition_snapshot()
 
         for _ in range(2):  # test idempotency
             storage.add_auto_materialize_asset_evaluations(
@@ -836,7 +848,7 @@ class TestScheduleStorage:
         # add a mix of keys - one that already is using the unique index and one that is not
 
         eval_one = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            condition_snapshot=dummy_condition_snapshot(),
             start_timestamp=0,
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
@@ -846,7 +858,7 @@ class TestScheduleStorage:
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            condition_snapshot=dummy_condition_snapshot(),
             start_timestamp=0,
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
@@ -887,14 +899,17 @@ class TestScheduleStorage:
         asset_subset = AssetSubset(asset_key=AssetKey("asset_two"), value=subset)
         asset_subset_with_metadata = AssetSubsetWithMetadata(
             asset_subset,
-            {"foo": MetadataValue.text("bar"), "baz": MetadataValue.asset(AssetKey("asset_one"))},
+            {
+                "foo": MetadataValue.text("bar"),
+                "baz": MetadataValue.asset(AssetKey("asset_one")),
+            },
         )
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    condition_snapshot=dummy_condition_snapshot(),
                     start_timestamp=0,
                     end_timestamp=1,
                     true_subset=asset_subset,
@@ -928,7 +943,7 @@ class TestScheduleStorage:
             evaluation_id=11,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    condition_snapshot=dummy_condition_snapshot(),
                     start_timestamp=0,
                     end_timestamp=1,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
