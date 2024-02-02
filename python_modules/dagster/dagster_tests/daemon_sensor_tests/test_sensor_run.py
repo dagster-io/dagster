@@ -462,6 +462,11 @@ def asset_job_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
 
+@run_failure_sensor(monitor_all_code_locations=True)
+def all_code_locations_run_failure_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
+
+
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
@@ -561,6 +566,14 @@ def cross_repo_sensor(context):
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor():
+    pass
+
+
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def all_code_locations_run_status_sensor():
     pass
 
 
@@ -796,6 +809,8 @@ def the_other_repo():
     return [
         the_job,
         run_key_sensor,
+        all_code_locations_run_status_sensor,
+        all_code_locations_run_failure_sensor,
     ]
 
 
