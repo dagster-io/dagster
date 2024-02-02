@@ -108,7 +108,11 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
    ```python
    base64_data = base64.b64encode(image_data).decode('utf-8')
    md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
+   ```
 
+6. Finally, we'll return a `MaterializeResult` object with the metadata specified as a parameter:
+
+   ```python
    return MaterializeResult(
        metadata={
            "preview": MetadataValue.md(md_content)
@@ -122,7 +126,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
    2. `base64.b64encode` encodes the image’s binary data (`image_data`) into base64 format.
    3. Next, the encoded image data is converted to a UTF-8 encoded string using the `decode` function.
    4. Next, a variable named `md_content` is created. The value of this variable is a Markdown-formatted string containing a JPEG image, where the base64 representation of the image is inserted.
-   5. We are able to include the metadata on the asset by returning a `MaterializeResult` instance with the image is passed in as metadata. The metadata will have a `preview` label in the Dagster UI.
+   5. We are able to include the metadata on the asset by returning a `MaterializeResult` instance with the image passed in as metadata. The metadata will have a `preview` label in the Dagster UI.
    6. Using `MetadataValue.md`, the `md_content` is typed as Markdown. This ensures Dagster will correctly render the chart.
 
 At this point, the code for the `adhoc_request` asset should look like this:
