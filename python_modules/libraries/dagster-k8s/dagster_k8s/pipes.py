@@ -3,7 +3,7 @@ import random
 import string
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 
 import kubernetes
 from dagster import (
@@ -199,6 +199,7 @@ class _PipesK8sClient(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
+        ignore_containers: Optional[Set] = None,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -229,6 +230,8 @@ class _PipesK8sClient(PipesClient):
                 Override the default ext protocol context injection.
             message_reader (Optional[PipesMessageReader]):
                 Override the default ext protocol message reader.
+            ignore_containers (Optional[Set]): Ignore certain containers from waiting for termination. Defaults to
+                None.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
@@ -277,6 +280,7 @@ class _PipesK8sClient(PipesClient):
                     pod_name,
                     namespace,
                     wait_for_state=WaitForPodState.Terminated,
+                    ignore_containers=ignore_containers,
                     wait_time_between_attempts=self.poll_interval,
                 )
             finally:
