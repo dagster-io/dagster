@@ -69,6 +69,11 @@ type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 type Args = {
   name: string;
   icon: IconName;
+
+  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
+  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
+  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
+  // to the old state and pass that in.
   state?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
 };

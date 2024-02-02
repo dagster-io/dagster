@@ -18,6 +18,11 @@ type Args<TValue> = {
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
+
+  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
+  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
+  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
+  // to the old state and pass that in.
   state?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
@@ -59,6 +64,8 @@ export function useStaticSetFilter<TValue>({
 
   // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
   const [innerState, setState] = useState(() => new Set(state || []));
+
+  console.log({innerState});
 
   useEffect(() => {
     onStateChanged?.(innerState);
@@ -109,6 +116,7 @@ export function useStaticSetFilter<TValue>({
           }));
       },
       onSelect: ({value, close}) => {
+        console.log('selectImpl', value);
         let newState = new Set(filterObjRef.current.state);
         if (newState.has(value)) {
           newState.delete(value);
@@ -119,6 +127,7 @@ export function useStaticSetFilter<TValue>({
             newState.add(value);
           }
         }
+        console.log('new state', newState);
         setState(newState);
         if (closeOnSelect) {
           close();
@@ -146,7 +155,7 @@ export function useStaticSetFilter<TValue>({
     [
       name,
       icon,
-      state,
+      innerState,
       getStringValue,
       renderActiveStateLabel,
       renderLabel,
