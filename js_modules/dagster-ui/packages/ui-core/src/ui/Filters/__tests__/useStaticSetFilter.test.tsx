@@ -23,7 +23,7 @@ describe('useStaticSetFilter', () => {
       <span className={isActive ? 'active' : 'inactive'}>{value}</span>
     ),
     getStringValue: (value: string) => value,
-    initialState: ['banana'],
+    state: ['banana'],
   };
 
   it('creates filter object with the correct properties', () => {

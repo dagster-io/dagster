@@ -90,7 +90,7 @@ export function useAssetGraphExplorerFilters({
       ' - ' +
       buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
 
-    initialState: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
+    state: useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
     onStateChanged: (values) => {
       if (setGroupFilters) {
         setGroupFilters(Array.from(values));
@@ -125,7 +125,7 @@ export function useAssetGraphExplorerFilters({
       </Box>
     ),
     getStringValue: (value) => value,
-    initialState: computeKindTags ?? emptyArray,
+    state: computeKindTags ?? emptyArray,
     onStateChanged: (values) => {
       setComputeKindTags?.(Array.from(values));
     },
