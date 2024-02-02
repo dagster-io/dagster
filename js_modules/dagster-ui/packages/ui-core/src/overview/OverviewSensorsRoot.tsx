@@ -85,7 +85,7 @@ export const OverviewSensorsRoot = () => {
     allValues: ALL_SENSOR_TYPE_FILTERS,
     icon: 'sensors',
     getStringValue: (value) => value.label,
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(Array.from(sensorTypes).map((type) => SENSOR_TYPE_TO_FILTER[type]!.value));
     }, [sensorTypes]),
 
