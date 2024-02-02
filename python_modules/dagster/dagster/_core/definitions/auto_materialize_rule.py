@@ -20,6 +20,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
+    AutoMaterializeRuleEvaluationData,
     AutoMaterializeRuleSnapshot,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
@@ -28,7 +29,9 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
@@ -113,13 +116,17 @@ class AutoMaterializeRule(ABC):
                 Defaults to False.
         """
         check.param_invariant(
-            is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string"
+            is_valid_cron_string(cron_schedule),
+            "cron_schedule",
+            "must be a valid cron string",
         )
         check.param_invariant(
             timezone in pytz.all_timezones_set, "timezone", "must be a valid timezone"
         )
         return MaterializeOnCronRule(
-            cron_schedule=cron_schedule, timezone=timezone, all_partitions=all_partitions
+            cron_schedule=cron_schedule,
+            timezone=timezone,
+            all_partitions=all_partitions,
         )
 
     @public
@@ -445,6 +452,39 @@ class AutoMaterializeAssetPartitionsFilter(
         return hash(frozenset((self.latest_run_required_tags or {}).items()))
 
 
+class AssetConditionResultBuilder:
+    def __init__(self) -> None:
+        self._seen_asset_partitions = set()
+        self.metadata_dict = defaultdict(set)
+
+    def add_asset_partition_with_evaluation_data(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        evaluation_data: AutoMaterializeRuleEvaluationData,
+    ):
+        if asset_partition in self._seen_asset_partitions:
+            check.failed(f"Already seen asset_partition {asset_partition}")
+        self._seen_asset_partitions.add(asset_partition)
+        self.metadata_dict[evaluation_data.frozen_metadata].add(asset_partition)
+
+    @staticmethod
+    def for_empty_subset(context: AssetConditionEvaluationContext, *, ignore_subset: AssetSubset):
+        return AssetConditionResultBuilder().build(context, ignore_subset=ignore_subset)
+
+    def build(
+        self, context: AssetConditionEvaluationContext, *, ignore_subset: AssetSubset
+    ) -> "AssetConditionResult":
+        (
+            true_subset,
+            subsets_with_metadata,
+        ) = context.add_evaluation_data_from_previous_tick(
+            self.metadata_dict, ignore_subset=ignore_subset
+        )
+        from .asset_condition import AssetConditionResult
+
+        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+
+
 @whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule,
@@ -453,7 +493,10 @@ class MaterializeOnParentUpdatedRule(
         [("updated_parent_filter", Optional[AutoMaterializeAssetPartitionsFilter])],
     ),
 ):
-    def __new__(cls, updated_parent_filter: Optional[AutoMaterializeAssetPartitionsFilter] = None):
+    def __new__(
+        cls,
+        updated_parent_filter: Optional[AutoMaterializeAssetPartitionsFilter] = None,
+    ):
         return super().__new__(cls, updated_parent_filter=updated_parent_filter)
 
     @property
@@ -474,8 +517,6 @@ class MaterializeOnParentUpdatedRule(
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        from .asset_condition import AssetConditionResult
-
         asset_partitions_by_updated_parents: Mapping[
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
         ] = defaultdict(set)
@@ -484,6 +525,13 @@ class MaterializeOnParentUpdatedRule(
         ] = defaultdict(set)
 
         subset_to_evaluate = context.candidate_parent_has_or_will_update_subset
+
+        if subset_to_evaluate.size == 0:
+            return AssetConditionResultBuilder.for_empty_subset(
+                context,
+                ignore_subset=context.materialized_requested_or_discarded_since_previous_tick_subset,
+            )
+
         for asset_partition in subset_to_evaluate.asset_partitions:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
                 dynamic_partitions_store=context.instance_queryer,
@@ -540,12 +588,14 @@ class MaterializeOnParentUpdatedRule(
                     updated_or_will_update_parent.asset_key
                 )
 
-        asset_partitions_by_evaluation_data = defaultdict(set)
+        builder = AssetConditionResultBuilder()
+
         for asset_partition in (
             updated_parent_assets_by_asset_partition.keys()
             | will_update_parent_assets_by_asset_partition.keys()
         ):
-            asset_partitions_by_evaluation_data[
+            builder.add_asset_partition_with_evaluation_data(
+                asset_partition,
                 ParentUpdatedRuleEvaluationData(
                     updated_asset_keys=frozenset(
                         updated_parent_assets_by_asset_partition.get(asset_partition, [])
@@ -553,14 +603,13 @@ class MaterializeOnParentUpdatedRule(
                     will_update_asset_keys=frozenset(
                         will_update_parent_assets_by_asset_partition.get(asset_partition, [])
                     ),
-                ).frozen_metadata
-            ].add(asset_partition)
+                ),
+            )
 
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data,
+        return builder.build(
+            context,
             ignore_subset=context.materialized_requested_or_discarded_since_previous_tick_subset,
         )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -600,7 +649,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             unhandled_candidates = (
                 context.candidate_subset
                 & handled_subset.inverse(
-                    context.partitions_def, context.evaluation_time, context.instance_queryer
+                    context.partitions_def,
+                    context.evaluation_time,
+                    context.instance_queryer,
                 )
                 if handled_subset.size > 0
                 else context.candidate_subset
@@ -646,15 +697,19 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
-
-        asset_partitions_by_evaluation_data = defaultdict(set)
+        # from .asset_condition import AssetConditionResult
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         subset_to_evaluate = (
             context.candidates_not_evaluated_on_previous_tick_subset
             | context.candidate_parent_has_or_will_update_subset
         )
+        if subset_to_evaluate.size == 0:
+            return AssetConditionResultBuilder.for_empty_subset(
+                context, ignore_subset=context.empty_subset()
+            )
+
+        builder = AssetConditionResultBuilder()
         for candidate in subset_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -665,18 +720,20 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                     candidate.asset_key, parent.asset_key
                 ):
                     continue
+
                 outdated_ancestors.update(
                     context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
                 )
-            if outdated_ancestors:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors)).frozen_metadata
-                ].add(candidate)
 
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
-        )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+            if outdated_ancestors:
+                builder.add_asset_partition_with_evaluation_data(
+                    asset_partition=candidate,
+                    evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                        frozenset(outdated_ancestors)
+                    ),
+                )
+
+        return builder.build(context, ignore_subset=context.empty_subset())
 
 
 @whitelist_for_serdes
@@ -693,15 +750,19 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self,
         context: AssetConditionEvaluationContext,
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
-
-        asset_partitions_by_evaluation_data = defaultdict(set)
-
         # only need to evaluate net-new candidates and candidates whose parents have changed
         subset_to_evaluate = (
             context.candidates_not_evaluated_on_previous_tick_subset
             | context.candidate_parent_has_or_will_update_subset
         )
+
+        if subset_to_evaluate.size == 0:
+            return AssetConditionResultBuilder.for_empty_subset(
+                context, ignore_subset=context.empty_subset()
+            )
+
+        builder = AssetConditionResultBuilder()
+
         for candidate in subset_to_evaluate.asset_partitions:
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -716,24 +777,22 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                     parent
                 ):
                     missing_parent_asset_keys.add(parent.asset_key)
-            if missing_parent_asset_keys:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(
-                        frozenset(missing_parent_asset_keys)
-                    ).frozen_metadata
-                ].add(candidate)
 
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
-        )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+            if missing_parent_asset_keys:
+                builder.add_asset_partition_with_evaluation_data(
+                    candidate,
+                    WaitingOnAssetsRuleEvaluationData(frozenset(missing_parent_asset_keys)),
+                )
+
+        return builder.build(context, ignore_subset=subset_to_evaluate)
 
 
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
     AutoMaterializeRule,
     NamedTuple(
-        "_SkipOnNotAllParentsUpdatedRule", [("require_update_for_all_parent_partitions", bool)]
+        "_SkipOnNotAllParentsUpdatedRule",
+        [("require_update_for_all_parent_partitions", bool)],
     ),
 ):
     """An auto-materialize rule that enforces that an asset can only be materialized if all parents
@@ -763,15 +822,20 @@ class SkipOnNotAllParentsUpdatedRule(
         self,
         context: AssetConditionEvaluationContext,
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
-
-        asset_partitions_by_evaluation_data = defaultdict(set)
+        # asset_partitions_by_evaluation_data = defaultdict(set)
+        builder = AssetConditionResultBuilder()
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
         subset_to_evaluate = (
             context.candidates_not_evaluated_on_previous_tick_subset
             | context.candidate_parent_has_or_will_update_subset
         )
+
+        if subset_to_evaluate.size == 0:
+            return AssetConditionResultBuilder.for_empty_subset(
+                context, ignore_subset=context.empty_subset()
+            )
+
         for candidate in subset_to_evaluate.asset_partitions:
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
@@ -806,16 +870,11 @@ class SkipOnNotAllParentsUpdatedRule(
             non_updated_parent_keys -= {context.asset_key}
 
             if non_updated_parent_keys:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(
-                        frozenset(non_updated_parent_keys)
-                    ).frozen_metadata
-                ].add(candidate)
+                builder.add_asset_partition_with_evaluation_data(
+                    candidate, WaitingOnAssetsRuleEvaluationData(frozenset(non_updated_parent_keys))
+                )
 
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
-        )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return builder.build(context, ignore_subset=subset_to_evaluate)
 
 
 @whitelist_for_serdes
@@ -833,14 +892,18 @@ class SkipOnRequiredButNonexistentParentsRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
-
-        asset_partitions_by_evaluation_data = defaultdict(set)
+        builder = AssetConditionResultBuilder()
 
         subset_to_evaluate = (
             context.candidates_not_evaluated_on_previous_tick_subset
             | context.candidate_parent_has_or_will_update_subset
         )
+
+        if subset_to_evaluate.size == 0:
+            return AssetConditionResultBuilder.for_empty_subset(
+                context, ignore_subset=context.empty_subset()
+            )
+
         for candidate in subset_to_evaluate.asset_partitions:
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
@@ -851,16 +914,11 @@ class SkipOnRequiredButNonexistentParentsRule(
 
             nonexistent_parent_keys = {parent.asset_key for parent in nonexistent_parent_partitions}
             if nonexistent_parent_keys:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(
-                        frozenset(nonexistent_parent_keys)
-                    ).frozen_metadata
-                ].add(candidate)
+                builder.add_asset_partition_with_evaluation_data(
+                    candidate, WaitingOnAssetsRuleEvaluationData(frozenset(nonexistent_parent_keys))
+                )
 
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
-        )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return builder.build(context, ignore_subset=subset_to_evaluate)
 
 
 @whitelist_for_serdes
@@ -904,7 +962,8 @@ class SkipOnBackfillInProgressRule(
 
 @whitelist_for_serdes
 class DiscardOnMaxMaterializationsExceededRule(
-    AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
+    AutoMaterializeRule,
+    NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)]),
 ):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
