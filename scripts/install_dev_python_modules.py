@@ -51,7 +51,6 @@ def main(
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-managed-elements",
         "-e python_modules/libraries/dagster-airbyte",
-        "-e python_modules/libraries/dagster-airflow",
         "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
@@ -86,17 +85,22 @@ def main(
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
-        "-e python_modules/libraries/dagster-duckdb",
-        "-e python_modules/libraries/dagster-duckdb-pandas",
-        "-e python_modules/libraries/dagster-duckdb-polars",
-        "-e python_modules/libraries/dagster-duckdb-pyspark",
-        "-e python_modules/libraries/dagster-wandb",
         "-e python_modules/libraries/dagster-deltalake",
         "-e python_modules/libraries/dagster-deltalake-pandas",
         "-e python_modules/libraries/dagster-deltalake-polars",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
     ]
+
+    if sys.version_info <= (3, 12):
+        install_targets += [
+            "-e python_modules/libraries/dagster-duckdb",
+            "-e python_modules/libraries/dagster-duckdb-pandas",
+            "-e python_modules/libraries/dagster-duckdb-polars",
+            "-e python_modules/libraries/dagster-duckdb-pyspark",
+            "-e python_modules/libraries/dagster-wandb",
+            "-e python_modules/libraries/dagster-airflow",
+        ]
 
     if sys.version_info > (3, 7):
         install_targets += [

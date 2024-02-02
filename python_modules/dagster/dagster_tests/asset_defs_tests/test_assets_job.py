@@ -1,6 +1,5 @@
 import hashlib
 import os
-import warnings
 
 import pytest
 from dagster import (
@@ -50,7 +49,7 @@ from dagster._core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.test_utils import ignore_warning, instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test, raise_exception_on_warnings
 from dagster._utils import safe_tempfile_path
 from dagster._utils.warnings import (
     disable_dagster_warnings,
@@ -59,10 +58,7 @@ from dagster._utils.warnings import (
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def _all_asset_keys(result):
