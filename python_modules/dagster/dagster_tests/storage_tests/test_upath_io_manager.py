@@ -5,13 +5,16 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
+from unittest.mock import MagicMock
 
 import fsspec
+import pendulum
 import pytest
 from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
+    BackfillPolicy,
     ConfigurableIOManager,
     DagsterInvariantViolationError,
     DagsterType,
@@ -31,12 +34,14 @@ from dagster import (
     build_init_resource_context,
     build_input_context,
     build_output_context,
+    instance_for_test,
     io_manager,
     materialize,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
+from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from fsspec.asyn import AsyncFileSystem
@@ -45,6 +50,11 @@ from pydantic import (
     PrivateAttr,
 )
 from upath import UPath
+
+from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
+    get_asset_graph,
+    run_backfill_to_completion,
+)
 
 
 class DummyIOManager(UPathIOManager):
@@ -263,10 +273,89 @@ def test_upath_io_manager_with_none_return_multi_partitioned():
     )
 
 
-# tests to add:
-# none return partitioned, time window, static, multi
-# partition that was filled by a run, then was None for a backfill, ensure that the next standalone run
-# gets the tags from the backfill
+def test_upath_io_manager_with_none_return_backfill():
+    # This test ensures that the tags applied to the AssetMaterialization created during a
+    # single_run backfill are used when loading an output in a downstream asset, rather than the
+    # tags from an AssetMaterialization from the most recent non-backfill run of the upstream asset
+    # we test this by running the two assets as a single run, where my_asset returns a value, meaning
+    # that the NONE_OUTPUT_TAG is not applied. Then we run as a single run backfill, and have my_asset
+    # return None. If downstream doesn't load a None, this means that the tags are not being read from
+    # the AssetMaterialization from the single run backfill
+
+    first_run = True
+
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            if first_run:
+                return
+            # this function should not get called because we skip storing None
+            assert False
+
+        def load_from_path(self, context: InputContext, path: UPath):
+            if first_run:
+                return 1
+            # this function should not get called because we skip loading None
+            assert False
+
+    partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def my_asset():
+        if first_run:
+            return 1
+        else:
+            return None
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def downstream(my_asset):
+        if first_run:
+            assert my_asset == 1
+        else:
+            assert my_asset is None
+
+    with instance_for_test() as instance:
+        # during the first run we want to store non-None outputs so that the tags don't exist on the AssetMaterialization
+        materialize(
+            [my_asset, downstream],
+            resources={"io_manager": MyIOManager()},
+            partition_key="2024-01-02",
+            instance=instance,
+        )
+
+        first_run = False
+
+        # run the single run backfill
+        assets_by_repo_name = {"repo": [my_asset, downstream]}
+        asset_graph = get_asset_graph(assets_by_repo_name)
+        time_now = pendulum.now("UTC")
+
+        backfill_data = AssetBackfillData.from_asset_partitions(
+            partition_names=None,
+            asset_graph=asset_graph,
+            asset_selection=[
+                my_asset.key,
+                downstream.key,
+            ],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=True,
+            backfill_start_time=time_now,
+        )
+
+    run_backfill_to_completion(
+        instance=instance,
+        asset_graph=asset_graph,
+        assets_by_repo_name=assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+    )
+
+    # just execute downstream, to ensure the tags from the AssetMaterialization from the backfill are used
+    materialize(
+        [downstream],
+        resources={"io_manager": MyIOManager()},
+        partition_key="2024-01-02",
+        instance=instance,
+    )
 
 
 def test_upath_io_manager_multiple_time_partitions(
