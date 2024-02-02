@@ -10,7 +10,8 @@ from dagster import (
     multi_asset,
     op,
 )
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition import StaticPartitionsDefinition, DynamicPartitionsDefinition
+from dagster._core.events import AssetMaterializationPlannedData
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -228,3 +229,31 @@ def test_single_run_backfill_with_unpartitioned_and_partitioned_mix():
             EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, unpartitioned.key)
         )
         assert record.event_log_entry.dagster_event.event_specific_data.partitions_subset is None
+
+
+def test_subset_on_asset_materialization_planned_event_for_dynamic_partition():
+    partitions_def = DynamicPartitionsDefinition(name='my_partition')
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        return 0
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("my_partition", ["a", "b"])
+
+        materialize_to_memory(
+            [my_asset],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        [record] = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert (
+                record.event_log_entry.dagster_event.event_specific_data.partitions_subset
+                == partitions_def.subset_with_partition_keys(["a", "b"])
+        )
