@@ -25,7 +25,7 @@ When viewing an asset in Dagster’s UI, you can see all of its checks, and whet
 
 ### Asset check that executes in its own op
 
-The following code defines an asset named `orders` and an asset check named `orders_id_is_unique`. When executed, the check verifies a property of the `orders` asset: that all the values in its primary key column are unique.
+The following code defines an asset named `orders` and an asset check named `orders_id_has_no_nulls`. When executed, the check verifies a property of the `orders` asset: that all the values in its primary key column are unique.
 
 ```python file=/concepts/assets/asset_checks/orders_check.py
 import pandas as pd
@@ -57,9 +57,9 @@ defs = Definitions(
 <br />
 
 <PyObject object="asset_check" displayText="@asset_check" /> decorates the <code>
-orders_id_is_unique{" "} </code> function which returns an <PyObject object="AssetCheckResult" /> object.
+orders_id_has_no_nulls{" "} </code> function which returns an <PyObject object="AssetCheckResult" /> object.
 
-The `orders_id_is_unique` check runs in its own [op](/concepts/ops-jobs-graphs/ops). That means that if you launch a run that materializes the `orders` asset and also executes the `orders_id_is_unique` check and you’re using the <PyObject object="multiprocess_executor" />, the check will execute in a separate process from the process that materializes the asset.
+The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graphs/ops). That means that if you launch a run that materializes the `orders` asset and also executes the `orders_id_has_no_nulls` check and you’re using the <PyObject object="multiprocess_executor" />, the check will execute in a separate process from the process that materializes the asset.
 
 ### Checks that execute in the same op that materializes the asset
 
