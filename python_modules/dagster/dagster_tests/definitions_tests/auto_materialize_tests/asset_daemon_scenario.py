@@ -851,5 +851,5 @@ class AssetConditionInspector:
             f"No eval found for legacy rule {legacy_rule} on asset {asset_key.to_string()}"
         )
 
-    def eval_result_for_legacy_rule(self, key: AssetKey, legacy_rule: str):
+    def eval_result_for_legacy_rule(self, key: CoercibleToAssetKey, legacy_rule: str):
         return self.get_eval_for_legacy_rule(key, legacy_rule).true_subset.bool_value
