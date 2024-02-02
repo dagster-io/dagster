@@ -89,7 +89,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
      pio.write_image(fig, file_path)
    ```
 
-3. Add the following to the import to the top of the file:
+3. Add the `base64` and `MaterializeResult` imports to the top of the file:
 
    ```python
    import base64
