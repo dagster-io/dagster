@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, experimental_param, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
@@ -82,10 +82,15 @@ class AssetSelection(ABC, BaseModel, frozen=True):
     """
 
     @public
+    @experimental_param(param="include_sources")
     @staticmethod
-    def all() -> "AllSelection":
-        """Returns a selection that includes all assets and asset checks."""
-        return AllSelection()
+    def all(include_sources: bool = False) -> "AllSelection":
+        """Returns a selection that includes all assets and asset checks.
+
+        Args:
+            include_sources (bool): If True, then include all source assets.
+        """
+        return AllSelection(include_sources=include_sources)
 
     @public
     @staticmethod
@@ -412,14 +417,20 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
 @whitelist_for_serdes
 class AllSelection(AssetSelection, frozen=True):
+    include_sources: Optional[bool]
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return asset_graph.materializable_asset_keys
+        return (
+            asset_graph.all_asset_keys
+            if self.include_sources
+            else asset_graph.materializable_asset_keys
+        )
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
 
     def __str__(self) -> str:
-        return "all materializable assets"
+        return "all materializable assets" + (" and source assets" if self.include_sources else "")
 
 
 @whitelist_for_serdes
