@@ -27,7 +27,7 @@ export const useCodeLocationFilter = () => {
   return useStaticSetFilter<RepoAddress>({
     name: 'Code location',
     icon: 'folder',
-    initialState: visibleRepoAddresses,
+    state: visibleRepoAddresses,
     allValues: allRepoAddresses.map((repoAddress) => {
       return {value: repoAddress, match: [repoAddressAsHumanString(repoAddress)]};
     }),

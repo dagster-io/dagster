@@ -298,7 +298,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -319,7 +319,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     allValues: StatusFilterValues,
     renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
     getStringValue: (x) => capitalizeFirstLetter(x),
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'status').map((x) => x.value)),
       [tokens],
     ),
@@ -346,7 +346,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -366,7 +366,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'backfill',
     allValues: backfillValues,
     allowMultipleSelections: false,
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -403,7 +403,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'partition',
     allValues: partitionValues,
     allowMultipleSelections: false,
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -466,7 +466,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       }
       return x.value!;
     },
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -495,7 +495,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const createdDateFilter = useTimeRangeFilter({
     name: 'Created date',
     icon: 'date',
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       const before = tokens.find((token) => token.token === 'created_date_before');
       const after = tokens.find((token) => token.token === 'created_date_after');
       return [

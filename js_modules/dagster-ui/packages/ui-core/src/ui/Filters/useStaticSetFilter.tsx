@@ -18,7 +18,12 @@ type Args<TValue> = {
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
-  initialState?: Set<TValue> | TValue[];
+
+  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
+  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
+  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
+  // to the old state and pass that in.
+  state?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
@@ -38,7 +43,7 @@ export function useStaticSetFilter<TValue>({
   allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
-  initialState,
+  state,
   getStringValue,
   getTooltipText,
   onStateChanged,
@@ -57,23 +62,24 @@ export function useStaticSetFilter<TValue>({
     return _unsortedValues;
   }, [StaticFilterSorter, name, _unsortedValues]);
 
-  const [state, setState] = useState(() => new Set(initialState || []));
+  // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
+  const [innerState, setState] = useState(() => new Set(state || []));
 
   useEffect(() => {
-    onStateChanged?.(state);
+    onStateChanged?.(innerState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [innerState]);
 
   useEffect(() => {
-    setState(initialState ? new Set(initialState) : new Set());
-  }, [initialState]);
+    setState(state ? new Set(state) : new Set());
+  }, [state]);
 
   const filterObj: StaticSetFilter<TValue> = useMemo(
     () => ({
       name,
       icon,
-      state,
-      isActive: state.size > 0,
+      state: innerState,
+      isActive: innerState.size > 0,
       getResults: (query) => {
         if (query === '') {
           return allValues.map(({value}, index) => ({
@@ -127,7 +133,7 @@ export function useStaticSetFilter<TValue>({
       activeJSX: (
         <SetFilterActiveState
           name={name}
-          state={state}
+          state={innerState}
           getStringValue={getStringValue}
           getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
@@ -145,7 +151,7 @@ export function useStaticSetFilter<TValue>({
     [
       name,
       icon,
-      state,
+      innerState,
       getStringValue,
       renderActiveStateLabel,
       renderLabel,
