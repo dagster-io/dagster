@@ -157,6 +157,11 @@ class AssetBackfillData(NamedTuple):
             backfill_start_time=self.backfill_start_time,
         )
 
+    def with_latest_storage_id(self, latest_storage_id: Optional[int]) -> "AssetBackfillData":
+        return self._replace(
+            latest_storage_id=latest_storage_id,
+        )
+
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
         failure, or cancellation). Since the AssetBackfillData object stores materialization states
@@ -682,11 +687,12 @@ def _submit_runs_and_update_backfill_in_chunks(
     # Fetch backfill status
     backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
     mid_iteration_cancel_requested = backfill.status != BulkActionStatus.REQUESTED
+    retryable_error_raised = False
 
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
-    for run_requests_chunk in submit_asset_runs_in_chunks(
+    for submit_run_request_chunk_result in submit_asset_runs_in_chunks(
         run_requests=run_requests,
         reserved_run_ids=None,
         chunk_size=RUN_CHUNK_SIZE,
@@ -695,14 +701,19 @@ def _submit_runs_and_update_backfill_in_chunks(
         asset_graph=asset_graph,
         logger=logger,
         debug_crash_flags={},
+        backfill_id=backfill_id,
     ):
-        if run_requests_chunk is None:
+        if submit_run_request_chunk_result is None:
             # allow the daemon to heartbeat
             yield None
             continue
 
+        retryable_error_raised = submit_run_request_chunk_result.retryable_error_raised
+
         requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            [rr for (rr, _) in run_requests_chunk], asset_graph, instance_queryer
+            [rr for (rr, _) in submit_run_request_chunk_result.chunk_submitted_runs],
+            asset_graph,
+            instance_queryer,
         )
         submitted_partitions = submitted_partitions | AssetGraphSubset.from_asset_partition_set(
             set(requested_partitions_in_chunk), asset_graph=asset_graph
@@ -715,6 +726,15 @@ def _submit_runs_and_update_backfill_in_chunks(
                 submitted_partitions
             )
         )
+        if retryable_error_raised:
+            # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
+            # from the previous iteration, to allow next iteration to reevaluate the same
+            # events.
+            backfill_data_with_submitted_runs = (
+                backfill_data_with_submitted_runs.with_latest_storage_id(
+                    previous_asset_backfill_data.latest_storage_id
+                )
+            )
 
         # Refetch, in case the backfill was requested for cancellation in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
@@ -731,7 +751,7 @@ def _submit_runs_and_update_backfill_in_chunks(
             mid_iteration_cancel_requested = True
             break
 
-    if not mid_iteration_cancel_requested:
+    if not mid_iteration_cancel_requested and not retryable_error_raised:
         if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
             missing_partitions = list(
                 (
