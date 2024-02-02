@@ -2,12 +2,19 @@ from pathlib import Path
 
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_k8s.pipes import _detect_current_namespace, build_pod_body
+from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, _detect_current_namespace, build_pod_body
+from dagster_pipes import (
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
+)
 
 
-def test_pod_building():
-    test_image = "my_test_image"
-    # min info
+@pytest.fixture
+def test_image():
+    return "my_test_image"
+
+
+def test_pod_building_min_info(test_image):
     pod = build_pod_body(
         pod_name="test",
         image=test_image,
@@ -19,6 +26,8 @@ def test_pod_building():
     assert pod.spec.containers[0].image == test_image
     assert pod.spec.restart_policy == "Never"
 
+
+def test_pod_building_common(test_image):
     # expected common case
     pod = build_pod_body(
         pod_name="test",
@@ -30,6 +39,8 @@ def test_pod_building():
     )
     assert pod.spec.containers[0].image == test_image
 
+
+def test_pod_building_with_spec(test_image):
     # spec provided
     pod = build_pod_body(
         pod_name="test",
@@ -47,6 +58,8 @@ def test_pod_building():
     )
     assert pod.spec.containers[0].image == test_image
 
+
+def test_pod_building_no_image_failure(test_image):
     # no image
     with pytest.raises(DagsterInvariantViolationError):
         build_pod_body(
@@ -58,8 +71,10 @@ def test_pod_building():
             base_pod_meta=None,
         )
 
-    # invalid other containers
-    with pytest.raises(ValueError):
+
+def test_pod_building_multiple_containers_must_specify_image_and_name(test_image):
+    # specifying other containers means we need to specify image and name
+    with pytest.raises(DagsterInvariantViolationError):
         build_pod_body(
             pod_name="test",
             image=test_image,
@@ -75,6 +90,32 @@ def test_pod_building():
             base_pod_meta=None,
         )
 
+
+def test_pod_building_multiple_containers_ok(test_image):
+    # valid other containers
+    pod = build_pod_body(
+        pod_name="test",
+        image=None,
+        command=None,
+        env_vars={},
+        base_pod_spec={
+            "containers": [
+                {"name": "foo", "image": test_image},
+                {"name": "bar", "image": test_image},
+            ],
+            "init_containers": [
+                {"name": "init_foo", "image": test_image},
+            ],
+        },
+        base_pod_meta=None,
+    )
+
+    assert pod.spec.containers[0].image == test_image
+    assert pod.spec.containers[1].image == test_image
+    assert pod.spec.init_containers[0].image == test_image
+
+
+def test_pod_building_with_metadata(test_image):
     # metadata provided
     pod = build_pod_body(
         pod_name="test",
@@ -94,10 +135,12 @@ def test_pod_building():
     assert pod.metadata.labels["foo"] == "bar"
     assert pod.metadata.annotations["fizz"] == "buzz"
 
+
+def test_pod_building_env_overrides(test_image):
     # env overrides
     pod = build_pod_body(
         pod_name="test",
-        image=test_image,
+        image=None,
         command=None,
         env_vars={
             "from_arg": "arg",
@@ -106,21 +149,171 @@ def test_pod_building():
         base_pod_spec={
             "containers": [
                 {
+                    "name": "main",
                     "image": test_image,
                     "env": [
                         {"name": "from_spec", "value": "spec"},
                         {"name": "collide", "value": "spec"},
                     ],
-                }
+                },
+                {
+                    "name": "second",
+                    "image": test_image,
+                    "env": [
+                        {"name": "from_spec", "value": "spec"},
+                        {"name": "collide", "value": "spec"},
+                    ],
+                },
             ]
         },
         base_pod_meta=None,
     )
-    assert len(pod.spec.containers[0].env) == 4
-    resolved_env_vars = {pair.name: pair.value for pair in pod.spec.containers[0].env}
-    assert len(resolved_env_vars) == 3
-    assert resolved_env_vars["collide"] == "arg"
 
+    assert {
+        container.name: [env.to_dict() for env in container.env]
+        for container in pod.spec.containers
+    } == {
+        "main": [
+            {"name": "from_spec", "value": "spec", "value_from": None},
+            {"name": "collide", "value": "spec", "value_from": None},
+            {"name": "from_arg", "value": "arg", "value_from": None},
+            {"name": "collide", "value": "arg", "value_from": None},
+        ],
+        "second": [
+            {"name": "from_spec", "value": "spec", "value_from": None},
+            {"name": "collide", "value": "spec", "value_from": None},
+        ],
+    }
+
+
+def test_pod_building_pipes_session_env_overrides(test_image):
+    # env overrides
+    pod = build_pod_body(
+        pod_name="test",
+        image=None,
+        command=None,
+        env_vars={
+            DAGSTER_PIPES_CONTEXT_ENV_VAR: "context-var",
+            DAGSTER_PIPES_MESSAGES_ENV_VAR: "pipes-message-var",
+        },
+        base_pod_spec={
+            "init_containers": [
+                {
+                    "name": "init",
+                    "image": test_image,
+                },
+            ],
+            "containers": [
+                {
+                    "name": "main",
+                    "image": test_image,
+                    "env": [
+                        {"name": "from_spec", "value": "spec"},
+                        {"name": "collide", "value": "spec"},
+                    ],
+                },
+                {
+                    "name": "second",
+                    "image": test_image,
+                },
+            ],
+        },
+        base_pod_meta=None,
+    )
+
+    assert {
+        container.name: [env.to_dict() for env in container.env]
+        for container in pod.spec.init_containers + pod.spec.containers
+    } == {
+        "init": [
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {
+                "name": "DAGSTER_PIPES_MESSAGES",
+                "value": _DEV_NULL_MESSAGE_WRITER,
+                "value_from": None,
+            },
+        ],
+        "main": [
+            {"name": "from_spec", "value": "spec", "value_from": None},
+            {"name": "collide", "value": "spec", "value_from": None},
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {"name": "DAGSTER_PIPES_MESSAGES", "value": "pipes-message-var", "value_from": None},
+        ],
+        "second": [
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {
+                "name": "DAGSTER_PIPES_MESSAGES",
+                "value": _DEV_NULL_MESSAGE_WRITER,
+                "value_from": None,
+            },
+        ],
+    }
+
+
+def test_pod_building_pipes_session_env_overrides_with_custom_pipes_message_writer(test_image):
+    # env overrides
+    pod = build_pod_body(
+        pod_name="test",
+        image=None,
+        command=None,
+        env_vars={
+            DAGSTER_PIPES_CONTEXT_ENV_VAR: "context-var",
+            DAGSTER_PIPES_MESSAGES_ENV_VAR: "pipes-message-var",
+        },
+        base_pod_spec={
+            "init_containers": [
+                {
+                    "name": "init",
+                    "image": test_image,
+                },
+            ],
+            "containers": [
+                {
+                    "name": "main",
+                    "image": test_image,
+                    "env": [
+                        {"name": "from_spec", "value": "spec"},
+                        {"name": "collide", "value": "spec"},
+                    ],
+                },
+                {
+                    "name": "second",
+                    "image": test_image,
+                    "env": [
+                        {"name": "DAGSTER_PIPES_MESSAGES", "value": "custom"},
+                    ],
+                },
+            ],
+        },
+        base_pod_meta=None,
+    )
+
+    assert {
+        container.name: [env.to_dict() for env in container.env]
+        for container in pod.spec.init_containers + pod.spec.containers
+    } == {
+        "init": [
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {
+                "name": "DAGSTER_PIPES_MESSAGES",
+                "value": _DEV_NULL_MESSAGE_WRITER,
+                "value_from": None,
+            },
+        ],
+        "main": [
+            {"name": "from_spec", "value": "spec", "value_from": None},
+            {"name": "collide", "value": "spec", "value_from": None},
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {"name": "DAGSTER_PIPES_MESSAGES", "value": "pipes-message-var", "value_from": None},
+        ],
+        "second": [
+            {"name": "DAGSTER_PIPES_MESSAGES", "value": "custom", "value_from": None},
+            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+        ],
+    }
+
+
+def test_pod_building_snake_camel_case_mix(test_image):
     # snake case camel case mix
     pod = build_pod_body(
         pod_name="test",
@@ -157,6 +350,8 @@ def test_pod_building():
     )
     assert pod  # cases coerced correctly and passed internal validation
 
+
+def test_pod_building_common_labels_no_overrides(test_image):
     # common labels dont override
     pod = build_pod_body(
         pod_name="test",
@@ -169,6 +364,8 @@ def test_pod_building():
     assert pod.metadata.labels["app.kubernetes.io/name"] == "custom"
     assert pod.metadata.labels["app.kubernetes.io/instance"] == "dagster"
 
+
+def test_pod_building_restart_policy(test_image):
     # restart policy
     pod = build_pod_body(
         pod_name="test",
@@ -180,6 +377,8 @@ def test_pod_building():
     )
     assert pod.spec.restart_policy == "OnFailure"
 
+
+def test_pod_building_cannot_set_restart_policy_always(test_image):
     with pytest.raises(DagsterInvariantViolationError):
         build_pod_body(
             pod_name="test",

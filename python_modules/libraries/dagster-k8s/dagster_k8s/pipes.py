@@ -29,8 +29,11 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import (
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PipesDefaultMessageWriter,
     PipesExtras,
+    encode_env_var,
 )
 
 from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
@@ -48,6 +51,7 @@ def get_pod_name(run_id: str, op_name: str):
 
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+_DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
 
 @experimental
@@ -216,7 +220,9 @@ class _PipesK8sClient(PipesClient):
             base_pod_spec (Optional[Mapping[str, Any]]:
                 Raw k8s config for the k8s pod's pod spec
                 (https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#PodSpec).
-                Keys can either snake_case or camelCase.
+                Keys can either snake_case or camelCase. The dagster context will be readable
+                from any container within the pod, but only the first container in the
+                `pod.spec.containers` will be able to communicate back to Dagster.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
             context_injector (Optional[PipesContextInjector]):
@@ -329,24 +335,82 @@ def build_pod_body(
             "A restart policy of Always is not allowed, computations are expected to complete."
         )
 
+    containers = spec["containers"]
+    init_containers = spec.get("init_containers") or []
+
     if "image" not in spec["containers"][0] and not image:
         raise DagsterInvariantViolationError(
             "Must specify image property or provide base_pod_spec with one set."
         )
 
-    if "name" not in spec["containers"][0]:
-        spec["containers"][0]["name"] = DEFAULT_CONTAINER_NAME
+    # We set the container name for the first container in the list if it is not set.
+    # There will be a validation error below for other containers.
+    if "name" not in containers[0]:
+        containers[0]["name"] = DEFAULT_CONTAINER_NAME
 
-    if image:
-        spec["containers"][0]["image"] = image
+    if not init_containers and len(containers) == 1:
+        if image:
+            containers[0]["image"] = image
 
-    if command:
-        spec["containers"][0]["command"] = command
+        if command:
+            containers[0]["command"] = command
+    else:
+        if image:
+            raise DagsterInvariantViolationError(
+                "Should specify 'image' via 'base_pod_spec' when specifying multiple containers"
+            )
 
-    if "env" not in spec["containers"][0]:
-        spec["containers"][0]["env"] = []
+        if command:
+            raise DagsterInvariantViolationError(
+                "Should specify 'command' via 'base_pod_spec' when specifying multiple containers"
+            )
 
-    spec["containers"][0]["env"].extend({"name": k, "value": v} for k, v in env_vars.items())
+        for container_type, containers_ in {
+            "containers": containers,
+            "init_containers": init_containers,
+        }.items():
+            for i, container in enumerate(containers_):
+                for key in ["name", "image"]:
+                    if key not in container:
+                        raise DagsterInvariantViolationError(
+                            f"Must provide base_pod_spec with {container_type}[{i}].{key} property set."
+                        )
+
+    if "env" not in containers[0]:
+        containers[0]["env"] = []
+
+    # Extend the env variables for the first container
+    containers[0]["env"].extend({"name": k, "value": v} for k, v in env_vars.items())
+
+    if DAGSTER_PIPES_CONTEXT_ENV_VAR in env_vars:
+        # Add the dagster context to the remaining containers
+        for container in containers[1:] + init_containers:
+            if "env" not in container:
+                container["env"] = []
+
+            container["env"].append(
+                {
+                    "name": DAGSTER_PIPES_CONTEXT_ENV_VAR,
+                    "value": env_vars[DAGSTER_PIPES_CONTEXT_ENV_VAR],
+                }
+            )
+
+            for env_var in container["env"]:
+                # If the user configures DAGSTER_PIPES_MESSAGES env var, don't replace it as
+                # they may want to configure writing messages to a file and store it somewhere
+                # or pass it within a container through a shared volume.
+                if env_var["name"] == DAGSTER_PIPES_MESSAGES_ENV_VAR:
+                    break
+            else:
+                # Default to writing messages to /dev/null within the pipes session so that
+                # they don't need to do anything special if the want to read the pipes context
+                # by using `with open_dagster_pipes()`.
+                container["env"].append(
+                    {
+                        "name": DAGSTER_PIPES_MESSAGES_ENV_VAR,
+                        "value": _DEV_NULL_MESSAGE_WRITER,
+                    }
+                )
 
     return k8s_model_from_dict(
         kubernetes.client.V1Pod,
