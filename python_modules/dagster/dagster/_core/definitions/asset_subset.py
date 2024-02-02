@@ -20,7 +20,10 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
 )
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    whitelist_for_serdes,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
@@ -28,6 +31,10 @@ if TYPE_CHECKING:
 
 class AssetSubsetSerializer(NamedTupleSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
+
+    def get_storage_name(self) -> str:
+        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
+        return "AssetSubset"
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
         if value.is_partitioned:
@@ -154,7 +161,7 @@ class AssetSubset(NamedTuple):
             )
 
 
-@whitelist_for_serdes(serializer=AssetSubsetSerializer, storage_name="AssetSubset")
+@whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class ValidAssetSubset(AssetSubset):
     """Represents an AssetSubset which is known to be compatible with the current
     PartitionsDefinition of the asset represents.
