@@ -80,9 +80,9 @@ class DbClient:
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
         ...
 
-    @staticmethod
     @contextmanager
-    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice):
+    @abstractmethod
+    def connect(self, context: Union[OutputContext, InputContext], table_slice: TableSlice):
         ...
 
 

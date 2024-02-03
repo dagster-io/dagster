@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Generator, Optional, Sequence, Type, cast
+from typing import Optional, Sequence, Type, cast
 
-from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster import IOManagerDefinition, OutputContext, ResourceDependency, io_manager
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory,
@@ -20,7 +20,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from pydantic import Field
 
-from .utils import setup_gcp_creds
+from ..auth.resources import GoogleAuthResource
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -154,19 +154,21 @@ def build_bigquery_io_manager(
         * dataset -> schema
         * table -> table
         """
-        mgr = DbIOManager(
+        if init_context.resource_config.get("gcp_credentials") is not None:
+            auth_resource = GoogleAuthResource(
+                service_account_info=init_context.resource_config["gcp_credentials"]
+            )
+        else:
+            auth_resource = GoogleAuthResource()
+
+        return DbIOManager(
             type_handlers=type_handlers,
-            db_client=BigQueryClient(),
+            db_client=BigQueryClient(auth_resource=auth_resource),
             io_manager_name="BigQueryIOManager",
             database=init_context.resource_config["project"],
             schema=init_context.resource_config.get("dataset"),
             default_load_type=default_load_type,
         )
-        if init_context.resource_config.get("gcp_credentials"):
-            with setup_gcp_creds(init_context.resource_config.get("gcp_credentials")):
-                yield mgr
-        else:
-            yield mgr
 
     return bigquery_io_manager
 
@@ -279,6 +281,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " your SparkSession configuration."
         ),
     )
+    google_auth_resource: ResourceDependency[Optional[GoogleAuthResource]]
     gcp_credentials: Optional[str] = Field(
         default=None,
         description=(
@@ -313,23 +316,29 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def default_load_type() -> Optional[Type]:
         return None
 
-    def create_io_manager(self, context) -> Generator:
-        mgr = DbIOManager(
-            db_client=BigQueryClient(),
+    def create_io_manager(self, context) -> DbIOManager:
+        if self.google_auth_resource is None:
+            if self.gcp_credentials is not None:
+                auth_resource = GoogleAuthResource(service_account_info=self.gcp_credentials)
+            else:
+                auth_resource = GoogleAuthResource()
+        else:
+            auth_resource = self.google_auth_resource
+
+        return DbIOManager(
+            db_client=BigQueryClient(auth_resource=auth_resource),
             io_manager_name="BigQueryIOManager",
             database=self.project,
             schema=self.dataset,
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
         )
-        if self.gcp_credentials:
-            with setup_gcp_creds(self.gcp_credentials):
-                yield mgr
-        else:
-            yield mgr
 
 
 class BigQueryClient(DbClient):
+    def __init__(self, auth_resource: GoogleAuthResource):
+        self.auth_resource = auth_resource
+
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
@@ -355,12 +364,12 @@ class BigQueryClient(DbClient):
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
         connection.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
-    @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(self, context, _):
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),
+            credentials=self.auth_resource.get_credentials(),
         )
 
         yield conn
