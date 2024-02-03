@@ -140,10 +140,12 @@ export const AssetSidebarNode = ({
                 />
               </ExpandMore>
             ) : isGroupNode ? (
-              <AssetGroupPopoverMenu
-                onFilterToGroup={() => onFilterToGroup(node.groupNode)}
-                assets={node.groupNode.assets}
-              />
+              <ExpandMore>
+                <AssetGroupPopoverMenu
+                  onFilterToGroup={() => onFilterToGroup(node.groupNode)}
+                  assets={node.groupNode.assets}
+                />
+              </ExpandMore>
             ) : null}
           </ItemContainer>
         </BoxWrapper>

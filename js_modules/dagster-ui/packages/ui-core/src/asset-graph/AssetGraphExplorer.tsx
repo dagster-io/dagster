@@ -36,7 +36,7 @@ import {
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
-import {AssetGraphLayout} from './layout';
+import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -497,7 +497,7 @@ const AssetGraphExplorerWithData = ({
     </ShortcutHandler>
   );
 
-  const onFilterToGroup = (group: AssetGroup) => {
+  const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     setFilters?.({
       ...filters,
       groups: [
