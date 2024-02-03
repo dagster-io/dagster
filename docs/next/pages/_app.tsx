@@ -84,6 +84,9 @@ const Layout = ({asPath, children, pageProps}: Props) => {
     }
   }
 
+  // handle API docs pages (they are HTML pages generated from Sphinx, not Markdown pages)
+  const isHTMLPage = pageProps?.type === 'HTML';
+
   return (
     <>
       <div
@@ -105,16 +108,23 @@ const Layout = ({asPath, children, pageProps}: Props) => {
             />
             <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
             <div className="lg:pl-80 flex w-full">
-              <VersionedContentLayout asPath={asPath}>
-                <div className="DocSearch-content prose dark:prose-dark max-w-none">{children}</div>
-              </VersionedContentLayout>
-
-              <RightSidebar
-                markdownHeadings={markdownHeadings}
-                navigationItemsForMDX={navigationItems}
-                githubLink={githubLink}
-                toggleFeedback={toggleFeedback}
-              />
+              {isHTMLPage ? (
+                children
+              ) : (
+                <>
+                  <VersionedContentLayout asPath={asPath}>
+                    <div className="DocSearch-content prose dark:prose-dark max-w-none">
+                      {children}
+                    </div>
+                  </VersionedContentLayout>
+                  <RightSidebar
+                    markdownHeadings={markdownHeadings}
+                    navigationItemsForMDX={navigationItems}
+                    githubLink={githubLink}
+                    toggleFeedback={toggleFeedback}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>
