@@ -497,7 +497,7 @@ const AssetGraphExplorerWithData = ({
     </ShortcutHandler>
   );
 
-  const onFilterToGroup = (group: GroupLayout) => {
+  const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     setFilters?.({
       ...filters,
       groups: [
@@ -849,6 +849,7 @@ const AssetGraphExplorerWithData = ({
               hideSidebar={() => {
                 setShowSidebar(false);
               }}
+              onFilterToGroup={onFilterToGroup}
             />
           ) : null
         }
@@ -858,6 +859,12 @@ const AssetGraphExplorerWithData = ({
   }
   return explorer;
 };
+
+export interface AssetGroup {
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
 
 interface KeyboardTagProps {
   $withinTooltip?: boolean;
