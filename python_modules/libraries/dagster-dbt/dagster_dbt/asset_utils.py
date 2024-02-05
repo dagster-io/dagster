@@ -22,6 +22,7 @@ from dagster import (
     AssetSelection,
     AutoMaterializePolicy,
     DagsterInvariantViolationError,
+    DefaultScheduleStatus,
     FreshnessPolicy,
     In,
     MetadataValue,
@@ -240,6 +241,7 @@ def build_schedule_from_dbt_selection(
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
     execution_timezone: Optional[str] = None,
+    default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> ScheduleDefinition:
     """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
 
@@ -290,6 +292,7 @@ def build_schedule_from_dbt_selection(
             tags=tags,
         ),
         execution_timezone=execution_timezone,
+        default_status=default_status,
     )
 
 
