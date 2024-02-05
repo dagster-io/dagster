@@ -1104,7 +1104,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
             key,
             event_type,
-            [DATA_VERSION_TAG, NONE_OUTPUT_TAG],
+            [
+                DATA_VERSION_TAG,
+                NONE_OUTPUT_TAG,  # fetch NONE_OUTPUT_TAG so UPath I/O manager can load None outputs
+            ],
             asset_partitions=list(partition_keys),
         )
         # collect the tags on the latest AssetMaterialization for an asset/partition so that the
