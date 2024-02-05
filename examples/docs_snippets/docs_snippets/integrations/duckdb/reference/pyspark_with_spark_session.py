@@ -1,4 +1,4 @@
-# pyright: reportGeneralTypeIssues=none
+# pyright: reportAttributeAccessIssue=none
 
 # start
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager

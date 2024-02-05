@@ -1782,9 +1782,9 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
                     break
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
-                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
+                    result_windows[0] = TimeWindow(window.start, included_window.end)
                 elif result_windows and window.end == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
+                    result_windows[0] = TimeWindow(window.start, included_window.end)
                 else:
                     result_windows.insert(0, window)
 

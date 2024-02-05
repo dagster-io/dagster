@@ -60,7 +60,7 @@ RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest]
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 

@@ -1,4 +1,4 @@
-# pyright: reportGeneralTypeIssues=none
+# pyright: reportCallIssue=none
 # pyright: reportOptionalMemberAccess=none
 
 import os

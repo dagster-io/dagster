@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
+from typing_extensions import Self
 
 MANAGED_ELEMENTS_DEPRECATION_MSG = (
     "Dagster is deprecating support for ingestion-as-code."
@@ -303,7 +304,7 @@ class InitializedAirbyteConnection:
         api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
-    ):
+    ) -> Self:
         source = next(
             (
                 source.source

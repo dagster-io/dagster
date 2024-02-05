@@ -1102,6 +1102,6 @@ def test_partial_resource_checks() -> None:
 
     # this should fail but does not https://github.com/dagster-io/dagster/issues/18017
     MergeResource(
-        int_res=StrResource.configure_at_launch(),  # type: ignore # type checker catches it though
-        str_res=IntResource.configure_at_launch(),  # type: ignore
+        int_res=StrResource.configure_at_launch(),
+        str_res=IntResource.configure_at_launch(),
     )

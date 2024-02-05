@@ -28,6 +28,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
     Union,
     overload,
@@ -396,7 +397,9 @@ def write_telemetry_log_line(log_line: object) -> None:
     logger.info(json.dumps(log_line))
 
 
-def _get_instance_telemetry_info(instance: DagsterInstance):
+def _get_instance_telemetry_info(
+    instance: DagsterInstance,
+) -> Tuple[bool, Optional[str], Optional[str]]:
     from dagster._core.storage.runs import SqlRunStorage
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -741,7 +744,7 @@ def log_action(
                 client_time=str(client_time),
                 elapsed_time=str(elapsed_time),
                 event_id=str(uuid.uuid4()),
-                instance_id=instance_id,
+                instance_id=check.not_none(instance_id),
                 metadata=metadata,
                 run_storage_id=run_storage_id,
             )._asdict()
