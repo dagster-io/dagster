@@ -257,6 +257,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     graphName = graphene.String()
     groupName = graphene.String()
+    owners = non_null_list(graphene.String)
     id = graphene.NonNull(graphene.ID)
     isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
@@ -366,6 +367,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
+            owners=external_asset_node.owners,
         )
 
     @property

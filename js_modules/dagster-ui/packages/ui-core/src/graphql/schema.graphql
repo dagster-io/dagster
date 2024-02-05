@@ -661,6 +661,7 @@ type AssetNode {
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
   groupName: String
+  owners: [String!]!
   id: ID!
   isExecutable: Boolean!
   isObservable: Boolean!

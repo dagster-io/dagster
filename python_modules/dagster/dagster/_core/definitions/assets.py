@@ -47,6 +47,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import (
     disable_dagster_warnings,
+    experimental_warning,
 )
 
 from .dependency import NodeHandle
@@ -94,6 +95,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
+    _owners_by_key: Mapping[AssetKey, Sequence[str]]
 
     def __init__(
         self,
@@ -116,6 +118,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         is_subset: bool = False,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -315,6 +318,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
+        self._owners_by_key = check.opt_mapping_param(
+            owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
+        )
+
+        if self._owners_by_key and any(self._owners_by_key.values()):
+            experimental_warning("Defining owners on assets")
 
     @staticmethod
     def dagster_internal_init(
@@ -337,6 +346,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -357,6 +367,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
             is_subset=is_subset,
+            owners_by_key=owners_by_key,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -578,6 +589,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _assign_output_names_to_check_specs,
@@ -715,6 +727,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,
             is_subset=False,
+            owners_by_key=owners_by_key,
         )
 
     @public
@@ -879,6 +892,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return self._partition_mappings
+
+    @property
+    def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
+        return self._owners_by_key
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -1378,6 +1395,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
+            owners_by_key=self._owners_by_key,
         )
 
 

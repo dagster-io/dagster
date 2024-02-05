@@ -89,6 +89,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
+    owners: Optional[List[str]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -128,6 +129,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    owners: Optional[List[str]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -202,6 +204,8 @@ def asset(
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, team name, or other arbitrary identifier.
 
     Examples:
         .. code-block:: python
@@ -241,6 +245,7 @@ def asset(
             code_version=code_version,
             check_specs=check_specs,
             key=key,
+            owners=owners,
         )
 
     if compute_fn is not None:
@@ -313,6 +318,7 @@ class _Asset:
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -340,6 +346,7 @@ class _Asset:
         self.code_version = code_version
         self.check_specs = check_specs
         self.key = key
+        self.owners = owners
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -484,6 +491,7 @@ class _Asset:
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
+            owners_by_key={out_asset_key: self.owners} if self.owners else None,
         )
 
 
@@ -853,6 +861,11 @@ def multi_asset(
             for asset_key, props in props_by_asset_key.items()
             if props.metadata is not None
         }
+        owners_by_key = {
+            asset_key: props.owners
+            for asset_key, props in props_by_asset_key.items()
+            if props.owners is not None
+        }
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -882,6 +895,7 @@ def multi_asset(
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
+            owners_by_key=owners_by_key,
         )
 
     return inner

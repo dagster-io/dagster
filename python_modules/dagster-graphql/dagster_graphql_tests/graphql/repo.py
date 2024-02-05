@@ -1630,7 +1630,7 @@ def req_config_job():
     the_op()
 
 
-@asset
+@asset(owners=["owner_1", "owner_2"])
 def asset_1():
     yield Output(3)
 

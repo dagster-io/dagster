@@ -2054,3 +2054,24 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
             return my_op()
 
         assert _specified_elsewhere  # appease linter
+
+
+def test_asset_owners():
+    @asset(owners=["owner1", "owner2"])
+    def my_asset():
+        pass
+
+    assert my_asset.owners_by_key == {my_asset.key: ["owner1", "owner2"]}
+
+
+def test_multi_asset_owners():
+    @multi_asset(
+        outs={"out1": AssetOut(owners=["owner1", "owner2"]), "out2": AssetOut(owners=["owner3"])}
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): ["owner1", "owner2"],
+        AssetKey("out2"): ["owner3"],
+    }

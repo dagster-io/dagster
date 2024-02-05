@@ -1197,6 +1197,7 @@ class ExternalAssetNode(
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
             ("backfill_policy", Optional[BackfillPolicy]),
             ("auto_observe_interval_minutes", Optional[float]),
+            ("owners", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -1231,6 +1232,7 @@ class ExternalAssetNode(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[float] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1292,6 +1294,7 @@ class ExternalAssetNode(
             auto_observe_interval_minutes=check.opt_numeric_param(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
         )
 
     @property
@@ -1546,6 +1549,7 @@ def external_asset_nodes_from_defs(
     group_name_by_asset_key: Dict[AssetKey, str] = {}
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
+    owners_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
@@ -1595,6 +1599,7 @@ def external_asset_nodes_from_defs(
                 {key: assets_def.backfill_policy for key in assets_def.keys}
             )
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
+            owners_by_asset_key.update(assets_def.owners_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
 
@@ -1726,6 +1731,7 @@ def external_asset_nodes_from_defs(
                 backfill_policy=backfill_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
+                owners=owners_by_asset_key.get(asset_key),
             )
         )
 

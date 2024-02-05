@@ -457,6 +457,7 @@ export type AssetNode = {
   opName: Maybe<Scalars['String']>;
   opNames: Array<Scalars['String']>;
   opVersion: Maybe<Scalars['String']>;
+  owners: Array<Scalars['String']>;
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
@@ -6214,6 +6215,7 @@ export const buildAssetNode = (
     opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionDefinition:
       overrides && overrides.hasOwnProperty('partitionDefinition')
         ? overrides.partitionDefinition!

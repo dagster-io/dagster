@@ -566,6 +566,17 @@ GET_REPO_ASSET_GROUPS = """
     }
 """
 
+GET_ASSET_OWNERS = """
+    query AssetOwnersQuery($assetKeys: [AssetKeyInput!]) {
+        assetNodes(assetKeys: $assetKeys) {
+            assetKey {
+                path
+            }
+            owners
+        }
+    }
+"""
+
 
 GET_RUN_MATERIALIZATIONS = """
     query RunAssetsQuery {
@@ -1861,6 +1872,19 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert (
             expected_default_group_members & default_group_members
         ) == expected_default_group_members
+
+    def test_asset_owners(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OWNERS,
+            variables={"assetKeys": [{"path": ["asset_1"]}]},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        assert result.data["assetNodes"][0]["assetKey"] == {"path": ["asset_1"]}
+        assert result.data["assetNodes"][0]["owners"] == ["owner_1", "owner_2"]
 
     def test_typed_assets(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "typed_assets")

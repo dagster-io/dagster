@@ -33,6 +33,7 @@ class AssetOut(
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
+            ("owners", PublicAttr[Optional[Sequence[str]]]),
         ],
     )
 ):
@@ -64,6 +65,8 @@ class AssetOut(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, team name, or other arbitrary identifier.
     """
 
     def __new__(
@@ -80,6 +83,7 @@ class AssetOut(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -110,6 +114,7 @@ class AssetOut(
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
         )
 
     def to_out(self) -> Out:
