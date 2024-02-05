@@ -416,6 +416,26 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
 
 @whitelist_for_serdes
+class AllAutoMaterializableSelection(AssetSelection, frozen=True):
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return {
+            target_key
+            for target_key in asset_graph.materializable_asset_keys
+            if asset_graph.get_auto_materialize_policy(target_key) is not None
+        }.union(
+            target_key
+            for target_key in asset_graph.source_asset_keys
+            if asset_graph.get_auto_observe_interval_minutes(target_key) is not None
+        )
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
+
+    def __str__(self) -> str:
+        return "all auto-materializable assets and auto-observable source assets"
+
+
+@whitelist_for_serdes
 class AllSelection(AssetSelection, frozen=True):
     include_sources: Optional[bool]
 

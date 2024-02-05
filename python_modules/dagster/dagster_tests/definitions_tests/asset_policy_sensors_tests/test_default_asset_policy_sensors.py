@@ -10,6 +10,7 @@ from dagster import (
     observable_source_asset,
     sensor,
 )
+from dagster._core.definitions.asset_selection import AllAutoMaterializableSelection
 from dagster._core.definitions.automation_policy_sensor_definition import (
     AutomationPolicySensorDefinition,
 )
@@ -124,6 +125,8 @@ def test_default_automation_policy_sensors(instance_with_automation_policy_senso
 
     asset_graph = ExternalAssetGraph.from_external_repository(external_repo)
 
+    assert automation_policy_sensor.asset_selection == AllAutoMaterializableSelection()
+
     assert automation_policy_sensor.asset_selection.resolve(asset_graph) == {
         AssetKey(["auto_materialize_asset"]),
         AssetKey(["auto_observe_asset"]),
@@ -197,6 +200,11 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_automati
     # default sensor includes the assets that weren't covered by the custom one
 
     default_sensor = external_repo.get_external_sensor("default_automation_policy_sensor")
+
+    assert (
+        default_sensor.asset_selection
+        == AllAutoMaterializableSelection() - automation_policy_sensor.asset_selection
+    )
 
     assert default_sensor.asset_selection.resolve(asset_graph) == {
         AssetKey(["other_auto_materialize_asset"]),

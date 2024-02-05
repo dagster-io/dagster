@@ -18,6 +18,7 @@ import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AllAutoMaterializableSelection
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -202,12 +203,16 @@ class ExternalRepository:
             }
 
             covered_asset_keys = set()
+            default_sensor_asset_selection = AllAutoMaterializableSelection()
+            default_sensor_asset_keys = set()
+
             for sensor in existing_automation_policy_sensors.values():
                 covered_asset_keys = covered_asset_keys.union(
                     check.not_none(sensor.asset_selection).resolve(asset_graph)
                 )
-
-            default_sensor_asset_keys = set()
+                default_sensor_asset_selection = default_sensor_asset_selection - check.not_none(
+                    sensor.asset_selection
+                )
 
             for asset_key, policy in asset_graph.auto_materialize_policies_by_key.items():
                 if not policy:
@@ -228,7 +233,7 @@ class ExternalRepository:
                     name=self.get_default_automation_policy_sensor_name(),
                     job_name=None,
                     op_selection=None,
-                    asset_selection=AssetSelection.keys(*default_sensor_asset_keys),
+                    asset_selection=default_sensor_asset_selection,
                     mode=None,
                     min_interval=30,
                     description=None,
