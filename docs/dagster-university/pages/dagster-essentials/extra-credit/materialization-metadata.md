@@ -14,8 +14,8 @@ Now that we’ve covered definition metadata, let’s dive into the other type o
 
 To add metadata to an asset, you need to do two things:
 
+- Return a `MaterializeResult` object with the `metadata` parameter from your asset
 - Use the `MetadataValue` utility class to wrap the data, ensuring it displays correctly in the UI
-- Return a `MaterializeResult` instance with the `metadata` parameter from your asset
 
 Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This will add the count of records to the asset’s materialization metadata.
 
