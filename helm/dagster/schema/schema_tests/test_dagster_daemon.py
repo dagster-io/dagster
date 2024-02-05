@@ -559,6 +559,7 @@ def test_init_container_resources(template: HelmTemplate):
         for container in webserver_deployment.spec.template.spec.init_containers
     )
 
+
 def test_automount_svc_acct_token(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
 
