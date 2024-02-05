@@ -54,6 +54,7 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.warnings import normalize_renamed_param
 
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
@@ -526,7 +527,12 @@ def run_failure_sensor(
             sensor_name = name
 
         jobs = monitored_jobs if monitored_jobs else job_selection
-        monitor_all = monitor_all_code_locations or monitor_all_repositories
+        monitor_all = normalize_renamed_param(
+            monitor_all_code_locations,
+            "monitor_all_code_locations",
+            monitor_all_repositories,
+            "monitor_all_repositories",
+        )
 
         @run_status_sensor(
             run_status=DagsterRunStatus.FAILURE,
@@ -1007,7 +1013,12 @@ def run_status_sensor(
         sensor_name = name or fn.__name__
 
         jobs = monitored_jobs if monitored_jobs else job_selection
-        monitor_all = monitor_all_code_locations or monitor_all_repositories
+        monitor_all = normalize_renamed_param(
+            monitor_all_code_locations,
+            "monitor_all_code_locations",
+            monitor_all_repositories,
+            "monitor_all_repositories",
+        )
 
         if jobs and monitor_all:
             DagsterInvalidDefinitionError(
