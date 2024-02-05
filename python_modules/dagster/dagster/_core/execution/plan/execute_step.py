@@ -27,6 +27,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -48,7 +49,8 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import AssetResult
+from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
@@ -101,23 +103,9 @@ def _process_asset_results_to_events(
 def _process_user_event(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> Iterator[OpOutputUnion]:
-    if isinstance(user_event, MaterializeResult):
-        assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
-        if not assets_def:
-            raise DagsterInvariantViolationError(
-                "MaterializeResult is only valid within asset computations, no backing"
-                " AssetsDefinition found."
-            )
-        if user_event.asset_key:
-            asset_key = user_event.asset_key
-        else:
-            if len(assets_def.keys) != 1:
-                raise DagsterInvariantViolationError(
-                    "MaterializeResult did not include asset_key and it can not be inferred."
-                    f" Specify which asset_key, options are: {assets_def.keys}."
-                )
-            asset_key = assets_def.key
-
+    if isinstance(user_event, AssetResult):
+        assets_def = _get_assets_def_for_step(step_context, user_event)
+        asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
         output_name = assets_def.get_output_name_for_asset_key(asset_key)
 
         for check_result in user_event.check_results or []:
@@ -167,6 +155,32 @@ def _process_user_event(
         yield output
     else:
         yield user_event
+
+
+def _get_assets_def_for_step(
+    step_context: StepExecutionContext, user_event: OpOutputUnion
+) -> AssetsDefinition:
+    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
+    if not assets_def:
+        raise DagsterInvariantViolationError(
+            f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
+            " AssetsDefinition found."
+        )
+    return assets_def
+
+
+def _resolve_asset_result_asset_key(
+    asset_result: AssetResult, assets_def: AssetsDefinition
+) -> AssetKey:
+    if asset_result.asset_key:
+        return asset_result.asset_key
+    else:
+        if len(assets_def.keys) != 1:
+            raise DagsterInvariantViolationError(
+                f"{asset_result.__class__.__name__} did not include asset_key and it can not be inferred."
+                f" Specify which asset_key, options are: {assets_def.keys}."
+            )
+        return assets_def.key
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -587,23 +601,24 @@ def _materializing_asset_key_and_partitions_for_output(
     return None, set()
 
 
-def _get_output_asset_materializations(
+def _get_output_asset_events(
     asset_key: AssetKey,
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],
     step_context: StepExecutionContext,
-) -> Iterator[AssetMaterialization]:
+    execution_type: AssetExecutionType,
+) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
     all_metadata = {**output.metadata, **io_manager_metadata}
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
-
     tags: Dict[str, str]
     if (
-        step_context.is_external_input_asset_version_info_loaded
+        execution_type == AssetExecutionType.MATERIALIZATION
+        and step_context.is_external_input_asset_version_info_loaded
         and asset_key in step_context.job_def.asset_layer.asset_keys
     ):
         assert isinstance(output, Output)
@@ -632,12 +647,24 @@ def _get_output_asset_materializations(
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_data_version(asset_key, data_version)
+    elif execution_type == AssetExecutionType.OBSERVATION:
+        assert isinstance(output, Output)
+        tags = (
+            _build_data_version_observation_tags(output.data_version) if output.data_version else {}
+        )
     else:
         tags = {}
 
     backfill_id = step_context.get_tag(BACKFILL_ID_TAG)
     if backfill_id:
         tags[BACKFILL_ID_TAG] = backfill_id
+
+    if execution_type == AssetExecutionType.MATERIALIZATION:
+        event_class = AssetMaterialization
+    elif execution_type == AssetExecutionType.OBSERVATION:
+        event_class = AssetObservation
+    else:
+        check.failed(f"Unexpected asset execution type {execution_type}")
 
     if asset_partitions:
         for partition in asset_partitions:
@@ -648,7 +675,7 @@ def _get_output_asset_materializations(
                     else {}
                 )
 
-                yield AssetMaterialization(
+                yield event_class(
                     asset_key=asset_key,
                     partition=partition,
                     metadata=all_metadata,
@@ -656,7 +683,7 @@ def _get_output_asset_materializations(
                 )
     else:
         with disable_dagster_warnings():
-            yield AssetMaterialization(asset_key=asset_key, metadata=all_metadata, tags=tags)
+            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=tags)
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -716,6 +743,15 @@ def _build_data_version_tags(
     if data_version_is_user_provided:
         tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
     return tags
+
+
+def _build_data_version_observation_tags(
+    data_version: DataVersion,
+) -> Dict[str, str]:
+    return {
+        DATA_VERSION_TAG: data_version.value,
+        DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
+    }
 
 
 def _store_output(
@@ -859,18 +895,41 @@ def _log_asset_materialization_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        yield from (
-            (
-                DagsterEvent.asset_materialization(step_context, materialization)
-                for materialization in _get_output_asset_materializations(
-                    asset_key,
-                    partitions,
-                    output,
-                    output_def,
-                    manager_metadata,
-                    step_context,
+        # This is a temporary workaround to prevent duplicate observation events from external
+        # observable assets that were auto-converted from source assets. These assets yield
+        # observation events through the context in their body, and will continue to do so until we
+        # can convert them to using ObserveResult, which requires a solution to partition-scoped
+        # metadata and data version on output. We identify these auto-converted assets by looking
+        # for OBSERVATION-type asset that have this special metadata key (added in
+        # `wrap_source_asset_observe_fn_in_op_compute_fn`), which should only occur for these
+        # auto-converted source assets. This can be removed when source asset observation functions
+        # are converted to use ObserveResult.
+        if (
+            execution_type == AssetExecutionType.OBSERVATION
+            and SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata
+        ):
+            pass
+        else:
+            yield from (
+                (
+                    _dagster_event_for_asset_event(step_context, event)
+                    for event in _get_output_asset_events(
+                        asset_key,
+                        partitions,
+                        output,
+                        output_def,
+                        manager_metadata,
+                        step_context,
+                        execution_type,
+                    )
                 )
             )
-            if execution_type == AssetExecutionType.MATERIALIZATION
-            else ()
-        )
+
+
+def _dagster_event_for_asset_event(
+    step_context: StepExecutionContext, asset_event: Union[AssetMaterialization, AssetObservation]
+):
+    if isinstance(asset_event, AssetMaterialization):
+        return DagsterEvent.asset_materialization(step_context, asset_event)
+    else:  # observation
+        return DagsterEvent.asset_observation(step_context, asset_event)

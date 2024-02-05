@@ -840,7 +840,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
 
-    from ..definitions.result import MaterializeResult
+    from ..definitions.result import MaterializeResult, ObserveResult
     from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
@@ -876,6 +876,9 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         # convert MaterializeResult type annotation to Nothing until returning
         # scalar values via MaterializeResult is supported
         # https://github.com/dagster-io/dagster/issues/16887
+        dagster_type = Nothing
+    elif dagster_type == ObserveResult:
+        # ObserveResult does not include a value
         dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library

@@ -29,7 +29,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
 from dagster._core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
@@ -58,6 +58,7 @@ OpOutputUnion: TypeAlias = Union[
     AssetCheckEvaluation,
     AssetCheckResult,
     MaterializeResult,
+    ObserveResult,
 ]
 
 
@@ -114,6 +115,7 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             AssetCheckResult,
             AssetCheckEvaluation,
             MaterializeResult,
+            ObserveResult,
         ),
     ):
         raise DagsterInvariantViolationError(
@@ -213,7 +215,7 @@ def execute_core_compute(
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
-        elif isinstance(step_output, MaterializeResult):
+        elif isinstance(step_output, AssetResult):
             asset_key = (
                 step_output.asset_key
                 or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
