@@ -338,7 +338,24 @@ def test_with_fake_adls2_resource():
     }
 
     result = job.execute_in_process(run_config=run_config)
+    assert result.success
+
+
+def test_with_fake_adls2_resource_uses_extension():
+    extension = ".pkl"
+    job = define_inty_job(adls_io_resource=fake_adls2_resource)
+
+    run_config = {
+        "resources": {
+            "io_manager": {
+                "config": {"adls2_file_system": "fake_file_system", "adls2_extension": extension}
+            },
+            "adls2": {"config": {"account_name": "my_account"}},
+        }
+    }
+
+    result = job.execute_in_process(run_config=run_config)
     output_paths = get_io_manager_handled_output_paths(result)
 
-    assert all([path.endswith(PickledObjectADLS2IOManager.extension) for path in output_paths])
+    assert all([path.endswith(extension) for path in output_paths])
     assert result.success
