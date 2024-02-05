@@ -28,6 +28,7 @@ from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
     SENSOR_NAME_TAG,
+    TICK_ID_TAG,
 )
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._daemon.asset_daemon import (
@@ -506,8 +507,10 @@ def test_automation_policy_sensor_ticks(num_threads):
             run = runs[0]
             assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
             assert run.tags["foo_tag"] == "bar_val"
-            assert run.tags[SENSOR_NAME_TAG] == "automation_policy_sensor_a"
             assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
+            assert run.tags[SENSOR_NAME_TAG] == "automation_policy_sensor_a"
+
+            assert int(run.tags[TICK_ID_TAG]) > 0
 
             # Starting a sensor causes it to make ticks too
             result = result.start_sensor("automation_policy_sensor_b")

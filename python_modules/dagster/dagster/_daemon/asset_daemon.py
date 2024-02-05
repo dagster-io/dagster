@@ -50,6 +50,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
@@ -860,6 +861,9 @@ class AssetDaemon(DagsterDaemon):
                 cursor=stored_cursor,
                 materialize_run_tags={
                     **instance.auto_materialize_run_tags,
+                    **DagsterRun.tags_for_tick_id(
+                        str(tick.tick_id),
+                    ),
                     **sensor_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
