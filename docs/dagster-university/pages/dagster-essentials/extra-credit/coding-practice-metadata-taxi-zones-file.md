@@ -15,6 +15,9 @@ To practice what you’ve learned, add the record counts to the metadata for `ta
 The metadata you built should look similar to the code contained in the **View answer** toggle. Click to open it.
 
 ```python {% obfuscated="true" %}
+from dagster import MaterializeResult
+
+
 @asset(
     group_name="raw_files",
 )
