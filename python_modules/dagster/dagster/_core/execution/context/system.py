@@ -575,6 +575,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             AssetKey, Optional[AssetMaterialization]
         ] = {}
 
+        # collect the tags on the latest AssetMaterialization for an asset/partition so that the
+        # UPath I/O manager can handle loading None inputs
         self._upstream_asset_tags: Dict[
             AssetKey, Optional[Union[Mapping[str, Mapping[str, str]], Mapping[str, str]]]
         ] = {}
@@ -1101,6 +1103,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
             key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
         )
+        # collect the tags on the latest AssetMaterialization for an asset/partition so that the
+        # UPath I/O manager can handle loading None inputs
         upstream_asset_tags_dict[key] = tags_by_partition
         partition_data_versions = [
             pair[1][DATA_VERSION_TAG]
