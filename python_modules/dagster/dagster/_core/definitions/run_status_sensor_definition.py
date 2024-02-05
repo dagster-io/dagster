@@ -472,11 +472,11 @@ def run_failure_sensor(
             ]
         ]
     ] = None,
-    monitor_all_code_locations: bool = False,
+    monitor_all_code_locations: Optional[bool] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-    monitor_all_repositories: bool = False,
+    monitor_all_repositories: Optional[bool] = None,
 ) -> Union[
     SensorDefinition,
     Callable[
@@ -612,7 +612,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 ]
             ]
         ] = None,
-        monitor_all_code_locations: bool = False,
+        monitor_all_code_locations: Optional[bool] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
@@ -642,6 +642,9 @@ class RunStatusSensorDefinition(SensorDefinition):
             ),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
+        monitor_all_code_locations = check.opt_bool_param(
+            monitor_all_code_locations, "monitor_all_code_locations", default=False
+        )
 
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
 
@@ -963,11 +966,11 @@ def run_status_sensor(
             ]
         ]
     ] = None,
-    monitor_all_code_locations: bool = False,
+    monitor_all_code_locations: Optional[bool] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-    monitor_all_repositories: bool = False,
+    monitor_all_repositories: Optional[bool] = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,
@@ -988,7 +991,7 @@ def run_status_sensor(
             Jobs in the current code locations that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the code location matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
-        monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
+        monitor_all_code_locations (Optional[bool]): If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
@@ -1001,7 +1004,7 @@ def run_status_sensor(
             executed if a RunRequest is yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
-        monitor_all_repositories (bool): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
+        monitor_all_repositories (Optional[bool]): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
     """
