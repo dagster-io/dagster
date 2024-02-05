@@ -70,6 +70,7 @@ def test_construct_dagster_k8s_job():
     assert job["kind"] == "Job"
     assert job["metadata"]["name"] == "job123"
     assert job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    assert job["spec"]["template"]["spec"]["automount_service_account_token"]
     assert DAGSTER_PG_PASSWORD_ENV_VAR in [
         env["name"] for env in job["spec"]["template"]["spec"]["containers"][0]["env"]
     ]
