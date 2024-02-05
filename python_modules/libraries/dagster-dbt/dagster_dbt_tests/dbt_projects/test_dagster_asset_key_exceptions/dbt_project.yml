@@ -21,6 +21,7 @@ require-dbt-version: [">=1.0.0", "<2.0.0"]
 
 models:
   test_dagster_asset_key_exceptions:
+    +schema: jaffle_shop
     materialized: table
     staging:
       materialized: view

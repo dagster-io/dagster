@@ -39,6 +39,15 @@ test_dagster_metadata_manifest_path = (
 )
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
 
+test_dagster_asset_key_exceptions_path = (
+    Path(__file__)
+    .joinpath("..", "dbt_projects", "test_dagster_asset_key_exceptions", "manifest.json")
+    .resolve()
+)
+test_dagster_asset_key_exceptions_manifest = json.loads(
+    test_dagster_asset_key_exceptions_path.read_bytes()
+)
+
 test_python_interleaving_manifest_path = (
     Path(__file__)
     .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving", "manifest.json")
@@ -711,3 +720,17 @@ def test_dbt_with_python_interleaving() -> None:
     }
     result = subset_job.execute_in_process()
     assert result.success
+
+
+def test_dbt_with_invalid_self_dependencies() -> None:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "The following dbt resources, identified by their dbt unique ids,"
+            " are configured with identical Dagster asset keys"
+        ),
+    ):
+
+        @dbt_assets(manifest=test_dagster_asset_key_exceptions_manifest)
+        def my_dbt_assets():
+            ...

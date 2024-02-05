@@ -376,6 +376,8 @@ def get_dbt_multi_asset_args(
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
 
+    invalid_self_dependencies: Dict[Tuple[str, str], AssetKey] = {}
+
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
@@ -439,6 +441,9 @@ def get_dbt_multi_asset_args(
                         )
                     )
 
+                if asset_key == parent_asset_key:
+                    invalid_self_dependencies[(unique_id, parent_unique_id)] = asset_key
+
             self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                 dbt_resource_props,
                 dbt_parent_resource_props=dbt_resource_props,
@@ -453,5 +458,26 @@ def get_dbt_multi_asset_args(
                     )
                 )
                 output_internal_deps.add(asset_key)
+
+    if invalid_self_dependencies:
+        error_messages = []
+        for (unique_id, parent_unique_id), asset_key in invalid_self_dependencies.items():
+            unique_id_file_path = dbt_nodes[unique_id]["path"]
+            parent_unique_id_file_path = dbt_nodes[parent_unique_id]["path"]
+
+            error_messages.append(
+                f"  - `{unique_id}` (filepath: {unique_id_file_path})"
+                f" depends on `{parent_unique_id}` (filepath: {parent_unique_id_file_path}),"
+                f" but both have the same asset key `{asset_key.path}`"
+            )
+
+        raise DagsterInvalidDefinitionError(
+            "The following dbt resources, identified by their dbt unique ids, are configured with"
+            " identical Dagster asset keys. Please ensure that each dbt resource generates a unique"
+            " Dagster asset key."
+            " See the reference for configuring Dagster asset keys for your dbt project:"
+            " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
+            "\n\n" + "\n".join(error_messages)
+        )
 
     return list(deps), outs, internal_asset_deps, check_specs
