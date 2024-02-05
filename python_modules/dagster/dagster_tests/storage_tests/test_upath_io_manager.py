@@ -236,8 +236,29 @@ def test_upath_io_manager_with_none_return_partitioned():
     def downstream(my_asset):
         assert my_asset is None
 
+    instance = DagsterInstance.ephemeral()
+
     materialize(
-        [my_asset, downstream], resources={"io_manager": MyIOManager()}, partition_key="2024-01-02"
+        [my_asset, downstream],
+        resources={"io_manager": MyIOManager()},
+        partition_key="2024-01-02",
+        instance=instance,
+    )
+
+    # with partition mapping
+
+    @asset(
+        partitions_def=partitions_def,
+        ins={"my_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1))},
+    )
+    def downstream_mapping(my_asset):
+        assert my_asset == dict()  # UPath doesn't include None partitions in the returned dict
+
+    materialize(
+        [my_asset, downstream_mapping],
+        resources={"io_manager": MyIOManager()},
+        partition_key="2024-01-03",
+        instance=instance,
     )
 
 

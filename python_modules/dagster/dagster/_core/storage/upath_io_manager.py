@@ -457,7 +457,7 @@ class UPathIOManager(MemoizableIOManager):
                         f" Any: is '{type_annotation}'."
                     )
 
-                return self._load_multiple_inputs(context)  # TODO - make this support Nones
+                return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if obj is None and context.has_asset_key:

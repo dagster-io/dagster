@@ -642,6 +642,8 @@ def _get_output_asset_materializations(
         tags[BACKFILL_ID_TAG] = backfill_id
 
     if output.value is None:
+        # if the output is None we mark a tag. This allows the UPath IO manager to skip storing the
+        # None, but still be able to load a None in a downstream asset
         tags[NONE_OUTPUT_TAG] = "True"
 
     if asset_partitions:
