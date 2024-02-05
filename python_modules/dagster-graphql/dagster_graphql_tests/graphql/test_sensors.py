@@ -152,6 +152,9 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       sensorType
       assetSelection {
         assetSelectionString
+        assetKeys {
+          path
+        }
       }
     }
   }
@@ -1411,3 +1414,6 @@ def test_asset_selection(graphql_context):
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
         == "fresh_diamond_bottom"
     )
+    assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
+        {"path": ["fresh_diamond_bottom"]}
+    ]

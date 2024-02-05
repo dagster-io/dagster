@@ -566,6 +566,7 @@ export type AssetPartitionsStatusCounts = {
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
+  assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']>;
 };
 
@@ -6367,6 +6368,7 @@ export const buildAssetSelection = (
   relationshipsToOmit.add('AssetSelection');
   return {
     __typename: 'AssetSelection',
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelectionString:
       overrides && overrides.hasOwnProperty('assetSelectionString')
         ? overrides.assetSelectionString!

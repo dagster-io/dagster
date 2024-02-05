@@ -59,7 +59,7 @@ def get_sensors_or_error(
 
     return GrapheneSensors(
         results=[
-            GrapheneSensor(sensor, sensor_states_by_name.get(sensor.name), batch_loader)
+            GrapheneSensor(sensor, repository, sensor_states_by_name.get(sensor.name), batch_loader)
             for sensor in filtered
         ]
     )
@@ -81,7 +81,7 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) ->
         external_sensor.selector_id,
     )
 
-    return GrapheneSensor(external_sensor, sensor_state)
+    return GrapheneSensor(external_sensor, repository, sensor_state)
 
 
 def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
@@ -96,7 +96,7 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
     sensor_state = graphene_info.context.instance.start_sensor(external_sensor)
-    return GrapheneSensor(external_sensor, sensor_state)
+    return GrapheneSensor(external_sensor, repository, sensor_state)
 
 
 def stop_sensor(
@@ -149,7 +149,7 @@ def reset_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
     sensor_state = graphene_info.context.instance.reset_sensor(external_sensor)
 
-    return GrapheneSensor(external_sensor, sensor_state)
+    return GrapheneSensor(external_sensor, repository, sensor_state)
 
 
 def get_sensors_for_pipeline(
@@ -174,7 +174,7 @@ def get_sensors_for_pipeline(
             external_sensor.get_external_origin_id(),
             external_sensor.selector_id,
         )
-        results.append(GrapheneSensor(external_sensor, sensor_state))
+        results.append(GrapheneSensor(external_sensor, repository, sensor_state))
 
     return results
 
@@ -259,4 +259,4 @@ def set_sensor_cursor(
     else:
         instance.update_instigator_state(updated_state)
 
-    return GrapheneSensor(external_sensor, updated_state)
+    return GrapheneSensor(external_sensor, repository, updated_state)
