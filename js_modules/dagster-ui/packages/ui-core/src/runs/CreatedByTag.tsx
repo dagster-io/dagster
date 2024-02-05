@@ -32,6 +32,7 @@ type TagType =
   | {type: 'manual'};
 
 const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
+  // Prefer user/schedule/sensor
   for (const tag of tags) {
     const {key} = tag;
     switch (key) {
@@ -41,6 +42,13 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
         return {type: 'schedule', tag};
       case DagsterTag.SensorName:
         return {type: 'sensor', tag};
+    }
+  }
+
+  // If none of those, check for AMP
+  for (const tag of tags) {
+    const {key} = tag;
+    switch (key) {
       case DagsterTag.Automaterialize:
         return {type: 'auto-materialize', tag};
       case DagsterTag.CreatedBy: {
