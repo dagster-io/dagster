@@ -871,6 +871,7 @@ def construct_dagster_k8s_job(
             {
                 "image_pull_secrets": job_config.image_pull_secrets,
                 "service_account_name": service_account_name,
+                "automount_service_account_token": True,
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },
