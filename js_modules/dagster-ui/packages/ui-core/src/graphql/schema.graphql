@@ -2905,6 +2905,7 @@ enum SensorType {
 
 type AssetSelection {
   assetSelectionString: String
+  assetKeys: [AssetKey!]!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
