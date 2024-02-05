@@ -235,29 +235,33 @@ export const AutomaterializeMiddlePanelWithData = ({
     if (selectedEvaluation?.numRequested) {
       if (definition?.partitionDefinition) {
         return (
-          <Popover
-            interactionKind="hover"
-            placement="bottom"
-            hoverOpenDelay={50}
-            hoverCloseDelay={50}
-            content={
-              <PartitionSubsetList
-                description="Requested assets"
-                subset={rootPartitionedEvaluationNode!.trueSubset}
-                selectPartition={selectPartition}
-              />
-            }
-          >
-            <Tag intent="success">
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <StatusDot $color={Colors.accentGreen()} />
-                {selectedEvaluation.numRequested} Requested
-                {selectedEvaluation.numRequested === 1
-                  ? ` (${rootPartitionedEvaluationNode!.trueSubset.subsetValue.partitionKeys![0]})`
-                  : null}
-              </Box>
-            </Tag>
-          </Popover>
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            <Popover
+              interactionKind="hover"
+              placement="bottom"
+              hoverOpenDelay={50}
+              hoverCloseDelay={50}
+              content={
+                <PartitionSubsetList
+                  description="Requested assets"
+                  subset={rootPartitionedEvaluationNode!.trueSubset}
+                  selectPartition={selectPartition}
+                />
+              }
+            >
+              <Tag intent="success">
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  <StatusDot $color={Colors.accentGreen()} $size={8} />
+                  {selectedEvaluation.numRequested} Requested
+                </Box>
+              </Tag>
+            </Popover>
+            {selectedEvaluation.numRequested === 1 ? (
+              <Tag icon="partition">
+                {rootPartitionedEvaluationNode!.trueSubset.subsetValue.partitionKeys![0]}
+              </Tag>
+            ) : null}
+          </Box>
         );
       }
       return (
