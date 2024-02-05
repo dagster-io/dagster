@@ -43,6 +43,7 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
+      automountServiceAccountToken: true
       securityContext:
         {{- toYaml $_.Values.dagsterWebserver.podSecurityContext | nindent 8 }}
       initContainers:
