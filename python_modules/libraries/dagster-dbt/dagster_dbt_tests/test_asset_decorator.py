@@ -24,7 +24,7 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
@@ -723,14 +723,35 @@ def test_dbt_with_python_interleaving() -> None:
 
 
 def test_dbt_with_invalid_self_dependencies() -> None:
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "The following dbt resources, identified by their dbt unique ids,"
-            " are configured with identical Dagster asset keys"
-        ),
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match=DUPLICATE_ASSET_KEY_ERROR_MESSAGE):
 
         @dbt_assets(manifest=test_dagster_asset_key_exceptions_manifest)
         def my_dbt_assets():
             ...
+
+
+def test_dbt_with_duplicate_asset_keys() -> None:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            asset_key = super().get_asset_key(dbt_resource_props)
+            if asset_key in [AssetKey("orders"), AssetKey("customers")]:
+                return AssetKey(["duplicate"])
+
+            return asset_key
+
+    expected_error_message = "  - `model.test_dagster_metadata.customers`, `model.test_dagster_metadata.orders` have the same asset key `['duplicate']`"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+    ) as exc_info:
+
+        @dbt_assets(
+            manifest=test_dagster_metadata_manifest,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
+        )
+        def my_dbt_assets():
+            ...
+
+    assert expected_error_message in str(exc_info.value)

@@ -359,6 +359,16 @@ def dbt_assets(
     return inner
 
 
+DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
+    "The following dbt resources, identified by their dbt unique ids, are configured with"
+    " identical Dagster asset keys. Please ensure that each dbt resource generates a unique"
+    " Dagster asset key."
+    " See the reference for configuring Dagster asset keys for your dbt project:"
+    " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
+    "\n\n"
+)
+
+
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     dbt_unique_id_deps: Mapping[str, FrozenSet[str]],
@@ -377,12 +387,15 @@ def get_dbt_multi_asset_args(
     check_specs: Sequence[AssetCheckSpec] = []
 
     invalid_self_dependencies: Dict[Tuple[str, str], AssetKey] = {}
+    dbt_unique_ids_by_asset_key: Dict[AssetKey, Set[str]] = {}
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
         output_name = output_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+
+        dbt_unique_ids_by_asset_key.setdefault(asset_key, set()).add(unique_id)
 
         outs[output_name] = AssetOut(
             key=asset_key,
@@ -424,6 +437,10 @@ def get_dbt_multi_asset_args(
                 parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                     dbt_resource_props,
                     dbt_parent_resource_props=dbt_parent_resource_props,
+                )
+
+                dbt_unique_ids_by_asset_key.setdefault(parent_asset_key, set()).add(
+                    parent_unique_id
                 )
 
                 if parent_partition_mapping:
@@ -472,12 +489,25 @@ def get_dbt_multi_asset_args(
             )
 
         raise DagsterInvalidDefinitionError(
-            "The following dbt resources, identified by their dbt unique ids, are configured with"
-            " identical Dagster asset keys. Please ensure that each dbt resource generates a unique"
-            " Dagster asset key."
-            " See the reference for configuring Dagster asset keys for your dbt project:"
-            " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
-            "\n\n" + "\n".join(error_messages)
+            DUPLICATE_ASSET_KEY_ERROR_MESSAGE + "\n".join(error_messages)
+        )
+
+    dbt_unique_ids_by_duplicate_asset_key = {
+        asset_key: unique_ids
+        for asset_key, unique_ids in dbt_unique_ids_by_asset_key.items()
+        if len(unique_ids) != 1
+    }
+    if dbt_unique_ids_by_duplicate_asset_key:
+        error_messages = []
+        for asset_key, unique_ids in dbt_unique_ids_by_duplicate_asset_key.items():
+            formatted_ids = [f"`{id}`" for id in unique_ids]
+
+            error_messages.append(
+                f"  - {', '.join(formatted_ids)} have the same asset key `{asset_key.path}`"
+            )
+
+        raise DagsterInvalidDefinitionError(
+            DUPLICATE_ASSET_KEY_ERROR_MESSAGE + "\n".join(error_messages)
         )
 
     return list(deps), outs, internal_asset_deps, check_specs
