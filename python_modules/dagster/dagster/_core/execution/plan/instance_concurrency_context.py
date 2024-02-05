@@ -31,7 +31,7 @@ class InstanceConcurrencyContext:
     `free_concurrency_slots_by_run_id`
     """
 
-    def __init__(self, instance: DagsterInstance, run_id: str):
+    def __init__(self, instance: DagsterInstance, run_id: str, run_priority: int = 0):
         self._instance = instance
         self._run_id = run_id
         self._global_concurrency_keys = None
@@ -39,6 +39,7 @@ class InstanceConcurrencyContext:
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
         self._claims = set()
+        self._run_priority = run_priority
 
     def __enter__(self) -> Self:
         self._context_guard = True
@@ -79,7 +80,7 @@ class InstanceConcurrencyContext:
     def _sync_global_concurrency_keys(self) -> None:
         self._global_concurrency_keys = self._instance.event_log_storage.get_concurrency_keys()
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(self, concurrency_key: str, step_key: str, step_priority: int = 0):
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
@@ -103,6 +104,7 @@ class InstanceConcurrencyContext:
         else:
             self._pending_claims.add(step_key)
 
+        priority = self._run_priority + step_priority
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
             concurrency_key, self._run_id, step_key, priority
         )

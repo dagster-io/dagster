@@ -1,4 +1,5 @@
 import time
+from contextlib import ExitStack
 
 import pytest
 from dagster._core.execution.plan.instance_concurrency_context import (
@@ -170,3 +171,46 @@ def test_zero_concurrency_key(concurrency_instance):
     with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
         assert not context.claim("foo", "a")
         assert not context.claim("foo", "b")
+
+
+def test_step_priority(concurrency_instance):
+    run_id = make_new_run_id()
+    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+        assert context.claim("foo", "a")
+        assert not context.claim("foo", "b")
+        assert not context.claim("foo", "c", step_priority=1000)
+        assert not context.claim("foo", "d", step_priority=-1)
+
+        context.free_step("a")
+        time.sleep(1)
+
+        # highest priority step should be able to claim the slot
+        assert not context.claim("foo", "b")
+        assert context.claim("foo", "c")
+        assert not context.claim("foo", "d")
+
+
+def test_run_priority(concurrency_instance):
+    low_priority_run = make_new_run_id()
+    high_priority_run = make_new_run_id()
+    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with ExitStack() as stack:
+        low_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, low_priority_run)
+        )
+        high_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, high_priority_run, run_priority=1000)
+        )
+        assert low_context.claim("foo", "a")
+        assert not low_context.claim("foo", "b")
+        assert not high_context.claim("foo", "c")
+
+        # free the occupied slot
+        low_context.free_step("a")
+        time.sleep(1)
+
+        # high priority run should now be able to claim the slot
+        assert not low_context.claim("foo", "b")
+        assert high_context.claim("foo", "c")

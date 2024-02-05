@@ -10,6 +10,7 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
@@ -20,8 +21,13 @@ def inprocess_execution_iterator(
     execution_plan: ExecutionPlan,
     instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
+    try:
+        run_priority = int(job_context.run_tags.get(PRIORITY_TAG, "0"))
+    except ValueError:
+        run_priority = 0
+
     with InstanceConcurrencyContext(
-        job_context.instance, job_context.run_id
+        job_context.instance, job_context.run_id, run_priority
     ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
             job_context, execution_plan, instance_concurrency_context
