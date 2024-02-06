@@ -41,8 +41,8 @@ def asset1():
     return [1, 2, 3]
 
 
-@asset
-def asset2(deps=[asset1]):
+@asset(deps=[asset1])
+def asset2():
     return asset1 + [4]
 
 
