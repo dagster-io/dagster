@@ -18,7 +18,7 @@ description: I/O managers determine how to store asset/op outputs and load asset
 
 I/O managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that reduces boilerplate code and easily changes where your data is stored.
 
-Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can have parameters and return values that are loaded from and written to persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the I/O manager effectively determines where the physical asset lives.
+Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can return values that are written to persistent storage. Downstream assets and ops can have parameters that load the values from persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the I/O manager effectively determines where the physical asset lives.
 
 <center>
   <Image
