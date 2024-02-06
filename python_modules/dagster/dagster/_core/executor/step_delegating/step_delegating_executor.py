@@ -16,7 +16,6 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -118,12 +117,8 @@ class StepDelegatingExecutor(Executor):
             f"Starting execution with step handler {self._step_handler.name}.",
             EngineEventData(),
         )
-        try:
-            run_priority = int(plan_context.run_tags.get(PRIORITY_TAG, "0"))
-        except ValueError:
-            run_priority = 0
         with InstanceConcurrencyContext(
-            plan_context.instance, plan_context.run_id, run_priority
+            plan_context.instance, plan_context.dagster_run
         ) as instance_concurrency_context:
             with ActiveExecution(
                 execution_plan,

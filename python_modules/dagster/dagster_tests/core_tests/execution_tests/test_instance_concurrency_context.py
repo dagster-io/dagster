@@ -2,6 +2,7 @@ import time
 from contextlib import ExitStack
 
 import pytest
+from dagster import job, op
 from dagster._core.execution.plan.instance_concurrency_context import (
     INITIAL_INTERVAL_VALUE,
     STEP_UP_BASE,
@@ -12,11 +13,23 @@ from dagster._core.utils import make_new_run_id
 from .conftest import CUSTOM_SLEEP_INTERVAL
 
 
+def define_foo_job():
+    @op
+    def foo_op():
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    return foo_job
+
+
 def test_global_concurrency(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 2)
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert not context.has_pending_claims()
         assert context.claim("foo", "b")
@@ -34,10 +47,10 @@ def test_global_concurrency(concurrency_instance):
 
 
 def test_limitless_context(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     assert concurrency_instance.event_log_storage.get_concurrency_info("foo").slot_count == 0
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert context.claim("foo", "b")
         assert context.claim("foo", "d")
@@ -50,11 +63,11 @@ def test_limitless_context(concurrency_instance):
 
 
 def test_context_error(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 2)
 
     with pytest.raises(Exception, match="uh oh"):
-        with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+        with InstanceConcurrencyContext(concurrency_instance, run) as context:
             assert context.claim("foo", "a")
             assert not context.has_pending_claims()
             assert context.claim("foo", "b")
@@ -72,10 +85,10 @@ def test_context_error(concurrency_instance):
 
 
 def test_default_interval(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
         call_count = concurrency_instance.event_log_storage.get_check_calls("b")
@@ -90,10 +103,10 @@ def test_default_interval(concurrency_instance):
 
 
 def test_backoff_interval(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
         call_count = concurrency_instance.event_log_storage.get_check_calls("b")
@@ -116,11 +129,13 @@ def test_backoff_interval(concurrency_instance):
 
 
 def test_custom_interval(concurrency_custom_sleep_instance):
-    run_id = make_new_run_id()
+    run = concurrency_custom_sleep_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
     storage = concurrency_custom_sleep_instance.event_log_storage
     storage.set_concurrency_slots("foo", 1)
 
-    with InstanceConcurrencyContext(concurrency_custom_sleep_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_custom_sleep_instance, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
         call_count = storage.get_check_calls("b")
@@ -142,41 +157,43 @@ def test_custom_interval(concurrency_custom_sleep_instance):
 
 
 def test_unset_concurrency_default(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
 
     assert concurrency_instance.event_log_storage.get_concurrency_keys() == set()
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert context.claim("foo", "b")
 
 
 def test_default_concurrency_key(concurrency_instance_with_default_one):
-    run_id = make_new_run_id()
+    run = concurrency_instance_with_default_one.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
 
     assert concurrency_instance_with_default_one.event_log_storage.get_concurrency_keys() == set()
     assert concurrency_instance_with_default_one.global_op_concurrency_default_limit == 1
 
-    with InstanceConcurrencyContext(concurrency_instance_with_default_one, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance_with_default_one, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
 
 
 def test_zero_concurrency_key(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
 
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
     assert concurrency_instance.event_log_storage.get_concurrency_keys() == set(["foo"])
 
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert not context.claim("foo", "a")
         assert not context.claim("foo", "b")
 
 
 def test_step_priority(concurrency_instance):
-    run_id = make_new_run_id()
+    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
-    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+    with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
         assert not context.claim("foo", "c", step_priority=1000)
@@ -192,8 +209,12 @@ def test_step_priority(concurrency_instance):
 
 
 def test_run_priority(concurrency_instance):
-    low_priority_run = make_new_run_id()
-    high_priority_run = make_new_run_id()
+    low_priority_run = concurrency_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    high_priority_run = concurrency_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "1000"}
+    )
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
 
     with ExitStack() as stack:
@@ -201,7 +222,7 @@ def test_run_priority(concurrency_instance):
             InstanceConcurrencyContext(concurrency_instance, low_priority_run)
         )
         high_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, high_priority_run, run_priority=1000)
+            InstanceConcurrencyContext(concurrency_instance, high_priority_run)
         )
         assert low_context.claim("foo", "a")
         assert not low_context.claim("foo", "b")

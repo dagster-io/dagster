@@ -11,6 +11,8 @@ from typing import (
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import PRIORITY_TAG
 
 INITIAL_INTERVAL_VALUE = 1
 STEP_UP_BASE = 1.1
@@ -31,15 +33,18 @@ class InstanceConcurrencyContext:
     `free_concurrency_slots_by_run_id`
     """
 
-    def __init__(self, instance: DagsterInstance, run_id: str, run_priority: int = 0):
+    def __init__(self, instance: DagsterInstance, dagster_run: DagsterRun):
         self._instance = instance
-        self._run_id = run_id
+        self._run_id = dagster_run.run_id
         self._global_concurrency_keys = None
         self._pending_timeouts = defaultdict(float)
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
         self._claims = set()
-        self._run_priority = run_priority
+        try:
+            self._run_priority = int(dagster_run.tags.get(PRIORITY_TAG, "0"))
+        except ValueError:
+            self._run_priority = 0
 
     def __enter__(self) -> Self:
         self._context_guard = True

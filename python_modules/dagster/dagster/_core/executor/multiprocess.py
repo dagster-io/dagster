@@ -29,7 +29,6 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
@@ -188,13 +187,8 @@ class MultiprocessExecutor(Executor):
         with ExitStack() as stack:
             timer_result = stack.enter_context(time_execution_scope())
 
-            try:
-                run_priority = int(plan_context.run_tags.get(PRIORITY_TAG, "0"))
-            except ValueError:
-                run_priority = 0
-
             instance_concurrency_context = stack.enter_context(
-                InstanceConcurrencyContext(plan_context.instance, plan_context.run_id, run_priority)
+                InstanceConcurrencyContext(plan_context.instance, plan_context.dagster_run)
             )
             active_execution = stack.enter_context(
                 ActiveExecution(
