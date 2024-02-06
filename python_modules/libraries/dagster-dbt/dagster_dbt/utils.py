@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
@@ -237,11 +238,13 @@ def select_unique_ids_from_manifest(
     select: str,
     exclude: str,
     manifest_json: Mapping[str, Any],
+    state_path: Optional[Path] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
+    from dbt.contracts.state import PreviousState
     from dbt.flags import GLOBAL_FLAGS
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
@@ -260,8 +263,17 @@ def select_unique_ids_from_manifest(
         parsed_exclude_spec = graph_cli.parse_union([exclude], False)
         parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
+    if state_path is not None:
+        previous_state = PreviousState(
+            state_path=state_path.absolute(),
+            project_root=Path("/dev/null"),  # ignored by using absolute path
+            target_path=Path("/dev/null"),  # target artifacts not needed
+        )
+    else:
+        previous_state = None
+
     # execute this selection against the graph
-    selector = graph_selector.NodeSelector(graph, manifest)
+    selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
     selected, _ = selector.select_nodes(parsed_spec)
     return selected
 

@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from pathlib import Path
+from typing import AbstractSet, Any, Mapping, Optional, Union
 
 from dagster import (
     AssetKey,
@@ -48,6 +49,7 @@ class DbtManifestAssetSelection(
     select: str
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
+    state_path: Optional[Path]
 
     @classmethod
     def build(
@@ -57,7 +59,11 @@ class DbtManifestAssetSelection(
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
+        state_path: Optional[Union[Path, str]] = None,
     ):
+        if isinstance(state_path, str):
+            state_path = Path(state_path)
+
         return cls(
             manifest=validate_manifest(manifest),
             select=check.str_param(select, "select"),
@@ -68,6 +74,7 @@ class DbtManifestAssetSelection(
                 DagsterDbtTranslator(),
             ),
             exclude=check.opt_str_param(exclude, "exclude", default=""),
+            state_path=check.opt_inst_param(state_path, "state_path", Path),
         )
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -78,6 +85,7 @@ class DbtManifestAssetSelection(
             select=self.select,
             exclude=self.exclude,
             manifest_json=self.manifest,
+            state_path=self.state_path,
         ):
             dbt_resource_props = dbt_nodes[unique_id]
             is_dbt_asset = dbt_resource_props["resource_type"] in ASSET_RESOURCE_TYPES
@@ -98,6 +106,7 @@ class DbtManifestAssetSelection(
             select=self.select,
             exclude=self.exclude,
             manifest_json=self.manifest,
+            state_path=self.state_path,
         ):
             dbt_resource_props = dbt_nodes[unique_id]
             if dbt_resource_props["resource_type"] != "test":

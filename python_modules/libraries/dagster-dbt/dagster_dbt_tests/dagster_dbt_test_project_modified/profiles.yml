@@ -1,0 +1,9 @@
+duckdb:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ '../dagster_dbt_test_project/test.duckdb' }}"
+      database: test
+      schema: test-schema_dev
+      threads: 4
