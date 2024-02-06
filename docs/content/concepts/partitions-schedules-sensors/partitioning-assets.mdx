@@ -33,23 +33,6 @@ Before continuing, you should be familiar with:
 
 ---
 
-## Relevant APIs
-
-| Name                                                               | Description                                                                       |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
-| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
-| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
-| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
-| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
-| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
-| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
-| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
-| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
-| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
-
----
-
 ## Defining partitioned assets
 
 A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
@@ -415,6 +398,23 @@ def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
 ```
 
 If using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
+
+---
+
+## Relevant APIs
+
+| Name                                                               | Description                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
+| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
+| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
+| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
+| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
 
 ---
 
