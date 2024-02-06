@@ -16,7 +16,7 @@ description: I/O managers determine how to store asset/op outputs and load asset
   </a> guide.
 </Note>
 
-I/O managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
+I/O managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that reduces boilerplate code and easily changes where your data is stored.
 
 Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can have parameters and return values that are loaded from and written to persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the I/O manager effectively determines where the physical asset lives.
 
@@ -29,23 +29,28 @@ Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="m
   />
 </center>
 
-The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
+The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined Assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
 
 ---
 
-## When to use I/O managers
+## Basics
 
-I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
+- [When to use I/O managers](#when-to-use-io-managers)
+- [Outputs and downstream inputs](#outputs-and-downstream-inputs)
+- [Built-in I/O managers](#built-in-io-managers)
+- [I/O managers are resources](#io-managers-are-resources)
 
-- You store many of your assets in the same location and follow a consistent set of rules to determine the storage path.
-- You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
-- Your asset functions load the upstream dependencies into memory in order to do the function computation.
+### When to use I/O managers
 
-If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager.
+If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager. They can be useful in situations where:
 
-However, I/O managers are not required, nor are they the best option, in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
+- Many assets are stored in the same location and follow a consistent set of rules to determine the storage path
+- Assets should be stored differently in local, staging, and production environments
+- Aasset functions load the upstream dependencies into memory to do the function computation
+
+However, I/O managers are not required, nor are they the best option in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but doesn't need to load that table in memory in order to execute the query:
 
 ```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
 @asset(deps=[orders])
@@ -98,11 +103,16 @@ Consider the following diagram. In this example, a job has two I/O managers, eac
 
 The default I/O manager, <PyObject module="dagster" object="FilesystemIOManager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
-Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem. For a full list of Dagster-provided I/O managers, refer to the [built-in I/O managers list](#built-in-io-managers-list).
+Dagster provides out-of-the-box I/O managers for popular storage systems, such as Amazon S3 and Snowflake, or you can write your own:
+
+- From scratch, or
+- By extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem
+
+For a full list of Dagster-provided I/O managers, refer to the [built-in I/O managers list](#built-in-io-managers).
 
 ### I/O managers are resources
 
-I/O managers are provided through the [resources](/concepts/resources) system which means you can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an Amazon S3 I/O manager in production.
+I/O managers are provided through the [resources](/concepts/resources) system, which means you can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an Amazon S3 I/O manager in production.
 
 ---
 
