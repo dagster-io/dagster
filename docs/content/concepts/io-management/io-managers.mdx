@@ -48,7 +48,7 @@ If you find yourself writing the same code at the start and end of each asset or
 
 - Many assets are stored in the same location and follow a consistent set of rules to determine the storage path
 - Assets should be stored differently in local, staging, and production environments
-- Aasset functions load the upstream dependencies into memory to do the function computation
+- Asset functions load the upstream dependencies into memory to do the computation
 
 However, I/O managers are not required, nor are they the best option in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but doesn't need to load that table in memory in order to execute the query:
 
