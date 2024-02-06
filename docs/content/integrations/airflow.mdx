@@ -1,5 +1,5 @@
 ---
-title: Dagster with Airflow | Dagster
+title: "Dagster + Airflow | Dagster Docs"
 description: The dagster-airflow package allows you to import Airflow DAGs into Dagster jobs and assets, as well as trigger job runs from Airflow.
 ---
 
@@ -7,10 +7,11 @@ description: The dagster-airflow package allows you to import Airflow DAGs into 
 
 <CodeReferenceLink filePath="examples/with_airflow" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. The main scenarios for using the Dagster Airflow integration are:
+The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. Using `dagster-airflow`, you can:
 
-- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster jobs/Software-defined Assets (SDAs)
-- You want to trigger Dagster job runs from Airflow
+- Incorporate an Airflow Directed Acyclic Graph (DAG) directory as a Dagster repository, allowing you to do a lift-and-shift migration of your existing Airflow DAGs into Dagster jobs or Software-defined Assets (SDAs)
+- Orchestrate Dagster jobs from Airflow
+- Ingest DAGs from Airflow
 
 This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
 
@@ -18,7 +19,7 @@ This integration is designed to help support users who have existing Airflow usa
 
 ## Migrating to Dagster
 
-Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough.
+Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough. You can also refer to the [Airflow reference](/integrations/airflow/reference) for specific examples.
 
 If you're not sure how to map Airflow concepts to Dagster, check out the cheatsheet in the next section before you begin.
 
