@@ -419,7 +419,7 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             check_spec = default_asset_check_fn(
-                manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
+                manifest, dbt_nodes, dagster_dbt_translator, asset_key, unique_id, test_unique_id
             )
             if check_spec:
                 check_specs.append(check_spec)
