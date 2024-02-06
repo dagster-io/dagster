@@ -7,20 +7,19 @@ description: "How to set up and manage multiple projects with Dagster Cloud Hybr
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Whether to manage complexity or to divide your work into areas of responsibility, you may want to isolate your code bases into multiple projects. See [Strategies for code separation](#strategies-for-code-separation) for more information.
+Whether to manage complexity or to divide your work into areas of responsibility, you may want to separate your Dagster code into multiple projects. See [Strategies for code separation](#strategies-for-code-separation) for more information.
 
-If you require isolation between your execution context, see [Strategies for execution context isolation](#strategies-for-execution-context-isolation).
+If you require isolation between your code execution environments, see [Strategies for execution context isolation](#strategies-for-execution-context-isolation).
 
 ## Strategies for code separation
 
 <Note>
-  Disambiguation: In this section, repository refers to a depot under a version
-  control system such as Git or Mercurial.
+  In this section, repository refers to a version control system, such as Git or Mercurial.
 </Note>
 
 ### Multiple directories in a single repository
 
-You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each projects.
+You can use a single repository to manage multiple projects by placing each project in a separate directory. You may want to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each project.
 
 Pro:
 
@@ -71,7 +70,7 @@ Whether you use a single or multiple repositories, you can use the [Dagster Clou
          # ...
    ```
 
-3. Modify the CI/CD workflow to deploy every code locations for this repository.
+3. Modify the CI/CD workflow to deploy every code location for this repository.
 
    ```yaml
    # File: .github/workflows/dagster-cloud-deploy.yml
@@ -126,6 +125,8 @@ Pro:
 Con:
 
 - no isolation between execution environments
+- you need to use [SourceAsset to share assets across code locations](/concepts/assets/software-defined-assets#defining-external-asset-dependencies)
+
 
 ### Agent isolation
 
