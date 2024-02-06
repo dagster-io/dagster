@@ -1,9 +1,9 @@
 ---
-title: I/O Managers | Dagster
-description: I/O Managers determine how to store asset/op outputs and load asset/op inputs.
+title: "I/O managers | Dagster"
+description: I/O managers determine how to store asset/op outputs and load asset/op inputs.
 ---
 
-# I/O Managers
+# I/O managers
 
 <Note>
   This guide covers using the new Pythonic resources system introduced in
@@ -16,7 +16,9 @@ description: I/O Managers determine how to store asset/op outputs and load asset
   </a> guide.
 </Note>
 
-I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
+I/O managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
+
+Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can have parameters and return values that are loaded from and written to persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the I/O manager effectively determines where the physical asset lives.
 
 <center>
   <Image
@@ -27,25 +29,13 @@ I/O Managers are user-provided objects that store asset and op outputs and load 
   />
 </center>
 
-## Relevant APIs
-
-| Name                                                                | Description                                                                                                                                                                                                  |   |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | - |
-| <PyObject module="dagster" object="ConfigurableIOManager" />        | A base class used to define configurable I/O managers, which are also configurable resources.                                                                                                                | ƒ |
-| <PyObject module="dagster" object="ConfigurableIOManagerFactory" /> | A base class used to specify configuration for more advanced I/O managers, where configuration is separate from the `IOManager` implementation class.                                                        |   |
-| <PyObject module="dagster" object="IOManager" />                    | Base class for standalone I/O managers which are constructed by `ConfigurableIOManagerFactories`.                                                                                                            |   |
-| <PyObject object="build_input_context"/>                            | Function for directly constructing an <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |   |
-| <PyObject object="build_output_context"/>                           | Function for directly constructing an <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |   |
-
-## Overview
-
-Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="multi_asset" decorator/>, and <PyObject object="op" decorator/> can have parameters and return values that are loaded from and written to persistent storage. <PyObject module="dagster" object="IOManager" pluralize /> let the user control how this data is stored and how it's loaded in downstream ops and assets. For `@asset` and `@multi_asset`, the I/O manager effectively determines where the physical asset lives.
-
 The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
 
-### When to use I/O managers
+---
+
+## When to use I/O managers
 
 I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
 
@@ -275,6 +265,8 @@ defs = Definitions(
 )
 ```
 
+---
+
 ## Using I/O managers with non-asset jobs
 
 ### Job-wide I/O manager
@@ -355,6 +347,8 @@ def op_2(a):
 def a_job():
     op_2(op_1())
 ```
+
+---
 
 ## Defining an I/O manager
 
@@ -604,6 +598,8 @@ def my_better_job():
     df = produce_pandas_output()
     better_analyze_as_numpy(df)
 ```
+
+---
 
 ## Examples
 
@@ -863,7 +859,21 @@ Any entries yielded this way will be attached to the `Handled Output` event for 
 
 Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
-## Built-in I/O managers list
+---
+
+## See it in action
+
+For more examples of I/O managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+
+- [Parquet I/O manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
+
+Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom I/O managers.
+
+---
+
+## References
+
+### Built-in I/O managers
 
 | Name                                                                                       | Description                                                                   | Additional Documentation                                                                                               |
 | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -880,10 +890,12 @@ Additionally, if the handled output is part of a software-defined asset, these m
 | <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |                                                                                                                        |
 | <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                                                                                                        |
 
-## See it in action
+### Relevant APIs
 
-For more examples of I/O managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
-
-- [Parquet I/O Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
-
-Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom I/O managers.
+| Name                                                                | Description                                                                                                                                                                                                  |   |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | - |
+| <PyObject module="dagster" object="ConfigurableIOManager" />        | A base class used to define configurable I/O managers, which are also configurable resources.                                                                                                                | ƒ |
+| <PyObject module="dagster" object="ConfigurableIOManagerFactory" /> | A base class used to specify configuration for more advanced I/O managers, where configuration is separate from the `IOManager` implementation class.                                                        |   |
+| <PyObject module="dagster" object="IOManager" />                    | Base class for standalone I/O managers which are constructed by `ConfigurableIOManagerFactories`.                                                                                                            |   |
+| <PyObject object="build_input_context"/>                            | Function for directly constructing an <PyObject object="InputContext"/>, to be passed to the <PyObject object="IOManager" method="load_input"/> method. This is designed primarily for testing purposes.     |   |
+| <PyObject object="build_output_context"/>                           | Function for directly constructing an <PyObject object="OutputContext"/>, to be passed to the <PyObject object="IOManager" method="handle_output"/> method. This is designed primarily for testing purposes. |   |
