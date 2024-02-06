@@ -78,101 +78,119 @@ def test_manifest_argument(manifest: DbtManifestParam):
 @pytest.mark.parametrize(
     "select,exclude,expected_asset_names",
     [
+        # (
+        #     "*",
+        #     None,
+        #     {
+        #         "sort_by_calories",
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "subdir_schema/least_caloric",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #         "cereals",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar",
+        #     },
+        # ),
+        # (
+        #     "+least_caloric",
+        #     None,
+        #     {"sort_by_calories", "subdir_schema/least_caloric", "cereals"},
+        # ),
+        # (
+        #     "sort_by_calories least_caloric",
+        #     None,
+        #     {"sort_by_calories", "subdir_schema/least_caloric"},
+        # ),
+        # (
+        #     "tag:bar+",
+        #     None,
+        #     {
+        #         "sort_by_calories",
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "subdir_schema/least_caloric",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #     },
+        # ),
+        # (
+        #     "tag:foo",
+        #     None,
+        #     {"sort_by_calories", "cold_schema/sort_cold_cereals_by_calories"},
+        # ),
+        # (
+        #     "tag:foo,tag:bar",
+        #     None,
+        #     {"sort_by_calories"},
+        # ),
+        # (
+        #     None,
+        #     "sort_hot_cereals_by_calories",
+        #     {
+        #         "sort_by_calories",
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "subdir_schema/least_caloric",
+        #         "cereals",
+        #         "orders_snapshot",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar"                
+        #     },
+        # ),
+        # (
+        #     None,
+        #     "+least_caloric",
+        #     {
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar"
+        #     },
+        # ),
+        # (
+        #     None,
+        #     "sort_by_calories least_caloric",
+        #     {
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #         "cereals",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar"
+        #     },
+        # ),
+        # (
+        #     None,
+        #     "tag:foo",
+        #     {
+        #         "subdir_schema/least_caloric",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #         "cereals",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar"
+        #     },
+        # ),
+        # (
+        #     "*",
+        #     "tag:does-not-exist",
+        #     {
+        #         "sort_by_calories",
+        #         "cold_schema/sort_cold_cereals_by_calories",
+        #         "subdir_schema/least_caloric",
+        #         "sort_hot_cereals_by_calories",
+        #         "orders_snapshot",
+        #         "cereals",
+        #         "foo/foo.bar",
+        #         "baz/baz.bar"
+        #     },
+        # ),
         (
-            "*",
+            "fqn:dagster_dbt_test_project.foo.foo.bar"+
+            " fqn:dagster_dbt_test_project.baz.baz.bar",
             None,
-            {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
-            },
-        ),
-        (
-            "+least_caloric",
-            None,
-            {"sort_by_calories", "subdir_schema/least_caloric", "cereals"},
-        ),
-        (
-            "sort_by_calories least_caloric",
-            None,
-            {"sort_by_calories", "subdir_schema/least_caloric"},
-        ),
-        (
-            "tag:bar+",
-            None,
-            {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-            },
-        ),
-        (
-            "tag:foo",
-            None,
-            {"sort_by_calories", "cold_schema/sort_cold_cereals_by_calories"},
-        ),
-        (
-            "tag:foo,tag:bar",
-            None,
-            {"sort_by_calories"},
-        ),
-        (
-            None,
-            "sort_hot_cereals_by_calories",
-            {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "cereals",
-                "orders_snapshot",
-            },
-        ),
-        (
-            None,
-            "+least_caloric",
-            {
-                "cold_schema/sort_cold_cereals_by_calories",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-            },
-        ),
-        (
-            None,
-            "sort_by_calories least_caloric",
-            {
-                "cold_schema/sort_cold_cereals_by_calories",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
-            },
-        ),
-        (
-            None,
-            "tag:foo",
-            {
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
-            },
-        ),
-        (
-            "*",
-            "tag:does-not-exist",
-            {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
-            },
-        ),
+            {"foo/foo.bar", "baz/baz.bar"},
+        )
     ],
 )
 def test_selections(

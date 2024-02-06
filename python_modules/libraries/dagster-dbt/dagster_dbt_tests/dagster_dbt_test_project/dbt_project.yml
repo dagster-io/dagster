@@ -34,6 +34,10 @@ models:
     subdir:
       +schema: "subdir_schema"
     materialized: view
+    foo:
+      +schema: "foo"
+    baz:
+      +schema: "baz"
 
 seeds:
   quote_columns: false
