@@ -775,8 +775,8 @@ def test_resource_equality() -> None:
         a_str: str
         an_int: int
 
-    common_kwargs = dict(a_str="foo", an_int=100)
-    assert BaseResource(**common_kwargs) == BaseResource(**common_kwargs)
+    assert BaseResource(a_str="foo", an_int=100) == BaseResource(a_str="foo", an_int=100)
+    assert BaseResource(a_str="foo", an_int=102) != BaseResource(a_str="foo", an_int=100)
 
 
 def test_execute_in_process() -> None:
