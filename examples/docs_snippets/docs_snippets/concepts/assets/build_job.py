@@ -8,7 +8,7 @@ def asset1():
 
 
 @asset
-def asset2(deps=[asset_1]):
+def asset2(deps=[asset1]):
     return asset1 + [4]
 
 
