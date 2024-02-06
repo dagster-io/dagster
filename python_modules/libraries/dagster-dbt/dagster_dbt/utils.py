@@ -246,33 +246,7 @@ def select_unique_ids_from_manifest(
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
-    class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object."""
-
-        def __getattr__(self, item):
-            ret = super().get(item)
-            # allow recursive access e.g. foo.bar.baz
-            return _DictShim(ret) if isinstance(ret, dict) else ret
-
-    manifest = Manifest(
-        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
-        },
-        sources={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["sources"].items()  # type: ignore
-        },
-        metrics={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["metrics"].items()  # type: ignore
-        },
-        exposures={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["exposures"].items()  # type: ignore
-        },
-    )
+    manifest = Manifest.from_dict(manifest_json)
     child_map = manifest_json["child_map"]
 
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
