@@ -1,5 +1,7 @@
-import functools
+import dataclasses
 import json
+from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Mapping,
@@ -66,7 +68,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
     }
 )
-class AssetDaemonCursor(NamedTuple):
+@dataclass(frozen=True)
+class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
     Attributes:
@@ -88,8 +91,7 @@ class AssetDaemonCursor(NamedTuple):
             last_observe_request_timestamp_by_asset_key={},
         )
 
-    @property
-    @functools.lru_cache(maxsize=1)
+    @cached_property
     def previous_evaluation_state_by_key(
         self,
     ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
@@ -119,7 +121,8 @@ class AssetDaemonCursor(NamedTuple):
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         evaluation_state: Sequence["AssetConditionEvaluationState"],
     ) -> "AssetDaemonCursor":
-        return self._replace(
+        return dataclasses.replace(
+            self,
             evaluation_id=evaluation_id,
             previous_evaluation_state=evaluation_state,
             last_observe_request_timestamp_by_asset_key={

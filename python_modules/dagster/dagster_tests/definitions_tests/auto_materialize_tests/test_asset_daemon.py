@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 from contextlib import contextmanager, nullcontext
 from typing import Any, Generator, Mapping, Optional, Sequence, cast
@@ -400,7 +401,9 @@ def test_automation_policy_sensor_transition():
         instance.daemon_cursor_storage.set_cursor_values(
             {
                 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
-                    AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
+                    dataclasses.replace(
+                        AssetDaemonCursor.empty(), evaluation_id=pre_sensor_evaluation_id
+                    )
                 )
             }
         )
@@ -465,7 +468,10 @@ def test_automation_policy_sensor_ticks(num_threads):
             instance.daemon_cursor_storage.set_cursor_values(
                 {
                     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
-                        AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
+                        dataclasses.replace(
+                            AssetDaemonCursor.empty(),
+                            evaluation_id=pre_sensor_evaluation_id,
+                        )
                     )
                 }
             )
