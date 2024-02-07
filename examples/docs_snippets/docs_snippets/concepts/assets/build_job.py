@@ -1,3 +1,4 @@
+# ruff: isort: skip_file
 from docs_snippets.concepts.assets.non_argument_deps import (
     shopping_list,
     sugary_cereals,
