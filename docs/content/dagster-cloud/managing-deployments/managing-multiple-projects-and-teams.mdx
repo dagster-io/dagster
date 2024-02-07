@@ -145,12 +145,13 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
-1. For each repository, use the CI/CD workflow provided in [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
+1. **For each repository**, use the CI/CD workflow provided in [Dagster Cloud Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
-2. For each project in the repository, you can configure the [code location to deploy in the `dagster_cloud.yml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) and configure it accordingly to your project structure.
+2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml):
 
    ```yaml
-   # File: dagster_cloud.yml
+   # dagster_cloud.yml
+
    locations:
      - location_name: project_a
        code_source:
@@ -164,11 +165,11 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
          # ...
    ```
 
-3. Modify the CI/CD workflow to deploy every code location for this repository.
+3. In the repository's `dagster-cloud-deploy.yml` file, modify the CI/CD workflow to deploy all code locations for the repository:
 
    ```yaml
-   # File: .github/workflows/dagster-cloud-deploy.yml
-   # ...
+   # .github/workflows/dagster-cloud-deploy.yml
+
    jobs:
      dagster-cloud-deploy:
        # ...
