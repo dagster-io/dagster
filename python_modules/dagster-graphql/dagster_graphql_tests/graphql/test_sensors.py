@@ -1355,8 +1355,11 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
     log_messages = tick["logEvents"]["events"]
-    assert len(log_messages) == 1
+    assert len(log_messages) == 2
     assert log_messages[0]["message"] == "hello hello"
+    assert log_messages[1]["message"].startswith("goodbye goodbye")
+    assert "Traceback" in log_messages[1]["message"]
+    assert "Exception: hi hi" in log_messages[1]["message"]
 
 
 def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceRequestContext):

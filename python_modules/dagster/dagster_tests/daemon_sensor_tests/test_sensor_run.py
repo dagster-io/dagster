@@ -585,6 +585,12 @@ def logging_sensor(context):
     context.log.addHandler(handler)
     context.log.info("hello %s", "hello")
     context.log.info(handler.message)
+
+    try:
+        raise Exception("hi hi")
+    except Exception:
+        context.log.exception("goodbye goodbye")
+
     context.log.removeHandler(handler)
 
     return SkipReason()
@@ -2980,9 +2986,12 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     ]
     assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
-    assert len(records) == 2
+    assert len(records) == 3
     assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
     assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
+    assert records[2][DAGSTER_META_KEY]["orig_message"] == ("goodbye goodbye")
+    assert records[2]["exc_info"].startswith("Traceback")
+    assert "Exception: hi hi" in records[2]["exc_info"]
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
