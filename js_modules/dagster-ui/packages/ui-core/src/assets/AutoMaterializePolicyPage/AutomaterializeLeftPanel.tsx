@@ -202,10 +202,10 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   padding: 8px 12px;
 `;
 
-export const StatusDot = styled.div<{$color: string}>`
+export const StatusDot = styled.div<{$color: string; $size?: number}>`
   background-color: ${({$color}) => $color};
   border-radius: 50%;
-  width: 10px;
-  height: 10px;
-  margin: 5px;
+  width: ${({$size = 10}) => $size}px;
+  height: ${({$size = 10}) => $size}px;
+  margin: ${({$size = 10}) => $size / 2}px;
 `;

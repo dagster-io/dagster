@@ -20,7 +20,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     DataVersionsByPartition,
 )
-from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
@@ -59,6 +59,12 @@ from dagster._utils.warnings import disable_dagster_warnings
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
+# This is a private key that is attached to the Output emitted from a source asset observation
+# function and used to prevent observations from being auto-generated from it. This is a workaround
+# because we cannot currently auto-convert the observation function to use `ObserveResult`. It can
+# be removed when that conversion is completed.
+SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION = "__source_asset_observation__"
+
 
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
@@ -78,7 +84,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
     observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
-    def fn(context: OpExecutionContext) -> None:
+    def fn(context: OpExecutionContext) -> Output[None]:
         resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
         resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
         observe_fn_return_value = (
@@ -124,6 +130,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
                 " DataVersionsByPartition, but returned a value of type"
                 f" {type(observe_fn_return_value)}"
             )
+        return Output(None, metadata={SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION: True})
 
     return DecoratedOpFunction(fn)
 

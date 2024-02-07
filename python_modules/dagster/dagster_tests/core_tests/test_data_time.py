@@ -93,7 +93,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         },
     )
     def bcd(context):
-        for output_name in sorted(context.selected_output_names):
+        for output_name in sorted(context.op_execution_context.selected_output_names):
             yield Output(output_name, output_name)
 
     @asset(deps=[AssetKey("c")])

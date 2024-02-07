@@ -359,7 +359,7 @@ class MaterializeOnCronRule(
         asset_subset_to_request = AssetSubset.from_asset_partitions_set(
             context.asset_key, context.partitions_def, new_asset_partitions_to_request
         ) | (
-            context.previous_true_subset
+            context.previous_true_subset.as_valid(context.partitions_def)
             - context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
@@ -583,8 +583,10 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             else None
         ) or context.instance_queryer.get_materialized_asset_subset(asset_key=context.asset_key)
 
-        return previous_handled_subset | (
-            context.previous_tick_requested_subset | context.materialized_since_previous_tick_subset
+        return (
+            context.materialized_since_previous_tick_subset
+            | context.previous_tick_requested_subset
+            | previous_handled_subset
         )
 
     def evaluate_for_asset(
@@ -599,7 +601,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             handled_subset = self.get_handled_subset(context)
             unhandled_candidates = (
                 context.candidate_subset
-                & handled_subset.inverse(
+                & handled_subset.as_valid(context.partitions_def).inverse(
                     context.partitions_def, context.evaluation_time, context.instance_queryer
                 )
                 if handled_subset.size > 0
@@ -610,8 +612,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             # asset as missing if at least one of its parents has updated since the previous tick
             handled_subset = None
             unhandled_candidates = (
-                context.previous_true_subset
-                | AssetSubset.from_asset_partitions_set(
+                AssetSubset.from_asset_partitions_set(
                     context.asset_key,
                     context.partitions_def,
                     {
@@ -622,6 +623,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                         )
                     },
                 )
+                | context.previous_true_subset
             ) - context.previous_tick_requested_subset
 
         return AssetConditionResult.create(
@@ -889,7 +891,7 @@ class SkipOnBackfillInProgressRule(
             # be valid
             (context.instance_queryer.get_active_backfill_target_asset_graph_subset())
             .get_asset_subset(context.asset_key, context.asset_graph)
-            .as_valid
+            .as_valid(context.partitions_def)
         )
 
         if backfilling_subset.size == 0:

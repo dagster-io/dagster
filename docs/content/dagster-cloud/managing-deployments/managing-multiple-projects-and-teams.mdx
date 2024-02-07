@@ -5,15 +5,16 @@ description: "How to set up and manage multiple projects with Dagster Cloud Hybr
 
 # Managing multiple projects & teams in Dagster Cloud
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
-
-In this guide, we'll cover some strategies for managing multiple projects and teams in a Dagster Cloud account.
-
-If you require isolation between your execution context, see [Strategies for execution context isolation](#strategies-for-execution-context-isolation).
+In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster Cloud account.
 
 ---
 
 ## Separating code bases
+
+<Note>
+  In this section, repository refers to a version control system, such as Git or
+  Mercurial.
+</Note>
 
 If you want to manage complexity or divide your work into areas of responsibility, consider isolating your code bases into multiple projects with:
 
@@ -194,11 +195,11 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
 ## Isolating execution context between projects
 
-Separating execution context between projects can allow you to:
+Separating execution context between projects can have several motivations:
 
-- Facilitate separation of duty between teams to prevent access to sensitive data
-- Support different compute environments and requirements (different architecture, cloud provider, etc.)
-- Reduce impact on other projects. For example, a project with a large number of runs can impact the performance of other projects.
+- Facilitating separation of duty between teams to prevent access to sensitive data
+- Differing compute environments and requirements, such as different architecture, cloud provider, etc.
+- Reducing impact on other projects. For example, a project with a large number of runs can impact the performance of other projects.
 
 In order from least to most isolated, there are three levels of isolation:
 
@@ -254,7 +255,30 @@ height={384}
           <li>Single glass pane to view all assets</li>
         </ul>
       </td>
-      <td>No isolation between execution environments</td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            No isolation between execution environments
+          </li>
+          <li>
+            You need to use{" "}
+            <code>
+              <a href="/concepts/assets/software-defined-assets#defining-external-asset-dependencies">
+                SourceAssets
+              </a>
+            </code>{" "}
+            to share assets across code locations
+          </li>
+        </ul>
+      </td>
     </tr>
   </tbody>
 </table>
@@ -321,7 +345,9 @@ height={537}
 
 ### Deployment isolation
 
-<Note>Multiple deployments are a Dagster Cloud Pro feature.</Note>
+<Note>
+  Multiple deployments are only available in Dagster Cloud Enterprise.
+</Note>
 
 Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
 

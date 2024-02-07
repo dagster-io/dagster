@@ -12,7 +12,9 @@ import styled from 'styled-components';
 import {StatusDot} from './StatusDot';
 import {FolderNodeNonAssetType, getDisplayName} from './util';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {AssetGroup} from '../AssetGraphExplorer';
 import {useAssetNodeMenu} from '../AssetNodeMenu';
+import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
 import {GraphData, GraphNode} from '../Utils';
 
 export const AssetSidebarNode = ({
@@ -27,6 +29,7 @@ export const AssetSidebarNode = ({
   onChangeExplorerPath,
   fullAssetGraphData,
   isLastSelected,
+  onFilterToGroup,
 }: {
   fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
@@ -39,8 +42,9 @@ export const AssetSidebarNode = ({
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onFilterToGroup: (group: AssetGroup) => void;
 }) => {
-  const isGroupNode = 'groupName' in node;
+  const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
@@ -48,7 +52,7 @@ export const AssetSidebarNode = ({
     if (isAssetNode) {
       return getDisplayName(node);
     } else if (isGroupNode) {
-      return node.groupName;
+      return node.groupNode.groupName;
     } else {
       return node.locationName;
     }
@@ -73,12 +77,20 @@ export const AssetSidebarNode = ({
     <>
       <Box ref={elementRef} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <ItemContainer padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
+          <ItemContainer
+            padding={{right: 12}}
+            flex={{direction: 'row', alignItems: 'center'}}
+            onClick={selectThisNode}
+            onDoubleClick={(e) => !e.metaKey && toggleOpen()}
+          >
             {showArrow ? (
               <UnstyledButton
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
                 }}
                 onKeyDown={(e) => {
                   if (e.code === 'Space') {
@@ -102,8 +114,6 @@ export const AssetSidebarNode = ({
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
-              onClick={selectThisNode}
-              onDoubleClick={(e) => !e.metaKey && toggleOpen()}
               style={{
                 width: '100%',
                 borderRadius: '8px',
@@ -119,9 +129,13 @@ export const AssetSidebarNode = ({
                   alignItems: 'center',
                 }}
               >
-                {isAssetNode ? <StatusDot node={node} /> : null}
-                {isGroupNode ? <Icon name="asset_group" /> : null}
-                {isLocationNode ? <Icon name="folder_open" /> : null}
+                {isAssetNode ? (
+                  <StatusDot node={node} />
+                ) : isGroupNode ? (
+                  <Icon name="asset_group" />
+                ) : isLocationNode ? (
+                  <Icon name="folder_open" />
+                ) : null}
                 <MiddleTruncate text={displayName} />
               </div>
             </GrayOnHoverBox>
@@ -135,10 +149,37 @@ export const AssetSidebarNode = ({
                   onChangeExplorerPath={onChangeExplorerPath}
                 />
               </ExpandMore>
+            ) : isGroupNode ? (
+              <ExpandMore>
+                <AssetGroupPopoverMenu
+                  onFilterToGroup={() => onFilterToGroup(node.groupNode)}
+                  assets={node.groupNode.assets}
+                />
+              </ExpandMore>
             ) : null}
           </ItemContainer>
         </BoxWrapper>
       </Box>
+    </>
+  );
+};
+
+const AssetGroupPopoverMenu = (props: Parameters<typeof useGroupNodeContextMenu>[0]) => {
+  const {menu, dialog} = useGroupNodeContextMenu(props);
+  return (
+    <>
+      {dialog}
+      <Popover
+        content={menu}
+        placement="right"
+        shouldReturnFocusOnClose
+        canEscapeKeyClose
+        modifiers={{offset: {enabled: true, options: {offset: [0, 12]}}}}
+      >
+        <UnstyledButton>
+          <Icon name="more_horiz" color={Colors.accentGray()} />
+        </UnstyledButton>
+      </Popover>
     </>
   );
 };
@@ -195,7 +236,6 @@ const ExpandMore = styled.div`
 
 const GrayOnHoverBox = styled(UnstyledButton)`
   border-radius: 8px;
-  cursor: pointer;
   user-select: none;
   width: 100%;
   display: flex;
@@ -212,6 +252,7 @@ const GrayOnHoverBox = styled(UnstyledButton)`
 const ItemContainer = styled(Box)`
   height: 32px;
   position: relative;
+  cursor: pointer;
 
   &:hover,
   &:focus-within {

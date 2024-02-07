@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from unittest import mock
 
 import pytest
@@ -17,9 +18,22 @@ from dagster._grpc.types import ExecuteRunArgs
 from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
-from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+from dagster_k8s.job import (
+    DAGSTER_PG_PASSWORD_ENV_VAR,
+    UserDefinedDagsterK8sConfig,
+    get_job_name_from_run_id,
+)
+from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
+from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+
+if kubernetes_version >= "13":
+    from kubernetes.client.models.core_v1_event import CoreV1Event
+else:
+    # Ignore type error here due to differen module structures in
+    # older kubernetes library versions.
+    from kubernetes.client.models.v1_event import V1Event as CoreV1Event  # type: ignore
 
 
 def test_launcher_from_config(kubeconfig_file):
@@ -690,3 +704,92 @@ def test_check_run_health(kubeconfig_file):
 
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
+
+
+def test_get_run_worker_debug_info(kubeconfig_file):
+    labels = {"foo_label_key": "bar_label_value"}
+
+    mock_k8s_client_batch_api = mock.Mock(
+        spec_set=["read_namespaced_job_status", "list_namespaced_job"]
+    )
+    mock_k8s_client_core_api = mock.Mock(spec_set=["list_namespaced_pod", "list_namespaced_event"])
+
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        k8s_client_core_api=mock_k8s_client_core_api,
+        labels=labels,
+    )
+
+    # Launch the run in a fake Dagster instance.
+    job_name = "demo_job"
+
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
+    repo_def = recon_repo.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
+    list_namespaced_pod_response = mock.Mock(spec_set=["items"])
+    list_namespaced_pod_response.items = []
+    mock_k8s_client_core_api.list_namespaced_pod.return_value = list_namespaced_pod_response
+
+    list_namespaced_job_response = mock.Mock(spec_set=["items"])
+    list_namespaced_job_response.items = [
+        V1Job(
+            metadata=V1ObjectMeta(name="hello-world"),
+            status=V1JobStatus(
+                failed=None,
+                succeeded=None,
+                active=None,
+                start_time=datetime.now(),
+            ),
+        ),
+    ]
+    mock_k8s_client_batch_api.list_namespaced_job.return_value = list_namespaced_job_response
+
+    list_namespaced_job_event_response = mock.Mock(spec_set=["items"])
+    list_namespaced_job_event_response.items = [
+        CoreV1Event(
+            metadata=V1ObjectMeta(name="event/demo_job"),
+            reason="Testing",
+            message="test message",
+            involved_object=job_name,
+        )
+    ]
+    mock_k8s_client_core_api.list_namespaced_event.return_value = list_namespaced_job_event_response
+
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                code_location=location,
+            )
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            started_run = create_run_for_test(
+                instance,
+                job_name=job_name,
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
+                status=DagsterRunStatus.STARTING,
+            )
+
+            debug_info = k8s_run_launcher.get_run_worker_debug_info(started_run)
+            running_job_name = get_job_name_from_run_id(started_run.run_id)
+            assert f"Debug information for job {running_job_name}" in debug_info
+            assert "Job status:" in debug_info
+            assert "Testing: test message" in debug_info

@@ -52,7 +52,7 @@ To add the partition to the asset:
    def taxi_trips_file(context):
    ```
 
-   **Note**: The `context` argument isn’t specific to partitions. However, this is the first time you've used it in Dagster University. The `context` argument provides information about how Dagster is running and materializing your asset. For example, you can use it to find out which partition Dagster is materializing, which job triggered the materialization, or what metadata was been attached to its previous materializations.
+   **Note**: The `context` argument isn’t specific to partitions. However, this is the first time you've used it in Dagster University. The `context` argument provides information about how Dagster is running and materializing your asset. For example, you can use it to find out which partition Dagster is materializing, which job triggered the materialization, or what metadata was attached to its previous materializations.
 
 4. In the original asset code, the logic was hard-coded to specifically fetch data for March 2023 (`'2023-03'`). Use the `context` argument’s `asset_partition_key_for_output()` method to dynamically fetch a specific partition’s month of data:
 

@@ -3,6 +3,7 @@ from typing import Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
@@ -33,6 +34,7 @@ from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
     UserFacingGraphQLError,
+    assert_permission_for_asset_graph,
     assert_permission_for_location,
     capture_error,
     check_permission,
@@ -714,7 +716,7 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         name = "ReportRunlessAssetEventsMutation"
 
     @capture_error
-    @check_permission(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    @require_permission_check(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
     def mutate(
         self, graphene_info: ResolveInfo, eventParams: GrapheneReportRunlessAssetEventsParams
     ):
@@ -724,6 +726,12 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         description = eventParams.get("description", None)
 
         reporting_user_tags = {**graphene_info.context.get_reporting_user_tags()}
+
+        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
+        assert_permission_for_asset_graph(
+            graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
+        )
 
         return report_runless_asset_events(
             graphene_info,

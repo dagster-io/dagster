@@ -253,10 +253,10 @@ def code_location_a_data_update_failure_sensor():
 
 # start_instance_sensor
 @run_status_sensor(
-    monitor_all_repositories=True,
+    monitor_all_code_locations=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor():
+def sensor_monitor_all_code_locations():
     # when any job in the Dagster instance succeeds, this sensor will trigger
     send_slack_alert()
 

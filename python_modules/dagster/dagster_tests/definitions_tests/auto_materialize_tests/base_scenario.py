@@ -6,7 +6,6 @@ import logging
 import os
 import random
 import sys
-import threading
 from typing import (
     AbstractSet,
     Iterable,
@@ -511,7 +510,6 @@ class AssetReconciliationScenario(
                             threadpool_executor=None,
                             amp_tick_futures={},
                             debug_crash_flags=(debug_crash_flags or {}),
-                            sensor_state_lock=threading.Lock(),
                         )
                     )
 
@@ -639,7 +637,7 @@ def asset_def(
     def _asset(context, **kwargs):
         del kwargs
 
-        if context.op_config["fail"]:
+        if context.op_execution_context.op_config["fail"]:
             raise ValueError("")
 
     return _asset
@@ -676,7 +674,7 @@ def multi_asset_def(
     )
     def _assets(context):
         for output in keys:
-            if output in context.selected_output_names:
+            if output in context.op_execution_context.selected_output_names:
                 yield Output(output, output)
 
     return _assets

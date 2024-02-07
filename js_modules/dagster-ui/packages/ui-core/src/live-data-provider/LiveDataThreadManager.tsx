@@ -1,43 +1,35 @@
-import {ApolloClient} from '@apollo/client';
-
-import {AssetLiveDataThread, AssetLiveDataThreadID} from './AssetLiveDataThread';
+import {LiveDataThread, LiveDataThreadID} from './LiveDataThread';
 import {BATCH_SIZE} from './util';
-import {LiveDataForNode, tokenForAssetKey} from '../asset-graph/Utils';
-import {AssetKeyInput} from '../graphql/types';
 import {isDocumentVisible} from '../hooks/useDocumentVisibility';
 
-type Listener = (stringKey: string, assetData?: LiveDataForNode) => void;
+type Listener<T> = (stringKey: string, data?: T | undefined) => void;
 
-export class AssetLiveDataThreadManager {
-  protected static _instance: AssetLiveDataThreadManager;
-  private threads: Partial<Record<AssetLiveDataThreadID, AssetLiveDataThread>>;
+export class LiveDataThreadManager<T> {
+  protected static _instance: LiveDataThreadManager<any>;
+  private threads: Partial<Record<LiveDataThreadID, LiveDataThread<T>>>;
   private lastFetchedOrRequested: Record<
     string,
     {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
   >;
-  private cache: Record<string, LiveDataForNode>;
-  private client: ApolloClient<any>;
+  private cache: Record<string, T>;
   private pollRate: number = 30000;
-  private listeners: Record<string, undefined | Listener[]>;
+  private listeners: Record<string, undefined | Listener<T>[]>;
   private isPaused: boolean;
 
   private onSubscriptionsChanged(_allKeys: string[]) {}
   private onUpdatedOrUpdating() {}
 
-  constructor(client: ApolloClient<any>) {
+  private async queryKeys(_keys: string[]): Promise<Record<string, T>> {
+    return {};
+  }
+
+  constructor(queryKeys: (keys: string[]) => Promise<Record<string, T>>) {
+    this.queryKeys = queryKeys;
     this.lastFetchedOrRequested = {};
     this.cache = {};
-    this.client = client;
     this.threads = {};
     this.listeners = {};
     this.isPaused = false;
-  }
-
-  static getInstance(client: ApolloClient<any>) {
-    if (!this._instance) {
-      this._instance = new AssetLiveDataThreadManager(client);
-    }
-    return this._instance;
   }
 
   public setPollRate(pollRate: number) {
@@ -47,7 +39,7 @@ export class AssetLiveDataThreadManager {
     });
   }
 
-  // This callback is used by the main provider context to identify which assets we should be listening to run events for.
+  // This callback is used by the main provider context to identify which keys we should be listening to run events for.
   public setOnSubscriptionsChangedCallback(
     onSubscriptionsChanged: typeof this.onSubscriptionsChanged,
   ) {
@@ -60,36 +52,31 @@ export class AssetLiveDataThreadManager {
     this.onUpdatedOrUpdating = onUpdatingOrUpdated;
   }
 
-  public subscribe(
-    key: AssetKeyInput,
-    listener: Listener,
-    threadID: AssetLiveDataThreadID = 'default',
-  ) {
-    const assetKey = tokenForAssetKey(key);
+  public subscribe(key: string, listener: Listener<T>, threadID: LiveDataThreadID = 'default') {
     let _thread = this.threads[threadID];
     if (!_thread) {
-      _thread = new AssetLiveDataThread(this.client, this);
+      _thread = new LiveDataThread(this, this.queryKeys);
       if (!this.isPaused) {
         _thread.startFetchLoop();
       }
       this.threads[threadID] = _thread;
     }
-    this.listeners[assetKey] = this.listeners[assetKey] || [];
-    this.listeners[assetKey]!.push(listener);
-    if (this.cache[assetKey]) {
-      listener(assetKey, this.cache[assetKey]);
+    this.listeners[key] = this.listeners[key] || [];
+    this.listeners[key]!.push(listener);
+    if (this.cache[key]) {
+      listener(key, this.cache[key]);
     }
     const thread = _thread;
-    thread.subscribe(assetKey);
+    thread.subscribe(key);
     this.scheduleOnSubscriptionsChanged();
     return () => {
-      thread.unsubscribe(assetKey);
+      thread.unsubscribe(key);
       this.scheduleOnSubscriptionsChanged();
     };
   }
 
   /**
-   * Schedule calling onSubscriptionsChanged instead of calling it synchronously in case we're unsubscribing from 1,000+ assets synchronously
+   * Schedule calling onSubscriptionsChanged instead of calling it synchronously in case we're unsubscribing from 1,000+ keys synchronously
    */
   private scheduledOnSubscriptionsChanged: boolean = false;
   private scheduleOnSubscriptionsChanged() {
@@ -104,22 +91,20 @@ export class AssetLiveDataThreadManager {
   }
 
   /**
-   * Removes the lastFetchedOrRequested entries for the assetKeys specified or all assetKeys if none are specified
-   * so that the assetKeys are re-eligible for fetching again despite the pollRate.
+   * Removes the lastFetchedOrRequested entries for the keys specified or all keys if none are specified
+   * so that the keys are re-eligible for fetching again despite the pollRate.
    */
-  public refreshKeys(keys?: AssetKeyInput[]) {
-    (keys?.map((key) => tokenForAssetKey(key)) ?? Object.keys(this.lastFetchedOrRequested)).forEach(
-      (key) => {
-        delete this.lastFetchedOrRequested[key];
-      },
-    );
+  public invalidateCache(keys?: string[]) {
+    (keys ?? Object.keys(this.lastFetchedOrRequested)).forEach((key) => {
+      delete this.lastFetchedOrRequested[key];
+    });
   }
 
   // Function used by threads.
-  public determineAssetsToFetch(keys: string[]) {
-    const assetsToFetch: AssetKeyInput[] = [];
-    const assetsWithoutData: AssetKeyInput[] = [];
-    while (keys.length && assetsWithoutData.length < BATCH_SIZE) {
+  public determineKeysToFetch(keys: string[]) {
+    const keysToFetch: string[] = [];
+    const keysWithoutData: string[] = [];
+    while (keys.length && keysWithoutData.length < BATCH_SIZE) {
       const key = keys.shift()!;
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
       if (isRequested) {
@@ -130,20 +115,19 @@ export class AssetLiveDataThreadManager {
         continue;
       }
       if (lastFetchTime && isDocumentVisible()) {
-        assetsToFetch.push({path: key.split('/')});
+        keysToFetch.push(key);
       } else {
-        assetsWithoutData.push({path: key.split('/')});
+        keysWithoutData.push(key);
       }
     }
 
-    // Prioritize fetching assets for which there is no data in the cache
-    return assetsWithoutData.concat(assetsToFetch).slice(0, BATCH_SIZE);
+    // Prioritize fetching keys for which there is no data in the cache
+    return keysWithoutData.concat(keysToFetch).slice(0, BATCH_SIZE);
   }
 
-  public areKeysRefreshing(assetKeys: AssetKeyInput[]) {
-    for (const key of assetKeys) {
-      const stringKey = tokenForAssetKey(key);
-      if (!this.lastFetchedOrRequested[stringKey]?.fetched) {
+  public areKeysRefreshing(keys: string[]) {
+    for (const key of keys) {
+      if (!this.lastFetchedOrRequested[key]?.fetched) {
         return true;
       }
     }
@@ -156,10 +140,10 @@ export class AssetLiveDataThreadManager {
   }
 
   public getOldestDataTimestamp() {
-    const allAssetKeys = Object.keys(this.listeners).filter((key) => this.listeners[key]?.length);
-    let isRefreshing = allAssetKeys.length ? true : false;
+    const allKeys = Object.keys(this.listeners).filter((key) => this.listeners[key]?.length);
+    let isRefreshing = allKeys.length ? true : false;
     let oldestDataTimestamp = Infinity;
-    for (const key of allAssetKeys) {
+    for (const key of allKeys) {
       if (this.lastFetchedOrRequested[key]?.fetched) {
         isRefreshing = false;
       }
@@ -174,7 +158,7 @@ export class AssetLiveDataThreadManager {
     };
   }
 
-  public _updateCache(data: Record<string, LiveDataForNode>) {
+  public _updateCache(data: Record<string, T>) {
     Object.assign(this.cache, data);
   }
 
@@ -202,51 +186,45 @@ export class AssetLiveDataThreadManager {
     });
   }
 
-  public getCacheEntry(key: AssetKeyInput) {
-    return this.cache[tokenForAssetKey(key)];
+  public getCacheEntry(key: string) {
+    return this.cache[key];
   }
 
-  public _markAssetsRequested(assetKeys: AssetKeyInput[]) {
+  public _markKeysRequested(keys: string[]) {
     const requestTime = Date.now();
-    assetKeys.forEach((key) => {
-      this.lastFetchedOrRequested[tokenForAssetKey(key)] = {
+    keys.forEach((key) => {
+      this.lastFetchedOrRequested[key] = {
         requested: requestTime,
       };
     });
     this.onUpdatedOrUpdating();
   }
 
-  public _unmarkAssetsRequested(assetKeys: AssetKeyInput[]) {
-    assetKeys.forEach((key) => {
-      delete this.lastFetchedOrRequested[tokenForAssetKey(key)];
+  public _unmarkKeysRequested(keys: string[]) {
+    keys.forEach((key) => {
+      delete this.lastFetchedOrRequested[key];
     });
   }
 
-  public _updateFetchedAssets(assetKeys: AssetKeyInput[], data: Record<string, LiveDataForNode>) {
+  public _updateFetchedKeys(keys: string[], data: Record<string, T>) {
     const fetchedTime = Date.now();
-    assetKeys.forEach((key) => {
-      const stringKey = tokenForAssetKey(key);
-      this.lastFetchedOrRequested[stringKey] = {
+    keys.forEach((key) => {
+      this.lastFetchedOrRequested[key] = {
         fetched: fetchedTime,
       };
-      const assetData = data[stringKey];
+      const assetData = data[key];
       if (!assetData) {
         return;
       }
-      this.cache[stringKey] = assetData;
-      const listeners = this.listeners[stringKey];
+      this.cache[key] = assetData;
+      const listeners = this.listeners[key];
       if (!listeners) {
         return;
       }
       listeners.forEach((listener) => {
-        listener(stringKey, assetData);
+        listener(key, assetData);
       });
     });
     this.onUpdatedOrUpdating();
-  }
-
-  public static __resetForJest() {
-    // @ts-expect-error - its ok
-    AssetLiveDataThreadManager._instance = undefined;
   }
 }

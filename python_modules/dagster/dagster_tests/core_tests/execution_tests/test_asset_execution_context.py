@@ -56,23 +56,17 @@ def test_deprecation_warnings():
         "asset_key_for_input",
         "asset_key_for_output",
         "asset_partition_key_for_input",
-        "asset_partition_key_for_output",
         "asset_partition_key_range",
         "asset_partition_key_range_for_input",
-        "asset_partition_key_range_for_output",
         "asset_partition_keys_for_input",
-        "asset_partition_keys_for_output",
         "asset_partitions_def_for_input",
-        "asset_partitions_def_for_output",
         "asset_partitions_time_window_for_input",
-        "asset_partitions_time_window_for_output",
         "assets_def",
         "get_output_metadata",
         "has_asset_checks_def",
         "has_partition_key",
         "instance",
         "job_name",
-        "op_handle",
         "output_for_asset_key",
         "partition_key",
         "partition_key_range",
@@ -81,19 +75,13 @@ def test_deprecation_warnings():
         "resources",
         "selected_asset_check_keys",
         "selected_asset_keys",
-        "selected_output_names",
         "set_data_version",
         "set_requires_typed_event_stream",
         "typed_event_stream_error_message",
         "describe_op",
-        "has_assets_def",
-        "get_mapping_key",
-        "get_step_execution_context",
-        "node_handle",
-        "op",
-        "op_config",
         "op_def",
-        "op_handle",
+        "has_assets_def",
+        "get_step_execution_context",
         "step_launcher",
         "has_events",
         "consume_events",
@@ -154,13 +142,13 @@ def test_instance_check():
 
     @asset
     def test_op_context_instance_check(context: AssetExecutionContext):
-        isinstance(context, OpExecutionContext)
+        assert isinstance(context, OpExecutionContext)
 
     with pytest.raises(DeprecationWarning):
         materialize([test_op_context_instance_check])
 
     @asset
     def test_asset_context_instance_check(context: AssetExecutionContext):
-        isinstance(context, AssetExecutionContext)
+        assert isinstance(context, AssetExecutionContext)
 
     assert materialize([test_asset_context_instance_check]).success

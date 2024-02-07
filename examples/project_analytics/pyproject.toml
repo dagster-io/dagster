@@ -6,12 +6,15 @@ build-backend = "setuptools.build_meta"
 module_name = "dagster_pypi"
 
 [tool.ruff]
+
+src = ["dagster_pypi"]
+
 # Extend root configuration.
 extend = "../../pyproject.toml"
+
+[tool.ruff.lint]
 # Use extend-ignore so that we ignore all the same codes ignored in root.
 extend-ignore = [
   # (print found): Allow prints for demo purposes.
   "T201",
 ]
-
-src = ["dagster_pypi"]

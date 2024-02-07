@@ -907,10 +907,7 @@ class DbtCliResource(ConfigurableResource):
             # When dbt is enabled with asset checks, we turn off any indirection with dbt selection.
             # This way, the Dagster context completely determines what is executed in a dbt
             # invocation.
-            if (
-                version.parse(dbt_version) >= version.parse("1.5.0")
-                and dagster_dbt_translator.settings.enable_asset_checks
-            ):
+            if dagster_dbt_translator.settings.enable_asset_checks:
                 logger.info(
                     "Setting environment variable `DBT_INDIRECT_SELECTION` to 'empty'. When dbt "
                     "tests are modeled as asset checks, they are executed through explicit selection."

@@ -1364,6 +1364,11 @@ ALTERNATE_METHODS = {
     "run_config": "run.run_config",
     "run_tags": "run.tags",
     "get_op_execution_context": "op_execution_context",
+    "asset_partition_key_for_output": "partition_key",
+    "asset_partitions_time_window_for_output": "partition_time_window",
+    "asset_partition_key_range_for_output": "partition_key_range",
+    "asset_partitions_def_for_output": "assets_def.partitions_def",
+    "asset_partition_keys_for_output": "partition_keys",
 }
 
 ALTERNATE_EXPRESSIONS = {
@@ -1371,8 +1376,17 @@ ALTERNATE_EXPRESSIONS = {
     "get_tag": "context.run.tags.get(key)",
 }
 
+USE_OP_CONTEXT = [
+    "op_config",
+    "node_handle",
+    "op_handle",
+    "op",
+    "get_mapping_key",
+    "selected_output_names",
+]
 
-def _get_deprecation_kwargs(attr: str):
+
+def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
     deprecation_kwargs = {"breaking_version": "1.8.0"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 
@@ -1385,6 +1399,11 @@ def _get_deprecation_kwargs(attr: str):
         deprecation_kwargs["additional_warn_text"] = (
             f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
             f" {ALTERNATE_EXPRESSIONS[attr]} instead."
+        )
+    elif attr in USE_OP_CONTEXT:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            f" context.op_execution_context.{attr} instead."
         )
 
     return deprecation_kwargs
@@ -1501,6 +1520,76 @@ class AssetExecutionContext(OpExecutionContext):
     def get_op_execution_context(self) -> "OpExecutionContext":
         return self.op_execution_context
 
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
+
+    @deprecated(**_get_deprecation_kwargs("op_config"))
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_config(self) -> Any:
+        return self.op_execution_context.op_config
+
+    @deprecated(**_get_deprecation_kwargs("node_handle"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def node_handle(self) -> NodeHandle:
+        return self.op_execution_context.node_handle
+
+    @deprecated(**_get_deprecation_kwargs("op_handle"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_handle(self) -> NodeHandle:
+        return self.op_execution_context.op_handle
+
+    @deprecated(**_get_deprecation_kwargs("op"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def op(self) -> Node:
+        return self.op_execution_context.op
+
+    @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_mapping_key(self) -> Optional[str]:
+        return self.op_execution_context.get_mapping_key()
+
+    @deprecated(**_get_deprecation_kwargs("selected_output_names"))
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_output_names(self) -> AbstractSet[str]:
+        return self.op_execution_context.selected_output_names
+
     ########## pass-through to op context
 
     #### op related
@@ -1510,47 +1599,15 @@ class AssetExecutionContext(OpExecutionContext):
     def retry_number(self):
         return self.op_execution_context.retry_number
 
-    @public
-    @property
     @_copy_docs_from_op_execution_context
-    def op_config(self) -> Any:
-        return self.op_execution_context.op_config
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def node_handle(self) -> NodeHandle:
-        return self.op_execution_context.node_handle
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def op_handle(self) -> NodeHandle:
-        return self.op_execution_context.op_handle
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def op(self) -> Node:
-        return self.op_execution_context.op
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
 
     @public
     @property
     @_copy_docs_from_op_execution_context
     def op_def(self) -> OpDefinition:
         return self.op_execution_context.op_def
-
-    @_copy_docs_from_op_execution_context
-    def describe_op(self) -> str:
-        return self.op_execution_context.describe_op()
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def get_mapping_key(self) -> Optional[str]:
-        return self.op_execution_context.get_mapping_key()
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def selected_output_names(self) -> AbstractSet[str]:
-        return self.op_execution_context.selected_output_names
 
     #### job related
 
@@ -1659,23 +1716,6 @@ class AssetExecutionContext(OpExecutionContext):
 
     @public
     @_copy_docs_from_op_execution_context
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_key_range_for_output(
-        self, output_name: str = "result"
-    ) -> PartitionKeyRange:
-        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         return self.op_execution_context.asset_partition_key_range_for_input(input_name)
 
@@ -1686,18 +1726,8 @@ class AssetExecutionContext(OpExecutionContext):
 
     @public
     @_copy_docs_from_op_execution_context
-    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
         return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
 
     @public
     @_copy_docs_from_op_execution_context

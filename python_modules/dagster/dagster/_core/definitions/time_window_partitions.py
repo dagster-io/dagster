@@ -266,6 +266,8 @@ class TimeWindowPartitionsDefinition(
     or after the given start datetime. The last partition in the set will end before the current
     time, unless the end_offset argument is set to a positive number.
 
+    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+
     Args:
         cron_schedule (str): Determines the bounds of the time windows.
         start (datetime): The first partition in the set will start on at the first cron_schedule
@@ -1780,9 +1782,9 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
                     break
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
-                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
+                    result_windows[0] = TimeWindow(window.start, included_window.end)
                 elif result_windows and window.end == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
+                    result_windows[0] = TimeWindow(window.start, included_window.end)
                 else:
                     result_windows.insert(0, window)
 

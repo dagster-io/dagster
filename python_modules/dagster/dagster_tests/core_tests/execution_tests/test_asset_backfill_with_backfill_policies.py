@@ -4,10 +4,12 @@ from unittest.mock import MagicMock
 import pendulum
 import pytest
 from dagster import (
+    AssetDep,
     BackfillPolicy,
     DagsterInstance,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     asset,
 )
@@ -524,3 +526,366 @@ def test_dynamic_partitions():
     assert len(result.run_requests) == 1
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
+
+
+def test_assets_backfill_with_partition_mapping():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-3, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-01",
+            "2023-03-02",
+            "2023-03-03",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 1
+    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
+
+
+def test_assets_backfill_with_partition_mapping_run_to_complete():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(30),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-3, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-01",
+            "2023-03-02",
+            "2023-03-03",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+
+    (
+        completed_backfill_data,
+        _,
+        _,
+    ) = run_backfill_to_completion(
+        instance=instance,
+        asset_graph=asset_graph,
+        assets_by_repo_name=assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+    )
+
+    counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
+    assert counts[0].asset_key == upstream_a.key
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+
+    assert counts[1].asset_key == downstream_b.key
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 6
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+
+
+def test_assets_backfill_with_partition_mapping_without_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 2
+
+    for run_request in result.run_requests:
+        if run_request.partition_key == "2023-03-02":
+            assert set(run_request.asset_selection) == {upstream_a.key, downstream_b.key}
+        elif run_request.partition_key == "2023-03-03":
+            # downstream_b's 03-03 partition should be skipped because upstream_a's 03-02 partition is not materialized
+            assert set(run_request.asset_selection) == {upstream_a.key}
+
+
+def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(1),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(1),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 2
+
+
+def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(2),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(2),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+            "2023-03-04",
+            "2023-03-05",
+            "2023-03-06",
+            "2023-03-07",
+            "2023-03-08",
+            "2023-03-09",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 4
+
+    for run_request in result.run_requests:
+        # there is no parallel runs for downstream_b before upstream_a's targeted partitions are materialized
+        assert set(run_request.asset_selection) == {upstream_a.key}
+
+
+def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    time_now = pendulum.now("UTC")
+
+    @asset(
+        name="upstream_a",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+    )
+    def upstream_a():
+        return 1
+
+    @asset(
+        name="downstream_b",
+        partitions_def=daily_partitions_def,
+        backfill_policy=BackfillPolicy.single_run(),
+        deps=[
+            AssetDep(
+                upstream_a,
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+    )
+    def downstream_b():
+        return 2
+
+    assets_by_repo_name = {"repo": [upstream_a, downstream_b]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=[
+            "2023-03-02",
+            "2023-03-03",
+            "2023-03-04",
+            "2023-03-05",
+            "2023-03-06",
+            "2023-03-07",
+            "2023-03-08",
+            "2023-03-09",
+        ],
+        asset_graph=asset_graph,
+        asset_selection=[upstream_a.key, downstream_b.key],
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_time=time_now,
+        all_partitions=False,
+    )
+    assert backfill_data
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    assert len(result.run_requests) == 1
+    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"

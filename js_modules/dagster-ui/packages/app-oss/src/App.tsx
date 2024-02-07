@@ -6,8 +6,8 @@ import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
 import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
-import {LiveDataPollRateContext} from '@dagster-io/ui-core/asset-data/AssetLiveDataProvider';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
+import {LiveDataPollRateContext} from '@dagster-io/ui-core/live-data-provider/LiveDataProvider';
 
 import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';

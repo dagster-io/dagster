@@ -25,7 +25,7 @@ dayjs.updateLocale('en', {
   },
 });
 
-export const AssetDataRefreshButton = ({
+export const LiveDataRefreshButton = ({
   isRefreshing,
   onRefresh,
   oldestDataTimestamp,
@@ -69,5 +69,5 @@ const TimeFromNowWithSeconds = ({timestamp}: {timestamp: number}) => {
       clearInterval(interval);
     };
   }, [timestamp]);
-  return <>{text === '0s' ? 'Refreshing asset data…' : `Data is at most ${text} old`}</>;
+  return <>{text === '0s' ? 'Refreshing data…' : `Data is at most ${text} old`}</>;
 };

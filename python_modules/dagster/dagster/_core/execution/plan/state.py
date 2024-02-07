@@ -225,6 +225,7 @@ def _derive_state_of_past_run(
     parent_run_logs = instance.all_logs(
         parent_run_id,
         of_type={
+            DagsterEventType.STEP_START,
             DagsterEventType.STEP_FAILURE,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.STEP_OUTPUT,

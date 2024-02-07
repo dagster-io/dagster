@@ -43,6 +43,7 @@ def test_dag_run_conf_local() -> None:
 
         dag_bag = DagBag(dag_folder=dags_path)
         retry_dag = dag_bag.get_dag(dag_id="dag_run_conf_dag")
+        assert retry_dag is not None, "DAG not found"
 
         job = make_dagster_job_from_airflow_dag(
             dag=retry_dag, resource_defs={"airflow_db": airflow_db}
