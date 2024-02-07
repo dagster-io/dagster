@@ -81,6 +81,10 @@ ALL_CHECK_KEYS = {
         ("stg_payments", "unique_stg_payments_payment_id"),
         ("fail_tests_model", "accepted_values_fail_tests_model_first_name__foo__bar__baz"),
         ("fail_tests_model", "unique_fail_tests_model_id"),
+        (
+            "orders",
+            "relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_",
+        ),
     ]
 }
 
