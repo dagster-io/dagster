@@ -30,7 +30,7 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
 
    ```python
    @asset(
-     deps=["taxi_zones", "taxi_trips"]
+       deps=["taxi_zones", "taxi_trips"]
    )
    def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
    ```
@@ -86,25 +86,25 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
 
    ```python
    with database.get_connection() as conn:
-     results = conn.execute(query).fetch_df()
+       results = conn.execute(query).fetch_df()
    ```
 
 6. Now that the query data is stored as a DataFrame in the `results` variable, use the Plotly library to visualize the frequency of trips at each time of the day for the borough, stratified by the day of the week:
 
    ```python
    fig = px.bar(
-         results,
-         x="hour_of_day",
-         y="num_trips",
-         color="day_of_week",
-         barmode="stack",
-         title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-         labels={
+       results,
+       x="hour_of_day",
+       y="num_trips",
+       color="day_of_week",
+       barmode="stack",
+       title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
+       labels={
            "hour_of_day": "Hour of Day",
            "day_of_week": "Day of Week",
            "num_trips": "Number of Trips"
-         }
-       )
+       }
+   )
    ```
 
 7. Lastly, save the report to the destination file specified by the `file_path` variable you declared earlier:
@@ -125,13 +125,13 @@ import plotly.io as pio
 from . import constants
 
 class AdhocRequestConfig(Config):
-  filename: str
-  borough: str
-  start_date: str
-  end_date: str
+    filename: str
+    borough: str
+    start_date: str
+    end_date: str
 
 @asset(
-	deps=["taxi_zones", "taxi_trips"]
+    deps=["taxi_zones", "taxi_trips"]
 )
 def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
     """
@@ -171,7 +171,7 @@ def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
     """
 
     with database.get_connection() as conn:
-      results = conn.execute(query).fetch_df()
+        results = conn.execute(query).fetch_df()
 
     fig = px.bar(
         results,
@@ -181,9 +181,9 @@ def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource):
         barmode="stack",
         title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
         labels={
-          "hour_of_day": "Hour of Day",
-          "day_of_week": "Day of Week",
-          "num_trips": "Number of Trips"
+            "hour_of_day": "Hour of Day",
+            "day_of_week": "Day of Week",
+            "num_trips": "Number of Trips"
         }
     )
 

@@ -24,15 +24,15 @@ from dagster import asset
 
 @asset
 def taxi_zones_file():
-  """
-    The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+    """
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
 ```
 
 ---
@@ -47,18 +47,18 @@ For example:
 from dagster import asset
 
 @asset(
- description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
+    description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
 )
 def taxi_zones_file():
-  """
-    This will not show in the Dagster UI
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+    """
+      This will not show in the Dagster UI
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
 ```
 
 ---
