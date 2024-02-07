@@ -7,25 +7,25 @@ description: The dagster-airflow package allows you to import Airflow DAGs into 
 
 <CodeReferenceLink filePath="examples/with_airflow" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. Using `dagster-airflow`, you can:
+The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
 
-- Incorporate an Airflow Directed Acyclic Graph (DAG) directory as a Dagster repository, allowing you to do a lift-and-shift migration of your existing Airflow DAGs into Dagster jobs or Software-defined Assets (SDAs)
-- Orchestrate Dagster jobs from Airflow
-- Ingest DAGs from Airflow
-
-This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
+Using `dagster-airflow`, you can incorporate all or some of your existing Airflow Directed Acyclic Graphs (DAGs) or orchestrate Dagster jobs from Airflow. Refer to the [Airflow reference](/integrations/airflow/reference) for examples or the following sections for info on migrating from Airflow.
 
 ---
 
 ## Migrating to Dagster
 
-Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough. You can also refer to the [Airflow reference](/integrations/airflow/reference) for specific examples.
+Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough.
 
 If you're not sure how to map Airflow concepts to Dagster, check out the cheatsheet in the next section before you begin.
 
-### Mapping Airflow concepts to Dagster
+---
+
+## Mapping Airflow concepts to Dagster
 
 While Airflow and Dagster have some significant differences, there are many concepts that overlap. Use this cheatsheet to understand how Airflow concepts map to Dagster.
+
+**Want a look at this in code?** Check out the [Learning Dagster from Airflow](/integrations/airflow/from-airflow-to-dagster) guide.
 
 <table
   className="table"
