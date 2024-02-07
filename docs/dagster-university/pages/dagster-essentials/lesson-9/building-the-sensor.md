@@ -114,7 +114,7 @@ Now that cursors have been explained, let’s start writing the sensor.
 
        # if the file is new or has been modified since the last run, add it to the request queue
        if filename not in previous_state or previous_state[filename] != last_modified:
-   					    with open(file_path, "r") as f:
+         with open(file_path, "r") as f:
            request_config = json.load(f)
 
            runs_to_request.append(RunRequest(
