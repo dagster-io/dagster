@@ -20,7 +20,7 @@
 - Retry from failure behavior has been improved for cases where dynamic steps were interrupted.
 - Previously, when backfilling a set of assets which shared a BackfillPolicy and PartitionsDefinition, but had a non-default partition mapping between them, a run for the downstream asset could be launched at the same time as a separate run for the upstream asset, resulting in inconsistent partition ordering. Now, the downstream asset will only execute after the parents complete. (Thanks `@ruizh22`!)
 - Previously, asset backfills would raise an exception if the code server became unreachable mid-iteration. Now, the backfill will pause until the next evaluation.
-- Fixed a bug that was causing range backfills over dynamically partitioned assets to fail.
+- Fixed a bug that was causing ranged backfills over dynamically partitioned assets to fail.
 - [dagster-pipes] `PipesK8sClient` has improved handling for init containers and additional containers. (Thanks `@aignas`!)
 - Fixed the `last_sensor_start_time` property of the `SensorEvaluationContext`, which would get cleared on ticks after the first tick after the sensor starts.
 - [dagster-mysql] Fixed the optional `dagster instance migrate --bigint-migration`, which caused some operational errors on mysql storages.
