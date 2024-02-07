@@ -175,6 +175,10 @@ class WhitelistMap(NamedTuple):
         )
         self.object_serializers[name] = serializer
         deserializer_name = storage_name or name
+        if deserializer_name in self.object_deserializers:
+            raise SerdesUsageError(
+                f"Multiple deserializers registered for storage name `{deserializer_name}`"
+            )
         self.object_deserializers[deserializer_name] = serializer
         if old_storage_names:
             for old_storage_name in old_storage_names:
