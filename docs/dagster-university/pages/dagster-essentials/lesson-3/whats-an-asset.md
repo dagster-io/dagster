@@ -33,7 +33,7 @@ Specifically, an asset includes:
 ```python
 @asset
 def cookie_dough(dry_ingredients, wet_ingredients):
-  return dry_ingredients + wet_ingredients
+    return dry_ingredients + wet_ingredients
 ```
 
 When naming assets, it’s best practice to use a **noun**, specifically **a descriptor of what is produced,** and not the steps required to produce it.
