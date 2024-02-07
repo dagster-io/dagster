@@ -89,7 +89,7 @@ class AssetSubset(NamedTuple):
     ) -> bool:
         if self.is_partitioned:
             # for some PartitionSubset types, we have access to the underlying partitions
-            # definitions so we can ensure those are identical
+            # definitions, so we can ensure those are identical
             if isinstance(self.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
                 return self.value.partitions_def == partitions_def
             else:
@@ -163,11 +163,15 @@ class AssetSubset(NamedTuple):
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class ValidAssetSubset(AssetSubset):
-    """Represents an AssetSubset which is known to be compatible with the current
-    PartitionsDefinition of the asset represents.
+    """Represents an AssetSubset which is known to be compatible with the current PartitionsDefinition
+    of the asset represents.
 
-    This class serializes to a regular AssetSubset, because once it is deserialized we can't be
-    certain that the subset will still be valid.
+    This class serializes to a regular AssetSubset, as it is unknown if this value will still be
+    valid in the process that deserializes it.
+
+    All operations act over the set of AssetKeyPartitionKeys that the operands represent if the
+    subsets are both ValidAssetSubsets. If the other operand cannot be coerced to a ValidAssetSubset,
+    it is treated as an empty subset.
     """
 
     def inverse(
@@ -194,24 +198,18 @@ class ValidAssetSubset(AssetSubset):
         return self._replace(value=value)
 
     def __sub__(self, other: AssetSubset) -> "ValidAssetSubset":
-        """Returns an AssetSubset representing self - other if they are compatible, otherwise
-        returns self.
-        """
+        """Returns an AssetSubset representing self.asset_partitions - other.asset_partitions."""
         valid_other = self.get_valid(other)
         if not self.is_partitioned:
             return self._replace(value=self.bool_value and not valid_other.bool_value)
         return self._oper(valid_other, operator.sub)
 
     def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
-        """Returns the intersection of this AssetSubset and another AssetSubset if they are compatible,
-        otherwise returns an empty AssetSubset.
-        """
+        """Returns an AssetSubset representing self.asset_partitions & other.asset_partitions."""
         return self._oper(self.get_valid(other), operator.and_)
 
     def __or__(self, other: AssetSubset) -> "ValidAssetSubset":
-        """Returns the union of this AssetSubset and another AssetSubset if they are compatible,
-        otherwise returns the other AssetSubset.
-        """
+        """Returns an AssetSubset representing self.asset_partitions | other.asset_partitions."""
         return self._oper(self.get_valid(other), operator.or_)
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
@@ -223,7 +221,7 @@ class ValidAssetSubset(AssetSubset):
             return item.asset_key == self.asset_key and item.partition_key in self.subset_value
 
     def get_valid(self, other: AssetSubset) -> "ValidAssetSubset":
-        """Cretes a ValidAssetSubset from the given AssetSubset by returning a copy of the given
+        """Creates a ValidAssetSubset from the given AssetSubset by returning a copy of the given
         AssetSubset if it is compatible with this AssetSubset, otherwise returns an empty subset.
         """
         if self._is_compatible_with_subset(other):
