@@ -12,7 +12,7 @@ from dagster import (
     PartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
@@ -94,6 +94,7 @@ def test_operations(
     assert actual_asset_partitions == expected_asset_partitions
 
 
+@pytest.mark.parametrize("use_valid_asset_subset", [True, False])
 @pytest.mark.parametrize(
     "value",
     [
@@ -129,9 +130,20 @@ def test_operations(
         ),
     ],
 )
-def test_serialization(value) -> None:
-    asset_subset = AssetSubset(AssetKey("foo"), value=value)
-    round_trip_asset_subset = deserialize_value(serialize_value(asset_subset), AssetSubset)
+def test_serialization(value, use_valid_asset_subset) -> None:
+    if use_valid_asset_subset:
+        asset_subset = ValidAssetSubset(AssetKey("foo"), value=value)
+    else:
+        asset_subset = AssetSubset(AssetKey("foo"), value=value)
+
+    serialized_asset_subset = serialize_value(asset_subset)
+    assert "ValidAssetSubset" not in serialized_asset_subset
+
+    round_trip_asset_subset = deserialize_value(serialized_asset_subset, AssetSubset)
+
+    assert isinstance(round_trip_asset_subset, AssetSubset)
+    # should always be deserialized as an AssetSubset
+    assert not isinstance(round_trip_asset_subset, ValidAssetSubset)
 
     assert asset_subset.asset_key == round_trip_asset_subset.asset_key
     assert asset_subset.asset_partitions == round_trip_asset_subset.asset_partitions
