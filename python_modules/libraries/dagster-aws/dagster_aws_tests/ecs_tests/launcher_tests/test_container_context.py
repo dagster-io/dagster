@@ -87,6 +87,7 @@ def test_merge(
         "cpu": "2048",
         "memory": "4096",
         "ephemeral_storage": 25,
+        "replica_count": 2,
     }
 
     assert merged.server_ecs_tags == [
