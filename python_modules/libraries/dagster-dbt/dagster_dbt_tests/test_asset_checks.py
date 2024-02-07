@@ -37,7 +37,7 @@ def dbt_commands(request):
     return request.param
 
 
-def test_without_checks():
+def test_without_checks() -> None:
     @dbt_assets(manifest=manifest)
     def my_dbt_assets_no_checks():
         ...
@@ -124,6 +124,13 @@ def test_with_asset_checks(assets_def) -> None:
                 AssetKey(["customers"]),
             ],
         ),
+        "orders_relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_": AssetCheckSpec(
+            name="relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_",
+            asset=AssetKey(["orders"]),
+            additional_deps=[
+                AssetKey(["jaffle_shop", "raw_customers"]),
+            ],
+        ),
         "orders_unique_orders_order_id": AssetCheckSpec(
             name="unique_orders_order_id",
             asset=AssetKey(["orders"]),
@@ -167,17 +174,6 @@ def test_with_asset_checks(assets_def) -> None:
         "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
             name="unique_fail_tests_model_id",
             asset=AssetKey(["fail_tests_model"]),
-        ),
-        "sort_by_calories_not_null_sort_by_calories_name": AssetCheckSpec(
-            name="not_null_sort_by_calories_name",
-            asset=AssetKey(["sort_by_calories"]),
-        ),
-        "sort_by_calories_relationships_sort_by_calories_name__name__source_jaffle_shop_foobar_": AssetCheckSpec(
-            name="relationships_sort_by_calories_name__name__source_jaffle_shop_foobar_",
-            asset=AssetKey(["sort_by_calories"]),
-            additional_deps=[
-                AssetKey(["jaffle_shop", "foobar"]),
-            ],
         ),
     }
 
@@ -252,8 +248,8 @@ def _materialize_dbt_assets(
 def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
     assert not result.success  # fail_tests_model fails
-    assert len(result.get_asset_materialization_events()) == 12
-    assert len(result.get_asset_check_evaluations()) == 24
+    assert len(result.get_asset_materialization_events()) == 10
+    assert len(result.get_asset_check_evaluations()) == 23
 
 
 def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
