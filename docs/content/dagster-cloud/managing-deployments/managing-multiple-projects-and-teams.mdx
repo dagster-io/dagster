@@ -192,17 +192,23 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
 ---
 
-## Strategies for execution context isolation
+## Isolating execution context between projects
 
-Separating execution context between projects can have several motivations:
+Separating execution context between projects can allow you to:
 
-- facilitate separation of duty between teams to prevent access to sensitive data
-- different compute environments and requirements (different architecture, cloud provider, etc.)
-- prevent noisy neighbors effects (a project with a large number of runs can impact the performance of other projects)
+- Facilitate separation of duty between teams to prevent access to sensitive data
+- Support different compute environments and requirements (different architecture, cloud provider, etc.)
+- Reduce impact on other projects. For example, a project with a large number of runs can impact the performance of other projects.
 
-There are three isolation levels you may want to consider:
+In order from least to most isolated, there are three levels of isolation:
+
+- [Code location](#code-location-isolation)
+- [Agent](#agent-isolation)
+- [Deployment](#deployment-isolation)
 
 ### Code location isolation
+
+If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
 
 <Image
 alt="Diagram of isolation at the code location level"
@@ -211,22 +217,58 @@ width={1167}
 height={384}
 />
 
-If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
-
-Pro:
-
-- simplest and most cost-effective solution
-- user access control can be set at the code location level
-- single glass pane to view all assets
-
-Con:
-
-- no isolation between execution environments
-- you need to use [SourceAsset to share assets across code locations](/concepts/assets/software-defined-assets#defining-external-asset-dependencies)
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "50%",
+        }}
+      >
+        Pros
+      </th>
+      <th>Cons</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Simplest and most cost-effective solution
+          </li>
+          <li>User access control can be set at the code location level</li>
+          <li>Single glass pane to view all assets</li>
+        </ul>
+      </td>
+      <td>No isolation between execution environments</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Agent isolation
 
-<Note>Agent queues are a Dagster Cloud Enterprise feature.</Note>
+<Note>Agent queues are a Dagster Cloud Pro feature.</Note>
+
+Using the [agent routing feature](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
+
+Motivations for utilizing this approach could include:
+
+- Different compute requirements, such as different cloud providers or architectures
+- Cptimizing for locality or access, such as running the data processing closer or in environment with access to the storage locations
 
 <Image
 alt="Diagram of isolation at the agent level"
@@ -235,25 +277,53 @@ width={1331}
 height={537}
 />
 
-Using the [agent routing feature](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
-
-Motivations for such a choice would include different compute requirements (different cloud providers, different architectures, etc.), optimizing for locality or access (running the data processing closer or in environment with access to the storage locations), etc.
-
-Pro:
-
-- isolation between execution environments
-- user access control can be set at the code location level
-- single glass pane to view all assets
-
-Con:
-
-- extra work to set up additional agents and agent queues
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "50%",
+        }}
+      >
+        Pros
+      </th>
+      <th>Cons</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Isolation between execution environments
+          </li>
+          <li>User access control can be set at the code location level</li>
+          <li>Single glass pane to view all assets</li>
+        </ul>
+      </td>
+      <td>Extra work to set up additional agents and agent queues</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Deployment isolation
 
-<Note>
-  Multiple deployments are only available in Dagster Cloud Enterprise.
-</Note>
+<Note>Multiple deployments are a Dagster Cloud Pro feature.</Note>
+
+Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
 
 <Image
 alt="Diagram of isolation at the Dagster Cloud deployment level"
@@ -262,13 +332,49 @@ width={1152}
 height={349}
 />
 
-This is the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
-
-Pro:
-
-- isolation between assets and execution environments
-- user access control can be set at the code location and deployment level
-
-Con:
-
-- no single glass pane to view all assets (requires switching between multiple deployments in the UI)
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "50%",
+        }}
+      >
+        Pros
+      </th>
+      <th>Cons</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Isolation between assets and execution environments
+          </li>
+          <li>
+            User access control can be set at the code location and deployment
+            level
+          </li>
+        </ul>
+      </td>
+      <td>
+        No single glass pane to view all assets (requires switching between
+        multiple deployments in the UI)
+      </td>
+    </tr>
+  </tbody>
+</table>
