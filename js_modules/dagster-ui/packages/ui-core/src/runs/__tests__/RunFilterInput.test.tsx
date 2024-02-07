@@ -86,6 +86,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value1',
           },
           match: ['value1'],
+          final: true,
         },
         {
           label: 'value2',
@@ -95,6 +96,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value2',
           },
           match: ['value2'],
+          final: true,
         },
       ]);
     });

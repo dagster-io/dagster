@@ -30,7 +30,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
@@ -168,10 +168,10 @@ def _filter_expected_output_defs(
     result_tuple = (
         (result,) if not isinstance(result, tuple) or is_named_tuple_instance(result) else result
     )
-    materialize_results = [x for x in result_tuple if isinstance(x, MaterializeResult)]
+    asset_results = [x for x in result_tuple if isinstance(x, AssetResult)]
     remove_outputs = [
         r.get_spec_python_identifier(asset_key=x.asset_key or context.asset_key)
-        for x in materialize_results
+        for x in asset_results
         for r in x.check_results or []
     ]
     return [out for out in output_defs if out.name not in remove_outputs]
@@ -257,7 +257,8 @@ def validate_and_coerce_op_result_to_iterator(
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
-    elif isinstance(result, AssetCheckResult):
+    # These don't correspond to output defs so pass them through
+    elif isinstance(result, (AssetCheckResult, ObserveResult)):
         yield result
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
@@ -310,7 +311,7 @@ def validate_and_coerce_op_result_to_iterator(
                             mapping_key=dynamic_output.mapping_key,
                             metadata=dynamic_output.metadata,
                         )
-            elif isinstance(element, MaterializeResult):
+            elif isinstance(element, AssetResult):
                 yield element  # coerced in to Output in outer iterator
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(

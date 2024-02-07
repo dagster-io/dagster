@@ -79,6 +79,7 @@ import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
+import hourglass from '../icon-svgs/hourglass.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
 import id from '../icon-svgs/id.svg';
 import infinity from '../icon-svgs/infinity.svg';
@@ -96,6 +97,7 @@ import materialization from '../icon-svgs/materialization.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
+import multi_asset from '../icon-svgs/multi_asset.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import observation from '../icon-svgs/observation.svg';
@@ -176,6 +178,7 @@ export const Icons = {
   materialization,
   observation,
   job,
+  multi_asset,
   op,
   op_selector,
   op_dynamic: bolt,
@@ -276,6 +279,7 @@ export const Icons = {
   info,
   history,
   history_toggle_off,
+  hourglass,
   hourglass_bottom,
   layers,
   line_style,

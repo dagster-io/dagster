@@ -296,6 +296,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneSensor(
                 sensor,
+                self._repository,
                 self._batch_loader.get_sensor_state(sensor.name),
                 self._batch_loader,
             )

@@ -646,6 +646,10 @@
             "path": "/dagster-cloud/insights",
             "children": [
               {
+                "title": "Integrating asset metadata",
+                "path": "/dagster-cloud/insights/asset-metadata"
+              },
+              {
                 "title": "Integrating external metrics",
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
                 "children": [

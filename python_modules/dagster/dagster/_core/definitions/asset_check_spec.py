@@ -61,6 +61,7 @@ class AssetCheckSpec(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
+            ("blocking", PublicAttr[bool]),
         ],
     )
 ):
@@ -80,6 +81,10 @@ class AssetCheckSpec(
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
+        blocking (bool): When enabled, runs that include this check and any downstream assets that
+            depend on `asset` will wait for this check to complete before starting the downstream
+            assets. If the check fails with severity `AssetCheckSeverity.ERROR`, then the downstream
+            assets won't execute.
     """
 
     def __new__(
@@ -89,6 +94,7 @@ class AssetCheckSpec(
         asset: Union[CoercibleToAssetKey, "AssetsDefinition", "SourceAsset"],
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
+        blocking: bool = False,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -111,6 +117,7 @@ class AssetCheckSpec(
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             additional_deps=additional_asset_deps,
+            blocking=check.bool_param(blocking, "blocking"),
         )
 
     def get_python_identifier(self) -> str:

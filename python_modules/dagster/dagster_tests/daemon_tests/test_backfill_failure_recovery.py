@@ -16,7 +16,7 @@ from dagster._core.test_utils import (
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .conftest import workspace_load_target
 
@@ -34,7 +34,7 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
+            with pendulum_freeze_time(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=workspace_load_target(), instance=instance
             ) as workspace_context:
                 list(

@@ -46,7 +46,7 @@ setup(
         "click>=7.0,<9.0",
         f"dagster{pin}",
         f"dagster-graphql{pin}",
-        "starlette",
+        "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
         "uvicorn[standard]",
     ],
     extras_require={

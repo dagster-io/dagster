@@ -23,7 +23,7 @@ describe('useStaticSetFilter', () => {
       <span className={isActive ? 'active' : 'inactive'}>{value}</span>
     ),
     getStringValue: (value: string) => value,
-    initialState: ['banana'],
+    state: ['banana'],
   };
 
   it('creates filter object with the correct properties', () => {
@@ -114,7 +114,7 @@ describe('useStaticSetFilter', () => {
     select(filter, 'banana');
     expect(filter.result.current.state).toEqual(new Set(['apple']));
 
-    props.initialState = ['cherry'];
+    props.state = ['cherry'];
 
     filter.rerender();
 

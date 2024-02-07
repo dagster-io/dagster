@@ -6,7 +6,16 @@ import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
 
 export type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
+  | {
+      id: string;
+      level: number;
+      groupNode: {
+        groupName: string;
+        assets: GraphNode[];
+        repositoryName: string;
+        repositoryLocationName: string;
+      };
+    }
   | {locationName: string; id: string; level: number};
 
 export type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};

@@ -115,7 +115,7 @@ def test_two_asset_job():
 def test_single_asset_job_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
-        return context.op_config["foo"]
+        return context.op_execution_context.op_config["foo"]
 
     job = build_assets_job("a", [asset1])
     assert job.graph.node_defs == [asset1.op]
@@ -1202,11 +1202,11 @@ def test_internal_asset_deps_assets():
     outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)}, can_subset=True
 )
 def ab(context, foo):
-    assert (context.selected_output_names != {"a", "b"}) == context.is_subset
+    assert (context.op_execution_context.selected_output_names != {"a", "b"}) == context.is_subset
 
-    if "a" in context.selected_output_names:
+    if "a" in context.op_execution_context.selected_output_names:
         yield Output(foo + 1, "a")
-    if "b" in context.selected_output_names:
+    if "b" in context.op_execution_context.selected_output_names:
         yield Output(foo + 2, "b")
 
 
@@ -1411,17 +1411,17 @@ def test_job_preserved_with_asset_subset():
 
     @op(config_schema={"foo": int})
     def one(context):
-        assert context.op_config["foo"] == 1
+        assert context.op_execution_context.op_config["foo"] == 1
 
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": int})
     def two(context, one):
-        assert context.op_config["bar"] == 2
+        assert context.op_execution_context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": int})
     def three(context, two):
-        assert context.op_config["baz"] == 3
+        assert context.op_execution_context.op_config["baz"] == 3
 
     foo_job = define_asset_job(
         "foo_job",
@@ -1446,17 +1446,17 @@ def test_job_default_config_preserved_with_asset_subset():
 
     @op(config_schema={"foo": Field(int, default_value=1)})
     def one(context):
-        assert context.op_config["foo"] == 1
+        assert context.op_execution_context.op_config["foo"] == 1
 
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": Field(int, default_value=2)})
     def two(context, one):
-        assert context.op_config["bar"] == 2
+        assert context.op_execution_context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": Field(int, default_value=3)})
     def three(context, two):
-        assert context.op_config["baz"] == 3
+        assert context.op_execution_context.op_config["baz"] == 3
 
     foo_job = define_asset_job("foo_job").resolve(
         asset_graph=AssetGraph.from_assets([asset_one, two, three])
@@ -2233,14 +2233,18 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def abc_(context, start):
-        assert (context.selected_output_names != {"a", "b", "c"}) == context.is_subset
+        assert (
+            context.op_execution_context.selected_output_names != {"a", "b", "c"}
+        ) == context.is_subset
 
         a = (start + 1) if start else None
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
         # Alphabetical order matches topological order here
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "abc"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2270,14 +2274,18 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def def_(context, a, b, c):
-        assert (context.selected_output_names != {"d", "e", "f"}) == context.is_subset
+        assert (
+            context.op_execution_context.selected_output_names != {"d", "e", "f"}
+        ) == context.is_subset
 
         d = (a + b) if a and b else None
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
         # Alphabetical order matches topological order here
-        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
+        outputs_to_return = (
+            sorted(context.op_execution_context.selected_output_names) if allow_subset else "def"
+        )
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2608,32 +2616,33 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     )
     def foo(context, x, y):
         assert (
-            context.selected_output_names != {"a", "b", "c", "d", "e", "f", "g", "h"}
+            context.op_execution_context.selected_output_names
+            != {"a", "b", "c", "d", "e", "f", "g", "h"}
         ) == context.is_subset
 
         a = b = c = d = e = f = g = h = None
-        if "a" in context.selected_output_names:
+        if "a" in context.op_execution_context.selected_output_names:
             a = 1
             yield Output(a, "a")
-        if "b" in context.selected_output_names:
+        if "b" in context.op_execution_context.selected_output_names:
             b = 1
             yield Output(b, "b")
-        if "c" in context.selected_output_names:
+        if "c" in context.op_execution_context.selected_output_names:
             c = (b or 1) + 1
             yield Output(c, "c")
-        if "d" in context.selected_output_names:
+        if "d" in context.op_execution_context.selected_output_names:
             d = (b or 1) + 1
             yield Output(d, "d")
-        if "e" in context.selected_output_names:
+        if "e" in context.op_execution_context.selected_output_names:
             e = x + (c or 2)
             yield Output(e, "e")
-        if "f" in context.selected_output_names:
+        if "f" in context.op_execution_context.selected_output_names:
             f = (d or 1) + 1
             yield Output(f, "f")
-        if "g" in context.selected_output_names:
+        if "g" in context.op_execution_context.selected_output_names:
             g = (e or 4) + 1
             yield Output(g, "g")
-        if "h" in context.selected_output_names:
+        if "h" in context.op_execution_context.selected_output_names:
             h = (g or 5) + y
             yield Output(h, "h")
 
@@ -2694,19 +2703,19 @@ def test_subset_cycle_resolution_complex():
         can_subset=True,
     )
     def foo(context, x, y):
-        if "a" in context.selected_output_names:
+        if "a" in context.op_execution_context.selected_output_names:
             yield Output(1, "a")
-        if "b" in context.selected_output_names:
+        if "b" in context.op_execution_context.selected_output_names:
             yield Output(x + 1, "b")
-        if "c" in context.selected_output_names:
+        if "c" in context.op_execution_context.selected_output_names:
             c = x + 2
             yield Output(c, "c")
-        if "d" in context.selected_output_names:
+        if "d" in context.op_execution_context.selected_output_names:
             d = y + 1
             yield Output(d, "d")
-        if "e" in context.selected_output_names:
+        if "e" in context.op_execution_context.selected_output_names:
             yield Output(c + 1, "e")
-        if "f" in context.selected_output_names:
+        if "f" in context.op_execution_context.selected_output_names:
             yield Output(d + 1, "f")
 
     @asset
@@ -2829,7 +2838,7 @@ def test_subset_cycle_dependencies():
     )
     def foo(context):
         for output in ["top", "a", "b"]:
-            if output in context.selected_output_names:
+            if output in context.op_execution_context.selected_output_names:
                 yield Output(output, output)
 
     @asset(deps=[AssetKey("top")])

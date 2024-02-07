@@ -891,7 +891,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 external_sensor.get_external_origin_id(),
                 external_sensor.selector_id,
             )
-            results.append(GrapheneSensor(external_sensor, sensor_state))
+            results.append(GrapheneSensor(external_sensor, self._external_repository, sensor_state))
 
         for external_schedule in external_schedules:
             if external_schedule.job_name in job_names:

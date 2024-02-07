@@ -28,7 +28,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_subset import AssetSubset
+from .asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
@@ -197,7 +197,9 @@ class AssetConditionEvaluation(NamedTuple):
         if discarded_subset is None:
             return self.true_subset
         else:
-            return self.true_subset | discarded_subset
+            # the true_subset and discarded_subset were created on the same tick, so they are
+            # guaranteed to be compatible with each other
+            return ValidAssetSubset(*self.true_subset) | discarded_subset
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -405,8 +407,8 @@ class RuleCondition(
         )
         evaluation_result = self.rule.evaluate_for_asset(context)
         context.root_context.daemon_context._verbose_log_fn(  # noqa
-            f"Rule returned {evaluation_result.true_subset.size} partitions:"
-            f"{evaluation_result.true_subset}"
+            f"Rule returned {evaluation_result.true_subset.size} partitions "
+            f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
         return evaluation_result
 

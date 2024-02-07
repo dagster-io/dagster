@@ -69,28 +69,29 @@ type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 type Args = {
   name: string;
   icon: IconName;
-  initialState?: TimeRangeState;
+
+  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
+  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
+  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
+  // to the old state and pass that in.
+  state?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
 };
-export function useTimeRangeFilter({
-  name,
-  icon,
-  initialState,
-  onStateChanged,
-}: Args): TimeRangeFilter {
+export function useTimeRangeFilter({name, icon, state, onStateChanged}: Args): TimeRangeFilter {
   const {
     timezone: [_timezone],
   } = useContext(TimeContext);
   const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-  const [state, setState] = useState<TimeRangeState>(initialState || [null, null]);
-  useEffect(() => {
-    onStateChanged?.(state);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state[0], state[1]]);
+  const [innerState, setState] = useState<TimeRangeState>(state || [null, null]);
 
   useEffect(() => {
-    setState(initialState || [null, null]);
-  }, [initialState]);
+    onStateChanged?.(innerState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [innerState[0], innerState[1]]);
+
+  useEffect(() => {
+    setState(state || [null, null]);
+  }, [state]);
 
   const {timeRanges, timeRangesArray} = useMemo(
     () => calculateTimeRanges(timezone),
@@ -110,9 +111,9 @@ export function useTimeRangeFilter({
     () => ({
       name,
       icon,
-      state,
+      state: innerState,
       setState,
-      isActive: state[0] !== null || state[1] !== null,
+      isActive: innerState[0] !== null || innerState[1] !== null,
       getResults: (
         query: string,
       ): {
@@ -153,14 +154,14 @@ export function useTimeRangeFilter({
       activeJSX: (
         <ActiveFilterState
           timeRanges={timeRanges}
-          state={state}
+          state={innerState}
           timezone={timezone}
           remove={onReset}
         />
       ),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, state, timeRanges, timezone, timeRangesArray],
+    [name, icon, innerState, timeRanges, timezone, timeRangesArray],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;

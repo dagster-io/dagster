@@ -19,12 +19,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from pytest_mock import MockerFixture
-
-is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
-
 
 test_asset_checks_dbt_project_dir = (
     Path(__file__).joinpath("..", "dbt_projects", "test_dagster_asset_checks").resolve()
@@ -78,105 +73,94 @@ def test_with_asset_checks() -> None:
             "customers_not_null_customers_customer_id": AssetCheckSpec(
                 name="not_null_customers_customer_id",
                 asset=AssetKey(["customers"]),
-                description="",
             ),
             "customers_unique_customers_customer_id": AssetCheckSpec(
                 name="unique_customers_customer_id",
                 asset=AssetKey(["customers"]),
-                description="",
             ),
             "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
                 name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
                 asset=AssetKey(["orders"]),
-                description="",
+                description="Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']",
             ),
             "orders_not_null_orders_amount": AssetCheckSpec(
-                name="not_null_orders_amount", asset=AssetKey(["orders"]), description=""
+                name="not_null_orders_amount",
+                asset=AssetKey(["orders"]),
             ),
             "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
                 name="not_null_orders_bank_transfer_amount",
                 asset=AssetKey(["orders"]),
-                description="",
             ),
             "orders_not_null_orders_coupon_amount": AssetCheckSpec(
-                name="not_null_orders_coupon_amount", asset=AssetKey(["orders"]), description=""
+                name="not_null_orders_coupon_amount",
+                asset=AssetKey(["orders"]),
             ),
             "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
                 name="not_null_orders_credit_card_amount",
                 asset=AssetKey(["orders"]),
-                description="",
             ),
             "orders_not_null_orders_customer_id": AssetCheckSpec(
-                name="not_null_orders_customer_id", asset=AssetKey(["orders"]), description=""
+                name="not_null_orders_customer_id",
+                asset=AssetKey(["orders"]),
             ),
             "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
                 name="not_null_orders_gift_card_amount",
                 asset=AssetKey(["orders"]),
-                description="",
             ),
             "orders_not_null_orders_order_id": AssetCheckSpec(
-                name="not_null_orders_order_id", asset=AssetKey(["orders"]), description=""
+                name="not_null_orders_order_id",
+                asset=AssetKey(["orders"]),
             ),
             "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
                 name="relationships_orders_customer_id__customer_id__ref_customers_",
                 asset=AssetKey(["orders"]),
-                description="",
                 additional_deps=[
                     AssetKey(["customers"]),
                 ],
             ),
             "orders_unique_orders_order_id": AssetCheckSpec(
-                name="unique_orders_order_id", asset=AssetKey(["orders"]), description=""
+                name="unique_orders_order_id",
+                asset=AssetKey(["orders"]),
             ),
             "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
                 name="not_null_stg_customers_customer_id",
                 asset=AssetKey(["stg_customers"]),
-                description="",
             ),
             "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
                 name="unique_stg_customers_customer_id",
                 asset=AssetKey(["stg_customers"]),
-                description="",
             ),
             "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
                 name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
                 asset=AssetKey(["stg_orders"]),
-                description="",
             ),
             "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
                 name="not_null_stg_orders_order_id",
                 asset=AssetKey(["stg_orders"]),
-                description="",
             ),
             "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
                 name="unique_stg_orders_order_id",
                 asset=AssetKey(["stg_orders"]),
-                description="",
             ),
             "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
                 name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
                 asset=AssetKey(["stg_payments"]),
-                description="",
             ),
             "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
                 name="not_null_stg_payments_payment_id",
                 asset=AssetKey(["stg_payments"]),
-                description="",
             ),
             "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
                 name="unique_stg_payments_payment_id",
                 asset=AssetKey(["stg_payments"]),
-                description="",
             ),
             "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
                 name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
                 asset=AssetKey(["fail_tests_model"]),
-                description="",
             ),
             "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
                 name="unique_fail_tests_model_id",
                 asset=AssetKey(["fail_tests_model"]),
-                description="",
             ),
         }
 
@@ -251,24 +235,16 @@ def _materialize_dbt_assets(
 def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
     assert not result.success  # fail_tests_model fails
-    assert len(result.get_asset_materialization_events()) == 9
+    assert len(result.get_asset_materialization_events()) == 10
     assert len(result.get_asset_check_evaluations()) == 22
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, AssetSelection.keys(AssetKey(["customers"])))
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 2
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 def test_materialize_asset_no_checks(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(
         dbt_commands, AssetSelection.keys(AssetKey(["customers"])).without_checks()
@@ -369,10 +345,6 @@ def test_asset_checks_are_logged_from_resource(
     )
 
 
-@pytest.mark.xfail(
-    is_dbt_1_4,
-    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-)
 @pytest.mark.parametrize(
     "selection",
     [

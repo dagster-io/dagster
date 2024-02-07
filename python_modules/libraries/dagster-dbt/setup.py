@@ -36,7 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
-        "dbt-core>=1.4,<1.8",
+        "dbt-core>=1.5,<1.8",
         "Jinja2",
         "networkx",
         "orjson",

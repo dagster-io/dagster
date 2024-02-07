@@ -545,7 +545,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert results.data == {
-            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": 0},
             "assetConditionEvaluationRecordsOrError": {"records": []},
         }
 

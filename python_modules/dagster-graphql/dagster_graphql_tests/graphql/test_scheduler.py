@@ -16,7 +16,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
@@ -697,7 +697,7 @@ def test_unloadable_schedule(graphql_context):
 
     stopped_origin = _get_unloadable_schedule_origin("unloadable_stopped")
 
-    with pendulum.test(initial_datetime):
+    with pendulum_freeze_time(initial_datetime):
         instance.add_instigator_state(running_instigator_state)
 
         instance.add_instigator_state(

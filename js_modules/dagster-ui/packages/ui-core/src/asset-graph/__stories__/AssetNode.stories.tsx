@@ -1,9 +1,7 @@
-import {useApolloClient} from '@apollo/client';
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
 
-import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
-import {AssetLiveDataThreadManager} from '../../asset-data/AssetLiveDataThreadManager';
+import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
@@ -34,8 +32,7 @@ export const LiveStates = () => {
     const dimensions = getAssetNodeDimensions(definitionCopy);
 
     function SetCacheEntry() {
-      const client = useApolloClient();
-      AssetLiveDataThreadManager.getInstance(client)._updateCache({
+      factory.manager._updateCache({
         [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
       });
       return null;
@@ -103,8 +100,7 @@ export const PartnerTags = () => {
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
     function SetCacheEntry() {
-      const client = useApolloClient();
-      AssetLiveDataThreadManager.getInstance(client)._updateCache({
+      factory.manager._updateCache({
         [tokenForAssetKey(buildAssetKey({path: [liveData.stepKey]}))]: liveData!,
       });
       return null;

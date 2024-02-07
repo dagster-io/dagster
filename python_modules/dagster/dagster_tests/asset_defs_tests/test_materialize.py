@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -57,7 +58,7 @@ def test_basic_materialize():
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         assert materialize(
@@ -70,7 +71,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
@@ -268,7 +269,7 @@ def test_materialize_multi_asset():
 def test_materialize_tags():
     @asset
     def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+        assert context.run.tags.get("key1") == "value1"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], instance=instance, tags={"key1": "value1"})
@@ -278,8 +279,8 @@ def test_materialize_tags():
 
 def test_materialize_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], partition_key="2022-02-02", instance=instance)

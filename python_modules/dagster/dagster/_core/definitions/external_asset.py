@@ -8,7 +8,9 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.events import Output
 from dagster._core.definitions.source_asset import (
+    SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION,
     SourceAsset,
     wrap_source_asset_observe_fn_in_op_compute_fn,
 )
@@ -140,12 +142,6 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     injected_metadata = (
         {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
         if source_asset.observe_fn is None
-        else {}
-    )
-
-    injected_metadata = (
-        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
-        if source_asset.observe_fn is None
         else {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value}
     )
 
@@ -173,10 +169,11 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
         op_function = wrap_source_asset_observe_fn_in_op_compute_fn(source_asset)
         return_value = op_function.decorated_fn(context)
         check.invariant(
-            return_value is None,
-            "The wrapped decorated_fn should return a value. If this changes, this code path must"
-            " changed to process the events appopriately.",
+            isinstance(return_value, Output)
+            and SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in return_value.metadata,
+            "The wrapped decorated_fn should return an Output with a special metadata key.",
         )
+        return return_value
 
     check.invariant(isinstance(_shim_assets_def, AssetsDefinition))
     assert isinstance(_shim_assets_def, AssetsDefinition)  # appease pyright
