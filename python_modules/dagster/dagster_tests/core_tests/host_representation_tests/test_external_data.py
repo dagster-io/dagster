@@ -261,7 +261,7 @@ def test_input_name_matches_output_name():
     def something(result):
         pass
 
-    assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
+    assets_job = build_assets_job("assets_job", [something], other_assets=[not_result])
     external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
@@ -421,7 +421,7 @@ def test_cross_job_asset_dependency():
         assert asset1 == 1
 
     assets_job1 = build_assets_job("assets_job1", [asset1])
-    assets_job2 = build_assets_job("assets_job2", [asset2], source_assets=[asset1])
+    assets_job2 = build_assets_job("assets_job2", [asset2], other_assets=[asset1])
     external_asset_nodes = external_asset_nodes_from_defs(
         [assets_job1, assets_job2], source_assets_by_key={}
     )
@@ -682,7 +682,7 @@ def test_source_asset_with_op():
     def bar(foo):
         pass
 
-    assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
+    assets_job = build_assets_job("assets_job", [bar], other_assets=[foo])
 
     external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
     assert external_asset_nodes == [
@@ -746,7 +746,7 @@ def test_used_source_asset():
     def foo(bar):
         assert bar
 
-    job1 = build_assets_job("job1", [foo], source_assets=[bar])
+    job1 = build_assets_job("job1", [foo], other_assets=[bar])
 
     external_asset_nodes = external_asset_nodes_from_defs(
         [job1], source_assets_by_key={AssetKey("bar"): bar}

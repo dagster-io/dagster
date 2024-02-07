@@ -185,8 +185,8 @@ def define_assets_job(bucket):
 
     return build_assets_job(
         name="assets",
-        assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
-        source_assets=[source1],
+        assets_to_execute=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
+        other_assets=[source1],
         resource_defs={
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,

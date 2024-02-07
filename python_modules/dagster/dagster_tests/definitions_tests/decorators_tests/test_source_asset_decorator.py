@@ -48,9 +48,7 @@ def test_no_context_observable_asset():
         executed["yes"] = True
         return DataVersion("version-string")
 
-    asset_job = build_assets_job(
-        "source_job", source_assets=[observable_asset_no_context], assets=[]
-    )
+    asset_job = build_assets_job("source_job", assets_to_execute=[observable_asset_no_context])
 
     defs = Definitions(jobs=[asset_job], assets=[observable_asset_no_context])
 

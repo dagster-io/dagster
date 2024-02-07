@@ -262,6 +262,11 @@ class SourceAsset(ResourceAddable):
         return self.node_def is not None
 
     @property
+    def is_materializable(self) -> bool:
+        """bool: Whether the asset is materializable."""
+        return False
+
+    @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}
 

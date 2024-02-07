@@ -224,7 +224,7 @@ def get_assets_job(io_manager_def, partitions_def=None):
         return asset1 + [4]
 
     return build_assets_job(
-        name="a", assets=[asset1, asset2], resource_defs={"io_manager": io_manager_def}
+        name="a", assets_to_execute=[asset1, asset2], resource_defs={"io_manager": io_manager_def}
     )
 
 
@@ -399,7 +399,7 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
 
         job_def = build_assets_job(
             name="a",
-            assets=[one, four_asset],
+            assets_to_execute=[one, four_asset],
             resource_defs={"io_manager": io_manager_def},
         )
 

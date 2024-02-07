@@ -908,6 +908,30 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """
         return self._selected_asset_check_keys
 
+    @property
+    def execution_type(self) -> AssetExecutionType:
+        key = next(iter(self.keys), None)
+
+        # This occurs when a multi-asset has been subsetted to have only checks-- for now supported
+        # only on materializable assets.
+        if key is None:
+            return AssetExecutionType.MATERIALIZATION
+
+        # All assets in an AssetsDefinition currently must have the same execution type
+        return self.asset_execution_type_for_asset(key)
+
+    @property
+    def is_observable(self) -> bool:
+        return self.execution_type == AssetExecutionType.OBSERVATION
+
+    @property
+    def is_materializable(self) -> bool:
+        return self.execution_type == AssetExecutionType.MATERIALIZATION
+
+    @property
+    def is_executable(self) -> bool:
+        return self.execution_type != AssetExecutionType.UNEXECUTABLE
+
     def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.
 

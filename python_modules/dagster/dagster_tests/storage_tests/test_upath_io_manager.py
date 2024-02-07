@@ -223,7 +223,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
 
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream_asset, downstream_asset],
+        assets_to_execute=[upstream_asset, downstream_asset],
         resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key="A")
@@ -249,7 +249,7 @@ def test_upath_io_manager_load_multiple_inputs(dummy_io_manager: DummyIOManager)
 
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream_asset, downstream_asset],
+        assets_to_execute=[upstream_asset, downstream_asset],
         resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
@@ -312,7 +312,7 @@ def test_upath_io_manager_static_partitions_with_dot():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[my_asset],
+        assets_to_execute=[my_asset],
         resource_defs={"io_manager": tracking_io_manager},
     )
     my_job.execute_in_process(partition_key="0.0-to-1.0")
@@ -350,7 +350,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[my_asset],
+        assets_to_execute=[my_asset],
         resource_defs={"io_manager": tracking_io_manager},
     )
     my_job.execute_in_process(partition_key="0.0-to-1.0")

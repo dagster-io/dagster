@@ -119,7 +119,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream_asset, downstream_asset],
+        assets_to_execute=[upstream_asset, downstream_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
@@ -168,7 +168,7 @@ def test_from_graph():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[
+        assets_to_execute=[
             AssetsDefinition.from_graph(upstream_asset, partitions_def=partitions_def),
             AssetsDefinition.from_graph(
                 downstream_asset,
@@ -204,7 +204,7 @@ def test_non_partitioned_depends_on_last_partition():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream, downstream],
+        assets_to_execute=[upstream, downstream],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
@@ -313,7 +313,7 @@ def test_non_partitioned_depends_on_all_partitions():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream, downstream],
+        assets_to_execute=[upstream, downstream],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
@@ -363,15 +363,15 @@ def test_partition_keys_in_range():
 
     upstream_job = build_assets_job(
         "upstream_job",
-        assets=[upstream],
+        assets_to_execute=[upstream],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     upstream_job.execute_in_process(partition_key="2022-09-11")
 
     downstream_job = build_assets_job(
         "downstream_job",
-        assets=[downstream],
-        source_assets=[upstream],
+        assets_to_execute=[downstream],
+        other_assets=[upstream],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")

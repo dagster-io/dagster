@@ -199,7 +199,7 @@ def test_load_from_instance(
         final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
         fivetran_sync_job = build_assets_job(
             name="fivetran_assets_job",
-            assets=all_assets,
+            assets_to_execute=all_assets,
         )
 
         with responses.RequestsMock() as rsps:

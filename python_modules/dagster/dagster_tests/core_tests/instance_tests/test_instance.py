@@ -260,7 +260,7 @@ def noop_asset():
     pass
 
 
-noop_asset_job = build_assets_job(assets=[noop_asset], name="noop_asset_job")
+noop_asset_job = build_assets_job(assets_to_execute=[noop_asset], name="noop_asset_job")
 
 
 def test_create_job_snapshot():

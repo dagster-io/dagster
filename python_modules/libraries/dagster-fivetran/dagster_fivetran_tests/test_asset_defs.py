@@ -82,7 +82,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
 
     fivetran_assets_job = build_assets_job(
         name="fivetran_assets_job",
-        assets=fivetran_assets,
+        assets_to_execute=fivetran_assets,
         resource_defs={"fivetran": ft_resource},
     )
 

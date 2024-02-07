@@ -23,6 +23,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
 from dagster._core.execution.context.invocation import build_asset_context
@@ -30,7 +31,7 @@ from dagster._core.storage.asset_check_execution_record import AssetCheckExecuti
 
 
 def _exec_asset(asset_def, selection=None, partition_key=None):
-    result = materialize([asset_def], selection=selection, partition_key=partition_key)
+    result = observe([asset_def], partition_key=partition_key)
     assert result.success
     return result.asset_observations_for_node(asset_def.node_def.name)
 

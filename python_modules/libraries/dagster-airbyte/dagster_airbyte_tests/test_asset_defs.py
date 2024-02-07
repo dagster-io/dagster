@@ -157,7 +157,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
     ab_job = build_assets_job(
         "ab_job",
         ab_assets,
-        source_assets=[SourceAsset(AssetKey(source_asset))] if source_asset else None,
+        other_assets=[SourceAsset(AssetKey(source_asset))] if source_asset else None,
         resource_defs={
             "airbyte": airbyte_resource.configured(
                 {

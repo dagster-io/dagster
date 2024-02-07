@@ -163,7 +163,7 @@ def test_single_partitioned_asset_job():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[my_asset],
+        assets_to_execute=[my_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
@@ -183,7 +183,7 @@ def test_two_partitioned_assets_job():
     def downstream(upstream):
         assert upstream is None
 
-    my_job = build_assets_job("my_job", assets=[upstream, downstream])
+    my_job = build_assets_job("my_job", assets_to_execute=[upstream, downstream])
     result = my_job.execute_in_process(partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream"),
@@ -208,7 +208,7 @@ def test_assets_job_with_different_partitions_defs():
         def downstream(upstream):
             assert upstream is None
 
-        build_assets_job("my_job", assets=[upstream, downstream])
+        build_assets_job("my_job", assets_to_execute=[upstream, downstream])
 
 
 def test_access_partition_keys_from_context_direct_invocation():
@@ -304,7 +304,7 @@ def test_output_context_asset_partitions_time_window():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[my_asset],
+        assets_to_execute=[my_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     my_job.execute_in_process(partition_key="2021-06-06")
@@ -368,8 +368,8 @@ def test_cross_job_different_partitions():
 
     daily_job = build_assets_job(
         name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
+        assets_to_execute=[daily_asset],
+        other_assets=[hourly_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
     )
     assert daily_job.execute_in_process(partition_key="2021-06-06").success
@@ -396,8 +396,8 @@ def test_source_asset_partitions():
 
     daily_job = build_assets_job(
         name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
+        assets_to_execute=[daily_asset],
+        other_assets=[hourly_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
     )
     assert daily_job.execute_in_process(partition_key="2021-06-06").success
@@ -475,7 +475,7 @@ def test_single_partitioned_multi_asset_job():
 
     my_job = build_assets_job(
         "my_job",
-        assets=[my_asset],
+        assets_to_execute=[my_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
@@ -512,7 +512,7 @@ def test_two_partitioned_multi_assets_job():
         del upstream_asset_2
 
     my_job = build_assets_job(
-        "my_job", assets=[upstream_asset, downstream_asset_1, downstream_asset_2]
+        "my_job", assets_to_execute=[upstream_asset, downstream_asset_1, downstream_asset_2]
     )
     result = my_job.execute_in_process(partition_key="b")
 
