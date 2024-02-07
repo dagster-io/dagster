@@ -564,6 +564,14 @@ def instance_sensor():
     pass
 
 
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def all_code_locations_run_status_sensor():
+    pass
+
+
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):

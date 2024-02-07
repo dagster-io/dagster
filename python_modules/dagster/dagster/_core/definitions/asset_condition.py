@@ -28,7 +28,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_subset import AssetSubset
+from .asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
@@ -199,7 +199,7 @@ class AssetConditionEvaluation(NamedTuple):
         else:
             # the true_subset and discarded_subset were created on the same tick, so they are
             # guaranteed to be compatible with each other
-            return self.true_subset | discarded_subset.as_valid
+            return ValidAssetSubset(*self.true_subset) | discarded_subset
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -430,7 +430,7 @@ class AndAssetCondition(
             child_context = context.for_child(condition=child, candidate_subset=true_subset)
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset &= child_result.true_subset.as_valid
+            true_subset &= child_result.true_subset
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
@@ -453,7 +453,7 @@ class OrAssetCondition(
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_subset |= child_result.true_subset.as_valid
+            true_subset |= child_result.true_subset
         return AssetConditionResult.create_from_children(context, true_subset, child_results)
 
 
