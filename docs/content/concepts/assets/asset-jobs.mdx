@@ -20,42 +20,42 @@ description: Asset jobs are the main unit for materializing and monitoring Softw
 
 ---
 
-## Relevant APIs
-
-| Name                                   | Description                                               |
-| -------------------------------------- | --------------------------------------------------------- |
-| <PyObject object="define_asset_job" /> | A function for defining a job from a selection of assets. |
-
----
-
 ## Creating asset jobs
 
-Asset jobs materialize a fixed set of assets each time they run. Additionally, multiple jobs can target overlapping sets of assets:
+Asset jobs materialize a fixed set of assets each time they run. We'll use the following assets to demonstrate how to create a few asset jobs:
 
-```python file=/concepts/assets/build_job.py startafter=start_job_only_marker endbefore=end_job_only_marker
-from dagster import Definitions, asset, define_asset_job
+```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
+from dagster import asset
 
 
 @asset
-def asset1():
-    return [1, 2, 3]
+def sugary_cereals() -> None:
+    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
 
 
-@asset(deps=[asset1])
-def asset2():
-    return asset1 + [4]
+@asset(deps=[sugary_cereals])
+def shopping_list() -> None:
+    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
+```
+
+To create an asset job, use <PyObject object="define_asset_job" />. The topology of an asset-based job is based on the [assets](/concepts/assets/software-defined-assets) and their dependencies.
+
+You can target one or multiple assets, or create multiple jobs that target overlapping sets of assets. The jobs in the following example target the `sugary_cereals` and `shopping_list` assets:
+
+```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
+from dagster import Definitions, define_asset_job
 
 
 all_assets_job = define_asset_job(name="all_assets_job")
-asset1_job = define_asset_job(name="asset1_job", selection="asset1")
+sugary_cereals_job = define_asset_job(
+    name="sugary_cereals_job", selection="sugary_cereals"
+)
 
 defs = Definitions(
-    assets=[asset1, asset2],
-    jobs=[all_assets_job, asset1_job],
+    assets=[sugary_cereals, shopping_list],
+    jobs=[all_assets_job, sugary_cereals_job],
 )
 ```
-
-The topology of an asset-based job is based on the [assets](/concepts/assets/software-defined-assets) and their dependencies.
 
 ---
 
@@ -99,8 +99,14 @@ You can run an asset job in a variety of ways:
 
 ---
 
-## See it in action
+## Reference
 
-For more examples of asset jobs, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+### Relevant APIs
 
-- [Building an asset job that targets an asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
+| Name                                   | Description                                               |
+| -------------------------------------- | --------------------------------------------------------- |
+| <PyObject object="define_asset_job" /> | A function for defining a job from a selection of assets. |
+
+## Examples
+
+Check this code in the [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured) that [builds an asset job that targets an asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py).
