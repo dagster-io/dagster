@@ -37,7 +37,7 @@ def dbt_commands(request):
     return request.param
 
 
-def test_with_asset_checks() -> None:
+def test_without_checks():
     @dbt_assets(manifest=manifest)
     def my_dbt_assets_no_checks():
         ...
@@ -49,124 +49,141 @@ def test_with_asset_checks() -> None:
         assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
         assert not asset_def.check_specs_by_output_name
 
-    @dbt_assets(
-        manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    )
-    def my_dbt_assets_with_checks():
-        ...
 
-    [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
-        manifest=manifest_path,
-        dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    )
+@dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=dagster_dbt_translator_with_checks,
+)
+def my_dbt_assets_with_checks():
+    ...
 
-    # dbt tests are present, and are modeled as Dagster asset checks
-    for asset_def in [
+
+@pytest.mark.parametrize(
+    "assets_def",
+    [
+        load_assets_from_dbt_manifest(
+            manifest=manifest_path,
+            dagster_dbt_translator=dagster_dbt_translator_with_checks,
+        )[0],
         my_dbt_assets_with_checks,
-        load_my_dbt_assets_with_checks,
-    ]:
-        assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
-        assert asset_def.check_specs_by_output_name
+    ],
+    ids=["load_assets_from_dbt_manifest", "@dbt_assets"],
+)
+def test_with_asset_checks(assets_def) -> None:
+    # dbt tests are present, and are modeled as Dagster asset checks
 
-        assert asset_def.check_specs_by_output_name == {
-            "customers_not_null_customers_customer_id": AssetCheckSpec(
-                name="not_null_customers_customer_id",
-                asset=AssetKey(["customers"]),
-            ),
-            "customers_unique_customers_customer_id": AssetCheckSpec(
-                name="unique_customers_customer_id",
-                asset=AssetKey(["customers"]),
-            ),
-            "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
-                name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
-                asset=AssetKey(["orders"]),
-                description="Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']",
-            ),
-            "orders_not_null_orders_amount": AssetCheckSpec(
-                name="not_null_orders_amount",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
-                name="not_null_orders_bank_transfer_amount",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_coupon_amount": AssetCheckSpec(
-                name="not_null_orders_coupon_amount",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
-                name="not_null_orders_credit_card_amount",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_customer_id": AssetCheckSpec(
-                name="not_null_orders_customer_id",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
-                name="not_null_orders_gift_card_amount",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_not_null_orders_order_id": AssetCheckSpec(
-                name="not_null_orders_order_id",
-                asset=AssetKey(["orders"]),
-            ),
-            "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
-                name="relationships_orders_customer_id__customer_id__ref_customers_",
-                asset=AssetKey(["orders"]),
-                additional_deps=[
-                    AssetKey(["customers"]),
-                ],
-            ),
-            "orders_unique_orders_order_id": AssetCheckSpec(
-                name="unique_orders_order_id",
-                asset=AssetKey(["orders"]),
-            ),
-            "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
-                name="not_null_stg_customers_customer_id",
-                asset=AssetKey(["stg_customers"]),
-            ),
-            "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
-                name="unique_stg_customers_customer_id",
-                asset=AssetKey(["stg_customers"]),
-            ),
-            "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
-                name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
-                asset=AssetKey(["stg_orders"]),
-            ),
-            "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
-                name="not_null_stg_orders_order_id",
-                asset=AssetKey(["stg_orders"]),
-            ),
-            "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
-                name="unique_stg_orders_order_id",
-                asset=AssetKey(["stg_orders"]),
-            ),
-            "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
-                name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
-                asset=AssetKey(["stg_payments"]),
-            ),
-            "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
-                name="not_null_stg_payments_payment_id",
-                asset=AssetKey(["stg_payments"]),
-            ),
-            "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
-                name="unique_stg_payments_payment_id",
-                asset=AssetKey(["stg_payments"]),
-            ),
-            "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
-                name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
-                asset=AssetKey(["fail_tests_model"]),
-            ),
-            "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
-                name="unique_fail_tests_model_id",
-                asset=AssetKey(["fail_tests_model"]),
-            ),
-        }
+    assert any(unique_id.startswith("test") for unique_id in manifest["nodes"].keys())
+    assert assets_def.check_specs_by_output_name
 
-        # dbt singular tests are not modeled as Dagster asset checks
-        for check_spec in asset_def.check_specs_by_output_name.values():
-            assert "assert_singular_test_is_not_asset_check" != check_spec.name
+    assert assets_def.check_specs_by_output_name == {
+        "customers_not_null_customers_customer_id": AssetCheckSpec(
+            name="not_null_customers_customer_id",
+            asset=AssetKey(["customers"]),
+        ),
+        "customers_unique_customers_customer_id": AssetCheckSpec(
+            name="unique_customers_customer_id",
+            asset=AssetKey(["customers"]),
+        ),
+        "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+            name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
+            asset=AssetKey(["orders"]),
+            description="Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']",
+        ),
+        "orders_not_null_orders_amount": AssetCheckSpec(
+            name="not_null_orders_amount",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
+            name="not_null_orders_bank_transfer_amount",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_coupon_amount": AssetCheckSpec(
+            name="not_null_orders_coupon_amount",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
+            name="not_null_orders_credit_card_amount",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_customer_id": AssetCheckSpec(
+            name="not_null_orders_customer_id",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
+            name="not_null_orders_gift_card_amount",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_not_null_orders_order_id": AssetCheckSpec(
+            name="not_null_orders_order_id",
+            asset=AssetKey(["orders"]),
+        ),
+        "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
+            name="relationships_orders_customer_id__customer_id__ref_customers_",
+            asset=AssetKey(["orders"]),
+            additional_deps=[
+                AssetKey(["customers"]),
+            ],
+        ),
+        "orders_unique_orders_order_id": AssetCheckSpec(
+            name="unique_orders_order_id",
+            asset=AssetKey(["orders"]),
+        ),
+        "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
+            name="not_null_stg_customers_customer_id",
+            asset=AssetKey(["stg_customers"]),
+        ),
+        "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
+            name="unique_stg_customers_customer_id",
+            asset=AssetKey(["stg_customers"]),
+        ),
+        "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
+            name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
+            asset=AssetKey(["stg_orders"]),
+        ),
+        "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
+            name="not_null_stg_orders_order_id",
+            asset=AssetKey(["stg_orders"]),
+        ),
+        "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
+            name="unique_stg_orders_order_id",
+            asset=AssetKey(["stg_orders"]),
+        ),
+        "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
+            name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
+            asset=AssetKey(["stg_payments"]),
+        ),
+        "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
+            name="not_null_stg_payments_payment_id",
+            asset=AssetKey(["stg_payments"]),
+        ),
+        "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
+            name="unique_stg_payments_payment_id",
+            asset=AssetKey(["stg_payments"]),
+        ),
+        "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
+            name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
+            asset=AssetKey(["fail_tests_model"]),
+        ),
+        "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
+            name="unique_fail_tests_model_id",
+            asset=AssetKey(["fail_tests_model"]),
+        ),
+        "sort_by_calories_not_null_sort_by_calories_name": AssetCheckSpec(
+            name="not_null_sort_by_calories_name",
+            asset=AssetKey(["sort_by_calories"]),
+        ),
+        "sort_by_calories_relationships_sort_by_calories_name__name__source_jaffle_shop_foobar_": AssetCheckSpec(
+            name="relationships_sort_by_calories_name__name__source_jaffle_shop_foobar_",
+            asset=AssetKey(["sort_by_calories"]),
+            additional_deps=[
+                AssetKey(["jaffle_shop", "foobar"]),
+            ],
+        ),
+    }
+
+    # dbt singular tests are not modeled as Dagster asset checks
+    for check_spec in assets_def.check_specs_by_output_name.values():
+        assert "assert_singular_test_is_not_asset_check" != check_spec.name
 
 
 def test_enable_asset_checks_with_custom_translator() -> None:
@@ -235,8 +252,8 @@ def _materialize_dbt_assets(
 def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
     assert not result.success  # fail_tests_model fails
-    assert len(result.get_asset_materialization_events()) == 10
-    assert len(result.get_asset_check_evaluations()) == 22
+    assert len(result.get_asset_materialization_events()) == 12
+    assert len(result.get_asset_check_evaluations()) == 24
 
 
 def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
