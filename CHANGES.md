@@ -4,13 +4,13 @@
 
 ### New
 
-- `build_schedule_from_partitioned_job`  now supports creating a schedule from a static-partitioned job (Thanks `@craustin`!)
+- `build_schedule_from_partitioned_job` now supports creating a schedule from a static-partitioned job (Thanks `@craustin`!)
 - [dagster-pipes] `PipesK8sClient` will now autodetect the namespace when using in-cluster config. (Thanks `@aignas`!)
-- [dagster-pipes] `PipesK8sClient`  can now inject the context in to multiple containers. (Thanks `@aignas`!)
-- [dagster-snowflake] The Snowflake Pandas I/O manager now uses the `write_pandas`  method to load Pandas DataFrames in Snowflake. To support this change, the database connector was switched from `SqlDbConnection` to `SnowflakeConnection` .
+- [dagster-pipes] `PipesK8sClient` can now inject the context in to multiple containers. (Thanks `@aignas`!)
+- [dagster-snowflake] The Snowflake Pandas I/O manager now uses the `write_pandas` method to load Pandas DataFrames in Snowflake. To support this change, the database connector was switched from `SqlDbConnection` to `SnowflakeConnection` .
 - [ui] On the overview sensors page you can now filter sensors by type.
 - [dagster-deltalake-polars] Added LazyFrame support (Thanks `@ion-elgreco`!)
-- [dagster-dbt] When using `@dbt_assets`  and multiple dbt resources produce the same `AssetKey`, we now display an exception message that highlights the file paths of the misconfigured dbt resources in your dbt project.
+- [dagster-dbt] When using `@dbt_assets` and multiple dbt resources produce the same `AssetKey`, we now display an exception message that highlights the file paths of the misconfigured dbt resources in your dbt project.
 - [dagster-k8s] The debug info reported upon failure has been improved to include additional information from the Job. (Thanks `@jblawatt`!)
 - [dagster-k8s] Changed the Dagster Helm chart to apply `automountServiceAccountToken: false` to the default service account used by the Helm chart, in order to better comply with security policies. (Thanks `@MattyKuzyk`!)
 
@@ -26,28 +26,28 @@
 
 ### Deprecations
 
-- The following methods on `AssetExecutionContext`  have been marked deprecated, with their suggested replacements in parenthesis:
-    - `context.op_config` (`context.op_execution_context.op_config`)
-    - `context.node_handle` (`context.op_execution_context.node_handle`)
-    - `context.op_handle` (`context.op_execution_context.op_handle`)
-    - `context.op` (`context.op_execution_context.op`)
-    - `context.get_mapping_key` (`context.op_execution_context.get_mapping_key`)
-    - `context.selected_output_names`  (`context.op_execution_context.selected_output_names`)
-    - `context.dagster_run` (`context.run`)
-    - `context.run_id` (`context.run.run_id`)
-    - `context.run_config` (`context.run.run_config`)
-    - `context.run_tags` (`context.run.tags`)
-    - `context.has_tag` (`key in context.run.tags`)
-    - `context.get_tag` (`context.run.tags.get(key)`)
-    - `context.get_op_execution_context` (`context.op_execution_context`)
-    - `context.asset_partition_key_for_output` (`context.partition_key`)
-    - `context.asset_partition_keys_for_output` (`context.partition_keys`)
-    - `context.asset_partitions_time_window_for_output` (`context.partition_time_window`)
-    - `context.asset_partition_key_range_for_output` (`context.partition_key_range`)
+- The following methods on `AssetExecutionContext` have been marked deprecated, with their suggested replacements in parenthesis:
+  - `context.op_config` (`context.op_execution_context.op_config`)
+  - `context.node_handle` (`context.op_execution_context.node_handle`)
+  - `context.op_handle` (`context.op_execution_context.op_handle`)
+  - `context.op` (`context.op_execution_context.op`)
+  - `context.get_mapping_key` (`context.op_execution_context.get_mapping_key`)
+  - `context.selected_output_names` (`context.op_execution_context.selected_output_names`)
+  - `context.dagster_run` (`context.run`)
+  - `context.run_id` (`context.run.run_id`)
+  - `context.run_config` (`context.run.run_config`)
+  - `context.run_tags` (`context.run.tags`)
+  - `context.has_tag` (`key in context.run.tags`)
+  - `context.get_tag` (`context.run.tags.get(key)`)
+  - `context.get_op_execution_context` (`context.op_execution_context`)
+  - `context.asset_partition_key_for_output` (`context.partition_key`)
+  - `context.asset_partition_keys_for_output` (`context.partition_keys`)
+  - `context.asset_partitions_time_window_for_output` (`context.partition_time_window`)
+  - `context.asset_partition_key_range_for_output` (`context.partition_key_range`)
 
 ### Experimental
 
-- [asset checks] `@asset_check`  now has a `blocking`  parameter. When this is enabled, if the check fails with severity `ERROR` then any downstream assets in the same run won’t execute.
+- [asset checks] `@asset_check` now has a `blocking` parameter. When this is enabled, if the check fails with severity `ERROR` then any downstream assets in the same run won’t execute.
 
 ### Documentation
 
