@@ -119,23 +119,135 @@ def test_new_asset(instance):
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
-"""
-Scenarios to test:
-* Adding a new asset to a graph, no connections to existing graph
-* Adding a new asset to a graph with connections to existing graph
-* Updating the code versions of existing assets in a graph
-* Changing the inputs of an existing asset in a graph
-* may need to do all of the above with different types of assets? This will depend on impl details
-* One asset updated multiple ways (code version change and inputs change, etc) - should we get a list of
-all changes, or should we return one and have a priority list, or say changed, but give no reason
-* Change an asset, and then revert the change
-* behavior of how we shoe changed assets after they've been materialized (need to figure out what this
-change if any should be)
-* if we do any caching, then need to test what happens when parent graph updates, or when multiple changes
-are made in sequence to the branch deployment graph
-* test at scale - generate a really large graph, may need to test various types of connectedness too if the
-diff impl does graph traversal stuff instead of iteration through a list?
-* if impl compares all codelocations as a group instead of each code location against it's parent version,
-then need to test things like duplicate asset keys
-* test a completely new definitions
-"""
+def test_new_asset_connected(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="basic_asset_graph",
+        parent_code_locations=["basic_asset_graph"],
+        branch_code_location_to_definitions={
+            "basic_asset_graph": "branch_deployment_new_asset_connected"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+
+
+def test_update_code_version(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="code_versions_asset_graph",
+        parent_code_locations=["code_versions_asset_graph"],
+        branch_code_location_to_definitions={
+            "code_versions_asset_graph": "branch_deployment_update_code_version"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.CODE_VERSION]
+    assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
+
+
+def test_change_inputs(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="basic_asset_graph",
+        parent_code_locations=["basic_asset_graph"],
+        branch_code_location_to_definitions={
+            "basic_asset_graph": "branch_deployment_change_inputs"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+
+
+def test_multiple_changes_for_one_asset(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="code_versions_asset_graph",
+        parent_code_locations=["code_versions_asset_graph"],
+        branch_code_location_to_definitions={
+            "code_versions_asset_graph": "branch_deployment_multiple_changes"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [
+        ChangeReason.CODE_VERSION,
+        ChangeReason.INPUTS,
+    ]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+
+
+def test_change_then_revert(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="code_versions_asset_graph",
+        parent_code_locations=["code_versions_asset_graph"],
+        branch_code_location_to_definitions={
+            "code_versions_asset_graph": "branch_deployment_update_code_version"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.CODE_VERSION]
+    assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
+
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="code_versions_asset_graph",
+        parent_code_locations=["code_versions_asset_graph"],
+        branch_code_location_to_definitions={"code_versions_asset_graph": "parent_asset_graph"},
+    )
+
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+    assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
+
+
+def test_large_asset_graph(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="huge_asset_graph",
+        parent_code_locations=["huge_asset_graph"],
+        branch_code_location_to_definitions={
+            "huge_asset_graph": "branch_deployment_restructure_graph"
+        },
+    )
+
+    for i in range(6, 1000):
+        key = AssetKey(f"asset_{i}")
+        assert differ.get_changes_for_asset(key) == [ChangeReason.INPUTS]
+
+    for i in range(6):
+        key = AssetKey(f"asset_{i}")
+        assert len(differ.get_changes_for_asset(key)) == 0
+
+
+def test_multiple_code_locations(instance):
+    # There are duplicate asset keys in the asset graphs of basic_asset_graph and code_versions_asset_graph
+    # this test ensures that the ParentAssetGraph differ constructs AssetGraphs of the intended code location and does not
+    # include assets from other code locations
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="basic_asset_graph",
+        parent_code_locations=["basic_asset_graph", "code_versions_asset_graph"],
+        branch_code_location_to_definitions={
+            "basic_asset_graph": "branch_deployment_new_asset_connected"
+        },
+    )
+
+    # if the code_versions_asset_graph were in the diff computation, ChangeReason.CODE_VERSION would be in the list
+    assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.INPUTS]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+
+
+def test_new_code_location(instance):
+    differ = get_parent_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="basic_asset_graph",
+        parent_code_locations=[],
+        branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
+    )
+    assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
+    assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.NEW]
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.NEW]
