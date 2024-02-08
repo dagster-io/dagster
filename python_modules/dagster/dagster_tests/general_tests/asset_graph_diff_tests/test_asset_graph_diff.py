@@ -19,8 +19,16 @@ from dagster._core.workspace.workspace import (
 )
 
 from .parent_deployment_asset_graphs.basic_asset_graph import defs as basic_asset_graph
+from .parent_deployment_asset_graphs.code_versions_asset_graph import (
+    defs as code_versions_asset_graph,
+)
+from .parent_deployment_asset_graphs.huge_asset_graph import defs as huge_asset_graph
 
-parent_deployment_defs_by_name = {"basic_asset_graph": basic_asset_graph}
+parent_deployment_defs_by_name = {
+    "basic_asset_graph": basic_asset_graph,
+    "code_versions_asset_graph": code_versions_asset_graph,
+    "huge_asset_graph": huge_asset_graph,
+}
 
 
 @pytest.fixture
@@ -137,16 +145,128 @@ def test_new_asset(instance):
     assert not resolver.is_changed_in_branch(AssetKey("upstream"))
 
 
+def test_new_asset_connected(instance):
+    @asset
+    def new_asset():
+        return 1
+
+    @asset
+    def downstream(upstream, new_asset):
+        return upstream + new_asset
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance,
+        parent_graph_name="basic_asset_graph",
+        new_assets=[new_asset],
+        updated_assets=[downstream],
+    )
+
+    assert resolver.is_changed_in_branch(new_asset.key)
+    assert resolver.is_changed_in_branch(downstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("upstream"))
+
+
+def test_update_code_version(instance):
+    @asset(code_version="2")
+    def upstream():
+        return 2
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance, parent_graph_name="code_versions_asset_graph", updated_assets=[upstream]
+    )
+
+    assert resolver.is_changed_in_branch(upstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("downstream"))
+
+
+def test_change_inputs(instance):
+    @asset
+    def downstream():
+        return 2
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance, parent_graph_name="basic_asset_graph", updated_assets=[downstream]
+    )
+
+    assert resolver.is_changed_in_branch(downstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("upstream"))
+
+
+def test_multiple_changes_for_one_asset(instance):
+    @asset(code_version="2")
+    def downstream():
+        return 2
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance,
+        parent_graph_name="code_versions_asset_graph",
+        updated_assets=[downstream],
+    )
+
+    assert resolver.is_changed_in_branch(downstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("upstream"))
+
+
+def test_change_then_revert(instance):
+    @asset(code_version="2")
+    def upstream():  # type: ignore
+        return 2
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance, parent_graph_name="code_versions_asset_graph", updated_assets=[upstream]
+    )
+
+    assert resolver.is_changed_in_branch(upstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("downstream"))
+
+    @asset(
+        code_version="1"  # code version is reverted
+    )
+    def upstream():
+        return 2
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance, parent_graph_name="code_versions_asset_graph", updated_assets=[upstream]
+    )
+
+    assert not resolver.is_changed_in_branch(upstream.key)
+    assert not resolver.is_changed_in_branch(AssetKey("downstream"))
+
+
+def test_on_large_asset_graph(instance):
+    def mod_large_asset_graph():
+        NUM_ASSETS = 1000
+
+        all_assets = []
+        for i in range(NUM_ASSETS):
+            dep_start = i - 60 if i - 60 > 0 else 0
+
+            @asset(key=f"asset_{i}", deps=[f"asset_{j}" for j in range(dep_start, i, 6)])
+            def the_asset():
+                return
+
+            all_assets.append(the_asset)
+
+        return all_assets
+
+    updated_assets = mod_large_asset_graph()
+
+    resolver = get_branch_change_resolver_for_parent_graph(
+        instance=instance, parent_graph_name="huge_asset_graph", updated_assets=updated_assets
+    )
+
+    for a in updated_assets[6:]:
+        assert resolver.is_changed_in_branch(a.key)
+
+    for a in updated_assets[:6]:
+        assert not resolver.is_changed_in_branch(a.key)
+
+
 """
 Scenarios to test:
-* Adding a new asset to a graph, no connections to existing graph
-* Adding a new asset to a graph with connections to existing graph
-* Updating the code versions of existing assets in a graph
-* Changing the inputs of an existing asset in a graph
 * may need to do all of the above with different types of assets? This will depend on impl details
 * One asset updated multiple ways (code version change and inputs change, etc) - should we get a list of
 all changes, or should we return one and have a priority list, or say changed, but give no reason
-* Change an asset, and then revert the change
 * behavior of how we shoe changed assets after they've been materialized (need to figure out what this
 change if any should be)
 * if we do any caching, then need to test what happens when parent graph updates, or when multiple changes
