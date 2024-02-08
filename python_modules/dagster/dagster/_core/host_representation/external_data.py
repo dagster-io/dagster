@@ -1659,6 +1659,7 @@ def external_asset_nodes_from_defs(
                         if source_asset.partitions_def
                         else None
                     ),
+                    freshness_policy=source_asset.freshness_policy,
                 )
             )
 

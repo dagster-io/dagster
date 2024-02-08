@@ -28,6 +28,7 @@ from dagster import (
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
@@ -75,6 +76,7 @@ from dagster import (
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -2037,6 +2039,11 @@ def define_asset_checks():
     ]
 
 
+@observable_source_asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+def source_asset_with_freshness():
+    return DataVersion("1")
+
+
 @repository(default_executor_def=in_process_executor)
 def test_repo():
     return [
@@ -2046,6 +2053,7 @@ def test_repo():
         *define_sensors(),
         *define_asset_jobs(),
         *define_asset_checks(),
+        source_asset_with_freshness,
     ]
 
 

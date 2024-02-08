@@ -21,6 +21,7 @@ from dagster._core.definitions.data_version import (
     DataVersionsByPartition,
 )
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
@@ -166,6 +167,11 @@ class SourceAsset(ResourceAddable):
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
+            of the observation function for this asset will be launched at this interval. `observe_fn`
+            must be provided.
+        freshness_policy (Optional[FreshnessPolicy]): A constraint specifying how often this asset
+            is expected to observe new data.
     """
 
     key: PublicAttr[AssetKey]
@@ -180,6 +186,7 @@ class SourceAsset(ResourceAddable):
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
+    freshness_policy: Optional[FreshnessPolicy]
 
     def __init__(
         self,
@@ -194,6 +201,7 @@ class SourceAsset(ResourceAddable):
         observe_fn: Optional[SourceAssetObserveFunction] = None,
         *,
         auto_observe_interval_minutes: Optional[float] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
         # asset. If we were to make this public, then we would have a canonical public
@@ -242,6 +250,9 @@ class SourceAsset(ResourceAddable):
         self._node_def = None
         self.auto_observe_interval_minutes = check.opt_numeric_param(
             auto_observe_interval_minutes, "auto_observe_interval_minutes"
+        )
+        self.freshness_policy = check.opt_inst_param(
+            freshness_policy, "freshness_policy", FreshnessPolicy
         )
 
     def get_io_manager_key(self) -> str:
@@ -345,6 +356,7 @@ class SourceAsset(ResourceAddable):
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+                freshness_policy=self.freshness_policy,
                 _required_resource_keys=self._required_resource_keys,
             )
 

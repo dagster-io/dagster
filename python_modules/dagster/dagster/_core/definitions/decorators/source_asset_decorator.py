@@ -9,6 +9,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataUserInput,
 )
@@ -38,6 +39,7 @@ def observable_source_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> "_ObservableSourceAsset":
     ...
 
@@ -58,6 +60,7 @@ def observable_source_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -91,6 +94,8 @@ def observable_source_asset(
         auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
             of the observation function for this asset will be launched at this interval.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        freshness_policy (FreshnessPolicy): A constraint specifying how often this asset is expected
+            to observe new data.
     """
     if observe_fn is not None:
         return _ObservableSourceAsset()(observe_fn)
@@ -108,6 +113,7 @@ def observable_source_asset(
         resource_defs,
         partitions_def,
         auto_observe_interval_minutes,
+        freshness_policy,
     )
 
 
@@ -126,6 +132,7 @@ class _ObservableSourceAsset:
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         self.key = key
         self.name = name
@@ -143,6 +150,7 @@ class _ObservableSourceAsset:
         self.resource_defs = resource_defs
         self.partitions_def = partitions_def
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
+        self.freshness_policy = freshness_policy
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
@@ -174,4 +182,5 @@ class _ObservableSourceAsset:
             observe_fn=observe_fn,
             partitions_def=self.partitions_def,
             auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+            freshness_policy=self.freshness_policy,
         )
