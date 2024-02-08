@@ -128,8 +128,6 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const {instance} = data;
 
-  console.log({selectionQueryResult});
-
   if (sensorOrError.sensorType === SensorType.AUTOMATION_POLICY) {
     const assetDaemonStatus = instance.daemonHealth.ampDaemonStatus;
     return (
