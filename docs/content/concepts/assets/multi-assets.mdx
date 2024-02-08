@@ -139,14 +139,13 @@ Multi-assets may assign different code versions for each of their outputs:
 
 ```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
 @multi_asset(
-    outs={
-        "a": AssetOut(code_version="1"),
-        "b": AssetOut(code_version="2"),
-    }
+    specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")]
 )
 def multi_asset_with_versions():
-    yield Output(100, "a")
-    yield Output(200, "b")
+    with open("data/a.json", "w") as f:
+        json.dump(100, f)
+    with open("data/b.json", "w") as f:
+        json.dump(200, f)
 ```
 
 Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
