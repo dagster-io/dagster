@@ -24,8 +24,13 @@ import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
+import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
@@ -55,23 +60,43 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     height,
   } = props;
 
-  const [querySensor, queryResult] = useLazyQuery<SingleSensorQuery, SingleSensorQueryVariables>(
-    SINGLE_SENSOR_QUERY,
-    {
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          sensorName: name,
-        },
+  const [querySensor, sensorQueryResult] = useLazyQuery<
+    SingleSensorQuery,
+    SingleSensorQueryVariables
+  >(SINGLE_SENSOR_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
       },
     },
+  });
+
+  const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+    SensorAssetSelectionQuery,
+    SensorAssetSelectionQueryVariables
+  >(SENSOR_ASSET_SELECTIONS_QUERY, {
+    variables: {
+      sensorSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
+      },
+    },
+  });
+
+  useDelayedRowQuery(
+    React.useCallback(() => {
+      querySensor();
+      querySensorAssetSelection();
+    }, [querySensor, querySensorAssetSelection]),
   );
 
-  useDelayedRowQuery(querySensor);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
+  const {data} = sensorQueryResult;
 
   const sensorData = React.useMemo(() => {
     if (data?.sensorOrError.__typename !== 'Sensor') {
@@ -146,19 +171,25 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </Box>
         </RowCell>
         <RowCell>
-          {sensorInfo ? (
-            sensorInfo.description ? (
-              <Tooltip content={sensorInfo.description}>
+          <div>
+            {sensorInfo ? (
+              sensorInfo.description ? (
+                <Tooltip content={sensorInfo.description}>
+                  <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+                </Tooltip>
+              ) : (
                 <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
-              </Tooltip>
-            ) : (
-              <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
-            )
-          ) : null}
+              )
+            ) : null}
+          </div>
         </RowCell>
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            <SensorTargetList targets={sensorData?.targets} repoAddress={repoAddress} />
+            <SensorTargetList
+              targets={sensorData?.targets}
+              repoAddress={repoAddress}
+              selectionQueryResult={sensorAssetSelectionQueryResult}
+            />
           </Box>
         </RowCell>
         <RowCell>
@@ -175,7 +206,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -184,7 +215,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               <TickStatusTag tick={tick} />
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -197,7 +228,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               showSummary={false}
             />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
       </RowGrid>

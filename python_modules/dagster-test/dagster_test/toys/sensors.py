@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     AssetKey,
+    AssetSelection,
     DefaultSensorStatus,
     RunFailureSensorContext,
     RunRequest,
@@ -19,6 +20,9 @@ from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
 from dagster_test.toys.simple_config import simple_config_job
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 
 
 def get_directory_files(directory_name, since=None):
@@ -175,6 +179,11 @@ def get_toys_sensors():
                 run_config={"ops": {"requires_config": {"config": {"num": cursor}}}},
             )
 
+    automation_policy_sensor = AutomationPolicySensorDefinition(
+        "my_automation_policy_sensor",
+        asset_selection=AssetSelection.all(),
+    )
+
     return [
         toy_file_sensor,
         toy_asset_sensor,
@@ -183,4 +192,5 @@ def get_toys_sensors():
         built_in_slack_on_run_failure_sensor,
         math_sensor,
         tick_logging_sensor,
+        automation_policy_sensor,
     ]
