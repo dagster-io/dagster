@@ -437,6 +437,41 @@ concurrency:
   default_op_concurrency_limit: 1
 ```
 
+#### Setting priority for ops/assets
+
+By default, slots will be allocated to op / asset execution on a first-in-first-out basis. However, steps from high priority runs will take precedence over steps from low priority runs, as determined by the priority tag on the individual run.
+
+```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
+@job(tags={"dagster/priority": "3"})
+def important_job():
+    ...
+
+
+@schedule(
+    cron_schedule="* * * * *",
+    job_name="important_job",
+    execution_timezone="US/Central",
+    tags={"dagster/priority": "-1"},
+)
+def less_important_schedule(_):
+    ...
+```
+
+Priority can also be assigned based on the priority tag of the op/asset definition.
+
+```python file=/deploying/concurrency_limits/concurrency_limits.py startafter=start_global_concurrency_priority endbefore=end_global_concurrency_priority
+@op(tags={"dagster/concurrency_key": "foo", "dagster/priority": "3"})
+def my_op():
+    ...
+
+
+@asset(op_tags={"dagster/concurrency_key": "foo", "dagster/priority": "3"})
+def my_asset():
+    ...
+```
+
+When the priority tag is set on both the run and the asset/op definition, the step priority will be the sum of the two values.
+
 #### Freeing concurrency slots
 
 With a global concurrency limit set, it is useful to configure your instance to automatically free slots for canceled/failed runs. Certain execution errors can cause steps to exit without freeing an occupied concurrency slot.
