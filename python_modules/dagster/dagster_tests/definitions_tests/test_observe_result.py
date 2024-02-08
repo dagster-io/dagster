@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any, Callable, Dict, Generator, Tuple
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 import pytest
 from dagster import (
@@ -542,3 +543,9 @@ def test_observe_result_with_partitions_direct_invocation():
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"
+
+
+def test_observable_source_asset():
+    @observable_source_asset
+    def source_asset() -> ObserveResult:
+        return ObserveResult(metadata={"foo": "bar"})
