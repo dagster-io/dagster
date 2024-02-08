@@ -16,9 +16,9 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
 )
 
-from .asset_graphs.scenario_1 import defs as scenario_1_defs
+from .parent_deployment_asset_graphs.basic_asset_graph import defs as basic_asset_graph
 
-defs_by_scenario = {"scenario_1": scenario_1_defs}
+parent_deployment_defs_by_name = {"basic_asset_graph": basic_asset_graph}
 
 
 @pytest.fixture
@@ -27,12 +27,12 @@ def instance():
         yield the_instance
 
 
-def _make_location_entry(scenario_name: str, instance: DagsterInstance):
+def _make_location_entry(parent_graph_name: str, instance: DagsterInstance):
     origin = InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             module_name=(
-                f"dagster_tests.general_tests.asset_graph_diff_tests.asset_graphs.{scenario_name}"
+                f"dagster_tests.general_tests.asset_graph_diff_tests.parent_deployment_asset_graphs.{parent_graph_name}"
             ),
             working_directory=os.getcwd(),
             attribute="defs",
@@ -55,11 +55,11 @@ def _make_location_entry(scenario_name: str, instance: DagsterInstance):
     )
 
 
-def _make_context(instance: DagsterInstance, defs_attrs):
+def _make_context(instance: DagsterInstance, parent_graph_names):
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
         workspace_snapshot={
-            defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
+            name: _make_location_entry(name, instance) for name in parent_graph_names
         },
         process_context=mock.MagicMock(),
         version=None,
@@ -68,17 +68,17 @@ def _make_context(instance: DagsterInstance, defs_attrs):
     )
 
 
-def get_parent_deployment_graph_for_scenario(scenario):
-    return ExternalAssetGraph.from_workspace(_make_context(instance, [scenario]))
+def get_parent_deployment_graph(parent_graph_name, instance):
+    return ExternalAssetGraph.from_workspace(_make_context(instance, [parent_graph_name]))
 
 
 def get_branch_deployment_graph_with_code_changes(
-    scenario, new_assets: Optional[List] = None, updated_assets: Optional[List] = None
+    parent_graph_name, new_assets: Optional[List] = None, updated_assets: Optional[List] = None
 ):
-    scenario_defs_as_repo = defs_by_scenario[scenario].get_asset_graph()
+    parent_asset_graph = parent_deployment_defs_by_name[parent_graph_name].get_asset_graph()
     parent_assets_by_key = {
         asset.key: asset
-        for asset in list(scenario_defs_as_repo.assets) + list(scenario_defs_as_repo.source_assets)
+        for asset in list(parent_asset_graph.assets) + list(parent_asset_graph.source_assets)
     }
     new_assets = new_assets or []
     if updated_assets:
@@ -111,14 +111,14 @@ def compute_graph_diff(parent_graph: AssetGraph, branch_graph: AssetGraph):
 
 
 def test_new_asset(instance):
-    parent_deployment_asset_graph = get_parent_deployment_graph_for_scenario("scenario_1")
+    parent_deployment_asset_graph = get_parent_deployment_graph("basic_asset_graph", instance)
 
     @asset
     def new_asset():
         return 1
 
     branch_deployment_asset_graph = get_branch_deployment_graph_with_code_changes(
-        scenario="scenario_1", new_assets=[new_asset]
+        parent_graph_name="basic_asset_graph", new_assets=[new_asset]
     )
 
     diff = compute_graph_diff(parent_deployment_asset_graph, branch_deployment_asset_graph)
