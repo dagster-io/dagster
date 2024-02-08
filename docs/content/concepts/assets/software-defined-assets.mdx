@@ -25,11 +25,11 @@ A software-defined asset includes the following:
 
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
-- A Python function, which is responsible for computing the contents of the asset from its upstream dependencies.
+- A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
 
   **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-defined Assets and ops is that Software-defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs.
 
 ---
 
@@ -94,63 +94,6 @@ def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 ```
 
-#### Defining basic managed-loading dependencies
-
-When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](/concepts/io-management/io-managers). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
-
-In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
-
-```python file=/concepts/assets/asset_dependency.py startafter=start_marker endbefore=end_marker
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-```
-
-In this example, Dagster will load the data returned from `upstream_asset` and pass it as the `upstream_asset` parameter to `downstream_asset`.
-
-#### Defining explicit managed-loading dependencies
-
-If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
-
-```python file=/concepts/assets/explicit_string_asset_dependency.py
-from dagster import AssetIn, asset
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset(ins={"upstream": AssetIn("upstream_asset")})
-def downstream_asset(upstream):
-    return upstream + [4]
-```
-
-In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
-
-Asset keys can also be provided to <PyObject object="AssetIn" /> to explicitly identify the asset. For example:
-
-```python file=/concepts/assets/explicit_asset_dependency_asset_keys.py
-from dagster import AssetIn, asset
-
-
-# If the upstream key has a single segment, you can specify it with a string:
-@asset(ins={"upstream": AssetIn(key="upstream_asset")})
-def downstream_asset(upstream):
-    return upstream + [4]
-
-
-# If it has multiple segments, you can provide a list:
-@asset(ins={"upstream": AssetIn(key=["some_db_schema", "upstream_asset"])})
-def another_downstream_asset(upstream):
-    return upstream + [10]
-```
-
 #### Defining external asset dependencies
 
 Software-defined assets frequently depend on assets that are generated elsewhere. Using <PyObject object="SourceAsset" />, you can include these external assets and allow your other assets to depend on them.
@@ -168,15 +111,6 @@ def my_derived_asset():
     return execute_query("SELECT * from a_source_asset").as_list() + [4]
 ```
 
-You can also define a dependency on a `SourceAsset` that will load the data of the asset:
-
-```python file=/concepts/assets/source_asset.py startafter=start_argument_dependency endbefore=end_argument_dependency
-@asset
-def my_other_derived_asset(a_source_asset):
-    return a_source_asset + [4]
-```
-
-**Note**: The source asset's asset key must be provided as the argument to downstream assets. In the previous example, the asset key is `a_source_asset` and not `my_source_asset`.
 
 You can also re-use assets across [code locations](/concepts/code-locations) by including them as source assets. Consider this example for `code_location_1`:
 
@@ -271,31 +205,6 @@ def context_asset(context: AssetExecutionContext):
     ...
 ```
 
-### Conditional materialization
-
-In some cases, an asset may not need to be updated in storage each time the decorated function is executed. You can use the `output_required` parameter along with `yield` syntax to implement this behavior.
-
-If the `output_required` parameter is set to `False`, and your function does not `yield` an <PyObject object="Output" /> object, then no asset materialization event will be created, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
-
-```python file=/concepts/assets/conditional_materialization.py
-import random
-
-from dagster import Output, asset
-
-
-@asset(output_required=False)
-def may_not_materialize():
-    # to simulate an asset that may not always materialize.
-    if random.randint(1, 10) < 5:
-        yield Output([1, 2, 3, 4])
-
-
-@asset
-def downstream(may_not_materialize):
-    # will not run when may_not_materialize doesn't materialize the asset
-    return may_not_materialize + [5]
-```
-
 ### Asset code versions
 
 Assets may be assigned a `code_version`. Versions let you help Dagster track what assets haven't been re-materialized since their code has changed, and avoid performing redundant computation.
@@ -310,22 +219,14 @@ When an asset with a code version is materialized, the generated `AssetMateriali
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 Multi-assets may assign different code versions for each of their outputs:
 >>>>>>> 490777b17d (revert change that's in another pr now)
+=======
+>>>>>>> c13bef45c5 (bring the mdx page back? so confused)
 
-```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
-@multi_asset(
-    outs={
-        "a": AssetOut(code_version="1"),
-        "b": AssetOut(code_version="2"),
-    }
-)
-def multi_asset_with_versions():
-    yield Output(100, "a")
-    yield Output(200, "b")
-```
 
 Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
 
@@ -599,26 +500,6 @@ def test_uses_context():
 
 ---
 
-## Loading asset values outside of Dagster runs
-
-It's sometimes useful to load an asset as a Python object outside of a Dagster run, such as performing exploratory analysis on data inside a Jupyter notebook.
-
-For this, you can use <PyObject object="Definitions" method="load_asset_value" />:
-
-```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
-asset1_value = defs.load_asset_value(AssetKey("asset1"))
-```
-
-To load the values of multiple assets, use <PyObject object="Definitions" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
-
-```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
-with defs.get_asset_value_loader() as loader:
-    asset1_value = loader.load_asset_value(AssetKey("asset1"))
-    asset2_value = loader.load_asset_value(AssetKey("asset2"))
-```
-
----
-
 ## Examples
 
 - [Multi-component asset keys](#multi-component-asset-keys)
@@ -671,9 +552,6 @@ def table1() -> Output[None]:
     return Output(None, metadata={"num_rows": 25})
 ```
 
-#### Recording materialization metadata using I/O managers
-
-Sometimes it's useful to record the same metadata for all assets that are stored in the same way. E.g. if you have a set of assets that are all stored on a filesystem, you might want to record the number of bytes they occupy on disk every time one is materialized. You can achieve this by [recording metadata from an I/O manager](/concepts/io-management/io-managers#recording-metadata-from-an-io-manager) that's shared by the assets.
 
 ### Attaching definition metadata
 
