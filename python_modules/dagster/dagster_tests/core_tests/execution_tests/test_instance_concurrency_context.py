@@ -1,6 +1,7 @@
 import time
 from contextlib import ExitStack
 
+import mock
 import pytest
 from dagster import job, op
 from dagster._core.execution.plan.instance_concurrency_context import (
@@ -190,6 +191,8 @@ def test_zero_concurrency_key(concurrency_instance):
         assert not context.claim("foo", "b")
 
 
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
 def test_step_priority(concurrency_instance):
     run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
@@ -200,7 +203,7 @@ def test_step_priority(concurrency_instance):
         assert not context.claim("foo", "d", step_priority=-1)
 
         context.free_step("a")
-        time.sleep(1)
+        time.sleep(0.1)
 
         # highest priority step should be able to claim the slot
         assert not context.claim("foo", "b")
@@ -208,6 +211,8 @@ def test_step_priority(concurrency_instance):
         assert not context.claim("foo", "d")
 
 
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
 def test_run_priority(concurrency_instance):
     low_priority_run = concurrency_instance.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id()
@@ -230,8 +235,62 @@ def test_run_priority(concurrency_instance):
 
         # free the occupied slot
         low_context.free_step("a")
-        time.sleep(1)
+        time.sleep(0.1)
 
         # high priority run should now be able to claim the slot
         assert not low_context.claim("foo", "b")
         assert high_context.claim("foo", "c")
+
+
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
+@mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
+def test_run_step_priority(concurrency_instance):
+    low_priority_run = concurrency_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    high_priority_run = concurrency_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "1000"}
+    )
+    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
+
+    with ExitStack() as stack:
+        low_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, low_priority_run)
+        )
+        high_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, high_priority_run)
+        )
+
+        # at first all steps are blocked
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
+        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
+        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+        assert not high_context.claim(
+            "foo", "high_run_high_step", step_priority=1000
+        )  # 1000 + 1000
+
+        concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+        time.sleep(0.1)
+
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
+        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
+        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+        assert high_context.claim("foo", "high_run_high_step", step_priority=1000)  # 1000 + 1000
+
+        high_context.free_step("high_run_high_step")
+        time.sleep(0.1)
+
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
+        assert low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
+        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+
+        low_context.free_step("low_run_high_step")
+        time.sleep(0.1)
+
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
+        assert high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+
+        high_context.free_step("high_run_low_step")
+        time.sleep(0.1)
+
+        assert low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
