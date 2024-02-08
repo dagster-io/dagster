@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING, Sequence
-
 import graphene
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -8,7 +6,6 @@ from dagster._core.host_representation.external import ExternalRepository
 from ..implementation.fetch_assets import get_asset
 from .asset_key import GrapheneAssetKey
 from .util import non_null_list
-
 
 
 class GrapheneAssetSelection(graphene.ObjectType):

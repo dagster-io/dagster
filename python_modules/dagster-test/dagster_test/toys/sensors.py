@@ -12,6 +12,9 @@ from dagster import (
     run_failure_sensor,
     sensor,
 )
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster_slack import make_slack_on_run_failure_sensor
 from slack_sdk.web.client import WebClient
 
@@ -20,9 +23,6 @@ from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
 from dagster_test.toys.simple_config import simple_config_job
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
-)
 
 
 def get_directory_files(directory_name, since=None):
