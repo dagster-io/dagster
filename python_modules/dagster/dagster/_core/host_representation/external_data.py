@@ -1636,7 +1636,7 @@ def external_asset_nodes_from_defs(
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
-    ).difference(source_assets_by_key.keys())
+    ).difference({*source_assets_by_key.keys()})
 
     asset_nodes = [
         ExternalAssetNode(
@@ -1729,6 +1729,14 @@ def external_asset_nodes_from_defs(
             node_handle = node_handle.parent
             graph_name = node_handle.name
 
+        if asset_key in source_assets_by_key:
+            source_asset = source_assets_by_key[asset_key]
+            is_observable = source_asset.is_observable
+            auto_observe_interval_minutes = source_asset.auto_observe_interval_minutes
+        else:
+            is_observable = False
+            auto_observe_interval_minutes = None
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
@@ -1749,6 +1757,8 @@ def external_asset_nodes_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 metadata=asset_metadata,
+                is_observable=is_observable,
+                auto_observe_interval_minutes=auto_observe_interval_minutes,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group

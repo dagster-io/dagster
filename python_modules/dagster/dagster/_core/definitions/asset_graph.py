@@ -22,6 +22,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
@@ -141,6 +142,10 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @property
+    def observable_keys(self) -> AbstractSet[AssetKey]:
+        return {key for key, is_observable in self._is_observable_by_key.items() if is_observable}
+
+    @property
     def auto_materialize_policies_by_key(
         self,
     ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
@@ -158,6 +163,10 @@ class AssetGraph:
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
+        from dagster._core.definitions.external_asset import (
+            SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
+        )
+
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
@@ -195,6 +204,25 @@ class AssetGraph:
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                is_observable = asset.execution_type == AssetExecutionType.OBSERVATION
+                is_observable_by_key.update({key: is_observable for key in asset.keys})
+
+                # Set auto_observe_interval_minutes for external observable assets
+                # This can be removed when/if we have a a solution for mapping
+                # `auto_observe_interval_minutes` to an AutoMaterialzePolicy
+                first_key = next(iter(asset.keys), None)
+                if (
+                    first_key
+                    and SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES
+                    in asset.metadata_by_key[first_key]
+                ):
+                    interval = asset.metadata_by_key[first_key][
+                        SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES
+                    ]
+                    auto_observe_interval_minutes_by_key.update(
+                        {key: interval for key in asset.keys}
+                    )
 
                 if not asset.can_subset:
                     all_required_keys = {*asset.check_keys, *asset.keys}
