@@ -126,7 +126,7 @@ def test_multi_asset_with_config_schema():
         materialize_to_memory([my_asset])
 
 
-def test_asset_with_compute_kind():
+def test_asset_with_compute_kind(ignore_code_origin):
     @asset(compute_kind="sql")
     def my_asset(arg1):
         return arg1
@@ -134,7 +134,7 @@ def test_asset_with_compute_kind():
     assert my_asset.op.tags == {"kind": "sql"}
 
 
-def test_multi_asset_with_compute_kind():
+def test_multi_asset_with_compute_kind(ignore_code_origin):
     @multi_asset(outs={"o1": AssetOut()}, compute_kind="sql")
     def my_asset(arg1):
         return arg1
@@ -577,7 +577,7 @@ def test_partitions_def():
     assert my_asset.partitions_def == partitions_def
 
 
-def test_op_tags():
+def test_op_tags(ignore_code_origin):
     tags = {"apple": "banana", "orange": {"rind": "fsd", "segment": "fjdskl"}}
     tags_stringified = {"apple": "banana", "orange": '{"rind": "fsd", "segment": "fjdskl"}'}
 

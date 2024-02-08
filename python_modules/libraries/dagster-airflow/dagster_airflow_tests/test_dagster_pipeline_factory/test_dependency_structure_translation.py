@@ -1,7 +1,9 @@
+import pytest
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 from airflow.utils.dates import days_ago
+from dagster._core.definitions.decorators.op_decorator import do_not_attach_code_origin
 
 if airflow_version >= "2.0.0":
     from airflow.models.baseoperator import chain
@@ -21,8 +23,16 @@ default_args = {
 }
 
 
+@pytest.fixture
+def ignore_code_origin():
+    # avoid attaching code origin metadata to ops/assets, because this can change from environment
+    # to environment and break snapshot tests
+    with do_not_attach_code_origin():
+        yield
+
+
 @requires_no_db
-def test_one_task_dag(snapshot):
+def test_one_task_dag(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="one_task_dag",
@@ -50,7 +60,7 @@ def test_one_task_dag(snapshot):
 
 
 @requires_no_db
-def test_two_task_dag_no_dep(snapshot):
+def test_two_task_dag_no_dep(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="two_task_dag_no_dep",
@@ -82,7 +92,7 @@ def test_two_task_dag_no_dep(snapshot):
 
 
 @requires_no_db
-def test_two_task_dag_with_dep(snapshot):
+def test_two_task_dag_with_dep(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="two_task_dag_with_dep",
@@ -116,7 +126,7 @@ def test_two_task_dag_with_dep(snapshot):
 
 
 @requires_no_db
-def test_diamond_task_dag(snapshot):
+def test_diamond_task_dag(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="diamond_task_dag",
@@ -160,7 +170,7 @@ def test_diamond_task_dag(snapshot):
 
 
 @requires_no_db
-def test_multi_root_dag(snapshot):
+def test_multi_root_dag(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="multi_root_dag",
@@ -204,7 +214,7 @@ def test_multi_root_dag(snapshot):
 
 
 @requires_no_db
-def test_multi_leaf_dag(snapshot):
+def test_multi_leaf_dag(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="multi_leaf_dag",
@@ -247,7 +257,7 @@ def test_multi_leaf_dag(snapshot):
 
 
 @requires_no_db
-def test_complex_dag(snapshot):
+def test_complex_dag(snapshot, ignore_code_origin):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="complex_dag",

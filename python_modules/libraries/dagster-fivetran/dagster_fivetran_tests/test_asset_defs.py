@@ -1,6 +1,7 @@
 import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
+from dagster._core.definitions.decorators.op_decorator import do_not_attach_code_origin
 from dagster._legacy import build_assets_job
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
@@ -17,6 +18,14 @@ from .utils import (
     get_sample_sync_response,
     get_sample_update_response,
 )
+
+
+@pytest.fixture
+def ignore_code_origin():
+    # avoid attaching code origin metadata to ops/assets, because this can change from environment
+    # to environment and break snapshot tests
+    with do_not_attach_code_origin():
+        yield
 
 
 def test_fivetran_asset_keys():
@@ -57,7 +66,9 @@ def test_fivetran_group_label(group_name, expected_group_name):
     ],
 )
 @pytest.mark.parametrize("op_tags", [None, {"key1": "value1"}])
-def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_prefix, op_tags):
+def test_fivetran_asset_run(
+    ignore_code_origin, tables, infer_missing_tables, should_error, schema_prefix, op_tags
+):
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"

@@ -1,18 +1,37 @@
+import inspect
+import os
+
 from dagster import job, op
+from dagster._core.definitions.decorators.op_decorator import CODE_ORIGIN_TAG_NAME
+from dagster._utils import file_relative_path
+
+
+def _code_origin_tag(line_no: int) -> str:
+    dagster_module_path = os.path.normpath(file_relative_path(__file__, "../../")) + "/"
+    return f"{dagster_module_path}:dagster_tests/definitions_tests/test_tags.py:{line_no}"
 
 
 def test_op_tags():
+    expected_line = inspect.currentframe().f_lineno + 2
+
     @op(tags={"foo": "bar"})
     def tags_op(_):
         pass
 
-    assert tags_op.tags == {"foo": "bar"}
+    assert tags_op.tags == {
+        "foo": "bar",
+        CODE_ORIGIN_TAG_NAME: _code_origin_tag(expected_line),
+    }
+
+    expected_line = inspect.currentframe().f_lineno + 2
 
     @op()
     def no_tags_op(_):
         pass
 
-    assert no_tags_op.tags == {}
+    assert no_tags_op.tags == {
+        CODE_ORIGIN_TAG_NAME: _code_origin_tag(expected_line),
+    }
 
 
 def test_job_tags():

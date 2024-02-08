@@ -20,7 +20,7 @@ def test_basic_op_definition():
     assert deserialize_value(serialize_value(op_snap), OpDefSnap) == op_snap
 
 
-def test_op_definition_kitchen_sink():
+def test_op_definition_kitchen_sink(ignore_code_origin):
     @op(
         ins={"arg_one": In(str, description="desc1"), "arg_two": In(int)},
         out={

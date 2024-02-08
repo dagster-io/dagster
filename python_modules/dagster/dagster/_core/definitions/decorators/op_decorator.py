@@ -1,10 +1,17 @@
+import inspect
+import os
+import sys
+from contextlib import contextmanager
 from functools import lru_cache, update_wrapper
 from inspect import Parameter
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
+    Dict,
+    Generator,
     List,
     Mapping,
     NamedTuple,
@@ -41,6 +48,38 @@ from ..utils import DEFAULT_OUTPUT
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
 
+CODE_ORIGIN_TAG_NAME = "__code_origin"
+
+
+# global var flag to enable/disable attaching code origin to ops and assets
+CODE_ORIGIN_ENABLED = [True]
+
+
+@contextmanager
+def do_not_attach_code_origin() -> Generator[None, None, None]:
+    """Disables attaching code origin to ops and assets. This is useful for testing, because code
+    origin can change from environment to environment and break snapshot tests.
+    """
+    CODE_ORIGIN_ENABLED[0] = False
+    try:
+        yield
+    finally:
+        CODE_ORIGIN_ENABLED[0] = True
+
+
+def is_code_origin_enabled():
+    return CODE_ORIGIN_ENABLED[0]
+
+
+def _get_root_module(module: ModuleType) -> ModuleType:
+    module_name_split = module.__name__.split(".")
+    for i in range(1, len(module_name_split)):
+        try:
+            return sys.modules[".".join(module_name_split[:i])]
+        except KeyError:
+            continue
+    return module
+
 
 class _Op:
     def __init__(
@@ -75,6 +114,44 @@ class _Op:
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
+    def get_code_origin_tags(self, fn: Callable) -> Dict[str, Any]:
+        """Generates the code origin tag for an op. This is a dictionary with a single key, __code_origin,
+        whose value is a string of the form "<file>:<line>" where <file> is the path to the file where
+        the op is defined and <line> is the line number on which the op is defined. This tag is used
+        to link to the location of the op in the user's editor from Dagit.
+        """
+        if not is_code_origin_enabled():
+            return {}
+
+        # Attempt to fetch information about where the op is defined in code,
+        # which we'll attach as a tag to the op
+        cwd = os.getcwd()
+        origin_file: Optional[str] = None
+        origin_line = None
+        try:
+            origin_file = os.path.abspath(os.path.join(cwd, inspect.getsourcefile(fn)))  # type: ignore
+            origin_file = check.not_none(origin_file)
+            origin_line = inspect.getsourcelines(fn)[1]
+
+            # Get the base module that the op function is defined in
+            # and find the filepath to that module
+            module = inspect.getmodule(fn)
+            root_module = _get_root_module(module) if module else None
+            path_to_module_root = (
+                os.path.abspath(os.path.dirname(os.path.dirname(root_module.__file__)))
+                if root_module and root_module.__file__
+                else "/"
+            )
+
+            # Figure out where in the module the op function is defined
+            path_from_module_root = os.path.relpath(origin_file, path_to_module_root)
+        except TypeError:
+            return {}
+
+        return {
+            CODE_ORIGIN_TAG_NAME: f"{path_to_module_root}/:{path_from_module_root}:{origin_line}"
+        }
+
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
@@ -84,6 +161,8 @@ class _Op:
 
         if not self.name:
             self.name = fn.__name__
+
+        tags = {**(self.tags or {}), **self.get_code_origin_tags(fn)}
 
         compute_fn = (
             DecoratedOpFunction(decorated_fn=fn)
@@ -132,7 +211,7 @@ class _Op:
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
             required_resource_keys=resolved_resource_keys,
-            tags=self.tags,
+            tags=tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
             version=None,  # code_version has replaced version

@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime
 from unittest import mock
@@ -18,36 +19,27 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_pp
 
 
-@op
-def foo_op(_):
-    pass
+def test_external_repository_data(snapshot, ignore_code_origin):
+    @op
+    def foo_op(_):
+        pass
 
+    @schedule(
+        cron_schedule="@daily",
+        job_name="foo_job",
+        execution_timezone="US/Central",
+    )
+    def foo_schedule():
+        return {}
 
-@schedule(
-    cron_schedule="@daily",
-    job_name="foo_job",
-    execution_timezone="US/Central",
-)
-def foo_schedule():
-    return {}
+    @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
+    def my_partitioned_config(_start: datetime, _end: datetime):
+        return {}
 
+    @job(config=my_partitioned_config)
+    def foo_job():
+        foo_op()
 
-@daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
-def my_partitioned_config(_start: datetime, _end: datetime):
-    return {}
-
-
-@job(config=my_partitioned_config)
-def foo_job():
-    foo_op()
-
-
-@repository
-def a_repo():
-    return [foo_job]
-
-
-def test_external_repository_data(snapshot):
     @repository
     def repo():
         return [foo_job, foo_schedule]
@@ -76,7 +68,19 @@ def test_external_repository_data(snapshot):
     snapshot.assert_match(serialize_pp(external_repo_data))
 
 
-def test_external_job_data(snapshot):
+def test_external_job_data(snapshot, ignore_code_origin):
+    @op
+    def foo_op(_):
+        pass
+
+    @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
+    def my_partitioned_config(_start: datetime, _end: datetime):
+        return {}
+
+    @job(config=my_partitioned_config)
+    def foo_job():
+        foo_op()
+
     snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
 
 
@@ -87,7 +91,10 @@ def test_external_repo_shared_index(snapshot_mock):
     snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
-            instance, LoadableTargetOrigin(python_file=__file__)
+            instance,
+            LoadableTargetOrigin(
+                python_file=os.path.join(os.path.dirname(__file__), "active_data_repo.py")
+            ),
         ) as workspace:
 
             def _fetch_snap_id():
@@ -109,7 +116,10 @@ def test_external_repo_shared_index_threaded(snapshot_mock):
     snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
-            instance, LoadableTargetOrigin(python_file=__file__)
+            instance,
+            LoadableTargetOrigin(
+                python_file=os.path.join(os.path.dirname(__file__), "active_data_repo.py")
+            ),
         ) as workspace:
 
             def _fetch_snap_id():

@@ -4,7 +4,7 @@ from dagster._serdes import serialize_pp
 from .repo import get_main_external_repo
 
 
-def test_all_snapshot_ids(snapshot):
+def test_all_snapshot_ids(snapshot, ignore_code_origin):
     # This ensures that pipeline snapshots remain stable
     # If you 1) change any pipelines in dagster_graphql_test or 2) change the
     # schema of PipelineSnapshots you are free to rerecord
