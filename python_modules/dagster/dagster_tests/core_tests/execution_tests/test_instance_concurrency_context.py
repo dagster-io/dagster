@@ -214,7 +214,7 @@ def test_step_priority(concurrency_instance):
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
 def test_run_priority(concurrency_instance):
-    low_priority_run = concurrency_instance.create_run_for_job(
+    regular_priority_run = concurrency_instance.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id()
     )
     high_priority_run = concurrency_instance.create_run_for_job(
@@ -223,22 +223,22 @@ def test_run_priority(concurrency_instance):
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
 
     with ExitStack() as stack:
-        low_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, low_priority_run)
+        regular_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, regular_priority_run)
         )
         high_context = stack.enter_context(
             InstanceConcurrencyContext(concurrency_instance, high_priority_run)
         )
-        assert low_context.claim("foo", "a")
-        assert not low_context.claim("foo", "b")
+        assert regular_context.claim("foo", "a")
+        assert not regular_context.claim("foo", "b")
         assert not high_context.claim("foo", "c")
 
         # free the occupied slot
-        low_context.free_step("a")
+        regular_context.free_step("a")
         time.sleep(0.1)
 
         # high priority run should now be able to claim the slot
-        assert not low_context.claim("foo", "b")
+        assert not regular_context.claim("foo", "b")
         assert high_context.claim("foo", "c")
 
 
@@ -246,10 +246,10 @@ def test_run_priority(concurrency_instance):
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
 def test_run_step_priority(concurrency_instance):
     low_priority_run = concurrency_instance.create_run_for_job(
-        define_foo_job(), run_id=make_new_run_id()
+        define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "-1000"}
     )
-    high_priority_run = concurrency_instance.create_run_for_job(
-        define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "1000"}
+    regular_priority_run = concurrency_instance.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
     )
     concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
 
@@ -257,40 +257,38 @@ def test_run_step_priority(concurrency_instance):
         low_context = stack.enter_context(
             InstanceConcurrencyContext(concurrency_instance, low_priority_run)
         )
-        high_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, high_priority_run)
+        regular_context = stack.enter_context(
+            InstanceConcurrencyContext(concurrency_instance, regular_priority_run)
         )
 
         # at first all steps are blocked
-        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
-        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
-        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
-        assert not high_context.claim(
-            "foo", "high_run_high_step", step_priority=1000
-        )  # 1000 + 1000
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
+        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0
+        assert not regular_context.claim("foo", "regular_run_low_step", step_priority=-1)  # -1
+        assert not regular_context.claim("foo", "regular_run_high_step", step_priority=1000)  # 1000
 
         concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
         time.sleep(0.1)
 
-        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
-        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
-        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
-        assert high_context.claim("foo", "high_run_high_step", step_priority=1000)  # 1000 + 1000
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
+        assert not low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0
+        assert not regular_context.claim("foo", "regular_run_low_step", step_priority=-1)  # -1
+        assert regular_context.claim("foo", "regular_run_high_step", step_priority=1000)  # 1000
 
-        high_context.free_step("high_run_high_step")
+        regular_context.free_step("regular_run_high_step")
         time.sleep(0.1)
 
-        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
-        assert low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0 + 1000
-        assert not high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
+        assert low_context.claim("foo", "low_run_high_step", step_priority=1000)  # 0
+        assert not regular_context.claim("foo", "regular_run_low_step", step_priority=-1)  # -1
 
         low_context.free_step("low_run_high_step")
         time.sleep(0.1)
 
-        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
-        assert high_context.claim("foo", "high_run_low_step", step_priority=-1)  # 1000 - 1
+        assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
+        assert regular_context.claim("foo", "regular_run_low_step", step_priority=-1)  # -1
 
-        high_context.free_step("high_run_low_step")
+        regular_context.free_step("regular_run_low_step")
         time.sleep(0.1)
 
-        assert low_context.claim("foo", "low_run_low_step", step_priority=-1)  # 0 - 1
+        assert low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
