@@ -5,18 +5,32 @@ import styled from 'styled-components';
 export const HeaderCell = ({
   children,
   style,
+  onClick,
 }: {
   children?: React.ReactNode;
   style?: React.CSSProperties;
-}) => (
-  <CellBox
-    padding={{vertical: 8, horizontal: 12}}
-    border="right"
-    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...(style || {})}}
-  >
-    {children}
-  </CellBox>
-);
+  onClick?: React.MouseEventHandler;
+}) => {
+  // no text select
+  const clickStyle = onClick ? {cursor: 'pointer', 'user-select': 'none'} : {};
+
+  return (
+    <CellBox
+      padding={{vertical: 8, horizontal: 12}}
+      border="right"
+      style={{
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        ...clickStyle,
+        ...(style || {}),
+      }}
+      onClick={onClick}
+    >
+      {children}
+    </CellBox>
+  );
+};
 
 export const RowCell = ({
   children,
