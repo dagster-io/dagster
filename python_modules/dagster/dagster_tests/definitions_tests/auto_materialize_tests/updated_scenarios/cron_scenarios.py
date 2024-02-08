@@ -15,6 +15,7 @@ from .asset_daemon_scenario_states import (
     one_asset_depends_on_two,
     three_assets_not_subsettable,
     time_partitions_start_str,
+    two_partitions_def,
 )
 
 
@@ -479,7 +480,7 @@ cron_scenarios = [
         # moved to a new cron schedule tick, still do not request run, because parents have not
         # been updated since cron schedule tick
         .with_current_time_advanced(minutes=60)
-        .evaluate_tick()
+        .evaluate_tick("FOO")
         .assert_requested_runs()
         .with_runs(run_request("B"))
         .with_current_time_advanced(seconds=30)
@@ -524,60 +525,138 @@ cron_scenarios = [
         .with_asset_properties(
             keys="C",
             auto_materialize_policy=get_cron_policy(
-                # this instructs the system to materialize new partitions 15 minutes after they come
-                # into being, so that we can test the waiting behavior
-                "15 * * * *",
+                basic_hourly_cron_schedule,
                 max_materializations_per_minute=100,
                 use_cron_skip_rule=True,
             ),
         )
-        .with_current_time(time_partitions_start_str),
+        .with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(hours=10),
         execution_fn=lambda state: state.evaluate_tick()
-        # no partitions exist yet
+        # No runs, because we're waiting for A and B
         .assert_requested_runs()
-        .assert_evaluation("C", [])
-        # don't materialize C because we're waiting for A and B
-        .with_current_time_advanced(hours=1, minutes=5)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # A is materialized, but it's not 15 minutes after the partition was created, so this
-        # doesn't count
-        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
-        # now it is 15 minutes after the partition was created
-        .with_current_time_advanced(minutes=10)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # B is materialized after the required time, but still waiting on A
-        .with_runs(run_request("B", hour_partition_key(state.current_time, delta=1)))
+        # A is materialized, still waiting for B
         .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=0)))
         .evaluate_tick()
         .assert_requested_runs()
-        # now A is rematerialized, so C can go
-        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
+        # B is materialized, but it's an old partition, so still waiting for the correct data
         .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs(run_request("C", hour_partition_key(state.current_time, delta=1)))
-        # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("B", hour_partition_key(state.current_time, delta=-3)))
         .evaluate_tick()
         .assert_requested_runs()
-        # next tick happens, 1 hour later, no runs requested
-        .with_current_time_advanced(hours=1)
-        .evaluate_tick()
-        .assert_requested_runs()
-        # now A and B are materialized, so C is too
+        # B is materialized with the latest partition
         .with_current_time_advanced(seconds=30)
-        .with_runs(
-            run_request(["A", "B"], hour_partition_key(state.current_time, delta=2)),
-        )
+        .with_runs(run_request("B", hour_partition_key(state.current_time, delta=0)))
         .evaluate_tick()
         .assert_requested_runs(
-            run_request("C", hour_partition_key(state.current_time, delta=2)),
+            run_request("C", hour_partition_key(state.current_time, delta=0)),
         )
-        # next tick should not request any more runs
+        # no new runs the next tick
         .with_current_time_advanced(seconds=30)
         .evaluate_tick()
-        .assert_requested_runs(),
+        .assert_requested_runs()
+        # a new hour, no new runs until both A and B are materialized
+        .with_current_time_advanced(hours=1)
+        .with_runs(run_request("B", hour_partition_key(state.current_time, delta=1)))
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now A is materialized, so C kicks off
+        .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("C", hour_partition_key(state.current_time, delta=1)),
+        ),
+    ),
+    AssetDaemonScenario(
+        id="daily_unpartitioned_downstream_of_hourly_and_static_with_cron_skip",
+        initial_state=one_asset_depends_on_two.with_asset_properties(
+            keys="A", partitions_def=two_partitions_def
+        )
+        .with_asset_properties(
+            keys="B",
+            partitions_def=hourly_partitions_def,
+        )
+        .with_asset_properties(
+            keys="C",
+            auto_materialize_policy=get_cron_policy(
+                "0 0 * * *",  # daily
+                use_cron_skip_rule=True,
+            ),
+        )
+        .with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(days=5, minutes=1),
+        execution_fn=lambda state: state.evaluate_tick()
+        # No runs, because we're waiting for A and B
+        .assert_requested_runs()
+        # One partition of A is materialized
+        .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("A", "1"))
+        .evaluate_tick()
+        .assert_requested_runs()
+        # Most hours of B are materialized
+        .with_current_time_advanced(seconds=30)
+        .with_runs(
+            *[run_request("B", hour_partition_key(state.current_time, delta=-i)) for i in range(20)]
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # Many hours later, other partition of B is materialized, still waiting for other
+        # partitions of A
+        .with_current_time_advanced(hours=15)
+        .with_runs(run_request("A", "2"))
+        .evaluate_tick()
+        .assert_requested_runs()
+        # some new partitions of B are materialized, still waiting for older ones within the time
+        # window
+        .with_current_time_advanced(seconds=30)
+        .with_runs(
+            *[
+                run_request("B", hour_partition_key(state.current_time, delta=i + 1))
+                for i in range(10)
+            ]
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # remaining partitions of A are materialized, C kicks off
+        .with_current_time_advanced(seconds=30)
+        .with_runs(
+            *[
+                run_request("B", hour_partition_key(state.current_time, delta=-i))
+                for i in range(20, 24)
+            ]
+        )
+        .evaluate_tick()
+        .assert_requested_runs(run_request("C"))
+        # next tick, no new runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now a new day, no new runs until both A and B are materialized
+        .with_current_time_advanced(hours=10)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # all of yesterday's partitions of B are materialized, but still waiting for A
+        .with_current_time_advanced(seconds=30)
+        .with_runs(
+            *[
+                run_request("B", hour_partition_key(state.current_time, delta=i + 1))
+                for i in range(10, 24)
+            ]
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now one partition of A is updated
+        .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("A", "2"))
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now other partition of A is updated, C kicks off
+        .with_current_time_advanced(seconds=30)
+        .with_runs(run_request("A", "1"))
+        .evaluate_tick()
+        .assert_requested_runs(run_request("C")),
     ),
 ]
 

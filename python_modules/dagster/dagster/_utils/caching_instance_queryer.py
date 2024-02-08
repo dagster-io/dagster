@@ -39,7 +39,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvalidDefinitionError,
 )
-from dagster._core.event_api import EventRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
@@ -198,8 +198,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         observable source assets, this will be an AssetObservation, otherwise it will be an
         AssetMaterialization.
         """
-        from dagster._core.event_api import EventRecordsFilter
-
         # in the simple case, just use the asset record
         if (
             before_cursor is None
@@ -351,8 +349,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         after_cursor: Optional[int],
         data_version: Optional[DataVersion],
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.event_api import EventRecordsFilter
-
         for record in self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_OBSERVATION,
@@ -820,12 +816,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns the AssetSubset of the given asset that has been updated after the given cursor."""
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
-            return AssetSubset(
+            return ValidAssetSubset(
                 asset_key,
                 value=self.asset_partition_has_materialization_or_observation(
                     AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
                 ),
-            ).as_valid
+            )
         else:
             new_asset_partitions = {
                 ap
@@ -853,17 +849,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns the AssetSubset of the given asset that has been updated after the given time."""
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
 
+        method = (
+            self.instance.fetch_materializations
+            if self._event_type_for_key(asset_key) == DagsterEventType.ASSET_MATERIALIZATION
+            else self.instance.fetch_observations
+        )
         first_event_after_time = next(
             iter(
-                self.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=self._event_type_for_key(asset_key),
-                        asset_key=asset_key,
-                        after_timestamp=after_time.timestamp(),
-                    ),
+                method(
+                    AssetRecordsFilter(asset_key=asset_key, after_timestamp=after_time.timestamp()),
                     limit=1,
                     ascending=True,
-                )
+                ).records
             ),
             None,
         )

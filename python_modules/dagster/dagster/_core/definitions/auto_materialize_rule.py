@@ -30,6 +30,8 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
 from dagster._core.storage.dagster_run import RunsFilter
@@ -184,18 +186,18 @@ class AutoMaterializeRule(ABC):
 
     @staticmethod
     def skip_on_not_all_parents_updated_since_cron(
-        cron_schedule: str, cron_timezone: str = "UTC"
+        cron_schedule: str, timezone: str = "UTC"
     ) -> "SkipOnNotAllParentsUpdatedSinceCronRule":
         """Skip materializing an asset partition if any of its parents have not been updated since
         the latest tick of the given cron schedule.
 
         Args:
             cron_schedule (str): A cron schedule string (e.g. "`0 * * * *`").
-            cron_timezone (str): The timezone in which this cron schedule should be evaluated. Defaults
+            timezone (str): The timezone in which this cron schedule should be evaluated. Defaults
                 to "UTC".
         """
         return SkipOnNotAllParentsUpdatedSinceCronRule(
-            cron_schedule=cron_schedule, timezone=cron_timezone
+            cron_schedule=cron_schedule, timezone=timezone
         )
 
     @public
@@ -850,65 +852,146 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
     @property
     def description(self) -> str:
-        return f"waiting until all upstream assets have been updated since the last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
+        return f"waiting until all upstream assets have updated since the last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def previous_cron_tick(self, context: AssetConditionEvaluationContext) -> datetime.datetime:
-        """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        return next(
-            reverse_cron_string_iterator(
-                end_timestamp=context.evaluation_time.timestamp(),
-                cron_string=self.cron_schedule,
-                execution_timezone=self.timezone,
-            )
+    def passed_time_window(self, context: AssetConditionEvaluationContext) -> TimeWindow:
+        """Returns the window of time that has passed between the previous two cron ticks. All
+        parent assets must contain all data from this time window in order for this asset to be
+        materialized.
+        """
+        previous_ticks = reverse_cron_string_iterator(
+            end_timestamp=context.evaluation_time.timestamp(),
+            cron_string=self.cron_schedule,
+            execution_timezone=self.timezone,
         )
+        end_time = next(previous_ticks)
+        start_time = next(previous_ticks)
 
-    def get_parent_subsets_updated_since_cron(
-        self, context: AssetConditionEvaluationContext
-    ) -> Sequence[ValidAssetSubset]:
-        previous_cron_tick = self.previous_cron_tick(context)
+        return TimeWindow(start=start_time, end=end_time)
+
+    def get_parent_subset_updated_since_cron(
+        self,
+        context: AssetConditionEvaluationContext,
+        parent_asset_key: AssetKey,
+        passed_time_window: TimeWindow,
+    ) -> ValidAssetSubset:
+        """Returns the AssetSubset of a given parent asset that has been updated since the end of
+        the previous cron tick. If a value for this parent asset was computed on the previous
+        evaluation, and that evaluation happened within the same cron tick as the current evaluation,
+        then this value will be calculated incrementally from the previous value to avoid expensive
+        queries.
+        """
         if (
             # first tick of evaluating this condition
             context.previous_evaluation_state is None
             or context.previous_evaluation_timestamp is None
             # new cron tick has happened since the previous tick
-            or previous_cron_tick.timestamp() > context.previous_evaluation_timestamp
+            or passed_time_window.end.timestamp() > context.previous_evaluation_timestamp
         ):
-            return [
-                # more expensive than the cursor-based query, but for each new cron tick
-                context.instance_queryer.get_asset_subset_updated_after_time(
-                    asset_key=parent_asset_key,
-                    after_time=self.previous_cron_tick(context),
-                )
-                for parent_asset_key in context.asset_graph.get_parents(context.asset_key)
-            ]
+            return context.instance_queryer.get_asset_subset_updated_after_time(
+                asset_key=parent_asset_key, after_time=passed_time_window.end
+            )
         else:
             # previous state still valid
-            previous_parent_subsets_by_key: Mapping[AssetKey, AssetSubset] = {
-                subset.asset_key: subset
-                for subset in context.previous_evaluation_state.get_extra_state(
-                    context.condition, list
+            previous_parent_subsets = (
+                context.previous_evaluation_state.get_extra_state(context.condition, list) or []
+            )
+            previous_parent_subset = next(
+                (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
+                context.empty_subset(),
+            )
+
+            # the set of asset partitions that have been updated since the previous evaluation
+            new_parent_subset = context.instance_queryer.get_asset_subset_updated_after_cursor(
+                asset_key=parent_asset_key, after_cursor=context.previous_max_storage_id
+            )
+            return new_parent_subset | previous_parent_subset
+
+    def get_parent_subsets_updated_since_cron_by_key(
+        self, context: AssetConditionEvaluationContext, passed_time_window: TimeWindow
+    ) -> Mapping[AssetKey, ValidAssetSubset]:
+        """Returns a mapping of parent asset keys to the AssetSubset of each parent that has been
+        updated since the end of the previous cron tick. Does not compute this value for time-window
+        partitioned parents, as their partitions encode the time windows they have processed.
+        """
+        updated_subsets_by_key = {}
+        for parent_asset_key in context.asset_graph.get_parents(context.asset_key):
+            # no need to incrementally calculate updated time-window partitions definitions, as
+            # their partitions encode the time windows they have processed.
+            if isinstance(
+                context.asset_graph.get_partitions_def(parent_asset_key),
+                TimeWindowPartitionsDefinition,
+            ):
+                continue
+            updated_subsets_by_key[parent_asset_key] = self.get_parent_subset_updated_since_cron(
+                context, parent_asset_key, passed_time_window
+            )
+        return updated_subsets_by_key
+
+    def parent_updated_since_cron(
+        self,
+        context: AssetConditionEvaluationContext,
+        passed_time_window: TimeWindow,
+        parent_asset_key: AssetKey,
+        child_asset_partition: AssetKeyPartitionKey,
+        updated_parent_subset: ValidAssetSubset,
+    ) -> bool:
+        """Returns if, for a given child asset partition, the given parent asset been updated with
+        information from the required time window.
+        """
+        parent_partitions_def = context.asset_graph.get_partitions_def(parent_asset_key)
+
+        if isinstance(parent_partitions_def, TimeWindowPartitionsDefinition):
+            # for time window partitions definitions, we simply assert that all time partitions that
+            # were newly created between the previous cron ticks have been materialized
+            required_parent_partitions = parent_partitions_def.get_partition_keys_in_time_window(
+                time_window=passed_time_window
+            )
+
+            # for time window partitions definitions, we simply assert that all time partitions that
+            return all(
+                AssetKeyPartitionKey(parent_asset_key, partition_key)
+                in context.instance_queryer.get_materialized_asset_subset(
+                    asset_key=parent_asset_key
                 )
-                or []
-            }
-            parent_subsets = []
-            for parent_key in context.asset_graph.get_parents(context.asset_key):
-                new_parent_subset = context.instance_queryer.get_asset_subset_updated_after_cursor(
-                    asset_key=parent_key, after_cursor=context.previous_max_storage_id
-                )
-                previous_parent_subset = previous_parent_subsets_by_key.get(
-                    parent_key, context.empty_subset()
-                )
-                parent_subsets.append(previous_parent_subset | new_parent_subset)
-            return parent_subsets
+                for partition_key in required_parent_partitions
+            )
+        # for all other partitions definitions, we assert that all parent partition keys have
+        # been materialized since the previous cron tick
+        else:
+            if parent_partitions_def is None:
+                non_updated_parent_asset_partitions = updated_parent_subset.inverse(
+                    parent_partitions_def
+                ).asset_partitions
+            else:
+                parent_subset = context.asset_graph.get_parent_partition_keys_for_child(
+                    child_asset_partition.partition_key,
+                    parent_asset_key,
+                    child_asset_partition.asset_key,
+                    context.instance_queryer,
+                    context.evaluation_time,
+                ).partitions_subset
+
+                non_updated_parent_asset_partitions = (
+                    ValidAssetSubset(parent_asset_key, parent_subset) - updated_parent_subset
+                ).asset_partitions
+
+            return not any(
+                not context.will_update_asset_partition(p)
+                for p in non_updated_parent_asset_partitions
+            )
 
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
         from .asset_condition import AssetConditionResult
 
-        parent_subsets_updated_since_cron = self.get_parent_subsets_updated_since_cron(context)
-        has_new_cron_tick = self.previous_cron_tick(context).timestamp() < (
+        passed_time_window = self.passed_time_window(context)
+        has_new_passed_time_window = passed_time_window.end.timestamp() > (
             context.previous_evaluation_timestamp or 0
+        )
+        updated_subsets_by_key = self.get_parent_subsets_updated_since_cron_by_key(
+            context, passed_time_window
         )
 
         # only need to evaluate net-new candidates and candidates whose parents have updated, unless
@@ -918,41 +1001,41 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 context.candidates_not_evaluated_on_previous_tick_subset
                 | context.candidate_parent_has_or_will_update_subset
             )
-            if not has_new_cron_tick
+            if not has_new_passed_time_window
             else context.candidate_subset
         )
-        true_candidates: Set[AssetKeyPartitionKey] = set()
-        updated_parent_mapping = {
-            subset.asset_key: subset for subset in parent_subsets_updated_since_cron
-        }
-        for candidate in subset_to_evaluate.asset_partitions:
-            parent_partitions = context.asset_graph.get_parents_partitions(
-                context.instance_queryer,
-                context.instance_queryer.evaluation_time,
-                context.asset_key,
-                candidate.partition_key,
-            ).parent_partitions
-            if all(
-                pp in updated_parent_mapping[pp.asset_key]
-                or context.will_update_asset_partition(pp)
-                for pp in parent_partitions
-            ):
-                true_candidates.add(candidate)
 
+        # the set of candidates for whom all parents have been updated since the previous cron tick
         all_parents_updated_subset = AssetSubset.from_asset_partitions_set(
-            context.asset_key, context.partitions_def, true_candidates
+            context.asset_key,
+            context.partitions_def,
+            {
+                candidate
+                for candidate in subset_to_evaluate.asset_partitions
+                if all(
+                    self.parent_updated_since_cron(
+                        context,
+                        passed_time_window,
+                        parent_asset_key,
+                        candidate,
+                        updated_subsets_by_key.get(parent_asset_key, context.empty_subset()),
+                    )
+                    for parent_asset_key in context.asset_graph.get_parents(candidate.asset_key)
+                )
+            },
         )
         # if your parents were all updated since the previous cron tick on the previous evaluation,
         # that will still be true unless a new cron tick has happened since the previous evaluation
-        if not has_new_cron_tick:
+        if not has_new_passed_time_window:
             all_parents_updated_subset = (
-                context.previous_candidate_subset.as_valid - context.previous_true_subset
+                context.previous_candidate_subset.as_valid(context.partitions_def)
+                - context.previous_true_subset
             ) | all_parents_updated_subset
 
         return AssetConditionResult.create(
             context,
             true_subset=context.candidate_subset - all_parents_updated_subset,
-            extra_state=parent_subsets_updated_since_cron,
+            extra_state=list(updated_subsets_by_key.values()),
         )
 
 
