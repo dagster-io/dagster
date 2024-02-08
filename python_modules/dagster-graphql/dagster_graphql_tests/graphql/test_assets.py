@@ -2496,7 +2496,7 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
             variables={
                 "eventParams": {
                     "eventType": DagsterEventType.ASSET_MATERIALIZATION,
-                    "assetKey": {"path": ["asset1"]},
+                    "assetKey": {"path": ["asset_one"]},
                 }
             },
         )
