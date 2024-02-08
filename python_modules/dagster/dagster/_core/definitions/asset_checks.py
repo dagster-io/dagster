@@ -255,4 +255,5 @@ def build_asset_with_blocking_check(
         auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
         backfill_policy=asset_def.backfill_policy,
         config=None,  # gets config from asset_def.op
+        _execution_type=asset_def.execution_type,
     )

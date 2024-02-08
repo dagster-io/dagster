@@ -94,6 +94,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
+    _execution_type: AssetExecutionType
 
     def __init__(
         self,
@@ -116,6 +117,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         is_subset: bool = False,
+        _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -315,6 +317,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
+        self._execution_type = check.inst_param(
+            _execution_type, "_execution_type", AssetExecutionType
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -337,6 +342,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
+        _execution_type: AssetExecutionType,
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -357,6 +363,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
             is_subset=is_subset,
+            _execution_type=_execution_type,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -394,6 +401,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -466,6 +474,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             check_specs=check_specs,
+            _execution_type=_execution_type,
         )
 
     @public
@@ -489,6 +498,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
+        _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -554,6 +564,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
+            _execution_type=_execution_type,
         )
 
     @staticmethod
@@ -578,6 +589,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _assign_output_names_to_check_specs,
@@ -715,6 +727,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,
             is_subset=False,
+            _execution_type=_execution_type,
         )
 
     @public
@@ -910,15 +923,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def execution_type(self) -> AssetExecutionType:
-        key = next(iter(self.keys), None)
+        return self._execution_type
 
-        # This occurs when a multi-asset has been subsetted to have only checks-- for now supported
-        # only on materializable assets.
-        if key is None:
-            return AssetExecutionType.MATERIALIZATION
-
-        # All assets in an AssetsDefinition currently must have the same execution type
-        return self.asset_execution_type_for_asset(key)
+    @property
+    def is_external(self) -> bool:
+        return self.execution_type != AssetExecutionType.MATERIALIZATION
 
     @property
     def is_observable(self) -> bool:
@@ -931,34 +940,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
-
-    def is_asset_executable(self, asset_key: AssetKey) -> bool:
-        """Returns True if the asset key is materializable by this AssetsDefinition.
-
-        Args:
-            asset_key (AssetKey): The asset key to check.
-
-        Returns:
-            bool: True if the asset key is materializable by this AssetsDefinition.
-        """
-        from dagster._core.definitions.asset_spec import (
-            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-            AssetExecutionType,
-        )
-
-        return AssetExecutionType.is_executable(
-            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        )
-
-    def asset_execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
-        from dagster._core.definitions.asset_spec import (
-            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-            AssetExecutionType,
-        )
-
-        return AssetExecutionType.str_to_enum(
-            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        )
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
@@ -1157,6 +1138,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
+            _execution_type=self.execution_type,
         )
 
         return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
@@ -1402,6 +1384,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
+            _execution_type=self._execution_type,
         )
 
 

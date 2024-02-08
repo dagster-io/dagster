@@ -40,7 +40,7 @@ from dagster._utils.warnings import (
 from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
-from ..asset_spec import AssetSpec
+from ..asset_spec import AssetExecutionType, AssetSpec
 from ..assets import ASSET_SUBSET_INPUT_PREFIX, AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
@@ -89,6 +89,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
+    _execution_type: AssetExecutionType = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -128,6 +129,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -241,6 +243,7 @@ def asset(
             code_version=code_version,
             check_specs=check_specs,
             key=key,
+            execution_type=_execution_type,
         )
 
     if compute_fn is not None:
@@ -313,6 +316,7 @@ class _Asset:
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -340,6 +344,7 @@ class _Asset:
         self.code_version = code_version
         self.check_specs = check_specs
         self.key = key
+        self.execution_type = execution_type
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -484,6 +489,7 @@ class _Asset:
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
+            _execution_type=self.execution_type,
         )
 
 
@@ -512,6 +518,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
     # deprecated
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -882,6 +889,7 @@ def multi_asset(
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
+            _execution_type=_execution_type,
         )
 
     return inner
@@ -1019,6 +1027,7 @@ def graph_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    _execution_type: AssetExecutionType = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -1040,6 +1049,7 @@ def graph_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -1117,6 +1127,7 @@ def graph_asset(
             resource_defs=resource_defs,
             check_specs=check_specs,
             key=key,
+            _execution_type=_execution_type,
         )
     else:
         return graph_asset_no_defaults(
@@ -1135,6 +1146,7 @@ def graph_asset(
             resource_defs=resource_defs,
             check_specs=check_specs,
             key=key,
+            _execution_type=_execution_type,
         )
 
 
@@ -1155,6 +1167,7 @@ def graph_asset_no_defaults(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     check_specs: Optional[Sequence[AssetCheckSpec]],
     key: Optional[CoercibleToAssetKey],
+    _execution_type: AssetExecutionType,
 ) -> AssetsDefinition:
     ins = ins or {}
     asset_ins = build_asset_ins(compose_fn, ins or {}, set())
@@ -1210,6 +1223,7 @@ def graph_asset_no_defaults(
         descriptions_by_output_name={"result": description} if description else None,
         resource_defs=resource_defs,
         check_specs=check_specs,
+        _execution_type=_execution_type,
     )
 
 
@@ -1225,6 +1239,7 @@ def graph_multi_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    _execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -1337,6 +1352,7 @@ def graph_multi_asset(
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            _execution_type=_execution_type,
         )
 
     return inner

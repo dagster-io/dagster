@@ -20,6 +20,9 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_spec import (
+    AssetExecutionType,
+)
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -740,6 +743,14 @@ class AssetLayer(NamedTuple):
 
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self.io_manager_keys_by_asset_key.get(asset_key, "io_manager")
+
+    def execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
+        if asset_key in self.assets_defs_by_key:
+            return self.assets_defs_by_key[asset_key].execution_type
+        elif asset_key in self.source_assets_by_key:
+            return self.source_assets_by_key[asset_key].execution_type
+        else:
+            check.failed(f"Couldn't find key {asset_key}")
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
         return (

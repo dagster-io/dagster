@@ -2,7 +2,6 @@ from typing import List, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
     AssetSpec,
 )
@@ -109,17 +108,11 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
-                    metadata={
-                        **(spec.metadata or {}),
-                        **{
-                            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
-                                AssetExecutionType.UNEXECUTABLE.value
-                            )
-                        },
-                    },
+                    metadata=spec.metadata,
                     deps=spec.deps,
                 )
             ],
+            _execution_type=AssetExecutionType.UNEXECUTABLE,
         )
         def _external_assets_def(context: AssetExecutionContext) -> None:
             raise DagsterInvariantViolationError(
@@ -139,21 +132,17 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
         " should be None",
     )
 
-    injected_metadata = (
-        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
-        if source_asset.observe_fn is None
-        else {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value}
-    )
-
     kwargs = {
         "key": source_asset.key,
-        "metadata": {
-            **source_asset.metadata,
-            **injected_metadata,
-        },
+        "metadata": source_asset.metadata,
         "group_name": source_asset.group_name,
         "description": source_asset.description,
         "partitions_def": source_asset.partitions_def,
+        "_execution_type": (
+            AssetExecutionType.UNEXECUTABLE
+            if source_asset.observe_fn is None
+            else AssetExecutionType.OBSERVATION
+        ),
     }
 
     if source_asset.io_manager_def:

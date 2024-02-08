@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -15,15 +16,8 @@ from .metadata import MetadataUserInput
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 
-# SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
-# (which currently ends up on the Output associated with the asset key)
-# whih encodes the execution type the of asset. "Unexecutable" assets are assets
-# that cannot be materialized in Dagster, but can have events in the event
-# log keyed off of them, making Dagster usable as a observability and lineage tool
-# for externally materialized assets.
-SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
-
+@whitelist_for_serdes
 class AssetExecutionType(Enum):
     OBSERVATION = "OBSERVATION"
     UNEXECUTABLE = "UNEXECUTABLE"

@@ -51,7 +51,7 @@ def test_external_asset_basic_creation() -> None:
     assert assets_def.metadata_by_key[expected_key]["user_metadata"] == "value"
     assert assets_def.group_names_by_key[expected_key] == "a_group"
     assert assets_def.descriptions_by_key[expected_key] == "desc"
-    assert assets_def.is_asset_executable(expected_key) is False
+    assert not assets_def.is_executable
 
 
 def test_multi_external_asset_basic_creation() -> None:
@@ -92,7 +92,7 @@ def test_normal_asset_materializeable() -> None:
     def an_asset() -> None:
         ...
 
-    assert an_asset.is_asset_executable(AssetKey(["an_asset"])) is True
+    assert an_asset.is_executable
 
 
 def test_external_asset_creation_with_deps() -> None:
@@ -230,7 +230,8 @@ def test_observable_source_asset_decorator() -> None:
         return DataVersion("foo")
 
     assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
-    assert assets_def.is_asset_executable(an_observable_source_asset.key)
+    assert assets_def.is_executable
+    assert assets_def.is_observable
     defs = Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()

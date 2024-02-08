@@ -880,7 +880,7 @@ def _log_asset_materialization_events_for_asset(
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         execution_type = (
-            asset_layer.assets_def_for_asset(asset_key).asset_execution_type_for_asset(asset_key)
+            asset_layer.assets_def_for_asset(asset_key).execution_type
             if asset_layer.has_assets_def_for_asset(asset_key)
             else AssetExecutionType.MATERIALIZATION
         )
