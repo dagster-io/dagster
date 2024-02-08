@@ -1189,6 +1189,12 @@ def define_sensors():
     @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
+
+        try:
+            raise Exception("hi hi")
+        except Exception:
+            context.log.exception("goodbye goodbye")
+
         return SkipReason()
 
     @sensor(asset_selection=AssetSelection.all())
