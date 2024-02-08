@@ -1,7 +1,12 @@
 from typing import Optional
 
 import pytest
-from dagster import DataVersionsByPartition, IOManager, StaticPartitionsDefinition
+from dagster import (
+    ConfigurableResource,
+    DataVersionsByPartition,
+    IOManager,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
@@ -159,3 +164,17 @@ def test_observe_handle_output():
     instance = DagsterInstance.ephemeral()
 
     assert observe([foo], instance=instance, resources={"io_manager": MyIOManager()}).success
+
+
+def test_observe_pythonic_resource():
+    class FooResource(ConfigurableResource):
+        foo: str
+
+    @observable_source_asset
+    def foo(foo: FooResource) -> DataVersion:
+        return DataVersion(f"{foo.foo}-alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
