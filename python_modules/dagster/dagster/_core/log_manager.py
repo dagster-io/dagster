@@ -64,7 +64,9 @@ class DagsterMessageProps(
             log_timestamp=check.opt_str_param(
                 log_timestamp,
                 "log_timestamp",
-                default=datetime.datetime.utcnow().isoformat(),
+                default=(
+                    datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
+                ),
             ),
             dagster_event=dagster_event,
         )
