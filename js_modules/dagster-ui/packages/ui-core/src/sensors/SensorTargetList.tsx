@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Dialog,
   DialogFooter,
-  Icon,
   MiddleTruncate,
   Subtitle2,
   ToggleButton,
@@ -186,11 +184,10 @@ const VirtualizedSelectedAssetRow = ({
       style={{cursor: 'pointer'}}
       padding={{horizontal: 24}}
     >
-      <Box style={{overflow: 'hidden'}}>
-        <MiddleTruncate text={displayNameForAssetKey(asset.key)} />
-      </Box>
       <Link to={assetDetailsPathForKey(asset.key)} target="_blank">
-        <Icon name="open_in_new" color={Colors.linkDefault()} />
+        <Box style={{overflow: 'hidden'}}>
+          <MiddleTruncate text={displayNameForAssetKey(asset.key)} />
+        </Box>
       </Link>
     </Box>
   );
