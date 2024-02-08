@@ -17,10 +17,15 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -244,6 +249,18 @@ class RunRequest(
         # Backcompat run requests yielded via `run_request_for_partition` already have resolved
         # partitioning
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
+
+    @property
+    def partition_key_range(self) -> Optional[PartitionKeyRange]:
+        if (
+            ASSET_PARTITION_RANGE_START_TAG in self.tags
+            and ASSET_PARTITION_RANGE_END_TAG in self.tags
+        ):
+            return PartitionKeyRange(
+                self.tags[ASSET_PARTITION_RANGE_START_TAG], self.tags[ASSET_PARTITION_RANGE_END_TAG]
+            )
+        else:
+            return None
 
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(
