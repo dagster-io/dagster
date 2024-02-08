@@ -1251,7 +1251,7 @@ class ExternalAssetNode(
                 check.failed(
                     f"Expected metadata value for key {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE} to be a TextMetadataValue, got {val}"
                 )
-            metadata_execution_type = AssetExecutionType.str_to_enum(val.value)
+            metadata_execution_type = AssetExecutionType[check.not_none(val.value)]
             if execution_type is not None:
                 check.invariant(
                     execution_type == metadata_execution_type,
@@ -1641,7 +1641,7 @@ def external_asset_nodes_from_defs(
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
-    ).difference(source_assets_by_key.keys())
+    ).difference({*source_assets_by_key.keys()})
 
     asset_nodes = [
         ExternalAssetNode(
@@ -1734,6 +1734,14 @@ def external_asset_nodes_from_defs(
             node_handle = node_handle.parent
             graph_name = node_handle.name
 
+        if asset_key in source_assets_by_key:
+            source_asset = source_assets_by_key[asset_key]
+            is_observable = source_asset.is_observable
+            auto_observe_interval_minutes = source_asset.auto_observe_interval_minutes
+        else:
+            is_observable = False
+            auto_observe_interval_minutes = None
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
@@ -1754,6 +1762,8 @@ def external_asset_nodes_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 metadata=asset_metadata,
+                is_observable=is_observable,
+                auto_observe_interval_minutes=auto_observe_interval_minutes,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
