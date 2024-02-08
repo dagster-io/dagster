@@ -770,10 +770,7 @@ class JobDefinition(IHasInternalInit):
         check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         nonexistent_assets = [
-            asset
-            for asset in asset_selection
-            if asset not in self.asset_layer.asset_keys
-            and asset not in self.asset_layer.source_assets_by_key
+            asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
         ]
         nonexistent_asset_strings = [
             asset_str
@@ -818,7 +815,7 @@ class JobDefinition(IHasInternalInit):
         new_job = build_asset_selection_job(
             name=self.name,
             assets=set(self.asset_layer.assets_defs_by_key.values()),
-            source_assets=self.asset_layer.source_assets_by_key.values(),
+            source_assets=set(),
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
@@ -1219,6 +1216,8 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
     AssetLayer that includes those SourceAssets.
     """
+    from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
     source_assets_list = []
     source_asset_keys_set = set()
@@ -1250,17 +1249,18 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         for node_name, node in graph_def.node_dict.items():
             if isinstance(node.definition, GraphDefinition):
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
-
+    assets_defs_by_key = {
+        source_asset.key: create_external_asset_from_source_asset(source_asset)
+        for source_asset in source_assets_list
+    }
     return AssetLayer(
+        asset_keys_to_execute=set(),
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
         asset_deps={},
         dependency_node_handles_by_asset_key={},
-        assets_defs_by_key={},
-        source_assets_by_key={
-            source_asset.key: source_asset for source_asset in source_assets_list
-        },
+        assets_defs_by_key=assets_defs_by_key,
         io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
         dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},

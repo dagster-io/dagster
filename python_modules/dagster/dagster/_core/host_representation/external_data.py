@@ -1657,7 +1657,7 @@ def external_asset_nodes_from_defs(
                 [
                     job_def.name
                     for job_def in job_defs
-                    if source_asset.key in job_def.asset_layer.source_assets_by_key
+                    if source_asset.key in job_def.asset_layer.target_asset_keys
                     and (
                         # explicit source-asset observation job
                         not job_def.asset_layer.has_assets_defs

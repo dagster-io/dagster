@@ -30,6 +30,7 @@ from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
+    ExternalAssetIOManagerRequirement,
     RequiresResources,
     ResourceAddable,
     ResourceRequirement,
@@ -1334,7 +1335,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        if self.is_executable:
+            yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        else:
+            for key in self.keys:
+                yield ExternalAssetIOManagerRequirement(
+                    key=self.get_io_manager_key_for_asset_key(key),
+                    asset_key=key.to_string(),
+                )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 

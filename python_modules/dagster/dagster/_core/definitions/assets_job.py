@@ -63,17 +63,12 @@ def is_base_asset_job_name(name: str) -> bool:
 
 def get_base_asset_jobs(
     assets: Sequence[AssetsDefinition],
-    source_assets: Sequence[SourceAsset],
     asset_checks: Sequence[AssetChecksDefinition],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    executable_assets_defs = [ad for ad in assets if ad.is_executable]
-    unexecutable_assets_defs = [ad for ad in assets if not ad.is_executable]
-    executable_source_assets = [sa for sa in source_assets if sa.is_observable]
-    unexecutable_source_assets = [sa for sa in source_assets if not sa.is_observable]
-    executable_assets = [*executable_assets_defs, *executable_source_assets]
-    unexecutable_assets = [*unexecutable_assets_defs, *unexecutable_source_assets]
+    executable_assets = [ad for ad in assets if ad.is_executable]
+    unexecutable_assets = [ad for ad in assets if not ad.is_executable]
 
     executable_assets_by_partitions_def: Dict[
         Optional[PartitionsDefinition], List[Union[AssetsDefinition, SourceAsset]]
@@ -172,6 +167,7 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+    from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     check.str_param(name, "name")
@@ -192,33 +188,33 @@ def build_assets_job(
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-    # turn any AssetsDefinitions into SourceAssets
-    resolved_other_assets: List[SourceAsset] = []
-    for asset in other_assets or []:
-        if isinstance(asset, AssetsDefinition):
-            resolved_other_assets += asset.to_source_assets()
-        elif isinstance(asset, SourceAsset):
-            resolved_other_assets.append(asset)
-
-    all_assets_defs = [a for a in assets_to_execute if isinstance(a, AssetsDefinition)]
-    all_source_assets = [
-        *(a for a in assets_to_execute if isinstance(a, SourceAsset)),
-        *resolved_other_assets,
+    # normalize SourceAssets to AssetsDefinition (external assets)
+    assets_to_execute = [
+        create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
+        for a in assets_to_execute
+    ]
+    other_assets = [
+        create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
+        for a in other_assets or []
     ]
 
+    all_assets = [*assets_to_execute, *other_assets]
+
     resolved_asset_deps = ResolvedAssetDependencies(
-        assets_defs=all_assets_defs,
-        source_assets=all_source_assets,
+        assets_defs=all_assets,
+        source_assets=[],
     )
-    # do I need node deps for assets to observe?
+
     deps, assets_by_node_handle, asset_checks_by_node_handle = _build_node_deps(
         assets_to_execute, asset_checks, resolved_asset_deps
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets_to_execute = _attempt_resolve_cycles(all_assets_defs, all_source_assets)
-        resolved_asset_deps = ResolvedAssetDependencies(assets_to_execute, resolved_other_assets)
+        assets_to_execute = _attempt_resolve_cycles(assets_to_execute, other_assets)
+
+        # assets_to_execute = _attempt_resolve_cycles(all_assets, [])
+        resolved_asset_deps = ResolvedAssetDependencies([*assets_to_execute, *other_assets], [])
 
         deps, assets_by_node_handle, asset_checks_by_node_handle = _build_node_deps(
             assets_to_execute, asset_checks, resolved_asset_deps
@@ -228,7 +224,6 @@ def build_assets_job(
         *(asset.node_def for asset in assets_to_execute),
         *(asset_check.node_def for asset_check in asset_checks),
     ]
-
     graph = GraphDefinition(
         name=name,
         node_defs=node_defs,
@@ -243,13 +238,11 @@ def build_assets_job(
         graph_def=graph,
         assets_to_execute_by_node_handle=assets_by_node_handle,
         asset_checks_by_node_handle=asset_checks_by_node_handle,
-        other_assets=resolved_other_assets,
+        other_assets=other_assets,
         resolved_asset_deps=resolved_asset_deps,
     )
 
-    all_resource_defs = get_all_resource_defs(
-        all_assets_defs, asset_checks, all_source_assets, wrapped_resource_defs
-    )
+    all_resource_defs = get_all_resource_defs(all_assets, asset_checks, [], wrapped_resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -347,12 +340,12 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
 
 
 def _build_node_deps(
-    assets_to_execute: Iterable[Union[AssetsDefinition, SourceAsset]],
+    assets_to_execute: Iterable[AssetsDefinition],
     asset_checks_to_execute: Sequence[AssetChecksDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
     DependencyMapping[NodeInvocation],
-    Mapping[NodeHandle, Union[AssetsDefinition, SourceAsset]],
+    Mapping[NodeHandle, AssetsDefinition],
     Mapping[NodeHandle, AssetChecksDefinition],
 ]:
     # sort so that nodes get a consistent name
@@ -366,7 +359,7 @@ def _build_node_deps(
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue
     collisions: Dict[str, int] = {}
-    node_handle_to_asset: Dict[NodeHandle, Union[AssetsDefinition, SourceAsset]] = {}
+    node_handle_to_asset: Dict[NodeHandle, AssetsDefinition] = {}
     node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
     for asset in assets_to_execute:
         node_def = check.not_none(asset.node_def)
@@ -492,8 +485,8 @@ def _has_cycles(
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
+    assets_to_execute: Iterable["AssetsDefinition"],
+    other_assets: Iterable["AssetsDefinition"],
 ) -> Sequence["AssetsDefinition"]:
     """DFS starting at root nodes to color the asset dependency graph. Each time you leave your
     current AssetsDefinition, the color increments.
@@ -510,14 +503,8 @@ def _attempt_resolve_cycles(
     """
     from dagster._core.selector.subset_selector import generate_asset_dep_graph
 
-    # get asset dependencies
-    asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
-
-    # index AssetsDefinitions by their asset names
-    assets_defs_by_asset_key: Dict[AssetKey, AssetsDefinition] = {}
-    for assets_def in assets_defs:
-        for asset_key in assets_def.keys:
-            assets_defs_by_asset_key[asset_key] = assets_def
+    asset_deps = generate_asset_dep_graph([*assets_to_execute, *other_assets], [])
+    assets_to_execute_by_asset_key = {k: ad for ad in assets_to_execute for k in ad.keys}
 
     # color for each asset
     colors = {}
@@ -525,10 +512,11 @@ def _attempt_resolve_cycles(
     # recursively color an asset and all of its downstream assets
     def _dfs(key, cur_color):
         colors[key] = cur_color
-        if key in assets_defs_by_asset_key:
-            cur_node_asset_keys = assets_defs_by_asset_key[key].keys
+
+        assets_def = assets_to_execute_by_asset_key.get(key)
+        if assets_def is not None:
+            cur_node_asset_keys = assets_def.keys
         else:
-            # in a SourceAsset, treat all downstream as if they're in the same node
             cur_node_asset_keys = asset_deps["downstream"][key]
 
         for downstream_key in asset_deps["downstream"][key]:
@@ -553,10 +541,10 @@ def _attempt_resolve_cycles(
         lambda: defaultdict(set)
     )
     for key, color in colors.items():
-        # ignore source assets
-        if key not in assets_defs_by_asset_key:
+        assets_def = assets_to_execute_by_asset_key.get(key)
+        if assets_def is None:
             continue
-        color_mapping_by_assets_defs[assets_defs_by_asset_key[key]][color].add(key)
+        color_mapping_by_assets_defs[assets_def][color].add(key)
 
     ret = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():

@@ -88,6 +88,7 @@ class AssetGraph:
         required_assets_and_checks_by_key: Mapping[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
+        execution_types_by_key: Mapping[AssetKey, AssetExecutionType],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -101,10 +102,8 @@ class AssetGraph:
         self._is_observable_by_key = is_observable_by_key
         self._auto_observe_interval_minutes_by_key = auto_observe_interval_minutes_by_key
         # source assets keys can sometimes appear in the upstream dict
-        self._materializable_asset_keys = (
-            self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
-        )
         self._required_assets_and_checks_by_key = required_assets_and_checks_by_key
+        self._execution_types_by_key = execution_types_by_key
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -117,6 +116,10 @@ class AssetGraph:
     @property
     def source_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._source_asset_keys
+
+    @property
+    def external_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.all_asset_keys - self.materializable_asset_keys
 
     @functools.cached_property
     def root_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -155,6 +158,10 @@ class AssetGraph:
     def backfill_policies_by_key(self) -> Mapping[AssetKey, Optional[BackfillPolicy]]:
         return self._backfill_policies_by_key
 
+    @property
+    def execution_types_by_key(self) -> Mapping[AssetKey, AssetExecutionType]:
+        return self._execution_types_by_key
+
     def get_auto_observe_interval_minutes(self, asset_key: AssetKey) -> Optional[float]:
         return self._auto_observe_interval_minutes_by_key.get(asset_key)
 
@@ -174,6 +181,7 @@ class AssetGraph:
             AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
+        execution_types_by_key: Dict[AssetKey, AssetExecutionType] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
         backfill_policies_by_key: Dict[AssetKey, Optional[BackfillPolicy]] = {}
@@ -193,6 +201,7 @@ class AssetGraph:
                 auto_observe_interval_minutes_by_key[
                     asset.key
                 ] = asset.auto_observe_interval_minutes
+                execution_types_by_key[asset.key] = AssetExecutionType.UNEXECUTABLE
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -204,6 +213,8 @@ class AssetGraph:
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
+                for key in asset.keys:
+                    execution_types_by_key[key] = asset.execution_type
 
                 is_observable = asset.execution_type == AssetExecutionType.OBSERVATION
                 is_observable_by_key.update({key: is_observable for key in asset.keys})
@@ -246,15 +257,20 @@ class AssetGraph:
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            execution_types_by_key=execution_types_by_key,
         )
 
     @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._materializable_asset_keys
+        return {
+            k
+            for k, v in self._execution_types_by_key.items()
+            if v == AssetExecutionType.MATERIALIZATION
+        }
 
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._materializable_asset_keys | self.source_asset_keys
+        return self._execution_types_by_key.keys()
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
@@ -303,7 +319,10 @@ class AssetGraph:
         )
 
     def is_observable(self, asset_key: AssetKey) -> bool:
-        return self._is_observable_by_key.get(asset_key, False)
+        return (
+            self._is_observable_by_key.get(asset_key, False)
+            or self._execution_types_by_key.get(asset_key) == AssetExecutionType.OBSERVATION
+        )
 
     def get_children(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets that depend on the given asset."""
@@ -746,6 +765,7 @@ class InternalAssetGraph(AssetGraph):
         required_assets_and_checks_by_key: Mapping[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
+        execution_types_by_key: Mapping[AssetKey, AssetExecutionType],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -760,6 +780,7 @@ class InternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            execution_types_by_key=execution_types_by_key,
         )
         self._assets = assets
         self._source_assets = source_assets
@@ -788,13 +809,15 @@ class InternalAssetGraph(AssetGraph):
     def asset_checks(self) -> Sequence[AssetChecksDefinition]:
         return self._asset_checks
 
-    def includes_materializable_and_source_assets(self, asset_keys: AbstractSet[AssetKey]) -> bool:
+    def includes_materializable_and_external_assets(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> bool:
         """Returns true if the given asset keys contains at least one materializable asset and
         at least one source asset.
         """
-        selected_source_assets = self.source_asset_keys & asset_keys
-        selected_regular_assets = asset_keys - self.source_asset_keys
-        return len(selected_source_assets) > 0 and len(selected_regular_assets) > 0
+        selected_external_assets = self.external_asset_keys & asset_keys
+        selected_regular_assets = asset_keys - self.external_asset_keys
+        return len(selected_external_assets) > 0 and len(selected_regular_assets) > 0
 
 
 def sort_key_for_asset_partition(

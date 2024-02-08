@@ -42,6 +42,7 @@ from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
@@ -304,7 +305,7 @@ def test_missing_io_manager():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            r"io manager with key 'special_io_manager' required by SourceAsset with key"
+            r"io manager with key 'special_io_manager' required by external asset with key"
             r" \[\"source1\"\] was not provided."
         ),
     ):
@@ -1979,7 +1980,6 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
             hourly_asset,
             unpartitioned_asset,
         ],
-        source_assets=[],
         executor_def=None,
         resource_defs={},
         asset_checks=[],
@@ -2023,10 +2023,8 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     jobs = get_base_asset_jobs(
         assets=[
             asset_x,
-        ],
-        source_assets=[
-            asset_a,
-            asset_b,
+            create_external_asset_from_source_asset(asset_a),
+            create_external_asset_from_source_asset(asset_b),
         ],
         executor_def=None,
         resource_defs={},
@@ -2110,7 +2108,7 @@ def test_selection_multi_component():
 
     assert Definitions(
         assets=[source_asset, asset1], jobs=[define_asset_job("something", selection="abc/asset1")]
-    ).get_job_def("something").asset_layer.asset_keys == {AssetKey(["abc", "asset1"])}
+    ).get_job_def("something").asset_layer.target_asset_keys == {AssetKey(["abc", "asset1"])}
 
 
 @pytest.mark.parametrize(

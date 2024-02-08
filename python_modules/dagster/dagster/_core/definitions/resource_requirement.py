@@ -104,6 +104,29 @@ class InputManagerRequirement(
         )
 
 
+class ExternalAssetIOManagerRequirement(
+    NamedTuple(
+        "_ExternalAssetIOManagerRequirement",
+        [
+            ("key", str),
+            ("asset_key", Optional[str]),
+        ],
+    ),
+    ResourceRequirement,
+):
+    @property
+    def expected_type(self) -> Type:
+        from ..storage.io_manager import IOManagerDefinition
+
+        return IOManagerDefinition
+
+    def describe_requirement(self) -> str:
+        external_asset_descriptor = (
+            f"external asset with key {self.asset_key}" if self.asset_key else "external asset"
+        )
+        return f"io manager with key '{self.key}' required by {external_asset_descriptor}"
+
+
 class SourceAssetIOManagerRequirement(
     NamedTuple(
         "_InputManagerRequirement",

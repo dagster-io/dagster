@@ -578,20 +578,15 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _materializing_asset_key_and_partitions_for_output(
+def _get_asset_key_and_partitions_for_output(
     output_context: OutputContext,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
     output_asset_info = output_context.asset_info
 
-    if (
-        output_asset_info
-        and not output_context.step_context.job_def.asset_layer.is_observable_for_asset(
-            output_asset_info.key
-        )
-    ):
+    if output_asset_info:
         if not output_asset_info.is_required:
             output_context.log.warning(
-                f"Materializing unexpected asset key: {output_asset_info.key}."
+                f"Materializing or observing unexpected asset key: {output_asset_info.key}."
             )
         return (
             output_asset_info.key,
@@ -619,7 +614,7 @@ def _get_output_asset_events(
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
-        and asset_key in step_context.job_def.asset_layer.asset_keys
+        and asset_key in step_context.job_def.asset_layer.target_asset_keys
     ):
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
@@ -773,7 +768,7 @@ def _store_output(
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
         or output_context.dagster_type.is_nothing
     ):
-        yield from _log_asset_materialization_events_for_asset(
+        yield from _log_asset_events_for_asset(
             step_context=step_context,
             output_context=output_context,
             output=output,
@@ -857,7 +852,7 @@ def _store_output(
 
             yield DagsterEvent.asset_materialization(step_context, materialization)
 
-        yield from _log_asset_materialization_events_for_asset(
+        yield from _log_asset_events_for_asset(
             step_context=step_context,
             output_context=output_context,
             output=output,
@@ -873,10 +868,26 @@ def _store_output(
         )
 
 
-def _log_asset_materialization_events_for_asset(
-    step_context, output_context, output, output_def, manager_metadata
-):
-    asset_key, partitions = _materializing_asset_key_and_partitions_for_output(output_context)
+def _log_asset_events_for_asset(
+    step_context: StepExecutionContext,
+    output_context: OutputContext,
+    output: Union[Output, DynamicOutput],
+    output_def: OutputDefinition,
+    manager_metadata: Mapping[str, MetadataValue],
+) -> Iterator[DagsterEvent]:
+    # This is a temporary workaround to prevent duplicate observation events from external
+    # observable assets that were auto-converted from source assets. These assets yield
+    # observation events through the context in their body, and will continue to do so until we
+    # can convert them to using ObserveResult, which requires a solution to partition-scoped
+    # metadata and data version on output. We identify these auto-converted assets by looking
+    # for OBSERVATION-type asset that have this special metadata key (added in
+    # `wrap_source_asset_observe_fn_in_op_compute_fn`), which should only occur for these
+    # auto-converted source assets. This can be removed when source asset observation functions
+    # are converted to use ObserveResult.
+    if SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata:
+        return
+
+    asset_key, partitions = _get_asset_key_and_partitions_for_output(output_context)
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         execution_type = (
@@ -886,44 +897,24 @@ def _log_asset_materialization_events_for_asset(
         )
 
         check.invariant(
-            execution_type != AssetExecutionType.UNEXECUTABLE,
-            "There should never be unexecutable assets here",
-        )
-
-        check.invariant(
             execution_type in {AssetExecutionType.MATERIALIZATION, AssetExecutionType.OBSERVATION},
             f"Unexpected asset execution type {execution_type}",
         )
 
-        # This is a temporary workaround to prevent duplicate observation events from external
-        # observable assets that were auto-converted from source assets. These assets yield
-        # observation events through the context in their body, and will continue to do so until we
-        # can convert them to using ObserveResult, which requires a solution to partition-scoped
-        # metadata and data version on output. We identify these auto-converted assets by looking
-        # for OBSERVATION-type asset that have this special metadata key (added in
-        # `wrap_source_asset_observe_fn_in_op_compute_fn`), which should only occur for these
-        # auto-converted source assets. This can be removed when source asset observation functions
-        # are converted to use ObserveResult.
-        if (
-            execution_type == AssetExecutionType.OBSERVATION
-            and SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata
-        ):
-            pass
-        else:
-            yield from (
-                (
-                    _dagster_event_for_asset_event(step_context, event)
-                    for event in _get_output_asset_events(
-                        asset_key,
-                        partitions,
-                        output,
-                        output_def,
-                        manager_metadata,
-                        step_context,
-                        execution_type,
-                    )
+        yield from (
+            (
+                _dagster_event_for_asset_event(step_context, event)
+                for event in _get_output_asset_events(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                    execution_type,
                 )
             )
+        )
 
 
 def _dagster_event_for_asset_event(

@@ -58,7 +58,7 @@ def test_observe_result_asset():
         DagsterInvariantViolationError,
         match="Asset key random not found in AssetsDefinition",
     ):
-        materialize([ret_mismatch])
+        observe([ret_mismatch])
 
     # direct invocation
     with pytest.raises(
@@ -73,7 +73,7 @@ def test_observe_result_asset():
         return ObserveResult(metadata={"one": 1}), ObserveResult(metadata={"two": 2})
 
     # core execution
-    result = materialize([ret_two])
+    result = observe([ret_two])
     assert result.success
 
     # direct invocation
@@ -96,7 +96,7 @@ def test_return_observe_result_with_asset_checks():
             )
 
         # core execution
-        materialize([ret_checks], instance=instance)
+        observe([ret_checks], instance=instance)
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
             AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
@@ -119,7 +119,7 @@ def test_multi_asset_observe_result():
             asset_key="two", metadata={"baz": "qux"}
         )
 
-    assert materialize([outs_multi_asset]).success
+    assert observe([outs_multi_asset]).success
 
     res = outs_multi_asset()
     assert res[0].metadata["foo"] == "bar"
@@ -137,7 +137,7 @@ def test_multi_asset_observe_result():
             asset_key=["prefix", "two"], metadata={"baz": "qux"}
         )
 
-    assert materialize([specs_multi_asset]).success
+    assert observe([specs_multi_asset]).success
 
     res = specs_multi_asset()
     assert res[0].metadata["foo"] == "bar"
@@ -315,7 +315,7 @@ def test_observe_result_output_typing():
     def asset_with_type_annotation() -> ObserveResult:
         return ObserveResult(metadata={"foo": "bar"})
 
-    assert materialize(
+    assert observe(
         [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
@@ -326,7 +326,7 @@ def test_observe_result_output_typing():
     def multi_asset_with_outs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
@@ -340,7 +340,7 @@ def test_observe_result_output_typing():
     def multi_asset_with_specs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
@@ -354,7 +354,7 @@ def test_observe_result_output_typing():
     def multi_asset_with_specs_and_no_type_annotation():
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_specs_and_no_type_annotation],
         resources={"io_manager": TestingIOManager()},
     ).success

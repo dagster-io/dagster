@@ -463,7 +463,7 @@ def test_define_selection_job_assets_definition_selection():
     job1 = define_asset_job("job1", selection=[asset1, asset2]).resolve(
         asset_graph=AssetGraph.from_assets(all_assets)
     )
-    asset_keys = list(job1.asset_layer.asset_keys)
+    asset_keys = list(job1.asset_layer.target_asset_keys)
     assert len(asset_keys) == 2
     assert set(asset_keys) == {asset1.key, asset2.key}
     job1.execute_in_process()

@@ -54,6 +54,7 @@ class ExternalAssetGraph(AssetGraph):
         required_assets_and_checks_by_key: Mapping[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
+        execution_types_by_key: Mapping[AssetKey, AssetExecutionType],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -68,6 +69,7 @@ class ExternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            execution_types_by_key=execution_types_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._materialization_job_names_by_key = job_names_by_key
@@ -149,6 +151,9 @@ class ExternalAssetGraph(AssetGraph):
             for _, node in repo_handle_external_asset_nodes
             if not node.is_source
         }
+        execution_types_by_key = {
+            node.asset_key: node.execution_type for _, node in repo_handle_external_asset_nodes
+        }
 
         all_non_source_keys = {
             node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
@@ -224,6 +229,7 @@ class ExternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            execution_types_by_key=execution_types_by_key,
         )
 
     @property
