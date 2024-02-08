@@ -21,7 +21,10 @@ import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -953,33 +956,36 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """
         return self._selected_asset_check_keys
 
-    def is_asset_executable(self, asset_key: AssetKey) -> bool:
-        """Returns True if the asset key is materializable by this AssetsDefinition.
+    @property
+    def execution_type(self) -> AssetExecutionType:
+        first_key = next(iter(self.keys), None)
+        # Currently all assets in an AssetsDefinition have the same execution type
+        if first_key:
+            return AssetExecutionType.str_to_enum(
+                self.metadata_by_key.get(first_key, {}).get(
+                    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE
+                )
+            )
+        else:
+            return AssetExecutionType.UNEXECUTABLE
 
-        Args:
-            asset_key (AssetKey): The asset key to check.
+        return self._execution_type
 
-        Returns:
-            bool: True if the asset key is materializable by this AssetsDefinition.
-        """
-        from dagster._core.definitions.asset_spec import (
-            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-            AssetExecutionType,
-        )
+    @property
+    def is_external(self) -> bool:
+        return self.execution_type != AssetExecutionType.MATERIALIZATION
 
-        return AssetExecutionType.is_executable(
-            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        )
+    @property
+    def is_observable(self) -> bool:
+        return self.execution_type == AssetExecutionType.OBSERVATION
 
-    def asset_execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
-        from dagster._core.definitions.asset_spec import (
-            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-            AssetExecutionType,
-        )
+    @property
+    def is_materializable(self) -> bool:
+        return self.execution_type == AssetExecutionType.MATERIALIZATION
 
-        return AssetExecutionType.str_to_enum(
-            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        )
+    @property
+    def is_executable(self) -> bool:
+        return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])

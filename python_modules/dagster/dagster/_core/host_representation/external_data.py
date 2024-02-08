@@ -103,7 +103,9 @@ from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import is_whitelisted_for_serdes_object
+from dagster._serdes.serdes import (
+    is_whitelisted_for_serdes_object,
+)
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -1175,6 +1177,7 @@ class ExternalAssetNode(
             ("asset_key", AssetKey),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
+            ("execution_type", AssetExecutionType),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Sequence[str]),
@@ -1215,6 +1218,7 @@ class ExternalAssetNode(
         asset_key: AssetKey,
         dependencies: Sequence[ExternalAssetDependency],
         depended_by: Sequence[ExternalAssetDependedBy],
+        execution_type: Optional[AssetExecutionType] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
@@ -1238,6 +1242,32 @@ class ExternalAssetNode(
         auto_observe_interval_minutes: Optional[float] = None,
         owners: Optional[Sequence[str]] = None,
     ):
+        metadata = normalize_metadata(check.opt_mapping_param(metadata, "metadata", key_type=str))
+
+        # backcompat logic for execution type specified via metadata
+        if SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE in metadata:
+            val = metadata[SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE]
+            if not isinstance(val, TextMetadataValue):
+                check.failed(
+                    f"Expected metadata value for key {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE} to be a TextMetadataValue, got {val}"
+                )
+            metadata_execution_type = AssetExecutionType.str_to_enum(val.value)
+            if execution_type is not None:
+                check.invariant(
+                    execution_type == metadata_execution_type,
+                    f"Execution type {execution_type} in metadata does not match type inferred from metadata {metadata_execution_type}",
+                )
+            execution_type = metadata_execution_type
+        else:
+            execution_type = (
+                check.opt_inst_param(
+                    execution_type,
+                    "execution_type",
+                    AssetExecutionType,
+                )
+                or AssetExecutionType.MATERIALIZATION
+            )
+
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
             op_names = list(filter(None, [op_name]))
@@ -1272,9 +1302,7 @@ class ExternalAssetNode(
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
-            metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
-            ),
+            metadata=metadata,
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
@@ -1299,19 +1327,12 @@ class ExternalAssetNode(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            execution_type=check.inst_param(execution_type, "execution_type", AssetExecutionType),
         )
 
     @property
     def is_executable(self) -> bool:
-        metadata_value = self.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        if not metadata_value:
-            varietal_text = None
-        else:
-            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
-            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
-            varietal_text = metadata_value.value
-
-        return AssetExecutionType.is_executable(varietal_text)
+        return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
@@ -1554,6 +1575,7 @@ def external_asset_nodes_from_defs(
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
     owners_by_asset_key: Dict[AssetKey, Sequence[AssetOwner]] = {}
+    execution_types_by_asset_key: Dict[AssetKey, AssetExecutionType] = {}
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
@@ -1577,6 +1599,9 @@ def external_asset_nodes_from_defs(
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, job_def))
             asset_info_by_asset_key[output_key] = asset_info
+            execution_types_by_asset_key[output_key] = asset_layer.execution_type_for_asset(
+                output_key
+            )
 
             for upstream_key in upstream_asset_keys:
                 partition_mapping = asset_layer.partition_mapping_for_node_input(
@@ -1623,6 +1648,7 @@ def external_asset_nodes_from_defs(
             asset_key=asset_key,
             dependencies=list(deps[asset_key].values()),
             depended_by=list(dep_by[asset_key].values()),
+            execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=group_name_by_asset_key.get(asset_key),
             code_version=code_version_by_asset_key.get(asset_key),
@@ -1656,6 +1682,7 @@ def external_asset_nodes_from_defs(
                     asset_key=source_asset.key,
                     dependencies=list(deps[source_asset.key].values()),
                     depended_by=list(dep_by[source_asset.key].values()),
+                    execution_type=source_asset.execution_type,
                     job_names=job_names,
                     op_description=source_asset.description,
                     metadata=source_asset.metadata,
@@ -1712,6 +1739,7 @@ def external_asset_nodes_from_defs(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
+                execution_type=execution_types_by_asset_key[asset_key],
                 compute_kind=node_def.tags.get("kind"),
                 # backcompat
                 op_name=graph_name
