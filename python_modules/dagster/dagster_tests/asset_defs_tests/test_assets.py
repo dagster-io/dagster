@@ -2063,6 +2063,18 @@ def test_asset_owners():
 
     assert my_asset.owners_by_key == {my_asset.key: ["owner1", "owner2"]}
 
+    @asset(owners=[])
+    def asset_2():
+        pass
+
+    assert asset_2.owners_by_key == {}
+
+    @asset(owners=None)
+    def asset_3():
+        pass
+
+    assert asset_3.owners_by_key == {}
+
 
 def test_multi_asset_owners():
     @multi_asset(

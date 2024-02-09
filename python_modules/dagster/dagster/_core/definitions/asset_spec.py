@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -45,6 +45,7 @@ class AssetExecutionType(Enum):
         )
 
 
+@experimental_param(param="owners")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",

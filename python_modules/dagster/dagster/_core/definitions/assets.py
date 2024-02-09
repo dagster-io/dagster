@@ -47,7 +47,6 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import (
     disable_dagster_warnings,
-    experimental_warning,
 )
 
 from .dependency import NodeHandle
@@ -321,9 +320,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._owners_by_key = check.opt_mapping_param(
             owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
         )
-
-        if self._owners_by_key and any(self._owners_by_key.values()):
-            experimental_warning("Defining owners on assets")
 
     @staticmethod
     def dagster_internal_init(

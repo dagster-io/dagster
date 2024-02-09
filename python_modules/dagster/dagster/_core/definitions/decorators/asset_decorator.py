@@ -98,6 +98,7 @@ def asset(
 @experimental_param(param="io_manager_def")
 @experimental_param(param="auto_materialize_policy")
 @experimental_param(param="backfill_policy")
+@experimental_param(param="owners")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
