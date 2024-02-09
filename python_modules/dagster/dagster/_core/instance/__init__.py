@@ -3159,3 +3159,7 @@ class DagsterInstance(DynamicPartitionsStore):
             if self.event_log_storage.supports_asset_checks
             else AssetCheckInstanceSupport.NEEDS_MIGRATION
         )
+
+    @property
+    def cloud_deployment(self) -> None:
+        return None

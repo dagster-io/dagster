@@ -45,11 +45,13 @@ class BranchChangeResolver:
 
     def _is_branch_deployment(self) -> bool:
         """Determines if the current deployment is a branch deployment."""
-        # TODO - implement.
+        if self._instance.cloud_deployment is not None:
+            return self._instance.cloud_deployment.is_branch_deployment
         return False
 
     def _get_parent_deployment_asset_graph(self):
-        # TODO - implement. For now we can override in the test suite
+        if self._instance.cloud_deployment is not None:
+            parent_deployment = self._instance.cloud_deployment.compute_parent_deployment()
         return None
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
