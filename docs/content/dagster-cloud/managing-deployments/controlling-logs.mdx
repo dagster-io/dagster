@@ -77,7 +77,7 @@ For a full list of available compute log storage options, refer to the [Compute 
 
 By default, Dagster Cloud surfaces error messages from your code locations in the Dagster Cloud UI, including when runs fail, when sensors or schedules throw an exception, or when your code locations fail to load. You can mask these error messages in the case that their contents are sensitive.
 
-In order to mask error messages in a Dagster Cloud Deployment, you can set the environment variable `DAGSTER_REDACT_USER_CODE_ERRORS` equal to `1` using the [Dagster Cloud Environment Variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets) UI:
+To mask error messages in a Dagster Cloud Deployment, set the environment variable `DAGSTER_REDACT_USER_CODE_ERRORS` equal to `1` using the [**Environment variables** page](/dagster-cloud/managing-deployments/environment-variables-and-secrets) in the UI:
 
 <Image
 alt="Environment variable UI showing DAGSTER_REDACT_USER_CODE_ERRORS set to 1"
