@@ -131,6 +131,13 @@ def test_with_asset_checks(assets_def) -> None:
                 AssetKey(["jaffle_shop", "raw_customers"]),
             ],
         ),
+        "orders_relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_": AssetCheckSpec(
+            name="relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
+            asset=AssetKey(["orders"]),
+            additional_deps=[
+                AssetKey(["customers"]),
+            ],
+        ),
         "orders_unique_orders_order_id": AssetCheckSpec(
             name="unique_orders_order_id",
             asset=AssetKey(["orders"]),
@@ -249,7 +256,7 @@ def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
     result = _materialize_dbt_assets(dbt_commands, selection=None, raise_on_error=False)
     assert not result.success  # fail_tests_model fails
     assert len(result.get_asset_materialization_events()) == 10
-    assert len(result.get_asset_check_evaluations()) == 23
+    assert len(result.get_asset_check_evaluations()) == 24
 
 
 def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
