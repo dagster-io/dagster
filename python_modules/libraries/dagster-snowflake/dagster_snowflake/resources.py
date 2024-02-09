@@ -526,6 +526,7 @@ class SnowflakeConnection:
         parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
+        use_arrow_result: bool = False,
     ):
         """Execute a query in Snowflake.
 
@@ -538,7 +539,10 @@ class SnowflakeConnection:
                 and use_pandas_result is also True, results will be returned as a Pandas DataFrame.
             use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
                 Defaults to False. If fetch_results is False and use_pandas_result is True, an error will be
-                raised.
+                raised. Only one of use_pandas_result and use_arrow_result may be True.
+            use_arrow_result (bool): If True, will return the query as a PyArrow table. Defaults to False.
+                If fetch_results is False, and use_arrow_result if True, an error will be raised. Only one of
+                use_pandas_result and use_arrow_result may be True.
 
         Returns:
             The result of the query if fetch_results or use_pandas_result is True, otherwise returns None
@@ -555,8 +559,10 @@ class SnowflakeConnection:
         check.str_param(sql, "sql")
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
-        if not fetch_results and use_pandas_result:
-            check.failed("If use_pandas_result is True, fetch_results must also be True.")
+        if not fetch_results and (use_pandas_result or use_arrow_result):
+            check.failed(
+                "If use_pandas_result or use_arrow_result is True, fetch_results must also be True."
+            )
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
@@ -568,6 +574,8 @@ class SnowflakeConnection:
                 cursor.execute(sql, parameters)
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
+                if use_arrow_result:
+                    return cursor.fetch_arrow_all()
                 if fetch_results:
                     return cursor.fetchall()
 
