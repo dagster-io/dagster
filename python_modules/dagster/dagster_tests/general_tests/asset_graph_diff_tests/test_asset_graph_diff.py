@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 from dagster import DagsterInstance, asset, instance_for_test
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.branch_changes import BranchChangeResolver
+from dagster._core.definitions.branch_changes import BranchChangeResolver, ChangeReason
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
@@ -133,6 +133,7 @@ def test_new_asset(instance):
     )
 
     assert resolver.is_changed_in_branch(new_asset.key)
+    assert resolver.get_changes_for_asset(new_asset.key) == [ChangeReason.NEW]
     assert not resolver.is_changed_in_branch(AssetKey("upstream"))
 
 

@@ -1,10 +1,5 @@
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Mapping,
-    Optional,
-    Union,
-)
+from enum import Enum
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
 
@@ -14,6 +9,12 @@ if TYPE_CHECKING:
         AssetKey,
     )
     from dagster._core.instance import DagsterInstance
+
+
+class ChangeReason(Enum):
+    NEW = "NEW"
+    CODE_VERSION = "CODE_VERSION"
+    INPUTS = "INPUTS"
 
 
 class BranchChangeResolver:
@@ -27,7 +28,7 @@ class BranchChangeResolver:
         instance: "DagsterInstance",
         branch_asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
     ):
-        from dagster._core.definitions.asset_graph import AssetGraph, AssetKey
+        from dagster._core.definitions.asset_graph import AssetGraph
 
         self._instance = instance
         if isinstance(branch_asset_graph, AssetGraph):
@@ -39,9 +40,6 @@ class BranchChangeResolver:
 
         if self._is_branch_deployment():
             self._parent_asset_graph = self._get_parent_deployment_asset_graph()
-            self._changed_status_by_asset_key: Mapping[
-                AssetKey, bool
-            ] = self._compare_parent_and_branch_asset_graphs()
         else:
             self._changed_status_by_asset_key = {}
 
@@ -54,36 +52,42 @@ class BranchChangeResolver:
         # TODO - implement. For now we can override in the test suite
         return None
 
-    def _compare_parent_and_branch_asset_graphs(self) -> Mapping["AssetKey", bool]:
-        """Computes the diff between a branch deployment asset graph and the
-        corresponding parent deployment asset graph.
-
-        TODO - this is a really rough impl right now. Will get better later
+    def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
+        """Computes the diff between a branch deployment asset and the
+        corresponding parent deployment asset.
         """
-        if self._parent_asset_graph is None:
-            return {}
+        if not self._is_branch_deployment():
+            return []
 
-        changes = {}
-        for asset_key in self.branch_asset_graph.all_asset_keys:
-            if asset_key in self._parent_asset_graph.all_asset_keys:
-                if self.branch_asset_graph.get_code_version(
-                    asset_key
-                ) != self._parent_asset_graph.get_code_version(
-                    asset_key
-                ) or self.branch_asset_graph.get_parents(
-                    asset_key
-                ) != self._parent_asset_graph.get_parents(asset_key):
-                    changes[asset_key] = True
-                else:
-                    changes[asset_key] = False
-            else:
-                changes[asset_key] = True
+        if self._parent_asset_graph is None:
+            # TODO - this might indicate that the entire asset graph is new, and thus should
+            # return ChangeReason.NEW. This will depend on how the parent asset graph is fetched.
+            return []
+
+        if asset_key not in self._parent_asset_graph.all_asset_keys:
+            return [ChangeReason.NEW]
+
+        changes = []
+        if self.branch_asset_graph.get_code_version(
+            asset_key
+        ) != self._parent_asset_graph.get_code_version(asset_key):
+            changes.append(ChangeReason.CODE_VERSION)
+
+        if self.branch_asset_graph.get_parents(asset_key) != self._parent_asset_graph.get_parents(
+            asset_key
+        ):
+            changes.append(ChangeReason.INPUTS)
 
         return changes
 
     def is_changed_in_branch(self, asset_key: "AssetKey") -> bool:
         """Returns whether the given asset has been changed in the branch deployment."""
-        return self._changed_status_by_asset_key.get(asset_key, False)
+        # TODO - unclear if this method is really necessary. Consider removing.
+        return len(self._compare_parent_and_branch_assets(asset_key)) > 0
+
+    def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
+        """Returns list of ChangeReasons for asset_key as compared to the parent deployment."""
+        return self._compare_parent_and_branch_assets(asset_key)
 
     @property
     def branch_asset_graph(self) -> "AssetGraph":
