@@ -178,3 +178,20 @@ def test_observe_pythonic_resource():
 
     observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
     assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
+
+
+def test_observe_backcompat_pythonic_resource():
+    class FooResource(ConfigurableResource):
+        foo: str
+
+        def get_object_to_set_on_execution_context(self):
+            raise Exception("Shouldn't get here")
+
+    @observable_source_asset
+    def foo(foo: FooResource) -> DataVersion:
+        return DataVersion(f"{foo.foo}-alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
