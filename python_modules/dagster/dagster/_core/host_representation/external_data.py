@@ -44,12 +44,12 @@ from dagster._core.definitions import (
     PartitionsDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
-    SourceAsset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     AssetExecutionType,
 )
 from dagster._core.definitions.assets import AssetsDefinition
@@ -68,6 +68,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.external_asset import is_external_asset
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -1328,8 +1329,27 @@ class ExternalAssetNode(
         )
 
     @property
+    def execution_type(self) -> AssetExecutionType:
+        metadata_value = self.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        if not metadata_value:
+            varietal_text = None
+        else:
+            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
+            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
+            varietal_text = metadata_value.value
+        return (
+            AssetExecutionType.MATERIALIZATION
+            if varietal_text is None
+            else AssetExecutionType(varietal_text)
+        )
+
+    @property
+    def is_external(self) -> bool:
+        return self.execution_type != AssetExecutionType.MATERIALIZATION
+
+    @property
     def is_executable(self) -> bool:
-        return self.execution_type != AssetExecutionType.UNEXECUTABLE
+        return AssetExecutionType.is_executable(self.execution_type)
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
@@ -1397,10 +1417,7 @@ def external_repository_data_from_def(
         job_refs = None
 
     resource_datas = repository_def.get_top_level_resources()
-    asset_graph = external_asset_nodes_from_defs(
-        jobs,
-        source_assets_by_key=repository_def.source_assets_by_key,
-    )
+    asset_graph = external_asset_nodes_from_defs(jobs, repository_def.assets_defs_by_key)
 
     nested_resource_map = _get_nested_resources_map(
         resource_datas, repository_def.get_resource_key_mapping()
@@ -1417,12 +1434,6 @@ def external_repository_data_from_def(
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
-
-    # collect resource usage from source assets
-    for source_asset_key, source_asset in repository_def.source_assets_by_key.items():
-        if source_asset.required_resource_keys:
-            for resource_key in source_asset.required_resource_keys:
-                resource_asset_usage_map[resource_key].append(source_asset_key)
 
     resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
     for schedule in repository_def.schedule_defs:
@@ -1550,10 +1561,127 @@ def external_asset_checks_from_defs(
     return sorted(external_checks, key=lambda check: (check.asset_key, check.name))
 
 
+# def external_asset_nodes_from_assets_defs(
+#     assets_defs: Sequence[AssetsDefinition],
+#     job_defs: Sequence[JobDefinition],
+# ) -> Sequence[ExternalAssetNode]:
+#     asset_nodes: List[ExternalAssetNode] = []
+#
+#     # An asset may appear in a job as a node output, a node input, or both a node output and a node
+#     # input.
+#     #
+#     # - An asset is only considered "part" of a job if it appears as a node output, i.e. is
+#     #   materialized by the job.
+#     # When an asset appears as a node output, it will can appear in multiple jobs.
+#     # `ExternalAssetNode` contains fields (e.g. `op_name`, `graph_name`) that implicitly assume a
+#     # single job. We therefore need to find the canonical job for each asset that will be used to
+#     # resolve these fields.
+#     # build job-dependent data structures
+#     processed_job_asset_keys: Set[AssetKey] = set()
+#     graph_names_by_key: Dict[AssetKey, Optional[str]] = {}
+#     op_names_by_key: Dict[AssetKey, List[str]] = {}
+#     op_name_by_key: Dict[AssetKey, str] = {}
+#     job_names_by_key: DefaultDict[AssetKey, List[str]] = defaultdict(list)
+#     output_names_by_key: Dict[AssetKey, str] = {}
+#     for job_def in job_defs:
+#         asset_layer = job_def.asset_layer
+#         for asset_key in asset_layer.asset_keys:
+#             job_names_by_key[asset_key].append(job_def.name)
+#
+#         asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
+#         for node_output_handle, asset_info in asset_info_by_node_output.items():
+#             asset_key = asset_info.key
+#             node_def = job_def.graph.get_node(node_output_handle.node_handle).definition
+#             if asset_key not in processed_job_asset_keys:
+#                 op_names = [
+#                     str(handle)
+#                     for handle in asset_layer.dependency_node_handles_by_asset_key.get(
+#                         asset_key, []
+#                     )
+#                 ]
+#                 # if the asset is produced by an op at the top level of the
+#                 # graph, graph_name should be None
+#                 graph_name = None
+#                 node_handle = node_output_handle.node_handle
+#                 while node_handle.parent:
+#                     node_handle = node_handle.parent
+#                     graph_name = node_handle.name
+#                 op_name = graph_name or next(iter(op_names), None) or node_def.name
+#
+#                 processed_job_asset_keys.add(asset_key)
+#                 graph_names_by_key[asset_key] = graph_name
+#                 op_names_by_key[asset_key] = op_names
+#                 op_name_by_key[asset_key] = op_name
+#
+#     # build dependency data structures
+#     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
+#     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
+#     for assets_def in assets_defs:
+#         for asset_key in assets_def.keys:
+#             for upstream_key in assets_def.asset_deps[asset_key]:
+#                 partition_mapping = assets_def.get_partition_mapping(upstream_key)
+#                 deps[asset_key][upstream_key] = ExternalAssetDependency(
+#                     upstream_asset_key=upstream_key,
+#                     partition_mapping=(
+#                         partition_mapping
+#                         if isinstance(partition_mapping, get_builtin_partition_mapping_types())
+#                         else None
+#                     ),
+#                 )
+#                 dep_by[upstream_key][asset_key] = ExternalAssetDependedBy(
+#                     downstream_asset_key=asset_key
+#                 )
+#
+#     # build asset nodes
+#     for assets_def in assets_defs:
+#         partitions_data = (
+#             external_partitions_definition_from_def(assets_def.partitions_def)
+#             if assets_def.partitions_def
+#             else None
+#         )
+#         for asset_key in assets_def.keys:
+#             asset_nodes.append(
+#                 ExternalAssetNode(
+#                     asset_key=asset_key,
+#                     dependencies=list(deps[asset_key].values()),
+#                     depended_by=list(dep_by[asset_key].values()),
+#                     compute_kind=assets_def.node_def.tags.get("kind"),
+#                     op_name=op_name_by_key.get(asset_key),
+#                     op_names=op_names_by_key.get(asset_key),
+#                     code_version=assets_def.code_versions_by_key.get(asset_key),
+#                     node_definition_name=assets_def.node_def.name,
+#                     graph_name=graph_names_by_key.get(asset_key),
+#                     op_description=assets_def.node_def.description,
+#                     job_names=job_names_by_key[asset_key],
+#                     partitions_def_data=partitions_data,
+#                     output_name=None,
+#                     output_description=None,
+#                     metadata=assets_def.metadata_by_key.get(asset_key, {}),
+#                     group_name=assets_def.group_names_by_key.get(asset_key),
+#                     freshness_policy=assets_def.freshness_policies_by_key.get(asset_key),
+#                     is_source=False,
+#                     is_observable=False,
+#                     atomic_execution_unit_id=assets_def.unique_id,
+#                     required_top_level_resources=assets_def.required_resource_keys,
+#                     auto_materialize_policy=assets_def.auto_materialize_policies_by_key.get(
+#                         asset_key
+#                     ),
+#                     backfill_policy=assets_def.backfill_policy,
+#                     auto_observe_interval_minutes=assets_def.metadata_by_key.get(asset_key, {}).get(
+#                         SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES
+#                     ),
+#                 )
+#             )
+
+
 def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
-    source_assets_by_key: Mapping[AssetKey, SourceAsset],
+    assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
 ) -> Sequence[ExternalAssetNode]:
+    external_assets_defs = [
+        assets_def for assets_def in assets_defs_by_key.values() if is_external_asset(assets_def)
+    ]
+    external_asset_keys = {key for assets_def in external_assets_defs for key in assets_def.keys}
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
     ] = defaultdict(list)
@@ -1636,7 +1764,7 @@ def external_asset_nodes_from_defs(
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
-    ).difference({*source_assets_by_key.keys()})
+    ).difference(external_asset_keys)
 
     asset_nodes = [
         ExternalAssetNode(
@@ -1651,47 +1779,55 @@ def external_asset_nodes_from_defs(
         for asset_key in asset_keys_without_definitions
     ]
 
-    for source_asset in source_assets_by_key.values():
-        if source_asset.key not in node_defs_by_asset_key:
-            job_names = (
-                [
-                    job_def.name
-                    for job_def in job_defs
-                    if source_asset.key in job_def.asset_layer.target_asset_keys
-                    and (
-                        # explicit source-asset observation job
-                        not job_def.asset_layer.has_assets_defs
-                        # "base asset job" will have both source and materializable assets
-                        or is_base_asset_job_name(job_def.name)
+    # for source_asset in source_assets_by_key.values():
+    for external_assets_def in external_assets_defs:
+        for asset_key in external_assets_def.keys:
+            is_observable = (
+                external_assets_def.execution_type == AssetExecutionType.OBSERVATION
+            )
+            if asset_key not in node_defs_by_asset_key:
+                job_names = (
+                    [
+                        job_def.name
+                        for job_def in job_defs
+                        if asset_key in job_def.asset_layer.target_asset_keys
                         and (
-                            source_asset.partitions_def is None
-                            or source_asset.partitions_def == job_def.partitions_def
+                            # explicit source-asset observation job
+                            not job_def.asset_layer.has_assets_defs
+                            # "base asset job" will have both source and materializable assets
+                            or is_base_asset_job_name(job_def.name)
+                            and (
+                                external_assets_def.partitions_def is None
+                                or external_assets_def.partitions_def == job_def.partitions_def
+                            )
                         )
-                    )
-                ]
-                if source_asset.node_def is not None
-                else []
-            )
-            asset_nodes.append(
-                ExternalAssetNode(
-                    asset_key=source_asset.key,
-                    dependencies=list(deps[source_asset.key].values()),
-                    depended_by=list(dep_by[source_asset.key].values()),
-                    execution_type=source_asset.execution_type,
-                    job_names=job_names,
-                    op_description=source_asset.description,
-                    metadata=source_asset.metadata,
-                    group_name=source_asset.group_name,
-                    is_source=True,
-                    is_observable=source_asset.is_observable,
-                    auto_observe_interval_minutes=source_asset.auto_observe_interval_minutes,
-                    partitions_def_data=(
-                        external_partitions_definition_from_def(source_asset.partitions_def)
-                        if source_asset.partitions_def
-                        else None
-                    ),
+                    ]
+                    if is_observable
+                    else []
                 )
-            )
+                asset_nodes.append(
+                    ExternalAssetNode(
+                        asset_key=asset_key,
+                        dependencies=list(deps[asset_key].values()),
+                        depended_by=list(dep_by[asset_key].values()),
+                        job_names=job_names,
+                        op_description=external_assets_def.descriptions_by_key.get(asset_key),
+                        metadata=external_assets_def.metadata_by_key.get(asset_key, {}),
+                        group_name=external_assets_def.group_names_by_key.get(asset_key),
+                        is_source=True,
+                        is_observable=is_observable,
+                        auto_observe_interval_minutes=external_assets_def.metadata_by_key.get(
+                            asset_key, {}
+                        ).get(SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES),
+                        partitions_def_data=(
+                            external_partitions_definition_from_def(
+                                external_assets_def.partitions_def
+                            )
+                            if external_assets_def.partitions_def
+                            else None
+                        ),
+                    )
+                )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]

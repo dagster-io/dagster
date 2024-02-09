@@ -5,6 +5,7 @@ from dagster._annotations import deprecated_param
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._utils.warnings import disable_dagster_warnings, normalize_renamed_param
 
 from ..instance import DagsterInstance
@@ -26,7 +27,7 @@ def observe(
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
     *,
-    source_assets: Optional[Sequence[SourceAsset]] = None,
+    source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which observes provided observable assets.
 
@@ -63,10 +64,14 @@ def observe(
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
 
+    normalized_assets = [
+        *(x for x in assets if isinstance(x, AssetsDefinition)),
+        *(create_external_asset_from_source_asset(x) for x in assets if isinstance(x, SourceAsset)),
+    ]
     with disable_dagster_warnings():
-        observation_job = build_assets_job("in_process_observation_job", assets)
+        observation_job = build_assets_job("in_process_observation_job", [], normalized_assets)
         defs = Definitions(
-            assets=assets,
+            assets=normalized_assets,
             jobs=[observation_job],
             resources=resources,
         )

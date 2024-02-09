@@ -184,10 +184,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._asset_record_cache[asset_key]
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
-        if self.asset_graph.is_source(asset_key):
-            return DagsterEventType.ASSET_OBSERVATION
-        else:
+        if self.asset_graph.is_materializable(asset_key):
             return DagsterEventType.ASSET_MATERIALIZATION
+        else:
+            return DagsterEventType.ASSET_OBSERVATION
 
     @cached_method
     def _get_latest_materialization_or_observation_record(
@@ -203,7 +203,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if (
             before_cursor is None
             and asset_partition.partition_key is None
-            and not self.asset_graph.is_observable(asset_partition.asset_key)
+            and self.asset_graph.is_materializable(asset_partition.asset_key)
         ):
             asset_record = self.get_asset_record(asset_partition.asset_key)
             if asset_record is None:
@@ -283,7 +283,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-        if not self.asset_graph.is_source(asset_partition.asset_key):
+        if self.asset_graph.is_materializable(asset_partition.asset_key):
             asset_record = self.get_asset_record(asset_partition.asset_key)
             if (
                 asset_record is None
@@ -319,7 +319,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             "before_cursor",
             "Cannot set both before_cursor and after_cursor",
         )
-
         # first, do a quick check to eliminate the case where we know there is no record
         if not self.asset_partition_has_materialization_or_observation(
             asset_partition, after_cursor
@@ -534,7 +533,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
         """
-        if self.asset_graph.is_source(child_asset_key):
+        if not self.asset_graph.is_materializable(child_asset_key):
             return set(), latest_storage_id
 
         child_partitions_def = self.asset_graph.get_partitions_def(child_asset_key)
@@ -548,10 +547,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         ]
         for parent_asset_key in self.asset_graph.get_parents(child_asset_key):
-            # ignore non-observable sources
-            if self.asset_graph.is_source(parent_asset_key) and not self.asset_graph.is_observable(
-                parent_asset_key
-            ):
+            # ignore non-executable assets
+            if not self.asset_graph.is_executable(parent_asset_key):
                 continue
 
             # if the parent has not been updated at all since the latest_storage_id, then skip
@@ -803,7 +800,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not updated_after_cursor:
             return set()
         if after_cursor is None or (
-            not self.asset_graph.is_source(asset_key) and not respect_materialization_data_versions
+            self.asset_graph.is_materializable(asset_key)
+            and not respect_materialization_data_versions
         ):
             return updated_after_cursor
 
@@ -862,10 +860,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if parent_key in ignored_parent_keys:
                 continue
 
-            # ignore non-observable source parents
-            if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
-                parent_key
-            ):
+            # ignore non-executable parents
+            if not self.asset_graph.is_executable(parent_key):
                 continue
 
             # when mapping from unpartitioned assets to time partitioned assets, we ignore
