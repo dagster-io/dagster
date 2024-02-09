@@ -5,9 +5,7 @@ description: "Learn to integrate Snowflake with Dagster using a Snowflake resour
 
 # Integrating Snowflake with Dagster using resources
 
-This tutorial focuses on how to store and load Dagster's [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets) in Snowflake by using Dagster's <PyObject object="SnowflakeResource" module="dagster_snowflake" />
-
-A [**resource**](/concepts/resources) allows you to directly run SQL queries against tables within an asset's compute function.
+This tutorial focuses on how to store and load Dagster's [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets) in Snowflake by using Dagster's <PyObject object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/concepts/resources) allows you to directly run SQL queries against tables within an asset's compute function.
 
 By the end of the tutorial, you will:
 
@@ -15,7 +13,7 @@ By the end of the tutorial, you will:
 - Use the Snowflake resource to execute a SQL query that creates a table
 - Load Snowflake tables in downstream assets
 
-**Prefer to use an I/O manager?** Refer to the [Snowlake I/O manager guide](/integrations/snowflake/using-snowflake-with-dagster-io-manager).
+**Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/concepts/io-management/io-managers) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](/integrations/snowflake/using-snowflake-with-dagster-io-manager) for more info.
 
 ---
 
@@ -236,8 +234,21 @@ defs = Definitions(
 
 ## Related
 
-For more Snowflake features, refer to the [Snowflake reference](/integrations/snowflake/reference).
-
-For more information on Software-defined Assets, refer to the [tutorial](/tutorial) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
-
-For more information onresources, refer to the [Resource documentation](/concepts/resources).
+<ArticleList>
+  <ArticleListItem
+    title="Dagster + Snowflake using I/O managers"
+    href="/integrations/snowflake/using-snowflake-with-dagster-io-managers"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Snowflake reference"
+    href="/integrations/snowflake/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Resources"
+    href="/concepts/resources"
+  ></ArticleListItem>
+</ArticleList>
