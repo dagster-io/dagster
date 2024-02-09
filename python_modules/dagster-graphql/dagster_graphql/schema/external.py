@@ -6,6 +6,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.branch_changes import BranchChangeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.host_representation import (
@@ -267,6 +268,10 @@ class GrapheneRepository(graphene.ObjectType):
             asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
         self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
+        self._branch_changes_loader = BranchChangeResolver(
+            instance=instance,
+            branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
+        )
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
@@ -355,6 +360,7 @@ class GrapheneRepository(graphene.ObjectType):
                 asset_checks_loader=asset_checks_loader,
                 stale_status_loader=self._stale_status_loader,
                 dynamic_partitions_loader=self._dynamic_partitions_loader,
+                branch_changes_loader=self._branch_changes_loader,
             )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]

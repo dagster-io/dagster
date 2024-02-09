@@ -6,6 +6,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.branch_changes import BranchChangeResolver, ChangeReason
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -144,6 +145,9 @@ class GrapheneAssetStaleCause(graphene.ObjectType):
         name = "StaleCause"
 
 
+GrapheneAssetChangedInBranchReason = graphene.Enum.from_enum(ChangeReason, name="ChangeReason")
+
+
 class GrapheneAssetDependency(graphene.ObjectType):
     class Meta:
         name = "AssetDependency"
@@ -244,6 +248,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
     _asset_checks_loader: AssetChecksLoader
+    _branch_changes_loader: Optional[BranchChangeResolver]
 
     # NOTE: properties/resolvers are listed alphabetically
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -322,6 +327,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.List((non_null_list(GrapheneAssetStaleCause))),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
     )
+    changedInBranchCauses = graphene.Field(non_null_list(GrapheneAssetChangedInBranchReason))
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
@@ -348,6 +354,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
+        branch_changes_loader: Optional[BranchChangeResolver] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -378,6 +385,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._asset_checks_loader = check.inst_param(
             asset_checks_loader, "asset_checks_loader", AssetChecksLoader
+        )
+        self._branch_changes_loader = check.opt_inst_param(
+            branch_changes_loader, "branch_changes_loader", BranchChangeResolver
         )
         self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -416,6 +426,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         loader = check.not_none(
             self._stale_status_loader,
             "stale_status_loader must exist in order to access data versioning information",
+        )
+        return loader
+
+    @property
+    def branch_changes_loader(self) -> BranchChangeResolver:
+        loader = check.not_none(
+            self._branch_changes_loader,
+            "branch_changes_loader must exist in order to access changes in branch deployment",
         )
         return loader
 
@@ -1273,6 +1291,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._asset_checks_loader.get_checks_for_asset(
             self._external_asset_node.asset_key, limit, pipeline
         )
+
+    def resolve_changedInBranchCauses(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneAssetChangedInBranchReason]:
+        return self.branch_changes_loader.get_changes_for_asset(self._external_asset_node.asset_key)
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
