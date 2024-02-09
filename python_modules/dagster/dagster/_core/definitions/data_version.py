@@ -186,6 +186,7 @@ def _asset_key_from_tag(tag: str) -> "AssetKey":
 # ########################
 
 DATA_VERSION_TAG: Final[str] = "dagster/data_version"
+DATA_TIMESTAMP_TAG: Final[str] = "dagster/data_timestamp"
 _OLD_DATA_VERSION_TAG: Final[str] = "dagster/logical_version"
 CODE_VERSION_TAG: Final[str] = "dagster/code_version"
 INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_data_version"

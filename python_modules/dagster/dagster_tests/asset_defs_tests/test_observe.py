@@ -1,5 +1,5 @@
 from typing import Optional
-
+import time
 import pytest
 from dagster import DataVersionsByPartition, IOManager, StaticPartitionsDefinition
 from dagster._core.definitions.data_version import (
@@ -166,7 +166,11 @@ def test_observe_handle_output():
 def test_observe_with_observe_result():
     @observable_source_asset
     def foo() -> ObserveResult:
-        return ObserveResult(data_version=DataVersion("alpha"), metadata={"foo": "bar"})
+        return ObserveResult(
+            data_version=DataVersion("alpha"),
+            data_timestamp=42.0,
+            metadata={"foo": "bar"},
+        )
 
     instance = DagsterInstance.ephemeral()
     result = observe([foo], instance=instance)
@@ -175,3 +179,7 @@ def test_observe_with_observe_result():
     assert len(observations) == 1
     assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
     assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+    assert observations[0].tags == {
+        "dagster/data_version": "alpha",
+        "dagster/data_timestamp": "42.0",
+    }

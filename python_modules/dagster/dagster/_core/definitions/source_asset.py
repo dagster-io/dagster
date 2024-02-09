@@ -16,6 +16,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.data_version import (
+    DATA_TIMESTAMP_TAG,
     DATA_VERSION_TAG,
     DataVersion,
     DataVersionsByPartition,
@@ -104,17 +105,19 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             if isinstance(observe_fn_return_value, ObserveResult):
                 data_version = check.not_none(observe_fn_return_value.data_version)
                 data_version_str = data_version.value
+                data_timestamp = observe_fn_return_value.data_timestamp
                 metadata = observe_fn_return_value.metadata
             else:  # DataVersion
                 data_version_str = observe_fn_return_value.value
+                data_timestamp = None
                 metadata = {}
 
+            tags = {DATA_VERSION_TAG: data_version_str}
+            if data_timestamp:
+                tags[DATA_TIMESTAMP_TAG] = str(data_timestamp)
+
             context.log_event(
-                AssetObservation(
-                    asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: data_version_str},
-                    metadata=metadata,
-                )
+                AssetObservation(asset_key=source_asset.key, tags=tags, metadata=metadata)
             )
 
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):

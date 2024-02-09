@@ -20,6 +20,9 @@ class AssetResult(
             ("metadata", PublicAttr[Optional[MetadataUserInput]]),
             ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
             ("data_version", PublicAttr[Optional[DataVersion]]),
+            # maybe would want to split MaterializeResult and ObserveResult into separate classes
+            # so we don't add data_timestamp to MaterializeResult
+            ("data_timestamp", PublicAttr[Optional[float]]),
         ],
     )
 ):
@@ -32,6 +35,7 @@ class AssetResult(
         metadata: Optional[MetadataUserInput] = None,
         check_results: Optional[Sequence[AssetCheckResult]] = None,
         data_version: Optional[DataVersion] = None,
+        data_timestamp: Optional[float] = None,
     ):
         asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
 
@@ -47,6 +51,7 @@ class AssetResult(
                 check_results, "check_results", of_type=AssetCheckResult
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
+            data_timestamp=check.opt_float_param(data_timestamp, "data_timestamp"),
         )
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:
