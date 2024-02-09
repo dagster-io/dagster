@@ -180,13 +180,13 @@ export const AssetView = ({assetKey, trace}: Props) => {
     );
   };
 
-  const {flagUseNewAutomationPage} = useFeatureFlags();
+  const {flagUseNewAssetPages} = useFeatureFlags();
 
   const renderAutomaterializeHistoryTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
-    if (flagUseNewAutomationPage) {
+    if (flagUseNewAssetPages) {
       return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
     }
     return (
