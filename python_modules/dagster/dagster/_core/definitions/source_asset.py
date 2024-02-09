@@ -37,6 +37,7 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
@@ -93,19 +94,29 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             else observe_fn(**resource_kwargs)
         )
 
-        if isinstance(observe_fn_return_value, DataVersion):
+        if isinstance(observe_fn_return_value, (DataVersion, ObserveResult)):
             if source_asset.partitions_def is not None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is partitioned, so its observe function should return a"
-                    " DataVersionsByPartition, not a DataVersion"
+                    f"{source_asset.key} is partitioned. Returning `{observe_fn_return_value.__class__}` not supported"
+                    " for partitioned assets. Return `DataVersionsByPartition` instead."
                 )
+
+            if isinstance(observe_fn_return_value, ObserveResult):
+                data_version = check.not_none(observe_fn_return_value.data_version)
+                data_version_str = data_version.value
+                metadata = observe_fn_return_value.metadata
+            else:  # DataVersion
+                data_version_str = observe_fn_return_value.value
+                metadata = {}
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: observe_fn_return_value.value},
+                    tags={DATA_VERSION_TAG: data_version_str},
+                    metadata=metadata,
                 )
             )
+
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):
             if source_asset.partitions_def is None:
                 raise DagsterInvalidObservationError(
