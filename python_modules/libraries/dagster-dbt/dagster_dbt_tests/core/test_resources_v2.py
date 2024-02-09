@@ -10,6 +10,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     FloatMetadataValue,
+    IntMetadataValue,
     TextMetadataValue,
     job,
     materialize,
@@ -307,6 +308,24 @@ def test_dbt_cli_debug_execution() -> None:
     assert result.success
 
 
+def test_dbt_cli_adapter_metadata() -> None:
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        # For `dbt-duckdb`, the `rows_affected` metadata is only emitted for seed files.
+        for event in dbt.cli(["seed"], context=context).stream():
+            assert event.metadata.get("rows_affected")
+
+            yield event
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
+
+
 def test_dbt_cli_subsetted_execution() -> None:
     dbt_select = " ".join(
         [
@@ -501,6 +520,11 @@ def test_to_default_asset_output_events() -> None:
                 "node_finished_at": "2024-01-01T00:01:00Z",
                 "meta": {},
             },
+            "run_result": {
+                "adapter_response": {
+                    "rows_affected": 100,
+                }
+            },
         },
     }
     manifest = {
@@ -525,6 +549,7 @@ def test_to_default_asset_output_events() -> None:
         "unique_id": TextMetadataValue("a.b.c"),
         "invocation_id": TextMetadataValue("1-2-3"),
         "Execution Duration": FloatMetadataValue(60.0),
+        "rows_affected": IntMetadataValue(100),
     }
 
 
