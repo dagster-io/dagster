@@ -128,7 +128,9 @@ def get_branch_change_resolver_for_parent_graph(
             # for testing, we want to always be in a branch deployment
             return True
 
-    return TestingBranchChangeResolver(instance=instance, branch_asset_graph=branch_graph)
+    return TestingBranchChangeResolver(
+        instance=instance, branch_asset_graph=branch_graph, repository_name="test_repo"
+    )
 
 
 def test_new_asset(instance):

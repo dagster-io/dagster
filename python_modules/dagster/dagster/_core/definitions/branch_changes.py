@@ -2,6 +2,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
@@ -58,7 +60,15 @@ class BranchChangeResolver:
             parent_workspace = self._instance.cloud_storage.all_workspace_location_entries(
                 deployment=parent_deployment
             ).get(self._repository_name)
-            ExternalAssetGraph.from_workspace()
+            workspace_context = WorkspaceRequestContext(
+                instance=self._instance,
+                workspace_snapshot={self._repository_name: parent_workspace},
+                process_context=mock.MagicMock(),  # replace with actual process_context
+                version=None,
+                source=None,
+                read_only=True,
+            )
+            ExternalAssetGraph.from_workspace(workspace_context)
         return None
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
