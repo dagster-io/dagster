@@ -60,7 +60,7 @@ compute_logs:
   class: NoOpComputeLogManager
 ```
 
-If you are using Helm to deploy thew Kubernetes agent, the `enabled` flag lets you easily disable compute log upload:
+If you are using Helm to deploy the Kubernetes agent, you may use the `enabled` flag to disable compute log upload:
 
 ```yaml
 computeLogs:
@@ -86,7 +86,7 @@ width={644}
 height={407}
 />
 
-Once set, error messages from your code locations will be masked in the UI. A unique error ID will be generated, which you can use to look up the error message in your own logs.
+Once set, error messages from your code locations will be masked in the UI. A unique error ID will be generated, which you can use to look up the error message in your own logs. This error ID will appear in place of the error message in UI dialogs or in a run's event logs.
 
 <Image
 alt="Error message in Dagster event logs showing unique error ID"
