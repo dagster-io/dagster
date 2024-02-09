@@ -342,8 +342,8 @@ def test_custom_auto_materialize_policy():
         node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.lazy(),
     )
 
-    assert dbt_assets[0].auto_materialize_policies_by_key == {
-        key: AutoMaterializePolicy.lazy() for key in dbt_assets[0].keys
+    assert dbt_assets[0].asset_conditions_by_key == {
+        key: AutoMaterializePolicy.lazy().to_asset_condition() for key in dbt_assets[0].keys
     }
 
 
@@ -624,8 +624,8 @@ def test_dagster_dbt_translator(
     for freshness_policy in dbt_assets[0].freshness_policies_by_key.values():
         assert freshness_policy == FreshnessPolicy(maximum_lag_minutes=1)
 
-    for auto_materialize_policy in dbt_assets[0].auto_materialize_policies_by_key.values():
-        assert auto_materialize_policy == AutoMaterializePolicy.lazy()
+    for asset_condition in dbt_assets[0].asset_conditions_by_key.values():
+        assert asset_condition == AutoMaterializePolicy.lazy().to_asset_condition()
 
     result = materialize_to_memory(
         dbt_assets,

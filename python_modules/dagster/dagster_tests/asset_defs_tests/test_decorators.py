@@ -922,8 +922,8 @@ def test_graph_asset_with_args():
         maximum_lag_minutes=5
     )
     assert (
-        my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
-        == AutoMaterializePolicy.lazy()
+        my_asset.asset_conditions_by_key[AssetKey("my_asset")]
+        == AutoMaterializePolicy.lazy().to_asset_condition()
     )
     assert my_asset.resource_defs["foo"] == foo_resource
 
@@ -1098,10 +1098,10 @@ def test_graph_multi_asset_decorator():
     )
 
     assert (
-        two_assets.auto_materialize_policies_by_key[AssetKey("first_asset")]
-        == AutoMaterializePolicy.eager()
+        two_assets.asset_conditions_by_key[AssetKey("first_asset")]
+        == AutoMaterializePolicy.eager().to_asset_condition()
     )
-    assert two_assets.auto_materialize_policies_by_key.get(AssetKey("second_asset")) is None
+    assert two_assets.asset_conditions_by_key.get(AssetKey("second_asset")) is None
 
     assert two_assets.resource_defs["foo"] == foo_resource
 
@@ -1254,9 +1254,9 @@ def test_multi_asset_with_auto_materialize_policy():
     def my_asset():
         ...
 
-    assert my_asset.auto_materialize_policies_by_key == {
-        AssetKey("o2"): AutoMaterializePolicy.eager(),
-        AssetKey("o3"): AutoMaterializePolicy.lazy(),
+    assert my_asset.asset_conditions_by_key == {
+        AssetKey("o2"): AutoMaterializePolicy.eager().to_asset_condition(),
+        AssetKey("o3"): AutoMaterializePolicy.lazy().to_asset_condition(),
     }
 
 

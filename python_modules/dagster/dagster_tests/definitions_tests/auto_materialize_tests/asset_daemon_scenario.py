@@ -404,8 +404,8 @@ class AssetDaemonScenarioState(NamedTuple):
             asset_graph=self.asset_graph,
             auto_materialize_asset_keys={
                 key
-                for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
-                if policy is not None
+                for key, condition in self.asset_graph.asset_condtitions_by_key.items()
+                if condition is not None
             },
             instance=self.instance,
             materialize_run_tags={},

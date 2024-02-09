@@ -47,7 +47,7 @@ from dagster import (
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
-    get_implicit_auto_materialize_policy,
+    get_implicit_asset_condition,
 )
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
@@ -189,7 +189,7 @@ class AssetReconciliationScenario(
         # and add them to the assets.
         assets_with_implicit_policies = assets
         if assets and all(
-            (isinstance(a, AssetsDefinition) and not a.auto_materialize_policies_by_key)
+            (isinstance(a, AssetsDefinition) and not a.asset_conditions_by_key)
             or isinstance(a, SourceAsset)
             for a in assets
         ):
@@ -710,7 +710,9 @@ def with_auto_materialize_policy(
     """
     ret = []
     for assets_def in assets_defs:
-        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
+        ret.append(
+            assets_def.with_attributes(asset_condition=auto_materialize_policy.to_asset_condition())
+        )
     return ret
 
 
@@ -724,22 +726,17 @@ def with_implicit_auto_materialize_policies(
     """
     ret = []
     for assets_def in assets_defs:
-        if (
-            isinstance(assets_def, AssetsDefinition)
-            and not assets_def.auto_materialize_policies_by_key
-        ):
+        if isinstance(assets_def, AssetsDefinition) and not assets_def.asset_conditions_by_key:
             targeted_keys = (
                 assets_def.keys & targeted_assets if targeted_assets else assets_def.keys
             )
-            auto_materialize_policies_by_key = {}
+            asset_conditions_by_key = {}
             for key in targeted_keys:
-                policy = get_implicit_auto_materialize_policy(key, asset_graph)
-                if policy:
-                    auto_materialize_policies_by_key[key] = policy
+                condition = get_implicit_asset_condition(key, asset_graph)
+                if condition:
+                    asset_conditions_by_key[key] = condition
 
-            ret.append(
-                assets_def.with_attributes(auto_materialize_policy=auto_materialize_policies_by_key)
-            )
+            ret.append(assets_def.with_attributes(asset_condition=asset_conditions_by_key))
         else:
             ret.append(assets_def)
     return ret

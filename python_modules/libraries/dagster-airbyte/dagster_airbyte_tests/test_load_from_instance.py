@@ -241,10 +241,15 @@ def test_load_from_instance(
     expected_auto_materialize_policy = (
         AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
     )
-    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    asset_conditions_by_key = ab_assets[0].asset_conditions_by_key
     assert all(
-        auto_materialize_policies_by_key[key] == expected_auto_materialize_policy
-        for key in auto_materialize_policies_by_key
+        asset_conditions_by_key[key]
+        == (
+            expected_auto_materialize_policy.to_asset_condition()
+            if expected_auto_materialize_policy
+            else None
+        )
+        for key in asset_conditions_by_key
     )
 
     responses.add(

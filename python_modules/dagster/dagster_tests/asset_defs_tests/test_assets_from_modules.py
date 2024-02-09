@@ -46,7 +46,8 @@ def check_auto_materialize_policy(assets, auto_materialize_policy):
             asset_keys = a.keys
             for asset_key in asset_keys:
                 assert (
-                    a.auto_materialize_policies_by_key.get(asset_key) == auto_materialize_policy
+                    a.asset_conditions_by_key.get(asset_key)
+                    == auto_materialize_policy.to_asset_condition()
                 ), asset_key
 
 

@@ -34,7 +34,7 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
+from .asset_condition import AssetCondition, AssetConditionEvaluation, AssetConditionEvaluationState
 from .asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
@@ -50,12 +50,12 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
-def get_implicit_auto_materialize_policy(
+def get_implicit_asset_condition(
     asset_key: AssetKey, asset_graph: AssetGraph
-) -> Optional[AutoMaterializePolicy]:
+) -> Optional[AssetCondition]:
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
-    if auto_materialize_policy is None:
+    asset_condition = asset_graph.get_asset_condition(asset_key)
+    if asset_condition is None:
         time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
         if time_partitions_def is None:
             max_materializations_per_minute = None
@@ -76,8 +76,8 @@ def get_implicit_auto_materialize_policy(
         return AutoMaterializePolicy(
             rules=rules,
             max_materializations_per_minute=max_materializations_per_minute,
-        )
-    return auto_materialize_policy
+        ).to_asset_condition()
+    return asset_condition
 
 
 class AssetDaemonContext:
@@ -192,9 +192,7 @@ class AssetDaemonContext:
 
         """
         # convert the legacy AutoMaterializePolicy to an Evaluator
-        asset_condition = check.not_none(
-            self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
-        ).to_asset_condition()
+        asset_condition = check.not_none(self.asset_graph.get_asset_condition(asset_key))
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
 
