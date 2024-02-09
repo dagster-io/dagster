@@ -640,7 +640,7 @@
                 ]
               },
               {
-                "title": "Managing compute logs and error messages",
+                "title": "Compute logs & error messages",
                 "path": "/dagster-cloud/managing-deployments/controlling-logs"
               }
             ]
