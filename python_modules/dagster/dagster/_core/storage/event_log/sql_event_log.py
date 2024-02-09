@@ -3,7 +3,7 @@ import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -208,9 +208,7 @@ class SqlEventLogStorage(EventLogStorage):
             run_id=event.run_id,
             event=serialize_value(event),
             dagster_event_type=dagster_event_type,
-            # Postgres requires a datetime that is in UTC but has no timezone info set
-            # in order to be stored correctly
-            timestamp=datetime.utcfromtimestamp(event.timestamp),
+            timestamp=self._event_insert_timestamp(event),
             step_key=step_key,
             asset_key=asset_key_str,
             partition=partition,
@@ -421,9 +419,7 @@ class SqlEventLogStorage(EventLogStorage):
                             asset_key=asset_key_str,
                             key=key,
                             value=value,
-                            # Postgres requires a datetime that is in UTC but has no timezone info
-                            # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                            event_timestamp=self._event_insert_timestamp(event),
                         )
                         for key, value in tags.items()
                     ],
@@ -796,7 +792,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     event=serialize_value(event),
                     dagster_event_type=dagster_event_type,
-                    timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    timestamp=self._event_insert_timestamp(event),
                     step_key=event.step_key,
                     asset_key=asset_key_str,
                 )
@@ -2767,9 +2763,13 @@ class SqlEventLogStorage(EventLogStorage):
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                 )
             )
+
+    def _event_insert_timestamp(self, event):
+        # Postgres requires a datetime that is in UTC but has no timezone info
+        return datetime.fromtimestamp(event.timestamp, timezone.utc).replace(tzinfo=None)
 
     def _store_runless_asset_check_evaluation(
         self, event: EventLogEntry, event_id: Optional[int]
@@ -2789,7 +2789,7 @@ class SqlEventLogStorage(EventLogStorage):
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                     evaluation_event_storage_id=event_id,
                     materialization_event_storage_id=(
                         evaluation.target_materialization_data.storage_id
@@ -2821,7 +2821,7 @@ class SqlEventLogStorage(EventLogStorage):
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                     evaluation_event_storage_id=event_id,
                     materialization_event_storage_id=(
                         evaluation.target_materialization_data.storage_id
