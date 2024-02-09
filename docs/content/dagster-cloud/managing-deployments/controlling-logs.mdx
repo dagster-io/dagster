@@ -16,7 +16,7 @@ Depending on your organization's needs, you may want to retain these logs in you
 
 ## Modifying compute log storage
 
-Dagster's compute logs are handled by the configured [`ComputeLogManager`](/\_apidocs/internals#dagster.\_core.storage.compute_log_manager.ComputeLogManager). By default, Dagster Cloud utilizes the `CloudComputeLogManager` which stores logs in a Dagster Cloud managed S3 bucket, but you can customize this behavior to store logs in a destination of your choice.
+Dagster's compute logs are handled by the configured [`ComputeLogManager`](/\_apidocs/internals#dagster.\_core.storage.compute_log_manager.ComputeLogManager). By default, Dagster Cloud utilizes the `CloudComputeLogManager` which stores logs in a Dagster Cloud-managed Amazon S3 bucket, but you can customize this behavior to store logs in a destination of your choice.
 
 ### Writing to your own S3 bucket
 
