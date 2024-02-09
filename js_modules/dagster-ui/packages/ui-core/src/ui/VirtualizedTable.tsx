@@ -6,11 +6,8 @@ export const HeaderCell = ({
   children,
   style,
   onClick,
-}: {
-  children?: React.ReactNode;
-  style?: React.CSSProperties;
-  onClick?: React.MouseEventHandler;
-}) => {
+  ...rest
+}: React.ComponentProps<typeof CellBox>) => {
   // no text select
   const clickStyle = onClick ? {cursor: 'pointer', 'user-select': 'none'} : {};
 
@@ -26,6 +23,7 @@ export const HeaderCell = ({
         ...(style || {}),
       }}
       onClick={onClick}
+      {...rest}
     >
       {children}
     </CellBox>
