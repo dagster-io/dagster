@@ -8,8 +8,10 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.resource_definition import ResourceDefinition, resource
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -159,3 +161,17 @@ def test_observe_handle_output():
     instance = DagsterInstance.ephemeral()
 
     assert observe([foo], instance=instance, resources={"io_manager": MyIOManager()}).success
+
+
+def test_observe_with_observe_result():
+    @observable_source_asset
+    def foo() -> ObserveResult:
+        return ObserveResult(data_version=DataVersion("alpha"), metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = observe([foo], instance=instance)
+    assert result.success
+    observations = result.asset_observations_for_node("foo")
+    assert len(observations) == 1
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
+    assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
