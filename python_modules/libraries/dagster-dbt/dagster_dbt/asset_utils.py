@@ -535,7 +535,8 @@ def default_asset_check_fn(
     test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
     test_resource_props = dbt_nodes[test_unique_id]
-    parent_ids = manifest["parent_map"].get(test_unique_id, [])
+    parent_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+    parent_ids.discard(unique_id)
 
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
         unique_id, test_resource_props
@@ -549,17 +550,13 @@ def default_asset_check_fn(
     ):
         return None
 
-    additional_deps = [
-        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
-        for parent_id in parent_ids
-        if parent_id != unique_id
-    ]
-
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
-        additional_deps=additional_deps,
+        additional_deps=[
+            dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id]) for parent_id in parent_ids
+        ],
     )
 
 
