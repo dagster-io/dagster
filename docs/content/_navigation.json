@@ -843,8 +843,17 @@
         "path": "/integrations/snowflake",
         "children": [
           {
-            "title": "Snowflake + Dagster tutorial",
-            "path": "/integrations/snowflake/using-snowflake-with-dagster"
+            "title": "Snowflake + Dagster tutorials",
+            "children": [
+              {
+                "title": "With resources",
+                "path": "/integrations/snowflake/using-snowflake-with-dagster"
+              },
+              {
+                "title": "With I/O managers",
+                "path": "/integrations/snowflake/using-snowflake-with-dagster-io-managers"
+              }
+            ]
           },
           {
             "title": "Reference",
