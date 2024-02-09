@@ -446,6 +446,7 @@ def test_dbt_cli_op_execution() -> None:
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "failure",
+                "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:00:00Z",
                 "meta": {},
             },
@@ -456,6 +457,7 @@ def test_dbt_cli_op_execution() -> None:
                 "unique_id": "a.b.c",
                 "resource_type": "macro",
                 "node_status": "success",
+                "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:00:00Z",
                 "meta": {},
             },
@@ -466,6 +468,8 @@ def test_dbt_cli_op_execution() -> None:
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "failure",
+                "node_started_at": "2024-01-01T00:00:00Z",
+                "node_finished_at": "2024-01-01T00:00:00Z",
                 "meta": {},
             },
         },
@@ -475,6 +479,8 @@ def test_dbt_cli_op_execution() -> None:
                 "unique_id": "a.b.c",
                 "resource_type": "test",
                 "node_status": "success",
+                "node_started_at": "2024-01-01T00:00:00Z",
+                "node_finished_at": "2024-01-01T00:00:00Z",
                 "meta": {},
             },
         },
@@ -528,6 +534,9 @@ def test_to_default_asset_output_events() -> None:
         },
     }
     manifest = {
+        "metadata": {
+            "adapter_type": "duckdb",
+        },
         "nodes": {
             "a.b.c": {
                 "meta": {
@@ -548,7 +557,9 @@ def test_to_default_asset_output_events() -> None:
     assert asset_events[0].metadata == {
         "unique_id": TextMetadataValue("a.b.c"),
         "invocation_id": TextMetadataValue("1-2-3"),
+        "dbt_materialization": TextMetadataValue("table"),
         "Execution Duration": FloatMetadataValue(60.0),
+        "adapter_type": TextMetadataValue("duckdb"),
         "rows_affected": IntMetadataValue(100),
     }
 
@@ -556,6 +567,9 @@ def test_to_default_asset_output_events() -> None:
 @pytest.mark.parametrize("is_asset_check", [False, True])
 def test_dbt_tests_to_events(mocker: MockerFixture, is_asset_check: bool) -> None:
     manifest = {
+        "metadata": {
+            "adapter_type": "duckdb",
+        },
         "nodes": {
             "model.a": {
                 "resource_type": "model",
@@ -591,6 +605,7 @@ def test_dbt_tests_to_events(mocker: MockerFixture, is_asset_check: bool) -> Non
                 "resource_type": "test",
                 "node_name": "node_name.test.a",
                 "node_status": "success",
+                "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:00:00Z",
             },
         },

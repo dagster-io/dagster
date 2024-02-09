@@ -133,8 +133,6 @@ class DbtCliEventMessage:
         if self.raw_event["info"]["name"] != "NodeFinished":
             return
 
-        adapter_response = self.raw_event["data"].get("run_result", {}).get("adapter_response", {})
-        adapter_response_metadata = self._process_adapter_response_metadata(adapter_response)
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
@@ -151,6 +149,21 @@ class DbtCliEventMessage:
 
         invocation_id: str = self.raw_event["info"]["invocation_id"]
         unique_id: str = event_node_info["unique_id"]
+        adapter_response = self.raw_event["data"].get("run_result", {}).get("adapter_response", {})
+        adapter_response_metadata = self._process_adapter_response_metadata(adapter_response)
+
+        started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
+        finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
+        duration_seconds = (finished_at - started_at).total_seconds()
+
+        default_metadata = {
+            "unique_id": unique_id,
+            "invocation_id": invocation_id,
+            "Execution Duration": duration_seconds,
+            **({"adapter_type": manifest["metadata"]["adapter_type"]} if manifest else {}),
+            **adapter_response_metadata,
+        }
+
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
         node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
@@ -163,20 +176,16 @@ class DbtCliEventMessage:
             and is_node_successful
             and not is_node_ephemeral
         ):
-            started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
-            finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
-            duration_seconds = (finished_at - started_at).total_seconds()
+            metadata = {
+                "dbt_materialization": node_materialization,
+                **default_metadata,
+            }
 
             if has_asset_def:
                 yield Output(
                     value=None,
                     output_name=output_name_fn(event_node_info),
-                    metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
-                        "Execution Duration": duration_seconds,
-                        **adapter_response_metadata,
-                    },
+                    metadata=metadata,
                 )
             else:
                 dbt_resource_props = manifest["nodes"][unique_id]
@@ -184,21 +193,14 @@ class DbtCliEventMessage:
 
                 yield AssetMaterialization(
                     asset_key=asset_key,
-                    metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
-                        "Execution Duration": duration_seconds,
-                        **adapter_response_metadata,
-                    },
+                    metadata=metadata,
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
             metadata = {
-                "unique_id": unique_id,
-                "invocation_id": invocation_id,
                 "status": node_status,
-                **adapter_response_metadata,
+                **default_metadata,
             }
 
             is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
