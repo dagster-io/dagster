@@ -50,7 +50,7 @@ computeLogs:
 
 ### Disabling compute log upload
 
-If your organization has its own logging solution which ingests stdout and stderr from your compute environment, you may want to disable compute log upload entirely. You can do this with the [`NoOpComputeLogManager`](/\_apidocs/internals#dagster.\_core.storage.noop_compute_log_manager.NoOpComputeLogManager).
+If your organization has its own logging solution which ingests `stdout` and `stderr` from your compute environment, you may want to disable compute log upload entirely. You can do this with the [`NoOpComputeLogManager`](/\_apidocs/internals#dagster.\_core.storage.noop_compute_log_manager.NoOpComputeLogManager).
 
 You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](https://docs.dagster.io/dagster-cloud/deployment/agents/customizing-configuration):
 
