@@ -27,7 +27,7 @@ class BranchChangeResolver:
         self,
         instance: "DagsterInstance",
         branch_asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
-        repository_name: str
+        repository_name: str,
     ):
         from dagster._core.definitions.asset_graph import AssetGraph
 
@@ -52,11 +52,12 @@ class BranchChangeResolver:
         return False
 
     def _get_parent_deployment_asset_graph(self):
-        """Probably will refactor this so that it mainly lives on the cloud instance.
-        """
+        """Probably will refactor this so that it mainly lives on the cloud instance."""
         if self._instance.cloud_deployment is not None:
             parent_deployment = self._instance.cloud_deployment.compute_parent_deployment()
-            parent_workspace = self._instance.cloud_storage.all_workspace_location_entries(deployment=parent_deployment).get(self._repository_name)
+            parent_workspace = self._instance.cloud_storage.all_workspace_location_entries(
+                deployment=parent_deployment
+            ).get(self._repository_name)
             ExternalAssetGraph.from_workspace()
         return None
 
