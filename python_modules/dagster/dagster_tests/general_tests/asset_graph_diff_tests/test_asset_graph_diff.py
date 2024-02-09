@@ -163,6 +163,8 @@ def test_new_asset_connected(instance):
 
     assert resolver.is_changed_in_branch(new_asset.key)
     assert resolver.is_changed_in_branch(downstream.key)
+    assert resolver.get_changes_for_asset(new_asset.key) == [ChangeReason.NEW]
+    assert resolver.get_changes_for_asset(downstream.key) == [ChangeReason.INPUTS]
     assert not resolver.is_changed_in_branch(AssetKey("upstream"))
 
 
@@ -176,6 +178,7 @@ def test_update_code_version(instance):
     )
 
     assert resolver.is_changed_in_branch(upstream.key)
+    assert resolver.get_changes_for_asset(upstream.key) == [ChangeReason.CODE_VERSION]
     assert not resolver.is_changed_in_branch(AssetKey("downstream"))
 
 
@@ -189,6 +192,7 @@ def test_change_inputs(instance):
     )
 
     assert resolver.is_changed_in_branch(downstream.key)
+    assert resolver.get_changes_for_asset(downstream.key) == [ChangeReason.INPUTS]
     assert not resolver.is_changed_in_branch(AssetKey("upstream"))
 
 
@@ -204,6 +208,10 @@ def test_multiple_changes_for_one_asset(instance):
     )
 
     assert resolver.is_changed_in_branch(downstream.key)
+    assert resolver.get_changes_for_asset(downstream.key) == [
+        ChangeReason.CODE_VERSION,
+        ChangeReason.INPUTS,
+    ]
     assert not resolver.is_changed_in_branch(AssetKey("upstream"))
 
 
@@ -217,6 +225,7 @@ def test_change_then_revert(instance):
     )
 
     assert resolver.is_changed_in_branch(upstream.key)
+    assert resolver.get_changes_for_asset(upstream.key) == [ChangeReason.CODE_VERSION]
     assert not resolver.is_changed_in_branch(AssetKey("downstream"))
 
     @asset(
@@ -257,6 +266,7 @@ def test_on_large_asset_graph(instance):
 
     for a in updated_assets[6:]:
         assert resolver.is_changed_in_branch(a.key)
+        assert resolver.get_changes_for_asset(a.key) == [ChangeReason.INPUTS]
 
     for a in updated_assets[:6]:
         assert not resolver.is_changed_in_branch(a.key)
