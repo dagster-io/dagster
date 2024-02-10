@@ -514,7 +514,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     ) -> AssetConditionEvaluation:
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
-                "...", description, str(random.randint(0, 100000000))
+                "...", description, str(random.randint(0, 100000000)), None
             ),
             true_subset=AssetSubset(
                 asset_key=asset_key,
