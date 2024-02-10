@@ -224,7 +224,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> list[str]:
+    ) -> Sequence[str]:
         start: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.start)
         end: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.end)
 
