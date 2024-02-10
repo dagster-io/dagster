@@ -233,7 +233,12 @@ class DeltaLakeDbClient(DbClient):
             **{k: str(v) for k, v in client_options.items() if v is not None},
         }
         table_config = resource_config.get("table_config")
-        table_uri = f"{root_uri}/{table_slice.schema}/{table_slice.table}"
+        
+        # Ignore schema if None or empty string, useful to set schema = "" which overrides the assetkey
+        if table_slice.schema:
+            table_uri = f"{root_uri}/{table_slice.schema}/{table_slice.table}"
+        else:
+            table_uri = f"{root_uri}/{table_slice.table}"
 
         conn = TableConnection(
             table_uri=table_uri,
