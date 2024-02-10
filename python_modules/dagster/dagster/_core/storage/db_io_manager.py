@@ -185,7 +185,7 @@ class DbIOManager(IOManager):
             # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
             if output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
-            elif self._schema:
+            elif self._schema is not None:
                 schema = self._schema
             elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
