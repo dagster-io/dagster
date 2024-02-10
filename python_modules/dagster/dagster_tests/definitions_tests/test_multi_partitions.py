@@ -656,24 +656,79 @@ def test_context_returns_multipartition_keys():
     materialize([upstream, downstream], partition_key="1|a")
 
 
-def test_multipartitions_range_cartesian():
+def test_multipartitions_range_cartesian_single_key_in_secondary():
     from dagster import PartitionKeyRange
 
     partitions_def = MultiPartitionsDefinition(
         {
             "a": DailyPartitionsDefinition(start_date="2024-01-01"),
-            "b": StaticPartitionsDefinition(["a", "b", "c"]),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
         }
     )
 
     partition_range = partitions_def.get_partition_keys_in_range(
         PartitionKeyRange(
-            MultiPartitionKey({"a": "2024-01-01", "b": "a"}),
-            MultiPartitionKey({"a": "2024-01-02", "b": "a"}),
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
         )
     )
 
     assert partition_range == [
-        MultiPartitionKey({"a": "2024-01-01", "b": "a"}),
-        MultiPartitionKey({"a": "2024-01-02", "b": "a"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
     ]
+
+def test_multipartitions_range_cartesian_single_key_in_primary():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+    ]
+
+
+def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+    ]
+
