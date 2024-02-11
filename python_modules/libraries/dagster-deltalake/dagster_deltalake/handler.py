@@ -268,7 +268,7 @@ def partition_dimensions_to_dnf(
                 )
                 parts.append(filter_)
             elif field.type.type == "string":
-                parts.append(_value_dnf(partition_dimension, field.type.type, str_values))
+                parts.append(_value_dnf(partition_dimension))
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
         else:
@@ -277,15 +277,13 @@ def partition_dimensions_to_dnf(
     return parts if len(parts) > 0 else None
 
 
-def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_values: bool):
+def _value_dnf(table_partition: TablePartitionDimension):
     # ", ".join(f"'{partition}'" for partition in table_partition.partitions)
     partition = cast(Sequence[str], table_partition.partitions)
     if len(partition) > 1:
         return (table_partition.partition_expr, "in", table_partition.partitions)
-    if str_values:
+    else:
         return (table_partition.partition_expr, "=", table_partition.partitions[0])
-
-    return (table_partition.partition_expr, "=", table_partition.partitions)
 
 
 def _time_window_partition_dnf(
