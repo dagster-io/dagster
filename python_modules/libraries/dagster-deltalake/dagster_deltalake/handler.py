@@ -281,7 +281,7 @@ def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_val
     # ", ".join(f"'{partition}'" for partition in table_partition.partitions)
     partition = cast(Sequence[str], table_partition.partitions)
     if len(partition) > 1:
-        raise ValueError(f"Array partition values are not yet supported: {data_type} / {partition}")
+        return (table_partition.partition_expr, "in", table_partition.partitions)
     if str_values:
         return (table_partition.partition_expr, "=", table_partition.partitions[0])
 
