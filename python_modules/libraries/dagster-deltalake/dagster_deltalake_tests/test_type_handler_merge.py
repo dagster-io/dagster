@@ -27,14 +27,15 @@ def add_one_to_dataframe():
     add_one(a_df())
 
 
-def test_deltalake_io_manager_with_ops_rust_writer(tmp_path):
+@pytest.mark.parametrize("merge_type", [MergeType.deduplicate_insert, MergeType.upsert])
+def test_deltalake_io_manager_with_ops_rust_writer(tmp_path, merge_type: MergeType):
     resource_defs = {
         "io_manager": DeltaLakePyarrowIOManager(
             root_uri=str(tmp_path),
             storage_options=LocalConfig(),
             mode=WriteMode.merge,
             merge_config=MergeConfig(
-                merge_type=MergeType.deduplicate_insert,
+                merge_type=merge_type,
                 predicate="s.a = t.a",
                 source_alias="s",
                 target_alias="t",

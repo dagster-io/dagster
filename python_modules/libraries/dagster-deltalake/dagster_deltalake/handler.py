@@ -50,7 +50,7 @@ def _merge_execute(
     writer_properties: Optional[WriterProperties],
     custom_metadata: Optional[Dict[str, str]],
     delta_params: Dict[str, Any],
-):
+) -> Dict[str, Any]:
     merge_type = merge_config.get("merge_type")
     error_on_type_mismatch = merge_config.get("error_on_type_mismatch", True)
 
@@ -66,13 +66,13 @@ def _merge_execute(
     )
 
     if merge_type == MergeType.update_only:
-        merger.when_matched_update_all().execute()
+        return merger.when_matched_update_all().execute()
     elif merge_type == MergeType.deduplicate_insert:
-        merger.when_not_matched_insert_all().execute()
+        return merger.when_not_matched_insert_all().execute()
     elif merge_type == MergeType.upsert:
-        merger.when_matched_update_all().when_not_matched_insert_all().execute()
+        return merger.when_matched_update_all().when_not_matched_insert_all().execute()
     elif merge_type == MergeType.replace_delete_unmatched:
-        merger.when_matched_update_all().when_not_matched_by_source_delete().execute()
+        return merger.when_matched_update_all().when_not_matched_by_source_delete().execute()
     else:
         raise NotImplementedError
 
@@ -126,6 +126,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             main_save_mode = save_mode
         context.log.debug("Writing with mode: `%s`", main_save_mode)
 
+        merge_stats = None
         partition_filters = None
         partition_columns = None
 
@@ -172,7 +173,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                     storage_options=connection.storage_options,
                     custom_metadata=custom_metadata,
                 )
-            _merge_execute(
+            merge_stats = _merge_execute(
                 dt,
                 reader,
                 merge_config,
@@ -189,22 +190,24 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             context.log.warn(f"error while computing table stats: {e}")
             stats = {}
 
-        context.add_output_metadata(
-            {
-                "table_columns": MetadataValue.table_schema(
-                    TableSchema(
-                        columns=[
-                            TableColumn(name=name, type=str(dtype))
-                            for name, dtype in zip(reader.schema.names, reader.schema.types)
-                        ]
-                    )
-                ),
-                "table_uri": MetadataValue.path(connection.table_uri),
-                "table_version": MetadataValue.int(dt.version()),
-                **stats,
-                **object_stats,
-            }
-        )
+        output_metadata = {
+            "table_columns": MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name=name, type=str(dtype))
+                        for name, dtype in zip(reader.schema.names, reader.schema.types)
+                    ]
+                )
+            ),
+            "table_uri": MetadataValue.path(connection.table_uri),
+            "table_version": MetadataValue.int(dt.version()),
+            **stats,
+            **object_stats,
+        }
+        if merge_stats is not None:
+            output_metadata["merge_stats"] = MetadataValue.json(merge_stats)
+
+        context.add_output_metadata(output_metadata)
 
     def load_input(
         self,
