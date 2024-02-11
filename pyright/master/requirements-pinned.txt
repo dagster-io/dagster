@@ -259,7 +259,7 @@ importlib-resources==6.1.1
 inflection==0.5.1
 iniconfig==2.0.0
 ipykernel==6.29.0
-ipython==8.21.0
+ipython==8.18.0
 ipython-genutils==0.2.0
 ipywidgets==8.1.1
 iso8601==2.1.0
