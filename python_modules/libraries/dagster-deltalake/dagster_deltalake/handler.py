@@ -252,6 +252,7 @@ def partition_dimensions_to_dnf(
     partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,
     str_values: bool = False,
+    input_dnf: bool = False,  # during input we want to read a range when it's (un)-partitioned
 ) -> Optional[List[FilterLiteralType]]:
     parts = []
     for partition_dimension in partition_dimensions:
@@ -264,9 +265,12 @@ def partition_dimensions_to_dnf(
         if isinstance(field.type, PrimitiveType):
             if field.type.type in ["timestamp", "date"]:
                 filter_ = _time_window_partition_dnf(
-                    partition_dimension, field.type.type, str_values
+                    partition_dimension, field.type.type, str_values, input_dnf
                 )
-                parts.append(filter_)
+                if isinstance(filter_, list):
+                    parts.extend(filter_)
+                else:
+                    parts.append(filter_)
             elif field.type.type == "string":
                 parts.append(_value_dnf(partition_dimension))
             else:
@@ -287,20 +291,32 @@ def _value_dnf(table_partition: TablePartitionDimension):
 
 
 def _time_window_partition_dnf(
-    table_partition: TablePartitionDimension, data_type: str, str_values: bool
-) -> FilterLiteralType:
+    table_partition: TablePartitionDimension, data_type: str, str_values: bool, input_dnf: bool
+) -> Union[FilterLiteralType, List[FilterLiteralType]]:
     partition = cast(TimeWindow, table_partition.partitions)
-    start_dt, _ = partition
-    start_dt = start_dt.replace(tzinfo=None)
+    start_dt, end_dt = partition
+    start_dt, end_dt = start_dt.replace(tzinfo=None), end_dt.replace(tzinfo=None)
     if str_values:
         if data_type == "timestamp":
-            start_dt = start_dt.strftime(DELTA_DATETIME_FORMAT)
+            start_dt, end_dt = (
+                start_dt.strftime(DELTA_DATETIME_FORMAT),
+                end_dt.strftime(DELTA_DATETIME_FORMAT),
+            )
         elif data_type == "date":
-            start_dt = start_dt.strftime(DELTA_DATE_FORMAT)
+            start_dt, end_dt = (
+                start_dt.strftime(DELTA_DATE_FORMAT),
+                end_dt.strftime(DELTA_DATETIME_FORMAT),
+            )
         else:
             raise ValueError(f"Unknown primitive type: {data_type}")
 
-    return (table_partition.partition_expr, "=", start_dt)
+    if input_dnf:
+        return [
+            (table_partition.partition_expr, ">=", start_dt),
+            (table_partition.partition_expr, "<", end_dt),
+        ]
+    else:
+        return (table_partition.partition_expr, "=", start_dt)
 
 
 def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
@@ -333,6 +349,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
         partition_filters = partition_dimensions_to_dnf(
             partition_dimensions=table_slice.partition_dimensions,
             table_schema=table.schema(),
+            input_dnf=True,
         )
         if partition_filters is not None:
             partition_expr = _filters_to_expression([partition_filters])

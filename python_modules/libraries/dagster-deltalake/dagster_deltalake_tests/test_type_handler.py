@@ -451,7 +451,7 @@ def test_dynamic_partition(tmp_path, io_manager):
         assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skip("handle creating empty tables - hopw to get schema a-priory?")
+@pytest.mark.skip("handle creating empty tables - how to get schema a-priory?")
 def test_self_dependent_asset(tmp_path, io_manager):
     daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
