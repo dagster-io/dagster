@@ -61,6 +61,9 @@ def asset(
     ...
 
 
+from dagster._core.reactive_scheduling.reactive_policy import SchedulingPolicy
+
+
 @overload
 def asset(
     *,
@@ -89,6 +92,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
+    scheduling_policy: Optional[SchedulingPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -128,6 +132,7 @@ def asset(
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    scheduling_policy: Optional[SchedulingPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -241,6 +246,7 @@ def asset(
             code_version=code_version,
             check_specs=check_specs,
             key=key,
+            scheduling_policy=scheduling_policy,
         )
 
     if compute_fn is not None:
@@ -313,6 +319,7 @@ class _Asset:
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        scheduling_policy: Optional[SchedulingPolicy] = None,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -340,6 +347,7 @@ class _Asset:
         self.code_version = code_version
         self.check_specs = check_specs
         self.key = key
+        self.scheduling_policy = scheduling_policy
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -484,6 +492,9 @@ class _Asset:
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
+            scheduling_policy_by_key={out_asset_key: self.scheduling_policy}
+            if self.scheduling_policy
+            else None,
         )
 
 
