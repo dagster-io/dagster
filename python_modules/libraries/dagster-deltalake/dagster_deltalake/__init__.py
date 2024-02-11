@@ -5,7 +5,10 @@ from dagster._core.storage.db_io_manager import DbTypeHandler
 
 from .config import (
     AzureConfig as AzureConfig,
+    ClientConfig as ClientConfig,
     LocalConfig as LocalConfig,
+    MergeConfig as MergeConfig,
+    MergeType as MergeType,
     S3Config as S3Config,
 )
 from .handler import (

@@ -25,17 +25,56 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from deltalake import DeltaTable, WriterProperties, write_deltalake
+from deltalake.exceptions import TableNotFoundError
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
     Schema,
+    _convert_pa_schema_to_delta,
 )
 from deltalake.table import FilterLiteralType, _filters_to_expression
 
+from .config import MergeType
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
 T = TypeVar("T")
 ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
+
+from .io_manager import _DeltaTableIOManagerResourceConfig
+
+
+def _merge_execute(
+    dt: DeltaTable,
+    reader: pa.RecordBatchReader,
+    merge_config: Dict[str, Any],
+    writer_properties: Optional[WriterProperties],
+    custom_metadata: Optional[Dict[str, str]],
+    delta_params: Dict[str, Any],
+):
+    merge_type = merge_config.get("merge_type")
+    error_on_type_mismatch = merge_config.get("error_on_type_mismatch", True)
+
+    merger = dt.merge(
+        source=reader,
+        predicate=merge_config.get("predicate"),  # type: ignore
+        source_alias=merge_config.get("source_alias"),
+        target_alias=merge_config.get("target_alias"),
+        error_on_type_mismatch=error_on_type_mismatch,
+        writer_properties=writer_properties,
+        custom_metadata=custom_metadata,
+        **delta_params,
+    )
+
+    if merge_type == MergeType.update_only:
+        merger.when_matched_update_all().execute()
+    elif merge_type == MergeType.deduplicate_insert:
+        merger.when_not_matched_insert_all().execute()
+    elif merge_type == MergeType.upsert:
+        merger.when_matched_update_all().when_not_matched_insert_all().execute()
+    elif merge_type == MergeType.replace_delete_unmatched:
+        merger.when_matched_update_all().when_not_matched_by_source_delete().execute()
+    else:
+        raise NotImplementedError
 
 
 class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
@@ -45,6 +84,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
     @abstractmethod
     def to_arrow(self, obj: T) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def get_output_stats(self, obj: T) -> Dict[str, MetadataValue]:
         pass
 
     def handle_output(
@@ -57,15 +100,22 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         """Stores pyarrow types in Delta table."""
         metadata = context.metadata or {}
         resource_config = context.resource_config or {}
+        object_stats = self.get_output_stats(obj)
         reader, delta_params = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
-
+        resource_config = cast(_DeltaTableIOManagerResourceConfig, context.resource_config)
         engine = resource_config.get("writer_engine")
         save_mode = metadata.get("mode")
         main_save_mode = resource_config.get("mode")
-        main_custom_metadata = resource_config.get("custom_metadata")
-        overwrite_schema = resource_config.get("overwrite_schema")
-        writerprops = resource_config.get("writer_properties")
+        custom_metadata = metadata.get("custom_metadata") or resource_config.get("custom_metadata")
+        overwrite_schema = metadata.get("overwrite_schema") or resource_config.get(
+            "overwrite_schema"
+        )
+        writer_properties = resource_config.get("writer_properties")
+        writer_properties = (
+            WriterProperties(**writer_properties) if writer_properties is not None else None  # type: ignore
+        )
+        merge_config = resource_config.get("merge_config")
 
         if save_mode is not None:
             context.log.debug(
@@ -74,7 +124,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                 save_mode,
             )
             main_save_mode = save_mode
-        context.log.debug("Writing with mode: %s", main_save_mode)
+        context.log.debug("Writing with mode: `%s`", main_save_mode)
 
         partition_filters = None
         partition_columns = None
@@ -92,21 +142,44 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
-        write_deltalake(  # type: ignore
-            table_or_uri=connection.table_uri,
-            data=reader,
-            storage_options=connection.storage_options,
-            mode=main_save_mode,
-            partition_filters=partition_filters,
-            partition_by=partition_columns,
-            engine=engine,
-            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
-            custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
-            writer_properties=WriterProperties(**writerprops)  # type: ignore
-            if writerprops is not None
-            else writerprops,
-            **delta_params,
-        )
+        if main_save_mode != "merge":
+            write_deltalake(  # type: ignore
+                table_or_uri=connection.table_uri,
+                data=reader,
+                storage_options=connection.storage_options,
+                mode=main_save_mode,
+                partition_filters=partition_filters,
+                partition_by=partition_columns,
+                engine=engine,
+                overwrite_schema=overwrite_schema,
+                custom_metadata=custom_metadata,
+                writer_properties=writer_properties,
+                **delta_params,
+            )
+        else:
+            if merge_config is None:
+                raise ValueError(
+                    "Merge Configuration should be provided when `mode = WriterMode.merge`"
+                )
+            try:
+                dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
+            except TableNotFoundError:
+                context.log.debug("Creating a DeltaTable first before merging.")
+                dt = DeltaTable.create(
+                    table_uri=connection.table_uri,
+                    schema=_convert_pa_schema_to_delta(reader.schema, **delta_params),
+                    partition_by=partition_columns,
+                    storage_options=connection.storage_options,
+                    custom_metadata=custom_metadata,
+                )
+            _merge_execute(
+                dt,
+                reader,
+                merge_config,
+                writer_properties=writer_properties,
+                custom_metadata=custom_metadata,
+                delta_params=delta_params,
+            )
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
@@ -126,8 +199,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                         ]
                     )
                 ),
-                "table_uri": connection.table_uri,
+                "table_uri": MetadataValue.path(connection.table_uri),
+                "table_version": MetadataValue.int(dt.version()),
                 **stats,
+                **object_stats,
             }
         )
 
@@ -161,6 +236,9 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
         if isinstance(obj, ds.Dataset):
             return obj.scanner().to_reader(), {}
         return obj, {}
+
+    def get_output_stats(self, obj: ArrowTypes) -> Dict[str, MetadataValue]:
+        return {}
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:

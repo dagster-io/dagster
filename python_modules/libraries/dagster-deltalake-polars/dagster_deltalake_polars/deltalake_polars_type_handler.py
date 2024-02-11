@@ -1,9 +1,9 @@
-from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union, Mapping
 
 import polars as pl
 import pyarrow as pa
 import pyarrow.dataset as ds
-from dagster import InputContext
+from dagster import InputContext, MetadataValue
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TableSlice,
@@ -38,6 +38,9 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
     def to_arrow(self, obj: PolarsTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
         if isinstance(obj, pl.LazyFrame):
             obj = obj.collect()
+
+        # todo(ion): maybe move stats collection here
+
         return obj.to_arrow().to_reader(), {"large_dtypes": True}
 
     def load_input(
@@ -59,6 +62,14 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
                 return self.from_arrow(scanner.to_reader(), context.dagster_type.typing_type)
         else:
             return self.from_arrow(dataset, context.dagster_type.typing_type)
+
+    def get_output_stats(self, obj: PolarsTypes) -> Mapping[str, MetadataValue]:
+        stats = {}
+        # TODO(ion): think of more meaningful stats to add from a dataframe
+        if isinstance(obj, pl.DataFrame):
+            stats["source_num_rows"] = MetadataValue.int(obj.shape[0])
+
+        return stats
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:

@@ -3,7 +3,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
+from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast, Any
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -27,7 +27,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, MergeConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"
@@ -52,6 +52,7 @@ class WriteMode(str, Enum):
     append = "append"
     overwrite = "overwrite"
     ignore = "ignore"
+    merge = "merge"
 
 
 class WriterEngine(str, Enum):
@@ -64,6 +65,7 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
     mode: WriteMode
     overwrite_schema: bool
     writer_engine: WriterEngine
+    merge_config: NotRequired[Dict[str, Any]]
     storage_options: _StorageOptionsConfig
     client_options: NotRequired[Dict[str, str]]
     table_config: NotRequired[Dict[str, str]]
@@ -130,6 +132,10 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     overwrite_schema: bool = Field(default=False)
     writer_engine: WriterEngine = Field(
         default=WriterEngine.pyarrow.value, description="Engine passed to write_deltalake."
+    )
+
+    merge_config: Optional[MergeConfig] = Field(
+        default=None, description="Additional configuration for the MERGE operation."
     )
 
     storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(

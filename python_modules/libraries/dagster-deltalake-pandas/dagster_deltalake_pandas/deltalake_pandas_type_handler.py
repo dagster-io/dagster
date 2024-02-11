@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, Mapping
 
 import pandas as pd
 import pyarrow as pa
@@ -9,6 +9,7 @@ from dagster_deltalake.handler import (
     DeltalakeBaseArrowTypeHandler,
     DeltaLakePyArrowTypeHandler,
 )
+from dagster import MetadataValue
 from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
@@ -24,6 +25,10 @@ class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
     @property
     def supported_types(self) -> Sequence[Type[object]]:
         return [pd.DataFrame]
+
+    def get_output_stats(self, obj: pd.DataFrame) -> Mapping[str, MetadataValue]:
+        stats = {"source_num_rows": MetadataValue.int(obj.shape[0])}
+        return stats
 
 
 class DeltaLakePandasIOManager(DeltaLakeIOManager):
