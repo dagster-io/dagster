@@ -287,6 +287,20 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
+    sensors = list(sensors) if sensors else []
+
+    for assets_def in assets or []:
+        if isinstance(assets_def, AssetsDefinition):
+            for asset_key in assets_def.keys:
+                if asset_key in assets_def.scheduling_policy_by_key:
+                    scheduling_policy = assets_def.scheduling_policy_by_key[asset_key]
+                    if scheduling_policy.tick_cron:
+                        from dagster._core.reactive_scheduling.reactive_scheduling_sensor_factory import (
+                            build_reactive_scheduling_sensor,
+                        )
+
+                        sensors.append(build_reactive_scheduling_sensor(assets_def, asset_key))
+
     # Binds top-level resources to jobs and any jobs attached to schedules or sensors
     (
         jobs_with_resources,
