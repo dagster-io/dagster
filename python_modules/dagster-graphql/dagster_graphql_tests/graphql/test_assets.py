@@ -2394,7 +2394,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(targeting_instigators) == 2
         assert set(
             targeting_instigator["name"] for targeting_instigator in targeting_instigators
-        ) == {"my_automation_policy_sensor", "every_asset_sensor"}
+        ) == {"my_auto_materialize_sensor", "every_asset_sensor"}
 
         result = execute_dagster_graphql(
             graphql_context,

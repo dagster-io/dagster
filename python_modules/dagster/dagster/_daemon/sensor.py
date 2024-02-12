@@ -316,7 +316,7 @@ def execute_sensor_iteration(
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
         if (
             not sensor_state.instigator_data
-            or sensor_state.instigator_data.sensor_type != SensorType.AUTOMATION_POLICY  # type: ignore
+            or sensor_state.instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE  # type: ignore
         )
     }
 
@@ -328,7 +328,7 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
-                    if sensor.sensor_type == SensorType.AUTOMATION_POLICY:
+                    if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
                         continue
 
                     selector_id = sensor.selector_id

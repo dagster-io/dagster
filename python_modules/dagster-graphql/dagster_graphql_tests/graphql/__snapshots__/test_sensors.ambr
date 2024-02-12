@@ -238,7 +238,7 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'my_automation_policy_sensor',
+      'name': 'my_auto_materialize_sensor',
       'sensorState': dict({
         'runs': list([
         ]),

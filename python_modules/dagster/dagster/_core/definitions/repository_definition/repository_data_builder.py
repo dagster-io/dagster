@@ -28,8 +28,8 @@ from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -264,7 +264,7 @@ def build_caching_repository_data_from_list(
     asset_graph = AssetGraph.from_assets(
         [*assets_defs, *source_assets], asset_checks=asset_checks_defs
     )
-    _validate_automation_policy_sensors(sensors.values(), asset_graph)
+    _validate_auto_materialize_sensors(sensors.values(), asset_graph)
 
     if unresolved_partitioned_asset_schedules:
         for (
@@ -449,13 +449,13 @@ def _process_and_validate_target(
         jobs[target.name] = target
 
 
-def _validate_automation_policy_sensors(
+def _validate_auto_materialize_sensors(
     sensors: Iterable[SensorDefinition], asset_graph: AssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
     sensor_names_by_asset_key: Dict[AssetKey, str] = {}
     for sensor in sensors:
-        if isinstance(sensor, AutomationPolicySensorDefinition):
+        if isinstance(sensor, AutoMaterializeSensorDefinition):
             asset_keys = sensor.asset_selection.resolve(asset_graph)
             for asset_key in asset_keys:
                 if asset_key in sensor_names_by_asset_key:

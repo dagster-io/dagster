@@ -932,8 +932,8 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("max_tick_retries", 3)
 
     @property
-    def auto_materialize_use_automation_policy_sensors(self) -> int:
-        return self.get_settings("auto_materialize").get("use_automation_policy_sensors", False)
+    def auto_materialize_use_sensors(self) -> int:
+        return self.get_settings("auto_materialize").get("use_sensors", False)
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
@@ -2964,7 +2964,7 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled or self.auto_materialize_use_automation_policy_sensors:
+        if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
         return daemons
 
