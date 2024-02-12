@@ -6,7 +6,7 @@ from dagster import asset
 
 @asset
 def iris_dataset(snowflake: SnowflakeResource) -> None:
-    return pd.read_csv(
+    iris_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
