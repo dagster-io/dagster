@@ -1,5 +1,5 @@
 import datetime
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractproperty
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -17,6 +17,7 @@ import pytz
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -49,10 +50,7 @@ from .asset_condition.asset_condition_evaluation_context import AssetConditionEv
 from .asset_graph import sort_key_for_asset_partition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition.asset_condition import (
-        AssetCondition,
-        AssetConditionResult,
-    )
+    from dagster._core.definitions.asset_condition.asset_condition import AssetConditionResult
 
 
 class AutoMaterializeRule(ABC):
@@ -85,7 +83,6 @@ class AutoMaterializeRule(ABC):
 
         return RuleCondition(rule=self)
 
-    @abstractmethod
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
@@ -1058,39 +1055,14 @@ class SkipOnRequiredButNonexistentParentsRule(
 
     @property
     def description(self) -> str:
-        return "required parent partitions do not exist"
+        return self.to_asset_condition().description
 
-    def evaluate_for_asset(
-        self, context: AssetConditionEvaluationContext
-    ) -> "AssetConditionResult":
-        from .asset_condition.asset_condition import AssetConditionResult
-
-        asset_partitions_by_evaluation_data = defaultdict(set)
-
-        subset_to_evaluate = (
-            context.candidates_not_evaluated_on_previous_tick_subset
-            | context.candidate_parent_has_or_will_update_subset
+    def to_asset_condition(self) -> AssetCondition:
+        from .asset_condition.required_nonexistent_parents_condition import (
+            RequiresNonexistentParentsCondition,
         )
-        for candidate in subset_to_evaluate.asset_partitions:
-            nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
-                context.instance_queryer,
-                context.instance_queryer.evaluation_time,
-                candidate.asset_key,
-                candidate.partition_key,
-            ).required_but_nonexistent_parents_partitions
 
-            nonexistent_parent_keys = {parent.asset_key for parent in nonexistent_parent_partitions}
-            if nonexistent_parent_keys:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(
-                        frozenset(nonexistent_parent_keys)
-                    ).frozen_metadata
-                ].add(candidate)
-
-        true_subset, subsets_with_metadata = context.add_evaluation_data_from_previous_tick(
-            asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
-        )
-        return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
+        return RequiresNonexistentParentsCondition()
 
 
 @whitelist_for_serdes
@@ -1104,32 +1076,12 @@ class SkipOnBackfillInProgressRule(
 
     @property
     def description(self) -> str:
-        if self.all_partitions:
-            return "part of an asset targeted by an in-progress backfill"
-        else:
-            return "targeted by an in-progress backfill"
+        return self.to_asset_condition().description
 
-    def evaluate_for_asset(
-        self, context: AssetConditionEvaluationContext
-    ) -> "AssetConditionResult":
-        from .asset_condition.asset_condition import AssetConditionResult
+    def to_asset_condition(self) -> AssetCondition:
+        from .asset_condition.backfill_in_progress_condition import BackfillInProgressCondition
 
-        backfilling_subset = (
-            # this backfilling subset is aware of the current partitions definitions, and so will
-            # be valid
-            (context.instance_queryer.get_active_backfill_target_asset_graph_subset())
-            .get_asset_subset(context.asset_key, context.asset_graph)
-            .as_valid(context.partitions_def)
-        )
-
-        if backfilling_subset.size == 0:
-            true_subset = context.empty_subset()
-        elif self.all_partitions:
-            true_subset = context.candidate_subset
-        else:
-            true_subset = context.candidate_subset & backfilling_subset
-
-        return AssetConditionResult.create(context, true_subset)
+        return BackfillInProgressCondition(any_partition=self.all_partitions)
 
 
 @whitelist_for_serdes
