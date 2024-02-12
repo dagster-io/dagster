@@ -2,7 +2,6 @@ import datetime
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -17,6 +16,7 @@ import pytz
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_condition import AssetConditionResult
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -45,9 +45,6 @@ from dagster._utils.schedules import (
 
 from .asset_condition_evaluation_context import AssetConditionEvaluationContext
 from .asset_graph import sort_key_for_asset_partition
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetConditionResult
 
 
 class AutoMaterializeRule(ABC):
@@ -935,3 +932,37 @@ class DiscardOnMaxMaterializationsExceededRule(
                 context.asset_key, context.partitions_def, rate_limited_asset_partitions
             ),
         )
+
+
+@whitelist_for_serdes
+class BlockingAssetCheckRule(AutoMaterializeRule, NamedTuple("_BlockingAssetcheckRule", [])):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset(
+        self, context: AssetConditionEvaluationContext
+    ) -> "AssetConditionResult":
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionRecordStatus,
+        )
+
+        if context.candidate_subset.size == 0:
+            return AssetConditionResult.create(context, context.empty_subset())
+
+        parent_assets = context.instance_queryer.asset_graph.get_parents(context.asset_key)
+        checks_on_parent_assets = [
+            key
+            for key in context.instance_queryer.asset_graph.blocking_asset_check_keys
+            if key.asset_key in parent_assets
+        ]
+
+        if checks_on_parent_assets:
+            check_executions = context.instance_queryer.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+                checks_on_parent_assets
+            ).values()
+            for check_execution in check_executions:
+                if check_execution.status != AssetCheckExecutionRecordStatus.SUCCEEDED:
+                    return AssetConditionResult.create(context, context.candidate_subset)
+
+        return AssetConditionResult.create(context, context.empty_subset())

@@ -90,6 +90,7 @@ class RunSpec(NamedTuple):
     partition_key: Optional[str] = None
     failed_asset_keys: Optional[Sequence[AssetKey]] = None
     is_observation: bool = False
+    tags: Optional[Mapping[str, str]] = None
 
 
 class AssetEvaluationSpec(NamedTuple):
@@ -370,6 +371,7 @@ class AssetReconciliationScenario(
                         all_assets=self.assets,
                         instance=instance,
                         failed_asset_keys=run.failed_asset_keys,
+                        tags=run.tags,
                     )
 
         if self.evaluation_delta is not None:
@@ -575,6 +577,7 @@ def run(
     partition_key: Optional[str] = None,
     failed_asset_keys: Optional[Iterable[str]] = None,
     is_observation: bool = False,
+    tags: Optional[Mapping[str, str]] = None,
 ):
     return RunSpec(
         asset_keys=list(
@@ -583,6 +586,7 @@ def run(
         failed_asset_keys=list(map(AssetKey.from_coercible, failed_asset_keys or [])),
         partition_key=partition_key,
         is_observation=is_observation,
+        tags=tags,
     )
 
 

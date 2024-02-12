@@ -88,6 +88,7 @@ class AssetGraph:
         required_assets_and_checks_by_key: Mapping[
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
+        blocking_asset_check_keys: AbstractSet[AssetCheckKey],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -105,6 +106,7 @@ class AssetGraph:
             self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
         )
         self._required_assets_and_checks_by_key = required_assets_and_checks_by_key
+        self._blocking_asset_check_keys = blocking_asset_check_keys
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -228,6 +230,10 @@ class AssetGraph:
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._materializable_asset_keys | self.source_asset_keys
+
+    @property
+    def blocking_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self._blocking_asset_check_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
@@ -785,6 +791,24 @@ class InternalAssetGraph(AssetGraph):
             AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
         ],
     ):
+        self._assets = assets
+        self._source_assets = source_assets
+        self._asset_checks = asset_checks
+
+        asset_check_keys = set()
+        blocking_asset_check_keys = set()
+        for asset_check in asset_checks:
+            asset_check_keys.update([spec.key for spec in asset_check.specs])
+            blocking_asset_check_keys.update(
+                [spec.key for spec in asset_check.specs if spec.blocking]
+            )
+        for asset in assets:
+            asset_check_keys.update([spec.key for spec in asset.check_specs])
+            blocking_asset_check_keys.update(
+                [spec.key for spec in asset.check_specs if spec.blocking]
+            )
+        self._asset_check_keys = asset_check_keys
+
         super().__init__(
             asset_dep_graph=asset_dep_graph,
             source_asset_keys=source_asset_keys,
@@ -798,17 +822,8 @@ class InternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
             required_assets_and_checks_by_key=required_assets_and_checks_by_key,
+            blocking_asset_check_keys=blocking_asset_check_keys,
         )
-        self._assets = assets
-        self._source_assets = source_assets
-        self._asset_checks = asset_checks
-
-        asset_check_keys = set()
-        for asset_check in asset_checks:
-            asset_check_keys.update([spec.key for spec in asset_check.specs])
-        for asset in assets:
-            asset_check_keys.update([spec.key for spec in asset.check_specs])
-        self._asset_check_keys = asset_check_keys
 
     @property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
