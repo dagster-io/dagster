@@ -32,13 +32,10 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
+from ..dbt_projects import test_exceptions_path
 
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
 manifest = json.loads(manifest_path.read_bytes())
-
-test_exception_messages_dbt_project_dir = (
-    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_exceptions").resolve()
-)
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
@@ -91,7 +88,7 @@ def test_dbt_cli_project_dir_path() -> None:
 
 
 def test_dbt_cli_failure() -> None:
-    dbt = DbtCliResource(project_dir=os.fspath(test_exception_messages_dbt_project_dir))
+    dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path))
     dbt_cli_invocation = dbt.cli(["run", "--selector", "nonexistent"])
 
     with pytest.raises(
@@ -103,10 +100,7 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.process.returncode == 2
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
-    dbt = DbtCliResource(
-        project_dir=os.fspath(test_exception_messages_dbt_project_dir),
-        target="error_dev",
-    )
+    dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path), target="error_dev")
 
     with pytest.raises(
         DagsterDbtCliRuntimeError, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"
