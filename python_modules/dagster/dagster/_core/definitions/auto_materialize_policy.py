@@ -63,6 +63,7 @@ class AutoMaterializePolicy(
         [
             ("rules", FrozenSet["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
+            ("asset_condition", Optional["AssetCondition"]),
         ],
     )
 ):
@@ -125,6 +126,7 @@ class AutoMaterializePolicy(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
+        asset_condition: Optional["AssetCondition"] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
@@ -133,12 +135,23 @@ class AutoMaterializePolicy(
             "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
             " to None. To disable auto materializing, remove the policy.",
         )
-        check.param_invariant(len(rules) > 0, "rules", "Must specify at least one rule.")
+        check.param_invariant(
+            bool(rules) ^ bool(asset_condition),
+            "asset_condition",
+            "Must specify exactly one of `rules` or `asset_condition`.",
+        )
+        if asset_condition is not None:
+            check.param_invariant(
+                max_materializations_per_minute is None,
+                "max_materializations_per_minute",
+                "`max_materializations_per_minute` is not supported when using `asset_condition`.",
+            )
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,
+            asset_condition=asset_condition,
         )
 
     @property
@@ -158,6 +171,19 @@ class AutoMaterializePolicy(
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
+
+    @staticmethod
+    def from_asset_condition(asset_condition: "AssetCondition") -> "AutoMaterializePolicy":
+        """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
+        the provided asset_condition evaluates to True.
+
+        Args:
+            asset_condition (AssetCondition): The condition which determines whether an asset
+                partition should be materialized.
+        """
+        return AutoMaterializePolicy(
+            rules=set(), max_materializations_per_minute=None, asset_condition=asset_condition
+        )
 
     @public
     @staticmethod
@@ -257,6 +283,9 @@ class AutoMaterializePolicy(
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .asset_condition import AndAssetCondition, NotAssetCondition, OrAssetCondition
         from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+
+        if self.asset_condition is not None:
+            return self.asset_condition
 
         materialize_condition = OrAssetCondition(
             children=[
