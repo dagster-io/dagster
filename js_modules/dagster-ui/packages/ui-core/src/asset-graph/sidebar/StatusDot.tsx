@@ -5,7 +5,8 @@ import {GraphNode} from '../Utils';
 
 export function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
   const {liveData} = useAssetLiveData(node.assetKey);
-  if (!liveData) {
+
+  if (!liveData || !node.definition) {
     return <StatusCaseDot statusCase={StatusCase.LOADING} />;
   }
   const status = buildAssetNodeStatusContent({

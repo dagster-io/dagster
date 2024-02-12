@@ -161,7 +161,7 @@ const ViewDetailsButton = ({
           setShowDetails(false);
         }}
       >
-        <AssetEventMetadataEntriesTable event={evaluation} />
+        <AssetEventMetadataEntriesTable event={evaluation} showDescriptions />
       </Dialog>
       <Button
         onClick={() => {

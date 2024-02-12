@@ -106,7 +106,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
       <div style={{borderBottom: `2px solid ${Colors.borderDefault()}`}} />
 
-      {nodeDependsOnSelf(graphNode) && <DependsOnSelfBanner />}
+      {nodeDependsOnSelf(graphNode) && (
+        <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+          <DependsOnSelfBanner />
+        </Box>
+      )}
 
       {asset.opVersion && (
         <SidebarSection title="Code Version">
