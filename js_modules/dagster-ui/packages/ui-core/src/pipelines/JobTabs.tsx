@@ -1,12 +1,11 @@
 import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
+import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
 import {PermissionResult, PermissionsState, permissionResultForKey} from '../app/Permissions';
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
 
 export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions'];
 
@@ -27,7 +26,7 @@ export const JobTabs = (props: Props) => {
     opNames: [],
   });
 
-  const selectedTab = React.useMemo(() => {
+  const selectedTab = useMemo(() => {
     return (
       tabs.find((tab) => tab.pathComponent === matchingTab) ||
       tabs.find((tab) => tab.pathComponent === '')

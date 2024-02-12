@@ -1,5 +1,5 @@
 import {Box, Checkbox} from '@dagster-io/ui-components';
-import React from 'react';
+import {useState} from 'react';
 
 import {assertUnreachable} from '../../app/Util';
 import {
@@ -281,7 +281,7 @@ const MetadataEntryMocks = [
 ];
 
 export const EmptyState = () => {
-  const [expandSmallValues, setExpandSmallValues] = React.useState(false);
+  const [expandSmallValues, setExpandSmallValues] = useState(false);
   return (
     <Box style={{width: '950px', display: 'flex', flexDirection: 'column', gap: 12}}>
       <Checkbox

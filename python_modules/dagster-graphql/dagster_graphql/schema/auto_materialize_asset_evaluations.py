@@ -1,18 +1,16 @@
-from collections import defaultdict
 from typing import Optional, Sequence, Tuple
 
-import dagster._check as check
 import graphene
 from dagster import PartitionsDefinition
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetSubsetWithMetadata,
+    RuleCondition,
+)
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
-    AutoMaterializeRuleEvaluation,
-    AutoMaterializeRuleEvaluationData,
-    ParentUpdatedRuleEvaluationData,
-    TextRuleEvaluationData,
-    WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.partition import SerializedPartitionsSubset
+from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.schema.errors import GrapheneError
@@ -104,72 +102,131 @@ class GrapheneAutoMaterializeRuleWithRuleEvaluations(graphene.ObjectType):
 
 
 def create_graphene_auto_materialize_rule_evaluation(
-    evaluation_data_tuple: Tuple[
-        AutoMaterializeRuleEvaluationData,
-        Optional[SerializedPartitionsSubset],
-    ],
-    partitions_def: Optional[PartitionsDefinition],
-):
-    rule_evaluation_data, serialized_partition_subset = evaluation_data_tuple
-
-    if not serialized_partition_subset:
+    asset_subset_with_metadata: AssetSubsetWithMetadata,
+) -> Optional[GrapheneAutoMaterializeRuleEvaluation]:
+    if not asset_subset_with_metadata.subset.is_partitioned:
         partition_keys_or_error = None
-    elif not partitions_def:
-        partition_keys_or_error = GraphenePartitionSubsetDeserializationError(
-            message="PartitionsDefinition not found, cannot display partition keys"
+    else:
+        partition_keys_or_error = GraphenePartitionKeys(
+            partitionKeys=asset_subset_with_metadata.subset.subset_value.get_partition_keys()
         )
-    elif not serialized_partition_subset.can_deserialize(partitions_def):
-        partition_keys_or_error = GraphenePartitionSubsetDeserializationError(
-            message=(
-                "Partition subset cannot be deserialized. The PartitionsDefinition may have"
-                " changed."
-            )
+
+    metadata = asset_subset_with_metadata.metadata
+    if "text" in metadata.keys() and isinstance(metadata["text"], str):
+        rule_evaluation_data = GrapheneTextRuleEvaluationData(text=metadata["text"])
+    elif any(key.startswith("updated_parent") for key in metadata.keys()):
+        updatedAssetKeys = {
+            value.asset_key
+            for key, value in metadata.items()
+            if key.startswith("updated_parent") and isinstance(value, DagsterAssetMetadataValue)
+        }
+        willUpdateAssetKeys = {
+            value.asset_key
+            for key, value in metadata.items()
+            if key.startswith("will_update_parent") and isinstance(value, DagsterAssetMetadataValue)
+        }
+        rule_evaluation_data = GrapheneParentMaterializedRuleEvaluationData(
+            updatedAssetKeys=updatedAssetKeys, willUpdateAssetKeys=willUpdateAssetKeys
+        )
+    elif any(key.startswith("waiting_on_ancestor") for key in metadata.keys()):
+        waitingOnAssetKeys = {
+            value.asset_key
+            for key, value in metadata.items()
+            if key.startswith("waiting_on_ancestor")
+            and isinstance(value, DagsterAssetMetadataValue)
+        }
+        rule_evaluation_data = GrapheneWaitingOnKeysRuleEvaluationData(
+            waitingOnAssetKeys=waitingOnAssetKeys
         )
     else:
-        subset = serialized_partition_subset.deserialize(partitions_def)
-        partition_keys_or_error = GraphenePartitionKeys(partitionKeys=subset.get_partition_keys())
-
-    if isinstance(rule_evaluation_data, TextRuleEvaluationData):
-        rule_evaluation_data = GrapheneTextRuleEvaluationData(text=rule_evaluation_data.text)
-    elif isinstance(rule_evaluation_data, ParentUpdatedRuleEvaluationData):
-        rule_evaluation_data = GrapheneParentMaterializedRuleEvaluationData(
-            updatedAssetKeys=rule_evaluation_data.updated_asset_keys,
-            willUpdateAssetKeys=rule_evaluation_data.will_update_asset_keys,
-        )
-    elif isinstance(rule_evaluation_data, WaitingOnAssetsRuleEvaluationData):
-        rule_evaluation_data = GrapheneWaitingOnKeysRuleEvaluationData(
-            waitingOnAssetKeys=rule_evaluation_data.waiting_on_asset_keys
-        )
-    elif rule_evaluation_data is not None:
-        check.failed(f"Unexpected rule evaluation data type {type(rule_evaluation_data)}")
+        rule_evaluation_data = None
 
     return GrapheneAutoMaterializeRuleEvaluation(
         partitionKeysOrError=partition_keys_or_error, evaluationData=rule_evaluation_data
     )
 
 
-def create_graphene_auto_materialize_rules_with_rule_evaluations(
-    partition_subsets_by_condition: Sequence[
-        Tuple[AutoMaterializeRuleEvaluation, Optional[SerializedPartitionsSubset]]
-    ],
-    partitions_def: Optional[PartitionsDefinition],
-) -> Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]:
-    rule_mapping = defaultdict(list)
-    for rule_evaluation, serialized_partition_subset in partition_subsets_by_condition:
-        rule_mapping[rule_evaluation.rule_snapshot].append(
-            (rule_evaluation.evaluation_data, serialized_partition_subset)
-        )
+def _create_rules_with_rule_evaluations_for_decision_type(
+    evaluation: AssetConditionEvaluation, decision_type: AutoMaterializeDecisionType
+) -> Tuple[
+    Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
+]:
+    rules = []
+    rules_with_rule_evaluations = []
+    leaf_evaluations = evaluation.child_evaluations
+    for le in leaf_evaluations:
+        snapshot = le.condition_snapshot
+        if snapshot.class_name != RuleCondition.__name__:
+            continue
+        rule = GrapheneAutoMaterializeRule(snapshot.description, decision_type)
+        rules.append(rule)
+        if le.subsets_with_metadata:
+            rules_with_rule_evaluations.append(
+                GrapheneAutoMaterializeRuleWithRuleEvaluations(
+                    rule=rule,
+                    ruleEvaluations=[
+                        create_graphene_auto_materialize_rule_evaluation(sswm)
+                        for sswm in le.subsets_with_metadata
+                    ],
+                )
+            )
+        elif le.true_subset.size > 0:
+            rules_with_rule_evaluations.append(
+                GrapheneAutoMaterializeRuleWithRuleEvaluations(
+                    rule=rule,
+                    ruleEvaluations=[
+                        GrapheneAutoMaterializeRuleEvaluation(
+                            partitionKeysOrError=GraphenePartitionKeys(
+                                partitionKeys=le.true_subset.subset_value.get_partition_keys()
+                            )
+                            if le.true_subset.is_partitioned
+                            else None,
+                            evaluationData=None,
+                        )
+                    ],
+                )
+            )
+    return rules, rules_with_rule_evaluations
 
-    return [
-        GrapheneAutoMaterializeRuleWithRuleEvaluations(
-            rule=GrapheneAutoMaterializeRule(rule_snapshot),
-            ruleEvaluations=[
-                create_graphene_auto_materialize_rule_evaluation(tup, partitions_def)
-                for tup in tups
-            ],
+
+def create_graphene_auto_materialize_rules_with_rule_evaluations(
+    evaluation: AssetConditionEvaluation,
+) -> Tuple[
+    Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
+]:
+    rules, rules_with_rule_evaluations = [], []
+
+    if len(evaluation.child_evaluations) > 0:
+        materialize_evaluation = evaluation.child_evaluations[0]
+        rs, rwres = _create_rules_with_rule_evaluations_for_decision_type(
+            materialize_evaluation, AutoMaterializeDecisionType.MATERIALIZE
         )
-        for rule_snapshot, tups in rule_mapping.items()
-    ]
+        rules.extend(rs)
+        rules_with_rule_evaluations.extend(rwres)
+
+    if (
+        len(evaluation.child_evaluations) > 1
+        and len(evaluation.child_evaluations[1].child_evaluations) == 1
+    ):
+        skip_evaluation = evaluation.child_evaluations[1].child_evaluations[0]
+        rs, rwres = _create_rules_with_rule_evaluations_for_decision_type(
+            skip_evaluation, AutoMaterializeDecisionType.SKIP
+        )
+        rules.extend(rs)
+        rules_with_rule_evaluations.extend(rwres)
+
+    if (
+        len(evaluation.child_evaluations) > 2
+        and len(evaluation.child_evaluations[2].child_evaluations) == 1
+    ):
+        discard_evaluation = evaluation.child_evaluations[2]
+        rs, rwres = _create_rules_with_rule_evaluations_for_decision_type(
+            discard_evaluation, AutoMaterializeDecisionType.DISCARD
+        )
+        rules.extend(rs)
+        rules_with_rule_evaluations.extend(rwres)
+
+    return rules, rules_with_rule_evaluations
 
 
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
@@ -192,25 +249,22 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def=partitions_def)
+        evaluation = evaluation_with_run_ids.evaluation
+        (
+            rules,
+            rules_with_rule_evaluations,
+        ) = create_graphene_auto_materialize_rules_with_rule_evaluations(evaluation)
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,
-            numRequested=record.evaluation.num_requested,
-            numSkipped=record.evaluation.num_skipped,
-            numDiscarded=record.evaluation.num_discarded,
-            rulesWithRuleEvaluations=create_graphene_auto_materialize_rules_with_rule_evaluations(
-                record.evaluation.partition_subsets_by_condition, partitions_def
-            ),
+            numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
+            numSkipped=evaluation.legacy_num_skipped(),
+            numDiscarded=evaluation.legacy_num_discarded(),
+            rulesWithRuleEvaluations=rules_with_rule_evaluations,
             timestamp=record.timestamp,
-            runIds=record.evaluation.run_ids,
-            rules=(
-                [
-                    GrapheneAutoMaterializeRule(snapshot)
-                    for snapshot in record.evaluation.rule_snapshots
-                ]
-                if record.evaluation.rule_snapshots is not None
-                else None  # Return None if no rules serialized in evaluation
-            ),
+            runIds=evaluation_with_run_ids.run_ids,
+            rules=sorted(rules, key=lambda rule: rule.className),
             assetKey=GrapheneAssetKey(path=record.asset_key.path),
         )
 

@@ -2,23 +2,20 @@ import {
   Box,
   Button,
   ButtonGroup,
+  Colors,
   Icon,
   JoinedButtons,
   TextInput,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
-
-import {GraphData} from '../asset-graph/Utils';
-import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
-import {AssetKeyInput} from '../graphql/types';
 
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetLineageScope, AssetViewParams} from './types';
+import {GraphData} from '../asset-graph/Utils';
+import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetKeyInput} from '../graphql/types';
 
 export const AssetNodeLineage = ({
   params,
@@ -35,7 +32,7 @@ export const AssetNodeLineage = ({
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
 }) => {
-  const maxDistances = React.useMemo(
+  const maxDistances = useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
   );
@@ -95,9 +92,9 @@ export const AssetNodeLineage = ({
 };
 
 const DepthHidesAssetsNotice = styled.div`
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   border-radius: 8px;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   align-items: center;
   display: flex;
   padding: 4px 8px;
@@ -117,8 +114,8 @@ const LineageDepthControl = ({
   max: number;
   onChange: (v: number) => void;
 }) => {
-  const [text, setText] = React.useState(`${value}`);
-  React.useEffect(() => {
+  const [text, setText] = useState(`${value}`);
+  useEffect(() => {
     setText(`${value}`);
   }, [value]);
 
@@ -152,7 +149,7 @@ const LineageDepthControl = ({
             padding: 6,
             borderRadius: 0,
             boxShadow: 'none',
-            border: `1px solid ${colorBorderDefault()}`,
+            border: `1px solid ${Colors.borderDefault()}`,
           }}
           key={value}
           value={text}

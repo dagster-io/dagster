@@ -130,7 +130,8 @@ class ExecuteRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.job_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "execute_run",
             serialize_value(self),
@@ -180,7 +181,8 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.job_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "resume_run",
             serialize_value(self),
@@ -281,15 +283,16 @@ class ExecuteStepArgs(
         """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
-        return (
-            _get_entry_point(self.job_origin)
-            + ["api", "execute_step"]
-            + (
+        return [
+            *_get_entry_point(self.job_origin),
+            "api",
+            "execute_step",
+            *(
                 ["--compressed-input-json", self._get_compressed_args()]
                 if not skip_serialized_namedtuple
                 else []
-            )
-        )
+            ),
+        ]
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
         """Get the env vars for overriding the Click args of this step. Used in conjuction with

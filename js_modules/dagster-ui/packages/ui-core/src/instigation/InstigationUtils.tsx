@@ -1,16 +1,14 @@
 import {gql} from '@apollo/client';
-import {Group, Mono, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, Group, Mono} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
+import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
-
-import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 
 export const InstigatedRunStatus = ({
   instigationState,
@@ -19,7 +17,7 @@ export const InstigatedRunStatus = ({
 }) => {
   const [instigationRun] = instigationState.runs;
   if (!instigationRun) {
-    return <span style={{color: colorTextLight()}}>None</span>;
+    return <span style={{color: Colors.textLight()}}>None</span>;
   }
   return <LastRunSummary run={instigationRun} name={instigationState.name} />;
 };
@@ -94,7 +92,7 @@ export const StatusTable = styled.table`
   }
 
   &&&&& tbody > tr > td:first-child {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 `;
 

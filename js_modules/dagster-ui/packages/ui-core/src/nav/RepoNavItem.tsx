@@ -1,36 +1,30 @@
 import {
   Box,
   Button,
+  Colors,
+  Dialog,
   DialogFooter,
   DialogHeader,
-  Dialog,
   Group,
   Icon,
   IconWrapper,
   Spinner,
   Tooltip,
-  colorTextLighter,
-  colorBackgroundLighter,
-  colorTextDisabled,
-  colorTextLight,
-  colorTextDefault,
-  colorAccentBlue,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
 import {RepoSelector, RepoSelectorOption} from './RepoSelector';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   allRepos: RepoSelectorOption[];
@@ -40,11 +34,11 @@ interface Props {
 
 export const RepoNavItem = (props: Props) => {
   const {allRepos, selected, onToggle} = props;
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: colorTextLighter()}}>No definitions</span>;
+      return <span style={{color: Colors.textLighter()}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repo={allRepos[0]!} onlyRepo />;
@@ -58,7 +52,7 @@ export const RepoNavItem = (props: Props) => {
 
   return (
     <Box
-      background={colorBackgroundLighter()}
+      background={Colors.backgroundLighter()}
       padding={{vertical: 12, left: 24, right: 20}}
       border="top"
     >
@@ -150,7 +144,7 @@ const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo
                   <ReloadButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? colorTextLight() : colorTextDisabled()}
+                      color={hasReloadPermission ? Colors.textLight() : Colors.textDisabled()}
                     />
                   </ReloadButton>
                 )}
@@ -171,7 +165,7 @@ const SummaryText = styled.div`
 `;
 
 const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   display: block;
   max-width: ${({$onlyRepo}) => ($onlyRepo ? '248px' : '192px')};
   overflow-x: hidden;
@@ -179,12 +173,12 @@ const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
   transition: color 100ms linear;
 
   &&:hover {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
   }
 
   &&:hover,
   &&:active {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
     text-decoration: none;
   }
 `;
@@ -213,7 +207,7 @@ const ReloadButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${colorAccentBlue()};
+    color: ${Colors.accentBlue()};
   }
 `;
 

@@ -753,11 +753,7 @@ class ExternalSchedule:
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
-        return (
-            self._external_schedule_data.default_status
-            if self._external_schedule_data.default_status
-            else DefaultScheduleStatus.STOPPED
-        )
+        return self._external_schedule_data.default_status or DefaultScheduleStatus.STOPPED
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
@@ -952,12 +948,8 @@ class ExternalSensor:
         return self._external_sensor_data.metadata
 
     @property
-    def default_status(self) -> Optional[DefaultSensorStatus]:
-        return (
-            self._external_sensor_data.default_status
-            if self._external_sensor_data
-            else DefaultSensorStatus.STOPPED
-        )
+    def default_status(self) -> DefaultSensorStatus:
+        return self._external_sensor_data.default_status or DefaultSensorStatus.STOPPED
 
 
 class ExternalPartitionSet:

@@ -1,15 +1,14 @@
-import {PageHeader, Heading, Box, JoinedButtons} from '@dagster-io/ui-components';
+import {Box, Heading, JoinedButtons, PageHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
-
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {ActivatableButton} from '../runs/RunListTabs';
 
 import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {ActivatableButton} from '../runs/RunListTabs';
 
 export const OverviewActivityRoot = () => {
   useTrackPageView();

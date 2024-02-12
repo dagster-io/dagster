@@ -1,17 +1,15 @@
 import functools
-from collections import OrderedDict
 from enum import Enum
 from hashlib import sha256
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
-    Tuple,
     Union,
 )
 
@@ -347,6 +345,12 @@ class StaleCause(
             self._sort_key = f"{self.key}/{self.dependency}" if self.dependency else str(self.key)
         return self._sort_key
 
+    @property
+    def dedupe_key(self) -> int:
+        # subset of properties that are safe to hash
+        safe_tup = (self.key, self.category, self.reason, self.dependency)
+        return hash(safe_tup)
+
 
 # If a partition has greater than this number of dependencies, we don't check
 # this edge for updated data or propagate other stale causes through this edge.
@@ -581,23 +585,21 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_stale_root_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
-        causes = self._get_stale_causes(key=key)
-        root_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
-        # After sorting the pairs, we can drop the level and de-dup using an
-        # ordered dict as an ordered set. This will give us unique root causes,
-        # sorted by level.
-        roots: Dict[StaleCause, None] = OrderedDict()
-        for root_cause in [leaf_cause for _, leaf_cause in root_pairs]:
-            roots[root_cause] = None
-        return list(roots.keys())
+        candidates = self._get_stale_causes(key=key)
+        visited = set()
+        root_causes = []
+        while candidates:
+            next_candidates: List[StaleCause] = []
+            for cause in candidates:
+                if cause.dedupe_key not in visited:
+                    if cause.children is None:
+                        root_causes.append(cause)
+                    else:
+                        next_candidates.extend(cause.children)
+                    visited.add(cause.dedupe_key)
 
-    # The leaves of the cause tree for an asset are the root causes of its staleness.
-    def _gather_leaves(self, cause: StaleCause, level: int = 0) -> Iterator[Tuple[int, StaleCause]]:
-        if cause.children is None:
-            yield (level, cause)
-        else:
-            for child in cause.children:
-                yield from self._gather_leaves(child, level=level + 1)
+            candidates = next_candidates
+        return root_causes
 
     @property
     def asset_graph(self) -> "AssetGraph":

@@ -4,27 +4,19 @@ import {
   Button,
   Dialog,
   Icon,
-  Tooltip,
-  Subheading,
-  useViewport,
   NonIdealState,
   Spinner,
+  Subheading,
+  Tooltip,
+  useViewport,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {usePermissionsForLocation} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {RunStatus} from '../graphql/types';
-import {DagsterTag} from '../runs/RunTag';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionStatus} from './PartitionStatus';
-import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
+import {PartitionPerOpStatus, getVisibleItemCount} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
   OpJobPartitionSetFragment,
@@ -34,6 +26,13 @@ import {
 } from './types/OpJobPartitionsView.types';
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {RunStatus} from '../graphql/types';
+import {DagsterTag} from '../runs/RunTag';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 type PartitionStatus = OpJobPartitionStatusFragment;
 
@@ -116,7 +115,7 @@ export const OpJobPartitionsView = ({
 };
 
 export function usePartitionDurations(partitions: PartitionRuns[]) {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
     const runDurationData: {[name: string]: number | undefined} = {};
 
@@ -156,13 +155,13 @@ export const OpJobPartitionsViewContent = ({
   } = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
-  const [pageSize, setPageSize] = React.useState(60);
-  const [offset, setOffset] = React.useState<number>(0);
-  const [showSteps, setShowSteps] = React.useState(false);
-  const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
-  const [blockDialog, setBlockDialog] = React.useState(false);
+  const [pageSize, setPageSize] = useState(60);
+  const [offset, setOffset] = useState<number>(0);
+  const [showSteps, setShowSteps] = useState(false);
+  const [showBackfillSetup, setShowBackfillSetup] = useState(false);
+  const [blockDialog, setBlockDialog] = useState(false);
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const [backfillRefetchCounter, setBackfillRefetchCounter] = React.useState(0);
+  const [backfillRefetchCounter, setBackfillRefetchCounter] = useState(0);
 
   const partitions = usePartitionStepQuery({
     partitionSetName: partitionSet.name,
@@ -176,7 +175,7 @@ export const OpJobPartitionsViewContent = ({
     skipQuery: !showSteps,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width && !showSteps) {
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
@@ -195,16 +194,16 @@ export const OpJobPartitionsViewContent = ({
 
   const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
-  const onSubmit = React.useCallback(() => setBlockDialog(true), []);
+  const onSubmit = useCallback(() => setBlockDialog(true), []);
 
   const {partitionStatusesOrError} = partitionSet;
-  const partitionStatuses = React.useMemo(() => {
+  const partitionStatuses = useMemo(() => {
     return partitionStatusesOrError.__typename === 'PartitionStatuses'
       ? partitionStatusesOrError.results
       : [];
   }, [partitionStatusesOrError]);
 
-  const {runStatusData, runDurationData} = React.useMemo(() => {
+  const {runStatusData, runDurationData} = useMemo(() => {
     // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
     // rather than looking at the duration of the most recent run returned in `partitions` above
     // so that the latter can be loaded when you click "Show per-step status" only.
@@ -220,7 +219,7 @@ export const OpJobPartitionsViewContent = ({
     return {runStatusData, runDurationData};
   }, [partitionStatuses, selectedPartitions]);
 
-  const health = React.useMemo(() => {
+  const health = useMemo(() => {
     return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
   }, [runStatusData]);
 

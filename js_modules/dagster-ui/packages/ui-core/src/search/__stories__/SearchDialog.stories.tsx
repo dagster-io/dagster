@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
 import {SearchDialog} from '../SearchDialog';

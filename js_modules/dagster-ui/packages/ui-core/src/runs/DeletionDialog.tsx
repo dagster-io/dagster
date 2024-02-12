@@ -3,16 +3,15 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  colorAccentGreen,
-  colorAccentYellow,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useReducer, useRef} from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
@@ -94,20 +93,16 @@ const deletionDialogReducer = (
 
 export const DeletionDialog = (props: Props) => {
   const {isOpen, onClose, onComplete, onTerminateInstead, selectedRuns} = props;
-  const frozenRuns = React.useRef<SelectedRuns>(selectedRuns);
+  const frozenRuns = useRef<SelectedRuns>(selectedRuns);
 
-  const [state, dispatch] = React.useReducer(
-    deletionDialogReducer,
-    frozenRuns.current,
-    initializeState,
-  );
+  const [state, dispatch] = useReducer(deletionDialogReducer, frozenRuns.current, initializeState);
 
   const runIDs = Object.keys(state.frozenRuns);
   const count = runIDs.length;
   const terminatableCount = runIDs.filter((id) => state.frozenRuns[id]).length;
 
   // If the dialog is newly open, update state to match the frozen list.
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       dispatch({type: 'reset', frozenRuns: frozenRuns.current});
     }
@@ -115,7 +110,7 @@ export const DeletionDialog = (props: Props) => {
 
   // If the dialog is not open, update the ref so that the frozen list will be entered
   // into state the next time the dialog opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       frozenRuns.current = selectedRuns;
     }
@@ -240,7 +235,7 @@ export const DeletionDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon name="check_circle" color={colorAccentGreen()} />
+            <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
             }.`}</div>
@@ -249,7 +244,7 @@ export const DeletionDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="center">
-              <Icon name="warning" color={colorAccentYellow()} />
+              <Icon name="warning" color={Colors.accentYellow()} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
             </Group>
             <ul>

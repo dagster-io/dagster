@@ -1,20 +1,21 @@
 import {
   Box,
   Button,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
+import {useCopyAction} from '../runs/RunTags';
 import {TagAction} from '../ui/TagActions';
 
 interface ITagEditorProps {
@@ -39,13 +40,13 @@ export const TagEditor = ({
   onChange,
   onRequestClose,
 }: ITagEditorProps) => {
-  const [editState, setEditState] = React.useState(() =>
+  const [editState, setEditState] = useState(() =>
     tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}],
   );
 
   // Reset the edit state when you close and re-open the modal, or when
   // tagsFromSession change while the modal is closed.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) {
       setEditState(tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}]);
     }
@@ -91,6 +92,8 @@ export const TagEditor = ({
     setEditState((current) => [...current, {key: '', value: ''}]);
   };
 
+  const copyAction = useCopyAction();
+
   return (
     <Dialog
       icon="info"
@@ -119,7 +122,7 @@ export const TagEditor = ({
                       </Tooltip>
                     );
                   }
-                  return <RunTag tag={tag} key={key} />;
+                  return <RunTag tag={tag} key={key} actions={[copyAction]} />;
                 })}
               </TagList>
             </Group>

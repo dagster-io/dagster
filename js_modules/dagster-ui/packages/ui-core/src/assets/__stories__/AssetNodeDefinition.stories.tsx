@@ -1,19 +1,16 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {
+  buildAssetKey,
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildCompositeConfigType,
-  buildConfigType,
   buildConfigTypeField,
-  buildDagsterType,
   buildFreshnessPolicy,
   buildIntMetadataEntry,
   buildPathMetadataEntry,
   buildResourceRequirement,
-  buildAssetKey,
 } from '../../graphql/types';
 import {AssetNodeDefinition} from '../AssetNodeDefinition';
 
@@ -35,8 +32,6 @@ export const MinimalAsset = () => {
             description: null,
             freshnessPolicy: null,
             autoMaterializePolicy: null,
-            configField: buildConfigTypeField({configType: buildConfigType({key: 'Any'})}),
-            type: buildDagsterType({displayName: 'Any'}),
             metadataEntries: [],
           }) as any
         }
@@ -91,7 +86,6 @@ export const FullUseAsset = () => {
                 fields: [],
               }),
             }),
-            type: buildDagsterType(),
             metadataEntries: [buildIntMetadataEntry({}), buildPathMetadataEntry()],
           }) as any
         }

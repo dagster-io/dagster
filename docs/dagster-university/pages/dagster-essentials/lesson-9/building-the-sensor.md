@@ -39,9 +39,9 @@ Now that cursors have been explained, let’s start writing the sensor.
 
    ```python
    from dagster import (
-     RunRequest,
-   		SensorResult,
-     sensor
+       RunRequest,
+       SensorResult,
+       sensor
    )
 
    import os
@@ -70,7 +70,7 @@ Now that cursors have been explained, let’s start writing the sensor.
 
    ```python
    @sensor(
-     job=adhoc_request_job
+       job=adhoc_request_job
    )
    def adhoc_request_sensor(context):
    ```
@@ -79,10 +79,10 @@ Now that cursors have been explained, let’s start writing the sensor.
 
    ```python
    @sensor(
-     job=adhoc_request_job
+       job=adhoc_request_job
    )
    def adhoc_request_sensor(context):
-     PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
+       PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
    ```
 
 6. Next, define the cursor. Copy and paste the following code into the sensor’s function body:
@@ -106,43 +106,47 @@ Now that cursors have been explained, let’s start writing the sensor.
 
    ```python
    for filename in os.listdir(PATH_TO_REQUESTS):
-     file_path = os.path.join(PATH_TO_REQUESTS, filename)
-     if filename.endswith(".json") and os.path.isfile(file_path):
-       last_modified = os.path.getmtime(file_path)
+       file_path = os.path.join(PATH_TO_REQUESTS, filename)
+       if filename.endswith(".json") and os.path.isfile(file_path):
+           last_modified = os.path.getmtime(file_path)
 
-       current_state[filename] = last_modified
+           current_state[filename] = last_modified
 
-       # if the file is new or has been modified since the last run, add it to the request queue
-       if filename not in previous_state or previous_state[filename] != last_modified:
-   					    with open(file_path, "r") as f:
-           request_config = json.load(f)
+           # if the file is new or has been modified since the last run, add it to the request queue
+           if filename not in previous_state or previous_state[filename] != last_modified:
+               with open(file_path, "r") as f:
+                   request_config = json.load(f)
 
-           runs_to_request.append(RunRequest(
-             run_key=f"adhoc_request_{filename}_{last_modified}",
-             run_config={
-               "ops": {
-                 "adhoc_request": {
-                   "config": {
-                     "filename": filename,
-                     **request_config
-                   }
-                 }
-               }
-             }
-           ))
+                   runs_to_request.append(RunRequest(
+                       run_key=f"adhoc_request_{filename}_{last_modified}",
+                       run_config={
+                           "ops": {
+                               "adhoc_request": {
+                                   "config": {
+                                       "filename": filename,
+                                       **request_config
+                                   }
+                               }
+                           }
+                       }
+                   ))
    ```
 
-   - Using `os.listdir` , iterate through the `data/requests` directory, look at every JSON file, and see if it’s been updated or looked at it before in `previous_state`
-   - If the file has been updated or a report hasn’t been run before, create a `RunRequest` for the file
-   - Construct a unique `run_key`, which includes the name of the file and when it was last modified
-   - Pass the `run_key` into the `RunRequest`'s configuration using the `run_config` argument. By using the `adhoc_request` key, you specify that the `adhoc_request` asset should use the config provided.
+   **Note**: When pasting this into the sensor, verify that the indentation is correct or you'll encounter a Python error.
+
+   This example:
+
+   - Uses `os.listdir`  to iterate through the `data/requests` directory, looking at every JSON file, and seeing if it’s been updated or looked at it before in `previous_state`
+   - Creates a `RunRequest` for the file if it's been updated or a report hasn’t been run before
+   - Constructs a unique `run_key`, which includes the name of the file and when it was last modified
+   - Passes the `run_key` into the `RunRequest`'s configuration using the `run_config` argument. By using the `adhoc_request` key, you specify that the `adhoc_request` asset should use the config provided.
 
 9. Sensors expect a `SensorResult` returned, which contains all the information for the sensor, such as which runs to trigger and what the new cursor is. Append the following to the end of the sensor function:
 
    ```python
    return SensorResult(
-     run_requests=runs_to_request,
-     cursor=json.dumps(current_state)
+       run_requests=runs_to_request,
+       cursor=json.dumps(current_state)
    )
    ```
 
@@ -150,9 +154,9 @@ Putting everything together, you should have the following code in `sensors/__in
 
 ```python
 from dagster import (
-  RunRequest,
-  SensorResult,
-  sensor,
+    RunRequest,
+    SensorResult,
+    sensor,
 )
 
 import os
@@ -161,43 +165,43 @@ import json
 from ..jobs import adhoc_request_job
 
 @sensor(
-  job=adhoc_request_job
+    job=adhoc_request_job
 )
 def adhoc_request_sensor(context):
-  PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
+    PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
 
-  previous_state = json.loads(context.cursor) if context.cursor else {}
-  current_state = {}
-  runs_to_request = []
+    previous_state = json.loads(context.cursor) if context.cursor else {}
+    current_state = {}
+    runs_to_request = []
 
-  for filename in os.listdir(PATH_TO_REQUESTS):
-    file_path = os.path.join(PATH_TO_REQUESTS, filename)
-    if filename.endswith(".json") and os.path.isfile(file_path):
-      last_modified = os.path.getmtime(file_path)
+    for filename in os.listdir(PATH_TO_REQUESTS):
+        file_path = os.path.join(PATH_TO_REQUESTS, filename)
+        if filename.endswith(".json") and os.path.isfile(file_path):
+            last_modified = os.path.getmtime(file_path)
 
-      current_state[filename] = last_modified
+            current_state[filename] = last_modified
 
-      # if the file is new or has been modified since the last run, add it to the request queue
-      if filename not in previous_state or previous_state[filename] != last_modified:
-        with open(file_path, "r") as f:
-          request_config = json.load(f)
+            # if the file is new or has been modified since the last run, add it to the request queue
+            if filename not in previous_state or previous_state[filename] != last_modified:
+                with open(file_path, "r") as f:
+                    request_config = json.load(f)
 
-          runs_to_request.append(RunRequest(
-            run_key=f"adhoc_request_{filename}_{last_modified}",
-            run_config={
-              "ops": {
-                "adhoc_request": {
-                  "config": {
-                    "filename": filename,
-                    **request_config
-                  }
-                }
-              }
-            }
-          ))
+                    runs_to_request.append(RunRequest(
+                        run_key=f"adhoc_request_{filename}_{last_modified}",
+                        run_config={
+                            "ops": {
+                                "adhoc_request": {
+                                    "config": {
+                                        "filename": filename,
+                                        **request_config
+                                    }
+                                }
+                            }
+                        }
+                    ))
 
-  return SensorResult(
-    run_requests=runs_to_request,
-    cursor=json.dumps(current_state)
-  )
+    return SensorResult(
+        run_requests=runs_to_request,
+        cursor=json.dumps(current_state)
+    )
 ```

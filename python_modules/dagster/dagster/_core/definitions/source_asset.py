@@ -20,7 +20,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     DataVersionsByPartition,
 )
-from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
@@ -37,6 +37,7 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
@@ -59,6 +60,12 @@ from dagster._utils.warnings import disable_dagster_warnings
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
+# This is a private key that is attached to the Output emitted from a source asset observation
+# function and used to prevent observations from being auto-generated from it. This is a workaround
+# because we cannot currently auto-convert the observation function to use `ObserveResult`. It can
+# be removed when that conversion is completed.
+SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION = "__source_asset_observation__"
+
 
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
@@ -78,7 +85,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
     observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
-    def fn(context: OpExecutionContext) -> None:
+    def fn(context: OpExecutionContext) -> Output[None]:
         resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
         resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
         observe_fn_return_value = (
@@ -87,19 +94,32 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             else observe_fn(**resource_kwargs)
         )
 
-        if isinstance(observe_fn_return_value, DataVersion):
+        if isinstance(observe_fn_return_value, (DataVersion, ObserveResult)):
             if source_asset.partitions_def is not None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is partitioned, so its observe function should return a"
-                    " DataVersionsByPartition, not a DataVersion"
+                    f"{source_asset.key} is partitioned. Returning `{observe_fn_return_value.__class__}` not supported"
+                    " for partitioned assets. Return `DataVersionsByPartition` instead."
                 )
+
+            if isinstance(observe_fn_return_value, ObserveResult):
+                data_version = check.not_none(
+                    observe_fn_return_value.data_version,
+                    "ObserveResult returned from an observable_source_asset must have a data version",
+                )
+                data_version_str = data_version.value
+                metadata = observe_fn_return_value.metadata
+            else:  # DataVersion
+                data_version_str = observe_fn_return_value.value
+                metadata = {}
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: observe_fn_return_value.value},
+                    tags={DATA_VERSION_TAG: data_version_str},
+                    metadata=metadata,
                 )
             )
+
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):
             if source_asset.partitions_def is None:
                 raise DagsterInvalidObservationError(
@@ -124,6 +144,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
                 " DataVersionsByPartition, but returned a value of type"
                 f" {type(observe_fn_return_value)}"
             )
+        return Output(None, metadata={SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION: True})
 
     return DecoratedOpFunction(fn)
 

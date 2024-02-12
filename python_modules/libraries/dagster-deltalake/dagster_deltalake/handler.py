@@ -24,7 +24,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
-from deltalake import DeltaTable, write_deltalake
+from deltalake import DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
@@ -55,28 +55,56 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         connection: TableConnection,
     ):
         """Stores pyarrow types in Delta table."""
+        metadata = context.metadata or {}
+        resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
         delta_schema = Schema.from_pyarrow(reader.schema)
 
+        engine = resource_config.get("writer_engine")
+        save_mode = metadata.get("mode")
+        main_save_mode = resource_config.get("mode")
+        main_custom_metadata = resource_config.get("custom_metadata")
+        overwrite_schema = resource_config.get("overwrite_schema")
+        writerprops = resource_config.get("writer_properties")
+
+        if save_mode is not None:
+            context.log.debug(
+                "IO manager mode overridden with the asset metadata mode, %s -> %s",
+                main_save_mode,
+                save_mode,
+            )
+            main_save_mode = save_mode
+        context.log.debug("Writing with mode: %s", main_save_mode)
+
         partition_filters = None
         partition_columns = None
+
         if table_slice.partition_dimensions is not None:
             partition_filters = partition_dimensions_to_dnf(
                 partition_dimensions=table_slice.partition_dimensions,
                 table_schema=delta_schema,
                 str_values=True,
             )
-
+            if partition_filters is not None and engine == "rust":
+                raise ValueError(
+                    """Partition dimension with rust engine writer combined is not supported yet, use the default 'pyarrow' engine."""
+                )
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
-        write_deltalake(
+        write_deltalake(  # type: ignore
             table_or_uri=connection.table_uri,
             data=reader,
             storage_options=connection.storage_options,
-            mode="overwrite",
+            mode=main_save_mode,
             partition_filters=partition_filters,
             partition_by=partition_columns,
+            engine=engine,
+            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
+            custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
+            writer_properties=WriterProperties(**writerprops)  # type: ignore
+            if writerprops is not None
+            else writerprops,
             **delta_params,
         )
 
@@ -110,22 +138,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         connection: TableConnection,
     ) -> T:
         """Loads the input as a pyarrow Table or RecordBatchReader."""
-        table = DeltaTable(
-            table_uri=connection.table_uri, storage_options=connection.storage_options
-        )
-
-        partition_expr = None
-        if table_slice.partition_dimensions is not None:
-            partition_filters = partition_dimensions_to_dnf(
-                partition_dimensions=table_slice.partition_dimensions,
-                table_schema=table.schema(),
-            )
-            if partition_filters is not None:
-                partition_expr = _filters_to_expression([partition_filters])
-
-        dataset = table.to_pyarrow_dataset()
-        if partition_expr is not None:
-            dataset = dataset.filter(expression=partition_expr)
+        dataset = _table_reader(table_slice, connection)
 
         if context.dagster_type.typing_type == ds.Dataset:
             if table_slice.columns is not None:
@@ -231,3 +244,22 @@ def _get_partition_stats(dt: DeltaTable, partition_filters=None):
     }
 
     return table, stats
+
+
+def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Dataset:
+    table = DeltaTable(table_uri=connection.table_uri, storage_options=connection.storage_options)
+
+    partition_expr = None
+    if table_slice.partition_dimensions is not None:
+        partition_filters = partition_dimensions_to_dnf(
+            partition_dimensions=table_slice.partition_dimensions,
+            table_schema=table.schema(),
+        )
+        if partition_filters is not None:
+            partition_expr = _filters_to_expression([partition_filters])
+
+    dataset = table.to_pyarrow_dataset()
+    if partition_expr is not None:
+        dataset = dataset.filter(expression=partition_expr)
+
+    return dataset

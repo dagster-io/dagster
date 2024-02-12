@@ -105,15 +105,15 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
             assert context.asset_partitions_def == upstream_partitions_def
 
     @asset(partitions_def=upstream_partitions_def)
-    def upstream_asset(context):
-        assert context.asset_partition_key_for_output() == "2"
+    def upstream_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2"
 
     @asset(
         partitions_def=downstream_partitions_def,
         ins={"upstream_asset": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
-    def downstream_asset(context, upstream_asset):
-        assert context.asset_partition_key_for_output() == "2"
+    def downstream_asset(context: AssetExecutionContext, upstream_asset):
+        assert context.partition_key == "2"
         assert upstream_asset is None
         assert context.asset_partitions_def_for_input("upstream_asset") == upstream_partitions_def
 
@@ -341,9 +341,8 @@ def test_partition_keys_in_range():
     ]
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
-    def upstream(context):
-        assert context.asset_partition_keys_for_output("result") == ["2022-09-11"]
-        assert context.asset_partition_keys_for_output() == ["2022-09-11"]
+    def upstream(context: AssetExecutionContext):
+        assert context.partition_keys == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
     def downstream(context, upstream):
@@ -383,8 +382,8 @@ def test_dependency_resolution_partition_mapping():
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
         key_prefix=["staging"],
     )
-    def upstream(context):
-        partition_date_str = context.asset_partition_key_for_output()
+    def upstream(context: AssetExecutionContext):
+        partition_date_str = context.partition_key
         return partition_date_str
 
     @asset(
@@ -441,11 +440,8 @@ def test_multipartitions_def_partition_mapping_infer_identity():
         return 1
 
     @asset(partitions_def=composite)
-    def downstream(context, upstream):
-        assert (
-            context.asset_partition_keys_for_input("upstream")
-            == context.asset_partition_keys_for_output()
-        )
+    def downstream(context: AssetExecutionContext, upstream):
+        assert context.asset_partition_keys_for_input("upstream") == context.partition_keys
         return 1
 
     asset_graph = AssetGraph.from_assets([upstream, downstream])
@@ -471,16 +467,14 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
     )
 
     @asset(partitions_def=abc_def)
-    def upstream(context):
-        assert context.asset_partition_keys_for_output("result") == ["a"]
+    def upstream(context: AssetExecutionContext):
+        assert context.partition_keys == ["a"]
         return 1
 
     @asset(partitions_def=composite)
-    def downstream(context, upstream):
+    def downstream(context: AssetExecutionContext, upstream):
         assert context.asset_partition_keys_for_input("upstream") == ["a"]
-        assert context.asset_partition_keys_for_output("result") == [
-            MultiPartitionKey({"abc": "a", "123": "1"})
-        ]
+        assert context.partition_keys == [MultiPartitionKey({"abc": "a", "123": "1"})]
         return 1
 
     asset_graph = AssetGraph.from_assets([upstream, downstream])
@@ -533,9 +527,9 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
         return 1
 
     @asset(partitions_def=abc_def)
-    def downstream(context, upstream):
+    def downstream(context: AssetExecutionContext, upstream):
         assert set(context.asset_partition_keys_for_input("upstream")) == a_multipartition_keys
-        assert context.asset_partition_keys_for_output("result") == ["a"]
+        assert context.partition_keys == ["a"]
         return 1
 
     asset_graph = AssetGraph.from_assets([upstream, downstream])

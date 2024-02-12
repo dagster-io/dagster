@@ -42,7 +42,7 @@ When building your own project, it should:
 
 If you get stuck or have questions, you can:
 
-- Join the [Dagster Slack](https://dagster.io/community) community and ask a question in our `#dagster-support` channel
+- Join the [Dagster Slack](https://dagster.io/community) community and ask a question in our `#ask-community` channel
 - Find solutions and patterns in our [GitHub discussions](https://github.com/dagster-io/dagster/discussions)
 - Check out the [Dagster Docs](https://docs.dagster.io)
 

@@ -129,7 +129,7 @@ class RepositoryScopedBatchLoader:
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
-    def get_sensor_state(self, sensor_name: str) -> Optional[Sequence[Any]]:
+    def get_sensor_state(self, sensor_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_sensor(sensor_name))
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None

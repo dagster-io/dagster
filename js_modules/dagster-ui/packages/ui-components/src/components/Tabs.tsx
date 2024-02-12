@@ -1,15 +1,7 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorBackgroundGray,
-  colorTextDefault,
-  colorTextDisabled,
-  colorTextLight,
-} from '../theme/color';
-
+import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
@@ -53,8 +45,8 @@ const Count = styled.div<{$disabled: boolean}>`
   font-weight: 500;
   letter-spacing: -0.02%;
   padding: 0 6px;
-  color: ${({$disabled}) => ($disabled ? colorTextDisabled() : colorTextDefault())};
-  background: ${colorBackgroundGray()};
+  color: ${({$disabled}) => ($disabled ? Colors.textDisabled() : Colors.textDefault())};
+  background: ${Colors.backgroundGray()};
   border-radius: 4px;
 `;
 
@@ -65,7 +57,7 @@ export const tabCSS = css<TabStyleProps>`
   line-height: 20px;
   font-weight: 600;
   padding: ${({$size}) => ($size === 'small' ? '10px 0' : '16px 0')};
-  box-shadow: ${({selected}) => (selected ? colorAccentBlue() : 'transparent')} 0 -2px 0 inset;
+  box-shadow: ${({selected}) => (selected ? Colors.accentBlue() : 'transparent')} 0 -2px 0 inset;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -76,14 +68,14 @@ export const tabCSS = css<TabStyleProps>`
     cursor: pointer;
     user-select: none;
     color: ${({selected, disabled}) =>
-      selected ? colorAccentBlue() : disabled ? colorTextDisabled() : colorTextLight()};
+      selected ? Colors.accentBlue() : disabled ? Colors.textDisabled() : Colors.textLight()};
   }
 
   ${({disabled}) =>
     disabled
       ? css`
           & ${IconWrapper} {
-            background-color: ${colorTextDisabled()};
+            background-color: ${Colors.textDisabled()};
           }
         `
       : null}
@@ -92,7 +84,7 @@ export const tabCSS = css<TabStyleProps>`
   &:focus {
     outline: none !important;
     box-shadow: ${({selected, disabled}) =>
-        selected ? colorAccentBlue() : disabled ? 'transparent' : colorAccentGray()}
+        selected ? Colors.accentBlue() : disabled ? 'transparent' : Colors.accentGray()}
       0 -2px 0 inset;
   }
 
@@ -101,10 +93,10 @@ export const tabCSS = css<TabStyleProps>`
     a {
       text-decoration: none;
       color: ${({selected, disabled}) =>
-        selected ? colorAccentBlue() : disabled ? colorTextDisabled() : colorAccentBlue()};
+        selected ? Colors.accentBlue() : disabled ? Colors.textDisabled() : Colors.accentBlue()};
     }
 
-    ${({disabled}) => (disabled ? `color: ${colorTextDisabled()};` : null)}
+    ${({disabled}) => (disabled ? `color: ${Colors.textDisabled()};` : null)}
   }
 `;
 

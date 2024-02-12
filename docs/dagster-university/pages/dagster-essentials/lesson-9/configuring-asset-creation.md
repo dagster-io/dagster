@@ -36,8 +36,8 @@ The `requests.py` file should look like the code snippet below:
 from dagster import Config
 
 class AdhocRequestConfig(Config):
-  filename: str
-  borough: str
-  start_date: str
-  end_date: str
+    filename: str
+    borough: str
+    start_date: str
+    end_date: str
 ```

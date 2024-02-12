@@ -1,17 +1,7 @@
 import {
   Box,
   Checkbox,
-  colorAccentCyan,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentReversed,
-  colorAccentYellow,
-  colorBackgroundCyan,
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorBackgroundYellow,
-  colorFocusRing,
-  colorTextYellow,
+  Colors,
   FontFamily,
   Group,
   Icon,
@@ -25,22 +15,6 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {AppContext} from '../app/AppContext';
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {withMiddleTruncation} from '../app/Util';
-import {WebSocketContext} from '../app/WebSocketProvider';
-import {CancelRunButton} from '../runs/RunActionButtons';
-import {
-  EMPTY_RUN_METADATA,
-  IRunMetadataDict,
-  IStepMetadata,
-  IStepState,
-} from '../runs/RunMetadataProvider';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
-import {StepSelection} from '../runs/StepSelection';
-import {RunFragment} from '../runs/types/RunFragments.types';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 import {
   BOTTOM_INSET,
@@ -66,10 +40,10 @@ import {
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
+  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
@@ -78,6 +52,21 @@ import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
 import {useGanttChartMode} from './useGanttChartMode';
+import {AppContext} from '../app/AppContext';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {withMiddleTruncation} from '../app/Util';
+import {WebSocketContext} from '../app/WebSocketProvider';
+import {CancelRunButton} from '../runs/RunActionButtons';
+import {
+  EMPTY_RUN_METADATA,
+  IRunMetadataDict,
+  IStepMetadata,
+  IStepState,
+} from '../runs/RunMetadataProvider';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
+import {StepSelection} from '../runs/StepSelection';
+import {RunFragment} from '../runs/types/RunFragments.types';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 export {GanttChartMode} from './Constants';
 
@@ -386,11 +375,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={colorBackgroundYellow()}
+                background={Colors.backgroundYellow()}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon name="warning" color={colorAccentYellow()} />
+                <Icon name="warning" color={Colors.accentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagster webserver.</strong>
                   <span>
@@ -640,7 +629,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? colorAccentGray() : colorAccentGrayHover()
+      darkened ? Colors.accentGray() : Colors.accentGrayHover()
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -699,7 +688,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
 
   .line {
     position: absolute;
@@ -719,7 +708,7 @@ const GanttChartContainer = styled.div`
       left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
-    color: ${colorAccentReversed()};
+    color: ${Colors.accentReversed()};
     overflow: hidden;
     user-select: text;
     z-index: 2;
@@ -758,10 +747,10 @@ const GanttChartContainer = styled.div`
       box-shadow ${CSS_DURATION}ms linear;
 
     &.focused {
-      box-shadow: 0 0 0 2px ${colorFocusRing()};
+      box-shadow: 0 0 0 2px ${Colors.focusRing()};
     }
     &.hovered {
-      box-shadow: 0 0 0 2px ${colorFocusRing()};
+      box-shadow: 0 0 0 2px ${Colors.focusRing()};
     }
     &.dynamic {
       filter: brightness(115%);
@@ -777,7 +766,7 @@ const GanttChartContainer = styled.div`
   .marker-dot {
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
-    border: 1px solid ${colorAccentCyan()};
+    border: 1px solid ${Colors.accentCyan()};
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
 
@@ -785,16 +774,16 @@ const GanttChartContainer = styled.div`
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background-color: ${colorBackgroundCyan()};
-    border-left: 1px solid ${colorAccentCyan()};
-    border-right: 1px solid ${colorAccentCyan()};
+    background-color: ${Colors.backgroundCyan()};
+    border-left: 1px solid ${Colors.accentCyan()};
+    border-right: 1px solid ${Colors.accentCyan()};
     transition:
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {
-      border-bottom: 1px dashed ${colorAccentCyan()};
+      border-bottom: 1px dashed ${Colors.accentCyan()};
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
@@ -803,7 +792,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${colorTextYellow()};
+  color: ${Colors.textYellow()};
   width: 100%;
 `;
 
@@ -817,7 +806,7 @@ const GraphQueryInputContainer = styled.div`
 `;
 
 const FilterInputsBackgroundBox = styled(Box)`
-  background-color: ${colorBackgroundGray()};
+  background-color: ${Colors.backgroundGray()};
   border-radius: 4px;
   padding: 8px 12px 8px 8px;
 `;

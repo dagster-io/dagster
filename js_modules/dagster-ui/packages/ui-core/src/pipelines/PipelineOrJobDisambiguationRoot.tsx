@@ -1,10 +1,8 @@
-import * as React from 'react';
 import {Redirect, useLocation, useParams} from 'react-router-dom';
 
+import {explorerPathFromString} from './PipelinePathUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {explorerPathFromString} from './PipelinePathUtils';
 
 interface Props {
   repoAddress: RepoAddress;

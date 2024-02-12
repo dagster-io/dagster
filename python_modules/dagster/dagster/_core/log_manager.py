@@ -31,7 +31,7 @@ class IDagsterMeta(Protocol):
 # `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
 # `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
 # defined via `extra`.
-class DagsterLogRecord(logging.LogRecord, IDagsterMeta):  # type: ignore
+class DagsterLogRecord(logging.LogRecord, IDagsterMeta):
     pass
 
 
@@ -64,7 +64,9 @@ class DagsterMessageProps(
             log_timestamp=check.opt_str_param(
                 log_timestamp,
                 "log_timestamp",
-                default=datetime.datetime.utcnow().isoformat(),
+                default=(
+                    datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
+                ),
             ),
             dagster_event=dagster_event,
         )

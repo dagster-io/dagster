@@ -192,7 +192,6 @@ partition_scenarios = [
                 ),
             ],
             num_requested=1,
-            num_discarded=29,
         ),
     ),
     AssetDaemonScenario(
@@ -509,7 +508,7 @@ partition_scenarios = [
                 ["A"], partition_key=hour_partition_key(time_partitions_start_datetime, delta=1)
             )
         )
-        .evaluate_tick()
+        .evaluate_tick("FOO")
         .assert_requested_runs()
         .with_not_started_runs()
         # now the start date is updated, request the new first partition key
@@ -519,7 +518,7 @@ partition_scenarios = [
                 start=time_partitions_start_datetime + datetime.timedelta(days=5)
             )
         )
-        .evaluate_tick()
+        .evaluate_tick("BAR")
         .assert_requested_runs(
             run_request(
                 ["A"],
@@ -657,10 +656,11 @@ partition_scenarios = [
                 ["B"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
             )
         )
-        .evaluate_tick()
+        .evaluate_tick("THIS ONE")
         .assert_requested_runs(
             run_request(
-                ["C"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
+                ["C"],
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=1),
             )
         )
         # new day's partition is filled in, should still be able to materialize the new partition
@@ -669,7 +669,7 @@ partition_scenarios = [
         .with_runs(
             run_request(
                 ["A"], partition_key=day_partition_key(time_partitions_start_datetime, delta=3)
-            )
+            ),
         )
         .evaluate_tick()
         .assert_requested_runs(

@@ -1,12 +1,10 @@
 import {gql} from '@apollo/client';
-import {Box, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
-
-import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
 import {TypeListFragment} from './types/TypeList.types';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 interface ITypeListProps {
   isGraph: boolean;
@@ -50,7 +48,7 @@ export const TypeList = (props: ITypeListProps) => {
                   ))}
                 </StyledUL>
               ) : (
-                <div style={{color: colorTextLight(), fontSize: '12px'}}>None</div>
+                <div style={{color: Colors.textLight(), fontSize: '12px'}}>None</div>
               )}
             </Box>
           </SidebarSection>

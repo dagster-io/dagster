@@ -4,24 +4,16 @@ import {
   ButtonLink,
   Caption,
   Checkbox,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
   Mono,
   Tag,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PipelineTag} from '../graphql/types';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {RepoAddress} from '../workspace/types';
-import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {CreatedByTagCell} from './CreatedByTag';
@@ -33,9 +25,17 @@ import {RunStateSummary, RunTime, assetKeysForRun, titleForRun} from './RunUtils
 import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {useTagPinning} from './useTagPinning';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {PipelineTag} from '../graphql/types';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
+import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 
 export const RunRow = ({
   run,
+  hasCheckboxColumn,
   canTerminateOrDelete,
   onAddTag,
   checked,
@@ -46,6 +46,7 @@ export const RunRow = ({
   hideCreatedBy,
 }: {
   run: RunTableRunFragment;
+  hasCheckboxColumn: boolean;
   canTerminateOrDelete: boolean;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
@@ -142,8 +143,12 @@ export const RunRow = ({
         setIsHovered(false);
       }}
     >
-      {canTerminateOrDelete ? (
-        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      {hasCheckboxColumn ? (
+        <td>
+          {canTerminateOrDelete ? (
+            <>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</>
+          ) : null}
+        </td>
       ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>
@@ -178,7 +183,7 @@ export const RunRow = ({
                   onClick={() => {
                     setShowRunTags(true);
                   }}
-                  color={colorTextLight()}
+                  color={Colors.textLight()}
                   style={{margin: '-4px', padding: '4px'}}
                 >
                   View all tags ({allTagsWithPinned.length})

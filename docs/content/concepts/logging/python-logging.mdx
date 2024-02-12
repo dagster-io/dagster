@@ -77,7 +77,7 @@ width={1165}
 height={250}
 />
 
-**Note**: If `python_log_level` is set, the loggers listed here will be set to the given level before a run is launched. Refer to the [Configuring global log levels](#configuring-global-log-levels-) for more info and an example.
+**Note**: If `python_log_level` is set, the loggers listed here will be set to the given level before a run is launched. Refer to the [Configuring global log levels](#configuring-global-log-levels) for more info and an example.
 
 ---
 
@@ -85,7 +85,7 @@ height={250}
 
 To set a global log level in a Dagster instance, set the `python_log_level` parameter in your instance's `dagster.yaml` file.
 
-This setting controls the log level of all loggers managed by Dagster. By default, this will just be the `context.log` logger. If there are custom Python loggers that you want to capture, refer to the [Capturing Python logs section](#capturing-python-logs-).
+This setting controls the log level of all loggers managed by Dagster. By default, this will just be the `context.log` logger. If there are custom Python loggers that you want to capture, refer to the [Capturing Python logs section](#capturing-python-logs).
 
 Setting a global log level allows you to filter out logs below a given level. For example, setting a log level of `INFO` will filter out all `DEBUG` level logs:
 

@@ -267,7 +267,7 @@ from dagster import AssetExecutionContext, asset
 
 @asset
 def context_asset(context: AssetExecutionContext):
-    context.log.info(f"My run ID is {context.run_id}")
+    context.log.info(f"My run ID is {context.run.run_id}")
     ...
 ```
 
@@ -307,22 +307,6 @@ def asset_with_version():
 ```
 
 When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
-
-Multi-assets may assign different code versions for each of their outputs:
-
-```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
-@multi_asset(
-    outs={
-        "a": AssetOut(code_version="1"),
-        "b": AssetOut(code_version="2"),
-    }
-)
-def multi_asset_with_versions():
-    yield Output(100, "a")
-    yield Output(200, "b")
-```
-
-Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
 
 ### Retrying failed assets
 
@@ -578,7 +562,7 @@ Consider the following asset that uses a context object:
 ```python file=/concepts/assets/asset_testing.py startafter=start_with_context_asset endbefore=end_with_context_asset
 @asset
 def uses_context(context: AssetExecutionContext):
-    context.log.info(context.run_id)
+    context.log.info(context.run.run_id)
     return "bar"
 ```
 

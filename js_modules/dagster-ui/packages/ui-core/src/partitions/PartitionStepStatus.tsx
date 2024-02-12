@@ -2,28 +2,49 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
+  DialogFooter,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
   Popover,
   useViewport,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
+import {PartitionRunList} from './PartitionRunList';
+import {
+  BOX_SIZE,
+  GridColumn,
+  GridFloatingContainer,
+  LeftLabel,
+  TopLabel,
+  TopLabelTilted,
+  topLabelHeightForLabels,
+} from './RunMatrixUtils';
+import {
+  PartitionStepStatusPipelineQuery,
+  PartitionStepStatusPipelineQueryVariables,
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  MatrixData,
+  MatrixStep,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  PartitionRuns,
+  StatusSquareColor,
+  useMatrixData,
+} from './useMatrixData';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStatusAtIndex,
   Range,
+  partitionStatusAtIndex,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -33,30 +54,6 @@ import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {PartitionRunList} from './PartitionRunList';
-import {
-  BOX_SIZE,
-  GridColumn,
-  GridFloatingContainer,
-  LeftLabel,
-  TopLabel,
-  topLabelHeightForLabels,
-  TopLabelTilted,
-} from './RunMatrixUtils';
-import {
-  PartitionStepStatusPipelineQuery,
-  PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatus.types';
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
-  MatrixData,
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  StatusSquareColor,
-} from './useMatrixData';
 
 const BUFFER = 3;
 
@@ -220,11 +217,11 @@ interface PartitionStepStatusProps extends PartitionStepStatusBaseProps {
 
 const PartitionStepStatus = (props: PartitionStepStatusProps) => {
   const {viewport, containerProps} = useViewport();
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
+  const [hovered, setHovered] = useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = useState<PartitionRunSelection | null>(null);
   const {setPageSize, data} = props;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       setPageSize(getVisibleItemCount(viewport.width));
     }
@@ -380,7 +377,7 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
 const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   width: 30px;
   position: absolute;
-  border: 1px solid ${colorKeylineDefault()};
+  border: 1px solid ${Colors.keylineDefault()};
   border-radius: 3px;
   display: flex;
   justify-content: center;
@@ -388,7 +385,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   top: calc(50% - 15px);
   bottom: calc(50% - 15px);
   ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   z-index: 10;
 
   justify-content: center;
@@ -396,7 +393,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   cursor: pointer;
   display: flex;
   &:hover {
-    background: ${colorBackgroundDefaultHover()};
+    background: ${Colors.backgroundDefaultHover()};
   }
 `;
 
@@ -408,7 +405,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
@@ -453,7 +450,7 @@ const PartitionSquare = ({
   setHovered: (hovered: PartitionRunSelection | null) => void;
   setFocused: (hovered: PartitionRunSelection | null) => void;
 }) => {
-  const [opened, setOpened] = React.useState(false);
+  const [opened, setOpened] = useState(false);
   let squareStatus;
 
   if (!runsLoaded) {

@@ -14,8 +14,8 @@ Navigate to the `jobs/__init__.py` file and add the following lines to create a 
 adhoc_request = AssetSelection.keys(["adhoc_request"])
 
 adhoc_request_job = define_asset_job(
-  name="adhoc_request_job",
-  selection=adhoc_request,
+    name="adhoc_request_job",
+    selection=adhoc_request,
 )
 ```
 
@@ -23,8 +23,8 @@ You’ll also have to update an existing job, `trip_update_job`. The initial `As
 
 ```python
 trip_update_job = define_asset_job(
-  name="trip_update_job",
-  partitions_def=monthly_partition,
-  selection=AssetSelection.all() - trips_by_week - adhoc_request
+    name="trip_update_job",
+    partitions_def=monthly_partition,
+    selection=AssetSelection.all() - trips_by_week - adhoc_request
 )
 ```

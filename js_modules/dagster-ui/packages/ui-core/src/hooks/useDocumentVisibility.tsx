@@ -1,4 +1,4 @@
-import React from 'react';
+import {useEffect, useState} from 'react';
 
 // Note: This is a workaround for a problem observed in Firefox - registering
 // two visibilitychange event listeners is fine, but if you add a third one
@@ -11,10 +11,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 export function useDocumentVisibility() {
-  const [documentVisible, setDocumentVisible] = React.useState(
-    document.visibilityState !== 'hidden',
-  );
-  React.useEffect(() => {
+  const [documentVisible, setDocumentVisible] = useState(document.visibilityState !== 'hidden');
+  useEffect(() => {
     const handler = () => {
       setDocumentVisible(document.visibilityState !== 'hidden');
     };

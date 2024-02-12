@@ -1,14 +1,15 @@
 import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
   RunStatus,
-  StaleStatus,
   StaleCause,
   StaleCauseCategory,
-  AssetCheckSeverity,
-  AssetCheckExecutionResolvedStatus,
-  buildAssetCheckExecution,
-  buildAssetCheckEvaluation,
+  StaleStatus,
   buildAssetCheck,
+  buildAssetCheckEvaluation,
+  buildAssetCheckExecution,
   buildAssetKey,
+  buildAssetNode,
 } from '../../graphql/types';
 import {LiveDataForNode} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
@@ -47,8 +48,7 @@ export const MockStaleReasonCode: StaleCause = {
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 
-export const AssetNodeFragmentBasic: AssetNodeFragment = {
-  __typename: 'AssetNode',
+export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   assetKey: {__typename: 'AssetKey', path: ['asset1']},
   computeKind: null,
   description: 'This is a test asset description',
@@ -61,7 +61,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = {
   jobNames: ['job1'],
   opNames: ['asset1'],
   opVersion: '1',
-};
+});
 
 export const AssetNodeFragmentSource: AssetNodeFragment = {
   ...AssetNodeFragmentBasic,

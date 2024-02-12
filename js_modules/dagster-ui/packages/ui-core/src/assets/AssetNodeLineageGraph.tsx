@@ -1,11 +1,13 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import React from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
-import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
+import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
@@ -14,9 +16,6 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
-
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetKey, AssetViewParams} from './types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
@@ -31,7 +30,7 @@ export const AssetNodeLineageGraph = ({
 }) => {
   const assetGraphId = toGraphId(assetKey);
 
-  const {allGroups, groupedAssets} = React.useMemo(() => {
+  const {allGroups, groupedAssets} = useMemo(() => {
     const groupedAssets: Record<string, GraphNode[]> = {};
     Object.values(assetGraphData.nodes).forEach((node) => {
       const groupId = groupIdForNode(node);
@@ -41,19 +40,19 @@ export const AssetNodeLineageGraph = ({
     return {allGroups: Object.keys(groupedAssets), groupedAssets};
   }, [assetGraphData]);
 
-  const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
+  const [highlighted, setHighlighted] = useState<string[] | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
   // and so that different assets dont invalidate each others layout
   const {layout, loading} = useAssetLayout(assetGraphData, allGroups);
-  const viewportEl = React.useRef<SVGViewport>();
+  const viewportEl = useRef<SVGViewport>();
   const history = useHistory();
 
   const onClickAsset = (key: AssetKey) => {
     history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewportEl.current && layout) {
       const lastZoomLevel = Number(getJSONForKey(LINEAGE_GRAPH_ZOOM_LEVEL));
       viewportEl.current.autocenter(false, lastZoomLevel);
@@ -162,7 +161,7 @@ export const AssetNodeLineageGraph = ({
 };
 
 const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       window.localStorage.setItem(LINEAGE_GRAPH_ZOOM_LEVEL, JSON.stringify(scale));
     } catch (err) {

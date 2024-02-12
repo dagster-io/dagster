@@ -2,18 +2,27 @@ import {useLazyQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Page,
   Checkbox,
+  Colors,
+  Heading,
+  Page,
+  PageHeader,
   Spinner,
   Subtitle2,
-  Heading,
-  PageHeader,
   Table,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import React, {useLayoutEffect} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 import {Redirect} from 'react-router-dom';
 
+import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
+import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
+import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
+import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
+import {
+  AssetDaemonTickFragment,
+  AssetDaemonTicksQuery,
+  AssetDaemonTicksQueryVariables,
+} from './types/AssetDaemonTicksQuery.types';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -26,16 +35,6 @@ import {isStuckStartedTick} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
-
-import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
-import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
-import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
-import {
-  AssetDaemonTicksQuery,
-  AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
-} from './types/AssetDaemonTicksQuery.types';
 
 const MINUTE = 60 * 1000;
 const THREE_MINUTES = 3 * MINUTE;
@@ -69,10 +68,10 @@ const GlobalAutomaterializationRoot = () => {
   const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
     ASSET_DAEMON_TICKS_QUERY,
   );
-  const [isPaused, setIsPaused] = React.useState(false);
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables: AssetDaemonTicksQueryVariables = React.useMemo(() => {
+  const [isPaused, setIsPaused] = useState(false);
+  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
+  const variables: AssetDaemonTicksQueryVariables = useMemo(() => {
     if (timeRange || statuses) {
       return {
         afterTimestamp: timeRange?.[0],
@@ -93,10 +92,10 @@ const GlobalAutomaterializationRoot = () => {
   useLayoutEffect(fetchData, [variables]);
   useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
-  const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
+  const [selectedTick, setSelectedTick] = useState<AssetDaemonTickFragment | null>(null);
 
   const [tableView, setTableView] = useQueryPersistedState<'evaluations' | 'runs'>(
-    React.useMemo(
+    useMemo(
       () => ({
         queryKey: 'view',
         decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
@@ -118,7 +117,7 @@ const GlobalAutomaterializationRoot = () => {
     ids.push('');
   }
 
-  const ticks = React.useMemo(
+  const ticks = useMemo(
     () => {
       const ticks = data?.autoMaterializeTicks;
       return (
@@ -139,7 +138,7 @@ const GlobalAutomaterializationRoot = () => {
     [...ids.slice(0, 100)],
   );
 
-  const onHoverTick = React.useCallback(
+  const onHoverTick = useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
       setIsPaused(!!tick);
     },
@@ -212,7 +211,7 @@ const GlobalAutomaterializationRoot = () => {
           flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
         >
           <Spinner purpose="body-text" />
-          <div style={{color: colorTextLight()}}>Loading evaluations…</div>
+          <div style={{color: Colors.textLight()}}>Loading evaluations…</div>
         </Box>
       ) : (
         <>

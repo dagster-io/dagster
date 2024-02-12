@@ -45,6 +45,9 @@ setup(
         "test_airflow_2": [
             "apache-airflow>=2.0.0,<2.8",
             "boto3>=1.26.7",
+            # Flask-session 0.6 is incompatible with certain airflow-provided test
+            # utilities.
+            "flask-session<0.6.0",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
             "apache-airflow-providers-apache-spark",

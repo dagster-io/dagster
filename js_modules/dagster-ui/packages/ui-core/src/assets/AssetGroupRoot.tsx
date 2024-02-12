@@ -1,8 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
+import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {AssetGlobalLineageLink} from './AssetPageHeader';
+import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetGroupMetadataQuery,
+  AssetGroupMetadataQueryVariables,
+} from './types/AssetGroupRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -14,21 +23,10 @@ import {
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {AssetGlobalLineageLink} from './AssetPageHeader';
-import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetGroupMetadataQuery,
-  AssetGroupMetadataQueryVariables,
-} from './types/AssetGroupRoot.types';
 
 interface AssetGroupRootParams {
   groupName: string;
@@ -51,7 +49,7 @@ export const AssetGroupRoot = ({
   useDocumentTitle(`Asset Group: ${groupName}`);
 
   const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
-  const groupSelector = React.useMemo(
+  const groupSelector = useMemo(
     () => ({
       groupName,
       repositoryLocationName: repoAddress.location,
@@ -60,14 +58,14 @@ export const AssetGroupRoot = ({
     [groupName, repoAddress],
   );
 
-  const onChangeExplorerPath = React.useCallback(
+  const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
       history[mode](`${groupPath}/${explorerPathToString(path)}`);
     },
     [groupPath, history],
   );
 
-  const onNavigateToSourceAssetNode = React.useCallback(
+  const onNavigateToSourceAssetNode = useCallback(
     (node: AssetLocation) => {
       if (node.groupName && node.repoAddress) {
         history.push(
@@ -134,8 +132,6 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
       }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 export const AssetGroupTags = ({

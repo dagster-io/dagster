@@ -1,11 +1,10 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-
-import {Container, Inner} from '../ui/VirtualizedTable';
-import {RepoAddress} from '../workspace/types';
+import {useRef} from 'react';
 
 import {VirtualizedResourceHeader, VirtualizedResourceRow} from './VirtualizedResourceRow';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
+import {Container, Inner} from '../ui/VirtualizedTable';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -13,7 +12,7 @@ interface Props {
 }
 
 export const VirtualizedResourceTable = ({repoAddress, resources}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: resources.length,

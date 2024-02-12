@@ -1,14 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import {Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
-
-import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 
 import {
   OldRunStatusOnlyQuery,
   OldRunStatusOnlyQueryVariables,
 } from './types/AutomaterializeRunTag.types';
+import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 
 interface Props {
   runId: string;

@@ -1,23 +1,14 @@
-import {
-  Box,
-  FontFamily,
-  Mono,
-  Popover,
-  colorKeylineDefault,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {RunStatus} from '../graphql/types';
-import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
+import {RunStatus} from '../graphql/types';
+import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -111,11 +102,11 @@ const OverlayContainer = styled.div`
 
 const OverlayTitle = styled.div`
   padding: 8px;
-  box-shadow: inset 0 -1px ${colorKeylineDefault()};
+  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
   font-family: ${FontFamily.default};
   font-size: 14px;
   font-weight: 500;
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;

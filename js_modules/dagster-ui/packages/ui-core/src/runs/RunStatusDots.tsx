@@ -1,14 +1,13 @@
 import {Popover, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo} from 'react';
 import styled, {css, keyframes} from 'styled-components';
-
-import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RunStatus} from '../graphql/types';
 
-export const RunStatusWithStats = React.memo(
+export const RunStatusWithStats = memo(
   ({
     runId,
     ...rest
@@ -31,7 +30,7 @@ interface RunStatusProps {
   size?: number;
 }
 
-export const RunStatusIndicator = React.memo(({status, size}: RunStatusProps) => {
+export const RunStatusIndicator = memo(({status, size}: RunStatusProps) => {
   if (status === 'STARTED' || status === 'CANCELING') {
     return <Spinner purpose="caption-text" />;
   }

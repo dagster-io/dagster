@@ -40,7 +40,7 @@ def execute_assets_and_checks(
 def test_asset_check_decorator():
     @asset_check(asset="asset1", description="desc")
     def check1():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert check1.name == "check1"
     assert check1.description == "desc"
@@ -50,7 +50,7 @@ def test_asset_check_decorator():
 def test_asset_check_decorator_name():
     @asset_check(asset="asset1", description="desc", name="check1")
     def _check():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert _check.name == "check1"
 
@@ -62,7 +62,7 @@ def test_asset_check_with_prefix():
 
     @asset_check(asset=asset1)
     def my_check():
-        ...
+        return AssetCheckResult(passed=True)
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
@@ -74,7 +74,7 @@ def test_asset_check_input_with_prefix():
 
     @asset_check(asset=asset1)
     def my_check(asset1):
-        ...
+        return AssetCheckResult(passed=True)
 
     assert my_check.asset_key == AssetKey(["prefix", "asset1"])
 
@@ -276,14 +276,12 @@ def test_asset_check_separate_op_downstream_still_executes():
     assert not check_eval.passed
 
 
-def test_error_severity_skip_downstream():
-    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
-
+def test_blocking_check_skip_downstream():
     @asset
     def asset1():
         ...
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1, blocking=True)
     def check1(context: AssetExecutionContext):
         return AssetCheckResult(passed=False)
 
@@ -304,21 +302,19 @@ def test_error_severity_skip_downstream():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
     error = result.failure_data_for_node("asset1_check1").error
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 
 
-def test_error_severity_with_source_asset_fail():
-    pytest.skip("Currently users should raise exceptions instead of using checks for control flow.")
-
+def test_blocking_check_with_source_asset_fail():
     asset1 = SourceAsset("asset1")
 
-    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    @asset_check(asset=asset1, blocking=True)
     def check1(context: AssetExecutionContext):
         return AssetCheckResult(passed=False)
 
@@ -339,11 +335,11 @@ def test_error_severity_with_source_asset_fail():
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
-    assert not check_eval.success
+    assert not check_eval.passed
 
     error = result.failure_data_for_node("asset1_check1").error
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 
@@ -404,7 +400,7 @@ def test_definitions_same_name_different_asset():
     def make_check_for_asset(asset_key: str):
         @asset_check(asset=asset_key)
         def check1(context: AssetExecutionContext):
-            ...
+            return AssetCheckResult(passed=True)
 
         return check1
 
@@ -415,7 +411,7 @@ def test_definitions_same_asset_different_name():
     def make_check(check_name: str):
         @asset_check(asset="asset1", name=check_name)
         def _check(context: AssetExecutionContext):
-            ...
+            return AssetCheckResult(passed=True)
 
         return _check
 

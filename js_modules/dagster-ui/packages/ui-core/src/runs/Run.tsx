@@ -1,16 +1,31 @@
 import {
   Box,
+  Button,
+  Colors,
+  ErrorBoundary,
+  Icon,
   NonIdealState,
   SplitPanelContainer,
-  ErrorBoundary,
-  Button,
-  Icon,
   Tooltip,
-  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
+import {ComputeLogPanel} from './ComputeLogPanel';
+import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogType, LogsToolbar} from './LogsToolbar';
+import {RunActionButtons} from './RunActionButtons';
+import {RunContext} from './RunContext';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {RunRootTrace} from './RunRootTrace';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {
+  matchingComputeLogKeyFromStepKey,
+  useComputeLogFileKeyForSelection,
+} from './useComputeLogFileKeyForSelection';
+import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -22,22 +37,6 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-
-import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {ComputeLogPanel} from './ComputeLogPanel';
-import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogsToolbar, LogType} from './LogsToolbar';
-import {RunActionButtons} from './RunActionButtons';
-import {RunContext} from './RunContext';
-import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunRootTrace} from './RunRootTrace';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
-import {
-  useComputeLogFileKeyForSelection,
-  matchingComputeLogKeyFromStepKey,
-} from './useComputeLogFileKeyForSelection';
-import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   runId: string;
@@ -407,7 +406,7 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      style={{background: colorBackgroundDefault()}}
+      style={{background: Colors.backgroundDefault()}}
     >
       <NonIdealState
         title={`Select a step to view ${type}`}

@@ -1,17 +1,16 @@
-import React from 'react';
+import {useMemo, useState} from 'react';
 
+import {placeholderDimensionSelection} from './MultipartitioningSupport';
+import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
+  allPartitionsRange,
   allPartitionsSpan,
   partitionsToText,
-  allPartitionsRange,
   spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
-
-import {placeholderDimensionSelection} from './MultipartitioningSupport';
-import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 type DimensionQueryState = {
   name: string;
@@ -77,13 +76,13 @@ export const usePartitionDimensionSelections = (opts: {
     shouldReadPartitionQueryStringParam = false,
   } = opts;
 
-  const serializer = React.useMemo(() => buildSerializer(assetHealth), [assetHealth]);
+  const serializer = useMemo(() => buildSerializer(assetHealth), [assetHealth]);
   const [query, setQuery] = useQueryPersistedState<DimensionQueryState[]>(serializer);
-  const [local, setLocal] = React.useState<DimensionQueryState[]>([]);
+  const [local, setLocal] = useState<DimensionQueryState[]>([]);
 
   const knownDimensionNamesJSON = JSON.stringify(knownDimensionNames);
 
-  const inflated = React.useMemo((): PartitionDimensionSelection[] => {
+  const inflated = useMemo((): PartitionDimensionSelection[] => {
     if (!assetHealth || !assetHealth.dimensions.length) {
       return JSON.parse(knownDimensionNamesJSON).map(placeholderDimensionSelection);
     }

@@ -1,68 +1,107 @@
-import {
-  Box,
-  Table,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorBackgroundLightHover,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, Icon, Table, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
-
-import {assertUnreachable} from '../../app/Util';
-import {TimeElapsed} from '../../runs/TimeElapsed';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {flattenEvaluations} from './flattenEvaluations';
+import {FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
-  AssetConditionEvaluation,
-  AssetConditionEvaluationStatus,
-  PartitionedAssetConditionEvaluation,
-  SpecificPartitionAssetConditionEvaluation,
-  UnpartitionedAssetConditionEvaluation,
-} from './types';
+  AssetConditionEvaluationRecordFragment,
+  PartitionedAssetConditionEvaluationNodeFragment,
+  SpecificPartitionAssetConditionEvaluationNodeFragment,
+  UnpartitionedAssetConditionEvaluationNodeFragment,
+} from './types/GetEvaluationsQuery.types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+import {TimeElapsed} from '../../runs/TimeElapsed';
+import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
-interface Props<T> {
-  rootEvaluation: T;
+interface Props {
+  evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>;
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
 }
 
-export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
-  rootEvaluation,
-}: Props<T>) => {
-  switch (rootEvaluation.__typename) {
-    case 'UnpartitionedAssetConditionEvaluation':
-    case 'SpecificPartitionAssetConditionEvaluation':
-      return <UnpartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
-    case 'PartitionedAssetConditionEvaluation':
-      return <PartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
-    default:
-      return assertUnreachable(rootEvaluation);
+export const PolicyEvaluationTable = ({evaluationRecord, definition, selectPartition}: Props) => {
+  const [collapsedRecords, setcollapsedRecords] = React.useState<Set<string>>(new Set());
+  const flattened = React.useMemo(
+    () => flattenEvaluations(evaluationRecord, collapsedRecords),
+    [evaluationRecord, collapsedRecords],
+  );
+
+  const toggleCollapsed = React.useCallback((uniqueId: string) => {
+    setcollapsedRecords((collapsedRecords) => {
+      const copy = new Set(collapsedRecords);
+      if (copy.has(uniqueId)) {
+        copy.delete(uniqueId);
+      } else {
+        copy.add(uniqueId);
+      }
+      return copy;
+    });
+  }, []);
+  if (flattened[0]?.evaluation.__typename === 'PartitionedAssetConditionEvaluationNode') {
+    return (
+      <PartitionedPolicyEvaluationTable
+        flattenedRecords={
+          flattened as FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[]
+        }
+        definition={definition}
+        selectPartition={selectPartition}
+        toggleCollapsed={toggleCollapsed}
+        collapsedRecords={collapsedRecords}
+      />
+    );
   }
+
+  return (
+    <UnpartitionedPolicyEvaluationTable
+      flattenedRecords={
+        flattened as
+          | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+          | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[]
+      }
+      toggleCollapsed={toggleCollapsed}
+      collapsedRecords={collapsedRecords}
+    />
+  );
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
+  collapsedRecords,
+  toggleCollapsed,
 }: {
-  rootEvaluation: UnpartitionedAssetConditionEvaluation | SpecificPartitionAssetConditionEvaluation;
+  collapsedRecords: Set<string>;
+  toggleCollapsed: (id: string) => void;
+  flattenedRecords:
+    | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+    | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
-  const showDuration = rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation';
+  const isSpecificPartitionAssetConditionEvaluations =
+    flattenedRecords[0]?.evaluation.__typename === 'SpecificPartitionAssetConditionEvaluationNode';
+
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
           <th>Result</th>
-          {showDuration ? <th>Duration</th> : null}
+          {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
           <th>Details</th>
         </tr>
       </thead>
       <tbody>
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, status} = evaluation;
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
+          const {description, status, uniqueId} = evaluation;
+          let endTimestamp, startTimestamp;
+          if ('endTimestamp' in evaluation) {
+            endTimestamp = evaluation.endTimestamp;
+            startTimestamp = evaluation.startTimestamp;
+          }
           return (
             <EvaluationRow
               key={id}
@@ -71,6 +110,9 @@ const UnpartitionedPolicyEvaluationTable = ({
               }
               onMouseEnter={() => setHoveredKey(id)}
               onMouseLeave={() => setHoveredKey(null)}
+              onClick={() => {
+                toggleCollapsed(uniqueId);
+              }}
             >
               <td>
                 <PolicyEvaluationCondition
@@ -79,22 +121,23 @@ const UnpartitionedPolicyEvaluationTable = ({
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
+                  isCollapsed={!collapsedRecords.has(uniqueId)}
+                  hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
               <td>
                 <PolicyEvaluationStatusTag status={status} />
               </td>
-              {showDuration ? (
+              {startTimestamp && endTimestamp ? (
                 <td>
-                  {evaluation.__typename === 'UnpartitionedAssetConditionEvaluation' ? (
-                    <TimeElapsed
-                      startUnix={evaluation.startTimestamp}
-                      endUnix={evaluation.endTimestamp}
-                    />
-                  ) : null}
+                  <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
                 </td>
               ) : null}
-              <td></td>
+              <td>
+                {evaluation.metadataEntries?.length ? (
+                  <ViewDetailsButton evaluation={evaluation} />
+                ) : null}
+              </td>
             </EvaluationRow>
           );
         })}
@@ -103,38 +146,65 @@ const UnpartitionedPolicyEvaluationTable = ({
   );
 };
 
+const ViewDetailsButton = ({
+  evaluation,
+}: {
+  evaluation: {metadataEntries: MetadataEntryFragment[]};
+}) => {
+  const [showDetails, setShowDetails] = React.useState(false);
+  return (
+    <>
+      <Dialog
+        title="Evaluation metadata"
+        isOpen={showDetails}
+        onClose={() => {
+          setShowDetails(false);
+        }}
+      >
+        <AssetEventMetadataEntriesTable event={evaluation} />
+      </Dialog>
+      <Button
+        onClick={() => {
+          setShowDetails(true);
+        }}
+      >
+        View details
+      </Button>
+    </>
+  );
+};
+
 const FULL_SEGMENTS_WIDTH = 200;
 
 const PartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
+  selectPartition,
+  collapsedRecords,
+  toggleCollapsed,
 }: {
-  rootEvaluation: PartitionedAssetConditionEvaluation;
+  flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
+  collapsedRecords: Set<string>;
+  toggleCollapsed: (id: string) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
+          <th>Partitions evaluated</th>
           <th>Result</th>
           <th>Duration</th>
         </tr>
       </thead>
       <tbody>
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {
-            description,
-            endTimestamp,
-            startTimestamp,
-            numTrue,
-            numFalse,
-            numSkipped,
-            trueSubset,
-            falseSubset,
-            candidateSubset,
-          } = evaluation;
-          const total = numTrue + numFalse + numSkipped;
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
+          const {description, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
+            evaluation;
+          const consideredPartitions = candidateSubset?.subsetValue.partitionKeys?.length;
 
           return (
             <EvaluationRow
@@ -144,6 +214,9 @@ const PartitionedPolicyEvaluationTable = ({
               }
               onMouseEnter={() => setHoveredKey(id)}
               onMouseLeave={() => setHoveredKey(null)}
+              onClick={() => {
+                toggleCollapsed(uniqueId);
+              }}
             >
               <td>
                 <PolicyEvaluationCondition
@@ -151,41 +224,37 @@ const PartitionedPolicyEvaluationTable = ({
                   label={description}
                   depth={depth}
                   type={type}
+                  isCollapsed={!collapsedRecords.has(evaluation.uniqueId)}
+                  hasChildren={evaluation.childUniqueIds.length > 0}
                 />
+              </td>
+              <td>
+                {consideredPartitions ? (
+                  consideredPartitions
+                ) : (
+                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                    All
+                    <Tooltip content="Evaluated against all partitions that existed at the time of evaluation">
+                      <Icon name="info" />
+                    </Tooltip>
+                  </Box>
+                )}
               </td>
               <td style={{width: 0}}>
                 <Box
                   flex={{direction: 'row', alignItems: 'center', gap: 2}}
                   style={{width: FULL_SEGMENTS_WIDTH}}
                 >
-                  {numTrue > 0 ? (
-                    <PartitionSegmentWithPopover
-                      description={description}
-                      status={AssetConditionEvaluationStatus.TRUE}
-                      subset={trueSubset}
-                      width={Math.ceil((numTrue / total) * FULL_SEGMENTS_WIDTH)}
-                    />
-                  ) : null}
-                  {numFalse > 0 ? (
-                    <PartitionSegmentWithPopover
-                      status={AssetConditionEvaluationStatus.FALSE}
-                      description={description}
-                      subset={falseSubset}
-                      width={Math.ceil((numFalse / total) * FULL_SEGMENTS_WIDTH)}
-                    />
-                  ) : null}
-                  {numSkipped > 0 ? (
-                    <PartitionSegmentWithPopover
-                      status={AssetConditionEvaluationStatus.SKIPPED}
-                      description={description}
-                      subset={candidateSubset}
-                      width={Math.ceil((numSkipped / total) * FULL_SEGMENTS_WIDTH)}
-                    />
-                  ) : null}
+                  <PartitionSegmentWithPopover
+                    description={description}
+                    status={AssetConditionEvaluationStatus.TRUE}
+                    subset={trueSubset}
+                    selectPartition={selectPartition}
+                  />
                 </Box>
               </td>
               <td>
-                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
+                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
               </td>
             </EvaluationRow>
           );
@@ -207,28 +276,29 @@ const VeryCompactTable = styled(Table)`
   & tr th:last-child,
   & tr td:last-child {
     box-shadow:
-      inset 1px 1px 0 ${colorKeylineDefault()},
-      inset -1px 0 0 ${colorKeylineDefault()} !important;
+      inset 1px 1px 0 ${Colors.keylineDefault()},
+      inset -1px 0 0 ${Colors.keylineDefault()} !important;
   }
 
   & tr:last-child td:last-child {
     box-shadow:
-      inset -1px -1px 0 ${colorKeylineDefault()},
-      inset 1px 1px 0 ${colorKeylineDefault()} !important;
+      inset -1px -1px 0 ${Colors.keylineDefault()},
+      inset 1px 1px 0 ${Colors.keylineDefault()} !important;
   }
 `;
 
 type RowHighlightType = 'hovered' | 'highlighted' | 'none';
 
 const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
+  cursor: pointer;
   background-color: ${({$highlight}) => {
     switch ($highlight) {
       case 'hovered':
-        return colorBackgroundLightHover();
+        return Colors.backgroundLightHover();
       case 'highlighted':
-        return colorBackgroundDefaultHover();
+        return Colors.backgroundDefaultHover();
       case 'none':
-        return colorBackgroundDefault();
+        return Colors.backgroundDefault();
     }
   }};
 
@@ -237,14 +307,14 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
       return css`
         && td {
           box-shadow:
-            inset 0 -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset 0 -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
 
         && td:last-child {
           box-shadow:
-            inset -1px -1px 0 ${colorKeylineDefault()},
-            inset 1px 1px 0 ${colorKeylineDefault()} !important;
+            inset -1px -1px 0 ${Colors.keylineDefault()},
+            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
         }
       `;
     }

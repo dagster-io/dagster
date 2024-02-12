@@ -1,20 +1,17 @@
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogFooter,
   Icon,
   Mono,
   Spinner,
-  colorBackgroundDefault,
-  colorLinkDefault,
 } from '@dagster-io/ui-components';
-import React, {useState} from 'react';
+import {useState} from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {DagsterEventType} from '../graphql/types';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
@@ -25,6 +22,8 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
+import {DagsterEventType} from '../graphql/types';
+import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
   const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(
@@ -91,7 +90,7 @@ export const StepLogsDialog = ({
       ) : (
         ''
       )}
-      <div style={{zIndex: 2, background: colorBackgroundDefault()}}>
+      <div style={{zIndex: 2, background: Colors.backgroundDefault()}}>
         <DialogFooter topBorder>
           <Button intent="primary" onClick={onClose}>
             Done
@@ -161,7 +160,7 @@ export const StepLogsModalContent = ({
               <Spinner purpose="body-text" />
             )}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
-            <Icon name="open_in_new" color={colorLinkDefault()} />
+            <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
         </Link>
       </LogsToolbar>

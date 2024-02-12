@@ -35,6 +35,11 @@
     "statusCode": 302
   },
   {
+    "source": "/guides/dagster/automating-pipelines",
+    "destination": "/concepts/automation",
+    "statusCode": 302
+  },
+  {
     "source": "/tutorial/basics_pipelines",
     "destination": "/tutorial/intro-tutorial/connecting-solids",
     "statusCode": 302

@@ -1,6 +1,18 @@
 import memoize from 'lodash/memoize';
 
-export const browserTimezone = memoize(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+// Etc/Unknown states that TZ information cannot be determined based on user's preferences.
+// We can't pass this value to `toLocaleDateString`, so we need to handle it and convert it
+// to a valid value.
+const BROWSER_TZ_UNKNOWN = `Etc/Unknown`;
+
+export const browserTimezone = memoize(() => {
+  const {timeZone} = Intl.DateTimeFormat().resolvedOptions();
+  if (timeZone === BROWSER_TZ_UNKNOWN) {
+    return 'UTC';
+  }
+  return timeZone;
+});
+
 export const browserTimezoneAbbreviation = memoize(() => timezoneAbbreviation(browserTimezone()));
 export const timezoneAbbreviation = memoize((timeZone: string) => {
   const dateString = new Date().toLocaleDateString('en-US', {

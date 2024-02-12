@@ -1,7 +1,7 @@
 import {Box, Checkbox, Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {AssetGroupSelector} from '../graphql/types';
 import {ClearButton} from '../ui/ClearButton';
@@ -15,7 +15,7 @@ type Asset = {
 };
 
 export function useAssetGroupSelectorsForAssets(assets: Asset[] | undefined) {
-  return React.useMemo(
+  return useMemo(
     () =>
       uniqBy(
         (assets || []).map(buildAssetGroupSelector).filter((a) => !!a) as AssetGroupSelector[],

@@ -118,7 +118,7 @@ class StepDelegatingExecutor(Executor):
             EngineEventData(),
         )
         with InstanceConcurrencyContext(
-            plan_context.instance, plan_context.run_id
+            plan_context.instance, plan_context.dagster_run
         ) as instance_concurrency_context:
             with ActiveExecution(
                 execution_plan,
@@ -233,32 +233,35 @@ class StepDelegatingExecutor(Executor):
 
                         return
 
-                    for dagster_event in self._pop_events(
-                        plan_context.instance,
-                        plan_context.run_id,
-                    ):
-                        yield dagster_event
-                        # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
-                        # and yields them.
+                    if active_execution.has_in_flight_steps:
+                        for dagster_event in self._pop_events(
+                            plan_context.instance,
+                            plan_context.run_id,
+                        ):
+                            yield dagster_event
+                            # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
+                            # and yields them.
 
-                        if dagster_event.is_step_skipped:
-                            assert isinstance(dagster_event.step_key, str)
-                            active_execution.verify_complete(plan_context, dagster_event.step_key)
-                        else:
-                            active_execution.handle_event(dagster_event)
-                            if (
-                                dagster_event.is_step_success
-                                or dagster_event.is_step_failure
-                                or dagster_event.is_resource_init_failure
-                                or dagster_event.is_step_up_for_retry
-                            ):
+                            if dagster_event.is_step_skipped:
                                 assert isinstance(dagster_event.step_key, str)
-                                del running_steps[dagster_event.step_key]
+                                active_execution.verify_complete(
+                                    plan_context, dagster_event.step_key
+                                )
+                            else:
+                                active_execution.handle_event(dagster_event)
+                                if (
+                                    dagster_event.is_step_success
+                                    or dagster_event.is_step_failure
+                                    or dagster_event.is_resource_init_failure
+                                    or dagster_event.is_step_up_for_retry
+                                ):
+                                    assert isinstance(dagster_event.step_key, str)
+                                    del running_steps[dagster_event.step_key]
 
-                                if not dagster_event.is_step_up_for_retry:
-                                    active_execution.verify_complete(
-                                        plan_context, dagster_event.step_key
-                                    )
+                                    if not dagster_event.is_step_up_for_retry:
+                                        active_execution.verify_complete(
+                                            plan_context, dagster_event.step_key
+                                        )
 
                     # process skips from failures or uncovered inputs
                     list(active_execution.plan_events_iterator(plan_context))

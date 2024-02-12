@@ -31,6 +31,7 @@ from dagster._serdes.serdes import (
 )
 
 from .asset_graph import AssetGraph
+from .asset_subset import AssetSubset
 from .events import AssetKey, AssetKeyPartitionKey
 
 
@@ -73,10 +74,27 @@ class AssetGraphSubset(NamedTuple):
         } | self.non_partitioned_asset_keys
 
     @property
-    def num_partitions_and_non_partitioned_assets(self):
+    def num_partitions_and_non_partitioned_assets(self) -> int:
         return len(self.non_partitioned_asset_keys) + sum(
             len(subset) for subset in self.partitions_subsets_by_asset_key.values()
         )
+
+    def get_asset_subset(self, asset_key: AssetKey, asset_graph: AssetGraph) -> AssetSubset:
+        """Returns an AssetSubset representing the subset of a specific asset that this
+        AssetGraphSubset contains.
+        """
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if partitions_def is None:
+            return AssetSubset(
+                asset_key=asset_key, value=asset_key in self.non_partitioned_asset_keys
+            )
+        else:
+            return AssetSubset(
+                asset_key=asset_key,
+                value=self.partitions_subsets_by_asset_key.get(
+                    asset_key, partitions_def.empty_subset()
+                ),
+            )
 
     def get_partitions_subset(
         self, asset_key: AssetKey, asset_graph: Optional[AssetGraph] = None

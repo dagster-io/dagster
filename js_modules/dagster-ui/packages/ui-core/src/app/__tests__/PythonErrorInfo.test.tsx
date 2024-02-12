@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 
 import {GenericError, PythonErrorInfo} from '../PythonErrorInfo';
 import {PythonErrorFragment} from '../types/PythonErrorFragment.types';

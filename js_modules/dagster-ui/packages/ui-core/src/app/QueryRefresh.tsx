@@ -1,6 +1,6 @@
 import {NetworkStatus, ObservableQuery, QueryResult} from '@apollo/client';
-import {useCountdown, RefreshableCountdown} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 
@@ -39,14 +39,14 @@ export function useQueryRefreshAtInterval(
   enabled = true,
   customRefetch?: () => void,
 ) {
-  const timer = React.useRef<number>();
-  const loadingStartMs = React.useRef<number>();
-  const [nextFireMs, setNextFireMs] = React.useState<number | null>();
+  const timer = useRef<number>();
+  const loadingStartMs = useRef<number>();
+  const [nextFireMs, setNextFireMs] = useState<number | null>();
 
-  const queryResultRef = React.useRef(queryResult);
+  const queryResultRef = useRef(queryResult);
   queryResultRef.current = queryResult;
 
-  const customRefetchRef = React.useRef(customRefetch);
+  const customRefetchRef = useRef(customRefetch);
   customRefetchRef.current = customRefetch;
 
   // Sanity check - don't use this hook alongside a useQuery pollInterval
@@ -59,10 +59,10 @@ export function useQueryRefreshAtInterval(
   // If the page is in the background when our refresh timer fires, we set
   // documentVisiblityDidInterrupt = true. When the document becomes visible again,
   // this effect triggers an immediate out-of-interval refresh.
-  const documentVisiblityDidInterrupt = React.useRef(false);
+  const documentVisiblityDidInterrupt = useRef(false);
   const documentVisible = useDocumentVisibility();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -72,7 +72,7 @@ export function useQueryRefreshAtInterval(
     }
   }, [documentVisible, enabled]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     clearTimeout(timer.current);
     if (!enabled) {
       return;
@@ -115,14 +115,11 @@ export function useQueryRefreshAtInterval(
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
-  const nextFireDelay = React.useMemo(
-    () => (nextFireMs ? nextFireMs - Date.now() : -1),
-    [nextFireMs],
-  );
+  const nextFireDelay = useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [nextFireMs]);
 
   // Memoize the returned object so components passed the entire QueryRefreshState
   // can be memoized / pure components.
-  return React.useMemo<QueryRefreshState>(
+  return useMemo<QueryRefreshState>(
     () => ({
       nextFireMs,
       nextFireDelay,
@@ -148,7 +145,7 @@ export function useQueryRefreshAtInterval(
 export function useMergedRefresh(
   ...args: [QueryRefreshState, ...QueryRefreshState[]]
 ): QueryRefreshState {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const refetch: ObservableQuery['refetch'] = async () => {
       const [ar] = await Promise.all(args.map((s) => s?.refetch()));
       return ar!;

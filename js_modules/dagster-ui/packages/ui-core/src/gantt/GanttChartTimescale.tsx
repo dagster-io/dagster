@@ -1,19 +1,9 @@
-import {
-  FontFamily,
-  colorAccentPrimary,
-  colorAccentReversed,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorKeylineDefault,
-  colorShadowDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {formatElapsedTimeWithoutMsec} from '../app/Util';
-
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 
 const ONE_MIN = 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
@@ -218,31 +208,31 @@ const TimescaleContainer = styled.div`
     text-align: center;
   }
   & .tick.duration {
-    color: ${colorTextLight()};
-    background: ${colorBackgroundLight()};
-    box-shadow: 0 1px 1px ${colorShadowDefault()};
+    color: ${Colors.textLight()};
+    background: ${Colors.backgroundLight()};
+    box-shadow: 0 1px 1px ${Colors.shadowDefault()};
   }
   & .tick.highlight {
-    color: ${colorAccentReversed()};
+    color: ${Colors.accentReversed()};
     height: ${TICKS_ROW_HEIGHT + 2}px;
-    background: ${colorAccentPrimary()};
+    background: ${Colors.accentPrimary()};
   }
   & .line {
     position: absolute;
-    border-left: 1px solid ${colorKeylineDefault()};
+    border-left: 1px solid ${Colors.keylineDefault()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 2px solid ${colorBorderDefault()};
+    border-left: 2px solid ${Colors.borderDefault()};
     z-index: 1111;
     top: -1px;
   }
 
   & .fog-of-war {
     position: absolute;
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
@@ -254,12 +244,12 @@ const TimescaleTicksContainer = styled.div`
   height: ${TICKS_ROW_HEIGHT}px;
   z-index: 4;
   position: relative;
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   display: flex;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   font-size: 13px;
   font-family: ${FontFamily.monospace};
-  box-shadow: inset 0 -1px ${colorKeylineDefault()};
+  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
   overflow: hidden;
 `;
 

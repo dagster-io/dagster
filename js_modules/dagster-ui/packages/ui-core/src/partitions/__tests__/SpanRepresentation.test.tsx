@@ -2,8 +2,8 @@ import {
   allPartitionsSpan,
   assembleIntoSpans,
   partitionsToText,
-  stringForSpan,
   spanTextToSelectionsOrError,
+  stringForSpan,
 } from '../SpanRepresentation';
 
 const MOCK_PARTITION_STATES = {

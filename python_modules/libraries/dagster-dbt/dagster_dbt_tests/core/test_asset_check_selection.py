@@ -41,6 +41,8 @@ ALL_ASSET_KEYS = {
         "stg_customers",
         "stg_orders",
         "stg_payments",
+        "raw_fail_tests_model",
+        "fail_tests_model",
     ]
 }
 
@@ -62,6 +64,10 @@ ALL_CHECK_KEYS = {
         ("orders", "not_null_orders_gift_card_amount"),
         ("orders", "not_null_orders_order_id"),
         ("orders", "relationships_orders_customer_id__customer_id__ref_customers_"),
+        (
+            "orders",
+            "relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
+        ),
         ("orders", "unique_orders_order_id"),
         ("stg_customers", "not_null_stg_customers_customer_id"),
         ("stg_customers", "unique_stg_customers_customer_id"),
@@ -77,6 +83,12 @@ ALL_CHECK_KEYS = {
         ),
         ("stg_payments", "not_null_stg_payments_payment_id"),
         ("stg_payments", "unique_stg_payments_payment_id"),
+        ("fail_tests_model", "accepted_values_fail_tests_model_first_name__foo__bar__baz"),
+        ("fail_tests_model", "unique_fail_tests_model_id"),
+        (
+            "orders",
+            "relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_",
+        ),
     ]
 }
 
@@ -111,7 +123,11 @@ def test_selection_customers():
         AssetCheckKey(
             asset_key=AssetKey(["orders"]),
             name="relationships_orders_customer_id__customer_id__ref_customers_",
-        )
+        ),
+        AssetCheckKey(
+            asset_key=AssetKey(["orders"]),
+            name="relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
+        ),
     }
 
 
@@ -119,7 +135,14 @@ def test_excluding_tests():
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
         dbt_select="customers",
-        dbt_exclude="not_null_customers_customer_id unique_customers_customer_id relationships_orders_customer_id__customer_id__ref_customers_",
+        dbt_exclude=" ".join(
+            [
+                "not_null_customers_customer_id",
+                "unique_customers_customer_id",
+                "relationships_orders_customer_id__customer_id__ref_customers_",
+                "relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
+            ]
+        ),
     )
     assert asset_selection.resolve(asset_graph) == {AssetKey(["customers"])}
     assert asset_selection.resolve_checks(asset_graph) == set()

@@ -1,8 +1,6 @@
 import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-
-import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
+import {useRef} from 'react';
 
 import {
   CodeLocationRowType,
@@ -10,6 +8,7 @@ import {
   VirtualizedCodeLocationHeader,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
+import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
 
 interface Props {
   loading: boolean;
@@ -18,7 +17,7 @@ interface Props {
 }
 
 export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
     count: codeLocations.length,

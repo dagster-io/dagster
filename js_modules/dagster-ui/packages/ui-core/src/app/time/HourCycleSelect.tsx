@@ -1,5 +1,5 @@
-import {MenuItem, Menu, Select, Button, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Button, Icon, Menu, MenuItem, Select} from '@dagster-io/ui-components';
+import {useContext, useEffect, useMemo, useState} from 'react';
 
 import {HourCycle} from './HourCycle';
 import {TimeContext} from './TimeContext';
@@ -18,11 +18,11 @@ import {browserHourCycle} from './browserTimezone';
 export const HourCycleSelect = () => {
   const {
     hourCycle: [hourCycle, setHourCycle],
-  } = React.useContext(TimeContext);
+  } = useContext(TimeContext);
 
-  const [date, setDate] = React.useState(() => new Date());
+  const [date, setDate] = useState(() => new Date());
 
-  const formats = React.useMemo(() => {
+  const formats = useMemo(() => {
     return {
       automatic: new Intl.DateTimeFormat(navigator.language, {timeStyle: 'short'}),
       h12: new Intl.DateTimeFormat(navigator.language, {hourCycle: 'h12', timeStyle: 'short'}),
@@ -30,7 +30,7 @@ export const HourCycleSelect = () => {
     };
   }, []);
 
-  const labels = React.useMemo(() => {
+  const labels = useMemo(() => {
     return {
       automatic: `Automatic (${browserHourCycle() === 'h12' ? '12-hour' : '24-hour'})`,
       h12: '12-hour',
@@ -38,7 +38,7 @@ export const HourCycleSelect = () => {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setDate(new Date());
     }, 1000);

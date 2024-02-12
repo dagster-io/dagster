@@ -1,15 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
 import {Alert, Box} from '@dagster-io/ui-components';
-import React from 'react';
+import {useContext} from 'react';
 import {Link} from 'react-router-dom';
-
-import {InstancePageContext} from '../instance/InstancePageContext';
-import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 
 import {
   QueueDaemonStatusQuery,
   QueueDaemonStatusQueryVariables,
 } from './types/QueuedRunsBanners.types';
+import {InstancePageContext} from '../instance/InstancePageContext';
+import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 
 export const QueuedRunsBanners = () => {
   const canSeeConfig = useCanSeeConfig();
@@ -31,7 +30,7 @@ const QueueDaemonAlert = () => {
   const {data} = useQuery<QueueDaemonStatusQuery, QueueDaemonStatusQueryVariables>(
     QUEUE_DAEMON_STATUS_QUERY,
   );
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const {pageTitle} = useContext(InstancePageContext);
   const status = data?.instance.daemonHealth.daemonStatus;
   if (status?.required && !status?.healthy) {
     return (

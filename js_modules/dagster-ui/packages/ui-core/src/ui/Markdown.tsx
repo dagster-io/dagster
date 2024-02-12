@@ -1,8 +1,8 @@
-import {FontFamily, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {Suspense, lazy} from 'react';
 import styled from 'styled-components';
 
-const MarkdownWithPlugins = React.lazy(() => import('./MarkdownWithPlugins'));
+const MarkdownWithPlugins = lazy(() => import('./MarkdownWithPlugins'));
 
 interface Props {
   children: string;
@@ -11,9 +11,9 @@ interface Props {
 export const Markdown = (props: Props) => {
   return (
     <Container>
-      <React.Suspense fallback={<div />}>
+      <Suspense fallback={<div />}>
         <MarkdownWithPlugins {...props} />
-      </React.Suspense>
+      </Suspense>
     </Container>
   );
 };
@@ -27,7 +27,7 @@ const Container = styled.div`
 
   &&& table tr th {
     box-shadow: none !important;
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: normal;

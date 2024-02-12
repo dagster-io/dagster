@@ -1,7 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box, Button, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 import {GraphQueryItem} from '../../app/GraphQueryImpl';
 import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';

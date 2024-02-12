@@ -42,9 +42,11 @@ class DeltaTableResource(ConfigurableResource):
         default=None, description="Additional configuration passed to http client."
     )
 
+    version: Optional[int] = Field(default=None, description="Version to load delta table.")
+
     def load(self) -> DeltaTable:
         storage_options = self.storage_options.dict() if self.storage_options else {}
         client_options = self.client_options.dict() if self.client_options else {}
         options = {**storage_options, **client_options}
-        table = DeltaTable(table_uri=self.url, storage_options=options)
+        table = DeltaTable(table_uri=self.url, storage_options=options, version=self.version)
         return table

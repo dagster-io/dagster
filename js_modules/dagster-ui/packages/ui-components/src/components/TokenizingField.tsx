@@ -3,22 +3,9 @@ import {TagInput} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorBorderDefault,
-  colorFocusRing,
-  colorTextDefault,
-  colorTextGreen,
-  colorTextRed,
-  colorTextYellow,
-} from '../theme/color';
-
 import {Box} from './Box';
-import {MenuItem, Menu} from './Menu';
+import {Colors} from './Color';
+import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
@@ -461,18 +448,18 @@ export const TokenizingField = ({
 };
 
 export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${Colors.backgroundDefault()};
   border: none;
   border-radius: 8px;
-  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
-  color: ${colorTextDefault()};
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  color: ${Colors.textDefault()};
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   input {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-size: 14px;
     font-weight: 400;
     padding-left: 4px;
@@ -481,11 +468,11 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   }
 
   &&.bp4-tag-input.bp4-active {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     box-shadow:
-      ${colorBorderDefault()} inset 0px 0px 0px 1px,
-      ${colorFocusRing()} 0 0 0 3px;
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.focusRing()} 0 0 0 3px;
   }
 
   && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
@@ -517,23 +504,23 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   }
 
   .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
-    background-color: ${colorBackgroundGray()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundGray()};
+    color: ${Colors.textDefault()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-success {
-    background-color: ${colorBackgroundGreen()};
-    color: ${colorTextGreen()};
+    background-color: ${Colors.backgroundGreen()};
+    color: ${Colors.textGreen()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-warning {
-    background-color: ${colorBackgroundYellow()};
-    color: ${colorTextYellow()};
+    background-color: ${Colors.backgroundYellow()};
+    color: ${Colors.textYellow()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-danger {
-    background-color: ${colorBackgroundRed()};
-    color: ${colorTextRed()};
+    background-color: ${Colors.backgroundRed()};
+    color: ${Colors.textRed()};
   }
 `;
 

@@ -588,6 +588,7 @@ class ExternalSensorData(
                 target_dict, "target_dict", str, ExternalTargetData
             ),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultSensorStatus.RUNNING
                 if default_status == DefaultSensorStatus.RUNNING
@@ -1172,7 +1173,7 @@ class ExternalAssetNode(
             ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
-            ("op_names", Optional[Sequence[str]]),
+            ("op_names", Sequence[str]),
             ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),

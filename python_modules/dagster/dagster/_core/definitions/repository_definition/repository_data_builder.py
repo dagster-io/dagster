@@ -4,6 +4,7 @@ from inspect import isfunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -22,7 +23,7 @@ from dagster._config.pythonic_config import (
     ResourceWithKeyMapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
@@ -103,6 +104,40 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     return env_vars
 
 
+def _resolve_unresolved_job_def_lambda(
+    unresolved_job_def: UnresolvedAssetJobDefinition,
+    asset_graph: InternalAssetGraph,
+    default_executor_def: Optional[ExecutorDefinition],
+    top_level_resources: Optional[Mapping[str, ResourceDefinition]],
+    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> Callable[[], JobDefinition]:
+    def resolve_unresolved_job_def() -> JobDefinition:
+        job_def = unresolved_job_def.resolve(
+            asset_graph=asset_graph,
+            default_executor_def=default_executor_def,
+            resource_defs=top_level_resources,
+        )
+        return _process_resolved_job(job_def, default_executor_def, default_logger_defs)
+
+    return resolve_unresolved_job_def
+
+
+def _process_resolved_job(
+    job_def: JobDefinition,
+    default_executor_def: Optional[ExecutorDefinition],
+    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> JobDefinition:
+    job_def.validate_resource_requirements_satisfied()
+
+    if default_executor_def and not job_def.has_specified_executor:
+        job_def = job_def.with_executor_def(default_executor_def)
+
+    if default_logger_defs and not job_def.has_specified_loggers:
+        job_def = job_def.with_logger_defs(default_logger_defs)
+
+    return job_def
+
+
 def build_caching_repository_data_from_list(
     repository_definitions: Sequence[RepositoryListDefinition],
     default_executor_def: Optional[ExecutorDefinition] = None,
@@ -116,7 +151,7 @@ def build_caching_repository_data_from_list(
     )
 
     schedule_and_sensor_names: Set[str] = set()
-    jobs: Dict[str, JobDefinition] = {}
+    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
     coerced_graphs: Dict[str, JobDefinition] = {}
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
     schedules: Dict[str, ScheduleDefinition] = {}
@@ -245,39 +280,28 @@ def build_caching_repository_data_from_list(
             )
 
     # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+    # resolving jobs is potentially time-consuming if there are many of them,
+    # so do the resolving lazily in a lambda
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
-            resolved_job = unresolved_job_def.resolve(
-                asset_graph=asset_graph,
-                default_executor_def=default_executor_def,
-                resource_defs=top_level_resources,
-            )
-            jobs[name] = resolved_job
-
-    # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
-    # the resolved job containing the partitions def
-    if unresolved_partitioned_asset_schedules:
-        for (
-            name,
-            unresolved_partitioned_asset_schedule,
-        ) in unresolved_partitioned_asset_schedules.items():
-            resolved_job = jobs[unresolved_partitioned_asset_schedule.job.name]
-            schedules[name] = unresolved_partitioned_asset_schedule.resolve(
-                cast(JobDefinition, resolved_job)
+            jobs[name] = _resolve_unresolved_job_def_lambda(
+                unresolved_job_def,
+                asset_graph,
+                default_executor_def,
+                top_level_resources,
+                default_logger_defs,
             )
 
-    for job_def in jobs.values():
-        job_def.validate_resource_requirements_satisfied()
-
-    if default_executor_def:
-        for name, job_def in jobs.items():
-            if not job_def.has_specified_executor:
-                jobs[name] = job_def.with_executor_def(default_executor_def)
-
-    if default_logger_defs:
-        for name, job_def in jobs.items():
-            if not job_def.has_specified_loggers:
-                jobs[name] = job_def.with_logger_defs(default_logger_defs)
+    jobs = {
+        name: (
+            job_def
+            if isfunction(job_def)
+            else _process_resolved_job(
+                cast(JobDefinition, job_def), default_executor_def, default_logger_defs
+            )
+        )
+        for name, job_def in jobs.items()
+    }
 
     top_level_resources = top_level_resources or {}
 
@@ -297,6 +321,7 @@ def build_caching_repository_data_from_list(
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
+        unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
     )
 
 
@@ -358,6 +383,7 @@ def build_caching_repository_data_from_dict(
         top_level_resources={},
         utilized_env_vars={},
         resource_key_mapping={},
+        unresolved_partitioned_asset_schedules={},
     )
 
 
@@ -367,7 +393,7 @@ def _process_and_validate_target(
     ],
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
-    jobs: Dict[str, JobDefinition],
+    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
     target: Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition],
 ):
     """This function modifies the state of coerced_graphs, unresolved_jobs, and jobs."""

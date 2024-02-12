@@ -7,8 +7,8 @@ import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
 
 import {
-  ConfigSchema,
   ConfigSchema_allConfigTypes_CompositeConfigType as CompositeConfigType,
+  ConfigSchema,
   ConfigSchema_allConfigTypes_MapConfigType as MapConfigType,
 } from '../types/ConfigSchema';
 

@@ -1,9 +1,9 @@
 import {ButtonGroup, ButtonGroupItem} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useCallback, useMemo} from 'react';
 
 import {GanttChartMode} from './Constants';
 
-export const GanttChartModeControl = React.memo(
+export const GanttChartModeControl = memo(
   ({
     value,
     onChange,
@@ -26,8 +26,8 @@ export const GanttChartModeControl = React.memo(
       });
     }
 
-    const activeItems = React.useMemo(() => new Set([value]), [value]);
-    const onClick = React.useCallback((id: GanttChartMode) => onChange(id), [onChange]);
+    const activeItems = useMemo(() => new Set([value]), [value]);
+    const onClick = useCallback((id: GanttChartMode) => onChange(id), [onChange]);
 
     return <ButtonGroup activeItems={activeItems} buttons={buttons} onClick={onClick} />;
   },

@@ -1,15 +1,16 @@
 import {
   Box,
   ButtonLink,
-  Tag,
-  Tooltip,
+  Colors,
   FontFamily,
   MiddleTruncate,
-  colorLinkDefault,
+  Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
+import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
@@ -17,8 +18,6 @@ import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 export const ScheduleOrSensorTag = ({
   repoAddress,
@@ -31,7 +30,7 @@ export const ScheduleOrSensorTag = ({
   sensors?: SensorSwitchFragment[];
   showSwitch?: boolean;
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const scheduleCount = schedules.length;
   const sensorCount = sensors.length;
@@ -49,7 +48,7 @@ export const ScheduleOrSensorTag = ({
     return (
       <>
         <Tag icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={colorLinkDefault()}>
+          <ButtonLink onClick={() => setOpen(true)} color={Colors.linkDefault()}>
             {buttonText}
           </ButtonLink>
         </Tag>

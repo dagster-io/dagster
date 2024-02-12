@@ -83,7 +83,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
-            executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
+            executor_def=check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition),
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
             op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
         )

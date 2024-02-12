@@ -82,6 +82,7 @@ export type RootWorkspaceQuery = {
                     id: string;
                     jobOriginId: string;
                     name: string;
+                    sensorType: Types.SensorType;
                     targets: Array<{
                       __typename: 'Target';
                       mode: string;
@@ -181,6 +182,7 @@ export type WorkspaceLocationNodeFragment = {
             id: string;
             jobOriginId: string;
             name: string;
+            sensorType: Types.SensorType;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
               __typename: 'InstigationState';
@@ -257,6 +259,7 @@ export type WorkspaceLocationFragment = {
       id: string;
       jobOriginId: string;
       name: string;
+      sensorType: Types.SensorType;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
         __typename: 'InstigationState';
@@ -310,6 +313,7 @@ export type WorkspaceRepositoryFragment = {
     id: string;
     jobOriginId: string;
     name: string;
+    sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
       __typename: 'InstigationState';
@@ -351,6 +355,7 @@ export type WorkspaceSensorFragment = {
   id: string;
   jobOriginId: string;
   name: string;
+  sensorType: Types.SensorType;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
   sensorState: {
     __typename: 'InstigationState';

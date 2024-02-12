@@ -6,7 +6,6 @@ from dagster._core.definitions.auto_materialize_policy import (
 )
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
-    AutoMaterializeRuleSnapshot,
     DiscardOnMaxMaterializationsExceededRule,
 )
 
@@ -23,11 +22,12 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
     class Meta:
         name = "AutoMaterializeRule"
 
-    def __init__(self, auto_materialize_rule_snapshot: AutoMaterializeRuleSnapshot):
+    def __init__(self, description: str, decision_type: AutoMaterializeDecisionType):
         super().__init__(
-            decisionType=auto_materialize_rule_snapshot.decision_type,
-            description=auto_materialize_rule_snapshot.description,
-            className=auto_materialize_rule_snapshot.class_name,
+            decisionType=decision_type,
+            description=description,
+            # the class name just needs to be distinct for each rule, so we use the description
+            className=description,
         )
 
 
@@ -46,15 +46,16 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
         # for now, we don't represent the max materializations per minute rule as a proper
         # rule in the serialized AutoMaterializePolicy object, but do so in the GraphQL layer
         rules = [
-            GrapheneAutoMaterializeRule(rule.to_snapshot())
+            GrapheneAutoMaterializeRule(rule.description, rule.decision_type)
             for rule in auto_materialize_policy.rules
         ]
         if auto_materialize_policy.max_materializations_per_minute:
             rules.append(
                 GrapheneAutoMaterializeRule(
-                    DiscardOnMaxMaterializationsExceededRule(
+                    description=DiscardOnMaxMaterializationsExceededRule(
                         limit=auto_materialize_policy.max_materializations_per_minute
-                    ).to_snapshot()
+                    ).description,
+                    decision_type=AutoMaterializeDecisionType.DISCARD,
                 )
             )
         super().__init__(

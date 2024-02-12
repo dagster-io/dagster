@@ -1,20 +1,6 @@
-import {
-  Box,
-  Icon,
-  Tag,
-  colorTextDefault,
-  colorTextLight,
-  colorTextLighter,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-
-import {assertUnreachable} from '../../app/Util';
-import {
-  AutoMaterializeDecisionType,
-  AutoMaterializeRule,
-  AutoMaterializeRuleEvaluation,
-} from '../../graphql/types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
@@ -22,7 +8,13 @@ import {ParentUpdatedLink} from './ParentUpdatedLink';
 import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnAssetKeysPartitionLink} from './WaitingOnAssetKeysPartitionLink';
-import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
+import {assertUnreachable} from '../../app/Util';
+import {
+  AutoMaterializeDecisionType,
+  AutoMaterializeRule,
+  AutoMaterializeRuleEvaluation,
+} from '../../graphql/types';
+import {RuleWithEvaluationsFragment} from '../AutoMaterializePolicyPageOld/types/GetEvaluationsQuery.types';
 
 interface RuleEvaluationOutcomeProps {
   text: string;
@@ -37,8 +29,11 @@ const RuleEvaluationOutcome = ({text, met, rightElement}: RuleEvaluationOutcomeP
       style={{height: 24}}
     >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Icon name={met ? 'done' : 'close'} color={met ? colorTextDefault() : colorTextLight()} />
-        <div style={{color: met ? colorTextDefault() : colorTextLight()}}>
+        <Icon
+          name={met ? 'done' : 'close'}
+          color={met ? Colors.textDefault() : Colors.textLight()}
+        />
+        <div style={{color: met ? Colors.textDefault() : Colors.textLight()}}>
           {text.slice(0, 1).toUpperCase()}
           {text.slice(1)}
         </div>
@@ -142,7 +137,7 @@ const RightElementForEvaluations = ({
 }) => {
   const first = evaluations.map((e) => e.evaluationData!).find(Boolean);
   if (!first) {
-    return <div style={{color: colorTextLighter()}}>&ndash;</div>;
+    return <div style={{color: Colors.textLighter()}}>&ndash;</div>;
   }
   switch (first.__typename) {
     case 'ParentMaterializedRuleEvaluationData':
@@ -182,7 +177,7 @@ const RightElementForPartitionedEvaluations = ({
     return partitionKeys.length ? (
       <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
     ) : (
-      <div style={{color: colorTextLighter()}}>&ndash;</div>
+      <div style={{color: Colors.textLighter()}}>&ndash;</div>
     );
   }
 

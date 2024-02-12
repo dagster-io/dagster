@@ -1,6 +1,5 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
-import React from 'react';
 
 import {AutoMaterializePolicyType, AutoMaterializeRule} from '../graphql/types';
 

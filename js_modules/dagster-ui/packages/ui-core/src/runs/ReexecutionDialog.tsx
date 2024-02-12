@@ -3,18 +3,15 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
   Mono,
-  colorAccentGreen,
-  colorAccentYellow,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {ReexecutionStrategy} from '../graphql/types';
+import {useEffect, useReducer, useRef} from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
@@ -22,6 +19,7 @@ import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
+import {ReexecutionStrategy} from '../graphql/types';
 
 interface Props {
   isOpen: boolean;
@@ -136,9 +134,9 @@ export const ReexecutionDialog = (props: Props) => {
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
-  const frozenRuns = React.useRef<SelectedRuns>(selectedRuns);
+  const frozenRuns = useRef<SelectedRuns>(selectedRuns);
 
-  const [state, dispatch] = React.useReducer(
+  const [state, dispatch] = useReducer(
     reexecutionDialogReducer,
     frozenRuns.current,
     initializeState,
@@ -147,7 +145,7 @@ export const ReexecutionDialog = (props: Props) => {
   const count = Object.keys(state.frozenRuns).length;
 
   // If the dialog is newly open, update state to match the frozen list.
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       dispatch({type: 'reset', frozenRuns: frozenRuns.current});
     }
@@ -155,7 +153,7 @@ export const ReexecutionDialog = (props: Props) => {
 
   // If the dialog is not open, update the ref so that the frozen list will be entered
   // into state the next time the dialog opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       frozenRuns.current = selectedRuns;
     }
@@ -294,7 +292,7 @@ export const ReexecutionDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={colorAccentGreen()} />
+            <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {`Successfully requested re-execution for ${successCount} ${
                 successCount === 1 ? 'run' : `runs`
@@ -305,7 +303,7 @@ export const ReexecutionDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={colorAccentYellow()} />
+              <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {`Could not request re-execution for ${errorCount} ${
                   errorCount === 1 ? 'run' : 'runs'

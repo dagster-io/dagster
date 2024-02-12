@@ -1,16 +1,15 @@
 import {
   Button,
   ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Tag,
   Trace,
-  colorLinkDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useReducer} from 'react';
 
 import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
@@ -56,7 +55,7 @@ const initialState = {shown: false, page: 0};
 
 export const DaemonHealth = (props: Props) => {
   const {daemon} = props;
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const {shown, page} = state;
 
   const errors = daemon.lastHeartbeatErrors;
@@ -71,7 +70,7 @@ export const DaemonHealth = (props: Props) => {
     if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={colorLinkDefault()} underline="hover" onClick={show}>
+          <ButtonLink color={Colors.linkDefault()} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
           <Dialog
@@ -122,7 +121,7 @@ export const DaemonHealth = (props: Props) => {
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: colorTextLight()}}>No recent heartbeat</div>;
+      return <div style={{color: Colors.textLight()}}>No recent heartbeat</div>;
     }
 
     return null;

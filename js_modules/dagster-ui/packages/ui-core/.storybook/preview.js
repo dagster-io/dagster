@@ -7,10 +7,7 @@ import {
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  browserColorScheme,
-  colorBackgroundDefault,
-  colorTextDefault,
-  colorLinkDefault,
+  Colors,
 } from '@dagster-io/ui-components';
 
 import * as React from 'react';
@@ -26,9 +23,9 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    color-scheme: ${browserColorScheme()};
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    color-scheme: ${Colors.browserColorScheme()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -36,7 +33,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${colorLinkDefault()};
+    color: ${Colors.linkDefault()};
   }
 
   body {
@@ -45,8 +42,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, input, select, textarea {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-family: ${FontFamily.default};
   }
 

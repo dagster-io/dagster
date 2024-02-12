@@ -54,8 +54,7 @@ reveal_type(my_outer.inner)
         # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
         assert pyright_out[0] == "(self: InnerResource, *, a_string: str) -> None"
         assert (
-            pyright_out[1]
-            == "(self: OuterResource, *, inner: InnerResource | PartialResource[InnerResource],"
+            pyright_out[1] == "(self: OuterResource, *, inner: Any | PartialResource[Any],"
             " a_bool: bool) -> None"
         )
 
@@ -137,7 +136,7 @@ from dagster import ConfigurableResource
 from pydantic import Field
 
 class ResourceWithAlias(ConfigurableResource):
-    _schema: str = Field(alias="schema")
+    _my_schema: str = Field(alias="schema")
 
 reveal_type(ResourceWithAlias.__init__)
 

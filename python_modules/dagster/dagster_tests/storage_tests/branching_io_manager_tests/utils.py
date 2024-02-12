@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from dagster import (
     AssetKey,
@@ -86,14 +86,22 @@ class AssetBasedInMemoryIOManager(IOManager):
 
     def handle_output(self, context: OutputContext, obj: Any):
         keys = self._keys_from_context(context)
-        for key in keys:
-            self.values[key] = obj
+        if keys is None:
+            self.values[None] = obj
+        else:
+            for key in keys:
+                self.values[key] = obj
 
     def load_input(self, context: InputContext) -> Any:
         keys = self._keys_from_context(context)
-        return (
-            {key[-1]: self.values[key] for key in keys} if len(keys) > 1 else self.values[keys[0]]
-        )
+        if keys is None:
+            return self.values[None]
+        else:
+            return (
+                {key[-1]: self.values[key] for key in keys}
+                if len(keys) > 1
+                else self.values[keys[0]]
+            )
 
     def has_value(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
@@ -103,9 +111,11 @@ class AssetBasedInMemoryIOManager(IOManager):
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
-    def _keys_from_context(self, context: Union[InputContext, OutputContext]):
+    def _keys_from_context(
+        self, context: Union[InputContext, OutputContext]
+    ) -> Optional[Sequence[Tuple[str, ...]]]:
         if not context.has_asset_key:
-            return [None]
+            return None
 
         partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
@@ -134,14 +144,22 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
 
     def handle_output(self, context: OutputContext, obj: Any):
         keys = self._keys_from_context(context)
-        for key in keys:
-            self._values[key] = obj
+        if keys is None:
+            self._values[None] = obj
+        else:
+            for key in keys:
+                self._values[key] = obj
 
     def load_input(self, context: InputContext) -> Any:
         keys = self._keys_from_context(context)
-        return (
-            {key[-1]: self._values[key] for key in keys} if len(keys) > 1 else self._values[keys[0]]
-        )
+        if keys is None:
+            return self.values[None]
+        else:
+            return (
+                {key[-1]: self._values[key] for key in keys}
+                if len(keys) > 1
+                else self._values[keys[0]]
+            )
 
     def has_value(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
@@ -151,9 +169,11 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
-    def _keys_from_context(self, context: Union[InputContext, OutputContext]):
+    def _keys_from_context(
+        self, context: Union[InputContext, OutputContext]
+    ) -> Optional[Sequence[Tuple[str, ...]]]:
         if not context.has_asset_key:
-            return [None]
+            return None
 
         partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
         return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]

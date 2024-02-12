@@ -1,15 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Page,
-  NonIdealState,
-  ButtonGroup,
-  colorTextLight,
-  Spinner,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {SensorDetails} from './SensorDetails';
+import {SENSOR_FRAGMENT} from './SensorFragment';
+import {SensorInfo} from './SensorInfo';
+import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
+import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -18,16 +17,9 @@ import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
+import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {SensorDetails} from './SensorDetails';
-import {SENSOR_FRAGMENT} from './SensorFragment';
-import {SensorInfo} from './SensorInfo';
-import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
-import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
 
 export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -40,9 +32,9 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     sensorName,
   };
 
-  const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables = React.useMemo(() => {
+  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
+  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
+  const variables = useMemo(() => {
     if (timeRange || statuses) {
       return {
         afterTimestamp: timeRange?.[0],
@@ -54,7 +46,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   }, [statuses, timeRange]);
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<'evaluations' | 'runs'>(
-    React.useMemo(
+    useMemo(
       () => ({
         queryKey: 'view',
         decode: ({view}) => (view === 'runs' ? 'runs' : 'evaluations'),
@@ -94,7 +86,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 16}}
       >
         <Spinner purpose="body-text" />
-        <div style={{color: colorTextLight()}}>Loading sensor…</div>
+        <div style={{color: Colors.textLight()}}>Loading sensor…</div>
       </Box>
     );
   }

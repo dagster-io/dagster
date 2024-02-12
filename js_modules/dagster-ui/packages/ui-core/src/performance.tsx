@@ -1,4 +1,4 @@
-import React from 'react';
+import {useMemo} from 'react';
 
 type TraceData = {
   name: string;
@@ -53,11 +53,11 @@ const instrumentation = new PointToPointInstrumentation();
 
 let counter = 0;
 export function useStartTrace(name: string) {
-  const traceId = React.useMemo(() => `${counter++}:${name}`, [name]);
+  const traceId = useMemo(() => `${counter++}:${name}`, [name]);
 
   instrumentation.startTrace(traceId, name);
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       endTrace: instrumentation.endTrace.bind(instrumentation, traceId),
     }),

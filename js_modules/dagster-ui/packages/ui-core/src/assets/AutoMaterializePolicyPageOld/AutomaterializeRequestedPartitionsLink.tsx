@@ -3,31 +3,30 @@ import {
   Box,
   Button,
   ButtonLink,
+  Caption,
   Dialog,
   DialogFooter,
   NonIdealState,
   Spinner,
   Tag,
   TextInput,
-  Caption,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {
+  OldRunStatusAndPartitionKeyQuery,
+  OldRunStatusAndPartitionKeyQueryVariables,
+  OldRunStatusAndTagsFragment,
+} from './types/AutomaterializeRequestedPartitionsLink.types';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 import {DagsterTag} from '../../runs/RunTag';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
-import {
-  OldRunStatusAndPartitionKeyQuery,
-  OldRunStatusAndPartitionKeyQueryVariables,
-  OldRunStatusAndTagsFragment,
-} from './types/AutomaterializeRequestedPartitionsLink.types';
 
 interface Props {
   runIds?: string[];

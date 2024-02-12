@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 export function getJSONForKey(key: string) {
   let stored = undefined;

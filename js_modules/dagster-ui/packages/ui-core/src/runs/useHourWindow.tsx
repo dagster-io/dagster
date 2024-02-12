@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -9,7 +9,7 @@ export type HourWindow = '1' | '6' | '12' | '24';
 export const useHourWindow = (
   defaultValue: HourWindow,
 ): [HourWindow, (value: HourWindow) => void] => {
-  const validate = React.useCallback(
+  const validate = useCallback(
     (value: string) => {
       switch (value) {
         case '1':
@@ -25,14 +25,14 @@ export const useHourWindow = (
   );
 
   const [hourWindow, setHourWindow] = useStateWithStorage(HOUR_WINDOW_KEY, validate);
-  const setHourWindowWithDefault = React.useCallback(
+  const setHourWindowWithDefault = useCallback(
     (value: HourWindow) => {
       setHourWindow(value || defaultValue);
     },
     [defaultValue, setHourWindow],
   );
 
-  return React.useMemo(
+  return useMemo(
     () => [hourWindow, setHourWindowWithDefault],
     [hourWindow, setHourWindowWithDefault],
   );

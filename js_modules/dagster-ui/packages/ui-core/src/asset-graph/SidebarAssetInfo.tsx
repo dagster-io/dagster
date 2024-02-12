@@ -1,24 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  ConfigTypeSchema,
-  Icon,
-  Spinner,
-  colorAccentGray,
-  colorBorderDefault,
-  colorLinkDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
-  AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
@@ -45,10 +39,6 @@ import {pluginForMetadata} from '../plugins';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {displayNameForAssetKey, GraphNode, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
-import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;
@@ -114,7 +104,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         liveData={liveData}
       />
 
-      <div style={{borderBottom: `2px solid ${colorBorderDefault()}`}} />
+      <div style={{borderBottom: `2px solid ${Colors.borderDefault()}`}} />
 
       {nodeDependsOnSelf(graphNode) && <DependsOnSelfBanner />}
 
@@ -144,7 +134,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
               .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
               .map((resource) => (
                 <ResourceContainer key={resource.resourceKey}>
-                  <Icon name="resource" color={colorAccentGray()} />
+                  <Icon name="resource" color={Colors.accentGray()} />
                   {repoAddress ? (
                     <Link
                       to={workspacePathFromAddress(
@@ -215,7 +205,7 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
           {'View in Asset Catalog '}
-          <Icon name="open_in_new" color={colorLinkDefault()} />
+          <Icon name="open_in_new" color={Colors.linkDefault()} />
         </AssetCatalogLink>
 
         {repoAddress && (

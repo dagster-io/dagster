@@ -1,7 +1,8 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 
-import {AssetKeyInput, AssetCheck} from '../graphql/types';
+import {AppContext} from './AppContext';
+import {AssetCheck, AssetKeyInput} from '../graphql/types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
@@ -10,8 +11,6 @@ import {
 } from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-
-import {AppContext} from './AppContext';
 
 // Internal LocalStorage data format and mutation helpers
 

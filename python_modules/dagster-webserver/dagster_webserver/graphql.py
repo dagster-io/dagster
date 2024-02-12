@@ -162,7 +162,7 @@ class GraphQLServer(ABC):
         with ErrorCapture.watch(captured_errors.append):
             result = await self.execute_graphql_request(request, query, variables, operation_name)
 
-        response_data = {"data": result.data}
+        response_data: Dict[str, Any] = {"data": result.data}
 
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
@@ -182,7 +182,7 @@ class GraphQLServer(ABC):
         """
         tasks: Dict[str, Task] = {}
 
-        await websocket.accept(subprotocol=GraphQLWS.PROTOCOL)
+        await websocket.accept(subprotocol=GraphQLWS.PROTOCOL.value)
 
         try:
             while (

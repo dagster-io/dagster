@@ -16,7 +16,7 @@ from dagster._core.storage.db_io_manager import (
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
-from sqlalchemy.exc import ProgrammingError
+from snowflake.connector.errors import ProgrammingError
 
 from .resources import SnowflakeResource
 
@@ -349,26 +349,31 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        with SnowflakeResource(
-            schema=table_slice.schema, connector="sqlalchemy", **no_schema_config
-        ).get_connection(raw_conn=False) as conn:
+        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(
+            raw_conn=False
+        ) as conn:
             yield conn
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        schemas = connection.execute(
-            f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
-        ).fetchall()
+        schemas = (
+            connection.cursor()
+            .execute(f"show schemas like '{table_slice.schema}' in database {table_slice.database}")
+            .fetchall()
+        )
         if len(schemas) == 0:
-            connection.execute(f"create schema {table_slice.schema};")
+            connection.cursor().execute(f"create schema {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
-            connection.execute(_get_cleanup_statement(table_slice))
-        except ProgrammingError:
-            # table doesn't exist yet, so ignore the error
-            pass
+            connection.cursor().execute(_get_cleanup_statement(table_slice))
+        except ProgrammingError as e:
+            if "does not exist" in e.msg:  # type: ignore
+                # table doesn't exist yet, so ignore the error
+                return
+            else:
+                raise
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

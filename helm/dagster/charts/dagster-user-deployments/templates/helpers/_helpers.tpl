@@ -135,5 +135,15 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if and (.env) (kindIs "slice" .env) }}
     env: {{- .env | toYaml | nindent 6 }}
     {{- end }}
+    {{- if or .sidecarContainers .initContainers }}
+    run_k8s_config:
+      pod_spec_config:
+        {{- if .sidecarContainers }}
+        containers: {{- toYaml .sidecarContainers | nindent 10 }}
+        {{- end }}
+        {{- if .initContainers }}
+        init_containers: {{- toYaml .initContainers | nindent 10 }}
+        {{- end }}
+    {{- end }}
   {{- end }}
 {{- end -}}

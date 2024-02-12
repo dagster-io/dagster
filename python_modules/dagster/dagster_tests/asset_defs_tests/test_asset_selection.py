@@ -19,11 +19,31 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AndAssetSelection, OrAssetSelection
+from dagster._core.definitions.asset_selection import (
+    AllAssetCheckSelection,
+    AllSelection,
+    AndAssetSelection,
+    AssetCheckKeysSelection,
+    AssetChecksForAssetKeysSelection,
+    DownstreamAssetSelection,
+    GroupsAssetSelection,
+    KeyPrefixesAssetSelection,
+    KeysAssetSelection,
+    OrAssetSelection,
+    ParentSourcesAssetSelection,
+    RequiredNeighborsAssetSelection,
+    RootsAssetSelection,
+    SinksAssetSelection,
+    SubtractAssetSelection,
+    UpstreamAssetSelection,
+)
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
+from pydantic import ValidationError
 from typing_extensions import TypeAlias
 
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
@@ -113,6 +133,9 @@ def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
 def test_asset_selection_all(all_assets: _AssetList):
     sel = AssetSelection.all()
     assert sel.resolve(all_assets) == _asset_keys_of(all_assets) - {earth.key}
+
+    sel_include_sources = AssetSelection.all(include_sources=True)
+    assert sel_include_sources.resolve(all_assets) == _asset_keys_of(all_assets)
 
 
 def test_asset_selection_and(all_assets: _AssetList):
@@ -386,17 +409,110 @@ def test_multi_operand_selection():
     bar = AssetSelection.keys("bar")
     baz = AssetSelection.keys("baz")
 
-    assert foo & bar & baz == AndAssetSelection([foo, bar, baz])
-    assert (foo & bar) & baz == AndAssetSelection([foo, bar, baz])
-    assert foo & (bar & baz) == AndAssetSelection([foo, bar, baz])
-    assert foo | bar | baz == OrAssetSelection([foo, bar, baz])
-    assert (foo | bar) | baz == OrAssetSelection([foo, bar, baz])
-    assert foo | (bar | baz) == OrAssetSelection([foo, bar, baz])
+    assert foo & bar & baz == AndAssetSelection(operands=[foo, bar, baz])
+    assert (foo & bar) & baz == AndAssetSelection(operands=[foo, bar, baz])
+    assert foo & (bar & baz) == AndAssetSelection(operands=[foo, bar, baz])
+    assert foo | bar | baz == OrAssetSelection(operands=[foo, bar, baz])
+    assert (foo | bar) | baz == OrAssetSelection(operands=[foo, bar, baz])
+    assert foo | (bar | baz) == OrAssetSelection(operands=[foo, bar, baz])
 
-    assert (foo & bar) | baz == OrAssetSelection([AndAssetSelection([foo, bar]), baz])
-    assert foo & (bar | baz) == AndAssetSelection([foo, OrAssetSelection([bar, baz])])
-    assert (foo | bar) & baz == AndAssetSelection([OrAssetSelection([foo, bar]), baz])
-    assert foo | (bar & baz) == OrAssetSelection([foo, AndAssetSelection([bar, baz])])
+    assert (foo & bar) | baz == OrAssetSelection(
+        operands=[AndAssetSelection(operands=[foo, bar]), baz]
+    )
+    assert foo & (bar | baz) == AndAssetSelection(
+        operands=[foo, OrAssetSelection(operands=[bar, baz])]
+    )
+    assert (foo | bar) & baz == AndAssetSelection(
+        operands=[OrAssetSelection(operands=[foo, bar]), baz]
+    )
+    assert foo | (bar & baz) == OrAssetSelection(
+        operands=[foo, AndAssetSelection(operands=[bar, baz])]
+    )
+
+
+def test_asset_selection_type_checking():
+    valid_asset_selection = AssetSelection.keys("foo")
+    valid_asset_selection_sequence = [valid_asset_selection]
+    valid_asset_key = AssetKey("bar")
+    valid_asset_key_sequence = [valid_asset_key]
+    valid_string_sequence = ["string"]
+    valid_string_sequence_sequence = [valid_string_sequence]
+    valid_asset_check_key = AssetCheckKey(asset_key=valid_asset_key, name="test_name")
+    valid_asset_check_key_sequence = [valid_asset_check_key]
+
+    invalid_argument = "invalid_argument"
+
+    with pytest.raises(ValidationError):
+        AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)
+    test = AssetChecksForAssetKeysSelection(selected_asset_keys=valid_asset_key_sequence)
+    assert isinstance(test, AssetChecksForAssetKeysSelection)
+
+    with pytest.raises(ValidationError):
+        AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)
+    test = AssetCheckKeysSelection(selected_asset_check_keys=valid_asset_check_key_sequence)
+    assert isinstance(test, AssetCheckKeysSelection)
+
+    with pytest.raises(ValidationError):
+        AndAssetSelection(operands=invalid_argument)
+    test = AndAssetSelection(operands=valid_asset_selection_sequence)
+    assert isinstance(test, AndAssetSelection)
+
+    with pytest.raises(ValidationError):
+        OrAssetSelection(operands=invalid_argument)
+    test = OrAssetSelection(operands=valid_asset_selection_sequence)
+    assert isinstance(test, OrAssetSelection)
+
+    with pytest.raises(ValidationError):
+        SubtractAssetSelection(left=invalid_argument, right=invalid_argument)
+    test = SubtractAssetSelection(left=valid_asset_selection, right=valid_asset_selection)
+    assert isinstance(test, SubtractAssetSelection)
+
+    with pytest.raises(ValidationError):
+        SinksAssetSelection(child=invalid_argument)
+    test = SinksAssetSelection(child=valid_asset_selection)
+    assert isinstance(test, SinksAssetSelection)
+
+    with pytest.raises(ValidationError):
+        RequiredNeighborsAssetSelection(child=invalid_argument)
+    test = RequiredNeighborsAssetSelection(child=valid_asset_selection)
+    assert isinstance(test, RequiredNeighborsAssetSelection)
+
+    with pytest.raises(ValidationError):
+        RootsAssetSelection(child=invalid_argument)
+    test = RootsAssetSelection(child=valid_asset_selection)
+    assert isinstance(test, RootsAssetSelection)
+
+    with pytest.raises(ValidationError):
+        DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)
+    test = DownstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
+    assert isinstance(test, DownstreamAssetSelection)
+
+    with pytest.raises(ValidationError):
+        GroupsAssetSelection(selected_groups=invalid_argument, include_sources=False)
+    test = GroupsAssetSelection(selected_groups=valid_string_sequence, include_sources=False)
+    assert isinstance(test, GroupsAssetSelection)
+
+    with pytest.raises(ValidationError):
+        KeysAssetSelection(selected_keys=invalid_argument)
+    test = KeysAssetSelection(selected_keys=valid_asset_key_sequence)
+    assert isinstance(test, KeysAssetSelection)
+
+    with pytest.raises(ValidationError):
+        KeyPrefixesAssetSelection(selected_key_prefixes=invalid_argument, include_sources=False)
+    test = KeyPrefixesAssetSelection(
+        selected_key_prefixes=valid_string_sequence_sequence, include_sources=False
+    )
+    assert isinstance(test, KeyPrefixesAssetSelection)
+
+    with pytest.raises(ValidationError):
+        UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)
+    test = UpstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
+    assert isinstance(test, UpstreamAssetSelection)
+
+    with pytest.raises(ValidationError):
+        ParentSourcesAssetSelection(child=invalid_argument)
+    test = ParentSourcesAssetSelection(child=valid_asset_selection)
+    assert isinstance(test, ParentSourcesAssetSelection)
 
 
 def test_all_asset_selection_subclasses_serializable():
@@ -416,7 +532,7 @@ def test_all_asset_selection_subclasses_serializable():
 
 
 def test_to_serializable_asset_selection():
-    class UnserializableAssetSelection(AssetSelection):
+    class UnserializableAssetSelection(AssetSelection, frozen=True):
         def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
@@ -519,6 +635,10 @@ def test_to_string_basic():
     assert str(AssetSelection.keys(AssetKey(["foo", "bar"]), AssetKey("baz"))) == "foo/bar or baz"
 
     assert str(AssetSelection.all()) == "all materializable assets"
+    assert (
+        str(AssetSelection.all(include_sources=True))
+        == "all materializable assets and source assets"
+    )
     assert str(AssetSelection.all_asset_checks()) == "all asset checks"
 
     assert str(AssetSelection.groups("marketing")) == "group:marketing"
@@ -532,6 +652,58 @@ def test_to_string_basic():
     )
 
 
+def test_to_string_binary_operators():
+    foo_bar = AssetSelection.keys(AssetKey(["foo", "bar"]))
+    baz = AssetSelection.keys("baz")
+    bork = AssetSelection.keys("bork")
+    assert str(foo_bar | baz) == "foo/bar or baz"
+    assert str(foo_bar & baz) == "foo/bar and baz"
+    assert str(foo_bar - baz) == "foo/bar - baz"
+
+    assert str(foo_bar | baz | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar & baz & bork) == "foo/bar and baz and bork"
+
+    assert str((foo_bar | baz) | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar | (baz | bork)) == "foo/bar or baz or bork"
+    assert str((foo_bar & baz) & bork) == "foo/bar and baz and bork"
+    assert str(foo_bar & (baz & bork)) == "foo/bar and baz and bork"
+
+    assert str(foo_bar | (baz & bork)) == "foo/bar or (baz and bork)"
+    assert str(foo_bar & (baz | bork)) == "foo/bar and (baz or bork)"
+
+    assert str(foo_bar - baz - bork) == "(foo/bar - baz) - bork"
+    assert str((foo_bar - baz) - bork) == "(foo/bar - baz) - bork"
+    assert str(foo_bar - (baz - bork)) == "foo/bar - (baz - bork)"
+
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") & AssetSelection.keys("bork"))
+        == "(foo/bar or baz) and bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") & AssetSelection.keys("foo/bar", "baz"))
+        == "bork and (foo/bar or baz)"
+    )
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") | AssetSelection.keys("bork"))
+        == "(foo/bar or baz) or bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") | AssetSelection.keys("foo/bar", "baz"))
+        == "bork or (foo/bar or baz)"
+    )
+
+    assert (
+        str(AssetSelection.groups("foo", "bar") & AssetSelection.groups("baz", "bork"))
+        == "group:(foo or bar) and group:(baz or bork)"
+    )
+
+
 def test_empty_namedtuple_truthy():
     # namedtuples with no fields are still truthy
-    assert bool(AssetSelection.all())
+    assert bool(AllAssetCheckSelection.all())
+
+
+def test_deserialize_old_all_asset_selection():
+    old_serialized_value = '{"__class__": "AllSelection"}'
+    new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
+    assert not new_unserialized_value.include_sources

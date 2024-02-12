@@ -1,17 +1,16 @@
 import {IconName} from '@dagster-io/ui-components';
-import {render, act, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';
-import React from 'react';
 
 import {
-  calculateTimeRanges,
-  useTimeRangeFilter,
+  ActiveFilterState,
   CustomTimeRangeFilterDialog,
   TimeRangeState,
-  ActiveFilterState,
+  calculateTimeRanges,
+  useTimeRangeFilter,
 } from '../useTimeRangeFilter';
 
 let mockReactDates = jest.fn((_props) => <div />);
@@ -26,7 +25,7 @@ jest.mock('react-dates', () => {
 const mockFilterProps = {
   name: 'Test Filter',
   icon: 'date' as IconName,
-  initialState: [null, null] as TimeRangeState,
+  state: [null, null] as TimeRangeState,
 };
 
 describe('useTimeRangeFilter', () => {
@@ -36,7 +35,7 @@ describe('useTimeRangeFilter', () => {
 
     expect(filter.name).toBe(mockFilterProps.name);
     expect(filter.icon).toBe(mockFilterProps.icon);
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should reset filter state', () => {
@@ -48,14 +47,14 @@ describe('useTimeRangeFilter', () => {
     });
 
     filter = result.current;
-    expect(filter.state).not.toEqual(mockFilterProps.initialState);
+    expect(filter.state).not.toEqual(mockFilterProps.state);
 
     act(() => {
       filter.setState([null, null]);
     });
     filter = result.current;
 
-    expect(filter.state).toEqual(mockFilterProps.initialState);
+    expect(filter.state).toEqual(mockFilterProps.state);
   });
 
   it('should handle pre-defined time ranges', () => {

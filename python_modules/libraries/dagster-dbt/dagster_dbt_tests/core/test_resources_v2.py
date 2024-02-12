@@ -1,4 +1,3 @@
-import atexit
 import json
 import os
 import shutil
@@ -11,11 +10,13 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     FloatMetadataValue,
+    IntMetadataValue,
     TextMetadataValue,
     job,
     materialize,
     op,
 )
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
@@ -113,27 +114,24 @@ def test_dbt_cli_failure() -> None:
         dbt.cli(["parse"]).wait()
 
 
-def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
+def test_dbt_cli_subprocess_cleanup(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"])
 
     assert dbt_cli_invocation_1.process.returncode is None
 
-    atexit._run_exitfuncs()  # noqa: SLF001
+    with pytest.raises(DagsterExecutionInterruptedError):
+        mock_stdout = mocker.patch.object(dbt_cli_invocation_1.process, "stdout")
+        mock_stdout.__enter__.side_effect = DagsterExecutionInterruptedError()
+        mock_stdout.closed = False
 
-    assert "Terminating the execution of dbt command." in caplog.text
-    assert not dbt_cli_invocation_1.is_successful()
+        dbt_cli_invocation_1.wait()
+
+    assert "Forwarding interrupt signal to dbt command" in caplog.text
     assert dbt_cli_invocation_1.process.returncode < 0
-
-    caplog.clear()
-
-    dbt_cli_invocation_2 = dbt.cli(["run"]).wait()
-
-    atexit._run_exitfuncs()  # noqa: SLF001
-
-    assert "Terminating the execution of dbt command." not in caplog.text
-    assert dbt_cli_invocation_2.is_successful()
-    assert dbt_cli_invocation_2.process.returncode == 0
 
 
 def test_dbt_cli_get_artifact() -> None:
@@ -310,6 +308,24 @@ def test_dbt_cli_debug_execution() -> None:
     assert result.success
 
 
+def test_dbt_cli_adapter_metadata() -> None:
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        # For `dbt-duckdb`, the `rows_affected` metadata is only emitted for seed files.
+        for event in dbt.cli(["seed"], context=context).stream():
+            assert event.metadata.get("rows_affected")
+
+            yield event
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
+
+
 def test_dbt_cli_subsetted_execution() -> None:
     dbt_select = " ".join(
         [
@@ -426,6 +442,7 @@ def test_dbt_cli_op_execution() -> None:
         {},
         {
             "node_info": {
+                "materialized": "table",
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "failure",
@@ -435,6 +452,7 @@ def test_dbt_cli_op_execution() -> None:
         },
         {
             "node_info": {
+                "materialized": "table",
                 "unique_id": "a.b.c",
                 "resource_type": "macro",
                 "node_status": "success",
@@ -444,6 +462,7 @@ def test_dbt_cli_op_execution() -> None:
         },
         {
             "node_info": {
+                "materialized": "table",
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "failure",
@@ -452,6 +471,7 @@ def test_dbt_cli_op_execution() -> None:
         },
         {
             "node_info": {
+                "materialized": "test",
                 "unique_id": "a.b.c",
                 "resource_type": "test",
                 "node_status": "success",
@@ -471,6 +491,7 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
     asset_events = DbtCliEventMessage(
         raw_event={
             "info": {
+                "name": "NodeFinished",
                 "level": "info",
                 "invocation_id": "1-2-3",
             },
@@ -484,11 +505,13 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
 def test_to_default_asset_output_events() -> None:
     raw_event = {
         "info": {
+            "name": "NodeFinished",
             "level": "info",
             "invocation_id": "1-2-3",
         },
         "data": {
             "node_info": {
+                "materialized": "table",
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_name": "node_name",
@@ -496,6 +519,11 @@ def test_to_default_asset_output_events() -> None:
                 "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:01:00Z",
                 "meta": {},
+            },
+            "run_result": {
+                "adapter_response": {
+                    "rows_affected": 100,
+                }
             },
         },
     }
@@ -521,6 +549,7 @@ def test_to_default_asset_output_events() -> None:
         "unique_id": TextMetadataValue("a.b.c"),
         "invocation_id": TextMetadataValue("1-2-3"),
         "Execution Duration": FloatMetadataValue(60.0),
+        "rows_affected": IntMetadataValue(100),
     }
 
 
@@ -551,11 +580,13 @@ def test_dbt_tests_to_events(mocker: MockerFixture, is_asset_check: bool) -> Non
     }
     raw_event = {
         "info": {
+            "name": "NodeFinished",
             "level": "info",
             "invocation_id": "1-2-3",
         },
         "data": {
             "node_info": {
+                "materialized": "test",
                 "unique_id": "test.a",
                 "resource_type": "test",
                 "node_name": "node_name.test.a",

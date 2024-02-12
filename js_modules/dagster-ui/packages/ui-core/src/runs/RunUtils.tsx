@@ -1,17 +1,7 @@
 import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
-import * as React from 'react';
-
-import {Mono} from '../../../ui-components/src';
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {Timestamp} from '../app/time/Timestamp';
-import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
-import {AssetKey} from '../assets/types';
-import {ExecutionParams, RunStatus} from '../graphql/types';
+import {createContext, memo, useEffect} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
@@ -19,6 +9,15 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
+import {Mono} from '../../../ui-components/src';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {Timestamp} from '../app/time/Timestamp';
+import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
+import {AssetKey} from '../assets/types';
+import {ExecutionParams, RunStatus} from '../graphql/types';
 
 export function titleForRun(run: {id: string}) {
   return run.id.split('-').shift();
@@ -45,12 +44,12 @@ export function linkToRunEvent(
   })}`;
 }
 
-export const RunsQueryRefetchContext = React.createContext<{
+export const RunsQueryRefetchContext = createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
 export function useDidLaunchEvent(cb: () => void, delay = 1500) {
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = () => {
       setTimeout(cb, delay);
     };
@@ -290,7 +289,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
 }
 
-export const RunTime = React.memo(({run}: RunTimeProps) => {
+export const RunTime = memo(({run}: RunTimeProps) => {
   const {startTime, updateTime} = run;
 
   return (
@@ -304,7 +303,7 @@ export const RunTime = React.memo(({run}: RunTimeProps) => {
   );
 });
 
-export const RunStateSummary = React.memo(({run}: RunTimeProps) => {
+export const RunStateSummary = memo(({run}: RunTimeProps) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
   const failedToStart =

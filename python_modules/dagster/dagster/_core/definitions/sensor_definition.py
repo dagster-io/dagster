@@ -440,10 +440,13 @@ RawSensorEvaluationFunctionReturn = Union[
     RunRequest,
     DagsterRunReaction,
     SensorResult,
+    None,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
-SensorEvaluationFunction: TypeAlias = Callable[..., Sequence[Union[SkipReason, RunRequest]]]
+SensorEvaluationFunction: TypeAlias = Callable[
+    ..., Sequence[Union[None, SensorResult, SkipReason, RunRequest]]
+]
 
 
 def get_context_param_name(fn: Callable) -> Optional[str]:

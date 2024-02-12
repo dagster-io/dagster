@@ -1,10 +1,9 @@
 import {ServerError} from '@apollo/client';
 import {ErrorResponse, onError} from '@apollo/client/link/error';
 import {Observable} from '@apollo/client/utilities';
-import {FontFamily, Toaster, colorBackgroundRed} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from './HTTPErrorCodes';
@@ -78,7 +77,7 @@ interface AppStackTraceLinkProps {
   operationName?: string;
 }
 
-const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
+export const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
   const title = 'Error';
   const stackTrace = error?.extensions?.errorInfo?.stack;
   const cause = error?.extensions?.errorInfo?.cause;
@@ -133,14 +132,14 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
       <div
         className="errorInfo"
         style={{
-          backgroundColor: colorBackgroundRed(),
-          border: '1px solid #d17257',
+          backgroundColor: Colors.backgroundRed(),
+          border: `1px solid ${Colors.accentRed()}`,
           borderRadius: 3,
           maxWidth: '90vw',
           maxHeight: '80vh',
           padding: '1em 2em',
           overflow: 'auto',
-          color: 'rgb(41, 50, 56)',
+          color: Colors.textDefault(),
           fontFamily: FontFamily.monospace,
           fontSize: '1em',
           whiteSpace: 'pre',

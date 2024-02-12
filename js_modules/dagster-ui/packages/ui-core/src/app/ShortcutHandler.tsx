@@ -1,9 +1,4 @@
-import {
-  colorBorderHover,
-  colorShadowDefault,
-  colorTooltipBackground,
-  colorTooltipText,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
@@ -210,9 +205,9 @@ const ShortcutAnnotation = styled.div`
   padding: 2px;
   z-index: 20;
   transform: translate(-90%, -10px);
-  color: ${colorTooltipText()};
-  background: ${colorTooltipBackground()};
-  border: 1px solid ${colorBorderHover()};
+  color: ${Colors.tooltipText()};
+  background: ${Colors.tooltipBackground()};
+  border: 1px solid ${Colors.borderHover()};
   border-radius: 3px;
-  box-shadow: 0 1px 3px ${colorShadowDefault()};
+  box-shadow: 0 1px 3px ${Colors.shadowDefault()};
 `;

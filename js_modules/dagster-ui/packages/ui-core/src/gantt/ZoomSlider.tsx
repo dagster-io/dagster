@@ -1,4 +1,4 @@
-import {SliderStyles, colorAccentGray} from '@dagster-io/ui-components';
+import {Colors, SliderStyles} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -10,7 +10,7 @@ import styled from 'styled-components';
 export const ZoomSlider = React.memo((props: {value: number; onChange: (v: number) => void}) => {
   return (
     <ZoomSliderContainer
-      $fillColor={colorAccentGray()}
+      $fillColor={Colors.accentGray()}
       className="bp4-slider bp4-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
         const rect = e.currentTarget.closest('.bp4-slider')!.getBoundingClientRect();

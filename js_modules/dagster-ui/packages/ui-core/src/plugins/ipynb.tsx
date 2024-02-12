@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import {IPluginSidebarProps} from '../plugins';
 import {NotebookButton} from '../ui/NotebookButton';
 

@@ -51,6 +51,7 @@
     "start": "next dev",
     "build": "next build",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "lint:ci": "eslint src/ --ext=.tsx,.ts,.js -c .eslintrc.js",
     "test": "jest",
     "ts": "tsc -p .",
     "analyze": "webpack-bundle-analyzer '.next/webpack-stats.json'"
