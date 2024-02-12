@@ -642,8 +642,14 @@
             ]
           },
           {
-            "title": "Managing multiple projects & teams",
-            "path": "/dagster-cloud/managing-deployments/managing-multiple-projects-and-teams"
+            "title":  "Best practices",
+            "path": "/dagster-cloud/best-practices",
+            "children": [
+              {
+                "title": "Managing multiple projects & teams",
+                "path": "/dagster-cloud/best-practices/managing-multiple-projects-and-teams"
+              }
+            ]
           },
           {
             "title": "Insights",
