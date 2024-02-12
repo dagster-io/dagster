@@ -1,3 +1,5 @@
+import os
+
 from bar import foo_op  # requires working_directory
 from dagster import DefaultSensorStatus, RunRequest, job, repository, sensor
 
@@ -25,3 +27,7 @@ def example_repo():
 @repository
 def other_example_repo():
     return [other_foo_job]
+
+
+if os.getenv("CHECK_DAGSTER_DEV") and not os.getenv("DAGSTER_IS_DEV_CLI"):
+    raise Exception("DAGSTER_DEV env var not set")
