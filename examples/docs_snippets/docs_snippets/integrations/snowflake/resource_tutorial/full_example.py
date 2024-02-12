@@ -20,13 +20,13 @@ def iris_dataset(snowflake: SnowflakeResource) -> None:
     )
 
     with snowflake.get_connection() as conn:
-        conn.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
+        conn.cursor.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
 
 
 @asset(deps=[iris_dataset])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
     with snowflake.get_connection() as conn:
-        conn.execute(
+        conn.cursor.execute(
             "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
             " species = 'Iris-setosa'"
         )

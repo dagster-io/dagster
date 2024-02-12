@@ -471,7 +471,7 @@ The Snowflake I/O manager also supports storing and loading PySpark DataFrames. 
 pip install dagster-snowflake-pyspark
 ```
 
-Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
+Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](/integrations/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
 
 ```python file=/integrations/snowflake/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
@@ -718,6 +718,6 @@ defs = Definitions(
 )
 ```
 
-In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager method of the resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection). We use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
+In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager method of the resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection). We use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/snowflake/using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
 
 For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource).

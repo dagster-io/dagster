@@ -11,7 +11,7 @@ from dagster import asset
 @asset(deps=[iris_dataset])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
     with snowflake.get_connection() as conn:
-        conn.execute(
+        conn.cursor.execute(
             "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
             " species = 'Iris-setosa'"
         )
