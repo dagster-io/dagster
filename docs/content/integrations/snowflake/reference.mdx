@@ -400,12 +400,13 @@ Due to a longstanding [issue](https://github.com/snowflakedb/snowflake-connector
 When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager will check if timestamp data has a timezone attached, and if not, **it will assign the UTC timezone**. In Snowflake, you will see the timestamp data stored as the TIMESTAMP_NTZ(9) type, as this is the type assigned by the Snowflake Pandas connector.
 
 <Note>
-  Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager
-  converted all timestamp data to strings before loading the data in Snowflake,
-  and did the opposite conversion when fetching a DataFrame from Snowflake. If
-  you have used a version of `dagster-snowflake` prior to version `0.19.0`
-  please see the <a href="/migration#extension-libraries">Migration Guide</a>{" "}
-  for information about migrating you database tables.
+  Prior to <code>dagster-snowflake</code> version <code>0.19.0</code> the
+  Snowflake I/O manager converted all timestamp data to strings before loading
+  the data in Snowflake, and did the opposite conversion when fetching a
+  DataFrame from Snowflake. If you have used a version of{" "}
+  <code>dagster-snowflake</code> prior to version <code>0.19.0</code>
+  see the <a href="/migration#extension-libraries">Migration Guide</a> for information
+  about migrating database tables.
 </Note>
 
 ---
