@@ -256,7 +256,6 @@ class RepositoryDefinition:
     # - External `AssetsDefinition` have been generated for referenced asset keys without a
     #   corresponding user-provided definition
 
-    @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         """Mapping[AssetKey, AssetsDefinition]: The assets definitions defined in the repository."""

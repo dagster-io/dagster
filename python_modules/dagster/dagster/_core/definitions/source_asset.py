@@ -50,6 +50,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
 )
+from dagster._utils.merger import merge_dicts
 
 from .utils import validate_definition_tags
 
@@ -58,7 +59,6 @@ if TYPE_CHECKING:
         DecoratedOpFunction,
     )
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import disable_dagster_warnings
 
 # Going with this catch-all for the time-being to permit pythonic resources
@@ -314,7 +314,7 @@ class SourceAsset(ResourceAddable):
     @property
     def is_observable(self) -> bool:
         """bool: Whether the asset is observable."""
-        return self.node_def is not None
+        return self.observe_fn is not None
 
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
@@ -370,12 +370,12 @@ class SourceAsset(ResourceAddable):
             for key, resource_def in merged_resource_defs.items()
             if key in relevant_keys
         }
-
         io_manager_key = (
             self.get_io_manager_key()
             if self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY
             else None
         )
+
         with disable_dagster_warnings():
             return SourceAsset(
                 key=self.key,
