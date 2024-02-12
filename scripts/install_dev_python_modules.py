@@ -106,14 +106,18 @@ def main(
             "-e python_modules/libraries/dagster-snowflake-pandas",
         ]
 
-    if sys.version_info > (3, 6) and sys.version_info < (3, 10):
-        install_targets += []
-
     if include_prebuilt_grpcio_wheel:
         install_targets += [
             "--find-links",
             "https://github.com/dagster-io/build-grpcio/wiki/Wheels",
         ]
+
+    # ensure that newer versions of pip still add each dagster package's base
+    # folder to sys.path (https://setuptools.pypa.io/en/latest/userguide/development_mode.html#legacy-behavior)
+    install_targets += [
+        "--config-settings",
+        "editable_mode=compat",
+    ]
 
     # NOTE: `dagster-ge` is out of date and does not support recent versions of great expectations.
     # Because of this, it has second-order dependencies on old versions of popular libraries like
