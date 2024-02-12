@@ -11,7 +11,7 @@ from dagster._serdes.serdes import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetCondition
+    from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
     from dagster._core.definitions.auto_materialize_rule import (
         AutoMaterializeRule,
         AutoMaterializeRuleSnapshot,
@@ -281,7 +281,11 @@ class AutoMaterializePolicy(
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .asset_condition import AndAssetCondition, NotAssetCondition, OrAssetCondition
+        from .asset_condition.asset_condition import (
+            AndAssetCondition,
+            NotAssetCondition,
+            OrAssetCondition,
+        )
         from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
         if self.asset_condition is not None:
