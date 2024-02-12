@@ -1,3 +1,4 @@
+# ruff: noqa
 import base64  # noqa: I001
 from io import BytesIO
 
