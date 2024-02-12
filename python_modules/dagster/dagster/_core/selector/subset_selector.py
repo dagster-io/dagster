@@ -243,10 +243,10 @@ def fetch_sinks(
     return sinks
 
 
-def fetch_sources(
+def fetch_roots(
     graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """A source is a node that has no upstream dependencies within the provided selection.
+    """A root is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     dp: Dict[T_Hashable, bool] = {}

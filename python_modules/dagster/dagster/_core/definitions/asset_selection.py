@@ -15,8 +15,8 @@ from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
+    fetch_roots,
     fetch_sinks,
-    fetch_sources,
     parse_clause,
 )
 from dagster._core.storage.tags import TAG_NO_VALUE
@@ -748,7 +748,7 @@ class RootsAssetSelection(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-        return fetch_sources(asset_graph.asset_dep_graph, selection)
+        return fetch_roots(asset_graph.asset_dep_graph, selection)
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
