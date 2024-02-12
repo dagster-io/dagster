@@ -39,7 +39,7 @@ from dagster import (
     asset,
     materialize,
 )
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )

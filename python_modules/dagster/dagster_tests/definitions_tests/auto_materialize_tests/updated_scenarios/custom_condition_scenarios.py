@@ -1,5 +1,5 @@
 from dagster import AutoMaterializeRule
-from dagster._core.definitions.asset_condition import RuleCondition
+from dagster._core.definitions.asset_condition.asset_condition import RuleCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from ..asset_daemon_scenario import (
