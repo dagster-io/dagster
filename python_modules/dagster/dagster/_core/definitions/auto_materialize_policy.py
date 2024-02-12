@@ -255,23 +255,18 @@ class AutoMaterializePolicy(
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .asset_condition import (
-            AndAssetCondition,
-            NotAssetCondition,
-            OrAssetCondition,
-            RuleCondition,
-        )
+        from .asset_condition import AndAssetCondition, NotAssetCondition, OrAssetCondition
         from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
         materialize_condition = OrAssetCondition(
             children=[
-                RuleCondition(rule)
+                rule.to_asset_condition()
                 for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
             ]
         )
         skip_condition = OrAssetCondition(
             children=[
-                RuleCondition(rule)
+                rule.to_asset_condition()
                 for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
             ]
         )
@@ -280,9 +275,9 @@ class AutoMaterializePolicy(
             NotAssetCondition([skip_condition]),
         ]
         if self.max_materializations_per_minute:
-            discard_condition = RuleCondition(
-                DiscardOnMaxMaterializationsExceededRule(self.max_materializations_per_minute)
-            )
+            discard_condition = DiscardOnMaxMaterializationsExceededRule(
+                self.max_materializations_per_minute
+            ).to_asset_condition()
             children.append(NotAssetCondition([discard_condition]))
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d

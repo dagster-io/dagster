@@ -49,7 +49,7 @@ from .asset_condition_evaluation_context import AssetConditionEvaluationContext
 from .asset_graph import sort_key_for_asset_partition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetConditionResult
+    from dagster._core.definitions.asset_condition import AssetCondition, AssetConditionResult
 
 
 class AutoMaterializeRule(ABC):
@@ -75,6 +75,12 @@ class AutoMaterializeRule(ABC):
         complete the sentence: 'Indicates an asset should be (materialize/skipped) when ____'.
         """
         ...
+
+    def to_asset_condition(self) -> "AssetCondition":
+        """Converts this AutoMaterializeRule into an AssetCondition."""
+        from .asset_condition import RuleCondition
+
+        return RuleCondition(rule=self)
 
     @abstractmethod
     def evaluate_for_asset(
