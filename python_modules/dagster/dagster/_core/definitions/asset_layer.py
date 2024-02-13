@@ -894,23 +894,24 @@ def build_asset_selection_job(
                 f"{partitions_def}.",
             )
 
-    if len(included_assets) or len(included_checks_defs) > 0:
-        # Job materializes assets and/or executes checks
-        final_assets = included_assets
-        final_asset_checks = included_checks_defs
-        final_source_assets = [*source_assets, *excluded_assets]
-    else:
-        # Job only observes source assets
-        final_assets = []
-        final_asset_checks = []
-        final_source_assets = included_source_assets
+    included_observables = [asset for asset in included_source_assets if asset.is_observable]
+    final_assets = [*included_assets, *included_observables]
+    final_asset_checks = included_checks_defs
+    final_source_assets = [
+        *(
+            source_asset
+            for source_asset in source_assets
+            if source_asset not in included_observables
+        ),
+        *excluded_assets,
+    ]
 
     return build_assets_job(
         name=name,
-        assets=final_assets,
+        executable_assets=final_assets,
         asset_checks=final_asset_checks,
         config=config,
-        source_assets=final_source_assets,
+        loadable_assets=final_source_assets,
         resource_defs=resource_defs,
         executor_def=executor_def,
         partitions_def=partitions_def,

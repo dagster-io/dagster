@@ -68,51 +68,56 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[
-        Optional[PartitionsDefinition], List[AssetsDefinition]
-    ] = defaultdict(list)
-    for assets_def in assets:
-        assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+    executable_assets = [a for a in (*assets, *source_assets) if a.is_executable]
+    unexecutable_assets = [a for a in (*assets, *source_assets) if not a.is_executable]
 
-    # We need to create "empty" jobs for each partitions def that is used by an observable but no
-    # materializable asset. They are empty because we don't assign the source asset to the `assets`,
-    # but rather the `source_assets` argument of `build_assets_job`.
-    for observable in [sa for sa in source_assets if sa.is_observable]:
-        if observable.partitions_def not in assets_by_partitions_def:
-            assets_by_partitions_def[observable.partitions_def] = []
-    if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
+    executable_assets_by_partitions_def: Dict[
+        Optional[PartitionsDefinition], List[Union[AssetsDefinition, SourceAsset]]
+    ] = defaultdict(list)
+    for asset in executable_assets:
+        executable_assets_by_partitions_def[asset.partitions_def].append(asset)
+    # sort to ensure some stability in the ordering
+    all_partitions_defs = sorted(
+        [p for p in executable_assets_by_partitions_def.keys() if p], key=repr
+    )
+
+    if len(all_partitions_defs) == 0:
         return [
             build_assets_job(
                 name=ASSET_BASE_JOB_PREFIX,
-                assets=assets,
+                executable_assets=executable_assets,
+                loadable_assets=unexecutable_assets,
                 asset_checks=asset_checks,
-                source_assets=source_assets,
                 executor_def=executor_def,
                 resource_defs=resource_defs,
             )
         ]
     else:
-        unpartitioned_assets = assets_by_partitions_def.get(None, [])
-        partitioned_assets_by_partitions_def = {
-            k: v for k, v in assets_by_partitions_def.items() if k is not None
-        }
+        unpartitioned_executable_assets = executable_assets_by_partitions_def.get(None, [])
         jobs = []
 
-        # sort to ensure some stability in the ordering
-        for i, (partitions_def, assets_with_partitions) in enumerate(
-            sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
-        ):
+        for i, partitions_def in enumerate(all_partitions_defs):
+            # all base jobs contain all unpartitioned assets
+            executable_assets_for_job = [
+                *executable_assets_by_partitions_def[partitions_def],
+                *unpartitioned_executable_assets,
+            ]
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    assets=[*assets_with_partitions, *unpartitioned_assets],
-                    source_assets=[*source_assets, *assets],
+                    executable_assets=executable_assets_for_job,
+                    loadable_assets=[
+                        *(
+                            asset
+                            for asset in executable_assets
+                            if asset not in executable_assets_for_job
+                        ),
+                        *unexecutable_assets,
+                    ],
                     asset_checks=asset_checks,
                     resource_defs=resource_defs,
                     executor_def=executor_def,
-                    # Only explicitly set partitions_def for observable-only jobs since it can't be
-                    # auto-detected from the passed assets (which is an empty list).
-                    partitions_def=partitions_def if len(assets_with_partitions) == 0 else None,
+                    partitions_def=partitions_def,
                 )
             )
         return jobs
@@ -120,8 +125,8 @@ def get_base_asset_jobs(
 
 def build_assets_job(
     name: str,
-    assets: Sequence[AssetsDefinition],
-    source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
+    executable_assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    loadable_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
@@ -144,11 +149,11 @@ def build_assets_job(
 
     Args:
         name (str): The name of the job.
-        assets (List[AssetsDefinition]): A list of assets or
-            multi-assets - usually constructed using the :py:func:`@asset` or :py:func:`@multi_asset`
-            decorator.
-        source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
-            assets that are not materialized by this job, but that assets in this job depend on.
+        executable_assets (Sequence[Union[AssetsDefinition, SourceAsset]]): A sequence of AssetsDefinitions or SourceAssets
+            to be executed by the job. SourceAssets must be observable.
+        loadable_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
+            AssetsDefinitions or SourceAssets that are not exectued by this job, but that are
+            available to be loaded as inputs by executable assets.
         resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
@@ -174,9 +179,9 @@ def build_assets_job(
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     check.str_param(name, "name")
-    check.iterable_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
-    source_assets = check.opt_sequence_param(
-        source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
+    check.iterable_param(executable_assets, "assets", of_type=(AssetsDefinition, SourceAsset))
+    loadable_assets = check.opt_sequence_param(
+        loadable_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     asset_checks = check.opt_sequence_param(
         asset_checks, "asset_checks", of_type=AssetChecksDefinition
@@ -184,30 +189,30 @@ def build_assets_job(
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
-    # figure out what partitions (if any) exist for this job
-    partitions_def = partitions_def or build_job_partitions_from_assets(assets)
-
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-    # turn any AssetsDefinitions into SourceAssets
-    resolved_source_assets: List[SourceAsset] = []
-    for asset in source_assets or []:
+    assets = [asset for asset in executable_assets if isinstance(asset, AssetsDefinition)]
+    source_assets = [asset for asset in executable_assets if isinstance(asset, SourceAsset)]
+    for asset in loadable_assets or []:
         if isinstance(asset, AssetsDefinition):
-            resolved_source_assets += asset.to_source_assets()
+            source_assets += asset.to_source_assets()
         elif isinstance(asset, SourceAsset):
-            resolved_source_assets.append(asset)
+            source_assets.append(asset)
 
-    resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+    # figure out what partitions (if any) exist for this job
+    partitions_def = partitions_def or build_job_partitions_from_assets(assets)
+
+    resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
     deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
         assets, asset_checks, resolved_asset_deps
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
-        resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+        assets = _attempt_resolve_cycles(assets, source_assets)
+        resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
 
         deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
             assets, asset_checks, resolved_asset_deps
@@ -245,14 +250,14 @@ def build_assets_job(
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
         graph_def=graph,
         asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
-        source_assets=resolved_source_assets,
+        source_assets=source_assets,
         resolved_asset_deps=resolved_asset_deps,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
         observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(
-        assets, asset_checks, resolved_source_assets, wrapped_resource_defs
+        assets, asset_checks, source_assets, wrapped_resource_defs
     )
 
     if _asset_selection_data:
