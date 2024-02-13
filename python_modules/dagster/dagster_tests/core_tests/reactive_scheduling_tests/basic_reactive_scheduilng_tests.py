@@ -114,3 +114,42 @@ def test_reactive_request_builder_two_assets() -> None:
     assert up_plan.asset_partitions == asset_partition_set(
         asset_partition("up"), asset_partition("down")
     )
+
+
+def test_reactive_request_builder_three_assets() -> None:
+    # test recursion
+
+    class AlwaysDefer(SchedulingPolicy):
+        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+            return RequestReaction(execute=True)
+
+        def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+            return RequestReaction(execute=True)
+
+    @asset(scheduling_policy=AlwaysDefer())
+    def root() -> None:
+        ...
+
+    @asset(scheduling_policy=AlwaysDefer(), deps=[root])
+    def up() -> None:
+        ...
+
+    @asset(deps=[up], scheduling_policy=AlwaysDefer())
+    def down() -> None:
+        ...
+
+    defs = Definitions([root, up, down])
+    instance = DagsterInstance.ephemeral()
+    builder = create_test_builder(defs, instance)
+
+    assert build_plan(builder, "root").asset_partitions == asset_partition_set(
+        asset_partition("root"), asset_partition("up"), asset_partition("down")
+    )
+
+    assert build_plan(builder, "up").asset_partitions == asset_partition_set(
+        asset_partition("root"), asset_partition("up"), asset_partition("down")
+    )
+
+    assert build_plan(builder, "down").asset_partitions == asset_partition_set(
+        asset_partition("root"), asset_partition("up"), asset_partition("down")
+    )
