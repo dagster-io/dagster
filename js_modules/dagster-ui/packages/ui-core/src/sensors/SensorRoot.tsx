@@ -8,10 +8,15 @@ import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+  SensorRootQuery,
+  SensorRootQueryVariables,
+} from './types/SensorRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -62,8 +67,18 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
+  const selectionQueryResult = useQuery<
+    SensorAssetSelectionQuery,
+    SensorAssetSelectionQueryVariables
+  >(SENSOR_ASSET_SELECTIONS_QUERY, {
+    variables: {sensorSelector},
+    notifyOnNetworkStatusChange: true,
+  });
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(refreshState1, refreshState2);
+
   const {data, loading} = queryResult;
 
   const tabs = (
@@ -122,6 +137,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           sensor={sensorOrError}
           daemonHealth={assetDaemonStatus.healthy}
           refreshState={refreshState}
+          selectionQueryResult={selectionQueryResult}
         />
         <SensorPageAutomaterialize
           repoAddress={repoAddress}
@@ -142,6 +158,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensor={sensorOrError}
         daemonHealth={sensorDaemonStatus.healthy}
         refreshState={refreshState}
+        selectionQueryResult={selectionQueryResult}
       />
       <SensorInfo
         sensorDaemonStatus={sensorDaemonStatus}
@@ -196,4 +213,35 @@ const SENSOR_ROOT_QUERY = gql`
   ${SENSOR_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
+`;
+
+export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
+  query SensorAssetSelectionQuery($sensorSelector: SensorSelector!) {
+    sensorOrError(sensorSelector: $sensorSelector) {
+      ... on Sensor {
+        id
+        assetSelection {
+          ...SensorAssetSelectionFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment SensorAssetSelectionFragment on AssetSelection {
+    assetSelectionString
+    assets {
+      id
+      key {
+        path
+      }
+      definition {
+        id
+        autoMaterializePolicy {
+          policyType
+        }
+      }
+    }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -1,3 +1,4 @@
+import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
@@ -16,6 +17,10 @@ import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from './types/SensorRoot.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -53,11 +58,13 @@ export const SensorDetails = ({
   repoAddress,
   daemonHealth,
   refreshState,
+  selectionQueryResult,
 }: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
+  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
 }) => {
   const {
     name,
@@ -154,7 +161,12 @@ export const SensorDetails = ({
             <tr>
               <td>Target</td>
               <td>
-                <SensorTargetList targets={sensor.targets} repoAddress={repoAddress} />
+                <SensorTargetList
+                  targets={sensor.targets}
+                  repoAddress={repoAddress}
+                  selectionQueryResult={selectionQueryResult}
+                  sensorType={sensor.sensorType}
+                />
               </td>
             </tr>
           ) : null}
