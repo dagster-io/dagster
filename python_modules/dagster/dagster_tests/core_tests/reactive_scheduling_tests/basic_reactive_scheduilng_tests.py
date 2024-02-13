@@ -101,7 +101,13 @@ def test_reactive_request_builder() -> None:
     defs = Definitions([up, down])
     instance = DagsterInstance.ephemeral()
     builder = create_test_builder(defs, instance)
+
     plan = build_plan(builder, "down")
+    assert plan.asset_partitions == asset_partition_set(
+        asset_partition("up"), asset_partition("down")
+    )
+
+    plan = build_plan(builder, "up")
     assert plan.asset_partitions == asset_partition_set(
         asset_partition("up"), asset_partition("down")
     )
