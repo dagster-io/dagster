@@ -29,6 +29,16 @@ class AlwaysDefer(SchedulingPolicy):
         return RequestReaction(execute=True)
 
 
+class DeferToDownstream(SchedulingPolicy):
+    def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+        return RequestReaction(execute=True)
+
+
+class DeferToUpstream(SchedulingPolicy):
+    def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+        return RequestReaction(execute=True)
+
+
 def scheduling_policy_of_asset(
     assets_def: AssetsDefinition, asset_key: Optional[CoercibleToAssetKey] = None
 ) -> SchedulingPolicy:
@@ -168,10 +178,6 @@ def test_reactive_request_builder_three_assets_always_defer() -> None:
 
 def test_reactive_request_builder_three_assets_only_downstream_requests_accepted() -> None:
     # test recursion
-
-    class DeferToDownstream(SchedulingPolicy):
-        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
 
     @asset(scheduling_policy=DeferToDownstream())
     def root() -> None:
