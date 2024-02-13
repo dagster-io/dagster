@@ -8,6 +8,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
+from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.reactive_policy import (
     AssetPartition,
@@ -316,3 +317,12 @@ def test_basic_tick() -> None:
 
     sensor_def = defs.get_sensor_def("the_sensor")
     assert sensor_def
+
+    instance = DagsterInstance.ephemeral()
+    with build_sensor_context(instance=instance ,repository_def = defs.get_repository_def()) as context:
+
+        eval_data = sensor_def.evaluate_tick(context=context)
+
+        import code
+
+        code.interact(local=locals())
