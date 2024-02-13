@@ -18,7 +18,7 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-export const isTableSchemaEntry = (
+export const isCanonicalTableSchemaEntry = (
   m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
 ): m is TableSchemaMetadataEntry =>
   m.__typename === 'TableSchemaMetadataEntry' && m.label === 'columns';

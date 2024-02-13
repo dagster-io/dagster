@@ -176,7 +176,6 @@ export const AssetNodeDefinition = ({
             <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
-            t{' '}
           </Box>
           <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}

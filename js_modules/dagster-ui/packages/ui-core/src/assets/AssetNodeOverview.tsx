@@ -5,6 +5,7 @@ import {
   Body,
   Body2,
   Box,
+  Button,
   ButtonLink,
   Caption,
   Colors,
@@ -19,7 +20,7 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useContext, useMemo} from 'react';
+import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
@@ -40,24 +41,29 @@ import {
 } from './types/AssetNodeOverview.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../app/Util';
-import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
+import {Timestamp} from '../app/time/Timestamp';
+import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
+  sortAssetKeys,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
+import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {TableSchema, isTableSchemaEntry} from '../metadata/TableSchema';
+import {TableSchema, isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {titleForRun} from '../runs/RunUtils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -89,13 +95,15 @@ export const AssetNodeOverview = ({
   const visibleJobNames = assetNode.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName));
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
-  const {materialization, observation} = useLatestEvents(
+  const latestPartitionEvents = useLatestPartitionEvents(
     assetNode,
     assetNodeLoadTimestamp,
     liveData,
   );
 
-  const tableSchema = [...(materialization?.metadataEntries || [])].find(isTableSchemaEntry);
+  const tableSchema = [...(latestPartitionEvents.materialization?.metadataEntries || [])].find(
+    isCanonicalTableSchemaEntry,
+  );
 
   return (
     <Box
@@ -106,16 +114,11 @@ export const AssetNodeOverview = ({
         <LargeCollapsibleSection header="Status" icon="status">
           <Box flex={{direction: 'row'}}>
             <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-              <Subtitle2>Latest materialization</Subtitle2>
+              <Subtitle2>
+                Latest {assetNode?.isSource ? 'observation' : 'materialization'}
+              </Subtitle2>
               <Box flex={{gap: 8, alignItems: 'center'}}>
-                {
-                  buildAssetNodeStatusContent({
-                    assetKey: assetNode.assetKey,
-                    definition: assetNode,
-                    expanded: true,
-                    liveData,
-                  }).content
-                }
+                <SimpleAssetStatus liveData={liveData} assetNode={assetNode} />
                 {assetNode && assetNode.freshnessPolicy && (
                   <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
                 )}
@@ -133,14 +136,14 @@ export const AssetNodeOverview = ({
           {assetNode.description ? (
             <Description description={assetNode.description} maxHeight={260} />
           ) : (
-            <Body>No description provided</Body>
+            <Caption color={Colors.textLight()}>No description provided</Caption>
           )}
         </LargeCollapsibleSection>
         <LargeCollapsibleSection header="Columns" icon="view_column">
           {tableSchema ? (
             <TableSchema
               schema={tableSchema.schema}
-              schemaLoadTimestamp={materialization?.timestamp}
+              schemaLoadTimestamp={latestPartitionEvents.materialization?.timestamp}
             />
           ) : (
             <Caption color={Colors.textLight()}>No table schema</Caption>
@@ -152,17 +155,26 @@ export const AssetNodeOverview = ({
             showTimestamps
             showFilter
             hideTableSchema
-            observations={observation && materialization ? [observation] : []}
+            observations={
+              latestPartitionEvents.observation && latestPartitionEvents.materialization
+                ? [latestPartitionEvents.observation]
+                : []
+            }
             definitionMetadata={assetMetadata}
             definitionLoadTimestamp={assetNodeLoadTimestamp}
-            event={materialization || observation || null}
+            event={
+              latestPartitionEvents.materialization || latestPartitionEvents.observation || null
+            }
           />
         </LargeCollapsibleSection>
         <LargeCollapsibleSection
           header="Lineage"
           icon="account_tree"
           right={
-            <Link to={globalAssetGraphPathForAssetsAndDescendants([assetNode.assetKey])}>
+            <Link
+              to={globalAssetGraphPathForAssetsAndDescendants([assetNode.assetKey])}
+              onClick={(e) => e.stopPropagation()}
+            >
               <Box flex={{gap: 4, alignItems: 'center'}}>View in graph</Box>
             </Link>
           }
@@ -208,8 +220,6 @@ export const AssetNodeOverview = ({
             <AttributeAndValue label="Key">
               {displayNameForAssetKey(assetNode.assetKey)}
             </AttributeAndValue>
-
-            <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
 
             <AttributeAndValue label="Group">
               <Tag icon="asset_group">
@@ -291,6 +301,8 @@ export const AssetNodeOverview = ({
                 />
               </Tag>
             </AttributeAndValue>
+
+            <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
 
             <AttributeAndValue label="Resources">
               {[...assetNode.requiredResources]
@@ -444,10 +456,101 @@ const LargeCollapsibleSection = ({
   );
 };
 
-const AssetLinksWithStatus = ({assets}: {assets: AssetNodeForGraphQueryFragment[]}) => {
+/** We explicitly don't want to share partition-level information with stakeholders,
+ * so this status component exposes only basic "materializing, success, failed, missing"
+ * states.
+ */
+const SimpleAssetStatus = ({
+  liveData,
+  assetNode,
+}: {
+  liveData: LiveDataForNode | undefined;
+  assetNode: AssetNodeDefinitionFragment;
+}) => {
+  if (!liveData) {
+    return <NoValue />;
+  }
+
+  if ((liveData.inProgressRunIds || []).length > 0) {
+    return (
+      <Caption>
+        Materializing in{' '}
+        <AssetRunLink assetKey={assetNode.assetKey} runId={liveData.inProgressRunIds[0]!} />
+      </Caption>
+    );
+  }
+
+  if (liveData.runWhichFailedToMaterialize) {
+    return (
+      <Tag intent="danger">
+        <Box flex={{gap: 4, alignItems: 'center'}}>
+          <StatusCaseDot statusCase={StatusCase.FAILED_MATERIALIZATION} />
+          Failed in
+          <AssetRunLink
+            assetKey={assetNode.assetKey}
+            runId={liveData.runWhichFailedToMaterialize.id}
+          >
+            <Box style={{color: Colors.textRed()}}>
+              {titleForRun(liveData.runWhichFailedToMaterialize)}
+            </Box>
+          </AssetRunLink>
+        </Box>
+      </Tag>
+    );
+  }
+  if (liveData.lastMaterialization) {
+    return (
+      <Tag intent="success">
+        <Box flex={{gap: 4, alignItems: 'center'}}>
+          <StatusCaseDot statusCase={StatusCase.MATERIALIZED} />
+          <AssetRunLink
+            assetKey={assetNode.assetKey}
+            runId={liveData.lastMaterialization.runId}
+            event={{
+              timestamp: liveData.lastMaterialization.timestamp,
+              stepKey: liveData.stepKey,
+            }}
+          >
+            <Box style={{color: Colors.textGreen()}} flex={{gap: 4}}>
+              <Timestamp timestamp={{ms: Number(liveData.lastMaterialization.timestamp)}} />
+            </Box>
+          </AssetRunLink>
+        </Box>
+      </Tag>
+    );
+  }
+  if (liveData.lastObservation && assetNode.isSource) {
+    return (
+      <Tag intent="none">
+        <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
+      </Tag>
+    );
+  }
+
+  return (
+    <Caption color={Colors.textLighter()}>
+      {assetNode.isSource ? 'Never observed' : 'Never materialized'}
+    </Caption>
+  );
+};
+
+const AssetLinksWithStatus = ({
+  assets,
+  displayedByDefault = 20,
+}: {
+  assets: AssetNodeForGraphQueryFragment[];
+  displayedByDefault?: number;
+}) => {
+  const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
+
+  const displayed = React.useMemo(
+    () => assets.sort((a, b) => sortAssetKeys(a.assetKey, b.assetKey)).slice(0, displayedCount),
+    [assets, displayedCount],
+  );
+
   return (
     <Box flex={{direction: 'column', gap: 6}}>
-      {assets.map((asset) => (
+      {displayed.map((asset) => (
         <Link to={assetDetailsPathForKey(asset.assetKey)} key={tokenForAssetKey(asset.assetKey)}>
           <div
             style={{
@@ -462,6 +565,17 @@ const AssetLinksWithStatus = ({assets}: {assets: AssetNodeForGraphQueryFragment[
           </div>
         </Link>
       ))}
+      <Box>
+        {displayed.length < assets.length ? (
+          <Button small onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
+            Show {assets.length - displayed.length} more
+          </Button>
+        ) : displayed.length > displayedByDefault ? (
+          <Button small onClick={() => setDisplayedCount(displayedByDefault)}>
+            Show less
+          </Button>
+        ) : undefined}
+      </Box>
     </Box>
   );
 };
@@ -477,7 +591,7 @@ function useLocationForRepoAddress(repoAddress: RepoAddress) {
   );
 }
 
-function useLatestEvents(
+function useLatestPartitionEvents(
   assetNode: AssetNodeDefinitionFragment,
   assetNodeLoadTimestamp: number | undefined,
   liveData: LiveDataForNode | undefined,

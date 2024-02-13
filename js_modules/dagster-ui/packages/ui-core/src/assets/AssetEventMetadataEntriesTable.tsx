@@ -1,7 +1,7 @@
-import {Box, Caption, Colors, Icon, Mono, Tag, TextInput} from '@dagster-io/ui-components';
+import {Box, Button, Caption, Colors, Icon, Mono, Tag, TextInput} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -11,7 +11,7 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {MetadataEntry} from '../metadata/MetadataEntry';
-import {isTableSchemaEntry} from '../metadata/TableSchema';
+import {isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 import {titleForRun} from '../runs/RunUtils';
 
@@ -37,6 +37,7 @@ export const AssetEventMetadataEntriesTable = ({
   showHeader,
   showFilter,
   hideTableSchema,
+  displayedByDefault = 100,
 }: {
   event: TableEvent | null;
   observations?: TableEvent[] | null;
@@ -47,42 +48,49 @@ export const AssetEventMetadataEntriesTable = ({
   showHeader?: boolean;
   showFilter?: boolean;
   hideTableSchema?: boolean;
+  displayedByDefault?: number;
 }) => {
   const [filter, setFilter] = useState('');
-
-  const eventRows = event
-    ? event.metadataEntries.map((entry) => ({
-        icon: 'materialization' as const,
-        timestamp: event.timestamp,
-        runId: null,
-        entry,
-      }))
-    : [];
-
-  const observationRows = (observations || []).flatMap((o) =>
-    o.metadataEntries.map((entry) => ({
-      icon: 'observation' as const,
-      timestamp: o.timestamp,
-      runId: o.runId,
-      entry,
-    })),
-  );
-
-  const definitionRows = (definitionMetadata || []).map((entry) => ({
-    icon: 'asset' as const,
-    timestamp: definitionLoadTimestamp,
-    runId: null,
-    entry,
-  }));
+  const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
 
   // If there are multiple observation events that contain entries with the same label,
   // or if a metadata key is present on the definition and then emitted in an event,
   // only show the latest version (first one found)
-  const allRows = uniqBy(
-    [...observationRows, ...eventRows, ...definitionRows]
-      .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-      .filter((row) => !(hideTableSchema && isTableSchemaEntry(row.entry))),
-    (e) => e.entry.label,
+  const allRows = useMemo(() => {
+    const eventRows = event
+      ? event.metadataEntries.map((entry) => ({
+          icon: 'materialization' as const,
+          timestamp: event.timestamp,
+          runId: null,
+          entry,
+        }))
+      : [];
+
+    const observationRows = (observations || []).flatMap((o) =>
+      o.metadataEntries.map((entry) => ({
+        icon: 'observation' as const,
+        timestamp: o.timestamp,
+        runId: o.runId,
+        entry,
+      })),
+    );
+
+    const definitionRows = (definitionMetadata || []).map((entry) => ({
+      icon: 'asset' as const,
+      timestamp: definitionLoadTimestamp,
+      runId: null,
+      entry,
+    }));
+
+    return uniqBy([...observationRows, ...eventRows, ...definitionRows], (e) => e.entry.label);
+  }, [definitionLoadTimestamp, definitionMetadata, event, observations]);
+
+  const filteredRows = useMemo(
+    () =>
+      allRows
+        .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
+        .filter((row) => !(hideTableSchema && isCanonicalTableSchemaEntry(row.entry))),
+    [allRows, filter, hideTableSchema],
   );
 
   return (
@@ -111,14 +119,14 @@ export const AssetEventMetadataEntriesTable = ({
             </thead>
           )}
           <tbody>
-            {allRows.length === 0 && (
+            {filteredRows.length === 0 && (
               <tr>
                 <td colSpan={4}>
                   <Caption color={Colors.textLight()}>No metadata entries</Caption>
                 </td>
               </tr>
             )}
-            {allRows.map(({entry, timestamp, runId, icon}) => (
+            {filteredRows.slice(0, displayedCount).map(({entry, timestamp, runId, icon}) => (
               <tr key={`metadata-${timestamp}-${entry.label}`}>
                 <td>
                   <Mono>{entry.label}</Mono>
@@ -154,6 +162,19 @@ export const AssetEventMetadataEntriesTable = ({
             ))}
           </tbody>
         </StyledTableWithHeader>
+        {displayedCount < filteredRows.length ? (
+          <Box padding={{vertical: 8}}>
+            <Button small onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
+              Show {filteredRows.length - displayedCount} more
+            </Button>
+          </Box>
+        ) : displayedCount > displayedByDefault ? (
+          <Box padding={{vertical: 8}}>
+            <Button small onClick={() => setDisplayedCount(displayedByDefault)}>
+              Show less
+            </Button>
+          </Box>
+        ) : undefined}
       </AssetEventMetadataScrollContainer>
     </>
   );
@@ -187,7 +208,9 @@ const AssetEventMetadataScrollContainer = styled.div`
 `;
 
 export const StyledTableWithHeader = styled.table`
-  width: 100%;
+  /** -2 accounts for the left and right border, which are not taken into account
+  * and cause a tiny amount of horizontal scrolling at all times. */
+  width: calc(100% - 2px);
   border-spacing: 0;
   border-collapse: collapse;
 
