@@ -83,16 +83,16 @@ class ReactiveRequestBuilder:
             current_time=self.current_time,
         ).as_valid(child_assets_def.partitions_def)
 
-    def build_plan(
-        self,
-        asset_key: AssetKey,
-    ) -> ReactivePlan:
-        # This is the core of the algorith. Assuming that tick has instructed the policy
-        # to instigate a run, we build a plan. This algorithm walks up and down the asset
-        # graph recursively, calling react_to_downstream_request and react_to_upstream_request
-        # respectively. Through this we cooperatively build a set of run requests.
-        start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
-        return self.build_for_asset_subset(start_asset_subset)
+    # def build_plan(
+    #     self,
+    #     asset_key: AssetKey,
+    # ) -> ReactivePlan:
+    #     # This is the core of the algorith. Assuming that tick has instructed the policy
+    #     # to instigate a run, we build a plan. This algorithm walks up and down the asset
+    #     # graph recursively, calling react_to_downstream_request and react_to_upstream_request
+    #     # respectively. Through this we cooperatively build a set of run requests.
+    #     start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
+    #     return self.build_for_asset_subset(start_asset_subset)
 
     def build_for_asset_subset(self, start_asset_subset: ValidAssetSubset) -> ReactivePlan:
         visited: Set[AssetPartition] = set()
@@ -144,14 +144,17 @@ class ReactiveRequestBuilder:
         return ReactivePlan(asset_partitions_to_execute)
 
     def make_valid_subset(
-        self, asset_key: AssetKey, asset_partitions: Set[AssetPartition]
+        self, asset_key: AssetKey, asset_partitions: Optional[Set[AssetPartition]] = None
     ) -> ValidAssetSubset:
         assets_def = self.repository_def.assets_defs_by_key[asset_key]
-        return AssetSubset.from_asset_partitions_set(
-            asset_key=asset_key,
-            asset_partitions_set=asset_partitions,
-            partitions_def=assets_def.partitions_def,
-        )
+        if asset_partitions:
+            return AssetSubset.from_asset_partitions_set(
+                asset_key=asset_key,
+                asset_partitions_set=asset_partitions,
+                partitions_def=assets_def.partitions_def,
+            )
+        else:
+            return AssetSubset(asset_key, True).as_valid(assets_def.partitions_def)
 
     def reactive_info_for_key(self, asset_key: AssetKey) -> Optional[ReactiveAssetInfo]:
         assets_def = self.repository_def.assets_defs_by_key[asset_key]

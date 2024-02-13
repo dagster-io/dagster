@@ -99,17 +99,14 @@ def build_plan(
     asset_key: CoercibleToAssetKey,
     partition_key: Optional[str] = None,
 ) -> ReactivePlan:
-    if partition_key:
-        return builder.build_for_asset_subset(
-            builder.make_valid_subset(
-                AssetKey.from_coercible(asset_key),
-                asset_partition_set(
-                    AssetPartition(AssetKey.from_coercible(asset_key), partition_key)
-                ),
-            )
+    return builder.build_for_asset_subset(
+        builder.make_valid_subset(
+            AssetKey.from_coercible(asset_key),
+            asset_partition_set(AssetPartition(AssetKey.from_coercible(asset_key), partition_key))
+            if partition_key
+            else None,
         )
-    else:
-        return builder.build_plan(AssetKey.from_coercible(asset_key))
+    )
 
 
 def asset_partition_set(*asset_partitions: AssetPartition) -> Set[AssetPartition]:
@@ -363,3 +360,7 @@ def test_basic_tick() -> None:
         assert not run_request_for_asset_partition(
             run_requests, asset_partition("down_ticking_asset", "down2")
         )
+
+        assert run_request_for_asset_partition(run_requests, asset_partition("up", "up1"))
+
+        assert not run_request_for_asset_partition(run_requests, asset_partition("up", "up2"))
