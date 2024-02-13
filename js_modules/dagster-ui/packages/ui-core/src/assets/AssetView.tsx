@@ -14,8 +14,8 @@ import {AssetPlots} from './AssetPlots';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
+import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
@@ -482,7 +482,7 @@ const AssetViewPageHeaderTags = ({
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }) => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;

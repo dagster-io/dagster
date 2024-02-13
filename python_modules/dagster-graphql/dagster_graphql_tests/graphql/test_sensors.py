@@ -1414,7 +1414,7 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
 
 
 def test_asset_selection(graphql_context):
-    sensor_name = "my_automation_policy_sensor"
+    sensor_name = "my_auto_materialize_sensor"
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     result = execute_dagster_graphql(
