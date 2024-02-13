@@ -179,11 +179,6 @@ def get_toys_sensors():
                 run_config={"ops": {"requires_config": {"config": {"num": cursor}}}},
             )
 
-    automation_policy_sensor = AutomationPolicySensorDefinition(
-        "my_automation_policy_sensor",
-        asset_selection=AssetSelection.all(),
-    )
-
     return [
         toy_file_sensor,
         toy_asset_sensor,
@@ -192,5 +187,4 @@ def get_toys_sensors():
         built_in_slack_on_run_failure_sensor,
         math_sensor,
         tick_logging_sensor,
-        automation_policy_sensor,
     ]
