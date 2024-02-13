@@ -2,8 +2,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.workspace.context import WorkspaceRequestContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
@@ -54,22 +52,7 @@ class BranchChangeResolver:
         return False
 
     def _get_parent_deployment_asset_graph(self):
-        """Probably will refactor this so that it mainly lives on the cloud instance."""
-        if self._instance.cloud_deployment is not None:
-            parent_deployment = self._instance.cloud_deployment.compute_parent_deployment()
-            parent_workspace = self._instance.cloud_storage.all_workspace_location_entries(
-                deployment=parent_deployment
-            ).get(self._repository_name)
-            workspace_context = WorkspaceRequestContext(
-                instance=self._instance,
-                workspace_snapshot={self._repository_name: parent_workspace},
-                process_context=mock.MagicMock(),  # replace with actual process_context
-                version=None,
-                source=None,
-                read_only=True,
-            )
-            ExternalAssetGraph.from_workspace(workspace_context)
-        return None
+        return self._instance.get_parent_deployment_asset_graph()
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
@@ -106,6 +89,7 @@ class BranchChangeResolver:
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Returns list of ChangeReasons for asset_key as compared to the parent deployment."""
+        print(f"THE CHANGE IS {self._compare_parent_and_branch_assets(asset_key)}")
         return self._compare_parent_and_branch_assets(asset_key)
 
     @property

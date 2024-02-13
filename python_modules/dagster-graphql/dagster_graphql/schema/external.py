@@ -271,6 +271,7 @@ class GrapheneRepository(graphene.ObjectType):
         self._branch_changes_loader = BranchChangeResolver(
             instance=instance,
             branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
+            repository_name=repository.name,
         )
         super().__init__(name=repository.name)
 

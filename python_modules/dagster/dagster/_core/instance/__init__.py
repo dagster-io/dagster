@@ -3163,3 +3163,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def cloud_deployment(self) -> None:
         return None
+
+    def get_parent_deployment_asset_graph(self):
+        return None
