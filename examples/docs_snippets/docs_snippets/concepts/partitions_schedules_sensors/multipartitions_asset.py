@@ -3,6 +3,7 @@ from dagster import (
     AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
+    MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
 )
