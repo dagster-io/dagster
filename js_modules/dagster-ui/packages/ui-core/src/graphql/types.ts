@@ -457,6 +457,7 @@ export type AssetNode = {
   opName: Maybe<Scalars['String']>;
   opNames: Array<Scalars['String']>;
   opVersion: Maybe<Scalars['String']>;
+  owners: Array<AssetOwner>;
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
@@ -543,6 +544,8 @@ export type AssetNotFoundError = Error & {
 };
 
 export type AssetOrError = Asset | AssetNotFoundError;
+
+export type AssetOwner = TeamAssetOwner | UserAssetOwner;
 
 export type AssetPartitionStatuses =
   | DefaultPartitionStatuses
@@ -5105,6 +5108,11 @@ export type Target = {
   solidSelection: Maybe<Array<Scalars['String']>>;
 };
 
+export type TeamAssetOwner = {
+  __typename: 'TeamAssetOwner';
+  team: Scalars['String'];
+};
+
 export type TerminatePipelineExecutionFailure = {
   message: Scalars['String'];
   run: Run;
@@ -5273,6 +5281,11 @@ export type UsedSolid = {
   __typename: 'UsedSolid';
   definition: CompositeSolidDefinition | SolidDefinition;
   invocations: Array<NodeInvocationSite>;
+};
+
+export type UserAssetOwner = {
+  __typename: 'UserAssetOwner';
+  email: Scalars['String'];
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -6214,6 +6227,7 @@ export const buildAssetNode = (
     opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionDefinition:
       overrides && overrides.hasOwnProperty('partitionDefinition')
         ? overrides.partitionDefinition!
@@ -14114,6 +14128,18 @@ export const buildTarget = (
   };
 };
 
+export const buildTeamAssetOwner = (
+  overrides?: Partial<TeamAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TeamAssetOwner'} & TeamAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TeamAssetOwner');
+  return {
+    __typename: 'TeamAssetOwner',
+    team: overrides && overrides.hasOwnProperty('team') ? overrides.team! : 'est',
+  };
+};
+
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14441,6 +14467,18 @@ export const buildUsedSolid = (
         ? ({} as SolidDefinition)
         : buildSolidDefinition({}, relationshipsToOmit),
     invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
+  };
+};
+
+export const buildUserAssetOwner = (
+  overrides?: Partial<UserAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UserAssetOwner'} & UserAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UserAssetOwner');
+  return {
+    __typename: 'UserAssetOwner',
+    email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'velit',
   };
 };
 
