@@ -5,7 +5,7 @@ type Props = {
   isOpen: boolean;
   onToggle: (e: React.MouseEvent<HTMLButtonElement>) => void;
 };
-export const ToggleButton = ({isOpen, onToggle}: Props) => {
+export const DisclosureTriangleButton = ({isOpen, onToggle}: Props) => {
   return (
     <UnstyledButton
       onClick={(e) => {

@@ -3,11 +3,13 @@ import {
   Box,
   Button,
   ButtonLink,
+  Caption,
+  Colors,
   Dialog,
   DialogFooter,
+  DisclosureTriangleButton,
   MiddleTruncate,
   Subtitle2,
-  ToggleButton,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -96,20 +98,16 @@ const AssetSelectionLink = ({assetSelection}: {assetSelection: SensorAssetSelect
         canEscapeKeyClose
       >
         <Box flex={{direction: 'column'}}>
-          {assetsWithAMP.length ? (
-            <Section
-              title="Assets with a materialization policy"
-              titleBorder="bottom"
-              assets={assetsWithAMP}
-            />
-          ) : null}
-          {assetsWithoutAMP.length ? (
-            <Section
-              title="Assets without a materialization policy"
-              titleBorder="top-and-bottom"
-              assets={assetsWithoutAMP}
-            />
-          ) : null}
+          <Section
+            title="Assets with a materialization policy"
+            titleBorder="bottom"
+            assets={assetsWithAMP}
+          />
+          <Section
+            title="Assets without a materialization policy"
+            titleBorder="top-and-bottom"
+            assets={assetsWithoutAMP}
+          />
         </Box>
         <DialogFooter topBorder>
           <Button
@@ -153,21 +151,27 @@ const Section = ({
             setIsOpen(!isOpen);
           }}
         >
-          <ToggleButton onToggle={() => {}} isOpen={isOpen} />
+          <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
           <Subtitle2>
             {title} ({numberFormatter.format(assets.length)})
           </Subtitle2>
         </Box>
       </Box>
       {isOpen ? (
-        <div style={{maxHeight: '300px', overflowY: 'scroll'}}>
-          <VirtualizedItemListForDialog
-            padding={0}
-            items={assets}
-            renderItem={(asset) => <VirtualizedSelectedAssetRow asset={asset} key={asset.id} />}
-            itemBorders
-          />
-        </div>
+        assets.length ? (
+          <div style={{maxHeight: '300px', overflowY: 'scroll'}}>
+            <VirtualizedItemListForDialog
+              padding={0}
+              items={assets}
+              renderItem={(asset) => <VirtualizedSelectedAssetRow asset={asset} key={asset.id} />}
+              itemBorders
+            />
+          </div>
+        ) : (
+          <Box padding={{horizontal: 24, vertical: 12}}>
+            <Caption color={Colors.textLight()}>0 assets</Caption>
+          </Box>
+        )
       ) : null}
     </>
   );
