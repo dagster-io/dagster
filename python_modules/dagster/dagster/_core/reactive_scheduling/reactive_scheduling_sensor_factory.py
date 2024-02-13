@@ -116,6 +116,17 @@ class ReactiveRequestBuilder:
             current_time=self.current_time,
         ).as_valid(parent_assets_def.partitions_def)
 
+    def get_child_asset_subset(
+        self, asset_subset: ValidAssetSubset, child_asset_key: AssetKey
+    ) -> ValidAssetSubset:
+        child_assets_def = self.repository_def.assets_defs_by_key[child_asset_key]
+        return self.asset_graph.get_child_asset_subset(
+            parent_asset_subset=asset_subset,
+            child_asset_key=child_asset_key,
+            dynamic_partitions_store=self.dynamic_partitions_store,
+            current_time=self.current_time,
+        ).as_valid(child_assets_def.partitions_def)
+
     def build_plan(
         self,
         asset_key: AssetKey,
@@ -124,8 +135,10 @@ class ReactiveRequestBuilder:
         # to instigate a run, we build a plan. This algorithm walks up and down the asset
         # graph recursively, calling react_to_downstream_request and react_to_upstream_request
         # respectively. Through this we cooperatively build a set of run requests.
-
         start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
+        return self.build_for_asset_subset(start_asset_subset)
+
+    def build_for_asset_subset(self, start_asset_subset: ValidAssetSubset) -> ReactivePlan:
         visited: Set[AssetPartition] = set()
         asset_partitions_to_execute: Set[AssetPartition] = set()
 
@@ -166,7 +179,9 @@ class ReactiveRequestBuilder:
                 if not child_asset_info:
                     continue
 
-                child_asset_subset = self.get_latest_asset_subset_for_key(child_asset_key)
+                child_asset_subset = self.get_child_asset_subset(
+                    current_asset_subset, child_asset_key
+                )
                 asset_partitions_to_descend: Set[AssetPartition] = set()
                 for child_asset_partition in child_asset_subset.asset_partitions:
                     if child_asset_partition in visited:

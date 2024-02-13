@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Optional, Set
 
 from dagster import asset
-from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -75,8 +74,22 @@ def create_test_builder(
     )
 
 
-def build_plan(builder: ReactiveRequestBuilder, asset_key: CoercibleToAssetKey) -> ReactivePlan:
-    return builder.build_plan(AssetKey.from_coercible(asset_key))
+def build_plan(
+    builder: ReactiveRequestBuilder,
+    asset_key: CoercibleToAssetKey,
+    partition_key: Optional[str] = None,
+) -> ReactivePlan:
+    if partition_key:
+        return builder.build_for_asset_subset(
+            builder.make_valid_subset(
+                AssetKey.from_coercible(asset_key),
+                asset_partition_set(
+                    AssetPartition(AssetKey.from_coercible(asset_key), partition_key)
+                ),
+            )
+        )
+    else:
+        return builder.build_plan(AssetKey.from_coercible(asset_key))
 
 
 def asset_partition_set(*asset_partitions: AssetPartition) -> Set[AssetPartition]:
@@ -206,7 +219,7 @@ def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
     partitions_def_numbers = StaticPartitionsDefinition(["1", "2"])
     partitions_def_letters = StaticPartitionsDefinition(["A", "B"])
 
-    mapping = StaticPartitionMapping({"1": "A", "2": "B"})
+    mapping = StaticPartitionMapping({"A": "1", "B": "2"})
 
     @asset(scheduling_policy=AlwaysDefer(), partitions_def=partitions_def_letters)
     def up() -> None:
@@ -222,18 +235,21 @@ def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
 
     defs = Definitions([up, down])
 
+    instance = DagsterInstance.ephemeral()
+    builder = create_test_builder(defs, instance)
 
-    job_def = defs.get_implicit_job_def_for_assets([AssetKey.from_coercible("up"), AssetKey.from_coercible("down")])
-    assert job_def
-    # instance = DagsterInstance.ephemeral()
-    # builder = create_test_builder(defs, instance)
+    assert build_plan(builder, "down", "1").asset_partitions == asset_partition_set(
+        asset_partition("up", "A"), asset_partition("down", "1")
+    )
 
-    # down_plan = build_plan(builder, "down")
-    # assert down_plan.asset_partitions == asset_partition_set(
-    #     asset_partition("up"), asset_partition("down")
-    # )
+    assert build_plan(builder, "down", "2").asset_partitions == asset_partition_set(
+        asset_partition("up", "B"), asset_partition("down", "2")
+    )
 
-    # up_plan = build_plan(builder, "up")
-    # assert up_plan.asset_partitions == asset_partition_set(
-    #     asset_partition("up"), asset_partition("down")
-    # )
+    assert build_plan(builder, "up", "A").asset_partitions == asset_partition_set(
+        asset_partition("up", "A"), asset_partition("down", "1")
+    )
+
+    assert build_plan(builder, "up", "B").asset_partitions == asset_partition_set(
+        asset_partition("up", "B"), asset_partition("down", "2")
+    )
