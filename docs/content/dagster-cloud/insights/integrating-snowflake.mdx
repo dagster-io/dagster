@@ -87,7 +87,7 @@ defs = Definitions(
 )
 ```
 
-In this example, the `snowflake_resource_key` is a <PyObject module="dagster_snowflake" object="SnowflakeResource" /> that has access to the `query_history` table.
+In this example, the `snowflake_resource_key` is a <PyObject module="dagster_snowflake" object="SnowflakeResource" /> that has access to the `query_history` table. Note that you only need to create this pipeline in a single code location per deployment, even if you have instrumented dbt assets in multiple code locations.
 
 Once the pipeline runs, Snowflake credits will be visible in the **Insights** tab in the Dagster UI:
 
