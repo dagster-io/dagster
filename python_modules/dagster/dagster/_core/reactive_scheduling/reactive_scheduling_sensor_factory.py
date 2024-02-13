@@ -83,17 +83,6 @@ class ReactiveRequestBuilder:
             current_time=self.current_time,
         ).as_valid(child_assets_def.partitions_def)
 
-    # def build_plan(
-    #     self,
-    #     asset_key: AssetKey,
-    # ) -> ReactivePlan:
-    #     # This is the core of the algorith. Assuming that tick has instructed the policy
-    #     # to instigate a run, we build a plan. This algorithm walks up and down the asset
-    #     # graph recursively, calling react_to_downstream_request and react_to_upstream_request
-    #     # respectively. Through this we cooperatively build a set of run requests.
-    #     start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
-    #     return self.build_for_asset_subset(start_asset_subset)
-
     def build_for_asset_subset(self, start_asset_subset: ValidAssetSubset) -> ReactivePlan:
         visited: Set[AssetPartition] = set()
         asset_partitions_to_execute: Set[AssetPartition] = set()
