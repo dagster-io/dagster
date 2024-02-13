@@ -200,6 +200,18 @@ class AssetConditionEvaluationContext:
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
+    def get_will_update_with_asset_subset(self, parent_key: AssetKey) -> ValidAssetSubset:
+        """Returns the set of asset partitions for a given parent asset that will be updated on this
+        tick, and which can be materialized in the same run as this asset.
+        """
+        if not self.materializable_in_same_run(self.asset_key, parent_key):
+            return self.empty_subset()
+
+        parent_info = self.evaluation_state_by_key.get(parent_key)
+        if not parent_info:
+            return self.empty_subset()
+        return parent_info.true_subset.as_valid(self.partitions_def)
+
     @functools.cached_property
     @root_property
     def materialized_since_previous_tick_subset(self) -> ValidAssetSubset:
