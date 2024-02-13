@@ -309,19 +309,21 @@ export const AssetNodeOverview = ({
                 .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
                 .map((resource) => (
                   <Tag key={resource.resourceKey}>
-                    <Icon name="resource" color={Colors.accentGray()} />
-                    {repoAddress ? (
-                      <Link
-                        to={workspacePathFromAddress(
-                          repoAddress,
-                          `/resources/${resource.resourceKey}`,
-                        )}
-                      >
-                        {resource.resourceKey}
-                      </Link>
-                    ) : (
-                      resource.resourceKey
-                    )}
+                    <Box flex={{gap: 4, alignItems: 'center'}}>
+                      <Icon name="resource" color={Colors.accentGray()} />
+                      {repoAddress ? (
+                        <Link
+                          to={workspacePathFromAddress(
+                            repoAddress,
+                            `/resources/${resource.resourceKey}`,
+                          )}
+                        >
+                          {resource.resourceKey}
+                        </Link>
+                      ) : (
+                        resource.resourceKey
+                      )}
+                    </Box>
                   </Tag>
                 ))}
             </AttributeAndValue>
