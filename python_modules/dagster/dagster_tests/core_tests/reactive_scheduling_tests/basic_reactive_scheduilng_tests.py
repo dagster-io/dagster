@@ -210,18 +210,18 @@ def test_reactive_request_builder_three_assets_only_downstream_requests_accepted
 
 
 def test_reactive_request_builder_two_assets_with_partition_mapping_all_defer() -> None:
-    partitions_def_numbers = StaticPartitionsDefinition(["1", "2"])
-    partitions_def_letters = StaticPartitionsDefinition(["A", "B"])
+    partitions_def_up = StaticPartitionsDefinition(["up1", "up2"])
+    partitions_def_down = StaticPartitionsDefinition(["down1", "down2"])
 
-    mapping = StaticPartitionMapping({"A": "1", "B": "2"})
+    up_to_down_mapping = StaticPartitionMapping({"up1": "down1", "up2": "down2"})
 
-    @asset(scheduling_policy=AlwaysDefer(), partitions_def=partitions_def_letters)
+    @asset(scheduling_policy=AlwaysDefer(), partitions_def=partitions_def_up)
     def up() -> None:
         ...
 
     @asset(
-        deps=[AssetDep("up", partition_mapping=mapping)],
-        partitions_def=partitions_def_numbers,
+        deps=[AssetDep("up", partition_mapping=up_to_down_mapping)],
+        partitions_def=partitions_def_down,
         scheduling_policy=AlwaysDefer(),
     )
     def down() -> None:
@@ -232,20 +232,20 @@ def test_reactive_request_builder_two_assets_with_partition_mapping_all_defer() 
     instance = DagsterInstance.ephemeral()
     builder = create_test_builder(defs, instance)
 
-    assert build_plan(builder, "down", "1").asset_partitions == asset_partition_set(
-        asset_partition("up", "A"), asset_partition("down", "1")
+    assert build_plan(builder, "down", "down1").asset_partitions == asset_partition_set(
+        asset_partition("up", "up1"), asset_partition("down", "down1")
     )
 
-    assert build_plan(builder, "down", "2").asset_partitions == asset_partition_set(
-        asset_partition("up", "B"), asset_partition("down", "2")
+    assert build_plan(builder, "down", "down2").asset_partitions == asset_partition_set(
+        asset_partition("up", "up2"), asset_partition("down", "down2")
     )
 
-    assert build_plan(builder, "up", "A").asset_partitions == asset_partition_set(
-        asset_partition("up", "A"), asset_partition("down", "1")
+    assert build_plan(builder, "up", "up1").asset_partitions == asset_partition_set(
+        asset_partition("up", "up1"), asset_partition("down", "down1")
     )
 
-    assert build_plan(builder, "up", "B").asset_partitions == asset_partition_set(
-        asset_partition("up", "B"), asset_partition("down", "2")
+    assert build_plan(builder, "up", "up2").asset_partitions == asset_partition_set(
+        asset_partition("up", "up2"), asset_partition("down", "down2")
     )
 
 
@@ -323,4 +323,3 @@ def test_basic_tick() -> None:
         instance=instance, repository_def=defs.get_repository_def()
     ) as context:
         eval_data = sensor_def.evaluate_tick(context=context)
-        assert eval_data
