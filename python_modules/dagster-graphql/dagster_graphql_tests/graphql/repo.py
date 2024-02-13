@@ -1630,7 +1630,7 @@ def req_config_job():
     the_op()
 
 
-@asset
+@asset(owners=["user@dagsterlabs.com", "team:team1"])
 def asset_1():
     yield Output(3)
 
