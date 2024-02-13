@@ -9,18 +9,18 @@ from dagster import (
 )
 
 
-@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-def partitioned_asset(context):
-    return "sample_data"
+@asset(partitions_def=StaticPartitionsDefinition(["1", "2", "3"]))
+def partitioned_asset(context) -> int:
+    return int(context.partition_key) * 2
 
 
 @asset_check(asset=partitioned_asset)
-def no_nones(partitioned_asset: Dict[str, str]):
-    # partitioned_asset will be a dict of partition keys to materialized values.
-    # partitioned_asset = {"a": "sample_data", "b": "sample_data", "c": "sample_data"}
-    return AssetCheckResult(
-        passed=all([x is not None for x in partitioned_asset.values()])
-    )
+def greater_than_zero(partitioned_asset: Dict[str, int]):
+    # With the default io manager, partitioned_asset will be a dict of partition keys to materialized
+    # values. In this case:
+    #
+    # partitioned_asset = {"1": 2, "2": 4, "3": 6}
+    return AssetCheckResult(passed=all([x > 0 for x in partitioned_asset.values()]))
 
 
-defs = Definitions(assets=[partitioned_asset], asset_checks=[no_nones])
+defs = Definitions(assets=[partitioned_asset], asset_checks=[greater_than_zero])

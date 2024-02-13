@@ -26,7 +26,7 @@ from docs_snippets.concepts.assets.asset_checks.factory import (
 from docs_snippets.concepts.assets.asset_checks.metadata import defs as metadata_defs
 from docs_snippets.concepts.assets.asset_checks.orders_check import defs as orders_defs
 from docs_snippets.concepts.assets.asset_checks.partitions import (
-    no_nones,
+    greater_than_zero,
     partitioned_asset,
 )
 from docs_snippets.concepts.assets.asset_checks.severity import defs as severity_defs
@@ -74,16 +74,16 @@ def test_factory_execute():
 def test_partitions():
     with instance_for_test() as instance:
         execute_assets_and_checks(
-            instance=instance, assets=[partitioned_asset], partition_key="a"
+            instance=instance, assets=[partitioned_asset], partition_key="1"
         )
         execute_assets_and_checks(
-            instance=instance, assets=[partitioned_asset], partition_key="b"
+            instance=instance, assets=[partitioned_asset], partition_key="2"
         )
         execute_assets_and_checks(
             instance=instance,
             assets=[partitioned_asset],
-            asset_checks=[no_nones],
-            partition_key="c",
+            asset_checks=[greater_than_zero],
+            partition_key="3",
         )
 
 

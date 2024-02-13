@@ -1,5 +1,5 @@
 import re
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import pytest
 from dagster import (
@@ -29,13 +29,19 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 
 def execute_assets_and_checks(
     assets: Optional[Sequence[AssetsDefinition]] = None,
+    source_assets: Optional[Sequence[SourceAsset]] = None,
     asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     raise_on_error: bool = True,
     resources: Optional[Mapping[str, object]] = None,
     instance=None,
     partition_key=None,
 ) -> ExecuteInProcessResult:
-    defs = Definitions(assets=assets, asset_checks=asset_checks, resources=resources)
+    defs = Definitions(
+        assets=[*(assets or []), *(source_assets or [])],
+        asset_checks=asset_checks,
+        resources=resources,
+    )
+
     job_def = defs.get_implicit_job_def_for_assets(
         [key for asset in (assets or []) for key in asset.keys]
     )
@@ -334,7 +340,7 @@ def test_blocking_check_with_source_asset_fail():
         ...
 
     result = execute_assets_and_checks(
-        assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
+        assets=[asset2], source_assets=[asset1], asset_checks=[check1], raise_on_error=False
     )
     assert not result.success
 
@@ -374,7 +380,8 @@ def test_error_severity_with_source_asset_success():
             raise NotImplementedError()
 
     result = execute_assets_and_checks(
-        assets=[asset1, asset2],
+        assets=[asset2],
+        source_assets=[asset1],
         asset_checks=[check1],
         raise_on_error=False,
         resources={"asset1_io_manager": MyIOManager()},
