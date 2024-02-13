@@ -120,6 +120,11 @@ class ReactiveRequestBuilder:
         self,
         asset_key: AssetKey,
     ) -> ReactivePlan:
+        # This is the core of the algorith. Assuming that tick has instructed the policy
+        # to instigate a run, we build a plan. This algorithm walks up and down the asset
+        # graph recursively, calling react_to_downstream_request and react_to_upstream_request
+        # respectively. Through this we cooperatively build a set of run requests.
+
         start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
         visited: Set[AssetPartition] = set()
         asset_partitions_to_execute: Set[AssetPartition] = set()
@@ -135,19 +140,61 @@ class ReactiveRequestBuilder:
                 if not parent_asset_info:
                     continue
 
+                asset_partitions_to_ascend: Set[AssetPartition] = set()
+
                 for parent_asset_partition in parent_asset_subset.asset_partitions:
                     if parent_asset_partition in visited:
                         continue
 
+                    # TODO: write variant that operates against subset directly
                     parent_result = parent_asset_info.scheduling_policy.react_to_downstream_request(
                         parent_asset_partition
                     )
                     if parent_result.execute:
                         asset_partitions_to_execute.add(parent_asset_partition)
+                        asset_partitions_to_ascend.add(parent_asset_partition)
+
+                if asset_partitions_to_ascend:
+                    _ascend(self.make_valid_subset(parent_asset_key, asset_partitions_to_ascend))
+
+        def _descend(current_asset_subset: ValidAssetSubset):
+            asset_partitions_to_execute.update(current_asset_subset.asset_partitions)
+            visited.update(current_asset_subset.asset_partitions)
+
+            for child_asset_key in self.asset_graph.get_children(current_asset_subset.asset_key):
+                child_asset_info = self.reactive_info_for_key(child_asset_key)
+                if not child_asset_info:
+                    continue
+
+                child_asset_subset = self.get_latest_asset_subset_for_key(child_asset_key)
+                asset_partitions_to_descend: Set[AssetPartition] = set()
+                for child_asset_partition in child_asset_subset.asset_partitions:
+                    if child_asset_partition in visited:
+                        continue
+
+                    child_result = child_asset_info.scheduling_policy.react_to_upstream_request(
+                        child_asset_partition
+                    )
+                    if child_result.execute:
+                        asset_partitions_to_execute.add(child_asset_partition)
+                        asset_partitions_to_descend.add(child_asset_partition)
+
+                if asset_partitions_to_descend:
+                    _descend(self.make_valid_subset(child_asset_key, asset_partitions_to_descend))
 
         _ascend(start_asset_subset)
 
         return ReactivePlan(asset_partitions_to_execute)
+
+    def make_valid_subset(
+        self, asset_key: AssetKey, asset_partitions: Set[AssetPartition]
+    ) -> ValidAssetSubset:
+        assets_def = self.repository_def.assets_defs_by_key[asset_key]
+        return AssetSubset.from_asset_partitions_set(
+            asset_key=asset_key,
+            asset_partitions_set=asset_partitions,
+            partitions_def=assets_def.partitions_def,
+        )
 
     def reactive_info_for_key(self, asset_key: AssetKey) -> Optional[ReactiveAssetInfo]:
         assets_def = self.repository_def.assets_defs_by_key[asset_key]
