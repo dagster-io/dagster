@@ -26,7 +26,7 @@ def test_external_sensor_grpc(instance):
         assert len(result.run_requests) == 2
         run_request = result.run_requests[0]
         assert run_request.run_config == {"foo": "FOO"}
-        assert run_request.tags == {"foo": "foo_tag"}
+        assert run_request.tags == {"foo": "foo_tag", "dagster/sensor_name": "sensor_foo"}
 
 
 def test_external_sensor_grpc_fallback_to_streaming(instance):
@@ -57,7 +57,10 @@ def test_external_sensor_grpc_fallback_to_streaming(instance):
                     assert len(result.run_requests) == 2
                     run_request = result.run_requests[0]
                     assert run_request.run_config == {"foo": "FOO"}
-                    assert run_request.tags == {"foo": "foo_tag"}
+                    assert run_request.tags == {
+                        "foo": "foo_tag",
+                        "dagster/sensor_name": "sensor_foo",
+                    }
 
 
 def test_external_sensor_error(instance):
