@@ -22,20 +22,20 @@ from dagster._core.reactive_scheduling.reactive_scheduling_sensor_factory import
 
 
 class AlwaysDefer(SchedulingPolicy):
-    def react_to_downstream_request(self, downstream_asset_partition) -> RequestReaction:
+    def react_to_downstream_request(self, downstream_subset) -> RequestReaction:
         return RequestReaction(execute=True)
 
-    def react_to_upstream_request(self, upstream_asset_partition) -> RequestReaction:
+    def react_to_upstream_request(self, upstream_subset) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
 class DeferToDownstream(SchedulingPolicy):
-    def react_to_downstream_request(self, downstream_asset_partition) -> RequestReaction:
+    def react_to_downstream_request(self, downstream_subset) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
 class DeferToUpstream(SchedulingPolicy):
-    def react_to_upstream_request(self, upstream_asset_partition) -> RequestReaction:
+    def react_to_upstream_request(self, upstream_subset) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
@@ -295,3 +295,24 @@ def test_reactive_request_builder_two_assets_with_partition_mapping_defer_to_up(
     assert build_plan(builder, "down", "down1").asset_partitions == asset_partition_set(
         asset_partition("down", "down1")
     )
+
+
+def test_basic_tick() -> None:
+    class SchedulingPolicyWithTick(SchedulingPolicy):
+        tick_cron = "*/1 * * * *"
+
+        def schedule(self) -> SchedulingResult:
+            return SchedulingResult(execute=True)
+
+    @asset(scheduling_policy=DeferToDownstream())
+    def up() -> None:
+        ...
+
+    @asset(deps=[up], scheduling_policy=SchedulingPolicyWithTick(sensor_name="the_sensor"))
+    def ticking_asset() -> None:
+        pass
+
+    defs = Definitions([up, ticking_asset])
+
+    sensor_def = defs.get_sensor_def("the_sensor")
+    assert sensor_def

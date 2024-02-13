@@ -31,10 +31,11 @@ class SchedulingPolicy:
 
     tick_cron = None
 
-    # what about resources?
+    # TODO support resources
     def schedule(self) -> SchedulingResult:
         ...
 
+    # TODO support resources
     def observe(self) -> ObserveResult:
         ...
 
