@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, Set
 
 from dagster import asset
+from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -221,8 +222,9 @@ def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
 
     defs = Definitions([up, down])
 
-    assert defs
 
+    job_def = defs.get_implicit_job_def_for_assets([AssetKey.from_coercible("up"), AssetKey.from_coercible("down")])
+    assert job_def
     # instance = DagsterInstance.ephemeral()
     # builder = create_test_builder(defs, instance)
 
