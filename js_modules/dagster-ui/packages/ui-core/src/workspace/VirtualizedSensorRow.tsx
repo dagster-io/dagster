@@ -185,11 +185,14 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            <SensorTargetList
-              targets={sensorData?.targets}
-              repoAddress={repoAddress}
-              selectionQueryResult={sensorAssetSelectionQueryResult}
-            />
+            {sensorData ? (
+              <SensorTargetList
+                targets={sensorData.targets}
+                repoAddress={repoAddress}
+                selectionQueryResult={sensorAssetSelectionQueryResult}
+                sensorType={sensorData.sensorType}
+              />
+            ) : null}
           </Box>
         </RowCell>
         <RowCell>

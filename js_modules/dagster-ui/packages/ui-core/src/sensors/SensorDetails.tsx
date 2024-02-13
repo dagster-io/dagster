@@ -165,6 +165,7 @@ export const SensorDetails = ({
                   targets={sensor.targets}
                   repoAddress={repoAddress}
                   selectionQueryResult={selectionQueryResult}
+                  sensorType={sensor.sensorType}
                 />
               </td>
             </tr>

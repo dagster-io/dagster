@@ -22,6 +22,7 @@ import {
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {SensorType} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
@@ -29,10 +30,12 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 export const SensorTargetList = ({
+  sensorType,
   targets,
   selectionQueryResult,
   repoAddress,
 }: {
+  sensorType: SensorType;
   targets: {pipelineName: string}[] | null | undefined;
   repoAddress: RepoAddress;
   selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
@@ -52,7 +55,9 @@ export const SensorTargetList = ({
 
   return (
     <Box flex={{direction: 'column', gap: 2}}>
-      {selectedAssets && <AssetSelectionLink assetSelection={selectedAssets} />}
+      {selectedAssets && (
+        <AssetSelectionLink assetSelection={selectedAssets} sensorType={sensorType} />
+      )}
       {visibleTargets?.map((target) =>
         target.pipelineName ? (
           <PipelineReference
@@ -67,7 +72,13 @@ export const SensorTargetList = ({
   );
 };
 
-const AssetSelectionLink = ({assetSelection}: {assetSelection: SensorAssetSelectionFragment}) => {
+const AssetSelectionLink = ({
+  assetSelection,
+  sensorType,
+}: {
+  assetSelection: SensorAssetSelectionFragment;
+  sensorType: SensorType;
+}) => {
   const [showAssetSelection, setShowAssetSelection] = React.useState(false);
 
   const sortedAssets = React.useMemo(() => {
@@ -98,16 +109,22 @@ const AssetSelectionLink = ({assetSelection}: {assetSelection: SensorAssetSelect
         canEscapeKeyClose
       >
         <Box flex={{direction: 'column'}}>
-          <Section
-            title="Assets with a materialization policy"
-            titleBorder="bottom"
-            assets={assetsWithAMP}
-          />
-          <Section
-            title="Assets without a materialization policy"
-            titleBorder="top-and-bottom"
-            assets={assetsWithoutAMP}
-          />
+          {sensorType === SensorType.AUTOMATION_POLICY ? (
+            <>
+              <Section
+                title="Assets with a materialization policy"
+                titleBorder="bottom"
+                assets={assetsWithAMP}
+              />
+              <Section
+                title="Assets without a materialization policy"
+                titleBorder="top-and-bottom"
+                assets={assetsWithoutAMP}
+              />
+            </>
+          ) : (
+            <Section assets={sortedAssets} />
+          )}
         </Box>
         <DialogFooter topBorder>
           <Button
@@ -137,26 +154,28 @@ const Section = ({
   titleBorder = 'top-and-bottom',
 }: {
   assets: SensorAssetSelectionFragment['assets'];
-  title: string;
-  titleBorder: React.ComponentProps<typeof Box>['border'];
+  title?: string;
+  titleBorder?: React.ComponentProps<typeof Box>['border'];
 }) => {
   const [isOpen, setIsOpen] = React.useState(true);
   return (
     <>
-      <Box border={titleBorder} padding={{right: 24, vertical: 12}}>
-        <Box
-          flex={{direction: 'row', gap: 4}}
-          style={{cursor: 'pointer'}}
-          onClick={() => {
-            setIsOpen(!isOpen);
-          }}
-        >
-          <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
-          <Subtitle2>
-            {title} ({numberFormatter.format(assets.length)})
-          </Subtitle2>
+      {title ? (
+        <Box border={titleBorder} padding={{right: 24, vertical: 12}}>
+          <Box
+            flex={{direction: 'row', gap: 4}}
+            style={{cursor: 'pointer'}}
+            onClick={() => {
+              setIsOpen(!isOpen);
+            }}
+          >
+            <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
+            <Subtitle2>
+              {title} ({numberFormatter.format(assets.length)})
+            </Subtitle2>
+          </Box>
         </Box>
-      </Box>
+      ) : null}
       {isOpen ? (
         assets.length ? (
           <div style={{maxHeight: '300px', overflowY: 'scroll'}}>
