@@ -1294,7 +1294,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_changedInBranchCauses(
         self, graphene_info: ResolveInfo
-    ) -> Sequence[GrapheneAssetChangedInBranchReason]:
+    ) -> Sequence[Any]:  # Sequence[GrapheneAssetChangedInBranchReason]
         return self.branch_changes_loader.get_changes_for_asset(self._external_asset_node.asset_key)
 
 
