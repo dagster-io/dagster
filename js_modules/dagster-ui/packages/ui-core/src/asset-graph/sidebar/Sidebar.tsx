@@ -139,7 +139,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       > = {};
 
       let groupsCount = 0;
-      Object.entries(graphData.nodes).forEach(([_, node]) => {
+      Object.values(graphData.nodes).forEach((node) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
