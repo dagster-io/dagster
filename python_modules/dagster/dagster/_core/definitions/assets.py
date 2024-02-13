@@ -44,7 +44,6 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.utils import is_valid_email
-from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -72,12 +71,10 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
-@whitelist_for_serdes
 class UserAssetOwner(NamedTuple):
     email: str
 
 
-@whitelist_for_serdes
 class TeamAssetOwner(NamedTuple):
     team: str
 

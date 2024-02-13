@@ -5,7 +5,6 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.assets import UserAssetOwner
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
@@ -33,6 +32,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -392,10 +392,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
             owners=[
-                GrapheneUserAssetOwner(email=owner.email)
-                if isinstance(owner, UserAssetOwner)
-                else GrapheneTeamAssetOwner(team=owner.team)
-                for owner in external_asset_node.owners
+                GrapheneUserAssetOwner(email=owner)
+                if is_valid_email(owner)
+                else GrapheneTeamAssetOwner(team=owner)
+                for owner in (external_asset_node.owners or [])
             ],
         )
 

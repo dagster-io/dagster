@@ -53,7 +53,11 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.assets import AssetOwner, AssetsDefinition
+from dagster._core.definitions.assets import (
+    AssetOwner,
+    AssetsDefinition,
+    UserAssetOwner,
+)
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
@@ -1197,7 +1201,7 @@ class ExternalAssetNode(
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
             ("backfill_policy", Optional[BackfillPolicy]),
             ("auto_observe_interval_minutes", Optional[float]),
-            ("owners", Optional[Sequence[AssetOwner]]),
+            ("owners", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -1232,7 +1236,7 @@ class ExternalAssetNode(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[float] = None,
-        owners: Optional[Sequence[AssetOwner]] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1294,7 +1298,7 @@ class ExternalAssetNode(
             auto_observe_interval_minutes=check.opt_numeric_param(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
-            owners=check.opt_sequence_param(owners, "owners", of_type=AssetOwner),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
         )
 
     @property
@@ -1731,7 +1735,10 @@ def external_asset_nodes_from_defs(
                 backfill_policy=backfill_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
-                owners=owners_by_asset_key.get(asset_key),
+                owners=[
+                    owner.email if isinstance(owner, UserAssetOwner) else owner.team
+                    for owner in owners_by_asset_key.get(asset_key, [])
+                ],
             )
         )
 
