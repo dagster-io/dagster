@@ -18,7 +18,7 @@ Alert policies define which events will trigger an alert, the conditions under w
 - **Job run based alert policies** include a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
 - **Alert policies created for schedule/sensor tick failure will apply to all schedules/sensors**. However, you will only receive alerts when the schedule/sensor changes from a state of succeeding to failing, so subsequent failures will not trigger new alerts.
 - **Code location error alert policies** will trigger when a code location fails to load due to an error.
-- **Agent downtime alert policies** will trigger when a Hybrid agent stops heart beating.
+- **Agent downtime alert policies** will trigger when a Hybrid agent hasn't heartbeated within the last 5 minutes.
 
 Alert policies are configured on a per-deployment basis. For example, asset alerts configured in a `prod` deployment are only applicable to assets in that deployment.
 
