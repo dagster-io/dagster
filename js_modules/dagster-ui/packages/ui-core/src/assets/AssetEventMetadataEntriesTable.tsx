@@ -11,6 +11,7 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {MetadataEntry} from '../metadata/MetadataEntry';
+import {isTableSchemaEntry} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 import {titleForRun} from '../runs/RunUtils';
 
@@ -35,6 +36,7 @@ export const AssetEventMetadataEntriesTable = ({
   showTimestamps,
   showHeader,
   showFilter,
+  hideTableSchema,
 }: {
   event: TableEvent | null;
   observations?: TableEvent[] | null;
@@ -44,6 +46,7 @@ export const AssetEventMetadataEntriesTable = ({
   showTimestamps?: boolean;
   showHeader?: boolean;
   showFilter?: boolean;
+  hideTableSchema?: boolean;
 }) => {
   const [filter, setFilter] = useState('');
 
@@ -76,9 +79,9 @@ export const AssetEventMetadataEntriesTable = ({
   // or if a metadata key is present on the definition and then emitted in an event,
   // only show the latest version (first one found)
   const allRows = uniqBy(
-    [...observationRows, ...eventRows, ...definitionRows].filter(
-      (row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()),
-    ),
+    [...observationRows, ...eventRows, ...definitionRows]
+      .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
+      .filter((row) => !(hideTableSchema && isTableSchemaEntry(row.entry))),
     (e) => e.entry.label,
   );
 
@@ -91,12 +94,12 @@ export const AssetEventMetadataEntriesTable = ({
             style={{minWidth: 250}}
             icon="search"
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter columns"
+            placeholder="Filter metadata keys"
           />
         </Box>
       )}
       <AssetEventMetadataScrollContainer>
-        <AssetEventMetadataTable>
+        <StyledTableWithHeader>
           {showHeader && (
             <thead>
               <tr>
@@ -150,7 +153,7 @@ export const AssetEventMetadataEntriesTable = ({
               </tr>
             ))}
           </tbody>
-        </AssetEventMetadataTable>
+        </StyledTableWithHeader>
       </AssetEventMetadataScrollContainer>
     </>
   );
@@ -183,7 +186,7 @@ const AssetEventMetadataScrollContainer = styled.div`
   overflow-x: auto;
 `;
 
-const AssetEventMetadataTable = styled.table`
+export const StyledTableWithHeader = styled.table`
   width: 100%;
   border-spacing: 0;
   border-collapse: collapse;

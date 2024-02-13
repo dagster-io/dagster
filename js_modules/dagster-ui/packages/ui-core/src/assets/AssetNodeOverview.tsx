@@ -53,6 +53,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {TableSchema, isTableSchemaEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {Description} from '../pipelines/Description';
@@ -81,11 +82,20 @@ export const AssetNodeOverview = ({
   );
   const location = useLocationForRepoAddress(repoAddress);
 
-  const {assetType} = metadataForAssetNode(assetNode);
+  const {assetType, assetMetadata} = metadataForAssetNode(assetNode);
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
   const configType = assetNode.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
   const visibleJobNames = assetNode.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName));
+
+  const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
+  const {materialization, observation} = useLatestEvents(
+    assetNode,
+    assetNodeLoadTimestamp,
+    liveData,
+  );
+
+  const tableSchema = [...(materialization?.metadataEntries || [])].find(isTableSchemaEntry);
 
   return (
     <Box
@@ -127,13 +137,25 @@ export const AssetNodeOverview = ({
           )}
         </LargeCollapsibleSection>
         <LargeCollapsibleSection header="Columns" icon="view_column">
-          Asset columns go here
+          {tableSchema ? (
+            <TableSchema
+              schema={tableSchema.schema}
+              schemaLoadTimestamp={materialization?.timestamp}
+            />
+          ) : (
+            <Caption color={Colors.textLight()}>No table schema</Caption>
+          )}
         </LargeCollapsibleSection>
         <LargeCollapsibleSection header="Metadata" icon="view_list">
-          <AssetOverviewMetadata
-            assetNode={assetNode}
-            liveData={liveData}
-            assetNodeLoadTimestamp={location ? location.updatedTimestamp * 1000 : undefined}
+          <AssetEventMetadataEntriesTable
+            showHeader
+            showTimestamps
+            showFilter
+            hideTableSchema
+            observations={observation && materialization ? [observation] : []}
+            definitionMetadata={assetMetadata}
+            definitionLoadTimestamp={assetNodeLoadTimestamp}
+            event={materialization || observation || null}
           />
         </LargeCollapsibleSection>
         <LargeCollapsibleSection
@@ -455,16 +477,11 @@ function useLocationForRepoAddress(repoAddress: RepoAddress) {
   );
 }
 
-const AssetOverviewMetadata = ({
-  assetNode,
-  assetNodeLoadTimestamp,
-  liveData,
-}: {
-  assetNode: AssetNodeDefinitionFragment;
-  assetNodeLoadTimestamp: number | undefined;
-  liveData: LiveDataForNode | undefined;
-}) => {
-  const {assetMetadata} = metadataForAssetNode(assetNode);
+function useLatestEvents(
+  assetNode: AssetNodeDefinitionFragment,
+  assetNodeLoadTimestamp: number | undefined,
+  liveData: LiveDataForNode | undefined,
+) {
   const refreshHint = liveData?.lastMaterialization?.timestamp;
 
   const {data, refetch} = useQuery<
@@ -485,18 +502,8 @@ const AssetOverviewMetadata = ({
   const observation =
     data?.assetOrError.__typename === 'Asset' ? data.assetOrError.assetObservations[0] : undefined;
 
-  return (
-    <AssetEventMetadataEntriesTable
-      showHeader
-      showTimestamps
-      showFilter
-      observations={observation && materialization ? [observation] : []}
-      definitionMetadata={assetMetadata}
-      definitionLoadTimestamp={assetNodeLoadTimestamp}
-      event={materialization || observation || null}
-    />
-  );
-};
+  return {materialization, observation};
+}
 
 export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
   query AssetOverviewMetadataEventsQuery($assetKey: AssetKeyInput!) {
