@@ -568,6 +568,7 @@ export type AssetSelection = {
   __typename: 'AssetSelection';
   assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']>;
+  assets: Array<Asset>;
 };
 
 export type AssetSubset = {
@@ -6373,6 +6374,7 @@ export const buildAssetSelection = (
       overrides && overrides.hasOwnProperty('assetSelectionString')
         ? overrides.assetSelectionString!
         : 'dolores',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
   };
 };
 
