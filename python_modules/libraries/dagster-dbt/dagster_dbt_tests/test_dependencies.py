@@ -1,25 +1,21 @@
-import json
-from pathlib import Path
+from typing import Any, Dict
 
 import pytest
-from dagster import AssetKey, asset
+from dagster import AssetKey, AssetsDefinition, asset
 from dagster_dbt import get_asset_key_for_model, get_asset_keys_by_output_name_for_source
 from dagster_dbt.asset_decorator import dbt_assets
 
-manifest_path = (
-    Path(__file__)
-    .joinpath("..", "dbt_projects", "test_dagster_meta_config", "manifest.json")
-    .resolve()
-)
-manifest = json.loads(manifest_path.read_bytes())
+
+@pytest.fixture(name="my_dbt_assets", scope="module")
+def my_dbt_assets_fixture(test_meta_config_manifest: Dict[str, Any]) -> AssetsDefinition:
+    @dbt_assets(manifest=test_meta_config_manifest)
+    def my_dbt_assets():
+        ...
+
+    return my_dbt_assets
 
 
-@dbt_assets(manifest=manifest)
-def my_dbt_assets():
-    ...
-
-
-def test_asset_downstream_of_dbt_asset() -> None:
+def test_asset_downstream_of_dbt_asset(my_dbt_assets: AssetsDefinition) -> None:
     upstream_asset_key = AssetKey(["orders"])
 
     @asset(deps=[get_asset_key_for_model([my_dbt_assets], "orders")])
@@ -30,7 +26,7 @@ def test_asset_downstream_of_dbt_asset() -> None:
     assert set(downstream_python_asset.keys_by_input_name.values()) == {upstream_asset_key}
 
 
-def test_get_asset_keys_by_output_name_for_source() -> None:
+def test_get_asset_keys_by_output_name_for_source(my_dbt_assets: AssetsDefinition) -> None:
     assert get_asset_keys_by_output_name_for_source([my_dbt_assets], "jaffle_shop") == {
         "raw_customers": AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]),
         "raw_events": AssetKey(["jaffle_shop", "raw_events"]),
@@ -40,7 +36,7 @@ def test_get_asset_keys_by_output_name_for_source() -> None:
         get_asset_keys_by_output_name_for_source([my_dbt_assets], "nonexistent")
 
 
-def test_get_asset_keys_for_model() -> None:
+def test_get_asset_keys_for_model(my_dbt_assets: AssetsDefinition) -> None:
     assert get_asset_key_for_model([my_dbt_assets], "stg_customers") == AssetKey(
         ["customized", "staging", "customers"]
     )
