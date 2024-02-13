@@ -903,14 +903,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return results
 
-    def _get_automation_policy_external_sensor(self) -> Optional[ExternalSensor]:
+    def _get_auto_materialize_external_sensor(self) -> Optional[ExternalSensor]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
 
         asset_key = self._external_asset_node.asset_key
         matching_sensors = [
             sensor
             for sensor in self._external_repository.get_external_sensors()
-            if sensor.sensor_type == SensorType.AUTOMATION_POLICY
+            if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
             and asset_key in check.not_none(sensor.asset_selection).resolve(asset_graph)
         ]
         check.invariant(
@@ -926,8 +926,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         from dagster._daemon.asset_daemon import get_current_evaluation_id
 
         instance = graphene_info.context.instance
-        if instance.auto_materialize_use_automation_policy_sensors:
-            external_sensor = self._get_automation_policy_external_sensor()
+        if instance.auto_materialize_use_sensors:
+            external_sensor = self._get_auto_materialize_external_sensor()
             if not external_sensor:
                 return None
 

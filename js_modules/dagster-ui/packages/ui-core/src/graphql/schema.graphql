@@ -2343,7 +2343,7 @@ type Instance {
   maxConcurrencyLimitValue: Int!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
-  useAutomationPolicySensors: Boolean!
+  useAutoMaterializeSensors: Boolean!
 }
 
 type RunQueueConfig {
@@ -2899,7 +2899,7 @@ enum SensorType {
   ASSET
   MULTI_ASSET
   FRESHNESS_POLICY
-  AUTOMATION_POLICY
+  AUTO_MATERIALIZE
   UNKNOWN
 }
 

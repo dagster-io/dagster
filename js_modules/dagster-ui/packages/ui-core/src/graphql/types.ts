@@ -1819,7 +1819,7 @@ export type Instance = {
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
-  useAutomationPolicySensors: Scalars['Boolean'];
+  useAutoMaterializeSensors: Scalars['Boolean'];
 };
 
 export type InstanceConcurrencyLimitArgs = {
@@ -4740,7 +4740,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
-  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
+  AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',
@@ -8436,10 +8436,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
         ? overrides.supportsConcurrencyLimits!
         : false,
-    useAutomationPolicySensors:
-      overrides && overrides.hasOwnProperty('useAutomationPolicySensors')
-        ? overrides.useAutomationPolicySensors!
-        : true,
+    useAutoMaterializeSensors:
+      overrides && overrides.hasOwnProperty('useAutoMaterializeSensors')
+        ? overrides.useAutoMaterializeSensors!
+        : false,
   };
 };
 

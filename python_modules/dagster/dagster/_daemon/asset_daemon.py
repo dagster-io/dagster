@@ -357,7 +357,7 @@ class AssetDaemon(DagsterDaemon):
                 if not auto_materialize_state.instigator_data:
                     continue
                 instigator_data = cast(SensorInstigatorData, auto_materialize_state.instigator_data)
-                if instigator_data.sensor_type != SensorType.AUTOMATION_POLICY:
+                if instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE:
                     continue
                 compressed_cursor = instigator_data.cursor
                 if compressed_cursor:
@@ -433,8 +433,8 @@ class AssetDaemon(DagsterDaemon):
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
-        use_automation_policy_sensors = instance.auto_materialize_use_automation_policy_sensors
-        if get_auto_materialize_paused(instance) and not use_automation_policy_sensors:
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if get_auto_materialize_paused(instance) and not use_auto_materialize_sensors:
             yield
             return
 
@@ -448,7 +448,7 @@ class AssetDaemon(DagsterDaemon):
             self._initialize_evaluation_id(instance, asset_graph)
         sensors: Sequence[Optional[ExternalSensor]] = []
 
-        if use_automation_policy_sensors:
+        if use_auto_materialize_sensors:
             workspace_snapshot = {
                 location_entry.origin.location_name: location_entry
                 for location_entry in workspace.get_workspace_snapshot().values()
@@ -460,7 +460,7 @@ class AssetDaemon(DagsterDaemon):
                 if code_location:
                     for repo in code_location.get_repositories().values():
                         for sensor in repo.get_external_sensors():
-                            if sensor.sensor_type == SensorType.AUTOMATION_POLICY:
+                            if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
                                 eligible_sensors.append(sensor)
 
             if not eligible_sensors:
@@ -474,7 +474,7 @@ class AssetDaemon(DagsterDaemon):
                 if (
                     sensor_state.instigator_data
                     and cast(SensorInstigatorData, sensor_state.instigator_data).sensor_type
-                    == SensorType.AUTOMATION_POLICY
+                    == SensorType.AUTO_MATERIALIZE
                 )
             }
 
@@ -543,7 +543,7 @@ class AssetDaemon(DagsterDaemon):
                         min_interval=sensor.min_interval_seconds,
                         cursor=None,
                         last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                        sensor_type=SensorType.AUTOMATION_POLICY,
+                        sensor_type=SensorType.AUTO_MATERIALIZE,
                     ),
                 )
                 instance.add_instigator_state(auto_materialize_state)
@@ -598,7 +598,7 @@ class AssetDaemon(DagsterDaemon):
                     min_interval=sensor.min_interval_seconds,
                     cursor=asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor),
                     last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                    sensor_type=SensorType.AUTOMATION_POLICY,
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
                 ),
             )
 
@@ -910,7 +910,7 @@ class AssetDaemon(DagsterDaemon):
                             last_tick_timestamp=tick.timestamp,
                             min_interval=sensor.min_interval_seconds,
                             cursor=asset_daemon_cursor_to_instigator_serialized_cursor(new_cursor),
-                            sensor_type=SensorType.AUTOMATION_POLICY,
+                            sensor_type=SensorType.AUTO_MATERIALIZE,
                         )
                     )
                 )

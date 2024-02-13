@@ -104,7 +104,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       definition?.targetingInstigators.find(
         (instigator) =>
           instigator.__typename === 'Sensor' &&
-          instigator.sensorType === SensorType.AUTOMATION_POLICY,
+          instigator.sensorType === SensorType.AUTO_MATERIALIZE,
       )?.name,
     [definition],
   );

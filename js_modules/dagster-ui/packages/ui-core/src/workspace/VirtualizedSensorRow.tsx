@@ -29,7 +29,7 @@ import {SensorTargetList} from '../sensors/SensorTargetList';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS = '1.5fr 130px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface SensorRowProps {
@@ -250,10 +250,11 @@ export const SENSOR_TYPE_META: Record<
     icon: 'asset',
     description: 'Asset sensors instigate runs when a materialization occurs',
   },
-  [SensorType.AUTOMATION_POLICY]: {
-    name: 'Automation',
+  [SensorType.AUTO_MATERIALIZE]: {
+    name: 'Auto-materialize',
     icon: 'materialization',
-    description: 'Automation policy sensors react to defined automation policy conditions',
+    description:
+      'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
   },
   [SensorType.FRESHNESS_POLICY]: {
     name: 'Freshness policy',
