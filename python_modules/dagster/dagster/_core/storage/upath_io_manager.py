@@ -431,9 +431,8 @@ class UPathIOManager(MemoizableIOManager):
         # into a directory
         if path.exists() and path.is_file():
             context.log.warn(
-                f"Non-partitioned asset {context.asset_key} was materialized to"
-                " file {path}. Materializing {context.asset_key} as a partitioned asset,"
-                f" will delete this file, and create a directory, {path} containing partitioned data files."
+                f"Found file at {path} believed to correspond with previously non-partitioned version"
+                f" of {context.asset_key}. Removing {path} and replacing with directory for partitioned data files."
             )
             path.unlink(missing_ok=True)
 
