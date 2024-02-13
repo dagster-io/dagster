@@ -319,10 +319,8 @@ def test_basic_tick() -> None:
     assert sensor_def
 
     instance = DagsterInstance.ephemeral()
-    with build_sensor_context(instance=instance ,repository_def = defs.get_repository_def()) as context:
-
+    with build_sensor_context(
+        instance=instance, repository_def=defs.get_repository_def()
+    ) as context:
         eval_data = sensor_def.evaluate_tick(context=context)
-
-        import code
-
-        code.interact(local=locals())
+        assert eval_data
