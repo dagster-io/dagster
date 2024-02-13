@@ -1,6 +1,7 @@
 import functools
 import hashlib
 from abc import ABC, abstractmethod, abstractproperty
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -306,6 +307,13 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
+@whitelist_for_serdes
+class ParentAssetConditionMode(Enum):
+    ALL_ASSETS = "ALL_ASSETS"
+    ALL_PARTITIONS = "ALL_PARTITIONS"
+    ANY_PARTITIONS = "ANY_PARTITIONS"
+
+
 class AssetCondition(ABC):
     """An AutomationCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AutomationConditions can be combined together to create
@@ -381,6 +389,51 @@ class AssetCondition(ABC):
             description=self.description,
             unique_id=self.unique_id,
         )
+
+    @staticmethod
+    def parent_newer(
+        mode: ParentAssetConditionMode = ParentAssetConditionMode.ANY_PARTITIONS,
+    ) -> "RuleCondition":
+        if mode == ParentAssetConditionMode.ANY_PARTITIONS:
+            return RuleCondition(AutoMaterializeRule.materialize_on_parent_updated())
+        elif mode == ParentAssetConditionMode.ALL_ASSETS:
+            return RuleCondition(
+                AutoMaterializeRule.skip_on_not_all_parents_updated(
+                    require_update_for_all_parent_partitions=False
+                )
+            )
+        elif mode == ParentAssetConditionMode.ALL_PARTITIONS:
+            return RuleCondition(
+                AutoMaterializeRule.skip_on_not_all_parents_updated(
+                    require_update_for_all_parent_partitions=True
+                )
+            )
+        else:
+            check.failed(f"Unsupported mode: {mode}")
+
+    @staticmethod
+    def parent_updated_since_cron(
+        cron_schedule: str,
+        timezone: str = "UTC",
+        mode: ParentAssetConditionMode = ParentAssetConditionMode.ALL_ASSETS,
+    ) -> "RuleCondition":
+        return RuleCondition(
+            AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
+                cron_schedule=cron_schedule, timezone=timezone
+            )
+        )
+
+    @staticmethod
+    def updated_since_cron() -> "RuleCondition":
+        return RuleCondition(AutoMaterializeRule.materialize_on_updated_since_cron())
+
+    @staticmethod
+    def missing() -> "RuleCondition":
+        return RuleCondition(AutoMaterializeRule.materialize_on_missing())
+
+    @staticmethod
+    def parent_outdated() -> "RuleCondition":
+        return RuleCondition(AutoMaterializeRule.skip_on_parent_outdated())
 
 
 class RuleCondition(
