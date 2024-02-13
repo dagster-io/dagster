@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 from dagster import file_relative_path, graph
 from dagster_shell import create_shell_script_op
 

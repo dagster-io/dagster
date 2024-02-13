@@ -1,25 +1,33 @@
 import string
+from typing import Optional
 
 import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_backfill_command, job_backfill_command
+from dagster._cli.workspace.cli_target import ClickArgMapping
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 
-from .test_cli_commands import backfill_command_contexts
+from .test_cli_commands import BackfillCommandTestContext, backfill_command_contexts
 
 
 def run_test_backfill(
-    execution_args,
-    instance,
-    expected_count=None,
-    error_message=None,
+    execution_args: ClickArgMapping,
+    instance: DagsterInstance,
+    expected_count: Optional[int] = None,
+    error_message: Optional[str] = None,
 ):
     run_test_backfill_inner(execution_args, instance, expected_count, error_message)
 
 
-def run_test_backfill_inner(execution_args, instance, expected_count, error_message):
+def run_test_backfill_inner(
+    execution_args: ClickArgMapping,
+    instance: DagsterInstance,
+    expected_count: Optional[int],
+    error_message: Optional[str],
+) -> None:
     if error_message:
         with pytest.raises(Exception):
             execute_backfill_command(execution_args, print, instance)
@@ -30,69 +38,36 @@ def run_test_backfill_inner(execution_args, instance, expected_count, error_mess
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_no_pipeline_or_job(backfill_args_context):
+def test_backfill_missing_job(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"job_name": "nonexistent"})
         run_test_backfill(args, instance, error_message="No pipeline or job found")
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_no_partition_sets(backfill_args_context):
+def test_backfill_unpartitioned_job(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"job_name": "foo"})
         run_test_backfill(
             args,
             instance,
-            error_message="No partition sets found",
+            error_message="is not partitioned",
         )
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_multiple_partition_set_matches(backfill_args_context):
+def test_backfill_partitioned_job(
+    backfill_args_context: BackfillCommandTestContext,
+):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "baz"})
-        run_test_backfill(
-            args,
-            instance,
-            error_message="No partition set specified",
-        )
-
-
-@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_single_partition_set_unspecified(backfill_args_context):
-    with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "partitioned_scheduled_pipeline"})
+        args = merge_dicts(cli_args, {"job_name": "partitioned_job"})
         run_test_backfill(args, instance, expected_count=len(string.digits))
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_no_named_partition_set(backfill_args_context):
+def test_backfill_error_partition_config(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "nonexistent"})
-        run_test_backfill(
-            args,
-            instance,
-            error_message="No partition set found",
-        )
-
-
-@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_error_partition_names(backfill_args_context):
-    with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "error_name_partitions"})
-        run_test_backfill(
-            args,
-            instance,
-            error_message="Failure fetching partition names",
-        )
-
-
-@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_error_partition_config(backfill_args_context):
-    with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(
-            cli_args, {"job_name": "baz", "partition_set": "error_config_partitions"}
-        )
+        args = merge_dicts(cli_args, {"job_name": "baz_error_config"})
         run_test_backfill(
             args,
             instance,
@@ -101,34 +76,30 @@ def test_backfill_error_partition_config(backfill_args_context):
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_launch(backfill_args_context):
+def test_backfill_launch(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "baz_partitions"})
+        args = merge_dicts(cli_args, {"job_name": "baz"})
         run_test_backfill(args, instance, expected_count=len(string.digits))
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_partition_range(backfill_args_context):
+def test_backfill_partition_range(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(
-            cli_args, {"job_name": "baz", "partition_set": "baz_partitions", "from": "7"}
-        )
+        args = merge_dicts(cli_args, {"job_name": "baz", "from": "7"})
         run_test_backfill(args, instance, expected_count=3)
 
-        args = merge_dicts(
-            cli_args, {"job_name": "baz", "partition_set": "baz_partitions", "to": "2"}
-        )
+        args = merge_dicts(cli_args, {"job_name": "baz", "to": "2"})
         run_test_backfill(args, instance, expected_count=6)  # 3 more runs
 
         args = merge_dicts(
             cli_args,
-            {"job_name": "baz", "partition_set": "baz_partitions", "from": "2", "to": "5"},
+            {"job_name": "baz", "from": "2", "to": "5"},
         )
         run_test_backfill(args, instance, expected_count=10)  # 4 more runs
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_partition_enum(backfill_args_context):
+def test_backfill_partition_enum(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
             cli_args,
@@ -138,7 +109,7 @@ def test_backfill_partition_enum(backfill_args_context):
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
-def test_backfill_tags_pipeline(backfill_args_context):
+def test_backfill_tags_job(backfill_args_context: BackfillCommandTestContext):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
             cli_args,

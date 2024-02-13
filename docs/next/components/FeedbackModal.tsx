@@ -2,10 +2,12 @@ import {Transition} from '@headlessui/react';
 import newGithubIssueUrl from 'new-github-issue-url';
 import React, {useEffect, useState} from 'react';
 
-import {useVersion} from '../util/useVersion';
+import {usePath} from '../util/usePath';
+import {LATEST_VERSION} from '../util/version';
 
 const FeedbackModal = ({isOpen, closeFeedback}: {isOpen: boolean; closeFeedback: () => void}) => {
-  const {asPath, version} = useVersion();
+  const {asPath} = usePath();
+  const version = LATEST_VERSION;
   const [currentPage, setCurrentPage] = useState<string>(asPath);
   const [currentVersion, setCurrentVersion] = useState<string>(version);
   const [description, setDescription] = useState<string>('');

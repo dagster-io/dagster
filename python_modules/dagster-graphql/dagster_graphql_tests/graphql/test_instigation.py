@@ -36,6 +36,7 @@ def _create_sensor_tick(graphql_context):
             graphql_context.process_context,
             logger,
             threadpool_executor=SingleThreadPoolExecutor(),
+            submit_threadpool_executor=None,
             sensor_tick_futures=futures,
         )
     )
@@ -45,11 +46,11 @@ def _create_sensor_tick(graphql_context):
 class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
     def test_schedule_next_tick(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
-        external_repository = graphql_context.get_repository_location(
+        external_repository = graphql_context.get_code_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
-        schedule_name = "no_config_pipeline_hourly_schedule"
+        schedule_name = "no_config_job_hourly_schedule"
         external_schedule = external_repository.get_external_schedule(schedule_name)
         selector = infer_instigation_selector(graphql_context, schedule_name)
 
@@ -66,7 +67,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
 
     def test_sensor_next_tick(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
-        external_repository = graphql_context.get_repository_location(
+        external_repository = graphql_context.get_code_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 

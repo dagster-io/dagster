@@ -9,7 +9,7 @@ def upstream_asset():
         pickle.dump([1, 2, 3], f)
 
 
-@asset(non_argument_deps={"upstream_asset"})
+@asset(deps=[upstream_asset])
 def downstream_asset():
     with open("upstream_asset.pkl", "wb") as f:
         data = pickle.load(f)

@@ -1,9 +1,12 @@
+import re
+
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
+    DagsterInvalidDefinitionError,
     Definitions,
-    OpExecutionContext,
     ResourceDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -11,13 +14,17 @@ from dagster import (
     build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
+    graph,
+    in_process_executor,
     materialize,
+    mem_io_manager,
     op,
     repository,
     sensor,
     with_resources,
 )
 from dagster._check import CheckError
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -45,7 +52,7 @@ from dagster._core.test_utils import instance_for_test
 def get_all_assets_from_defs(defs: Definitions):
     # could not find public method on repository to do this
     repo = resolve_pending_repo_if_required(defs)
-    return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
+    return list(repo.assets_defs_by_key.values())
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
@@ -58,7 +65,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 
 def test_basic_asset():
-    assert Definitions  # type: ignore
+    assert Definitions
 
     @asset
     def an_asset():
@@ -145,9 +152,30 @@ def test_with_resource_binding():
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
+
+
+def test_nested_resources() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner)},
+    )
+    repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
 
 
 def test_resource_coercion():
@@ -163,6 +191,10 @@ def test_resource_coercion():
         resources={"foo": "object-to-coerce"},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -254,7 +286,7 @@ def test_io_manager_coercion():
 def test_bad_executor():
     with pytest.raises(CheckError):
         # ignoring type to catch runtime error
-        Definitions(executor="not an executor")  # type: ignore
+        Definitions(executor="not an executor")
 
 
 def test_custom_executor_in_definitions():
@@ -296,13 +328,13 @@ def test_bad_logger_key():
 
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={1: a_logger})  # type: ignore
+        Definitions(loggers={1: a_logger})
 
 
 def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore
+        Definitions(loggers={"not_a_logger": "not_a_logger"})
 
 
 def test_kitchen_sink_on_create_helper_and_definitions():
@@ -471,11 +503,11 @@ def test_implicit_global_job_with_job_defined():
 
 def test_implicit_global_job_with_partitioned_asset():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def daily_partition_asset(context: OpExecutionContext):
+    def daily_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-02-02-10:00"))
-    def hourly_partition_asset(context: OpExecutionContext):
+    def hourly_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset
@@ -496,7 +528,7 @@ def test_implicit_global_job_with_partitioned_asset():
         [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
     )
 
-    with pytest.raises(DagsterInvariantViolationError):  # type: ignore
+    with pytest.raises(DagsterInvariantViolationError):
         defs.get_implicit_global_asset_job_def()
 
 
@@ -531,7 +563,6 @@ def test_unresolved_partitioned_asset_schedule():
     assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
     defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
-    defs_with_implicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
     assert defs_with_implicit_job.get_job_def("job1").name == "job1"
     assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
     assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
@@ -558,4 +589,175 @@ def test_bare_executor():
     assert isinstance(job, JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
-    assert job.executor_def.executor_creation_fn(None) is executor_inst  # type: ignore
+    assert job.executor_def.executor_creation_fn(None) is executor_inst
+
+
+def test_assets_with_io_manager():
+    @asset
+    def single_asset():
+        pass
+
+    defs = Definitions(assets=[single_asset], resources={"io_manager": mem_io_manager})
+
+    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    assert asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
+
+
+def test_asset_missing_resources():
+    @asset(required_resource_keys={"foo"})
+    def asset_foo(context):
+        return context.resources.foo
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by op 'asset_foo' was not provided.",
+    ):
+        Definitions(assets=[asset_foo])
+
+    source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
+        ),
+    ):
+        Definitions(assets=[source_asset_io_req])
+
+
+def test_assets_with_executor():
+    @asset
+    def the_asset():
+        pass
+
+    defs = Definitions(assets=[the_asset], executor=in_process_executor)
+
+    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    assert asset_group_underlying_job.executor_def == in_process_executor
+
+
+def test_asset_missing_io_manager():
+    @asset(io_manager_key="blah")
+    def asset_foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
+            " provided."
+        ),
+    ):
+        Definitions(assets=[asset_foo])
+
+
+def test_resource_defs_on_asset():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @asset(required_resource_keys={"bar"}, resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": the_resource})
+    def other_asset():
+        pass
+
+    defs = Definitions([the_asset, other_asset], resources={"bar": the_resource})
+    the_job = defs.get_all_job_defs()[0]
+    assert the_job.execute_in_process().success
+
+
+def test_conflicting_asset_resource_defs():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    @asset(resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": other_resource})
+    def other_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to "
+            "different assets. When constructing a job, all resource definitions "
+            "provided to assets must match by reference equality for a given key."
+        ),
+    ):
+        Definitions([the_asset, other_asset])
+
+
+def test_graph_backed_asset_resources():
+    @op(required_resource_keys={"foo"})
+    def the_op():
+        pass
+
+    @graph
+    def basic():
+        return the_op()
+
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    the_asset = AssetsDefinition.from_graph(
+        graph_def=basic,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
+        resource_defs={"foo": the_resource},
+    )
+    Definitions([the_asset])
+
+    other_asset = AssetsDefinition.from_graph(
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("other_asset")},
+        graph_def=basic,
+        resource_defs={"foo": other_resource},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to different assets."
+            " When constructing a job, all resource definitions provided to assets must match by"
+            " reference equality for a given key."
+        ),
+    ):
+        Definitions([the_asset, other_asset])
+
+
+def test_job_with_reserved_name():
+    @graph
+    def the_graph():
+        pass
+
+    the_job = the_graph.to_job(name="__ASSET_JOB")
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
+        ),
+    ):
+        Definitions(jobs=[the_job])
+
+
+def test_asset_cycle():
+    from toposort import CircularDependencyError
+
+    @asset
+    def a(s, c):
+        return s + c
+
+    @asset
+    def b(a):
+        return a + 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    s = SourceAsset(key="s")
+    with pytest.raises(CircularDependencyError):
+        Definitions(assets=[a, b, c, s])

@@ -71,7 +71,7 @@ class _TypedPythonDict(DagsterType):
         )  # True if value_type has a DagsterTypeLoader, meaning we can load the input from config,
         # otherwise False.
         super(_TypedPythonDict, self).__init__(
-            key="TypedPythonDict.{}.{}".format(key_type.key, value_type.key),
+            key=f"TypedPythonDict.{key_type.key}.{value_type.key}",
             name=None,
             loader=(
                 TypedDictLoader(self.key_type, self.value_type) if can_get_from_config else None
@@ -86,9 +86,7 @@ class _TypedPythonDict(DagsterType):
         if not isinstance(value, dict):
             return TypeCheck(
                 success=False,
-                description="Value should be a dict, got a {value_type}".format(
-                    value_type=type(value)
-                ),
+                description=f"Value should be a dict, got a {type(value)}",
             )
 
         for key, value in value.items():
@@ -103,9 +101,7 @@ class _TypedPythonDict(DagsterType):
 
     @property
     def display_name(self):
-        return "Dict[{key},{value}]".format(
-            key=self.key_type.display_name, value=self.value_type.display_name
-        )
+        return f"Dict[{self.key_type.display_name},{self.value_type.display_name}]"
 
     @property
     def inner_types(self):

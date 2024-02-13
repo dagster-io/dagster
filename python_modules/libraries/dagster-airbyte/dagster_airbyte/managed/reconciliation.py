@@ -1,11 +1,24 @@
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
-from dagster import AssetKey, ResourceDefinition
-from dagster._annotations import experimental, public
+from dagster import AssetKey
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
 from dagster_managed_elements import (
@@ -26,6 +39,7 @@ from dagster_airbyte.asset_defs import (
     _clean_name,
 )
 from dagster_airbyte.managed.types import (
+    MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
     AirbyteDestination,
     AirbyteDestinationNamespace,
@@ -42,8 +56,7 @@ from dagster_airbyte.utils import is_basic_normalization_operation
 def gen_configured_stream_json(
     source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode]
 ) -> Mapping[str, Any]:
-    """
-    Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
+    """Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
     full stream definition from the source.
     """
     config = user_stream_config[source_stream["stream"]["name"]]
@@ -74,9 +87,7 @@ def diff_sources(
     curr_src: Optional[AirbyteSource],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteSource objects.
-    """
+    """Utility to diff two AirbyteSource objects."""
     diff = _diff_configs(
         config_src.source_configuration if config_src else {},
         curr_src.source_configuration if curr_src else {},
@@ -94,9 +105,7 @@ def diff_destinations(
     curr_dst: Optional[AirbyteDestination],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteDestination objects.
-    """
+    """Utility to diff two AirbyteDestination objects."""
     diff = _diff_configs(
         config_dst.destination_configuration if config_dst else {},
         curr_dst.destination_configuration if curr_dst else {},
@@ -117,9 +126,11 @@ def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
         "destination": conn.destination.name if conn.destination else "Unknown",
         "normalize data": conn.normalize_data,
         "streams": {k: v.to_json() for k, v in conn.stream_config.items()},
-        "destination namespace": conn.destination_namespace.name
-        if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
-        else conn.destination_namespace,
+        "destination namespace": (
+            conn.destination_namespace.name
+            if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
+            else conn.destination_namespace
+        ),
         "prefix": conn.prefix,
     }
 
@@ -128,8 +139,7 @@ OPTIONAL_STREAM_SETTINGS = ("cursorField", "primaryKey")
 
 
 def _compare_stream_values(k: str, cv: str, _dv: str):
-    """
-    Don't register a diff for optional stream settings if the value is not set
+    """Don't register a diff for optional stream settings if the value is not set
     in the user-provided config, this means it will default to the value in the
     source.
     """
@@ -139,9 +149,7 @@ def _compare_stream_values(k: str, cv: str, _dv: str):
 def diff_connections(
     config_conn: Optional[AirbyteConnection], curr_conn: Optional[AirbyteConnection]
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteConnection objects.
-    """
+    """Utility to diff two AirbyteConnection objects."""
     diff = diff_dicts(
         conn_dict(config_conn),
         conn_dict(curr_conn),
@@ -163,8 +171,7 @@ def reconcile_sources(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
-    """
-    Generates a diff of the configured and existing sources and reconciles them to match the
+    """Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
@@ -251,8 +258,7 @@ def reconcile_destinations(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
-    """
-    Generates a diff of the configured and existing destinations and reconciles them to match the
+    """Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
@@ -340,8 +346,7 @@ def reconcile_config(
     should_delete: bool = False,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
+    """Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
     and a pointer to an Airbyte instance and returns a diff, along with applying the diff
     if dry_run is False.
     """
@@ -421,8 +426,7 @@ def reconcile_normalization(
     normalization_config: Optional[bool],
     workspace_id: str,
 ) -> Optional[str]:
-    """
-    Reconciles the normalization configuration for a connection.
+    """Reconciles the normalization configuration for a connection.
 
     If normalization_config is None, then defaults to True on destinations that support normalization
     and False on destinations that do not.
@@ -490,8 +494,7 @@ def reconcile_connections_pre(
     dry_run: bool,
     should_delete: bool,
 ) -> ManagedElementCheckResult:
-    """
-    Generates the diff for connections, and deletes any connections that are not in the config if
+    """Generates the diff for connections, and deletes any connections that are not in the config if
     dry_run is False.
 
     It's necessary to do this in two steps because we need to remove connections that depend on
@@ -544,9 +547,7 @@ def reconcile_connections_post(
     workspace_id: str,
     dry_run: bool,
 ) -> None:
-    """
-    Creates new and modifies existing connections based on the config if dry_run is False.
-    """
+    """Creates new and modifies existing connections based on the config if dry_run is False."""
     existing_connections_raw = cast(
         Dict[str, List[Dict[str, Any]]],
         check.not_none(
@@ -570,7 +571,7 @@ def reconcile_connections_post(
             # Enable or disable basic normalization based on config
             normalization_operation_id = reconcile_normalization(
                 res,
-                existing_connections.get("name", {}).get("connectionId"),  # type: ignore
+                existing_connections.get("name", {}).get("connectionId"),  # type: ignore  # (bad stubs)
                 destination,
                 config_conn.normalize_data,
                 workspace_id,
@@ -636,9 +637,9 @@ def reconcile_connections_post(
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
-    """
-    Reconciles Python-specified Airbyte connections with an Airbyte instance.
+    """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
     Passing the module containing an AirbyteManagedElementReconciler to the dagster-airbyte
     CLI will allow you to check the state of your Python-code-specified Airbyte connections
@@ -650,23 +651,26 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     @public
     def __init__(
         self,
-        airbyte: ResourceDefinition,
+        airbyte: Union[AirbyteResource, ResourceDefinition],
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
     ):
-        """
-        Reconciles Python-specified Airbyte connections with an Airbyte instance.
+        """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
         Args:
-            airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
+            airbyte (Union[AirbyteResource, ResourceDefinition]): The Airbyte resource definition to reconcile against.
             connections (Iterable[AirbyteConnection]): The Airbyte connection objects to reconcile.
             delete_unmentioned_resources (bool): Whether to delete resources that are not mentioned in
                 the set of connections provided. When True, all Airbyte instance contents are effectively
                 managed by the reconciler. Defaults to False.
         """
-        airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
+        # airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
 
-        self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
+        self._airbyte_instance: AirbyteResource = (
+            airbyte
+            if isinstance(airbyte, AirbyteResource)
+            else airbyte(build_init_resource_context())
+        )
         self._connections = list(
             check.iterable_param(connections, "connections", of_type=AirbyteConnection)
         )
@@ -698,10 +702,10 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
 class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: ResourceDefinition,
+        airbyte_resource_def: AirbyteResource,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
@@ -715,7 +719,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             workspace_id=None,
             key_prefix=key_prefix,
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-            connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=lambda conn: conn.name in defined_conn_names,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -732,18 +736,22 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
                 )
             )
         elif isinstance(diff, ManagedElementError):
-            raise ValueError("Error checking Airbyte connections: {}".format(str(diff)))
+            raise ValueError(f"Error checking Airbyte connections: {diff}")
 
         return super()._get_connections()
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
-    airbyte: ResourceDefinition,
+    airbyte: Union[AirbyteResource, ResourceDefinition],
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_meta_to_group_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[str]]
+    ] = None,
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_to_asset_key_fn: Optional[
@@ -753,12 +761,11 @@ def load_assets_from_connections(
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
+    """Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
     This method will raise an error on repo load if the passed AirbyteConnection objects are not in sync with the Airbyte instance.
 
     Args:
-        airbyte (ResourceDefinition): An AirbyteResource configured with the appropriate connection
+        airbyte (Union[AirbyteResource, ResourceDefinition]): An AirbyteResource configured with the appropriate connection
             details.
         connections (Iterable[AirbyteConnection]): A list of AirbyteConnection objects to build assets for.
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
@@ -768,6 +775,9 @@ def load_assets_from_connections(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        connection_meta_to_group_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]]): Function which
+            returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn
+            is None, no groups will be created. Defaults to None.
         io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
@@ -785,15 +795,13 @@ def load_assets_from_connections(
 
         from dagster_airbyte import (
             AirbyteConnection,
-            airbyte_resource,
+            AirbyteResource,
             load_assets_from_connections,
         )
 
-        airbyte_instance = airbyte_resource.configured(
-            {
-                "host": "localhost",
-                "port": "8000",
-            }
+        airbyte_instance = AirbyteResource(
+                host: "localhost",
+                port: "8000",
         )
         airbyte_connections = [
             AirbyteConnection(...),
@@ -812,14 +820,28 @@ def load_assets_from_connections(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
+    check.invariant(
+        not connection_meta_to_group_fn
+        or not connection_to_group_fn
+        or connection_to_group_fn == _clean_name,
+        "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
+    )
+
+    if not connection_meta_to_group_fn and connection_to_group_fn:
+        connection_meta_to_group_fn = lambda meta: connection_to_group_fn(meta.name)
+
     return AirbyteManagedElementCacheableAssetsDefinition(
-        airbyte_resource_def=check.inst_param(airbyte, "airbyte", ResourceDefinition),
+        airbyte_resource_def=(
+            airbyte
+            if isinstance(airbyte, AirbyteResource)
+            else airbyte(build_init_resource_context())
+        ),
         key_prefix=key_prefix,
         create_assets_for_normalization_tables=check.bool_param(
             create_assets_for_normalization_tables, "create_assets_for_normalization_tables"
         ),
-        connection_to_group_fn=check.opt_callable_param(
-            connection_to_group_fn, "connection_to_group_fn"
+        connection_meta_to_group_fn=check.opt_callable_param(
+            connection_meta_to_group_fn, "connection_meta_to_group_fn"
         ),
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),

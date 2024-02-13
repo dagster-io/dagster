@@ -1,16 +1,36 @@
 from collections import defaultdict
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    cast,
+)
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.errors import DagsterExecutionPlanSnapshotNotFoundError, DagsterRunNotFoundError
+from dagster._core.errors import (
+    DagsterExecutionPlanSnapshotNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterRunNotFoundError,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.plan import StepHandleUnion
 
 
 @whitelist_for_serdes
@@ -20,7 +40,7 @@ class StepOutputVersionData(NamedTuple):
 
     @staticmethod
     def get_version_list_from_dict(
-        step_output_versions: Mapping[StepOutputHandle, str]
+        step_output_versions: Mapping[StepOutputHandle, str],
     ) -> Sequence["StepOutputVersionData"]:
         return [
             StepOutputVersionData(step_output_handle=step_output_handle, version=version)
@@ -46,8 +66,7 @@ class PastExecutionState(
         ],
     )
 ):
-    """
-    Information relevant to execution about the parent run, notably which outputs
+    """Information relevant to execution about the parent run, notably which outputs
     were produced by which run ids, allowing for the proper ones to be loaded.
     """
 
@@ -84,8 +103,7 @@ class KnownExecutionState(
         ],
     )
 ):
-    """
-    A snapshot for the parts of an on going execution that need to be handed down when delegating
+    """A snapshot for the parts of an on going execution that need to be handed down when delegating
     step execution to another machine/process. This includes things like previous retries and
     resolved dynamic outputs.
     """
@@ -123,7 +141,7 @@ class KnownExecutionState(
             check.opt_inst_param(parent_state, "parent_state", PastExecutionState),
         )
 
-    def get_retry_state(self):
+    def get_retry_state(self) -> RetryState:
         return RetryState(self.previous_retry_attempts)
 
     def update_for_step_selection(self, step_keys_to_execute) -> "KnownExecutionState":
@@ -141,6 +159,11 @@ class KnownExecutionState(
         instance: DagsterInstance,
         parent_run: DagsterRun,
     ) -> Tuple[Sequence[str], "KnownExecutionState"]:
+        if parent_run.status not in (DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED):
+            raise DagsterInvariantViolationError(
+                "Cannot reexecute from failure a run that is not failed or canceled",
+            )
+
         steps_to_retry, known_state = _derive_state_from_logs(instance, parent_run)
         return steps_to_retry, known_state.update_for_step_selection(steps_to_retry)
 
@@ -153,7 +176,14 @@ class KnownExecutionState(
         return known_state
 
 
-def _copy_from_tracking_dict(dst, src, handle):
+TrackingDict: TypeAlias = Dict[str, Set["StepHandleUnion"]]
+
+
+def _copy_from_tracking_dict(
+    dst: TrackingDict,
+    src: TrackingDict,
+    handle: "StepHandleUnion",
+) -> None:
     if isinstance(handle, ResolvedFromDynamicStepHandle):
         key = handle.unresolved_form.to_key()
     else:
@@ -162,14 +192,14 @@ def _copy_from_tracking_dict(dst, src, handle):
     dst[key].update(src[key])
 
 
-def _update_tracking_dict(tracking, handle):
+def _update_tracking_dict(tracking: TrackingDict, handle: "StepHandleUnion") -> None:
     if isinstance(handle, ResolvedFromDynamicStepHandle):
         tracking[handle.unresolved_form.to_key()].add(handle)
     else:
         tracking[handle.to_key()].add(handle)
 
 
-def _in_tracking_dict(handle, tracking):
+def _in_tracking_dict(handle: "StepHandleUnion", tracking: TrackingDict) -> bool:
     if isinstance(handle, ResolvedFromDynamicStepHandle):
         unresolved_key = handle.unresolved_form.to_key()
         if unresolved_key in tracking:
@@ -183,7 +213,9 @@ def _in_tracking_dict(handle, tracking):
 def _derive_state_of_past_run(
     instance: DagsterInstance,
     parent_run: DagsterRun,
-):
+) -> Tuple[
+    Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], Set[StepOutputHandle]
+]:
     from dagster._core.host_representation import ExternalExecutionPlan
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -193,6 +225,7 @@ def _derive_state_of_past_run(
     parent_run_logs = instance.all_logs(
         parent_run_id,
         of_type={
+            DagsterEventType.STEP_START,
             DagsterEventType.STEP_FAILURE,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.STEP_OUTPUT,
@@ -212,7 +245,7 @@ def _derive_state_of_past_run(
 
     execution_plan = ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
 
-    output_set = set()
+    output_set: Set[StepOutputHandle] = set()
     observed_dynamic_outputs: Dict[str, Dict[str, List[str]]] = defaultdict(
         lambda: defaultdict(list)
     )
@@ -220,11 +253,11 @@ def _derive_state_of_past_run(
     # keep track of steps with dicts that point:
     # * step_key -> set(step_handle) in the normal case
     # * unresolved_step_key -> set(resolved_step_handle, ...) for dynamic outputs
-    all_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
-    failed_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
-    successful_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
-    interrupted_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
-    skipped_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
+    all_steps_in_parent_run_logs: TrackingDict = defaultdict(set)
+    failed_steps_in_parent_run_logs: TrackingDict = defaultdict(set)
+    successful_steps_in_parent_run_logs: TrackingDict = defaultdict(set)
+    interrupted_steps_in_parent_run_logs: TrackingDict = defaultdict(set)
+    skipped_steps_in_parent_run_logs: TrackingDict = defaultdict(set)
 
     for record in parent_run_logs:
         if record.dagster_event and record.dagster_event.step_handle:
@@ -246,7 +279,7 @@ def _derive_state_of_past_run(
             if record.dagster_event_type == DagsterEventType.STEP_OUTPUT:
                 output_data = record.get_dagster_event().step_output_data
                 if output_data.mapping_key:
-                    observed_dynamic_outputs[record.step_key][output_data.output_name].append(
+                    observed_dynamic_outputs[record.step_key][output_data.output_name].append(  # type: ignore
                         output_data.mapping_key
                     )
                 output_set.add(output_data.step_output_handle)
@@ -262,13 +295,17 @@ def _derive_state_of_past_run(
 
     # expand type to allow filling in None mappings for skips
     dynamic_outputs = cast(Dict[str, Dict[str, Optional[List[str]]]], observed_dynamic_outputs)
-    to_retry: Dict[str, set] = defaultdict(set)
+    to_retry: TrackingDict = defaultdict(set)
     execution_deps = execution_plan.execution_deps()
     for step_snap in execution_plan.topological_steps():
         step_key = step_snap.key
         step_handle = StepHandle.parse_from_key(step_snap.key)
 
         if parent_run.step_keys_to_execute and step_snap.key not in parent_run.step_keys_to_execute:
+            continue
+
+        # Dont retry steps that we already skipped in the parent run
+        if _in_tracking_dict(step_handle, skipped_steps_in_parent_run_logs):
             continue
 
         for output in step_snap.outputs:
@@ -319,7 +356,8 @@ def _derive_state_of_past_run(
                 ):
                     for resolved_handle in to_retry[retrying_key]:
                         _update_tracking_dict(
-                            to_retry, step_handle.resolve(resolved_handle.mapping_key)
+                            to_retry,
+                            step_handle.resolve(resolved_handle.mapping_key),  # type: ignore  # (must be ResolvedFromDynamicStepHandle)
                         )
 
                 else:

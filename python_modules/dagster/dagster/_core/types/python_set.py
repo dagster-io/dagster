@@ -8,7 +8,7 @@ from .config_schema import DagsterTypeLoader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 PythonSet = PythonObjectDagsterType(
-    set, "PythonSet", description="""Represents a python dictionary to pass between solids"""
+    set, "PythonSet", description="""Represents a python dictionary to pass between ops"""
 )
 
 
@@ -35,7 +35,7 @@ class _TypedPythonSet(DagsterType):
     def __init__(self, item_dagster_type):
         self.item_type = item_dagster_type
         super(_TypedPythonSet, self).__init__(
-            key="TypedPythonSet.{}".format(item_dagster_type.key),
+            key=f"TypedPythonSet.{item_dagster_type.key}",
             name=None,
             loader=(TypedSetLoader(item_dagster_type) if item_dagster_type.loader else None),
             type_check_fn=self.type_check_method,
@@ -48,9 +48,7 @@ class _TypedPythonSet(DagsterType):
         if not isinstance(value, set):
             return TypeCheck(
                 success=False,
-                description="Value should be a set, got a{value_type}".format(
-                    value_type=type(value)
-                ),
+                description=f"Value should be a set, got a{type(value)}",
             )
 
         for item in value:
@@ -62,7 +60,7 @@ class _TypedPythonSet(DagsterType):
 
     @property
     def display_name(self):
-        return "Set[{}]".format(self.item_type.display_name)
+        return f"Set[{self.item_type.display_name}]"
 
     @property
     def inner_types(self):

@@ -5,7 +5,7 @@ description: To organize the ops inside a job, you can nest sets of ops into sub
 
 # Nesting Graphs
 
-To organize the [ops](/concepts/ops-jobs-graphs/ops) inside a [job](/concepts/ops-jobs-graphs/jobs), you can nest sets of ops into sub-graphs.
+To organize the [ops](/concepts/ops-jobs-graphs/ops) inside a [job](/concepts/ops-jobs-graphs/op-jobs), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 
@@ -26,7 +26,7 @@ We use the term _node_ to refer to both ops and graphs, because both ops and gra
 As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheight, then logs the result:
 
 ```python file=/concepts/ops_jobs_graphs/unnested_ops.py
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 @op
@@ -45,7 +45,7 @@ def multiply_by_one_point_eight(number):
 
 
 @op
-def log_number(context, number):
+def log_number(context: OpExecutionContext, number):
     context.log.info(f"number: {number}")
 
 
@@ -69,7 +69,7 @@ def all_together_nested():
     log_number(celsius_to_fahrenheit(return_fifty()))
 ```
 
-When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in Dagit.
+When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in the Dagster UI.
 
 ## Sub-Graph Inputs and Outputs
 
@@ -78,7 +78,7 @@ As shown in the example above, sub-graphs can have inputs and outputs - `celsius
 - The `number` input of the `celsius_to_fahrenheit` graph is passed as an argument to the `multiply_by_one_point_eight` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and provides the output of another op or sub-graph for the `number` arg, the output of that op or sub-graph will be passed to `multiply_by_one_point_eight`, and `multiply_by_one_point_eight` will not execute until the upstream op that produces the output has completed.
 - The implementation of the `celsius_to_fahrenheit` graph returns the result of the `add_thirty_two` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and passes its output to the input of another node, the output of `add_thirty_two` will be provided to that node, and any ops that ultimately receive that input will not execute until `add_thirty_two` has completed.
 
-If you want to add a description to an input (that will display in Dagit), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
+If you want to add a description to an input (that will display in the UI), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
 
 ### Sub-Graph Configuration
 
@@ -88,12 +88,12 @@ This example two ops that both take config and are wrapped by a graph, which is 
 
 ```python file=/concepts/ops_jobs_graphs/nested_graphs.py startafter=start_composite_solid_config_marker endbefore=end_composite_solid_config_marker
 @op(config_schema={"n": float})
-def add_n(context, number):
+def add_n(context: OpExecutionContext, number):
     return number + context.op_config["n"]
 
 
 @op(config_schema={"m": float})
-def multiply_by_m(context, number):
+def multiply_by_m(context: OpExecutionContext, number):
     return number * context.op_config["m"]
 
 
@@ -126,17 +126,25 @@ ops:
 Sub-graphs can dictate config for the ops and sub-graphs inside them. If the full config is known at the time that you're defining the graph, you can pass a dictionary to the `config` argument of the <PyObject object="graph" decorator /> decorator.
 
 ```python file=/concepts/ops_jobs_graphs/graph_provides_config.py
-from dagster import graph, op
+from dagster import Config, graph, op
 
 
-@op(config_schema={"n": float})
-def add_n(context, number):
-    return number + context.op_config["n"]
+class AddNConfig(Config):
+    n: float
 
 
-@op(config_schema={"m": float})
-def multiply_by_m(context, number):
-    return number * context.op_config["m"]
+@op
+def add_n(config: AddNConfig, number):
+    return number + config.n
+
+
+class MultiplyByMConfig(Config):
+    m: float
+
+
+@op
+def multiply_by_m(config: MultiplyByMConfig, number):
+    return number * config.m
 
 
 @graph(config={"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": 32}}})
@@ -147,24 +155,36 @@ def celsius_to_fahrenheit(number):
 Alternatively, you can use "config mapping", i.e. you can provide a function that accepts config that's provided to the graph and generates config for the nodes inside the graph.
 
 ```python file=/concepts/ops_jobs_graphs/graph_provides_config_mapping.py
-from dagster import config_mapping, graph, op
+from dagster import Config, config_mapping, graph, op
 
 
-@op(config_schema={"n": float})
-def add_n(context, number):
-    return number + context.op_config["n"]
+class AddNConfig(Config):
+    n: float
 
 
-@op(config_schema={"m": float})
-def multiply_by_m(context, number):
-    return number * context.op_config["m"]
+@op
+def add_n(config: AddNConfig, number):
+    return number + config.n
 
 
-@config_mapping(config_schema={"from_unit": str})
-def generate_config(val):
-    if val["from_unit"] == "celsius":
+class MultiplyByMConfig(Config):
+    m: float
+
+
+@op
+def multiply_by_m(config: MultiplyByMConfig, number):
+    return number * config.m
+
+
+class ToFahrenheitConfig(Config):
+    from_unit: str
+
+
+@config_mapping
+def generate_config(config_in: ToFahrenheitConfig):
+    if config_in.from_unit == "celsius":
         n = 32
-    elif val["from_unit"] == "kelvin":
+    elif config_in.from_unit == "kelvin":
         n = -459.67
     else:
         raise ValueError()
@@ -198,7 +218,7 @@ from dagster import GraphOut
 
 @op
 def echo(i):
-    print(i)
+    print(i)  # noqa: T201
 
 
 @op

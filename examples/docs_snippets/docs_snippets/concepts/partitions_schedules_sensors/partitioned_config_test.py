@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import (
@@ -36,6 +36,7 @@ def test_my_partitioned_config():
 # end_partition_config
 
 # start_partition_keys
+from dagster import Config, OpExecutionContext
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
@@ -52,10 +53,15 @@ def my_offset_partitioned_config(start: datetime, _end: datetime):
     }
 
 
-@op(config_schema={"start": str, "end": str})
-def process_data(context):
-    s = context.op_config["start"]
-    e = context.op_config["end"]
+class ProcessDataConfig(Config):
+    start: str
+    end: str
+
+
+@op
+def process_data(context: OpExecutionContext, config: ProcessDataConfig):
+    s = config.start
+    e = config.end
     context.log.info(f"processing data for {s} - {e}")
 
 

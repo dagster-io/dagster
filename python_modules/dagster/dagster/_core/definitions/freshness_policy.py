@@ -1,12 +1,15 @@
 import datetime
-from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
-
-import pendulum
-from croniter import croniter
+from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
+from dagster._seven.compat.pendulum import pendulum_create_timezone
+from dagster._utils.schedules import (
+    is_valid_cron_schedule,
+    reverse_cron_string_iterator,
+)
 
 from .events import AssetKey
 
@@ -17,6 +20,11 @@ class FreshnessConstraint(NamedTuple):
     required_by_time: datetime.datetime
 
 
+class FreshnessMinutes(NamedTuple):
+    overdue_minutes: float
+    lag_minutes: float
+
+
 @experimental
 @whitelist_for_serdes
 class FreshnessPolicy(
@@ -25,20 +33,29 @@ class FreshnessPolicy(
         [
             ("maximum_lag_minutes", float),
             ("cron_schedule", Optional[str]),
+            ("cron_schedule_timezone", Optional[str]),
         ],
     )
 ):
-    """
-    A FreshnessPolicy specifies how up-to-date you want a given asset to be.
+    """A FreshnessPolicy specifies how up-to-date you want a given asset to be.
 
     Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
     that you expect to be incorporated into the current state of that asset at certain points in time.
-    More specifically, imagine you have two assets, where A depends on B.
+    How this is calculated differs depending on if the asset is unpartitioned or time-partitioned
+    (other partitioning schemes are not supported).
 
-    If `B` has a FreshnessPolicy defined, this means that at time T, the most recent materialization
-    of `B` should have come after a materialization of `A` which was no more than `maximum_lag_minutes`
-    ago. This calculation is recursive: any given asset is expected to incorporate up-to-date
-    data from all of its upstream assets.
+    For time-partitioned assets, the current data time for the asset is simple to calculate. The
+    upstream data that is incorporated into the asset is exactly the set of materialized partitions
+    for that asset. Thus, the current data time for the asset is simply the time up to which all
+    partitions have been materialized.
+
+    For unpartitioned assets, the current data time is based on the upstream materialization records
+    that were read to generate the current state of the asset. More specifically,
+    imagine you have two assets, where A depends on B. If `B` has a FreshnessPolicy defined, this
+    means that at time T, the most recent materialization of `B` should have come after a
+    materialization of `A` which was no more than `maximum_lag_minutes` ago. This calculation is
+    recursive: any given asset is expected to incorporate up-to-date data from all of its upstream
+    assets.
 
     It is assumed that all asset definitions with no upstream asset definitions consume from some
     always-updating source. That is, if you materialize that asset at time T, it will incorporate
@@ -62,6 +79,10 @@ class FreshnessPolicy(
         cron_schedule (Optional[str]): A cron schedule string (e.g. ``"0 1 * * *"``) specifying a
             series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
             no cron schedule is provided, then this constraint must be satisfied at all times.
+        cron_schedule_timezone (Optional[str]): Timezone in which the cron schedule should be evaluated.
+            If not specified, defaults to UTC. Supported strings for timezones are the ones provided
+            by the `IANA time zone database <https://www.iana.org/time-zones>` - e.g.
+            "America/Los_Angeles".
 
     .. code-block:: python
 
@@ -77,107 +98,98 @@ class FreshnessPolicy(
 
     """
 
-    def __new__(cls, *, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
+    def __new__(
+        cls,
+        *,
+        maximum_lag_minutes: float,
+        cron_schedule: Optional[str] = None,
+        cron_schedule_timezone: Optional[str] = None,
+    ):
+        if cron_schedule is not None:
+            if not is_valid_cron_schedule(cron_schedule):
+                raise DagsterInvalidDefinitionError(f"Invalid cron schedule '{cron_schedule}'.")
+            check.param_invariant(
+                is_valid_cron_schedule(cron_schedule),
+                "cron_schedule",
+                f"Invalid cron schedule '{cron_schedule}'.",
+            )
+        if cron_schedule_timezone is not None:
+            check.param_invariant(
+                cron_schedule is not None,
+                "cron_schedule_timezone",
+                "Cannot specify cron_schedule_timezone without a cron_schedule.",
+            )
+            try:
+                # Verify that the timezone can be loaded
+                pendulum_create_timezone(cron_schedule_timezone)
+            except Exception as e:
+                raise DagsterInvalidDefinitionError(
+                    "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
+                ) from e
         return super(FreshnessPolicy, cls).__new__(
             cls,
             maximum_lag_minutes=float(
                 check.numeric_param(maximum_lag_minutes, "maximum_lag_minutes")
             ),
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
+            cron_schedule_timezone=check.opt_str_param(
+                cron_schedule_timezone, "cron_schedule_timezone"
+            ),
         )
+
+    @classmethod
+    def _create(cls, *args):
+        """Pickle requires a method with positional arguments to construct
+        instances of a class. Since the constructor for this class has
+        keyword arguments only, we define this method to be used by pickle.
+        """
+        return cls(maximum_lag_minutes=args[0], cron_schedule=args[1])
+
+    def __reduce__(self):
+        return (self._create, (self.maximum_lag_minutes, self.cron_schedule))
 
     @property
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)
 
-    def constraints_for_time_window(
+    def get_evaluation_tick(
         self,
-        window_start: datetime.datetime,
-        window_end: datetime.datetime,
-        upstream_keys: FrozenSet[AssetKey],
-    ) -> AbstractSet[FreshnessConstraint]:
-        """For a given time window, calculate a set of FreshnessConstraints that this asset must
-        satisfy.
-
-        Args:
-            window_start (datetime): The start time of the window that constraints will be
-                calculated for. Generally, this is the current time.
-            window_start (datetime): The end time of the window that constraints will be
-                calculated for.
-            upstream_keys (FrozenSet[AssetKey]): The relevant upstream keys for this policy.
-        """
-        constraints = set()
-
-        # get an iterator of times to evaluate these constraints at
-        if self.cron_schedule:
-            constraint_ticks = croniter(
-                self.cron_schedule, window_start, ret_type=datetime.datetime
-            )
-        else:
-            # this constraint must be satisfied at all points in time, so generate a series of
-            # many constraints (10 per maximum lag window)
-            period = pendulum.period(pendulum.instance(window_start), pendulum.instance(window_end))
-            # old versions of pendulum return a list, so ensure this is an iterator
-            constraint_ticks = iter(
-                period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
-            )
-
-        # iterate over each schedule tick in the provided time window
-        evaluation_tick = next(constraint_ticks, None)
-        while evaluation_tick is not None and evaluation_tick < window_end:
-            required_data_time = evaluation_tick - self.maximum_lag_delta
-            required_by_time = evaluation_tick
-
-            constraints.add(
-                FreshnessConstraint(
-                    asset_keys=upstream_keys,
-                    required_data_time=required_data_time,
-                    required_by_time=required_by_time,
-                )
-            )
-
-            evaluation_tick = next(constraint_ticks, None)
-            # fallback if the user selects a very small maximum_lag_minutes value
-            if len(constraints) > 100:
-                break
-        return constraints
-
-    def minutes_late(
-        self,
-        evaluation_time: Optional[datetime.datetime],
-        used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> Optional[float]:
-        """Returns a number of minutes past the specified freshness policy that this asset currently
-        is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
-        how late it is, and this will return None.
-
-        Args:
-            evaluation_time (datetime): The time at which we're evaluating the lateness of this
-                asset. Generally, this is the current time.
-            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the data that was used to create the current
-                version of this asset.
-        """
+        evaluation_time: datetime.datetime,
+    ) -> Optional[datetime.datetime]:
         if self.cron_schedule:
             # most recent cron schedule tick
-            schedule_ticks = croniter(
-                self.cron_schedule, evaluation_time, ret_type=datetime.datetime, is_prev=True
+            schedule_ticks = reverse_cron_string_iterator(
+                end_timestamp=evaluation_time.timestamp(),
+                cron_string=self.cron_schedule,
+                execution_timezone=self.cron_schedule_timezone,
             )
-            evaluation_tick = next(schedule_ticks)
-        elif evaluation_time is not None:
-            evaluation_tick = evaluation_time
+            return next(schedule_ticks)
         else:
-            check.failed("Must provide an evaluation time if not using a cron schedule")
+            return evaluation_time
 
-        minutes_late = 0.0
-        for used_data_time in used_data_times.values():
-            # upstream data was not used, undefined how out of date you are
-            if used_data_time is None:
-                return None
+    def minutes_overdue(
+        self,
+        data_time: Optional[datetime.datetime],
+        evaluation_time: datetime.datetime,
+    ) -> Optional[FreshnessMinutes]:
+        """Returns a number of minutes past the specified freshness policy that this asset currently
+        is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
+        how overdue it is, and this will return None.
 
-            required_time = evaluation_tick - self.maximum_lag_delta
-            if used_data_time < required_time:
-                minutes_late = max(
-                    minutes_late, (required_time - used_data_time).total_seconds() / 60
-                )
-        return minutes_late
+        Args:
+            data_time (Optional[datetime]): The timestamp of the data that was used to create the
+                current version of this asset.
+            evaluation_time (datetime): The time at which we're evaluating the overdueness of this
+                asset. Generally, this is the current time.
+        """
+        if data_time is None:
+            return None
+        evaluation_tick = self.get_evaluation_tick(evaluation_time)
+        if evaluation_tick is None:
+            return None
+        required_time = evaluation_tick - self.maximum_lag_delta
+
+        return FreshnessMinutes(
+            lag_minutes=max(0.0, (evaluation_tick - data_time).total_seconds() / 60),
+            overdue_minutes=max(0.0, (required_time - data_time).total_seconds() / 60),
+        )

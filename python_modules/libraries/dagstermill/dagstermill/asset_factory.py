@@ -1,126 +1,52 @@
-import os
 import pickle
-import sys
 import tempfile
-import uuid
-from typing import Any, Mapping, Optional, Set, Union
+from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
 
 import dagster._check as check
-import papermill
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetsDefinition,
     Failure,
     Output,
     PartitionsDefinition,
     ResourceDefinition,
     RetryPolicy,
     RetryRequested,
+    SourceAsset,
     asset,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.system import StepExecutionContext
-from dagster._utils import safe_tempfile_path
-from dagster._utils.error import serializable_error_info_from_exc_info
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagstermill.compat import ExecutionError
-from dagstermill.factory import (
-    _clean_path_for_windows,
-    get_papermill_parameters,
-    replace_parameters,
-)
-
-from .engine import DagstermillEngine
+from dagstermill.factory import _clean_path_for_windows, execute_notebook
 
 
-def _dm_compute(
+def _make_dagstermill_asset_compute_fn(
     name: str,
     notebook_path: str,
     save_notebook_on_failure: bool,
-):
-    check.str_param(name, "name")
-    check.str_param(notebook_path, "notebook_path")
-
-    def _t_fn(context, **inputs):
-        check.inst_param(context, "context", OpExecutionContext)
+) -> Callable:
+    def _t_fn(context: OpExecutionContext, **inputs) -> Iterable:
         check.param_invariant(
             isinstance(context.run_config, dict),
             "context",
             "StepExecutionContext must have valid run_config",
         )
 
-        step_execution_context: StepExecutionContext = context.get_step_execution_context()
-
         with tempfile.TemporaryDirectory() as output_notebook_dir:
-            with safe_tempfile_path() as output_log_path:
-                prefix = str(uuid.uuid4())
-                parameterized_notebook_path = os.path.join(
-                    output_notebook_dir, f"{prefix}-inter.ipynb"
-                )
-
-                executed_notebook_path = os.path.join(output_notebook_dir, f"{prefix}-out.ipynb")
-
-                # Scaffold the registration here
-                nb = load_notebook_node(notebook_path)
-                compute_descriptor = "asset"
-
-                nb_no_parameters = replace_parameters(
-                    step_execution_context,
-                    nb,
-                    get_papermill_parameters(
-                        step_execution_context,
-                        inputs,
-                        output_log_path,
-                        compute_descriptor,
-                    ),
-                )
-
-                write_ipynb(nb_no_parameters, parameterized_notebook_path)
-
-                try:
-                    papermill_engines.register("dagstermill", DagstermillEngine)
-                    papermill.execute_notebook(
-                        input_path=parameterized_notebook_path,
-                        output_path=executed_notebook_path,
-                        engine_name="dagstermill",
-                        log_output=True,
-                    )
-                except Exception as ex:
-                    step_execution_context.log.warn(
-                        "Error when attempting to materialize executed notebook:"
-                        f" {serializable_error_info_from_exc_info(sys.exc_info())}"
-                    )
-                    # pylint: disable=no-member
-                    # compat:
-                    if isinstance(ex, ExecutionError) and (
-                        ex.ename == "RetryRequested" or ex.ename == "Failure"
-                    ):
-                        step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use"
-                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
-                            " their behavior."
-                        )
-
-                    if save_notebook_on_failure:
-                        storage_dir = context.instance.storage_directory()
-                        storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
-                        with open(storage_path, "wb") as dest_file_obj:
-                            with open(executed_notebook_path, "rb") as obj:
-                                dest_file_obj.write(obj.read())
-
-                        step_execution_context.log.info(
-                            f"Failed notebook written to {storage_path}"
-                        )
-
-                    raise
-
-            step_execution_context.log.debug(
-                f"Notebook execution complete for {name} at {executed_notebook_path}."
+            executed_notebook_path = execute_notebook(
+                context.get_step_execution_context(),
+                name=name,
+                inputs=inputs,
+                save_notebook_on_failure=save_notebook_on_failure,
+                notebook_path=notebook_path,
+                output_notebook_dir=output_notebook_dir,
             )
+
             with open(executed_notebook_path, "rb") as fd:
                 yield Output(fd.read())
 
@@ -146,7 +72,7 @@ def define_dagstermill_asset(
     notebook_path: str,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -158,7 +84,8 @@ def define_dagstermill_asset(
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
-):
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
 
     Arguments:
@@ -170,14 +97,14 @@ def define_dagstermill_asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
-            upstream dependencies, but do not pass an input to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]): The assets
+            that are upstream dependencies, but do not pass an input value to the notebook.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the notebook.
-        description (Optional[str]): Description of the asset to display in Dagit.
+        description (Optional[str]): Description of the asset to display in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
@@ -196,6 +123,8 @@ def define_dagstermill_asset(
         save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
             written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
             Defaults to False.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are
+            upstream dependencies, but do not pass an input to the asset.
 
     Examples:
         .. code-block:: python
@@ -247,26 +176,25 @@ def define_dagstermill_asset(
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in op_tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
 
     return asset(
         name=name,
         key_prefix=key_prefix,
         ins=ins,
-        non_argument_deps=non_argument_deps,
+        deps=deps,
         metadata=metadata,
         description=description,
         config_schema=config_schema,
@@ -278,8 +206,9 @@ def define_dagstermill_asset(
         output_required=False,
         io_manager_key=io_mgr_key,
         retry_policy=retry_policy,
+        non_argument_deps=non_argument_deps,
     )(
-        _dm_compute(
+        _make_dagstermill_asset_compute_fn(
             name=name,
             notebook_path=notebook_path,
             save_notebook_on_failure=save_notebook_on_failure,

@@ -34,3 +34,10 @@ yarn-error.log*
 .vercel
 
 *.tsbuildinfo
+
+
+# Yarn berry
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+.pnp.*

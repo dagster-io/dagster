@@ -1,3 +1,5 @@
+from typing import Any, Mapping, Optional, Sequence
+
 import dask
 import dask.distributed
 from dagster import (
@@ -11,14 +13,18 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
-from dagster._utils import frozentags, iterate_with_context
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._utils import iterate_with_context
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
@@ -113,38 +119,34 @@ def dask_executor(init_context):
 
 
 def query_on_dask_worker(
-    dependencies,
-    recon_pipeline,
-    pipeline_run,
-    run_config,
-    step_keys,
-    mode,
-    instance_ref,
-    known_state,
-):  # pylint: disable=unused-argument
+    dependencies: Any,
+    recon_job: ReconstructableJob,
+    dagster_run: DagsterRun,
+    run_config: Optional[Mapping[str, object]],
+    step_keys: Optional[Sequence[str]],
+    instance_ref: InstanceRef,
+    known_state: Optional[KnownExecutionState],
+) -> Sequence[DagsterEvent]:
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
     with DagsterInstance.from_ref(instance_ref) as instance:
-        subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
-        )
+        subset_job = recon_job.get_subset(op_selection=dagster_run.resolved_op_selection)
 
         execution_plan = create_execution_plan(
-            subset_pipeline,
+            subset_job,
             run_config=run_config,
             step_keys_to_execute=step_keys,
-            mode=mode,
             known_state=known_state,
         )
 
         return execute_plan(
-            execution_plan, subset_pipeline, instance, pipeline_run, run_config=run_config
+            execution_plan, subset_job, instance, dagster_run, run_config=run_config
         )
 
 
-def get_dask_resource_requirements(tags):
-    check.inst_param(tags, "tags", frozentags)
+def get_dask_resource_requirements(tags: Mapping[str, str]):
+    check.mapping_param(tags, "tags", key_type=str, value_type=str)
     req_str = tags.get(DASK_RESOURCE_REQUIREMENTS_KEY)
     if req_str is not None:
         return _seven.json.loads(req_str)
@@ -163,13 +165,13 @@ class DaskExecutor(Executor):
     def retries(self):
         return RetryMode.DISABLED
 
-    def execute(self, plan_context, execution_plan):
+    def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
             isinstance(plan_context.executor, DaskExecutor),
             "plan_context",
-            "Expected executor to be DaskExecutor got {}".format(plan_context.executor),
+            f"Expected executor to be DaskExecutor got {plan_context.executor}",
         )
 
         check.invariant(
@@ -179,7 +181,7 @@ class DaskExecutor(Executor):
 
         step_levels = execution_plan.get_steps_to_execute_by_level()
 
-        pipeline_name = plan_context.pipeline_name
+        job_name = plan_context.job_name
 
         instance = plan_context.instance
 
@@ -190,43 +192,43 @@ class DaskExecutor(Executor):
         elif cluster_type == "local":
             from dask.distributed import LocalCluster
 
-            cluster = LocalCluster(**self.build_dict(pipeline_name))
+            cluster = LocalCluster(**self.build_dict(job_name))
         elif cluster_type == "yarn":
             from dask_yarn import YarnCluster
 
-            cluster = YarnCluster(**self.build_dict(pipeline_name))
+            cluster = YarnCluster(**self.build_dict(job_name))
         elif cluster_type == "ssh":
             from dask.distributed import SSHCluster
 
-            cluster = SSHCluster(**self.build_dict(pipeline_name))
+            cluster = SSHCluster(**self.build_dict(job_name))
         elif cluster_type == "pbs":
             from dask_jobqueue import PBSCluster
 
-            cluster = PBSCluster(**self.build_dict(pipeline_name))
+            cluster = PBSCluster(**self.build_dict(job_name))
         elif cluster_type == "moab":
             from dask_jobqueue import MoabCluster
 
-            cluster = MoabCluster(**self.build_dict(pipeline_name))
+            cluster = MoabCluster(**self.build_dict(job_name))
         elif cluster_type == "sge":
             from dask_jobqueue import SGECluster
 
-            cluster = SGECluster(**self.build_dict(pipeline_name))
+            cluster = SGECluster(**self.build_dict(job_name))
         elif cluster_type == "lsf":
             from dask_jobqueue import LSFCluster
 
-            cluster = LSFCluster(**self.build_dict(pipeline_name))
+            cluster = LSFCluster(**self.build_dict(job_name))
         elif cluster_type == "slurm":
             from dask_jobqueue import SLURMCluster
 
-            cluster = SLURMCluster(**self.build_dict(pipeline_name))
+            cluster = SLURMCluster(**self.build_dict(job_name))
         elif cluster_type == "oar":
             from dask_jobqueue import OARCluster
 
-            cluster = OARCluster(**self.build_dict(pipeline_name))
+            cluster = OARCluster(**self.build_dict(job_name))
         elif cluster_type == "kube":
             from dask_kubernetes import KubeCluster
 
-            cluster = KubeCluster(**self.build_dict(pipeline_name))
+            cluster = KubeCluster(**self.build_dict(job_name))
         else:
             raise ValueError(
                 "Must be providing one of the following ('existing', 'local', 'yarn', 'ssh',"
@@ -246,23 +248,19 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    if plan_context.pipeline.get_definition().is_job:
-                        run_config = plan_context.run_config
-                    else:
-                        run_config = dict(plan_context.run_config, execution={"in_process": {}})
+                    run_config = plan_context.run_config
 
-                    dask_task_name = "%s.%s" % (pipeline_name, step.key)
+                    dask_task_name = "%s.%s" % (job_name, step.key)
 
-                    recon_pipeline = plan_context.reconstructable_pipeline
+                    recon_job = plan_context.reconstructable_job
 
                     future = client.submit(
                         query_on_dask_worker,
                         dependencies,
-                        recon_pipeline,
-                        plan_context.pipeline_run,
+                        recon_job,
+                        plan_context.dagster_run,
                         run_config,
                         [step.key],
-                        plan_context.pipeline_run.mode,
                         instance.get_ref(),
                         execution_plan.known_state,
                         key=dask_task_name,
@@ -282,7 +280,7 @@ class DaskExecutor(Executor):
                     check.inst(step_event, DagsterEvent)
                     yield step_event
 
-    def build_dict(self, pipeline_name):
+    def build_dict(self, job_name):
         """Returns a dict we can use for kwargs passed to dask client instantiation.
 
         Intended to be used like:
@@ -292,7 +290,7 @@ class DaskExecutor(Executor):
 
         """
         if self.cluster_type in ["yarn", "pbs", "moab", "sge", "lsf", "slurm", "oar", "kube"]:
-            dask_cfg = {"name": pipeline_name}
+            dask_cfg = {"name": job_name}
         else:
             dask_cfg = {}
 

@@ -12,7 +12,8 @@ def create_mock_client():
     with patch("dagster_graphql.client.client.Client") as _:
         client = DagsterGraphQLClient("localhost")
         yield MockClient(
-            python_client=client, mock_gql_client=client._client  # pylint: disable=W0212
+            python_client=client,
+            mock_gql_client=client._client,  # noqa: SLF001
         )
 
 

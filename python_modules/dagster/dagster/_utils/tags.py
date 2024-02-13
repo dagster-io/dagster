@@ -1,13 +1,15 @@
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Sequence, Tuple, Union
 
 from dagster import _check as check
 
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.step import ExecutionStep
+    from dagster._core.storage.dagster_run import DagsterRun
+
 
 class TagConcurrencyLimitsCounter:
-    """
-    Helper object that keeps track of when the tag concurrency limits are met
-    """
+    """Helper object that keeps track of when the tag concurrency limits are met."""
 
     _key_limits: Dict[str, int]
     _key_value_limits: Dict[Tuple[str, str], int]
@@ -16,7 +18,11 @@ class TagConcurrencyLimitsCounter:
     _key_value_counts: Dict[Tuple[str, str], int]
     _unique_value_counts: Dict[Tuple[str, str], int]
 
-    def __init__(self, tag_concurrency_limits, in_progress_tagged_items):
+    def __init__(
+        self,
+        tag_concurrency_limits: Sequence[Mapping[str, Any]],
+        in_progress_tagged_items: Sequence[Union["DagsterRun", "ExecutionStep"]],
+    ):
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
         check.list_param(in_progress_tagged_items, "in_progress_tagged_items")
 
@@ -44,10 +50,8 @@ class TagConcurrencyLimitsCounter:
         for item in in_progress_tagged_items:
             self.update_counters_with_launched_item(item)
 
-    def is_blocked(self, item):
-        """
-        True if there are in progress item which are blocking this item based on tag limits
-        """
+    def is_blocked(self, item: Union["DagsterRun", "ExecutionStep"]) -> bool:
+        """True if there are in progress item which are blocking this item based on tag limits."""
         for key, value in item.tags.items():
             if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
                 return True
@@ -67,10 +71,10 @@ class TagConcurrencyLimitsCounter:
 
         return False
 
-    def update_counters_with_launched_item(self, item):
-        """
-        Add a new in progress item to the counters
-        """
+    def update_counters_with_launched_item(
+        self, item: Union["DagsterRun", "ExecutionStep"]
+    ) -> None:
+        """Add a new in progress item to the counters."""
         for key, value in item.tags.items():
             if key in self._key_limits:
                 self._key_counts[key] += 1

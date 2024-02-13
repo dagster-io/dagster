@@ -9,23 +9,21 @@ class TestPostgresRunStorage(TestRunStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, conn_string):  # pylint: disable=arguments-renamed
+    def run_storage(self, conn_string):
         storage = PostgresRunStorage.create_clean_storage(conn_string)
         assert storage
         return storage
 
     def test_load_from_config(self, hostname):
-        url_cfg = """
+        url_cfg = f"""
           run_storage:
             module: dagster_postgres.run_storage
             class: PostgresRunStorage
             config:
               postgres_url: postgresql://test:test@{hostname}:5432/test
-        """.format(
-            hostname=hostname
-        )
+        """
 
-        explicit_cfg = """
+        explicit_cfg = f"""
           run_storage:
             module: dagster_postgres.run_storage
             class: PostgresRunStorage
@@ -35,12 +33,10 @@ class TestPostgresRunStorage(TestRunStorage):
                 password: test
                 hostname: {hostname}
                 db_name: test
-        """.format(
-            hostname=hostname
-        )
+        """
 
         with environ({"TEST_PG_PASSWORD": "test"}):
-            env_cfg = """
+            env_cfg = f"""
             run_storage:
               module: dagster_postgres.run_storage
               class: PostgresRunStorage
@@ -51,21 +47,18 @@ class TestPostgresRunStorage(TestRunStorage):
                     env: TEST_PG_PASSWORD
                   hostname: {hostname}
                   db_name: test
-            """.format(
-                hostname=hostname
-            )
+            """
 
-            # pylint: disable=protected-access
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(
                     overrides=yaml.safe_load(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url
-                        == from_explicit_instance._run_storage.postgres_url
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001
+                        == from_explicit_instance._run_storage.postgres_url  # noqa: SLF001
                     )
                 with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url
-                        == from_env_instance._run_storage.postgres_url
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001
+                        == from_env_instance._run_storage.postgres_url  # noqa: SLF001
                     )

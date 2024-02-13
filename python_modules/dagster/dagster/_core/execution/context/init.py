@@ -10,7 +10,7 @@ from dagster._core.definitions.resource_definition import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 
 class InitResourceContext:
@@ -18,32 +18,14 @@ class InitResourceContext:
 
     Users should not instantiate this object directly. To construct an `InitResourceContext` for testing purposes, use :py:func:`dagster.build_init_resource_context`.
 
-    Attributes:
-        resource_config (Any): The configuration data provided by the run config. The schema
-            for this data is defined by the ``config_field`` argument to
-            :py:class:`ResourceDefinition`.
-        resource_def (ResourceDefinition): The definition of the resource currently being
-            constructed.
-        log_manager (DagsterLogManager): The log manager for this run of the job or pipeline
-        resources (ScopedResources): The resources that are available to the resource that we are
-            initalizing.
-        dagster_run (Optional[PipelineRun]): The dagster run to use. When initializing resources
-            outside of execution context, this will be None.
-        run_id (Optional[str]): The id for this run of the job or pipeline. When initializing resources
-            outside of execution context, this will be None.
-        pipeline_run (Optional[PipelineRun]): (legacy) The dagster run to use. When initializing resources
-            outside of execution context, this will be None.
-
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import resource, InitResourceContext
 
-        from dagster import resource, InitResourceContext
-
-        @resource
-        def the_resource(init_context: InitResourceContext):
-            init_context.log.info("Hello, world!")
-
+            @resource
+            def the_resource(init_context: InitResourceContext):
+                init_context.log.info("Hello, world!")
     """
 
     def __init__(
@@ -62,44 +44,57 @@ class InitResourceContext:
         self._resources = resources
         self._dagster_run = dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def resource_config(self) -> Any:
+        """The configuration data provided by the run config. The schema
+        for this data is defined by the ``config_field`` argument to
+        :py:class:`ResourceDefinition`.
+        """
         return self._resource_config
 
-    @public  # type: ignore
+    @public
     @property
     def resource_def(self) -> Optional[ResourceDefinition]:
+        """The definition of the resource currently being constructed."""
         return self._resource_def
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Resources:
+        """The resources that are available to the resource that we are initalizing."""
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> Optional[DagsterInstance]:
+        """The Dagster instance configured for the current execution context."""
         return self._instance
 
     @property
     def dagster_run(self) -> Optional[DagsterRun]:
+        """The dagster run to use. When initializing resources outside of execution context, this will be None."""
         return self._dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> Optional[DagsterLogManager]:
+        """The Dagster log manager configured for the current execution context."""
         return self._log_manager
 
     # backcompat: keep around this property from when InitResourceContext used to be a NamedTuple
-    @public  # type: ignore
+    @public
     @property
     def log_manager(self) -> Optional[DagsterLogManager]:
+        """The log manager for this run of the job."""
         return self._log_manager
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> Optional[str]:
+        """The id for this run of the job or pipeline. When initializing resources outside of
+        execution context, this will be None.
+        """
         return self.dagster_run.run_id if self.dagster_run else None
 
     def replace_config(self, config: Any) -> "InitResourceContext":
@@ -134,7 +129,7 @@ class UnboundInitResourceContext(InitResourceContext):
             build_resources,
             wrap_resources_for_execution,
         )
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._instance_provided = (
             check.opt_inst_param(instance, "instance", DagsterInstance) is not None
@@ -143,7 +138,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._instance_cm = ephemeral_instance_if_missing(instance)
         # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
         # so ignore lint error
-        instance = self._instance_cm.__enter__()  # pylint: disable=no-member
+        instance = self._instance_cm.__enter__()
 
         if isinstance(resources, Resources):
             check.failed("Should not have a Resources object directly from this initialization")
@@ -153,7 +148,7 @@ class UnboundInitResourceContext(InitResourceContext):
         )
 
         self._resources_cm = build_resources(self._resource_defs, instance=instance)
-        resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+        resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
@@ -171,15 +166,15 @@ class UnboundInitResourceContext(InitResourceContext):
         return self
 
     def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        self._resources_cm.__exit__(*exc)
         if self._instance_provided:
-            self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
         if self._instance_provided and not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._instance_cm.__exit__(None, None, None)
 
     @property
     def resource_config(self) -> Any:
@@ -193,6 +188,7 @@ class UnboundInitResourceContext(InitResourceContext):
 
     @property
     def resources(self) -> Resources:
+        """The resources that are available to the resource that we are initalizing."""
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
@@ -204,10 +200,6 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def instance(self) -> Optional[DagsterInstance]:
         return self._instance
-
-    @property
-    def pipeline_run(self) -> Optional[DagsterRun]:
-        return None
 
     @property
     def log(self) -> Optional[DagsterLogManager]:

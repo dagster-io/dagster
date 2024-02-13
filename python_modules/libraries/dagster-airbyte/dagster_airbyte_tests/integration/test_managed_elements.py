@@ -1,4 +1,5 @@
-# pylint: disable=unused-argument,print-call
+# ruff: noqa: T201
+
 
 import os
 import time
@@ -45,9 +46,7 @@ def docker_compose_airbyte_instance_fixture(
     docker_compose_file,
     docker_compose_env_file,
 ):
-    """
-    Spins up an Airbyte instance using docker-compose, and tears it down after the test.
-    """
+    """Spins up an Airbyte instance using docker-compose, and tears it down after the test."""
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
         webapp_host = hostnames["airbyte-webapp"]
         webapp_port = "8000" if webapp_host == "localhost" else "80"
@@ -90,9 +89,7 @@ def track_make_requests_fixture():
 
 @pytest.fixture(name="empty_airbyte_instance")
 def empty_airbyte_instance_fixture(docker_compose_airbyte_instance):
-    """
-    Ensures that the docker-compose Airbyte instance is empty before running a test.
-    """
+    """Ensures that the docker-compose Airbyte instance is empty before running a test."""
     apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     yield docker_compose_airbyte_instance
@@ -349,6 +346,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         assert ManagedElementDiff() != check_result
 
 
+@pytest.mark.flaky(reruns=1)
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")

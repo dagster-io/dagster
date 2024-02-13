@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import dagster._check as check
 import graphene
 from dagster._core.host_representation import ExternalRepositoryOrigin
@@ -22,21 +24,23 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
     class Meta:
         name = "RepositoryOrigin"
 
-    def __init__(self, origin):
+    def __init__(self, origin: ExternalRepositoryOrigin):
         super().__init__()
         self._origin = check.inst_param(origin, "origin", ExternalRepositoryOrigin)
 
-    def resolve_id(self, _graphene_info: ResolveInfo):
+    def resolve_id(self, _graphene_info: ResolveInfo) -> str:
         return self._origin.get_id()
 
-    def resolve_repository_location_name(self, _graphene_info: ResolveInfo):
-        return self._origin.repository_location_origin.location_name
+    def resolve_repository_location_name(self, _graphene_info: ResolveInfo) -> str:
+        return self._origin.code_location_origin.location_name
 
-    def resolve_repository_name(self, _graphene_info: ResolveInfo):
+    def resolve_repository_name(self, _graphene_info: ResolveInfo) -> str:
         return self._origin.repository_name
 
-    def resolve_repository_location_metadata(self, _graphene_info: ResolveInfo):
-        metadata = self._origin.repository_location_origin.get_display_metadata()
+    def resolve_repository_location_metadata(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneRepositoryMetadata]:
+        metadata = self._origin.code_location_origin.get_display_metadata()
         return [
             GrapheneRepositoryMetadata(key=key, value=value)
             for key, value in metadata.items()

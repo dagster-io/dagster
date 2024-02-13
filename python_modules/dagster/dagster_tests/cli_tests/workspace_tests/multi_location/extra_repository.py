@@ -1,17 +1,16 @@
-from dagster import repository
-from dagster._legacy import pipeline, solid
+from dagster import job, op, repository
 
 
-@solid
-def extra_solid(_):
+@op
+def extra_op(_):
     pass
 
 
-@pipeline
-def extra_pipeline():
-    extra_solid()
+@job
+def extra_job():
+    extra_op()
 
 
 @repository
 def extra_repository():
-    return [extra_pipeline]
+    return [extra_job]

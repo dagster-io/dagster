@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
@@ -84,14 +82,79 @@ def test_merge(
 
     assert merged.container_name == "bar"
 
-    assert merged.run_resources == {
-        "cpu": "256",
-        "memory": "8192",
-    }
+    assert merged.run_resources == {"cpu": "256", "memory": "8192", "ephemeral_storage": 100}
     assert merged.server_resources == {
         "cpu": "2048",
         "memory": "4096",
+        "ephemeral_storage": 25,
     }
+
+    assert merged.server_ecs_tags == [
+        {"key": "BAZ", "value": "QUUX"},
+        {
+            "key": "FOO",  # no value
+        },
+    ]
+    assert merged.run_ecs_tags == [{"key": "GHI"}, {"key": "ABC", "value": "DEF"}]
+
+    assert merged.task_role_arn == "other-task-role"
+    assert merged.execution_role_arn == "other-fake-execution-role"
+
+    assert merged.mount_points == [
+        {
+            "sourceVolume": "myOtherEfsVolume",
+            "containerPath": "/mount/other/efs",
+            "readOnly": True,
+        },
+        {
+            "sourceVolume": "myEfsVolume",
+            "containerPath": "/mount/efs",
+            "readOnly": True,
+        },
+    ]
+
+    assert merged.repository_credentials == "fake-secret-arn"
+
+    assert merged.volumes == [
+        {
+            "name": "myOtherEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-5678",
+                "rootDirectory": "/path/to/my/other/data",
+            },
+        },
+        {
+            "name": "myEfsVolume",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-1234",
+                "rootDirectory": "/path/to/my/data",
+            },
+        },
+    ]
+
+    assert merged.server_sidecar_containers == [
+        {
+            "name": "OtherServerAgent",
+            "image": "public.ecr.aws/other/agent:latest",
+        },
+        {
+            "name": "DatadogAgent",
+            "image": "public.ecr.aws/datadog/agent:latest",
+            "environment": [
+                {"name": "ECS_FARGATE", "value": "true"},
+            ],
+        },
+    ]
+    assert merged.run_sidecar_containers == [
+        {
+            "name": "OtherRunAgent",
+            "image": "otherrun:latest",
+        },
+        {
+            "name": "busyrun",
+            "image": "busybox:latest",
+        },
+    ]
 
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"

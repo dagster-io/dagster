@@ -1,8 +1,8 @@
 import csv
 from collections import OrderedDict
 
-from dagster._legacy import execute_solid
 from dagster._utils import script_relative_path
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from docs_snippets.intro_tutorial.basics.testing.custom_types_2 import sort_by_calories
 from docs_snippets.intro_tutorial.basics.testing.custom_types_4 import (
     less_simple_data_frame_type_check,
@@ -35,4 +35,4 @@ def test_sort():
     ) as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    execute_solid(sort_by_calories, input_values={"cereals": cereals})
+    wrap_op_in_graph_and_execute(sort_by_calories, input_values={"cereals": cereals})

@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -28,23 +29,15 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            # Expect experimental warnings to be thrown for direct
-            # resource_defs and io_manager_def arguments.
-            if "resource_defs" in w.message.args[0] or "io_manager_def" in w.message.args[0]:
-                continue
-            assert False, f"Unexpected warning: {str(w)}"
+    warnings.filterwarnings("error")
 
 
 def test_basic_materialize():
@@ -57,15 +50,15 @@ def test_basic_materialize():
         with instance_for_test(temp_dir=temp_dir) as instance:
             result = materialize([the_asset], instance=instance)
             assert result.success
-            assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
+            assert result.asset_materializations_for_node("the_asset")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
 
 
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         assert materialize(
@@ -78,7 +71,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
@@ -89,6 +82,7 @@ def test_materialize_bad_config():
             )
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")})
     def the_asset(context):
@@ -116,6 +110,7 @@ def test_materialize_resources_not_satisfied():
         ).success
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_conflicting_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
     def first():
@@ -135,6 +130,7 @@ def test_materialize_conflicting_resources():
             materialize([first, second], instance=instance)
 
 
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_assets():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -159,6 +155,8 @@ def test_materialize_source_assets():
         assert result.output_for_node("the_asset") == 6
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_asset_conflicts():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -257,9 +255,9 @@ def test_materialize_multi_asset():
             "my_other_out_name": {AssetKey("thing")},
         },
     )
-    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
-        yield Output(1, "my_out_name")
+    def multi_asset_with_internal_deps(thing):
         yield Output(2, "my_other_out_name")
+        yield Output(1, "my_out_name")
 
     with instance_for_test() as instance:
         result = materialize([thing_asset, multi_asset_with_internal_deps], instance=instance)
@@ -271,7 +269,7 @@ def test_materialize_multi_asset():
 def test_materialize_tags():
     @asset
     def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+        assert context.run.tags.get("key1") == "value1"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], instance=instance, tags={"key1": "value1"})
@@ -281,8 +279,8 @@ def test_materialize_tags():
 
 def test_materialize_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], partition_key="2022-02-02", instance=instance)
@@ -302,7 +300,7 @@ def test_materialize_provided_resources():
         [the_asset], resources={"foo": foo_resource, "bar": 4, "io_manager": mem_io_manager}
     )
     assert result.success
-    assert result.asset_materializations_for_node("the_asset")[0].metadata_entries == []
+    assert result.asset_materializations_for_node("the_asset")[0].metadata == {}
 
 
 def test_conditional_materialize():
@@ -327,15 +325,15 @@ def test_conditional_materialize():
             result = materialize([the_asset, downstream], instance=instance)
             assert result.success
 
-            assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
+            assert result.asset_materializations_for_node("the_asset")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
             with open(os.path.join(temp_dir, "storage", "the_asset"), "rb") as f:
                 assert pickle.load(f) == 5
 
-            assert result.asset_materializations_for_node("downstream")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "downstream"))
+            assert result.asset_materializations_for_node("downstream")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "downstream"))
             with open(os.path.join(temp_dir, "storage", "downstream"), "rb") as f:
                 assert pickle.load(f) == 6
 
@@ -360,3 +358,29 @@ def test_raise_on_error():
 
     with instance_for_test() as instance:
         assert not materialize([asset1], raise_on_error=False, instance=instance).success
+
+
+def test_selection():
+    @asset
+    def upstream():
+        ...
+
+    @asset
+    def downstream(upstream):
+        ...
+
+    assets = [upstream, downstream]
+
+    with TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            result1 = materialize(assets, instance=instance, selection=[upstream])
+            assert result1.success
+            materialization_events = result1.get_asset_materialization_events()
+            assert len(materialization_events) == 1
+            assert materialization_events[0].materialization.asset_key == AssetKey("upstream")
+
+            result2 = materialize(assets, instance=instance, selection=[downstream])
+            assert result2.success
+            materialization_events = result2.get_asset_materialization_events()
+            assert len(materialization_events) == 1
+            assert materialization_events[0].materialization.asset_key == AssetKey("downstream")

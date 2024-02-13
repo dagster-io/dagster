@@ -1,5 +1,5 @@
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
 
 import yaml
 
@@ -7,6 +7,19 @@ import dagster._check as check
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides
+    from dagster._core.launcher.base import RunLauncher
+    from dagster._core.run_coordinator.base import RunCoordinator
+    from dagster._core.scheduler.scheduler import Scheduler
+    from dagster._core.secrets.loader import SecretsLoader
+    from dagster._core.storage.base_storage import DagsterStorage
+    from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.event_log.base import EventLogStorage
+    from dagster._core.storage.root import LocalArtifactStorage
+    from dagster._core.storage.runs.base import RunStorage
+    from dagster._core.storage.schedules.base import ScheduleStorage
 
 
 def compute_logs_directory(base: str) -> str:
@@ -311,18 +324,22 @@ class InstanceRef(
 
     @staticmethod
     def from_dir(
-        base_dir, *, config_dir=None, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None
-    ):
+        base_dir: str,
+        *,
+        config_dir: Optional[str] = None,
+        config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
+        overrides: Optional["DagsterInstanceOverrides"] = None,
+    ) -> "InstanceRef":
         if config_dir is None:
             config_dir = base_dir
 
-        overrides = check.opt_dict_param(overrides, "overrides")
+        overrides = check.opt_mapping_param(overrides, "overrides")
         config_value, custom_instance_class = dagster_instance_config(
             config_dir, config_filename=config_filename, overrides=overrides
         )
 
         if custom_instance_class:
-            config_keys = set(custom_instance_class.config_schema().keys())
+            config_keys = set(custom_instance_class.config_schema().keys())  # type: ignore  # (undefined method)
             custom_instance_class_config = {
                 key: val for key, val in config_value.items() if key in config_keys
             }
@@ -331,7 +348,7 @@ class InstanceRef(
                 config_value["instance_class"]["class"],
                 yaml.dump(custom_instance_class_config, default_flow_style=False),
             )
-            defaults = custom_instance_class.config_defaults(base_dir)
+            defaults = custom_instance_class.config_defaults(base_dir)  # type: ignore  # (undefined method)
         else:
             custom_instance_class_data = None
             defaults = InstanceRef.config_defaults(base_dir)
@@ -368,19 +385,19 @@ class InstanceRef(
                 config_yaml=yaml.dump(
                     {
                         "run_storage": {
-                            "module_name": run_storage_data.module_name,
-                            "class_name": run_storage_data.class_name,
-                            "config_yaml": run_storage_data.config_yaml,
+                            "module_name": run_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": run_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": run_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                         "event_log_storage": {
-                            "module_name": event_storage_data.module_name,
-                            "class_name": event_storage_data.class_name,
-                            "config_yaml": event_storage_data.config_yaml,
+                            "module_name": event_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": event_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": event_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                         "schedule_storage": {
-                            "module_name": schedule_storage_data.module_name,
-                            "class_name": schedule_storage_data.class_name,
-                            "config_yaml": schedule_storage_data.config_yaml,
+                            "module_name": schedule_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": schedule_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": schedule_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                     },
                     default_flow_style=False,
@@ -393,17 +410,29 @@ class InstanceRef(
                 run_storage_data,
                 event_storage_data,
                 schedule_storage_data,
-            ] = configurable_storage_data(config_value.get("storage"), defaults)
+            ] = configurable_storage_data(
+                config_value.get("storage"),  # type: ignore  # (possible none)
+                defaults,
+            )
 
         scheduler_data = configurable_class_data_or_default(
             config_value, "scheduler", defaults["scheduler"]
         )
 
-        run_coordinator_data = configurable_class_data_or_default(
-            config_value,
-            "run_coordinator",
-            defaults["run_coordinator"],
-        )
+        if config_value.get("run_queue"):
+            run_coordinator_data = configurable_class_data(
+                {
+                    "module": "dagster.core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": config_value["run_queue"],
+                }
+            )
+        else:
+            run_coordinator_data = configurable_class_data_or_default(
+                config_value,
+                "run_coordinator",
+                defaults["run_coordinator"],
+            )
 
         run_launcher_data = configurable_class_data_or_default(
             config_value,
@@ -412,7 +441,8 @@ class InstanceRef(
         )
 
         secrets_loader_data = configurable_secrets_loader_data(
-            config_value.get("secrets"), defaults["secrets"]
+            config_value.get("secrets"),  # type: ignore  # (possible none)
+            defaults["secrets"],
         )
 
         settings_keys = {
@@ -425,14 +455,16 @@ class InstanceRef(
             "sensors",
             "schedules",
             "nux",
+            "auto_materialize",
+            "concurrency",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
         return InstanceRef(
-            local_artifact_storage_data=local_artifact_storage_data,
+            local_artifact_storage_data=local_artifact_storage_data,  # type: ignore  # (possible none)
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,
-            compute_logs_data=compute_logs_data,
+            compute_logs_data=compute_logs_data,  # type: ignore  # (possible none)
             schedule_storage_data=schedule_storage_data,
             scheduler_data=scheduler_data,
             run_coordinator_data=run_coordinator_data,
@@ -455,59 +487,93 @@ class InstanceRef(
         return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
 
     @property
-    def local_artifact_storage(self):
-        return self.local_artifact_storage_data.rehydrate()
+    def local_artifact_storage(self) -> "LocalArtifactStorage":
+        from dagster._core.storage.root import LocalArtifactStorage
+
+        return self.local_artifact_storage_data.rehydrate(as_type=LocalArtifactStorage)
 
     @property
-    def storage(self):
-        return self.storage_data.rehydrate() if self.storage_data else None
+    def storage(self) -> Optional["DagsterStorage"]:
+        from dagster._core.storage.base_storage import DagsterStorage
+
+        return self.storage_data.rehydrate(as_type=DagsterStorage) if self.storage_data else None
 
     @property
-    def run_storage(self):
-        return self.run_storage_data.rehydrate() if self.run_storage_data else None
+    def run_storage(self) -> Optional["RunStorage"]:
+        from dagster._core.storage.runs.base import RunStorage
+
+        return (
+            self.run_storage_data.rehydrate(as_type=RunStorage) if self.run_storage_data else None
+        )
 
     @property
-    def event_storage(self):
-        return self.event_storage_data.rehydrate() if self.event_storage_data else None
+    def event_storage(self) -> Optional["EventLogStorage"]:
+        from dagster._core.storage.event_log.base import EventLogStorage
+
+        return (
+            self.event_storage_data.rehydrate(as_type=EventLogStorage)
+            if self.event_storage_data
+            else None
+        )
 
     @property
-    def schedule_storage(self):
-        return self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None
+    def schedule_storage(self) -> Optional["ScheduleStorage"]:
+        from dagster._core.storage.schedules.base import ScheduleStorage
+
+        return (
+            self.schedule_storage_data.rehydrate(as_type=ScheduleStorage)
+            if self.schedule_storage_data
+            else None
+        )
 
     @property
-    def compute_log_manager(self):
-        return self.compute_logs_data.rehydrate()
+    def compute_log_manager(self) -> "ComputeLogManager":
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
+
+        return self.compute_logs_data.rehydrate(as_type=ComputeLogManager)
 
     @property
-    def scheduler(self):
-        return self.scheduler_data.rehydrate() if self.scheduler_data else None
+    def scheduler(self) -> Optional["Scheduler"]:
+        from dagster._core.scheduler.scheduler import Scheduler
+
+        return self.scheduler_data.rehydrate(as_type=Scheduler) if self.scheduler_data else None
 
     @property
-    def run_coordinator(self):
-        return self.run_coordinator_data.rehydrate() if self.run_coordinator_data else None
+    def run_coordinator(self) -> Optional["RunCoordinator"]:
+        from dagster._core.run_coordinator.base import RunCoordinator
+
+        return (
+            self.run_coordinator_data.rehydrate(as_type=RunCoordinator)
+            if self.run_coordinator_data
+            else None
+        )
 
     @property
-    def run_launcher(self):
-        return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+    def run_launcher(self) -> Optional["RunLauncher"]:
+        from dagster._core.launcher.base import RunLauncher
+
+        return (
+            self.run_launcher_data.rehydrate(as_type=RunLauncher)
+            if self.run_launcher_data
+            else None
+        )
 
     @property
-    def secrets_loader(self):
+    def secrets_loader(self) -> Optional["SecretsLoader"]:
+        from dagster._core.secrets.loader import SecretsLoader
+
         # Defining a default here rather than in stored config to avoid
         # back-compat issues when loading the config on older versions where
         # EnvFileLoader was not defined
         return (
-            self.secrets_loader_data.rehydrate()
+            self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
-            else ConfigurableClassData(
-                "dagster._core.secrets.env_file",
-                "EnvFileLoader",
-                yaml.dump({}),
-            ).rehydrate()
+            else None
         )
 
     @property
-    def custom_instance_class(self):
-        return (
+    def custom_instance_class(self) -> Type["DagsterInstance"]:
+        return (  # type: ignore  # (ambiguous return type)
             class_from_code_pointer(
                 self.custom_instance_class_data.module_name,
                 self.custom_instance_class_data.class_name,

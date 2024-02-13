@@ -43,13 +43,16 @@ To define a sensor, use the <PyObject object="sensor" decorator /> decorator. Th
 Let's say you have a job that logs a filename that is specified in the op configuration of the `process_file` op:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_job_marker endbefore=end_sensor_job_marker
-from dagster import op, job
+from dagster import op, job, Config
 
 
-@op(config_schema={"filename": str})
-def process_file(context):
-    filename = context.op_config["filename"]
-    context.log.info(filename)
+class FileConfig(Config):
+    filename: str
+
+
+@op
+def process_file(context: OpExecutionContext, config: FileConfig):
+    context.log.info(config.filename)
 
 
 @job
@@ -61,7 +64,7 @@ You can write a sensor that watches for new files in a specific directory and yi
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_directory_sensor_marker endbefore=end_directory_sensor_marker
 import os
-from dagster import sensor, RunRequest
+from dagster import sensor, RunRequest, RunConfig
 
 
 @sensor(job=log_file_job)
@@ -71,9 +74,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config=RunConfig(
+                    ops={"process_file": FileConfig(filename=filename)}
+                ),
             )
 ```
 
@@ -90,7 +93,7 @@ def materializes_asset_sensor():
     yield RunRequest(...)
 ```
 
-Once a sensor is added to a <PyObject object="Definitions" /> object with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
+Once a sensor is added to a <PyObject object="Definitions" /> object with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in the Dagster UI, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
@@ -98,7 +101,7 @@ def my_running_sensor():
     ...
 ```
 
-If you manually start or stop a sensor in Dagit, that will override any default status that is set in code.
+If you manually start or stop a sensor in the UI, that will override any default status that is set in code.
 
 Once your sensor is started, if you're running a [Dagster daemon](/deployment/dagster-daemon) as part of your deployment, the sensor will begin executing immediately without needing to restart the dagster-daemon process.
 
@@ -154,7 +157,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
@@ -163,6 +166,8 @@ def my_directory_sensor_cursor(context):
 ```
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
+
+Note also that in the example above, both a `run_key` _and_ cursor are being used. This means that if the cursor is reset but the target files don't change, new runs will not be launched because the run keys have not changed. If you want the ability to fully reset the state of your sensor by resetting the cursor, then you should not set `run_key` on `RunRequest`.
 
 ---
 
@@ -193,7 +198,7 @@ If a sensor evaluation function takes more than 60 seconds to return its results
 
 ## Skipping sensor evaluations
 
-For debugging purposes, it's often useful to describe why a sensor might not yield any runs for a given evaluation. The sensor evaluation function can yield a <PyObject object="SkipReason" /> with a string description that will be displayed in Dagit.
+For debugging purposes, it's often useful to describe why a sensor might not yield any runs for a given evaluation. The sensor evaluation function can yield a <PyObject object="SkipReason" /> with a string description that will be displayed in the UI.
 
 For example, here is our directory sensor that now provides a `SkipReason` when no files are encountered:
 
@@ -217,15 +222,151 @@ def my_directory_sensor_with_skip_reasons():
 
 ---
 
+## Using resources in sensors
+
+Dagster's [resources](/concepts/resources) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which provides access to an external API. The same resource could be used in the job that the sensor triggers.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_sensor endbefore=end_new_resource_on_sensor dedent=4
+from dagster import (
+    sensor,
+    RunRequest,
+    SensorEvaluationContext,
+    ConfigurableResource,
+    job,
+    Definitions,
+    RunConfig,
+)
+import requests
+from typing import List
+
+class UsersAPI(ConfigurableResource):
+    url: str
+
+    def fetch_users(self) -> List[str]:
+        return requests.get(self.url).json()
+
+@job
+def process_user():
+    ...
+
+@sensor(job=process_user)
+def process_new_users_sensor(
+    context: SensorEvaluationContext,
+    users_api: UsersAPI,
+):
+    last_user = int(context.cursor) if context.cursor else 0
+    users = users_api.fetch_users()
+
+    num_users = len(users)
+    for user_id in users[last_user:]:
+        yield RunRequest(
+            run_key=user_id,
+            tags={"user_id": user_id},
+        )
+
+    context.update_cursor(str(num_users))
+
+defs = Definitions(
+    jobs=[process_user],
+    sensors=[process_new_users_sensor],
+    resources={"users_api": UsersAPI(url="https://my-api.com/users")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing sensors with resources](#testing-sensors-with-resources).
+
+---
+
+## Logging in sensors
+
+<Note>
+  Sensor logs are stored in your{" "}
+  <a href="/deployment/dagster-instance#compute-log-storage">
+    Dagster instance's compute log storage
+  </a>
+  . You should ensure that your compute log storage is configured to view your sensor
+  logs.
+</Note>
+
+Any sensor can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
+@sensor(job=the_job)
+def logs_then_skips(context):
+    context.log.info("Logging from a sensor!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed when inspecting a tick in the tick history view on the corresponding sensor page.
+
+---
+
 ## Testing sensors
 
-To quickly preview what an existing sensor will generate when evaluated, you can run the following CLI command:
+<TabGroup>
+<TabItem name="Via the Dagster UI">
+
+### Via the Dagster UI
+
+<Note>
+  <strong>Before you test</strong>: Test evaluations of sensors run the sensor's
+  underlying Python function, meaning that any side effects contained within
+  that sensor's function may be executed.
+</Note>
+
+In the UI, you can manually trigger a test evaluation of a sensor and view the results.
+
+1. Click **Overview > Sensors**.
+
+2. Click the sensor you want to test.
+
+3. Click the **Test Sensor** button, located near the top right corner of the page.
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/sensors/test-sensor-button.png"
+   width={592}
+   height={270}
+   />
+
+4. You'll be prompted to provide a cursor value. You can use the existing cursor for the sensor (which will be prepopulated) or enter a different value. If you're not using cursors, leave this field blank.
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/sensors/provide-cursor-page.png"
+   width={900}
+   height={454}
+   />
+
+5. Click **Evaluate** to fire the sensor. A window containing the result of the evaluation will display, whether it's run requests, a skip reason, or a Python error:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/sensors/eval-result-page.png"
+   width={898}
+   height={455}
+   />
+
+   If the run was successful, then for each produced run request, you can open the launchpad pre-scaffolded with the config produced by that run request. You'll also see a new computed cursor value from the evaluation, with the option to persist the value.
+
+</TabItem>
+<TabItem name="Via the CLI">
+
+### Via the CLI
+
+To quickly preview what an existing sensor will generate when evaluated, run the following::
 
 ```shell
 dagster sensor preview my_sensor_name
 ```
 
-To unit test sensors, you can invoke the sensor directly. This will return all the run requests yielded by the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function:
+</TabItem>
+<TabItem name="Via Python">
+
+### Via Python
+
+To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject object="validate_run_config" /> function:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
 from dagster import validate_run_config
@@ -244,7 +385,7 @@ def test_sensor():
         assert validate_run_config(log_file_job, run_request.run_config)
 ```
 
-Notice that since we did not use the context argument in our sensor, we don't have to provide a context object. However, if we do in fact need the context object for our sensor, we can provide it via <PyObject object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
+Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
 @sensor(job=log_file_job)
@@ -261,7 +402,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
@@ -269,7 +410,7 @@ def my_directory_sensor_cursor(context):
     context.update_cursor(str(max_mtime))
 ```
 
-This sensor makes use of the `context` argument, and thus to invoke it, we need to provide one:
+This sensor uses the `context` argument. To invoke it, we need to provide one:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing_with_context endbefore=end_sensor_testing_with_context
 from dagster import build_sensor_context
@@ -281,41 +422,44 @@ def test_my_directory_sensor_cursor():
         assert validate_run_config(log_file_job, run_request.run_config)
 ```
 
----
+#### Testing sensors with resources
 
-## Logging in sensors
+For sensors which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the sensor function.
 
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
+Below is a test for the `process_new_users_sensor` that we defined in the [Using resources in sensors](#using-resources-in-sensors) section, which uses the `users_api` resource.
 
-Any sensor can emit log messages during its evaluation function:
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
+from dagster import build_sensor_context, validate_run_config
 
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
-@sensor(job=the_job)
-def logs_then_skips(context):
-    context.log.info("Logging from a sensor!")
-    return SkipReason("Nothing to do")
+def test_process_new_users_sensor():
+    class FakeUsersAPI:
+        def fetch_users(self) -> List[str]:
+            return ["1", "2", "3"]
+
+    context = build_sensor_context()
+    run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
+    assert len(run_requests) == 3
 ```
 
-These logs can be viewed in Dagit on the corresponding sensor page, after first enabling the **Experimental schedule/sensor logging view** option in **User Settings**.
+</TabItem>
+</TabGroup>
 
 ---
 
-## Monitoring sensors in Dagit
+## Monitoring sensors in the Dagster UI
 
 <!--
     These images were generated by running
 
     ```
     cd dagster/examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/
-    dagit -f sensors.py
+    dagster-webserver -f sensors.py
     ```
  -->
 
-Using Dagit, you can monitor and operator sensors. Dagit provides multiple view that help with observing sensor evaluations, skip reasons, and errors.
+Using the UI, you can monitor and operate sensors. The UI provides multiple views that help with observing sensor evaluations, skip reasons, and errors.
 
-To view all sensors, navigate to **Overview > Sensors tab**. Here, you can start and stop sensors, and view their frequency, last tick, and last run:
+To view all sensors, navigate to **Overview > Sensors**. Here, you can start and stop sensors, and view their frequency, last tick, and last run:
 
 <Image
 src="/images/concepts/partitions-schedules-sensors/sensors/all-sensors.png"
@@ -323,7 +467,7 @@ width={1280}
 height={376}
 />
 
-Click on any sensor to monitor all sensor evaluations on a timeline and view a table of runs launched by the sensor.
+Click on any sensor to [test the sensor](#via-the-dagster-ui), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.
 
 ---
 
@@ -367,7 +511,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.dagster_run.job_name}" succeeded.',
+        text=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 ```
 
@@ -409,7 +553,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=(
+        text=(
             f'Job "{context.dagster_run.job_name}" failed. Error:'
             f" {context.failure_event.message}"
         ),
@@ -431,7 +575,10 @@ you create a run failure sensor that will message a given Slack channel:
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    "#my_channel",
+    os.getenv("MY_SLACK_TOKEN"),
+)
 ```
 
 <br></br>
@@ -482,14 +629,14 @@ def code_location_a_data_update_failure_sensor():
     send_slack_alert()
 ```
 
-You can also monitor every job in your Dagster instance by specifying `monitor_all_repositories=True` on the sensor decorator. Note that `monitor_all_repositories` cannot be used along with jobs specified via `monitored_jobs`.
+You can also monitor every job in your Dagster instance by specifying `monitor_all_code_locations=True` on the sensor decorator. Note that `monitor_all_code_locations` cannot be used along with jobs specified via `monitored_jobs`.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_instance_sensor endbefore=end_instance_sensor
 @run_status_sensor(
-    monitor_all_repositories=True,
+    monitor_all_code_locations=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor():
+def sensor_monitor_all_code_locations():
     # when any job in the Dagster instance succeeds, this sensor will trigger
     send_slack_alert()
 ```
@@ -634,35 +781,6 @@ def my_s3_sensor(context):
     context.update_cursor(last_key)
     return run_requests
 ```
-
-### Using resources in sensors
-
-If you want to use resources within your sensor, you can use the <PyObject object="build_resources"/> API to perform the initialization.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_build_resources_example endbefore=end_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-```
-
-If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
 
 ---
 

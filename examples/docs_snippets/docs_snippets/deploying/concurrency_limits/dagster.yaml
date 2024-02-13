@@ -1,11 +1,34 @@
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    max_concurrent_runs: 25
-    tag_concurrency_limits:
-      - key: "database"
-        value: "redshift"
-        limit: 4
-      - key: "dagster/backfill"
-        limit: 10
+# start_overall_example
+
+run_queue:
+  max_concurrent_runs: 15
+
+# end_overall_example
+
+# start_tag_example
+
+run_queue:
+  max_concurrent_runs: 15
+  tag_concurrency_limits:
+    - key: "database"
+      value: "redshift"        # applies when the `database` tag has a value of `redshift`
+      limit: 4
+    - key: "dagster/backfill"  # applies when the `dagster/backfill` tag is present, regardless of value
+      limit: 10
+
+# end_tag_example
+
+# start_free_slots
+
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300 # free any hanging concurrency slots after 5 minutes from the end of a run
+
+# end_free_slots
+
+# start_default_value
+
+concurrency:
+  default_op_concurrency_limit: 1
+
+# end_default_value

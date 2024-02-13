@@ -5,7 +5,7 @@ import yaml
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
+from dagster._core.host_representation import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
@@ -20,23 +20,25 @@ def instance():
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace(instance):
-    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
-    with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
-        with second_server_process.create_ephemeral_client() as second_server:
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), wait_on_exit=True
+    ) as first_server_process:
+        first_server = first_server_process.create_client()
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), wait_on_exit=True
+        ) as second_server_process:
+            second_server = second_server_process.create_client()
             first_socket = first_server.socket
             second_socket = second_server.socket
-            workspace_yaml = """
+            workspace_yaml = f"""
 load_from:
 - grpc_server:
     host: localhost
-    socket: {socket_one}
+    socket: {first_socket}
 - grpc_server:
-    socket: {socket_two}
+    socket: {second_socket}
     location_name: 'local_port_default_host'
-                """.format(
-                socket_one=first_socket, socket_two=second_socket
-            )
+                """
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
@@ -45,30 +47,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
-                    name: stack.enter_context(origin.create_location())
+                code_locations = {
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                default_location_name = f"grpc:localhost:{first_socket}"
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.socket == first_socket
                 assert local_port.host == "localhost"
                 assert local_port.port is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.socket == second_socket
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.port is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
-        second_server_process.wait()
-    first_server_process.wait()
+                assert all(map(lambda x: x.name, code_locations.values()))
 
 
 def test_grpc_server_env_vars():
@@ -103,70 +103,70 @@ def test_grpc_server_env_vars():
         assert len(origins) == 2
 
         port_origin = origins["my_grpc_server_port"]
-        assert isinstance(origins["my_grpc_server_port"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_port"], GrpcServerCodeLocationOrigin)
 
         assert port_origin.port == 1234
         assert port_origin.host == "barhost"
 
         socket_origin = origins["my_grpc_server_socket"]
-        assert isinstance(origins["my_grpc_server_socket"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_socket"], GrpcServerCodeLocationOrigin)
 
         assert socket_origin.socket == "barsocket"
         assert socket_origin.host == "barhost"
 
 
 def test_ssl_grpc_server_workspace(instance):
-    server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-    try:
-        with server_process.create_ephemeral_client() as client:
-            assert client.heartbeat(echo="Hello")
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+    ) as server_process:
+        client = server_process.create_client()
+        assert client.heartbeat(echo="Hello")
 
-            port = server_process.port
-            ssl_yaml = f"""
-    load_from:
-    - grpc_server:
-        host: localhost
-        port: {port}
-        ssl: true
-    """
-            origins = location_origins_from_config(
-                yaml.safe_load(ssl_yaml),
-                # fake out as if it were loaded by a yaml file in this directory
-                file_relative_path(__file__, "not_a_real.yaml"),
-            )
-            origin = list(origins.values())[0]
-            assert origin.use_ssl
-
-            # Actually connecting to the server will fail since it's expecting SSL
-            # and we didn't set up the server with SSL
-            try:
-                with origin.create_location():
-                    assert False
-            except DagsterUserCodeUnreachableError:
-                pass
-
-    finally:
-        server_process.wait()
-
-
-def test_grpc_server_workspace(instance):
-    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-    with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-        with second_server_process.create_ephemeral_client() as second_server:
-            first_port = first_server.port
-            second_port = second_server.port
-            workspace_yaml = """
+        port = server_process.port
+        ssl_yaml = f"""
 load_from:
 - grpc_server:
     host: localhost
-    port: {port_one}
+    port: {port}
+    ssl: true
+"""
+        origins = location_origins_from_config(
+            yaml.safe_load(ssl_yaml),
+            # fake out as if it were loaded by a yaml file in this directory
+            file_relative_path(__file__, "not_a_real.yaml"),
+        )
+        origin = next(iter(origins.values()))
+        assert origin.use_ssl
+
+        # Actually connecting to the server will fail since it's expecting SSL
+        # and we didn't set up the server with SSL
+        try:
+            with origin.create_location(instance):
+                assert False
+        except DagsterUserCodeUnreachableError:
+            pass
+
+
+def test_grpc_server_workspace(instance):
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+    ) as first_server_process:
+        first_server = first_server_process.create_client()
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+        ) as second_server_process:
+            second_server = second_server_process.create_client()
+            first_port = first_server.port
+            second_port = second_server.port
+            workspace_yaml = f"""
+load_from:
 - grpc_server:
-    port: {port_two}
+    host: localhost
+    port: {first_port}
+- grpc_server:
+    port: {second_port}
     location_name: 'local_port_default_host'
-                """.format(
-                port_one=first_port, port_two=second_port
-            )
+                """
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
@@ -175,30 +175,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
-                    name: stack.enter_context(origin.create_location())
+                code_locations = {
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{port}".format(port=first_port)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                default_location_name = f"grpc:localhost:{first_port}"
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.port == first_port
                 assert local_port.host == "localhost"
                 assert local_port.socket is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.port == second_port
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.socket is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
-        second_server_process.wait()
-    first_server_process.wait()
+                assert all(map(lambda x: x.name, code_locations.values()))
 
 
 def test_cannot_set_socket_and_port():

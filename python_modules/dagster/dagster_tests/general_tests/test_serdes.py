@@ -1,47 +1,46 @@
+import dataclasses
 import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import NamedTuple, Set
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
+import pydantic
 import pytest
-from dagster import _seven
 from dagster._check import ParameterCheckError, inst_param, set_param
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
-    DefaultEnumSerializer,
-    DefaultNamedTupleSerializer,
     EnumSerializer,
+    FieldSerializer,
+    NamedTupleSerializer,
+    SerializableNonScalarKeyMapping,
+    SetToSequenceFieldSerializer,
+    UnpackContext,
     WhitelistMap,
-    _deserialize_json,
-    _serialize_dagster_namedtuple,
     _whitelist_for_serdes,
-    deserialize_json_to_dagster_namedtuple,
     deserialize_value,
-    pack_inner_value,
-    register_serdes_enum_fallbacks,
-    register_serdes_tuple_fallbacks,
+    pack_value,
     serialize_value,
-    unpack_inner_value,
+    unpack_value,
 )
 from dagster._serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
-    unpacked_tuple = deserialize_value('{"foo": "bar"}')
+    unpacked_tuple = deserialize_value('{"foo": "bar"}', as_type=dict)
     assert unpacked_tuple
     assert unpacked_tuple["foo"] == "bar"
 
 
 def test_deserialize_json_non_namedtuple():
     with pytest.raises(DeserializationError, match="was not expected type"):
-        deserialize_json_to_dagster_namedtuple('{"foo": "bar"}')
+        deserialize_value('{"foo": "bar"}', NamedTuple)
 
 
 @pytest.mark.parametrize("bad_obj", [1, None, False])
 def test_deserialize_json_invalid_types(bad_obj):
     with pytest.raises(ParameterCheckError):
-        deserialize_json_to_dagster_namedtuple(bad_obj)
+        deserialize_value(bad_obj)
 
 
 def test_deserialize_empty_set():
@@ -64,131 +63,148 @@ def test_descent_path():
         buzz: int
 
     # Arg is not actually a namedtuple but the function still works on it
-    ser = _serialize_dagster_namedtuple(
-        {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map  # type: ignore
-    )
+    val = {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}
+    packed = pack_value(val, whitelist_map=test_map)
+    ser = serialize_value(val, whitelist_map=test_map)
 
-    with pytest.raises(DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
-        _deserialize_json(ser, whitelist_map=blank_map)
+    # when parsing from serialized - we unpack objects bottom-up in instead of so have no path
+    with pytest.raises(
+        DeserializationError,
+        match='Attempted to deserialize class "Fizz" which is not in the whitelist',
+    ):
+        unpack_value(packed, whitelist_map=blank_map)
+
+    with pytest.raises(
+        DeserializationError,
+        match='Attempted to deserialize class "Fizz" which is not in the whitelist',
+    ):
+        deserialize_value(ser, whitelist_map=blank_map)
 
 
 def test_forward_compat_serdes_new_field_with_default():
     test_map = WhitelistMap.create()
 
+    # Separate scope since we redefine Quux
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str)])):
+            def __new__(cls, foo, bar):
+                return super(Quux, cls).__new__(cls, foo, bar)
+
+        assert test_map.has_object_serializer("Quux")
+        serializer = test_map.get_object_serializer("Quux")
+        assert serializer.klass is Quux
+        return Quux("zip", "zow")
+
+    orig = get_orig_obj()
+    serialized = serialize_value(orig, whitelist_map=test_map)
+
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(namedtuple("_Quux", "foo bar")):  # type: ignore
-        def __new__(cls, foo, bar):
-            return super(Quux, cls).__new__(cls, foo, bar)  # type: ignore
-
-    assert test_map.has_tuple_entry("Quux")
-    klass, _, _ = test_map.get_tuple_entry("Quux")
-    assert klass is Quux
-
-    quux = Quux("zip", "zow")
-
-    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
-
-    @_whitelist_for_serdes(whitelist_map=test_map)  # type: ignore
-    class Quux(namedtuple("_Quux", "foo bar baz")):
+    class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", Optional[str])])):
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert test_map.has_tuple_entry("Quux")
-    klass, _, _ = test_map.get_tuple_entry("Quux")
-    assert klass is Quux
+    assert test_map.has_object_serializer("Quux")
+    serializer_v2 = test_map.get_object_serializer("Quux")
+    assert serializer_v2.klass is Quux
 
-    deserialized = _deserialize_json(serialized, whitelist_map=test_map)
+    deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
 
-    assert deserialized != quux
-    assert deserialized.foo == quux.foo
-    assert deserialized.bar == quux.bar
+    assert deserialized != orig
+    assert deserialized.foo == orig.foo
+    assert deserialized.bar == orig.bar
     assert deserialized.baz is None
 
 
 def test_forward_compat_serdes_new_enum_field():
     test_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class Corge(Enum):  # type: ignore
-        FOO = 1
-        BAR = 2
+    # Separate scope since we redefine Corge
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class Corge(Enum):
+            FOO = 1
+            BAR = 2
 
-    assert test_map.has_enum_entry("Corge")
+        assert test_map.has_enum_entry("Corge")
+        return Corge.FOO
 
-    corge = Corge.FOO
+    corge = get_orig_obj()
+    serialized = serialize_value(corge, whitelist_map=test_map)
 
-    packed = pack_inner_value(corge, whitelist_map=test_map, descent_path="")
-
-    # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Corge(Enum):
         FOO = 1
         BAR = 2
         BAZ = 3
 
-    unpacked = unpack_inner_value(packed, whitelist_map=test_map, descent_path="")
+    deserialized = deserialize_value(serialized, as_type=Corge, whitelist_map=test_map)
 
-    assert unpacked != corge
-    assert unpacked.name == corge.name
-    assert unpacked.value == corge.value
+    assert deserialized != corge
+    assert deserialized.name == corge.name
+    assert deserialized.value == corge.value
 
 
 def test_serdes_enum_backcompat():
     test_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class Corge(Enum):  # type: ignore
-        FOO = 1
-        BAR = 2
+    # Separate scope since we redefine Corge
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class Corge(Enum):
+            FOO = 1
+            BAR = 2
 
-    assert test_map.has_enum_entry("Corge")
+        assert test_map.has_enum_entry("Corge")
+        return Corge.FOO
 
-    corge = Corge.FOO
+    corge = get_orig_obj()
+    serialized = serialize_value(corge, whitelist_map=test_map)
 
-    packed = pack_inner_value(corge, whitelist_map=test_map, descent_path="")
-
-    class CorgeBackCompatSerializer(DefaultEnumSerializer):
-        @classmethod
-        def value_from_storage_str(cls, storage_str, klass):
-            if storage_str == "FOO":
+    class CorgeBackCompatSerializer(EnumSerializer):
+        def unpack(self, value):
+            if value == "FOO":
                 value = "FOO_FOO"
-            else:
-                value = storage_str
 
-            return super().value_from_storage_str(value, klass)
+            return super().unpack(value)
 
-    # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=CorgeBackCompatSerializer)
     class Corge(Enum):
         BAR = 2
         BAZ = 3
         FOO_FOO = 4
 
-    unpacked = unpack_inner_value(packed, whitelist_map=test_map, descent_path="")
+    deserialized = deserialize_value(serialized, whitelist_map=test_map)
 
-    assert unpacked != corge
-    assert unpacked == Corge.FOO_FOO
+    assert deserialized != corge
+    assert deserialized == Corge.FOO_FOO
 
 
 def test_backward_compat_serdes():
     test_map = WhitelistMap.create()
 
+    # Separate scope since we redefine Quux
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class Quux(namedtuple("_Quux", "foo bar baz")):
+            def __new__(cls, foo, bar, baz):
+                return super(Quux, cls).__new__(cls, foo, bar, baz)
+
+        return Quux("zip", "zow", "whoopie")
+
+    quux = get_orig_obj()
+    serialized = serialize_value(quux, whitelist_map=test_map)
+
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(namedtuple("_Quux", "foo bar baz")):  # type: ignore
-        def __new__(cls, foo, bar, baz):
-            return super(Quux, cls).__new__(cls, foo, bar, baz)  # type: ignore
-
-    quux = Quux("zip", "zow", "whoopie")
-
-    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
-
-    # pylint: disable=function-redefined
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(namedtuple("_Quux", "foo bar")):  # pylint: disable=bad-super-call
+    class Quux(namedtuple("_Quux", "foo bar")):
         def __new__(cls, foo, bar):
             return super(Quux, cls).__new__(cls, foo, bar)
 
-    deserialized = _deserialize_json(serialized, whitelist_map=test_map)
+    deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
 
     assert deserialized != quux
     assert deserialized.foo == quux.foo
@@ -199,34 +215,68 @@ def test_backward_compat_serdes():
 def test_forward_compat():
     old_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=old_map)
-    class Quux(namedtuple("_Quux", "bar baz")):  # type: ignore
-        def __new__(cls, bar, baz):
-            return super().__new__(cls, bar, baz)
+    # Separate scope since we redefine Quux
+    def register_orig() -> Any:
+        @_whitelist_for_serdes(whitelist_map=old_map)
+        class Quux(NamedTuple):
+            bar: str
+            baz: str
+
+        return Quux
+
+    orig_klass = register_orig()
 
     # new version has a new field with a new type
     new_map = WhitelistMap.create()
 
-    # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=new_map)
-    class Quux(namedtuple("_Quux", "foo bar baz")):  # noqa: F811
-        def __new__(cls, foo, bar, baz):
-            return super().__new__(cls, foo, bar, baz)
+    class Quux(NamedTuple):
+        foo: "Foo"
+        bar: str
+        baz: str
+        buried: dict
 
     @_whitelist_for_serdes(whitelist_map=new_map)
-    class Foo(namedtuple("_Foo", "wow")):
-        def __new__(cls, wow):
-            return super().__new__(cls, wow)
+    class Foo(NamedTuple):
+        s: str
 
-    new_quux = Quux(foo=Foo("wow"), bar="bar", baz="baz")
+    new_quux = Quux(
+        foo=Foo("wow"),
+        bar="bar",
+        baz="baz",
+        buried={
+            "top": Foo("d"),
+            "list": [Foo("l"), 2, 3],
+            "set": {Foo("s"), 2, 3},
+            "frozenset": frozenset((1, 2, Foo("fs"))),
+            "deep": {"1": [{"2": {"3": [Foo("d")]}}]},
+        },
+    )
 
     # write from new
-    serialized = _serialize_dagster_namedtuple(new_quux, whitelist_map=new_map)
+    serialized = serialize_value(new_quux, whitelist_map=new_map)
 
-    # read from old, foo ignored
-    deserialized = _deserialize_json(serialized, whitelist_map=old_map)
+    # read from old, Foo ignored
+    deserialized = deserialize_value(serialized, as_type=orig_klass, whitelist_map=old_map)
     assert deserialized.bar == "bar"
     assert deserialized.baz == "baz"
+
+
+def test_error_on_multiple_deserializers() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Foo(NamedTuple):
+        x: int
+
+    with pytest.raises(
+        SerdesUsageError, match="Multiple deserializers registered for storage name `Foo`"
+    ):
+
+        @_whitelist_for_serdes(whitelist_map=test_map, storage_name="Foo")
+        class Foo2(NamedTuple):
+            x: int
+            y: str
 
 
 def serdes_test_class(klass):
@@ -241,7 +291,7 @@ def test_wrong_first_arg():
         @serdes_test_class
         class NotCls(namedtuple("NotCls", "field_one field_two")):
             def __new__(not_cls, field_two, field_one):  # type: ignore
-                return super(NotCls, not_cls).__new__(field_one, field_two)  # type: ignore
+                return super(NotCls, not_cls).__new__(field_one, field_two)
 
     assert (
         str(exc_info.value)
@@ -255,11 +305,10 @@ def test_incorrect_order():
         @serdes_test_class
         class WrongOrder(namedtuple("WrongOrder", "field_one field_two")):
             def __new__(cls, field_two, field_one):
-                return super(WrongOrder, cls).__new__(field_one, field_two)  # type: ignore
+                return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For namedtuple WrongOrder: "
         "Params to __new__ must match the order of field declaration "
         "in the namedtuple. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
@@ -272,13 +321,10 @@ def test_missing_one_parameter():
         @serdes_test_class
         class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
             def __new__(cls, field_one, field_two):
-                return super(MissingFieldInNew, cls).__new__(
-                    field_one, field_two, None
-                )  # type: ignore
+                return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -297,8 +343,7 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldsInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -325,8 +370,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -367,19 +411,19 @@ def test_set():
 
     foo = HasSets({1, 2, 3, "3"}, frozenset([4, 5, 6, "6"]))
 
-    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
-    foo_2 = _deserialize_json(serialized, whitelist_map=test_map)
+    serialized = serialize_value(foo, whitelist_map=test_map)
+    foo_2 = deserialize_value(serialized, whitelist_map=test_map)
     assert foo == foo_2
 
     # verify that set elements are serialized in a consistent order so that
     # equal objects always have a consistent serialization / snapshot ID
     big_foo = HasSets(set(string.ascii_lowercase), frozenset(string.ascii_lowercase))
 
-    snap_id = hash_str(_serialize_dagster_namedtuple(big_foo, whitelist_map=test_map))
+    snap_id = hash_str(serialize_value(big_foo, whitelist_map=test_map))
     roundtrip_snap_id = hash_str(
-        _serialize_dagster_namedtuple(
-            _deserialize_json(
-                _serialize_dagster_namedtuple(big_foo, whitelist_map=test_map),
+        serialize_value(
+            deserialize_value(
+                serialize_value(big_foo, whitelist_map=test_map),
                 whitelist_map=test_map,
             ),
             whitelist_map=test_map,
@@ -388,133 +432,195 @@ def test_set():
     assert snap_id == roundtrip_snap_id
 
 
-def test_persistent_tuple():
+def test_named_tuple() -> None:
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Alphabet(namedtuple("_Alphabet", "a b c")):
-        def __new__(cls, a, b, c):
-            return super(Alphabet, cls).__new__(cls, a, b, c)
+    class Foo(NamedTuple):
+        color: str
 
-    foo = Alphabet(a="A", b="B", c="C")
-    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
-    foo_2 = _deserialize_json(serialized, whitelist_map=test_map)
-    assert foo == foo_2
-
-
-def test_from_storage_dict():
-    # pylint: disable=function-redefined
-    old_map = WhitelistMap.create()
-
-    @_whitelist_for_serdes(whitelist_map=old_map)
-    class MyThing(NamedTuple):  # type: ignore
-        orig_name: str
-
-    serialized_old = _serialize_dagster_namedtuple(MyThing("old"), whitelist_map=old_map)
-
-    class CompatSerializer(DefaultNamedTupleSerializer):
-        @classmethod
-        def value_from_storage_dict(
-            cls, storage_dict, klass, args_for_class, whitelist_map, descent_path
-        ):
-            # simplified demo of field renaming
-            return klass(storage_dict.get("orig_name") or storage_dict.get("new_name"))
-
-    new_map = WhitelistMap.create()
-
-    @_whitelist_for_serdes(whitelist_map=new_map, serializer=CompatSerializer)
-    class MyThing(NamedTuple):
-        new_name: str
-
-    deser_old_val = _deserialize_json(serialized_old, whitelist_map=new_map)
-
-    assert deser_old_val.new_name == "old"
-
-    serialized_new = _serialize_dagster_namedtuple(MyThing("new"), whitelist_map=new_map)
-    deser_new_val = _deserialize_json(serialized_new, whitelist_map=new_map)
-    assert deser_new_val.new_name == "new"
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_map)
+    deserialized = deserialize_value(serialized, whitelist_map=test_map)
+    assert deserialized == val
 
 
-def test_from_unpacked():
+# Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to
+# Foo, if Foo has a different storage name.
+def test_named_tuple_storage_name() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, storage_name="Bar")
+    class Foo(NamedTuple):
+        color: str
+
+    @_whitelist_for_serdes(test_env, storage_name="Foo")
+    class Bar(NamedTuple):
+        shape: str
+
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Bar", "color": "red"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+    val = Bar("square")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "shape": "square"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_named_tuple_old_storage_names() -> None:
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class OldFoo(NamedTuple):
+        color: str
+
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, old_storage_names={"OldFoo"})
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "color": "red"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+    old_serialized = serialize_value(OldFoo("red"), whitelist_map=legacy_env)
+    old_deserialized = deserialize_value(old_serialized, whitelist_map=test_env)
+    assert old_deserialized == val
+
+
+def test_named_tuple_storage_field_names() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, storage_field_names={"color": "colour"})
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "colour": "red"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_named_tuple_old_fields() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, old_fields={"shape": None})
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "color": "red", "shape": null}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_named_tuple_field_serializers() -> None:
+    test_env = WhitelistMap.create()
+
+    class PairsSerializer(FieldSerializer):
+        def pack(
+            self,
+            entries: Mapping[str, str],
+            whitelist_map: WhitelistMap,
+            descent_path: str,
+        ) -> Sequence[Sequence[str]]:
+            return list(entries.items())
+
+        def unpack(
+            self,
+            entries: Sequence[Sequence[str]],
+            whitelist_map: WhitelistMap,
+            context: UnpackContext,
+        ) -> Any:
+            return {entry[0]: entry[1] for entry in entries}
+
+    @_whitelist_for_serdes(test_env, field_serializers={"entries": PairsSerializer})
+    class Foo(NamedTuple):
+        entries: Mapping[str, str]
+
+    val = Foo({"a": "b", "c": "d"})
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "entries": [["a", "b"], ["c", "d"]]}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_set_to_sequence_field_serializer() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, field_serializers={"colors": SetToSequenceFieldSerializer})
+    class Foo(NamedTuple):
+        colors: AbstractSet[str]
+
+    val = Foo({"red", "green"})
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "colors": ["green", "red"]}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_named_tuple_skip_when_empty_fields() -> None:
     test_map = WhitelistMap.create()
 
-    class CompatSerializer(DefaultNamedTupleSerializer):
-        @classmethod
-        def value_from_unpacked(cls, unpacked_dict, klass):
-            return DeprecatedAlphabet.legacy_load(unpacked_dict)
+    # Separate scope since we redefine SameSnapshotTuple
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
+            def __new__(cls, foo):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo)
 
-    @_whitelist_for_serdes(whitelist_map=test_map, serializer=CompatSerializer)
-    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c")):
-        def __new__(cls, a, b, c):
-            raise Exception("DeprecatedAlphabet is deprecated")
+        return SameSnapshotTuple(foo="A")
 
-        @classmethod
-        def legacy_load(cls, storage_dict):
-            # instead of the DeprecatedAlphabet, directly invoke the namedtuple constructor
-            return super().__new__(
-                cls,
-                storage_dict.get("a"),
-                storage_dict.get("b"),
-                storage_dict.get("c"),
-            )
-
-    serialized = '{"__class__": "DeprecatedAlphabet", "a": "A", "b": "B", "c": "C"}'
-
-    nt = _deserialize_json(serialized, whitelist_map=test_map)
-    assert isinstance(nt, DeprecatedAlphabet)
-
-
-def test_skip_when_empty():
-    # pylint: disable=function-redefined
-    test_map = WhitelistMap.create()
-
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo")):  # type: ignore
-        def __new__(cls, foo):
-            return super(SameSnapshotTuple, cls).__new__(cls, foo)  # type: ignore
-
-    old_tuple = SameSnapshotTuple(foo="A")
-    old_serialized = _serialize_dagster_namedtuple(old_tuple, whitelist_map=test_map)
+    old_tuple = get_orig_obj()
+    old_serialized = serialize_value(old_tuple, whitelist_map=test_map)
     old_snapshot = hash_str(old_serialized)
 
-    # Without setting skip_when_empty, the ID changes
+    # Separate scope since we redefine SameSnapshotTuple
+    test_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # type: ignore
-        def __new__(cls, foo, bar=None):
-            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
-                cls, foo, bar
-            )
+    def get_new_obj_no_skip() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_SameSnapshotTuple", "foo bar")):
+            def __new__(cls, foo, bar=None):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
 
-    new_tuple_without_serializer = SameSnapshotTuple(foo="A")
+        return SameSnapshotTuple(foo="A")
+
+    new_tuple_without_serializer = get_new_obj_no_skip()
     new_snapshot_without_serializer = hash_str(
-        _serialize_dagster_namedtuple(new_tuple_without_serializer, whitelist_map=test_map)
+        serialize_value(new_tuple_without_serializer, whitelist_map=test_map)
     )
 
+    # Without setting skip_when_empty, the ID changes
     assert new_snapshot_without_serializer != old_snapshot
 
-    # By setting a custom serializer and skip_when_empty, the snapshot stays the same
-    # as long as the new field is None
+    # By setting `skip_when_empty_fields`, the ID stays the same as long as the new field is None
 
-    class SkipWhenEmptySerializer(DefaultNamedTupleSerializer):
-        @classmethod
-        def skip_when_empty(cls) -> Set[str]:
-            return {"bar"}
+    test_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
+    @_whitelist_for_serdes(whitelist_map=test_map, skip_when_empty_fields={"bar"})
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
-            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
-                cls, foo, bar
-            )
+            return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
 
     for bar_val in [None, [], {}, set()]:
         new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)
-        new_snapshot = hash_str(_serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map))
+        new_snapshot = hash_str(serialize_value(new_tuple, whitelist_map=test_map))
 
         assert old_snapshot == new_snapshot
 
-        rehydrated_tuple = _deserialize_json(old_serialized, whitelist_map=test_map)
+        rehydrated_tuple = deserialize_value(
+            old_serialized, SameSnapshotTuple, whitelist_map=test_map
+        )
         assert rehydrated_tuple.foo == "A"
         assert rehydrated_tuple.bar is None
 
@@ -523,36 +629,54 @@ def test_skip_when_empty():
     assert new_tuple_with_bar.bar == "B"
 
 
-def test_to_storage_value():
+def test_named_tuple_custom_serializer():
     test_map = WhitelistMap.create()
 
-    class MySerializer(DefaultNamedTupleSerializer):
-        @classmethod
-        def value_to_storage_dict(cls, value, whitelist_map, descent_path):
-            return DefaultNamedTupleSerializer.value_to_storage_dict(
-                SubstituteAlphabet(value.a, value.b, value.c),
-                test_map,
-                descent_path,
-            )
+    class FooSerializer(NamedTupleSerializer):
+        def after_pack(self, **storage_dict: Dict[str, Any]):
+            storage_dict["colour"] = storage_dict["color"]
+            del storage_dict["color"]
+            return storage_dict
 
-    @_whitelist_for_serdes(whitelist_map=test_map, serializer=MySerializer)
-    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c")):
-        def __new__(cls, a, b, c):
-            return super(DeprecatedAlphabet, cls).__new__(cls, a, b, c)
+        def before_unpack(self, context, unpacked_dict: Dict[str, Any]):
+            unpacked_dict["color"] = unpacked_dict["colour"]
+            del unpacked_dict["colour"]
+            return unpacked_dict
 
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=FooSerializer)
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value(val, whitelist_map=test_map)
+    assert serialized == '{"__class__": "Foo", "colour": "red"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_map)
+    assert deserialized == val
+
+
+def test_named_tuple_custom_serializer_error_handling():
+    test_map = WhitelistMap.create()
+
+    class FooSerializer(NamedTupleSerializer):
+        def handle_unpack_error(self, exc: Exception, context, storage_dict: Any) -> "Foo":
+            return Foo("default")
+
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=FooSerializer)
+    class Foo(NamedTuple):
+        color: str
+
+    old_serialized = '{"__class__": "Foo", "colour": "red"}'
+    deserialized = deserialize_value(old_serialized, whitelist_map=test_map)
+    assert deserialized == Foo("default")
+
+    # no custom error handling
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class SubstituteAlphabet(namedtuple("_SubstituteAlphabet", "a b c")):
-        def __new__(cls, a, b, c):
-            return super(SubstituteAlphabet, cls).__new__(cls, a, b, c)
+    class Bar(NamedTuple):
+        color: str
 
-    nested = DeprecatedAlphabet(None, None, "_C")
-    deprecated = DeprecatedAlphabet("A", "B", nested)
-    serialized = _serialize_dagster_namedtuple(deprecated, whitelist_map=test_map)
-    alphabet = _deserialize_json(serialized, whitelist_map=test_map)
-    assert not isinstance(alphabet, DeprecatedAlphabet)
-    assert isinstance(alphabet, SubstituteAlphabet)
-    assert not isinstance(alphabet.c, DeprecatedAlphabet)
-    assert isinstance(alphabet.c, SubstituteAlphabet)
+    with pytest.raises(Exception):
+        old_serialized = '{"__class__": "Bar", "colour": "red"}'
+        deserialized = deserialize_value(old_serialized, whitelist_map=test_map)
 
 
 def test_long_int():
@@ -563,160 +687,192 @@ def test_long_int():
         num: int
 
     x = NumHolder(98765432109876543210)
-    ser_x = _serialize_dagster_namedtuple(x, test_map)
-    roundtrip_x = _deserialize_json(ser_x, test_map)
+    ser_x = serialize_value(x, test_map)
+    roundtrip_x = deserialize_value(ser_x, whitelist_map=test_map)
     assert x.num == roundtrip_x.num
 
 
-def test_enum_backcompat():
+def test_enum_storage_name() -> None:
     test_env = WhitelistMap.create()
 
-    class MyEnumSerializer(EnumSerializer):
-        @classmethod
-        def value_from_storage_str(cls, storage_str, klass):
-            return getattr(klass, storage_str)
-
-        @classmethod
-        def value_to_storage_str(cls, value, whitelist_map, descent_path):
-            val_as_str = str(value)
-            actual_enum_val = val_as_str.split(".")[1:]
-            backcompat_name = (  # Simulate changing the storage name to some legacy backcompat name
-                "OldEnum"
-            )
-            return ".".join([backcompat_name, *actual_enum_val])
-
-    @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)
-    class MyEnum(Enum):
+    @_whitelist_for_serdes(test_env, storage_name="Bar")
+    class Foo(Enum):
         RED = "color.red"
-        BLUE = "color.red"
 
-    # Ensure that serdes roundtrip preserves value
-    register_serdes_enum_fallbacks({"OldEnum": MyEnum}, whitelist_map=test_env)
+    val = Foo.RED
 
-    my_enum = MyEnum("color.red")
-    enum_json = serialize_value(my_enum, whitelist_map=test_env)
-    result = _deserialize_json(enum_json, test_env)
-    assert result == my_enum
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__enum__": "Bar.RED"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == Foo.RED
 
-    # ensure that "legacy" environment can correctly interpret enum stored under legacy name.
+
+def test_enum_old_storage_names() -> None:
     legacy_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(legacy_env)
-    class OldEnum(Enum):
+    class OldFoo(Enum):
         RED = "color.red"
-        BLUE = "color.blue"
 
-    result = _deserialize_json(enum_json, legacy_env)
-    old_enum = OldEnum("color.red")
-    assert old_enum == result
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, old_storage_names={"OldFoo"})
+    class Foo(Enum):
+        RED = "color.red"
+
+    serialized = serialize_value(Foo.RED, whitelist_map=test_env)
+    assert serialized == '{"__enum__": "Foo.RED"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == Foo.RED
+
+    old_serialized = serialize_value(OldFoo.RED, whitelist_map=legacy_env)
+    old_deserialized = deserialize_value(old_serialized, whitelist_map=test_env)
+    assert old_deserialized == Foo.RED
 
 
-def test_namedtuple_backcompat():
-    old_map = WhitelistMap.create()
+def test_enum_custom_serializer():
+    test_env = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=old_map)
-    class OldThing(NamedTuple):
-        old_name: str
+    class MyEnumSerializer(EnumSerializer["Foo"]):
+        def unpack(self, packed_val: str) -> "Foo":
+            packed_val = packed_val.replace("BLUE", "RED")
+            return Foo[packed_val]
 
-        def get_id(self):
-            json_rep = _serialize_dagster_namedtuple(self, whitelist_map=old_map)
-            return hash_str(json_rep)
+        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:
+            return f"Foo.{unpacked_val.name.replace('RED', 'BLUE')}"
 
-    # create the old things
-    old_thing = OldThing("thing")
-    old_thing_id = old_thing.get_id()
-    old_thing_serialized = _serialize_dagster_namedtuple(old_thing, old_map)
+    @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)
+    class Foo(Enum):
+        RED = "color.red"
 
-    new_map = WhitelistMap.create()
+    serialized = serialize_value(Foo.RED, whitelist_map=test_env)
+    assert serialized == '{"__enum__": "Foo.BLUE"}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == Foo.RED
 
-    class ThingSerializer(DefaultNamedTupleSerializer):
-        @classmethod
-        def value_from_storage_dict(
-            cls, storage_dict, klass, args_for_class, whitelist_map, descent_path
-        ):
-            raw_dict = {
-                key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
-                for key, value in storage_dict.items()
-            }
-            # typical pattern is to use the same serialization format from an old field and passing
-            # it in as a new field
-            return klass(
-                **{key: value for key, value in raw_dict.items() if key in args_for_class},
-                new_name=raw_dict.get("old_name"),
+
+def test_serialize_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)
+    assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
+    assert non_scalar_key_mapping == deserialize_value(serialized, whitelist_map=test_env)
+
+
+def test_serializable_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    assert len(non_scalar_key_mapping) == 1
+    assert non_scalar_key_mapping[Bar("red")] == 1
+    assert list(iter(non_scalar_key_mapping)) == list(iter([Bar("red")]))
+
+    with pytest.raises(NotImplementedError, match="SerializableNonScalarKeyMapping is immutable"):
+        non_scalar_key_mapping["foo"] = None
+
+
+def test_serializable_non_scalar_key_mapping_in_named_tuple():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    @_whitelist_for_serdes(test_env)
+    class Foo(NamedTuple("_Foo", [("keyed_by_non_scalar", Mapping[Bar, int])])):
+        def __new__(cls, keyed_by_non_scalar):
+            return super(Foo, cls).__new__(
+                cls, SerializableNonScalarKeyMapping(keyed_by_non_scalar)
             )
 
-        @classmethod
-        def value_to_storage_dict(
-            cls,
-            value,
-            whitelist_map,
-            descent_path,
-        ):
-            storage = super().value_to_storage_dict(value, whitelist_map, descent_path)
-            name = storage.get("new_name") or storage.get("old_name")
-            if "new_name" in storage:
-                del storage["new_name"]
-            # typical pattern is to use the same serialization format
-            # it in as a new field
-            storage["old_name"] = name
-            storage["__class__"] = "OldThing"  # persist using old class name
-            return storage
-
-    @_whitelist_for_serdes(whitelist_map=new_map, serializer=ThingSerializer)
-    class NewThing(NamedTuple):
-        new_name: str
-
-        def get_id(self):
-            json_rep = _serialize_dagster_namedtuple(self, whitelist_map=new_map)
-            return hash_str(json_rep)
-
-    # exercising the old serialization format
-    register_serdes_tuple_fallbacks({"OldThing": NewThing}, whitelist_map=new_map)
-
-    new_thing = NewThing("thing")
-    new_thing_id = new_thing.get_id()
-    new_thing_serialized = _serialize_dagster_namedtuple(new_thing, new_map)
-
-    assert new_thing_id == old_thing_id
-    assert new_thing_serialized == old_thing_serialized
-
-    # ensure that the new serializer can correctly interpret old serialized data
-    old_thing_deserialized = _deserialize_json(old_thing_serialized, new_map)
-    assert isinstance(old_thing_deserialized, NewThing)
-    assert old_thing_deserialized.get_id() == new_thing_id
-
-    # ensure that the new things serialized can still be read by old code
-    new_thing_deserialized = _deserialize_json(new_thing_serialized, old_map)
-    assert isinstance(new_thing_deserialized, OldThing)
-    assert new_thing_deserialized.get_id() == old_thing_id
+    named_tuple = Foo(keyed_by_non_scalar={Bar("red"): 1})
+    assert (
+        deserialize_value(
+            serialize_value(named_tuple, whitelist_map=test_env), whitelist_map=test_env
+        )
+        == named_tuple
+    )
 
 
-def test_namedtuple_name_map():
-    wmap = WhitelistMap.create()
+def test_objects():
+    test_env = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=wmap)
-    class Thing(NamedTuple):
+    @_whitelist_for_serdes(test_env)
+    class SomeNT(NamedTuple):
+        nums: List[int]
+
+    @_whitelist_for_serdes(test_env)
+    @dataclasses.dataclass
+    class InnerDataclass:
+        f: float
+
+    @_whitelist_for_serdes(test_env)
+    class SomeModel(pydantic.BaseModel):
+        id: int
         name: str
 
-    wmap.register_serialized_name("Thing", "SerializedThing")
-    thing = Thing("foo")
+    @_whitelist_for_serdes(test_env)
+    @pydantic.dataclasses.dataclass
+    class DataclassObj:
+        s: str
+        i: int
+        d: InnerDataclass
+        nt: SomeNT
+        m: SomeModel
 
-    thing_serialized = _serialize_dagster_namedtuple(thing, wmap)
-    assert _seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
+    o = DataclassObj("woo", 4, InnerDataclass(1.2), SomeNT([1, 2, 3]), SomeModel(id=4, name="zuck"))
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o
 
-    with pytest.raises(DeserializationError):
-        _deserialize_json(thing_serialized, wmap)
-
-    wmap.register_deserialized_name("SerializedThing", "Thing")
-    assert _deserialize_json(thing_serialized, wmap) == thing
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=DataclassObj) == o
 
 
-def test_whitelist_storage_name():
-    wmap = WhitelistMap.create()
+def test_object_migration():
+    nt_env = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")
-    class Thing(NamedTuple):  # pylint: disable=unused-variable
+    @_whitelist_for_serdes(nt_env)
+    class MyEnt(NamedTuple):  # type: ignore
         name: str
+        age: int
+        children: List["MyEnt"]
 
-    assert wmap.get_serialized_name("Thing") == "SerializedThing"
-    assert wmap.get_deserialized_name("SerializedThing") == "Thing"
+    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])
+    ser_nt_ent = serialize_value(nt_ent, whitelist_map=nt_env)
+    assert deserialize_value(ser_nt_ent, whitelist_map=nt_env) == nt_ent
+
+    py_dc_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_dc_env)
+    @pydantic.dataclasses.dataclass
+    class MyEnt:  # type: ignore
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future dataclasses
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_dc_env)
+    assert py_dc_ent
+
+    py_m_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_m_env)
+    class MyEnt(pydantic.BaseModel):
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future pydantic models
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
+    assert py_dc_ent

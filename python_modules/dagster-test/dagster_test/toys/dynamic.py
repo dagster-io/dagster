@@ -36,7 +36,6 @@ def emit():
 
 @graph
 def dynamic():
-    # pylint: disable=no-member
     result = emit().map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
     multiply_by_two.alias("double_total")(sum_numbers(emit_ten(), result.collect()))
 

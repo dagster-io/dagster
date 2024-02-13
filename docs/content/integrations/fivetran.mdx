@@ -59,14 +59,13 @@ export FIVETRAN_API_SECRET=...
 Then, we can instruct Dagster to authorize the Fivetran resource using the environment variables:
 
 ```python startafter=start_define_instance endbefore=end_define_instance file=/integrations/fivetran/fivetran.py dedent=4
-from dagster_fivetran import fivetran_resource
+from dagster_fivetran import FivetranResource
+from dagster import EnvVar
 
 # Pull API key and secret from environment variables
-fivetran_instance = fivetran_resource.configured(
-    {
-        "api_key": {"env": "FIVETRAN_API_KEY"},
-        "api_secret": {"env": "FIVETRAN_API_SECRET"},
-    }
+fivetran_instance = FivetranResource(
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
 )
 ```
 
@@ -161,10 +160,30 @@ Once you have loaded your Fivetran assets into Dagster, you can create assets wh
 
 In this case, we have a Fivetran connector which is storing data in the `public.survey_responses` table in our Snowflake warehouse. The corresponding asset key is `public/survey_responses`. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
 
-```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/fivetran/fivetran.py dedent=4
+```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/fivetran/fivetran.py dedent=8
 import json
-from dagster import asset, AssetIn, AssetKey, Definitions
-from dagster_fivetran import load_assets_from_fivetran_instance
+
+from dagster_fivetran import (
+    FivetranResource,
+    load_assets_from_fivetran_instance,
+)
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    asset,
+    AssetIn,
+    AssetKey,
+    Definitions,
+    AssetSelection,
+    EnvVar,
+    Definitions,
+)
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+
+fivetran_instance = FivetranResource(
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+)
 
 fivetran_assets = load_assets_from_fivetran_instance(
     fivetran_instance,
@@ -172,15 +191,28 @@ fivetran_assets = load_assets_from_fivetran_instance(
 )
 
 @asset(
-    ins={"survey_responses": AssetIn(key=AssetKey(["public", "survey_responses"]))}
+    ins={
+        "survey_responses": AssetIn(
+            key=AssetKey(["public", "survey_responses"])
+        )
+    }
 )
 def survey_responses_file(survey_responses):
     with open("survey_responses.json", "w", encoding="utf8") as f:
         f.write(json.dumps(survey_responses, indent=2))
 
+# only run the airbyte syncs necessary to materialize survey_responses_file
+my_upstream_job = define_asset_job(
+    "my_upstream_job",
+    AssetSelection.keys("survey_responses_file")
+    .upstream()  # all upstream assets (in this case, just the survey_responses Fivetran asset)
+    .required_multi_asset_neighbors(),  # all Fivetran assets linked to the same connection
+)
+
 defs = Definitions(
+    jobs=[my_upstream_job],
     assets=[fivetran_assets, survey_responses_file],
-    resources={"snowflake_io_manager": snowflake_io_manager},
+    resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
 )
 ```
 
@@ -191,12 +223,20 @@ defs = Definitions(
 Once you have Fivetran assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Fivetran sync.
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/fivetran/fivetran.py dedent=4
+from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
 from dagster import (
     ScheduleDefinition,
     define_asset_job,
     AssetSelection,
+    EnvVar,
     Definitions,
 )
+
+fivetran_instance = FivetranResource(
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+)
+fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
 
 # materialize all assets
 run_everything_job = define_asset_job("run_everything", selection="*")

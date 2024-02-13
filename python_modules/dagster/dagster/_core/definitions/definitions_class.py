@@ -1,10 +1,28 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
+from dagster._config.pythonic_config import (
+    attach_resource_id_to_key_mapping,
+)
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -14,7 +32,7 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, default_job_io_manager
 from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
@@ -36,17 +54,39 @@ def create_repository_using_definitions_args(
     assets: Optional[
         Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-    """
-    For users who, for the time being, want to continue to use multiple named repositories in
-    a single code location, you can use this function. The behavior (e.g. applying resources to
-    all assets) are identical to :py:class:`Definitions` but this returns a named repository.
+    """Create a named repository using the same arguments as :py:class:`Definitions`. In older
+    versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
+    and jobs. There could be many repositories per code location. This was a complicated ontology but
+    gave users a way to organize code locations that contained large numbers of heterogenous definitions.
+
+    As a stopgap for those who both want to 1) use the new :py:class:`Definitions` API and 2) but still
+    want multiple logical groups of assets in the same code location, we have introduced this function.
+
+    Example usage:
+
+    .. code-block:: python
+
+        named_repo = create_repository_using_definitions_args(
+            name="a_repo",
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
+
     """
     return _create_repository_using_definitions_args(
         name=name,
@@ -57,7 +97,145 @@ def create_repository_using_definitions_args(
         resources=resources,
         executor=executor,
         loggers=loggers,
+        asset_checks=asset_checks,
     )
+
+
+class _AttachedObjects(NamedTuple):
+    jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+    schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    sensors: Iterable[SensorDefinition]
+
+
+def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str, Any]) -> bool:
+    """Explicitly replace the default IO manager in jobs that don't specify one, if a top-level
+    I/O manager is provided to Definitions.
+    """
+    return (
+        job.resource_defs.get("io_manager") == default_job_io_manager
+        and "io_manager" in resource_defs
+    )
+
+
+def _jobs_which_will_have_io_manager_replaced(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    resource_defs: Mapping[str, Any],
+) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    """Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
+    the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
+    the case.
+    """
+    jobs = jobs or []
+    return [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition) and _io_manager_needs_replacement(job, resource_defs)
+    ]
+
+
+def _attach_resources_to_jobs_and_instigator_jobs(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ],
+    sensors: Optional[Iterable[SensorDefinition]],
+    resource_defs: Mapping[str, Any],
+) -> _AttachedObjects:
+    """Given a list of jobs, schedules, and sensors along with top-level resource definitions,
+    attach the resource definitions to the jobs, schedules, and sensors which require them.
+    """
+    jobs = jobs or []
+    schedules = schedules or []
+    sensors = sensors or []
+
+    # Add jobs in schedules and sensors as well
+    jobs = [
+        *jobs,
+        *[
+            schedule.job
+            for schedule in schedules
+            if isinstance(schedule, ScheduleDefinition)
+            and schedule.has_loadable_target()
+            and isinstance(schedule.job, (JobDefinition, UnresolvedAssetJobDefinition))
+        ],
+        *[
+            job
+            for sensor in sensors
+            if sensor.has_loadable_targets()
+            for job in sensor.jobs
+            if isinstance(job, (JobDefinition, UnresolvedAssetJobDefinition))
+        ],
+    ]
+    # Dedupe
+    jobs = list({id(job): job for job in jobs}.values())
+
+    # Find unsatisfied jobs
+    unsatisfied_jobs = [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition)
+        and (
+            job.is_missing_required_resources() or _io_manager_needs_replacement(job, resource_defs)
+        )
+    ]
+
+    # Create a mapping of job id to a version of the job with the resource defs bound
+    unsatisfied_job_to_resource_bound_job = {
+        id(job): job.with_top_level_resources(
+            {
+                **resource_defs,
+                **job.resource_defs,
+                # special case for IO manager - the job-level IO manager does not take precedence
+                # if it is the default and a top-level IO manager is provided
+                **(
+                    {"io_manager": resource_defs["io_manager"]}
+                    if _io_manager_needs_replacement(job, resource_defs)
+                    else {}
+                ),
+            }
+        )
+        for job in jobs
+        if job in unsatisfied_jobs
+    }
+
+    # Update all jobs to use the resource bound version
+    jobs_with_resources = [
+        unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
+        for job in jobs
+    ]
+
+    # Update all schedules and sensors to use the resource bound version
+    updated_schedules = [
+        (
+            schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+            if (
+                isinstance(schedule, ScheduleDefinition)
+                and schedule.has_loadable_target()
+                and schedule.job in unsatisfied_jobs
+            )
+            else schedule
+        )
+        for schedule in schedules
+    ]
+    updated_sensors = [
+        (
+            sensor.with_updated_jobs(
+                [
+                    (
+                        unsatisfied_job_to_resource_bound_job[id(job)]
+                        if job in unsatisfied_jobs
+                        else job
+                    )
+                    for job in sensor.jobs
+                ]
+            )
+            if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
+            else sensor
+        )
+        for sensor in sensors
+    ]
+
+    return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
 def _create_repository_using_definitions_args(
@@ -73,6 +251,7 @@ def _create_repository_using_definitions_args(
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
     check.opt_iterable_param(
         assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
@@ -83,37 +262,72 @@ def _create_repository_using_definitions_args(
     check.opt_iterable_param(sensors, "sensors", SensorDefinition)
     check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
-    resource_defs = wrap_resources_for_execution(resources or {})
-
     check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
-
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None
         else ExecutorDefinition.hardcoded_executor(executor)
     )
 
+    # Generate a mapping from each top-level resource instance ID to its resource key
+    resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
+
+    # Provide this mapping to each resource instance so that it can be used to resolve
+    # nested resources
+    resources_with_key_mapping = (
+        {
+            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
+            for k, v in resources.items()
+        }
+        if resources
+        else {}
+    )
+
+    resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
+
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+
+    # Binds top-level resources to jobs and any jobs attached to schedules or sensors
+    (
+        jobs_with_resources,
+        schedules_with_resources,
+        sensors_with_resources,
+    ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
 
     @repository(
         name=name,
         default_executor_def=executor_def,
         default_logger_defs=loggers,
+        _top_level_resources=resource_defs,
+        _resource_key_mapping=resource_key_mapping,
     )
     def created_repo():
         return [
             *with_resources(assets or [], resource_defs),
-            *(schedules or []),
-            *(sensors or []),
-            *(jobs or []),
+            *with_resources(asset_checks or [], resource_defs),
+            *(schedules_with_resources),
+            *(sensors_with_resources),
+            *(jobs_with_resources),
         ]
 
     return created_repo
 
 
-class Definitions:
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Instantiations can be removed. Since it's behavior is now the default, this class is now a"
+        " no-op."
+    ),
+)
+class BindResourcesToJobs(list):
+    """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
+    and sensors. Now deprecated since this behavior is the default.
     """
-    A set of definitions explicitly available and loadable by Dagster tools.
+
+
+class Definitions:
+    """A set of definitions explicitly available and loadable by Dagster tools.
 
     Parameters:
         assets (Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]):
@@ -122,6 +336,9 @@ class Definitions:
             :py:func:`@observable_source_asset <observable_source_asset>`.
             Or they can by directly instantiating :py:class:`AssetsDefinition`,
             :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
+
+        asset_checks (Optional[Iterable[AssetChecksDefinition]]):
+            A list of asset checks.
 
         schedules (Optional[Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]]):
             List of schedules.
@@ -147,14 +364,11 @@ class Definitions:
             override this dictionary.
 
         executor (Optional[Union[ExecutorDefinition, Executor]]):
-            Default executor for jobs. Individual jobs
-            can override this and define their own executors by setting the executor
-            on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
+            Default executor for jobs. Individual jobs can override this and define their own executors
+            by setting the executor on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
             explicitly. This executor will also be used for materializing assets directly
-            outside of the context of jobs.
-
-            If an Executor is passed, it is coerced into an ExecutorDefinition.
-
+            outside of the context of jobs. If an :py:class:`Executor` is passed, it is coerced into
+            an :py:class:`ExecutorDefinition`.
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
             Default loggers for jobs. Individual jobs
@@ -171,7 +385,8 @@ class Definitions:
             jobs=[a_job],
             resources={
                 "a_resource": some_resource,
-            }
+            },
+            asset_checks=[asset_one_check_one]
         )
 
     Dagster separates user-defined code from system tools such the web server and
@@ -213,6 +428,7 @@ class Definitions:
         resources: Optional[Mapping[str, Any]] = None,
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+        asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
@@ -223,6 +439,7 @@ class Definitions:
             resources=resources,
             executor=executor,
             loggers=loggers,
+            asset_checks=asset_checks,
         )
 
     @public
@@ -254,9 +471,9 @@ class Definitions:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> object:
-        """
-        Load the contents of an asset as a Python object.
+        """Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -269,6 +486,8 @@ class Definitions:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+                (is equivalent to setting the metadata argument in `In` or `AssetIn`).
 
         Returns:
             The contents of an asset as a Python object.
@@ -278,14 +497,14 @@ class Definitions:
             python_type=python_type,
             instance=instance,
             partition_key=partition_key,
+            metadata=metadata,
         )
 
     @public
     def get_asset_value_loader(
         self, instance: Optional[DagsterInstance] = None
     ) -> "AssetValueLoader":
-        """
-        Returns an object that can load the contents of assets as Python objects.
+        """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
         spinning up resources separately for each asset.
@@ -322,10 +541,17 @@ class Definitions:
     ) -> Optional[JobDefinition]:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
+    def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        asset_key = AssetKey.from_coercible(key)
+        for assets_def in self.get_asset_graph().assets:
+            if asset_key in assets_def.keys:
+                return assets_def
+
+        raise DagsterInvariantViolationError(f"Could not find asset {asset_key}")
+
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
-        """
-        Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
+        """Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
         in order to access an functionality which is not exposed on Definitions. This method
         also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
         """
@@ -343,3 +569,7 @@ class Definitions:
         point is to defer that resolution until later.
         """
         return self._created_pending_or_normal_repo
+
+    def get_asset_graph(self) -> InternalAssetGraph:
+        """Get the AssetGraph for this set of definitions."""
+        return self.get_repository_def().asset_graph

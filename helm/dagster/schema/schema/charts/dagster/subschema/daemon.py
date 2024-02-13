@@ -65,11 +65,13 @@ class RunCoordinator(BaseModel):
 class Sensors(BaseModel):
     useThreads: bool
     numWorkers: Optional[int]
+    numSubmitWorkers: Optional[int]
 
 
 class Schedules(BaseModel):
     useThreads: bool
     numWorkers: Optional[int]
+    numSubmitWorkers: Optional[int]
 
 
 class Daemon(BaseModel):
@@ -77,7 +79,7 @@ class Daemon(BaseModel):
     image: kubernetes.Image
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
-    env: Dict[str, str]
+    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
     deploymentLabels: Dict[str, str]
@@ -99,6 +101,7 @@ class Daemon(BaseModel):
     schedulerName: Optional[str]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
+    initContainerResources: Optional[kubernetes.Resources]
 
     class Config:
         extra = Extra.forbid

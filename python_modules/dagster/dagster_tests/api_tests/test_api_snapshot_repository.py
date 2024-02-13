@@ -2,29 +2,31 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-from dagster import repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
+from dagster._api.snapshot_repository import (
+    sync_get_streaming_external_repositories_data_grpc,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import ExternalPipelineData
+from dagster._core.host_representation.external_data import ExternalJobData
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import lambda_solid, pipeline
-from dagster._serdes.serdes import deserialize_as
+from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_repository_location
+from .utils import get_bar_repo_code_location
 
 
 def test_streaming_external_repositories_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
+    with get_bar_repo_code_location(instance) as code_location:
         external_repo_datas = sync_get_streaming_external_repositories_data_grpc(
-            repository_location.client, repository_location
+            code_location.client, code_location
         )
 
         assert len(external_repo_datas) == 1
@@ -33,30 +35,32 @@ def test_streaming_external_repositories_api_grpc(instance):
 
         assert isinstance(external_repository_data, ExternalRepositoryData)
         assert external_repository_data.name == "bar_repo"
+        assert external_repository_data.metadata == {
+            "string": TextMetadataValue("foo"),
+            "integer": IntMetadataValue(123),
+        }
 
 
 def test_streaming_external_repositories_error(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        repository_location.repository_names = {"does_not_exist"}
-        assert repository_location.repository_names == {"does_not_exist"}
+    with get_bar_repo_code_location(instance) as code_location:
+        code_location.repository_names = {"does_not_exist"}
+        assert code_location.repository_names == {"does_not_exist"}
 
         with pytest.raises(
             DagsterUserCodeProcessError,
             match='Could not find a repository called "does_not_exist"',
         ):
-            sync_get_streaming_external_repositories_data_grpc(
-                repository_location.client, repository_location
-            )
+            sync_get_streaming_external_repositories_data_grpc(code_location.client, code_location)
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@pipeline
-def giant_pipeline():
-    # Pipeline big enough to be larger than the max size limit for a gRPC message in its
+@job
+def giant_job():
+    # Job big enough to be larger than the max size limit for a gRPC message in its
     # external repository
     for _i in range(20000):
         do_something()
@@ -65,15 +69,15 @@ def giant_pipeline():
 @repository
 def giant_repo():
     return {
-        "pipelines": {
-            "giant": giant_pipeline,
+        "jobs": {
+            "giant": giant_job,
         },
     }
 
 
 @contextmanager
-def get_giant_repo_grpc_repository_location(instance):
-    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+def get_giant_repo_grpc_code_location(instance):
+    with ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="giant_repo",
@@ -87,10 +91,10 @@ def get_giant_repo_grpc_repository_location(instance):
 @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6940")
 def test_giant_external_repository_streaming_grpc():
     with instance_for_test() as instance:
-        with get_giant_repo_grpc_repository_location(instance) as repository_location:
+        with get_giant_repo_grpc_code_location(instance) as code_location:
             # Using streaming allows the giant repo to load
             external_repos_data = sync_get_streaming_external_repositories_data_grpc(
-                repository_location.client, repository_location
+                code_location.client, code_location
             )
 
             assert len(external_repos_data) == 1
@@ -101,14 +105,14 @@ def test_giant_external_repository_streaming_grpc():
             assert external_repository_data.name == "giant_repo"
 
 
-def test_defer_snapshots(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
+def test_defer_snapshots(instance: DagsterInstance):
+    with get_bar_repo_code_location(instance) as code_location:
         repo_origin = ExternalRepositoryOrigin(
-            repository_location.origin,
+            code_location.origin,
             "bar_repo",
         )
 
-        ser_repo_data = repository_location.client.external_repository(
+        ser_repo_data = code_location.client.external_repository(
             repo_origin,
             defer_snapshots=True,
         )
@@ -117,30 +121,33 @@ def test_defer_snapshots(instance):
 
         def _ref_to_data(ref):
             _state["cnt"] = _state.get("cnt", 0) + 1
-            reply = repository_location.client.external_job(
+            reply = code_location.client.external_job(
                 repo_origin,
                 ref.name,
             )
-            return deserialize_as(reply.serialized_job_data, ExternalPipelineData)
+            return deserialize_value(reply.serialized_job_data, ExternalJobData)
 
-        external_repository_data = deserialize_as(ser_repo_data, ExternalRepositoryData)
-
-        assert len(external_repository_data.external_job_refs) == 5
-        assert external_repository_data.external_pipeline_datas is None
+        external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
+        assert (
+            external_repository_data.external_job_refs
+            and len(external_repository_data.external_job_refs) == 6
+        )
+        assert external_repository_data.external_job_datas is None
 
         repo = ExternalRepository(
             external_repository_data,
-            RepositoryHandle(repository_name="bar_repo", repository_location=repository_location),
+            RepositoryHandle(repository_name="bar_repo", code_location=code_location),
+            instance=instance,
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_external_jobs()
-        assert len(jobs) == 5
+        assert len(jobs) == 6
         assert _state.get("cnt", 0) == 0
 
         job = jobs[0]
 
         # basic accessors should not cause a fetch
-        _ = job.computed_pipeline_snapshot_id
+        _ = job.computed_job_snapshot_id
         assert _state.get("cnt", 0) == 0
 
         _ = job.name
@@ -149,14 +156,14 @@ def test_defer_snapshots(instance):
         _ = job.active_presets
         assert _state.get("cnt", 0) == 0
 
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # access should be memoized
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # refetching job should share fetched data
         job = repo.get_all_external_jobs()[0]
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1

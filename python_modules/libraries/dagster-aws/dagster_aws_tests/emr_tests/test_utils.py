@@ -3,7 +3,7 @@ from dagster_aws.emr.utils import subset_run_config
 
 def test_subset_run_config():
     run_config = {
-        "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
+        "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
         "resources": {
             "pyspark": {
                 "config": {
@@ -20,4 +20,4 @@ def test_subset_run_config():
     assert res == run_config
 
     res = subset_run_config(run_config, "not_here")
-    assert res["solids"] == {}
+    assert res["ops"] == {}

@@ -1,11 +1,10 @@
 import {promises as fs} from 'fs';
 import path from 'path';
-import {latestAllVersionedPaths} from 'util/useNavigation';
+import {latestAllDynamicPaths} from 'util/navigation';
+import zlib from 'zlib';
 
-import axios from 'axios';
-import FeedbackModal from 'components/FeedbackModal';
 import {Shimmer} from 'components/Shimmer';
-import {getItems} from 'components/mdx/SidebarNavigation';
+import {getMDXItems} from 'components/SidebarNavigation';
 import rehypePlugins from 'components/mdx/rehypePlugins';
 import matter from 'gray-matter';
 import generateToc from 'mdast-util-toc';
@@ -13,20 +12,22 @@ import {GetStaticProps} from 'next';
 import renderToString from 'next-mdx-remote/render-to-string';
 import {MdxRemote} from 'next-mdx-remote/types';
 import {useRouter} from 'next/router';
-import React, {useState} from 'react';
+import React from 'react';
 import remark from 'remark';
 import mdx from 'remark-mdx';
 
 import MDXComponents, {SearchIndexContext} from '../components/mdx/MDXComponents';
 import MDXRenderer, {MDXData, VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import {SphinxPrefix, sphinxPrefixFromPage} from '../util/useSphinx';
-import {versionFromPage} from '../util/useVersion';
 
-const components: MdxRemote.Components = MDXComponents;
+// The next-mdx-remote types are outdated.
+const components: MdxRemote.Components = MDXComponents as any;
+const searchProvider: React.ReactNode = SearchIndexContext.Provider as any;
 
 type HTMLData = {
   body: string;
   toc: string;
+  path: string;
 };
 
 enum PageType {
@@ -42,20 +43,20 @@ type Props =
   | {type: PageType.HTML; data: HTMLData};
 
 function HTMLRenderer({data}: {data: HTMLData}) {
-  const {body, toc} = data;
+  const {body, toc, path} = data;
   const markup = {__html: body};
   const tocMarkup = {__html: toc};
 
   return (
     <>
-      <VersionedContentLayout>
+      <VersionedContentLayout asPath={path}>
         <div
           className="DocSearch-content prose dark:prose-dark max-w-none"
           dangerouslySetInnerHTML={markup}
         />
       </VersionedContentLayout>
 
-      <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+      <aside className="relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
         <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
           <div className="mb-8 px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
@@ -70,16 +71,6 @@ function HTMLRenderer({data}: {data: HTMLData}) {
 }
 
 export default function MdxPage(props: Props) {
-  const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
-
-  const closeFeedback = () => {
-    setOpenFeedback(false);
-  };
-
-  const toggleFeedback = () => {
-    setOpenFeedback(!isFeedbackOpen);
-  };
-
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -90,9 +81,8 @@ export default function MdxPage(props: Props) {
 
   return (
     <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
       {props.type === PageType.MDX ? (
-        <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
+        <MDXRenderer data={props.data} />
       ) : (
         <HTMLRenderer data={props.data} />
       )}
@@ -100,36 +90,35 @@ export default function MdxPage(props: Props) {
   );
 }
 
-async function getVersionedContent(version: string, asPath: string): Promise<string> {
-  const bucket = 'dagster-docs-versioned-content';
-  const region = 'us-west-1';
-  const folder = 'versioned_content';
-  const url = `https://${bucket}.s3.${region}.amazonaws.com/${folder}/${version}${asPath}`;
-  const response = await axios.get(url, {transformResponse: (x) => x});
-  return response.data;
+async function getContent(asPath: string) {
+  // render files from the local content folder
+  const basePath = path.resolve('../content');
+  const pathToFile = path.join(basePath, asPath);
+  const buffer = await fs.readFile(pathToFile);
+  const contentString = buffer.toString();
+  return contentString;
 }
 
-async function getContent(version: string, asPath: string) {
-  if (version === 'master') {
-    // render files from the local content folder
-    const basePath = path.resolve('../content');
-    const pathToFile = path.join(basePath, asPath);
-    const buffer = await fs.readFile(pathToFile);
-    const contentString = buffer.toString();
-    return contentString;
-  } else {
-    // render versioned files from remote bucket
-    const contentString = await getVersionedContent(version, asPath);
-    return contentString;
-  }
+async function getGzJsonContent(asPath: string) {
+  const basePath = path.resolve('../content');
+  const pathToFile = path.join(basePath, asPath);
+  const buffer = await fs.readFile(pathToFile);
+  return new Promise<any>((resolve, reject) => {
+    zlib.gunzip(buffer, (err, result) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(JSON.parse(result.toString()));
+    });
+  });
 }
 
-async function getSphinxData(sphinxPrefix: SphinxPrefix, version: string, page: string[]) {
+async function getSphinxData(sphinxPrefix: SphinxPrefix, path: string) {
+  const page = path.split('/').splice(1);
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
-    const content = await getContent(version, '/api/sections.json');
     const {
       api: {apidocs: data},
-    } = JSON.parse(content);
+    } = await getGzJsonContent('/api/sections.json.gz');
 
     let curr = data;
     for (const part of page) {
@@ -139,11 +128,10 @@ async function getSphinxData(sphinxPrefix: SphinxPrefix, version: string, page: 
     const {body, toc} = curr;
 
     return {
-      props: {type: PageType.HTML, data: {body, toc}},
+      props: {type: PageType.HTML, data: {body, toc, path: `/${SphinxPrefix.API_DOCS}${path}`}},
     };
   } else {
-    const content = await getContent(version, '/api/modules.json');
-    const data = JSON.parse(content);
+    const data = await getGzJsonContent('/api/modules.json.gz');
     let curr = data;
     for (const part of page) {
       curr = curr[part];
@@ -152,20 +140,20 @@ async function getSphinxData(sphinxPrefix: SphinxPrefix, version: string, page: 
     const {body} = curr;
 
     return {
-      props: {type: PageType.HTML, data: {body}},
+      props: {type: PageType.HTML, data: {body, path: `/${SphinxPrefix.MODULES}${path}`}},
     };
   }
 }
 
 export const getStaticProps: GetStaticProps = async ({params}) => {
   const {page} = params;
-  const {version, asPath} = versionFromPage(page);
+  const asPath = Array.isArray(page) ? '/' + page.join('/') : page;
 
   const {sphinxPrefix, asPath: subPath} = sphinxPrefixFromPage(asPath);
   // If the subPath == "/", then we continue onto the MDX render to render the _apidocs.mdx page
   if (sphinxPrefix && subPath !== '/') {
     try {
-      return getSphinxData(sphinxPrefix, version, subPath.split('/').splice(1));
+      return getSphinxData(sphinxPrefix, subPath);
     } catch (err) {
       console.log(err);
       return {notFound: true};
@@ -179,23 +167,22 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
   try {
     // 1. Read and parse versioned search
-    const searchContent = await getContent(version, '/api/searchindex.json');
-    const searchIndex = JSON.parse(searchContent);
+    const searchIndex = await getGzJsonContent('/api/searchindex.json.gz');
 
     // 2. Read and parse versioned MDX content
-    const source = await getContent(version, asPath + '.mdx');
+    const source = await getContent(asPath + '.mdx');
     const {content, data} = matter(source);
 
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
     const node = generateToc(tree, {maxDepth: 4});
-    const tableOfContents = getItems(node.map, {});
+    const tableOfContents = getMDXItems(node.map, {});
 
     // 4. Render MDX
     const mdxSource = await renderToString(content, {
       components,
       provider: {
-        component: SearchIndexContext.Provider,
+        component: searchProvider,
         props: {value: searchIndex},
       },
       mdxOptions: {
@@ -228,7 +215,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllVersionedPaths(), // only generate pages of latest version at build time
+    paths: latestAllDynamicPaths({excludeNonMdx: true}),
     fallback: true,
   };
 }

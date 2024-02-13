@@ -1,0 +1,106 @@
+---
+title: Asset jobs | Dagster
+description: Asset jobs are the main unit for materializing and monitoring Software-defined assets in Dagster.
+---
+
+# Asset jobs
+
+<Note>
+  Looking to execute a <a href="/concepts/ops-jobs-graphs/graphs">graph</a> of{" "}
+  <a href="/concepts/ops-jobs-graphs/ops">ops</a>, which aren't tied to
+  Software-defined Assets? Check out the{" "}
+  <a href="/concepts/ops-jobs-graphs/op-jobs">Op jobs</a> documentation.
+</Note>
+
+[Jobs](/concepts/ops-jobs-graphs/jobs) are the main unit for executing and monitoring Software-defined assets in Dagster. An asset job materializes a selection of [Software-defined Assets](/concepts/assets/software-defined-assets). It can be launched in a few different ways:
+
+- Manually from the Dagster UI
+- At fixed intervals, by [schedules](/concepts/partitions-schedules-sensors/schedules)
+- When external changes occur, using [sensors](/concepts/partitions-schedules-sensors/sensors)
+
+---
+
+## Relevant APIs
+
+| Name                                   | Description                                               |
+| -------------------------------------- | --------------------------------------------------------- |
+| <PyObject object="define_asset_job" /> | A function for defining a job from a selection of assets. |
+
+---
+
+## Creating asset jobs
+
+Asset jobs materialize a fixed set of assets each time they run. Additionally, multiple jobs can target overlapping sets of assets:
+
+```python file=/concepts/assets/build_job.py startafter=start_job_only_marker endbefore=end_job_only_marker
+from dagster import Definitions, asset, define_asset_job
+
+
+@asset
+def asset1():
+    return [1, 2, 3]
+
+
+@asset
+def asset2(asset1):
+    return asset1 + [4]
+
+
+all_assets_job = define_asset_job(name="all_assets_job")
+asset1_job = define_asset_job(name="asset1_job", selection="asset1")
+
+defs = Definitions(
+    assets=[asset1, asset2],
+    jobs=[all_assets_job, asset1_job],
+)
+```
+
+The topology of an asset-based job is based on the [assets](/concepts/assets/software-defined-assets) and their dependencies.
+
+---
+
+## Making asset jobs available to Dagster tools
+
+You make asset jobs available to the UI, GraphQL, and the command line by including them in a <PyObject object="Definitions"/> object at the top level of a Python module or file. The tool loads that module as a code location. If you include schedules or sensors, the [code location](/concepts/code-locations) will automatically include jobs that those schedules or sensors target.
+
+```python file=/concepts/assets/jobs_to_definitions.py
+from dagster import Definitions, asset, define_asset_job
+
+
+@asset
+def number_asset():
+    return [1, 2, 3]
+
+
+number_asset_job = define_asset_job(name="number_asset_job", selection="number_asset")
+
+defs = Definitions(
+    assets=[number_asset],
+    jobs=[number_asset_job],
+)
+```
+
+---
+
+## Testing asset jobs
+
+Dagster has built-in support for testing, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [Testing guide](/concepts/testing) for more info and examples.
+
+---
+
+## Executing asset jobs
+
+You can run an asset job in a variety of ways:
+
+- In the Python process where it's defined
+- Via the command line
+- Via the GraphQL API
+- In [the UI](/concepts/webserver/ui). The UI centers on jobs, making it a one-stop shop - you can manually kick off runs for a job and view all historical runs.
+
+---
+
+## See it in action
+
+For more examples of asset jobs, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+
+- [Building an asset job that targets an asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)

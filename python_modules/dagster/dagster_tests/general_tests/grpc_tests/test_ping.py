@@ -1,31 +1,48 @@
+import json
+import logging
 import os
 import re
+import subprocess
+import threading
 import time
+from unittest import mock
 
 import dagster._check as check
 import dagster._seven as seven
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
-from dagster._grpc.server import GrpcServerProcess, open_server_process
+from dagster._grpc.server import (
+    DagsterCodeServerUtilizationMetrics,
+    GrpcServerProcess,
+    open_server_process,
+)
 from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port, safe_tempfile_path
 
 
-def server_thread_runnable(**kwargs):
-    def _runnable():
-        server = DagsterGrpcServer(**kwargs)
-        server.serve()
-
-    return _runnable
+def _cleanup_process(process):
+    interrupt_ipc_subprocess_pid(process.pid)
+    try:
+        process.wait(timeout=30)
+    except subprocess.TimeoutExpired:
+        print("subprocess did not terminate in 30s, killing")  # noqa: T201
+        process.kill()
 
 
 @pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
 def test_server_socket_on_windows():
     with safe_tempfile_path() as skt:
         with pytest.raises(check.CheckError, match=re.escape("`socket` not supported")):
-            DagsterGrpcServer(socket=skt)
+            DagsterGrpcServer(
+                server_termination_event=threading.Event(),
+                dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
+                socket=skt,
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
+            )
 
 
 def test_server_port_and_socket():
@@ -34,7 +51,14 @@ def test_server_port_and_socket():
             check.CheckError,
             match=re.escape("You must pass one and only one of `port` or `socket`."),
         ):
-            DagsterGrpcServer(socket=skt, port=find_free_port())
+            DagsterGrpcServer(
+                server_termination_event=threading.Event(),
+                dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
+                socket=skt,
+                port=find_free_port(),
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
+            )
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
@@ -43,7 +67,10 @@ def test_server_socket():
         with safe_tempfile_path() as skt:
             server_process = open_server_process(instance.get_ref(), port=None, socket=skt)
             try:
-                assert DagsterGrpcClient(socket=skt).ping("foobar") == "foobar"
+                assert DagsterGrpcClient(socket=skt).ping("foobar") == {
+                    "echo": "foobar",
+                    "serialized_server_utilization_metrics": "",
+                }
             finally:
                 interrupt_ipc_subprocess_pid(server_process.pid)
                 server_process.terminate()
@@ -51,16 +78,20 @@ def test_server_socket():
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
-def test_process_killed_after_client_finished():
+def test_process_killed_after_server_finished():
     with instance_for_test() as instance:
-        server_process = GrpcServerProcess(instance_ref=instance.get_ref())
+        raw_process = None
         try:
-            with server_process.create_ephemeral_client() as client:
+            with GrpcServerProcess(instance_ref=instance.get_ref()) as server_process:
+                client = server_process.create_client()
+                raw_process = server_process.server_process
                 socket = client.socket
                 assert socket and os.path.exists(socket)
 
+            # Verify server process cleans up eventually
+
             start_time = time.time()
-            while server_process.server_process.poll() is None:
+            while raw_process.poll() is None:
                 time.sleep(0.05)
                 # Verify server process cleans up eventually
                 assert time.time() - start_time < 5
@@ -68,8 +99,8 @@ def test_process_killed_after_client_finished():
             # verify socket is cleaned up
             assert not os.path.exists(socket)
         finally:
-            server_process.server_process.terminate()
-            server_process.server_process.wait()
+            raw_process.terminate()
+            raw_process.wait()
 
 
 def test_server_port():
@@ -79,11 +110,12 @@ def test_server_port():
         assert server_process is not None
 
         try:
-            assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+            assert DagsterGrpcClient(port=port).ping("foobar") == {
+                "echo": "foobar",
+                "serialized_server_utilization_metrics": "",
+            }
         finally:
-            interrupt_ipc_subprocess_pid(server_process.pid)
-            server_process.terminate()
-            server_process.wait()
+            _cleanup_process(server_process)
 
 
 def test_client_bad_port():
@@ -137,7 +169,10 @@ def test_client_port_and_socket():
 
 def test_ephemeral_client():
     with ephemeral_grpc_api_client() as api_client:
-        assert api_client.ping("foo") == "foo"
+        assert api_client.ping("foo") == {
+            "echo": "foo",
+            "serialized_server_utilization_metrics": "",
+        }
 
 
 def test_streaming():
@@ -174,9 +209,7 @@ def test_fixed_server_id():
             api_client = DagsterGrpcClient(port=port)
             assert api_client.get_server_id() == "fixed_id"
         finally:
-            interrupt_ipc_subprocess_pid(server_process.pid)
-            server_process.terminate()
-            server_process.wait()
+            _cleanup_process(server_process)
 
 
 def test_detect_server_restart():
@@ -187,9 +220,7 @@ def test_detect_server_restart():
         server_id_one = api_client.get_server_id()
         assert server_id_one
     finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        _cleanup_process(server_process)
 
     seven.wait_for_process(server_process, timeout=5)
     with pytest.raises(DagsterUserCodeUnreachableError):
@@ -202,8 +233,25 @@ def test_detect_server_restart():
         server_id_two = api_client.get_server_id()
         assert server_id_two
     finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        _cleanup_process(server_process)
 
     assert server_id_one != server_id_two
+
+
+def test_ping_metrics_retrieval():
+    with instance_for_test() as instance:
+        port = find_free_port()
+        server_process = open_server_process(
+            instance.get_ref(), port=port, socket=None, enable_metrics=True
+        )
+        assert server_process is not None
+
+        try:
+            result = DagsterGrpcClient(port=port).ping("foobar")
+            assert result["echo"] == "foobar"
+            metrics = json.loads(result["serialized_server_utilization_metrics"])
+            assert all(
+                key in metrics for key in DagsterCodeServerUtilizationMetrics.__annotations__
+            )
+        finally:
+            _cleanup_process(server_process)

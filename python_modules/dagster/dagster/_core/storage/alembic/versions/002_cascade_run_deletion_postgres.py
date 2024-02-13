@@ -8,7 +8,6 @@ Create Date: 2020-02-10 12:52:49.540462
 from alembic import op
 from sqlalchemy import inspect
 
-# pylint: disable=no-member
 # alembic dynamically populates the alembic.context module
 
 # revision identifiers, used by Alembic.
@@ -21,6 +20,9 @@ depends_on = None
 def upgrade():
     inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
+
+    if op.get_context().dialect.name == "sqlite":
+        return
 
     if "runs" in has_tables and "run_tags" in has_tables:
         op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type_="foreignkey")
@@ -37,6 +39,9 @@ def upgrade():
 def downgrade():
     inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
+
+    if op.get_context().dialect.name == "sqlite":
+        return
 
     if "runs" in has_tables and "run_tags" in has_tables:
         op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type_="foreignkey")

@@ -36,12 +36,12 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-When [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
+When [adding a code location](/dagster-cloud/managing-deployments/code-locations) to Dagster Cloud with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
 
-The following example `dagster_cloud.yaml` file illustrates the available fields:
+The following example [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
-## dagster_cloud.yaml
+# dagster_cloud.yaml
 
 locations:
   - location_name: cloud-examples
@@ -97,15 +97,20 @@ locations:
 Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
-## dagster_cloud.yaml
+# dagster_cloud.yaml
 
-container_context:
-  k8s:
-    env_vars:
-      - database_name
-      - database_username=hooli_testing
-    env_secrets:
-      - database_password
+location:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      k8s:
+        env_vars:
+          - database_name
+          - database_username=hooli_testing
+        env_secrets:
+          - database_password
 ```
 
 <ReferenceTable>
@@ -126,7 +131,7 @@ container_context:
 
 Refer to the following guides for more info about environment variables:
 
-- [Dagster Cloud environment variables and secrets](/dagster-cloud/developing-testing/environment-variables-and-secrets)
+- [Dagster Cloud environment variables and secrets](/dagster-cloud/managing-deployments/environment-variables-and-secrets)
 - [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets)
 
 ---
@@ -150,7 +155,7 @@ def k8s_job():
 
 ## Per-job and per-op configuration
 
-To add configuration to specific Dagster jobs or ops, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#per-job-or-per-op-kubernetes-configuration) for more info.
+To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#per-job-kubernetes-configuration) for more info.
 
 ---
 

@@ -14,23 +14,15 @@ Run Airflow on Dagster
 
 .. autofunction:: make_dagster_definitions_from_airflow_dag_bag
 
+.. autofunction:: make_schedules_and_jobs_from_airflow_dag_bag
+
 .. autofunction:: make_dagster_job_from_airflow_dag
 
-.. autofunction:: make_dagster_repo_from_airflow_dags_path
+.. autofunction:: load_assets_from_airflow_dag
 
-.. autofunction:: make_dagster_repo_from_airflow_dag_bag
+.. autofunction:: make_ephemeral_airflow_db_resource
 
-.. autofunction:: airflow_operator_to_op
-
-
-Run Dagster on Airflow
-======================
-
-.. autofunction:: make_airflow_dag
-
-.. autofunction:: make_airflow_dag_for_operator
-
-.. autofunction:: make_airflow_dag_containerized
+.. autofunction:: make_persistent_airflow_db_resource
 
 
 Orchestrate Dagster from Airflow

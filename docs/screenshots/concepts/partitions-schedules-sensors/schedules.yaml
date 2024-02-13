@@ -1,0 +1,19 @@
+- id: test-schedule-button.png
+  workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
+  steps:
+    - navigate to the page for math_schedule
+    - take a screenshot of the top right corner of the page, making sure to include the "Test schedule" button
+  vetted: false
+- id: select-timestamp-page.png
+  workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
+  steps:
+    - navigate to the page for math_schedule
+    - click the test schedule button, screenshot the window that pops up
+  vetted: false
+- id: eval-schedule-result-page.png
+  workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
+  steps:
+    - navigate to the page for math_schedule
+    - click the test schedule button, then the evaluate button
+    - screenshot the window that pops up
+  vetted: false

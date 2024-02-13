@@ -1,10 +1,11 @@
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
+from typing_extensions import TypeAlias
 
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
@@ -12,21 +13,27 @@ from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
+from .utils import (
+    BuildkiteLeafStep,
+    BuildkiteTopLevelStep,
+    GroupStep,
+    is_command_step,
+    is_feature_branch,
+    message_contains,
+)
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
     "python_modules/dagit",
     "python_modules/dagster-graphql",
-    "js_modules/dagit",
+    "js_modules/dagster-ui",
 ]
 
 _INFRASTRUCTURE_PACKAGES = [
     ".buildkite/dagster-buildkite",
     "python_modules/automation",
     "python_modules/dagster-test",
-    "python_modules/docs/dagit-screenshot",
-    "scripts",
+    "python_modules/docs/dagster-ui-screenshot",
 ]
 
 
@@ -53,8 +60,11 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
     "unknown": ":grey_question:",
 }
 
-PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
-PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
+PytestExtraCommandsFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, Optional[str]], List[str]
+]
+PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
+UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], List[AvailablePythonVersion]]
 
 
 @dataclass
@@ -98,14 +108,14 @@ class PackageSpec:
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
-        run_mypy (bool, optional): Whether to run mypy. Runs in the highest available supported
-            Python version. Enabled by default.
     """
 
     directory: str
     name: Optional[str] = None
     package_type: Optional[str] = None
-    unsupported_python_versions: List[AvailablePythonVersion] = field(default_factory=lambda: [])
+    unsupported_python_versions: Optional[
+        Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
+    ] = None
     pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None
     pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None
     pytest_tox_factors: Optional[List[str]] = None
@@ -115,7 +125,7 @@ class PackageSpec:
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
-    run_mypy: bool = True
+    always_run_if: Optional[Callable[[], bool]] = None
 
     def __post_init__(self):
         if not self.name:
@@ -127,22 +137,12 @@ class PackageSpec:
         self._should_skip = None
         self._skip_reason = None
 
-    def build_steps(self) -> List[GroupStep]:
+    def build_steps(self) -> List[BuildkiteTopLevelStep]:
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
-        supported_python_versions = [
-            v for v in AvailablePythonVersion.get_all() if v not in self.unsupported_python_versions
-        ]
-
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
-            pytest_python_versions = sorted(
-                list(set(default_python_versions) - set(self.unsupported_python_versions))
-            )
-            # Use lowest supported python version if no defaults match.
-            if len(pytest_python_versions) == 0:
-                pytest_python_versions = [supported_python_versions[0]]
 
             tox_factors: List[Optional[str]] = (
                 [f.lstrip("-") for f in self.pytest_tox_factors]
@@ -150,8 +150,26 @@ class PackageSpec:
                 else [None]
             )
 
-            for py_version in pytest_python_versions:
-                for other_factor in tox_factors:
+            for other_factor in tox_factors:
+                if callable(self.unsupported_python_versions):
+                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
+                else:
+                    unsupported_python_versions = self.unsupported_python_versions or []
+
+                supported_python_versions = [
+                    v
+                    for v in AvailablePythonVersion.get_all()
+                    if v not in unsupported_python_versions
+                ]
+
+                pytest_python_versions = sorted(
+                    list(set(default_python_versions) - set(unsupported_python_versions))
+                )
+                # Use lowest supported python version if no defaults match.
+                if len(pytest_python_versions) == 0:
+                    pytest_python_versions = [supported_python_versions[0]]
+
+                for py_version in pytest_python_versions:
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor
@@ -190,26 +208,22 @@ class PackageSpec:
                         )
                     )
 
-        if self.run_mypy:
-            steps.append(
-                build_tox_step(
-                    self.directory,
-                    "mypy",
-                    base_label=base_name,
-                    command_type="mypy",
-                    python_version=supported_python_versions[-1],
-                    skip_reason=self.skip_reason,
-                )
-            )
-
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
-        return [
-            GroupStep(
-                group=f"{emoji} {base_name}",
-                key=base_name,
-                steps=steps,
-            )
-        ]
+        if len(steps) >= 2:
+            return [
+                GroupStep(
+                    group=f"{emoji} {base_name}",
+                    key=base_name,
+                    steps=steps,
+                )
+            ]
+        elif len(steps) == 1:
+            only_step = steps[0]
+            if not is_command_step(only_step):
+                raise ValueError("Expected only step to be a CommandStep")
+            return [only_step]
+        else:
+            return []
 
     @property
     def requirements(self):
@@ -234,8 +248,17 @@ class PackageSpec:
         if self._should_skip is False:
             return None
 
+        if self.always_run_if and self.always_run_if():
+            self._should_skip = False
+            return None
+
         if self._skip_reason:
             return self._skip_reason
+
+        if message_contains("NO_SKIP"):
+            logging.info(f"Building {self.name} because NO_SKIP set")
+            self._should_skip = False
+            return None
 
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             logging.info(f"Building {self.name} we're not on a feature branch")

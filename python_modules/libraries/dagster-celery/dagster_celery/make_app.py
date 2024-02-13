@@ -18,8 +18,7 @@ def make_app_with_task_routes(task_routes, app_args=None):
         app_.config_from_object("dagster_celery.defaults", force=True)
 
         if is_module_available("dagster_celery_config"):
-            # pylint: disable=protected-access
-            obj = force_mapping(app_.loader._smart_import("dagster_celery_config"))
+            obj = force_mapping(app_.loader._smart_import("dagster_celery_config"))  # noqa: SLF001
             app_.conf.update(obj)
 
     app_.loader.import_module("celery.contrib.testing.tasks")

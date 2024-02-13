@@ -3,10 +3,11 @@ import warnings
 import pytest
 from dagster import (
     AssetKey,
+    Definitions,
     IOManager,
     IOManagerDefinition,
     ResourceDefinition,
-    build_op_context,
+    build_asset_context,
     execute_job,
     io_manager,
     mem_io_manager,
@@ -24,8 +25,6 @@ from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import environ, instance_for_test
-
-# pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking
 
 
 @pytest.fixture
@@ -57,7 +56,7 @@ def test_assets_direct():
     assert transformed_asset.node_def.output_defs[0].io_manager_key == "io_manager"
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
-    assert list(in_mem.values.values())[0] == 5
+    assert next(iter(in_mem.values.values())) == 5
 
 
 def test_asset_requires_io_manager_key():
@@ -78,7 +77,7 @@ def test_asset_requires_io_manager_key():
     assert isinstance(transformed_asset, AssetsDefinition)
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
-    assert list(in_mem.values.values())[0] == 5
+    assert next(iter(in_mem.values.values())) == 5
 
 
 def test_assets_direct_resource_conflicts():
@@ -232,7 +231,10 @@ def test_source_asset_no_manager_def():
     # Ensure error when io manager key is provided and resources don't satisfy.
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="requires IO manager with key 'foo', but none was provided.",
+        match=(
+            "io manager with key 'foo' required by SourceAsset with key \\[\"my_source_asset\"\\]"
+            " was not provided"
+        ),
     ):
         with_resources([the_source_asset], {})
 
@@ -325,10 +327,10 @@ def test_source_asset_partial_resources():
     my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_def=the_manager)
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'foo' required by resource with key 'my_source_asset__io_manager',"
-            " but not provided."
+            "resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
+            " was not provided"
         ),
     ):
         with_resources([my_source_asset], resource_defs={})
@@ -400,7 +402,7 @@ def test_config():
         resource_config_by_key={"foo": {"config": "blah"}, "bar": {"config": "baz"}},
     )[0]
 
-    transformed_asset(build_op_context())
+    transformed_asset(build_asset_context())
 
 
 def test_config_not_satisfied():
@@ -433,7 +435,7 @@ def test_bad_key_provided():
         },
     )[0]
 
-    transformed_asset(build_op_context())
+    transformed_asset(build_asset_context())
 
 
 def test_bad_config_provided():
@@ -605,6 +607,23 @@ def test_with_resources_no_exp_warnings():
             [blah, my_source_asset],
             {"foo": ResourceDefinition.hardcoded_resource("something"), "the_manager": the_manager},
         )
+
+
+def test_bare_resource_on_with_resources():
+    class BareObjectResource:
+        pass
+
+    executed = {}
+
+    @asset(required_resource_keys={"bare_resource"})
+    def blah(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    bound_assets = with_resources([blah], {"bare_resource": BareObjectResource()})
+    defs = Definitions(assets=bound_assets)
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert executed["yes"]
 
 
 class FooIoManager(PickledObjectFilesystemIOManager):

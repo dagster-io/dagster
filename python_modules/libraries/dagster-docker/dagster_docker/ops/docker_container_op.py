@@ -44,7 +44,6 @@ def _get_client(docker_container_context: DockerContainerContext):
 def _get_container_name(run_id, op_name, retry_number):
     container_name = hash_str(run_id + op_name)
 
-    retry_number = retry_number
     if retry_number > 0:
         container_name = f"{container_name}-{retry_number}"
 
@@ -83,8 +82,7 @@ def execute_docker_container(
     env_vars: Optional[Sequence[str]] = None,
     container_kwargs: Optional[Mapping[str, Any]] = None,
 ):
-    """
-    This function is a utility for executing a Docker container from within a Dagster op.
+    """This function is a utility for executing a Docker container from within a Dagster op.
 
     Args:
         image (str): The image to use for the launched Docker container.
@@ -105,10 +103,12 @@ def execute_docker_container(
             of available options.
     """
     run_container_context = DockerContainerContext.create_for_run(
-        context.pipeline_run,
-        context.instance.run_launcher
-        if isinstance(context.instance.run_launcher, DockerRunLauncher)
-        else None,
+        context.dagster_run,
+        (
+            context.instance.run_launcher
+            if isinstance(context.instance.run_launcher, DockerRunLauncher)
+            else None
+        ),
     )
 
     validate_docker_image(image)
@@ -139,7 +139,7 @@ def execute_docker_container(
     container.start()
 
     for line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
-        print(line)
+        print(line)  # noqa: T201
 
     exit_status = container.wait()["StatusCode"]
 
@@ -150,8 +150,7 @@ def execute_docker_container(
 @op(ins={"start_after": In(Nothing)}, config_schema=DOCKER_CONTAINER_OP_CONFIG)
 @experimental
 def docker_container_op(context):
-    """
-    An op that runs a Docker container using the docker Python API.
+    """An op that runs a Docker container using the docker Python API.
 
     Contrast with the `docker_executor`, which runs each Dagster op in a Dagster job in its
     own Docker container.

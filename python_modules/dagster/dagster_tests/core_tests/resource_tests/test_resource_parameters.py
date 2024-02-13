@@ -4,23 +4,23 @@ from typing import Any
 import pytest
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._check import ParameterCheckError
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_filter_out_resources():
     @op
-    def requires_resource_a(context, a: ResourceOutput[str]):
+    def requires_resource_a(context, a: ResourceParam[str]):
         assert a
         assert context.resources.a
         assert not hasattr(context.resources, "b")
 
     @op
-    def requires_resource_b(context, b: ResourceOutput[str]):
+    def requires_resource_b(context, b: ResourceParam[str]):
         assert b
         assert not hasattr(context.resources, "a")
         assert context.resources.b
@@ -58,11 +58,11 @@ def test_init_resources():
         yield "B"
 
     @op
-    def consumes_resource_a(a: ResourceOutput[str]):
+    def consumes_resource_a(a: ResourceParam[str]):
         assert a == "A"
 
     @op
-    def consumes_resource_b(b: ResourceOutput[str]):
+    def consumes_resource_b(b: ResourceParam[str]):
         assert b == "B"
 
     @job(
@@ -84,13 +84,13 @@ def test_ops_with_dependencies():
     completed = set()
 
     @op
-    def first_op(foo: ResourceOutput[str]):
+    def first_op(foo: ResourceParam[str]):
         assert foo == "foo"
         completed.add("first_op")
         return "hello"
 
     @op
-    def second_op(foo: ResourceOutput[str], first_op_result: str):
+    def second_op(foo: ResourceParam[str], first_op_result: str):
         assert foo == "foo"
         assert first_op_result == "hello"
         completed.add("second_op")
@@ -103,9 +103,7 @@ def test_ops_with_dependencies():
 
     # Ensure ordering of resource args doesn't matter
     @op
-    def fourth_op(
-        context, second_op_result: str, foo: ResourceOutput[str], third_op_result: str
-    ):  # pylint: disable=unused-argument
+    def fourth_op(context, second_op_result: str, foo: ResourceParam[str], third_op_result: str):
         assert foo == "foo"
         assert second_op_result == "hello world"
         assert third_op_result == "!"
@@ -127,14 +125,14 @@ def test_assets():
     executed = {}
 
     @asset
-    def the_asset(context, foo: ResourceOutput[str]):
+    def the_asset(context, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         executed["the_asset"] = True
         return "hello"
 
     @asset
-    def the_other_asset(context, the_asset, foo: ResourceOutput[str]):
+    def the_other_asset(context, the_asset, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         assert the_asset == "hello"
@@ -143,7 +141,7 @@ def test_assets():
 
     # Ensure ordering of resource args doesn't matter
     @asset
-    def the_third_asset(context, the_asset, foo: ResourceOutput[str], the_other_asset):
+    def the_third_asset(context, the_asset, foo: ResourceParam[str], the_other_asset):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         assert the_asset == "hello"
@@ -165,7 +163,7 @@ def test_multi_assets():
     executed = {}
 
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
-    def two_assets(context, foo: ResourceOutput[str]):
+    def two_assets(context, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         executed["two_assets"] = True
@@ -184,7 +182,7 @@ def test_multi_assets():
 def test_resource_not_provided():
     @asset
     def consumes_nonexistent_resource(
-        not_provided: ResourceOutput[str],  # pylint: disable=unused-argument
+        not_provided: ResourceParam[str],
     ):
         pass
 
@@ -206,7 +204,7 @@ def test_resource_class():
             resource_called["called"] = True
 
     @op
-    def do_something_op(my_resource: MyResource):
+    def do_something_op(my_resource: ResourceParam[MyResource]):
         my_resource.do_something()
 
     @job(resource_defs={"my_resource": MyResource()})
@@ -218,7 +216,7 @@ def test_resource_class():
 
     @asset
     def consumes_nonexistent_resource_class(
-        not_provided: MyResource,  # pylint: disable=unused-argument
+        not_provided: ResourceParam[MyResource],
     ):
         pass
 
@@ -241,7 +239,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @asset(required_resource_keys={"foo"})
-        def my_asset(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
+        def my_asset(bar: ResourceParam[Any]):
             pass
 
     with pytest.raises(
@@ -256,7 +254,7 @@ def test_both_decorator_and_argument_error():
             outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")},
             required_resource_keys={"foo"},
         )
-        def my_assets(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
+        def my_assets(bar: ResourceParam[Any]):
             pass
 
     with pytest.raises(
@@ -268,7 +266,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @op(required_resource_keys={"foo"})
-        def my_op(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
+        def my_op(bar: ResourceParam[Any]):
             pass
 
 
@@ -280,10 +278,10 @@ def test_asset_with_structured_config():
     executed = {}
 
     @asset
-    def the_asset(context, config: AnAssetConfig, foo: ResourceOutput[str]):
+    def the_asset(context, config: AnAssetConfig, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
-        assert context.op_config["a_string"] == "foo"
+        assert context.op_execution_context.op_config["a_string"] == "foo"
         assert config.a_string == "foo"
         assert config.an_int == 2
         executed["the_asset"] = True
@@ -316,14 +314,14 @@ def test_no_err_builtin_annotations():
     executed = {}
 
     @asset
-    def the_asset(context, foo: ResourceOutput[str]):
+    def the_asset(context, foo: ResourceParam[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         executed["the_asset"] = True
         return [{"hello": "world"}]
 
     @asset
-    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceOutput[str]):
+    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceParam[str]):  # type: ignore
         assert context.resources.foo == "blah"
         assert foo == "blah"
         assert the_asset == [{"hello": "world"}]

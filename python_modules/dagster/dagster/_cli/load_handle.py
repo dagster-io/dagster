@@ -9,10 +9,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 
 
 def _cli_load_invariant(condition, msg=None):
-    msg = (
-        msg
-        or "Invalid set of CLI arguments for loading repository/pipeline. See --help for details."
-    )
+    msg = msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
     if not condition:
         raise UsageError(msg)
 

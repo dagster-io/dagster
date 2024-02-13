@@ -1,0 +1,22 @@
+# name: TestGraphs.test_basic_graphs[0]
+  dict({
+    'graphOrError': dict({
+      '__typename': 'Graph',
+      'name': 'composed_graph',
+      'solidHandles': list([
+        dict({
+          'handleID': 'simple_graph',
+          'solid': dict({
+            'name': 'simple_graph',
+          }),
+        }),
+        dict({
+          'handleID': 'simple_graph.noop_op',
+          'solid': dict({
+            'name': 'noop_op',
+          }),
+        }),
+      ]),
+    }),
+  })
+# ---

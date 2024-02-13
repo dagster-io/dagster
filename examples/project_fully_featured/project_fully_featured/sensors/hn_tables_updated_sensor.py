@@ -11,8 +11,7 @@ from dagster import (
 
 
 def make_hn_tables_updated_sensor(job) -> SensorDefinition:
-    """
-    Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
+    """Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
     both been updated.
     """
 

@@ -1,12 +1,12 @@
 import pytest
-from dagster import DagsterInvalidDefinitionError
+from dagster import Config, DagsterInvalidDefinitionError, RunConfig
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
 
 EXPECTED_RUN_ID = "foo"
 
-launch_pipeline_success_response = {
+launch_job_success_response = {
     "launchPipelineExecution": {
         "__typename": "LaunchRunSuccess",
         "run": {"runId": EXPECTED_RUN_ID},
@@ -14,59 +14,38 @@ launch_pipeline_success_response = {
 }
 
 
-@python_client_test_suite
-def test_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        "bar",
-        repository_location_name="baz",
-        repository_name="quux",
-        run_config={},
-        mode="default",
-    )
-    assert actual_run_id == EXPECTED_RUN_ID
+class AnOpConfig(Config):
+    conn_string: str
+    port: int
 
 
 @python_client_test_suite
 def test_job_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
         repository_name="quux",
+        run_config={"ops": {"foo": dict(conn_string="my_conn", port=4253)}},
     )
     assert actual_run_id == EXPECTED_RUN_ID
 
 
 @python_client_test_suite
-def test_preset_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
+def test_job_success_run_config(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
         repository_name="quux",
-        preset="cool_preset",
-    )
-    assert actual_run_id == EXPECTED_RUN_ID
-
-
-@python_client_test_suite
-def test_tags_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        "bar",
-        repository_location_name="baz",
-        repository_name="quuz",
-        run_config={},
-        mode="default",
-        tags={"my_tag": "a", "my_other_tag": "b"},
+        run_config=RunConfig(ops={"foo": AnOpConfig(conn_string="my_conn", port=4253)}),
     )
     assert actual_run_id == EXPECTED_RUN_ID
 
 
 @python_client_test_suite
 def test_job_tags_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -77,22 +56,8 @@ def test_job_tags_success(mock_client: MockClient):
 
 
 @python_client_test_suite
-def test_pipeline_subset_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        "bar",
-        repository_location_name="baz",
-        repository_name="quuz",
-        solid_selection=[""],
-        mode="default",
-        run_config={},
-    )
-    assert actual_run_id == EXPECTED_RUN_ID
-
-
-@python_client_test_suite
 def test_job_subset_success(mock_client: MockClient):
-    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -111,16 +76,6 @@ def test_complex_tags_success(mock_client: MockClient):
         }
     }
     mock_client.mock_gql_client.execute.return_value = response
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        "bar",
-        repository_location_name="baz",
-        repository_name="quuz",
-        run_config={},
-        mode="default",
-        tags={"my_tag": {"I'm": {"a JSON-encodable": "thing"}}},
-    )
-    assert actual_run_id == EXPECTED_RUN_ID
-
     actual_run_id = mock_client.python_client.submit_job_execution(
         "bar",
         repository_location_name="baz",
@@ -137,16 +92,6 @@ def test_invalid_tags_failure(mock_client: MockClient):
         pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        mock_client.python_client.submit_pipeline_execution(
-            "bar",
-            repository_location_name="baz",
-            repository_name="quuz",
-            run_config={},
-            mode="default",
-            tags={"my_invalid_tag": SomeWeirdObject()},
-        )
-
-    with pytest.raises(DagsterInvalidDefinitionError):
         mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
@@ -158,8 +103,8 @@ def test_invalid_tags_failure(mock_client: MockClient):
 
 @python_client_test_suite
 def test_no_location_or_repo_provided_success(mock_client: MockClient):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
-    other_repo_name, other_pipeline_name = "other repo", "my_pipeline"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
+    other_repo_name, other_job_name = "other repo", "my_job"
     get_locations_and_names_response = {
         "repositoriesOrError": {
             "__typename": "RepositoryConnection",
@@ -167,12 +112,12 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}, {"name": other_pipeline_name}],
+                    "pipelines": [{"name": job_name}, {"name": other_job_name}],
                 },
                 {
                     "name": other_repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": "fun pipeline"}, {"name": other_pipeline_name}],
+                    "pipelines": [{"name": "fun pipeline"}, {"name": other_job_name}],
                 },
             ],
         }
@@ -188,22 +133,12 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
         submit_execution_response,
     ]
 
-    actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        pipeline_name, run_config={}, mode="default"
-    )
-    assert actual_run_id == EXPECTED_RUN_ID
-
-    mock_client.mock_gql_client.execute.side_effect = [
-        get_locations_and_names_response,
-        submit_execution_response,
-    ]
-
-    actual_run_id = mock_client.python_client.submit_job_execution(pipeline_name, run_config={})
+    actual_run_id = mock_client.python_client.submit_job_execution(job_name, run_config={})
     assert actual_run_id == EXPECTED_RUN_ID
 
 
 def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: MockClient):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
     other_repo_name = "other repo"
     get_locations_and_names_response = {
         "repositoriesOrError": {
@@ -212,12 +147,12 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 },
                 {
                     "name": other_repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 },
             ],
         }
@@ -233,19 +168,7 @@ def no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client: Moc
         submit_execution_response,
     ]
 
-    return pipeline_name
-
-
-@python_client_test_suite
-def test_no_location_or_repo_provided_duplicate_pipeline_failure(mock_client: MockClient):
-    pipeline_name = no_location_or_repo_provided_duplicate_pipeline_mock_config(mock_client)
-
-    with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
-            pipeline_name, run_config={}, mode="default"
-        )
-
-    assert exc_info.value.args[0].find(f"multiple pipelines with the name {pipeline_name}") != -1
+    return job_name
 
 
 @python_client_test_suite
@@ -259,7 +182,7 @@ def test_no_location_or_repo_provided_duplicate_job_failure(mock_client: MockCli
 
 
 def no_location_or_repo_provided_mock_config(mock_client):
-    repo_loc_name, repo_name, pipeline_name = "bar", "baz", "quux"
+    repo_loc_name, repo_name, job_name = "bar", "baz", "quux"
     get_locations_and_names_response = {
         "repositoriesOrError": {
             "__typename": "RepositoryConnection",
@@ -267,7 +190,7 @@ def no_location_or_repo_provided_mock_config(mock_client):
                 {
                     "name": repo_name,
                     "location": {"name": repo_loc_name},
-                    "pipelines": [{"name": pipeline_name}],
+                    "pipelines": [{"name": job_name}],
                 }
             ],
         }
@@ -282,16 +205,6 @@ def no_location_or_repo_provided_mock_config(mock_client):
         get_locations_and_names_response,
         submit_execution_response,
     ]
-
-
-@python_client_test_suite
-def test_no_location_or_repo_provided_no_pipeline_failure(mock_client: MockClient):
-    no_location_or_repo_provided_mock_config(mock_client)
-
-    with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution("123", run_config={}, mode="default")
-
-    assert exc_info.value.args[0] == "PipelineNotFoundError"
 
 
 @python_client_test_suite
@@ -316,12 +229,11 @@ def test_failure_with_invalid_step_error(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
+        mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
             repository_name="quux",
             run_config={},
-            mode="default",
         )
     exc_args = exc_info.value.args
 
@@ -342,12 +254,11 @@ def test_failure_with_invalid_output_error(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
+        mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
             repository_name="quux",
             run_config={},
-            mode="default",
         )
 
     assert exc_info.value.args == (error_type,)
@@ -357,7 +268,7 @@ def test_failure_with_invalid_output_error(mock_client: MockClient):
 
 
 @python_client_test_suite
-def test_failure_with_pipeline_config_invalid(mock_client: MockClient):
+def test_failure_with_job_config_invalid(mock_client: MockClient):
     error_type = "RunConfigValidationInvalid"
     errors = [
         {
@@ -371,12 +282,11 @@ def test_failure_with_pipeline_config_invalid(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
+        mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
             repository_name="quux",
             run_config={},
-            mode="default",
         )
     exc_args = exc_info.value.args
 
@@ -396,17 +306,28 @@ def test_failure_with_python_error(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
+        mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
             repository_name="quux",
             run_config={},
-            mode="default",
         )
     exc_args = exc_info.value.args
 
     assert exc_args[0] == error_type
     assert exc_args[1] == message
+
+
+@python_client_test_suite
+def test_failure_with_unauthorized_error(mock_client: MockClient):
+    error_type, message = "UnauthorizedError", "permissions failure"
+    response = {
+        "launchPipelineExecution": {
+            "__typename": error_type,
+            "message": message,
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_job_execution(
@@ -421,7 +342,7 @@ def test_failure_with_python_error(mock_client: MockClient):
     assert exc_args[1] == message
 
 
-def failure_with_pipeline_run_conflict_mock_config(mock_client: MockClient):
+def failure_with_job_run_conflict_mock_config(mock_client: MockClient):
     error_type, message = "RunConflict", "some conflict"
     response = {
         "launchPipelineExecution": {
@@ -433,26 +354,8 @@ def failure_with_pipeline_run_conflict_mock_config(mock_client: MockClient):
 
 
 @python_client_test_suite
-def test_failure_with_pipeline_run_conflict(mock_client: MockClient):
-    failure_with_pipeline_run_conflict_mock_config(mock_client)
-
-    with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
-            "bar",
-            repository_location_name="baz",
-            repository_name="quux",
-            run_config={},
-            mode="default",
-        )
-    exc_args = exc_info.value.args
-
-    assert exc_args[0] == "RunConflict"
-    assert exc_args[1] == "some conflict"
-
-
-@python_client_test_suite
 def test_failure_with_job_run_conflict(mock_client: MockClient):
-    failure_with_pipeline_run_conflict_mock_config(mock_client)
+    failure_with_job_run_conflict_mock_config(mock_client)
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_job_execution(
@@ -472,12 +375,11 @@ def test_failure_with_query_error(mock_client: MockClient):
     mock_client.mock_gql_client.side_effect = Exception("foo")
 
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-        mock_client.python_client.submit_pipeline_execution(
+        mock_client.python_client.submit_job_execution(
             "bar",
             repository_location_name="baz",
             repository_name="quux",
             run_config={},
-            mode="default",
         )
 
     assert exc_info.value.args[0].endswith("failed GraphQL validation")

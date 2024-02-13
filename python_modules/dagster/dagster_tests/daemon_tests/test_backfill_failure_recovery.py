@@ -1,9 +1,13 @@
 import multiprocessing
+from signal import Signals
 
 import pendulum
 import pytest
+from dagster import DagsterInstance
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.instance import DagsterInstance
+from dagster._core.host_representation import (
+    ExternalRepository,
+)
 from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace_context,
@@ -12,7 +16,7 @@ from dagster._core.test_utils import (
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 from .conftest import workspace_load_target
 
@@ -30,7 +34,7 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
+            with pendulum_freeze_time(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=workspace_load_target(), instance=instance
             ) as workspace_context:
                 list(
@@ -47,8 +51,8 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-def test_simple(instance, external_repo):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -68,6 +72,7 @@ def test_simple(instance, external_repo):
     launch_process.start()
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED
 
 
@@ -75,8 +80,10 @@ def test_simple(instance, external_repo):
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_before_submit(crash_signal, instance, external_repo):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+def test_before_submit(
+    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+):
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -98,6 +105,7 @@ def test_before_submit(crash_signal, instance, external_repo):
     assert launch_process.exitcode != 0
 
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
     assert instance.get_runs_count() == 0
 
@@ -110,6 +118,7 @@ def test_before_submit(crash_signal, instance, external_repo):
     launch_process.join(timeout=60)
 
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED
     assert instance.get_runs_count() == 3
 
@@ -118,8 +127,10 @@ def test_before_submit(crash_signal, instance, external_repo):
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_crash_after_submit(crash_signal, instance, external_repo):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+def test_crash_after_submit(
+    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+):
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -141,6 +152,7 @@ def test_crash_after_submit(crash_signal, instance, external_repo):
     assert launch_process.exitcode != 0
 
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
     assert instance.get_runs_count() == 3
 
@@ -153,5 +165,6 @@ def test_crash_after_submit(crash_signal, instance, external_repo):
     launch_process.join(timeout=60)
 
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED
     assert instance.get_runs_count() == 3

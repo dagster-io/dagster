@@ -6,7 +6,8 @@ from automation.docker.image_defs import copy_directories, get_image
 
 @pytest.fixture(name="repo")
 def repo_fixture(tmpdir):
-    """
+    """Test repo.
+
     repo/
     ├── .git/
     ├── bar/
@@ -65,7 +66,7 @@ def test_copy_directories_not_a_git_repo(tmpdir, repo):
 
 
 def test_get_image(tmpdir):
-    assert get_image("k8s-example")
+    assert get_image("dagster-celery-k8s")
 
     with pytest.raises(Exception) as e:
         get_image("hello-world", images_path=str(tmpdir))

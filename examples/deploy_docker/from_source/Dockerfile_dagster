@@ -1,7 +1,7 @@
-# Dagster libraries to run both dagit and the dagster-daemon. Does not
+# Dagster libraries to run both dagster-webserver and the dagster-daemon. Does not
 # need to have access to any pipeline code.
 
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 COPY ./python_modules/ /tmp/python_modules/
 
@@ -9,8 +9,9 @@ WORKDIR /tmp
 
 RUN pip install \
     -e python_modules/dagster \
+    -e python_modules/dagster-pipes \
     -e python_modules/dagster-graphql \
-    -e python_modules/dagit \
+    -e python_modules/dagster-webserver \
     -e python_modules/libraries/dagster-postgres \
     -e python_modules/libraries/dagster-docker
 

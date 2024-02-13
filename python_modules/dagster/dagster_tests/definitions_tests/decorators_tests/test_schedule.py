@@ -15,10 +15,10 @@ from dagster import (
     schedule,
     validate_run_config,
 )
+from dagster._core.errors import ScheduleExecutionError
 from dagster._utils.merger import merge_dicts
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
-# pylint: disable=unused-variable, unused-argument, redefined-outer-name
 
 
 def test_scheduler():
@@ -36,11 +36,9 @@ def test_scheduler():
     def echo_time_schedule(context):
         return {
             "echo_time": (
-                (
-                    context.scheduled_execution_time.isoformat()
-                    if context.scheduled_execution_time
-                    else ""
-                )
+                context.scheduled_execution_time.isoformat()
+                if context.scheduled_execution_time
+                else ""
             )
         }
 
@@ -58,10 +56,8 @@ def test_scheduler():
 
     context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
 
-    execution_data = echo_time_schedule.evaluate_tick(context_without_time)
-    assert execution_data.run_requests
-    assert len(execution_data.run_requests) == 1
-    assert execution_data.run_requests[0].run_config == {"echo_time": ""}
+    with pytest.raises(ScheduleExecutionError):
+        echo_time_schedule.evaluate_tick(context_without_time)
 
     execution_data = echo_time_schedule.evaluate_tick(context_with_time)
     assert execution_data.run_requests
@@ -87,11 +83,11 @@ def test_schedule_decorators_sanity():
 
     @schedule(cron_schedule="* * * * *", job_name="foo_job")
     def foo_schedule():
-        """Fake doc block"""
+        """Fake doc block."""
         return {}
 
     # Ensure that schedule definition inherits properties from wrapped fxn
-    assert foo_schedule.__doc__ == """Fake doc block"""
+    assert foo_schedule.__doc__ == """Fake doc block."""
 
     assert not foo_schedule.execution_timezone
 

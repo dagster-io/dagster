@@ -15,7 +15,7 @@ Metadata allows you to attach information to a job. This information can be what
 - linking to documentation or other resources
 - displaying the git hash corresponding to the current job definition
 
-Note: If you are running Dagster using separate Dagit and user code installations (more info [here](/deployment/overview)), then your Dagit installation must be >=0.14.18 to use metadata on jobs.
+Note: If you are running Dagster using separate webserver and user code installations (more info [here](/deployment/overview)), then your `dagster-webserver` installation must be >=0.14.18 to use metadata on jobs.
 
 ### Specifying metadata
 
@@ -52,7 +52,7 @@ my_second_job_with_metadata = my_graph.to_job(
 
 ### Viewing Metadata
 
-After attaching metadata to a job, you can view it in dagit by navigating to the job overview page. Metadata will be displayed in the right pane.
+After attaching metadata to a job, you can view it in the Dagster UI by navigating to the job overview page. Metadata will be displayed in the right pane.
 
 <Image
 alt="job-metadata.png"
@@ -81,28 +81,29 @@ In addition to adding tags on the `@job` decorator, you can also add metadata us
 my_second_job_with_tags = my_graph.to_job(tags={"foo": "bar"})
 ```
 
-When executing a job, you can add tags to the run using the Launchpad in Dagit <Image alt="tag-adder.png" src="/images/concepts/ops-jobs-graphs/tag-adder.png" width={2880} height={1406} />
+When executing a job, you can add tags to the run using the Launchpad in the UI <Image alt="tag-adder.png" src="/images/concepts/ops-jobs-graphs/tag-adder.png" width={2880} height={1406} />
 
 ### Viewing Tags
 
-You can view the tags that have been attached to runs by going to the Runs page in Dagit <Image alt="tags-viewer.png" src="/images/concepts/ops-jobs-graphs/tags-viewer.png" width={2880} height={1406} />
+You can view the tags that have been attached to runs by going to the Runs page in the UI <Image alt="tags-viewer.png" src="/images/concepts/ops-jobs-graphs/tags-viewer.png" width={2880} height={1406} />
 
 ### Dagster-provided tags
 
 Dagster will automatically add tags to your runs in some cases including:
 
-- The op selection for the run, if applicable
-- The partition set and partition of the run, if applicable
-- The schedule that triggered the run, if applicable
-- The backfill ID, if applicable
-- The parent run of a re-executed run
-- The docker image tag
+- `dagster/op_selection` - The op selection for the run, if applicable
+- `dagster/partition` - The partition of the run, if applicable
+- `dagster/schedule_name` - The schedule that triggered the run, if applicable
+- `dagster/sensor_name` - The sensor that triggered the run, if applicable
+- `dagster/backfill` - The backfill ID, if applicable
+- `dagster/parent_run_id` - The parent run of a re-executed run
+- `dagster/image` - The Docker image tag
 
 ### Using tags to affect run execution
 
-Some features of dagster are controlled using the tags attached to a run. Some examples include:
+Some features of Dagster are controlled using the tags attached to a run. Some examples include:
 
-- [Customizing kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
+- [Customizing Kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
 - [Specifying celery config](/deployment/guides/kubernetes/deploying-with-helm-advanced#configuring-celery-queues)
-- [Setting concurrency limits when using the QueuedRunCoordinator](/deployment/run-coordinator#usage)
-- [Setting the priority of different runs](/deployment/run-coordinator#priorities)
+- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/limiting-concurrency-in-data-pipelines)
+- [Setting the priority of different runs](/guides/customizing-run-queue-priority)

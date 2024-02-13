@@ -10,8 +10,6 @@ from alembic import op
 from dagster._core.storage.migration.utils import has_table
 from dagster._core.storage.sql import MySQLCompatabilityTypes
 
-# pylint: disable=no-member
-
 # revision identifiers, used by Alembic.
 revision = "72686963a802"
 down_revision = "3778078a3582"

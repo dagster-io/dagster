@@ -41,7 +41,7 @@ def test_fivetran_group_label(group_name, expected_group_name):
     )
     group_names = set(ft_assets[0].group_names_by_key.values())
     assert len(group_names) == 1
-    assert list(group_names)[0] == expected_group_name
+    assert next(iter(group_names)) == expected_group_name
 
 
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
@@ -56,7 +56,8 @@ def test_fivetran_group_label(group_name, expected_group_name):
         (["schema1.tracked", "does.not_exist"], True, False),
     ],
 )
-def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_prefix):
+@pytest.mark.parametrize("op_tags", [None, {"key1": "value1"}])
+def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_prefix, op_tags):
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
@@ -70,11 +71,14 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
         poll_interval=0.1,
         poll_timeout=10,
         infer_missing_tables=infer_missing_tables,
+        op_tags=op_tags,
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
     assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
+
+    assert fivetran_assets[0].op.tags == {**{"kind": "fivetran"}, **(op_tags or {})}
 
     fivetran_assets_job = build_assets_job(
         name="fivetran_assets_job",

@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import (
-    Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -13,28 +13,39 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.metadata import (
+    RawMetadataValue,
+    normalize_metadata,
+)
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
+from ..asset_checks import AssetChecksDefinition
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
+from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
-from ..partition import PartitionSetDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
     PendingRepositoryDefinition,
+    PendingRepositoryListDefinition,
     RepositoryData,
     RepositoryDefinition,
+    RepositoryListDefinition,
 )
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T")
+
+RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryListDefinition]]
 
 
 def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
@@ -51,22 +62,54 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
         self.default_executor_def = check.opt_inst_param(
             default_executor_def, "default_executor_def", ExecutorDefinition
         )
         self.default_logger_defs = check.opt_mapping_param(
             default_logger_defs, "default_logger_defs", key_type=str, value_type=LoggerDefinition
         )
+        self.top_level_resources = check.opt_mapping_param(
+            top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
+        )
+        self.resource_key_mapping = check.opt_mapping_param(
+            resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
+        )
+
+    @overload
+    def __call__(
+        self,
+        fn: Union[
+            Callable[[], Sequence[RepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
+    ) -> RepositoryDefinition:
+        ...
+
+    @overload
+    def __call__(
+        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+    ) -> PendingRepositoryDefinition:
+        ...
 
     def __call__(
-        self, fn: Callable[[], Sequence[Any]]
+        self,
+        fn: Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
+        from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")
@@ -87,16 +130,15 @@ class _Repository:
                 elif not isinstance(
                     definition,
                     (
-                        PipelineDefinition,
-                        PartitionSetDefinition,
+                        JobDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
-                        AssetGroup,
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
+                        AssetChecksDefinition,
                     ),
                 ):
                     bad_defns.append((i, type(definition)))
@@ -105,16 +147,13 @@ class _Repository:
 
             if bad_defns:
                 bad_definitions_str = ", ".join(
-                    [
-                        "value of type {type_} at index {i}".format(type_=type_, i=i)
-                        for i, type_ in bad_defns
-                    ]
+                    [f"value of type {type_} at index {i}" for i, type_ in bad_defns]
                 )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
-                    "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
-                    "AssetsDefinition, or SourceAsset."
+                    "must be of type JobDefinition, GraphDefinition, "
+                    "ScheduleDefinition, SensorDefinition, "
+                    "AssetsDefinition, SourceAsset, or AssetChecksDefinition."
                     f"Got {bad_definitions_str}."
                 )
 
@@ -125,6 +164,8 @@ class _Repository:
                     repository_defns,
                     default_executor_def=self.default_executor_def,
                     default_logger_defs=self.default_logger_defs,
+                    top_level_resources=self.top_level_resources,
+                    resource_key_mapping=self.resource_key_mapping,
                 )
             )
 
@@ -132,11 +173,11 @@ class _Repository:
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'jobs'}}: found "
+                    "keys other than {{'schedules', 'sensors', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
-                                "'{key}'".format(key=key)
+                                f"'{key}'"
                                 for key in repository_definitions.keys()
                                 if key not in VALID_REPOSITORY_DATA_DICT_KEYS
                             ]
@@ -153,18 +194,21 @@ class _Repository:
                 "details and examples".format(type_=type(repository_definitions)),
             )
 
-        if repository_data is None:
+        if isinstance(repository_definitions, list) and repository_data is None:
             return PendingRepositoryDefinition(
                 self.name,
                 repository_definitions=list(_flatten(repository_definitions)),
                 description=self.description,
+                metadata=self.metadata,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
+                _top_level_resources=self.top_level_resources,
             )
         else:
             repository_def = RepositoryDefinition(
                 name=self.name,
                 description=self.description,
+                metadata=self.metadata,
                 repository_data=repository_data,
             )
 
@@ -173,7 +217,18 @@ class _Repository:
 
 
 @overload
-def repository(definitions_fn: Callable[..., Sequence[Any]]) -> RepositoryDefinition:
+def repository(
+    definitions_fn: Union[
+        Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
+    ],
+) -> RepositoryDefinition:
+    ...
+
+
+@overload
+def repository(
+    definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]],
+) -> PendingRepositoryDefinition:
     ...
 
 
@@ -182,26 +237,37 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
+    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
+    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
+    _resource_key_mapping: Optional[Mapping[int, str]] = ...,
 ) -> _Repository:
     ...
 
 
 def repository(
-    definitions_fn: Optional[Callable[..., Sequence[Any]]] = None,
+    definitions_fn: Optional[
+        Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ]
+    ] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    metadata: Optional[Dict[str, RawMetadataValue]] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    _resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]``.
-    Use this form when you have no need to lazy load pipelines or other definitions. This is the
+    Use this form when you have no need to lazy load jobs or other definitions. This is the
     typical use case.
 
     2. A dict of the form:
@@ -226,6 +292,9 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
+        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository.
+        top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
+            resource keys to defintions, for resources which should be displayed in the UI.
 
     Example:
         .. code-block:: python
@@ -266,6 +335,22 @@ def repository(
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 
+            ######################################################################
+            # A simple repository using the first form of the decorated function
+            # and custom metadata that will be displayed in the UI
+            ######################################################################
+
+            ...
+
+            @repository(
+                name='my_repo',
+                metadata={
+                    'team': 'Team A',
+                    'repository_version': '1.2.3',
+                    'environment': 'production',
+             })
+            def simple_repository():
+                return [simple_job, some_sensor, my_schedule]
 
             ######################################################################
             # A lazy-loaded repository
@@ -304,7 +389,7 @@ def repository(
                 def __init__(self, yaml_directory):
                     self._yaml_directory = yaml_directory
 
-                def get_all_pipelines(self):
+                def get_all_jobs(self):
                     return [
                         self._construct_job_def_from_yaml_file(
                           self._yaml_file_for_job_name(file_name)
@@ -327,6 +412,9 @@ def repository(
     return _Repository(
         name=name,
         description=description,
+        metadata=metadata,
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
+        top_level_resources=_top_level_resources,
+        resource_key_mapping=_resource_key_mapping,
     )

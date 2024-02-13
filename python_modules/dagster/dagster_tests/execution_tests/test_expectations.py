@@ -1,40 +1,44 @@
 from typing import Sequence
 
 import pytest
-from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
+from dagster import (
+    DagsterEventType,
+    DagsterInvariantViolationError,
+    ExpectationResult,
+    GraphDefinition,
+    op,
+)
+from dagster._annotations import get_deprecated_info, is_deprecated
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster._core.execution.execution_result import ExecutionResult
 
 
 def expt_results_for_compute_step(
-    result: PipelineExecutionResult, solid_name: str
+    result: ExecutionResult, node_name: str
 ) -> Sequence[DagsterEvent]:
-    solid_result = result.result_for_node(solid_name)
-    assert isinstance(solid_result, OpExecutionResult)
     return [
         compute_step_event
-        for compute_step_event in solid_result.compute_step_events
+        for compute_step_event in result.events_for_node(node_name)
         if compute_step_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
     ]
 
 
 def test_successful_expectation_in_compute_step():
-    @solid(output_defs=[])
-    def success_expectation_solid(_context):
+    @op(out={})
+    def success_expectation_op(_context):
         yield ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = PipelineDefinition(
+    job_def = GraphDefinition(
         name="success_expectation_in_compute_pipeline",
-        solid_defs=[success_expectation_solid],
-    )
+        node_defs=[success_expectation_op],
+    ).to_job()
 
-    result = execute_pipeline(pipeline_def)
+    result = job_def.execute_in_process()
 
     assert result
     assert result.success
 
-    expt_results = expt_results_for_compute_step(result, "success_expectation_solid")
+    expt_results = expt_results_for_compute_step(result, "success_expectation_op")
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
@@ -43,20 +47,20 @@ def test_successful_expectation_in_compute_step():
 
 
 def test_failed_expectation_in_compute_step():
-    @solid(output_defs=[])
-    def failure_expectation_solid(_context):
+    @op(out={})
+    def failure_expectation_op(_context):
         yield ExpectationResult(success=False, description="This is always false.")
 
-    pipeline_def = PipelineDefinition(
+    job_def = GraphDefinition(
         name="failure_expectation_in_compute_pipeline",
-        solid_defs=[failure_expectation_solid],
-    )
+        node_defs=[failure_expectation_op],
+    ).to_job()
 
-    result = execute_pipeline(pipeline_def)
+    result = job_def.execute_in_process()
 
     assert result
     assert result.success
-    expt_results = expt_results_for_compute_step(result, "failure_expectation_solid")
+    expt_results = expt_results_for_compute_step(result, "failure_expectation_op")
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
@@ -65,14 +69,14 @@ def test_failed_expectation_in_compute_step():
 
 
 def test_return_expectation_failure():
-    @solid(output_defs=[])
+    @op
     def return_expectation_failure(_context):
         return ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = PipelineDefinition(
+    job_def = GraphDefinition(
         name="success_expectation_in_compute_pipeline",
-        solid_defs=[return_expectation_failure],
-    )
+        node_defs=[return_expectation_failure],
+    ).to_job()
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -81,4 +85,12 @@ def test_return_expectation_failure():
             " yield them directly"
         ),
     ):
-        execute_pipeline(pipeline_def)
+        job_def.execute_in_process()
+
+
+def test_expectation_result_deprecated() -> None:
+    assert is_deprecated(ExpectationResult)
+    assert (
+        get_deprecated_info(ExpectationResult).additional_warn_text
+        == "Please use AssetCheckResult and @asset_check instead."
+    )

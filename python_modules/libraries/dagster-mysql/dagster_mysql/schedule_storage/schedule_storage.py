@@ -1,20 +1,34 @@
+from typing import ContextManager, Optional, Sequence, cast
+
 import dagster._check as check
 import pendulum
 import sqlalchemy as db
-from dagster._core.storage.config import mysql_config
+import sqlalchemy.dialects as db_dialects
+import sqlalchemy.pool as db_pool
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
+)
+from dagster._core.storage.config import MySqlStorageConfig, mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster._core.storage.schedules.schema import InstigatorsTable
+from dagster._core.storage.schedules.schema import (
+    AssetDaemonAssetEvaluationsTable,
+    InstigatorsTable,
+)
 from dagster._core.storage.sql import (
+    AlembicVersion,
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from sqlalchemy.engine import Connection
 
 from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
+    mysql_isolation_level,
     mysql_url_from_config,
     parse_mysql_version,
     retry_mysql_connection_fn,
@@ -28,7 +42,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """MySQL-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
@@ -41,15 +55,15 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, mysql_url, inst_data=None):
+    def __init__(self, mysql_url: str, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
-            poolclass=db.pool.NullPool,
+            isolation_level=mysql_isolation_level(),
+            poolclass=db_pool.NullPool,
         )
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
@@ -62,58 +76,61 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
         super().__init__()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         with self.connect() as conn:
-            with conn.begin():
-                ScheduleStorageSqlMetadata.create_all(conn)
-                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
+            ScheduleStorageSqlMetadata.create_all(conn)
+            stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
         # mark all the data migrations as applied
         self.migrate()
         self.optimize()
 
-    def optimize_for_dagit(self, statement_timeout, pool_recycle):
-        # When running in dagit, hold an open connection
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
+            isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
         )
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return mysql_config()
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+    ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(
             inst_data=inst_data, mysql_url=mysql_url_from_config(config_value)
         )
 
     @staticmethod
-    def wipe_storage(mysql_url):
-        engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
+    def wipe_storage(mysql_url: str) -> None:
+        engine = create_engine(
+            mysql_url, isolation_level=mysql_isolation_level(), poolclass=db_pool.NullPool
+        )
         try:
             ScheduleStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
 
     @staticmethod
-    def create_clean_storage(mysql_url):
+    def create_clean_storage(mysql_url: str) -> "MySQLScheduleStorage":
         MySQLScheduleStorage.wipe_storage(mysql_url)
         return MySQLScheduleStorage(mysql_url)
 
-    def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
+    def connect(self) -> ContextManager[Connection]:
         return create_mysql_connection(self._engine, __file__, "schedule")
 
     @property
-    def supports_batch_queries(self):
+    def supports_batch_queries(self) -> bool:
         if not self._mysql_version:
             return False
 
@@ -121,37 +138,70 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             MINIMUM_MYSQL_BATCH_VERSION
         )
 
-    def get_server_version(self):
-        rows = self.execute("select version()")
-        if not rows:
+    def get_server_version(self) -> Optional[str]:
+        with self.connect() as conn:
+            row = conn.execute(db.text("select version()")).fetchone()
+
+        if not row:
             return None
 
-        return rows[0][0]
+        return cast(str, row[0])
 
-    def upgrade(self):
-        alembic_config = mysql_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)
+    def upgrade(self) -> None:
+        with self.connect() as conn:
+            alembic_config = mysql_alembic_config(__file__)
+            run_alembic_upgrade(alembic_config, conn)
 
-    def _add_or_update_instigators_table(self, conn, state):
+    def _add_or_update_instigators_table(self, conn: Connection, state) -> None:
         selector_id = state.selector_id
         conn.execute(
-            db.dialects.mysql.insert(InstigatorsTable)
+            db_dialects.mysql.insert(InstigatorsTable)
             .values(
                 selector_id=selector_id,
                 repository_selector_id=state.repository_selector_id,
                 status=state.status.value,
                 instigator_type=state.instigator_type.value,
-                instigator_body=serialize_dagster_namedtuple(state),
+                instigator_body=serialize_value(state),
             )
             .on_duplicate_key_update(
                 status=state.status.value,
                 instigator_type=state.instigator_type.value,
-                instigator_body=serialize_dagster_namedtuple(state),
+                instigator_body=serialize_value(state),
                 update_timestamp=pendulum.now("UTC"),
             )
         )
 
-    def alembic_version(self):
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
+    ):
+        if not asset_evaluations:
+            return
+
+        # Define the base insert statement
+        insert_stmt = db_dialects.mysql.insert(AssetDaemonAssetEvaluationsTable).values(
+            [
+                {
+                    "evaluation_id": evaluation_id,
+                    "asset_key": evaluation.asset_key.to_string(),
+                    "asset_evaluation_body": serialize_value(evaluation),
+                    "num_requested": evaluation.num_requested,
+                }
+                for evaluation in asset_evaluations
+            ]
+        )
+
+        # Define the upsert statement using the ON DUPLICATE KEY UPDATE syntax for MySQL
+        upsert_stmt = insert_stmt.on_duplicate_key_update(
+            asset_evaluation_body=insert_stmt.inserted.asset_evaluation_body,
+            num_requested=insert_stmt.inserted.num_requested,
+        )
+
+        with self.connect() as conn:
+            conn.execute(upsert_stmt)
+
+    def alembic_version(self) -> AlembicVersion:
         alembic_config = mysql_alembic_config(__file__)
         with self.connect() as conn:
             return check_alembic_revision(alembic_config, conn)

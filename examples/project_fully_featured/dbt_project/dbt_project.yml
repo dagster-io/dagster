@@ -35,6 +35,9 @@ models:
 
     activity_analytics:
       +schema: activity_analytics
+      +meta:
+        dagster:
+          group: activity_analytics
 
 seeds:
   quote_columns: false

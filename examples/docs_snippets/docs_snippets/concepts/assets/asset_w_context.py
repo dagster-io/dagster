@@ -1,12 +1,11 @@
-from dagster import asset
-
 # start_w_context
+from dagster import AssetExecutionContext, asset
 
 
-@asset(required_resource_keys={"api"})
-def my_asset(context):
-    # fetches contents of an asset
-    return context.resources.api.fetch_table("my_asset")
+@asset
+def context_asset(context: AssetExecutionContext):
+    context.log.info(f"My run ID is {context.run.run_id}")
+    ...
 
 
 # end_w_context

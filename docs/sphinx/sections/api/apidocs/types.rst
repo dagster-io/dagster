@@ -62,12 +62,6 @@ Making New Types
 
 .. autoclass:: DagsterTypeLoaderContext
 
-.. autofunction:: dagster_type_materializer
-
-.. autoclass:: DagsterTypeMaterializer
-
-.. autoclass:: DagsterTypeMaterializerContext
-
 .. autofunction:: usable_as_dagster_type
 
 .. autofunction:: make_python_type_usable_as_dagster_type

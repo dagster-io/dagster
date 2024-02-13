@@ -1,14 +1,13 @@
-# pylint: disable=unused-argument
-
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Callable, Generator, NamedTuple, Optional, Sequence
+from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence
 
+from typing_extensions import Final, Self
+
+import dagster._check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
-MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
+MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
 
 
 class CapturedLogContext(
@@ -17,17 +16,36 @@ class CapturedLogContext(
         [
             ("log_key", Sequence[str]),
             ("external_url", Optional[str]),
+            ("external_stdout_url", Optional[str]),
+            ("external_stderr_url", Optional[str]),
         ],
     )
 ):
-    """
-    Object representing the context in which logs are captured.  Can be used by external logging
-    sidecar implementations to point dagit to an external url to view compute logs instead of a
+    """Object representing the context in which logs are captured.  Can be used by external logging
+    sidecar implementations to point the Dagster UI to an external url to view compute logs instead of a
     Dagster-managed location.
     """
 
-    def __new__(cls, log_key: Sequence[str], external_url: Optional[str] = None):
-        return super(CapturedLogContext, cls).__new__(cls, log_key, external_url=external_url)
+    def __new__(
+        cls,
+        log_key: Sequence[str],
+        external_stdout_url: Optional[str] = None,
+        external_stderr_url: Optional[str] = None,
+        external_url: Optional[str] = None,
+    ):
+        if external_url and (external_stdout_url or external_stderr_url):
+            check.failed(
+                "Cannot specify both `external_url` and one of"
+                " `external_stdout_url`/`external_stderr_url`"
+            )
+
+        return super(CapturedLogContext, cls).__new__(
+            cls,
+            log_key,
+            external_stdout_url=external_stdout_url,
+            external_stderr_url=external_stderr_url,
+            external_url=external_url,
+        )
 
 
 class CapturedLogData(
@@ -41,8 +59,7 @@ class CapturedLogData(
         ],
     )
 ):
-    """
-    Object representing captured log data, either a partial chunk of the log data or the full
+    """Object representing captured log data, either a partial chunk of the log data or the full
     capture.  Contains the raw bytes and optionally the cursor offset for the partial chunk.
     """
 
@@ -67,8 +84,7 @@ class CapturedLogMetadata(
         ],
     )
 ):
-    """
-    Object representing metadata info for the captured log data, containing a display string for
+    """Object representing metadata info for the captured log data, containing a display string for
     the location of the log data and a URL for direct download of the captured log data.
     """
 
@@ -89,14 +105,16 @@ class CapturedLogMetadata(
 
 
 class CapturedLogSubscription:
-    def __init__(self, manager: CapturedLogManager, log_key: Sequence[str], cursor: Optional[str]):
+    def __init__(
+        self, manager: "CapturedLogManager", log_key: Sequence[str], cursor: Optional[str]
+    ):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor
         self._observer: Optional[Callable[[CapturedLogData], None]] = None
         self.is_complete = False
 
-    def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]):
+    def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]) -> Self:
         self._observer = observer
         self.fetch()
         if self._manager.is_capture_complete(self._log_key):
@@ -104,14 +122,14 @@ class CapturedLogSubscription:
         return self
 
     @property
-    def log_key(self):
+    def log_key(self) -> Sequence[str]:
         return self._log_key
 
-    def dispose(self):
+    def dispose(self) -> None:
         self._observer = None
         self._manager.unsubscribe(self)
 
-    def fetch(self):
+    def fetch(self) -> None:
         if not self._observer:
             return
 
@@ -127,12 +145,13 @@ class CapturedLogSubscription:
                 self._cursor = log_data.cursor
             should_fetch = _has_max_data(log_data.stdout) or _has_max_data(log_data.stderr)
 
-    def complete(self):
+    def complete(self) -> None:
         self.is_complete = True
 
 
-def _has_max_data(chunk) -> bool:
-    return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ
+def _has_max_data(chunk: Optional[bytes]) -> bool:
+    # function is used as predicate but does not actually return a boolean
+    return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ  # type: ignore
 
 
 class CapturedLogManager(ABC):
@@ -143,8 +162,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
-        """
-        Context manager for capturing the stdout/stderr within the current process, and persisting
+        """Context manager for capturing the stdout/stderr within the current process, and persisting
         it under the given log key.
 
         Args:
@@ -155,9 +173,8 @@ class CapturedLogManager(ABC):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Generator[Optional[IO], None, None]:
-        """
-        Context manager for providing an IO stream that enables the caller to write to a log stream
+    ) -> Iterator[Optional[IO[bytes]]]:
+        """Context manager for providing an IO stream that enables the caller to write to a log stream
         managed by the captured log manager, to be read later using the given log key.
 
         Args:
@@ -208,7 +225,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
-    ):
+    ) -> None:
         """Deletes the captured logs for a given log key.
 
         Args:
@@ -230,7 +247,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def unsubscribe(self, subscription: CapturedLogSubscription):
+    def unsubscribe(self, subscription: CapturedLogSubscription) -> None:
         """Deregisters an observable object from receiving log updates.
 
         Args:

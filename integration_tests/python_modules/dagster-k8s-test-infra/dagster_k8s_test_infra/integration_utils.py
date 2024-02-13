@@ -1,8 +1,9 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import json
 import os
 import random
 import subprocess
+from typing import Any, Mapping, Optional, Sequence
 
 import requests
 from dagster._utils.merger import merge_dicts
@@ -31,7 +32,7 @@ def check_output(*args, **kwargs):
 
 def which_(exe):
     """Uses distutils to look for an executable, mimicking unix which."""
-    from distutils import spawn  # pylint: disable=deprecated-module
+    from distutils import spawn
 
     # https://github.com/PyCQA/pylint/issues/73
     return spawn.find_executable(exe)
@@ -126,9 +127,9 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
 """
 
 
-def _execute_query_over_graphql(dagit_url, query, variables):
+def _execute_query_over_graphql(webserver_url, query, variables):
     return requests.post(
-        f"{dagit_url}/graphql",
+        f"{webserver_url}/graphql",
         headers={"Content-type": "application/json"},
         json=merge_dicts(
             {
@@ -140,32 +141,35 @@ def _execute_query_over_graphql(dagit_url, query, variables):
 
 
 def launch_run_over_graphql(
-    dagit_url,
-    run_config,
-    pipeline_name,
-    repository_name="demo_execution_repo",
-    repository_location_name="user-code-deployment-1",
-    mode="default",
-    solid_selection=None,
-):
+    webserver_url: str,
+    run_config: Mapping[str, Any],
+    job_name: str,
+    repository_name: str = "demo_execution_repo",
+    code_location_name: str = "user-code-deployment-1",
+    op_selection: Optional[Sequence[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> str:
+    tags = tags or {}
     variables = json.dumps(
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": repository_location_name,
+                    "repositoryLocationName": code_location_name,
                     "repositoryName": repository_name,
-                    "pipelineName": pipeline_name,
-                    "solidSelection": solid_selection,
+                    "pipelineName": job_name,
+                    "solidSelection": op_selection,
                 },
                 "runConfigData": run_config,
-                "mode": mode,
+                "executionMetadata": {
+                    "tags": [{"key": key, "value": value} for key, value in tags.items()]
+                },
             }
         }
     )
 
-    result = _execute_query_over_graphql(dagit_url, LAUNCH_PIPELINE_MUTATION, variables)
+    result = _execute_query_over_graphql(webserver_url, LAUNCH_PIPELINE_MUTATION, variables)
 
-    print("Launch pipeline result: {}".format(str(result)))
+    print(f"Launch pipeline result: {result}")
 
     assert (
         "data" in result
@@ -176,20 +180,20 @@ def launch_run_over_graphql(
 
 
 def can_terminate_run_over_graphql(
-    dagit_url,
+    webserver_url,
     run_id,
 ) -> bool:
     variables = json.dumps({"runId": run_id})
-    result = _execute_query_over_graphql(dagit_url, CAN_TERMINATE_RUN_QUERY, variables)
-    print("Can terminate result: {}".format(str(result)))
+    result = _execute_query_over_graphql(webserver_url, CAN_TERMINATE_RUN_QUERY, variables)
+    print(f"Can terminate result: {result}")
     assert "data" in result and result["data"]["runOrError"]["__typename"] == "Run"
     return result["data"]["runOrError"]["canTerminate"]
 
 
-def terminate_run_over_graphql(dagit_url, run_id):
+def terminate_run_over_graphql(webserver_url, run_id):
     variables = json.dumps({"runId": run_id})
-    result = _execute_query_over_graphql(dagit_url, TERMINATE_RUN_MUTATION, variables)
-    print("Terminate result: {}".format(str(result)))
+    result = _execute_query_over_graphql(webserver_url, TERMINATE_RUN_MUTATION, variables)
+    print(f"Terminate result: {result}")
     assert (
         "data" in result and result["data"]["terminateRun"]["__typename"] == "TerminateRunSuccess"
     )

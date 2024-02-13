@@ -1,76 +1,85 @@
 import base64
 import zlib
-from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    CodeLocationOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
-from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
-from dagster._utils import frozenlist
+from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
+from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "job_snapshot_id": "pipeline_snapshot_id",
+        "op_selection": "solid_selection",
+    }
+)
 class ExecutionPlanSnapshotArgs(
     NamedTuple(
         "_ExecutionPlanSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", Sequence[str]),
+            ("job_origin", ExternalJobOrigin),
+            ("op_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
-            ("mode", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
-            ("pipeline_snapshot_id", str),
+            ("job_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
-            ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
+            ("mode", str),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: Sequence[str],
+        job_origin: ExternalJobOrigin,
+        op_selection: Sequence[str],
         run_config: Mapping[str, object],
-        mode: str,
         step_keys_to_execute: Optional[Sequence[str]],
-        pipeline_snapshot_id: str,
+        job_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        mode: str = DEFAULT_MODE_NAME,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
-            solid_selection=check.opt_sequence_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
+            op_selection=check.opt_sequence_param(op_selection, "op_selection", of_type=str),
             run_config=check.mapping_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.str_param(job_snapshot_id, "job_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
+            ),
         )
 
 
-def _get_entry_point(origin: PipelinePythonOrigin):
+def _get_entry_point(origin: JobPythonOrigin):
     return (
         origin.repository_origin.entry_point
         if origin.repository_origin.entry_point
@@ -78,14 +87,19 @@ def _get_entry_point(origin: PipelinePythonOrigin):
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ExecuteRunArgs(
     NamedTuple(
         "_ExecuteRunArgs",
         [
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
@@ -93,19 +107,19 @@ class ExecuteRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                JobPythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             set_exit_code_on_failure=(
                 True
@@ -116,21 +130,27 @@ class ExecuteRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "execute_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ResumeRunArgs(
     NamedTuple(
         "_ResumeRunArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
@@ -138,19 +158,19 @@ class ResumeRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ResumeRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                PipelinePythonOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                JobPythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             set_exit_code_on_failure=(
                 True
@@ -161,74 +181,86 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "resume_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
-@whitelist_for_serdes
-class ExecuteExternalPipelineArgs(
+@whitelist_for_serdes(
+    storage_name="ExecuteExternalPipelineArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    },
+)
+class ExecuteExternalJobArgs(
     NamedTuple(
-        "_ExecuteExternalPipelineArgs",
+        "_ExecuteExternalJobArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
-            ("pipeline_run_id", str),
+            ("job_origin", ExternalJobOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
-        pipeline_run_id: str,
+        job_origin: ExternalJobOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
-        return super(ExecuteExternalPipelineArgs, cls).__new__(
+        return super(ExecuteExternalJobArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
-                ExternalPipelineOrigin,
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
+                ExternalJobOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ExecuteStepArgs(
     NamedTuple(
         "_ExecuteStepArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("instance_ref", Optional[InstanceRef]),
             ("retry_mode", Optional[RetryMode]),
             ("known_state", Optional[KnownExecutionState]),
             ("should_verify_step", Optional[bool]),
+            ("print_serialized_events", bool),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
         instance_ref: Optional[InstanceRef] = None,
         retry_mode: Optional[RetryMode] = None,
         known_state: Optional[KnownExecutionState] = None,
         should_verify_step: Optional[bool] = None,
+        print_serialized_events: Optional[bool] = None,
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", PipelinePythonOrigin
-            ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            job_origin=check.inst_param(job_origin, "job_origin", JobPythonOrigin),
+            run_id=check.str_param(run_id, "run_id"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
@@ -238,30 +270,32 @@ class ExecuteStepArgs(
             should_verify_step=check.opt_bool_param(
                 should_verify_step, "should_verify_step", False
             ),
+            print_serialized_events=check.opt_bool_param(
+                print_serialized_events, "print_serialized_events", False
+            ),
         )
 
     def _get_compressed_args(self) -> str:
         # Compress, then base64 encode so we can pass it around as a str
-        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+        return base64.b64encode(zlib.compress(serialize_value(self).encode())).decode()
 
     def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
-        """
-        Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
+        """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
-        return (
-            _get_entry_point(self.pipeline_origin)
-            + ["api", "execute_step"]
-            + (
+        return [
+            *_get_entry_point(self.job_origin),
+            "api",
+            "execute_step",
+            *(
                 ["--compressed-input-json", self._get_compressed_args()]
                 if not skip_serialized_namedtuple
                 else []
-            )
-        )
+            ),
+        ]
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
-        """
-        Get the env vars for overriding the Click args of this step. Used in conjuction with
+        """Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).
         """
         return [
@@ -292,17 +326,19 @@ class ListRepositoriesResponse(
             ("entry_point", Optional[Sequence[str]]),
             ("container_image", Optional[str]),
             ("container_context", Optional[Mapping[str, Any]]),
+            ("dagster_library_versions", Optional[Mapping[str, str]]),
         ],
     )
 ):
     def __new__(
         cls,
-        repository_symbols,
-        executable_path=None,
-        repository_code_pointer_dict=None,
-        entry_point=None,
-        container_image=None,
-        container_context=None,
+        repository_symbols: Sequence[LoadableRepositorySymbol],
+        executable_path: Optional[str] = None,
+        repository_code_pointer_dict: Optional[Mapping[str, CodePointer]] = None,
+        entry_point: Optional[Sequence[str]] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[Mapping] = None,
+        dagster_library_versions: Optional[Mapping[str, str]] = None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
@@ -310,14 +346,14 @@ class ListRepositoriesResponse(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
-            repository_code_pointer_dict=check.opt_dict_param(
+            repository_code_pointer_dict=check.opt_mapping_param(
                 repository_code_pointer_dict,
                 "repository_code_pointer_dict",
                 key_type=str,
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else None
             ),
@@ -326,6 +362,9 @@ class ListRepositoriesResponse(
                 check.dict_param(container_context, "container_context")
                 if container_context is not None
                 else None
+            ),
+            dagster_library_versions=check.opt_nullable_mapping_param(
+                dagster_library_versions, "dagster_library_versions"
             ),
         )
 
@@ -368,6 +407,7 @@ class PartitionArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
             ("partition_name", str),
+            ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
@@ -376,6 +416,7 @@ class PartitionArgs(
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
         partition_name: str,
+        instance_ref: Optional[InstanceRef] = None,
     ):
         return super(PartitionArgs, cls).__new__(
             cls,
@@ -386,6 +427,7 @@ class PartitionArgs(
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
@@ -414,6 +456,7 @@ class PartitionSetExecutionParamArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
             ("partition_names", Sequence[str]),
+            ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
@@ -422,6 +465,7 @@ class PartitionSetExecutionParamArgs(
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance_ref: Optional[InstanceRef] = None,
     ):
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
@@ -430,52 +474,63 @@ class PartitionSetExecutionParamArgs(
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_names=check.sequence_param(partition_names, "partition_names", of_type=str),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
-@whitelist_for_serdes
-class PipelineSubsetSnapshotArgs(
+@whitelist_for_serdes(
+    storage_name="PipelineSubsetSnapshotArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "op_selection": "solid_selection",
+    },
+    # asset_selection previously was erroneously represented as a sequence
+    field_serializers={"asset_selection": SetToSequenceFieldSerializer},
+)
+class JobSubsetSnapshotArgs(
     NamedTuple(
-        "_PipelineSubsetSnapshotArgs",
+        "_JobSubsetSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("job_origin", ExternalJobOrigin),
+            ("op_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: Sequence[str],
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        job_origin: ExternalJobOrigin,
+        op_selection: Optional[Sequence[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
-        return super(PipelineSubsetSnapshotArgs, cls).__new__(
+        return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
             ),
-            solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
-            if solid_selection
-            else None,
-            asset_selection=check.opt_sequence_param(
-                asset_selection, "asset_selection", of_type=AssetKey
+            asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection"
             ),
         )
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class NotebookPathArgs(
     NamedTuple(
         "_NotebookPathArgs",
-        [("repository_location_origin", RepositoryLocationOrigin), ("notebook_path", str)],
+        [("code_location_origin", CodeLocationOrigin), ("notebook_path", str)],
     )
 ):
-    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, notebook_path: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, notebook_path: str):
         return super(NotebookPathArgs, cls).__new__(
             cls,
-            repository_location_origin=check.inst_param(
-                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            code_location_origin=check.inst_param(
+                code_location_origin, "code_location_origin", CodeLocationOrigin
             ),
             notebook_path=check.str_param(notebook_path, "notebook_path"),
         )
@@ -491,6 +546,8 @@ class ExternalScheduleExecutionArgs(
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
             ("scheduled_execution_timezone", Optional[str]),
+            ("log_key", Optional[Sequence[str]]),
+            ("timeout", Optional[int]),
         ],
     )
 ):
@@ -501,6 +558,8 @@ class ExternalScheduleExecutionArgs(
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
         scheduled_execution_timezone: Optional[str] = None,
+        log_key: Optional[Sequence[str]] = None,
+        timeout: Optional[int] = None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
@@ -516,6 +575,8 @@ class ExternalScheduleExecutionArgs(
                 scheduled_execution_timezone,
                 "scheduled_execution_timezone",
             ),
+            log_key=check.opt_list_param(log_key, "log_key", of_type=str),
+            timeout=check.opt_int_param(timeout, "timeout"),
         )
 
 
@@ -527,9 +588,14 @@ class SensorExecutionArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("instance_ref", Optional[InstanceRef]),
             ("sensor_name", str),
-            ("last_completion_time", Optional[float]),
+            ("last_tick_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
+            ("log_key", Optional[Sequence[str]]),
+            ("timeout", Optional[int]),
+            ("last_sensor_start_time", Optional[float]),
+            # deprecated
+            ("last_completion_time", Optional[float]),
         ],
     )
 ):
@@ -538,10 +604,22 @@ class SensorExecutionArgs(
         repository_origin: ExternalRepositoryOrigin,
         instance_ref: Optional[InstanceRef],
         sensor_name: str,
-        last_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
+        last_tick_completion_time: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        cursor: Optional[str] = None,
+        log_key: Optional[Sequence[str]] = None,
+        timeout: Optional[int] = None,
+        last_sensor_start_time: Optional[float] = None,
+        # deprecated param
+        last_completion_time: Optional[float] = None,
     ):
+        # populate both last_tick_completion_time and last_completion_time for backcompat, so that
+        # older versions can still construct the correct context object.  We manually create the
+        # normalized value here instead of using normalize_renamed_param so that we can avoid the
+        # check.invariant that would be triggered by setting both values.
+        normalized_last_tick_completion_time = (
+            last_tick_completion_time if last_tick_completion_time else last_completion_time
+        )
         return super(SensorExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -549,11 +627,15 @@ class SensorExecutionArgs(
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             sensor_name=check.str_param(sensor_name, "sensor_name"),
-            last_completion_time=check.opt_float_param(
-                last_completion_time, "last_completion_time"
-            ),
+            last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
+            log_key=check.opt_list_param(log_key, "log_key", of_type=str),
+            timeout=timeout,
+            last_sensor_start_time=check.opt_float_param(
+                last_sensor_start_time, "last_sensor_start_time"
+            ),
+            last_completion_time=normalized_last_tick_completion_time,
         )
 
 

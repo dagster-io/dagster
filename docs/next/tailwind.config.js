@@ -5,8 +5,8 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
   important: 'html',
   purge: [
-    './pages/**/*.{js,jsx,ts,tsx}',
-    './components/**/*.{js,jsx,ts,tsx}',
+    './pages/**/*.{js,jsx,ts,tsx,md}',
+    './components/**/*.{js,jsx,ts,tsx,md}',
     './layouts/**/*.{js,jsx,ts,tsx}',
     '../content/**/*.mdx',
   ],
@@ -114,7 +114,6 @@ module.exports = {
             },
             h1: {
               color: theme('colors.gable-green'),
-              fontSize: theme('fontSize.4xl'),
               marginTop: 40,
               fontFamily: theme('fontFamily.sans').join(','),
               fontWeight: theme('fontWeight.medium'),

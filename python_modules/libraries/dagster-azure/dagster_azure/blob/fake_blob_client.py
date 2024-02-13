@@ -139,7 +139,7 @@ class FakeBlobClient:
         return ":memory:"
 
     @contextmanager
-    def acquire_lease(self, lease_duration=-1):  # pylint: disable=unused-argument
+    def acquire_lease(self, lease_duration=-1):
         if self.lease is None:
             self.lease = random.randint(0, 2**9)
             try:

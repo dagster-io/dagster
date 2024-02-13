@@ -17,7 +17,7 @@ def get_categories(products: DataFrame) -> DataFrame:
 
 @op
 def write_products_table(products: DataFrame) -> None:
-    products.to_sql(name="categories", con=create_db_connection())
+    products.to_sql(name="products", con=create_db_connection())
 
 
 @op

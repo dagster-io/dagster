@@ -55,8 +55,7 @@ def main(step_run_ref_bucket, s3_dir_key):
 
 
 def event_writing_loop(events_queue, put_events_fn):
-    """
-    Periodically check whether the step has posted any new events to the queue.  If they have,
+    """Periodically check whether the step has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to an S3 bucket.
 
     This approach was motivated by a few challenges:

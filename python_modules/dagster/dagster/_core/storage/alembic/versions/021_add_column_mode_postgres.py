@@ -15,8 +15,6 @@ down_revision = "45fa602c43dc"
 branch_labels = None
 depends_on = None
 
-# pylint: disable=no-member
-
 
 def upgrade():
     inspector = inspect(op.get_bind())

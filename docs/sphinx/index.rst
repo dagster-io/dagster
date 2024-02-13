@@ -4,10 +4,12 @@
    :hidden:
 
    sections/api/apidocs/assets
+   sections/api/apidocs/asset-checks
    sections/api/apidocs/cli
    sections/api/apidocs/config
    sections/api/apidocs/errors
    sections/api/apidocs/execution
+   sections/api/apidocs/external-assets
    sections/api/apidocs/graphs
    sections/api/apidocs/hooks
    sections/api/apidocs/internals
@@ -16,6 +18,7 @@
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
+   sections/api/apidocs/pipes
    sections/api/apidocs/definitions
    sections/api/apidocs/repositories
    sections/api/apidocs/resources
@@ -31,17 +34,25 @@
    sections/api/apidocs/libraries/dagster-celery
    sections/api/apidocs/libraries/dagster-celery-docker
    sections/api/apidocs/libraries/dagster-celery-k8s
+   sections/api/apidocs/libraries/dagster-census
    sections/api/apidocs/libraries/dagster-dask
    sections/api/apidocs/libraries/dagster-databricks
    sections/api/apidocs/libraries/dagster-datadog
    sections/api/apidocs/libraries/dagster-datahub
    sections/api/apidocs/libraries/dagster-dbt
+   sections/api/apidocs/libraries/dagster-deltalake
+   sections/api/apidocs/libraries/dagster-deltalake-pandas
+   sections/api/apidocs/libraries/dagster-deltalake-polars
    sections/api/apidocs/libraries/dagster-duckdb
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark
+   sections/api/apidocs/libraries/dagster-duckdb-polars
+   sections/api/apidocs/libraries/dagster-embedded-elt
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp
+   sections/api/apidocs/libraries/dagster-gcp-pandas
+   sections/api/apidocs/libraries/dagster-gcp-pyspark
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s
@@ -50,7 +61,9 @@
    sections/api/apidocs/libraries/dagster-mysql
    sections/api/apidocs/libraries/dagster-pagerduty
    sections/api/apidocs/libraries/dagster-pandas
+   sections/api/apidocs/libraries/dagster-pandera
    sections/api/apidocs/libraries/dagster-papertrail
+   sections/api/apidocs/libraries/dagster-pipes
    sections/api/apidocs/libraries/dagster-postgres
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark
@@ -64,3 +77,4 @@
    sections/api/apidocs/libraries/dagster-twilio
    sections/api/apidocs/libraries/dagstermill
    sections/api/apidocs/libraries/dagster-graphql
+   sections/api/apidocs/libraries/dagster-wandb

@@ -13,8 +13,6 @@ down_revision = "0da417ae1b81"
 branch_labels = None
 depends_on = None
 
-# pylint: disable=no-member
-
 
 def upgrade():
     create_bulk_actions_table()

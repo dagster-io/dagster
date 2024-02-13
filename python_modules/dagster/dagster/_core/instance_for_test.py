@@ -2,37 +2,15 @@ import os
 import sys
 import tempfile
 from contextlib import ExitStack, contextmanager
-from typing import Any, Generator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional
 
 import yaml
 
 from dagster._utils.error import serializable_error_info_from_exc_info
 
+from .._utils.env import environ
 from .._utils.merger import merge_dicts
 from .instance import DagsterInstance
-
-
-@contextmanager
-def environ(env):
-    """Temporarily set environment variables inside the context manager and
-    fully restore previous environment afterwards.
-    """
-    previous_values = {key: os.getenv(key) for key in env}
-    for key, value in env.items():
-        if value is None:
-            if key in os.environ:
-                del os.environ[key]
-        else:
-            os.environ[key] = value
-    try:
-        yield
-    finally:
-        for key, value in previous_values.items():
-            if value is None:
-                if key in os.environ:
-                    del os.environ[key]
-            else:
-                os.environ[key] = value
 
 
 @contextmanager
@@ -40,7 +18,7 @@ def instance_for_test(
     overrides: Optional[Mapping[str, Any]] = None,
     set_dagster_home: bool = True,
     temp_dir: Optional[str] = None,
-) -> Generator[DagsterInstance, None, None]:
+) -> Iterator[DagsterInstance]:
     """Creates a persistent :py:class:`~dagster.DagsterInstance` available within a context manager.
 
     When a context manager is opened, if no `temp_dir` parameter is set, a new
@@ -68,18 +46,14 @@ def instance_for_test(
         if not temp_dir:
             temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
 
-        # If using the default run launcher, wait for any grpc processes that created runs
-        # during test disposal to finish, since they might also be using this instance's tempdir
+        # wait for any grpc processes that created runs during test disposal to finish,
+        # since they might also be using this instance's tempdir (and to keep each test
+        # isolated / avoid race conditions in newer versions of grpcio when servers are
+        # shutting down and spinning up at the same time)
         instance_overrides = merge_dicts(
             {
-                "run_launcher": {
-                    "class": "DefaultRunLauncher",
-                    "module": "dagster._core.launcher.default_run_launcher",
-                    "config": {
-                        "wait_for_processes": True,
-                    },
-                },
                 "telemetry": {"enabled": False},
+                "code_servers": {"wait_for_local_processes_on_shutdown": True},
             },
             (overrides if overrides else {}),
         )
@@ -106,11 +80,11 @@ def instance_for_test(
                 cleanup_test_instance(instance)
 
 
-def cleanup_test_instance(instance: DagsterInstance):
+def cleanup_test_instance(instance: DagsterInstance) -> None:
     # To avoid filesystem contention when we close the temporary directory, wait for
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
 
     # Since launcher is lazy loaded, we don't need to do anyting if it's None
-    if instance._run_launcher:  # pylint: disable=protected-access
-        instance._run_launcher.join()  # pylint: disable=protected-access
+    if instance._run_launcher:  # noqa: SLF001
+        instance._run_launcher.join()  # noqa: SLF001

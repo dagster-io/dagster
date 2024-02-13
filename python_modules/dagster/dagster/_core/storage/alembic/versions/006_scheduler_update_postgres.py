@@ -10,7 +10,6 @@ from dagster._core.storage.migration.utils import get_currently_upgrading_instan
 from sqlalchemy import inspect
 
 # alembic magic breaks pylint
-# pylint: disable=no-member
 
 
 # revision identifiers, used by Alembic.

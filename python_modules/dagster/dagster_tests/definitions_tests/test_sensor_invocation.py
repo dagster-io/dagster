@@ -1,28 +1,30 @@
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, List, cast
 from unittest import mock
 
 import pytest
 from dagster import (
-    AssetIn,
     AssetKey,
     AssetOut,
     AssetSelection,
-    BoolMetadataValue,
+    Config,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
+    DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
+    Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
     Output,
-    PartitionKeyRange,
-    PartitionMapping,
-    PartitionsDefinition,
+    RunConfig,
     RunRequest,
     SkipReason,
+    SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_sensor,
     build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
@@ -35,24 +37,33 @@ from dagster import (
     multi_asset_sensor,
     op,
     repository,
+    resource,
     run_failure_sensor,
     run_status_sensor,
     sensor,
+    static_partitioned_config,
 )
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.execution.build_resources import build_resources
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
 
 def test_sensor_invocation_args():
     # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_no_arg():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_no_arg().run_config == {}
 
     # Test underscore name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -60,7 +71,7 @@ def test_sensor_invocation_args():
     assert basic_sensor(None).run_config == {}
 
     # Test sensor arbitrary arg name
-    @sensor(job_name="foo_pipeline")
+    @sensor(job_name="foo_job")
     def basic_sensor_with_context(_arbitrary_context):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -77,9 +88,7 @@ def test_sensor_invocation_args():
         DagsterInvalidInvocationError,
         match="Sensor invocation expected argument '_arbitrary_context'.",
     ):
-        basic_sensor_with_context(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            bad_context=context
-        )
+        basic_sensor_with_context(bad_context=context)
 
     # pass context with no args
     with pytest.raises(
@@ -89,19 +98,461 @@ def test_sensor_invocation_args():
             "provided when invoking."
         ),
     ):
-        basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
+        basic_sensor_with_context()
 
     # pass context with too many args
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Sensor invocation received multiple arguments. Only a first positional context "
-            "parameter should be provided when invoking."
+            "Sensor invocation received multiple non-resource arguments. Only a first positional"
+            " context parameter should be provided when invoking."
         ),
     ):
-        basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
-            context, _arbitrary_context=None
+        basic_sensor_with_context(context, _arbitrary_context=None)
+
+
+def test_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_job")
+    def basic_sensor_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            " provided."
+        ),
+    ):
+        basic_sensor_resource_req()
+
+    # Just need to pass context, which splats out into resource parameters
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_callable() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    class Foo:
+        def __call__(self, my_resource: MyResource):
+            return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    weird_sensor = SensorDefinition(
+        name="weird",
+        evaluation_fn=Foo(),
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=("Resource with key 'my_resource' required by sensor 'weird' was not" " provided."),
+    ):
+        weird_sensor()
+
+    # Just need to pass context, which splats out into resource parameters
+    assert cast(
+        RunRequest,
+        weird_sensor(build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_direct() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_job")
+    def basic_sensor_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            " provided."
+        ),
+    ):
+        basic_sensor_resource_req()
+
+    # Can pass resource through context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            context=build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+    # Can pass resource directly
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking a sensor, you may not provide resources as"
+            " positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        # We don't allow providing resources as args, this adds too much complexity
+        # They must be kwargs, and we will error accordingly
+        assert cast(
+            RunRequest,
+            basic_sensor_resource_req(MyResource(a_str="foo")),
+        ).run_config == {"foo": "foo"}
+
+    # Can pass resource directly with context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(build_sensor_context(), my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+    # Test with context arg requirement
+    @sensor(job_name="foo_job")
+    def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    assert cast(
+        RunRequest,
+        basic_sensor_with_context_resource_req(
+            build_sensor_context(), my_resource=MyResource(a_str="foo")
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_recreating_sensor_with_resource_arg() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @sensor(job_name="foo_job")
+    def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    @job
+    def junk_job():
+        pass
+
+    updated_sensor = basic_sensor_with_context_resource_req.with_updated_job(junk_job)
+
+    assert cast(
+        RunRequest,
+        updated_sensor(build_sensor_context(), my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_direct_many() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_job")
+    def basic_sensor_resource_req(my_resource: MyResource, my_other_resource: MyResource):
+        return RunRequest(
+            run_key=None,
+            run_config={"foo": my_resource.a_str, "bar": my_other_resource.a_str},
+            tags={},
         )
+
+    # Can pass resource directly
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            my_other_resource=MyResource(a_str="bar"), my_resource=MyResource(a_str="foo")
+        ),
+    ).run_config == {"foo": "foo", "bar": "bar"}
+
+    # Pass resources both directly and in context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            context=build_sensor_context(resources={"my_other_resource": MyResource(a_str="bar")}),
+            my_resource=MyResource(a_str="foo"),
+        ),
+    ).run_config == {"foo": "foo", "bar": "bar"}
+
+
+def test_sensor_invocation_resources_context_manager() -> None:
+    @sensor(job_name="foo_job")
+    def basic_sensor_str_resource_req(my_resource: ResourceParam[str]):
+        return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
+
+    @resource
+    @contextmanager
+    def my_cm_resource(_) -> Iterator[str]:
+        yield "foo"
+
+    # Fails bc resource is a contextmanager and sensor context is not entered
+    with pytest.raises(
+        DagsterInvariantViolationError, match="At least one provided resource is a generator"
+    ):
+        basic_sensor_str_resource_req(
+            build_sensor_context(resources={"my_resource": my_cm_resource})
+        )
+
+    with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+        assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_deferred() -> None:
+    class MyResource(ConfigurableResource):
+        def create_resource(self, context) -> None:
+            raise Exception()
+
+    @sensor(job_name="foo_job", required_resource_keys={"my_resource"})
+    def basic_sensor_resource_req() -> RunRequest:
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    context = build_sensor_context(resources={"my_resource": MyResource()})
+
+    # Resource isn't created until sensor is invoked
+    with pytest.raises(Exception):
+        basic_sensor_resource_req(context)
+
+    # Same goes for context manager
+    with context as open_context:
+        with pytest.raises(Exception):
+            basic_sensor_resource_req(open_context)
+
+
+def test_multi_asset_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def an_op():
+        return 1
+
+    @job
+    def the_job():
+        an_op()
+
+    @asset
+    def asset_a():
+        return 1
+
+    @asset
+    def asset_b():
+        return 1
+
+    @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+    def a_and_b_sensor(context, my_resource: MyResource):
+        asset_events = context.latest_materialization_records_by_key()
+        if all(asset_events.values()):
+            context.advance_all_cursors()
+            return RunRequest(
+                run_key=context.cursor, run_config={"foo": my_resource.a_str}, tags={}
+            )
+
+    @repository
+    def my_repo():
+        return [asset_a, asset_b, a_and_b_sensor]
+
+    with instance_for_test() as instance:
+        materialize([asset_a, asset_b], instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+            resources={"my_resource": MyResource(a_str="bar")},
+        )
+        assert cast(RunRequest, a_and_b_sensor(ctx)).run_config == {"foo": "bar"}
+
+
+def test_multi_asset_sensor_with_source_assets() -> None:
+    # upstream_asset1 exists in another repository
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
+    def upstream_asset1():
+        ...
+
+    upstream_asset1_source = SourceAsset(
+        key=upstream_asset1.key,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"),
+    )
+
+    @asset()
+    def downstream_asset(upstream_asset1):
+        ...
+
+    @multi_asset_sensor(
+        monitored_assets=[
+            upstream_asset1.key,
+        ],
+        job=define_asset_job("foo", selection=[downstream_asset]),
+    )
+    def my_sensor(context):
+        run_requests = []
+        for partition, record in context.latest_materialization_records_by_partition(
+            AssetKey("upstream_asset1")
+        ).items():
+            context.advance_cursor({upstream_asset1.key: record})
+            run_requests.append(RunRequest(partition_key=partition))
+        return run_requests
+
+    @repository
+    def my_repo():
+        return [upstream_asset1_source, downstream_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        materialize([upstream_asset1], instance=instance, partition_key="2023-03-01")
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[AssetKey("upstream_asset1")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        run_requests = cast(List[RunRequest], my_sensor(ctx))
+        assert len(run_requests) == 1
+        assert run_requests[0].partition_key == "2023-03-01"
+
+
+def test_freshness_policy_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def freshness_sensor(context, my_resource: MyResource) -> None:
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
+        assert my_resource.a_str == "bar"
+
+    with build_resources({"my_resource": MyResource(a_str="bar")}) as resources:
+        context = build_freshness_policy_sensor_context(
+            sensor_name="status_sensor",
+            asset_key=AssetKey("a"),
+            freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+            minutes_overdue=10,
+            # This is a bit gross right now, but FressnessPolicySensorContext is not a subclass of
+            # SensorEvaluationContext and isn't set up to be a context manager
+            # Direct invocation of freshness policy sensors should be rare anyway
+            resources=resources,
+        )
+
+        freshness_sensor(context)
+
+
+def test_run_status_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor(context, my_resource: MyResource):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert my_resource.a_str == "bar"
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor_no_context(my_resource: MyResource):
+        assert my_resource.a_str == "bar"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+        resources={"my_resource": MyResource(a_str="bar")},
+    )
+
+    status_sensor(context)
+    status_sensor_no_context(context)
+
+
+def test_run_status_sensor_invocation_resources_direct() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor(context, my_resource: MyResource):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert my_resource.a_str == "bar"
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor_no_context(my_resource: MyResource):
+        assert my_resource.a_str == "bar"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+    status_sensor(context, my_resource=MyResource(a_str="bar"))
+    status_sensor_no_context(context, my_resource=MyResource(a_str="bar"))
+
+
+def test_run_failure_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @run_failure_sensor
+    def failure_sensor(context, my_resource: MyResource):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert my_resource.a_str == "bar"
+
+    @run_failure_sensor
+    def failure_sensor_no_context(my_resource: MyResource):
+        assert my_resource.a_str == "bar"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="failure_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+        resources={"my_resource": MyResource(a_str="bar")},
+    ).for_run_failure()
+
+    failure_sensor(context)
+    failure_sensor_no_context(context)
 
 
 def test_instance_access_built_sensor():
@@ -109,7 +560,7 @@ def test_instance_access_built_sensor():
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
-        build_sensor_context().instance  # pylint: disable=expression-not-assigned
+        build_sensor_context().instance  # noqa: B018
 
     with instance_for_test() as instance:
         assert isinstance(build_sensor_context(instance).instance, DagsterInstance)
@@ -123,22 +574,156 @@ def test_instance_access_with_mock():
 def test_sensor_w_no_job():
     @sensor()
     def no_job_sensor():
-        pass
+        return RunRequest(
+            run_key=None,
+            run_config=None,
+            tags=None,
+        )
 
     with pytest.raises(
         Exception,
         match=r".* Sensor evaluation function returned a RunRequest for a sensor lacking a "
         r"specified target .*",
     ):
-        no_job_sensor.check_valid_run_requests(
-            [
-                RunRequest(
-                    run_key=None,
-                    run_config=None,
-                    tags=None,
-                )
-            ]
-        )
+        with build_sensor_context() as context:
+            no_job_sensor.evaluate_tick(context)
+
+
+def test_validated_partitions():
+    @job(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+    def my_job():
+        pass
+
+    @sensor(job=my_job)
+    def invalid_req_sensor():
+        return RunRequest(partition_key="nonexistent")
+
+    @sensor(job=my_job)
+    def valid_req_sensor():
+        return RunRequest(partition_key="foo", tags={"yay": "yay!"})
+
+    @repository
+    def my_repo():
+        return [my_job, invalid_req_sensor, valid_req_sensor]
+
+    with pytest.raises(DagsterInvariantViolationError, match="Must provide repository def"):
+        with build_sensor_context() as context:
+            invalid_req_sensor.evaluate_tick(context)
+
+    with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+        with build_sensor_context(repository_def=my_repo) as context:
+            invalid_req_sensor.evaluate_tick(context)
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        run_requests = valid_req_sensor.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        run_request = run_requests[0]
+        assert run_request.partition_key == "foo"
+        assert run_request.run_config == {}
+        assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
+        assert run_request.tags.get("yay") == "yay!"
+
+
+def test_partitioned_config_run_request():
+    def partition_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"partition": partition_key}}}}
+
+    @static_partitioned_config(partition_keys=["a", "b", "c", "d"])
+    def my_partitioned_config(partition_key: str):
+        return partition_fn(partition_key)
+
+    @op
+    def my_op():
+        pass
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    @sensor(job=my_job)
+    def valid_req_sensor():
+        return RunRequest(partition_key="a", tags={"yay": "yay!"})
+
+    @sensor(job=my_job)
+    def invalid_req_sensor():
+        return RunRequest(partition_key="nonexistent")
+
+    @sensor(job_name="my_job")
+    def job_str_target_sensor():
+        return RunRequest(partition_key="a", tags={"yay": "yay!"})
+
+    @sensor(job_name="my_job")
+    def invalid_job_str_target_sensor():
+        return RunRequest(partition_key="invalid")
+
+    @repository
+    def my_repo():
+        return [
+            my_job,
+            valid_req_sensor,
+            invalid_req_sensor,
+            job_str_target_sensor,
+            invalid_job_str_target_sensor,
+        ]
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        for valid_sensor in [valid_req_sensor, job_str_target_sensor]:
+            run_requests = valid_sensor.evaluate_tick(context).run_requests
+            assert len(run_requests) == 1
+            run_request = run_requests[0]
+            assert run_request.run_config == partition_fn("a")
+            assert run_request.tags.get(PARTITION_NAME_TAG) == "a"
+            assert run_request.tags.get("yay") == "yay!"
+
+        for invalid_sensor in [invalid_req_sensor, invalid_job_str_target_sensor]:
+            with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+                run_requests = invalid_sensor.evaluate_tick(context).run_requests
+
+
+def test_asset_selection_run_request_partition_key():
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def valid_req_sensor():
+        return RunRequest(partition_key="a")
+
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def invalid_req_sensor():
+        return RunRequest(partition_key="b")
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a"]))
+    def a_asset():
+        return 1
+
+    daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def b_asset():
+        return 1
+
+    @asset(partitions_def=daily_partitions_def)
+    def c_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [
+            a_asset,
+            b_asset,
+            c_asset,
+            valid_req_sensor,
+            invalid_req_sensor,
+            define_asset_job("a_job", [a_asset]),
+            define_asset_job("b_job", [b_asset]),
+        ]
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        run_requests = valid_req_sensor.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        assert run_requests[0].partition_key == "a"
+        assert run_requests[0].tags.get(PARTITION_NAME_TAG) == "a"
+        assert run_requests[0].asset_selection == [a_asset.key]
+
+        with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+            invalid_req_sensor.evaluate_tick(context)
 
 
 def test_run_status_sensor():
@@ -277,14 +862,14 @@ def test_run_failure_w_run_request():
 def test_freshness_policy_sensor():
     @freshness_policy_sensor(asset_selection=AssetSelection.all())
     def freshness_sensor(context):
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="status_sensor",
         asset_key=AssetKey("a"),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_late=10,
+        minutes_overdue=10,
     )
 
     freshness_sensor(context)
@@ -298,14 +883,14 @@ def test_freshness_policy_sensor_params_out_of_order():
         description="foo",
     )
     def freshness_sensor(context):
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
+        assert context.minutes_overdue == 10
+        assert context.previous_minutes_overdue is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="some_name",
         asset_key=AssetKey("a"),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_late=10,
+        minutes_overdue=10,
     )
 
     freshness_sensor(context)
@@ -335,18 +920,19 @@ def test_multi_asset_sensor():
             context.advance_all_cursors()
             return RunRequest(run_key=context.cursor, run_config={})
 
-    @repository
-    def my_repo():
-        return [asset_a, asset_b, a_and_b_sensor]
+    defs = Definitions(assets=[asset_a, asset_b], sensors=[a_and_b_sensor])
+    my_repo = defs.get_repository_def()
 
-    with instance_for_test() as instance:
-        materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
-            instance=instance,
-            repository_def=my_repo,
-        )
-        assert a_and_b_sensor(ctx).run_config == {}
+    for definitions, repository_def in [(defs, None), (None, my_repo)]:
+        with instance_for_test() as instance:
+            materialize([asset_a, asset_b], instance=instance)
+            ctx = build_multi_asset_sensor_context(
+                monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
+                instance=instance,
+                repository_def=repository_def,
+                definitions=definitions,
+            )
+            assert a_and_b_sensor(ctx).run_config == {}
 
 
 def test_multi_asset_sensor_selection():
@@ -355,7 +941,7 @@ def test_multi_asset_sensor_selection():
         return 1, 2
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a")])
-    def passing_sensor(context):  # pylint: disable=unused-argument
+    def passing_sensor(context):
         pass
 
     @repository
@@ -370,18 +956,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_a")
-            ]
-            == two_assets
-        )
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_b")
-            ]
-            == two_assets
-        )
+        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
         assert len(context.assets_defs_by_key) == 2
 
     @repository
@@ -395,35 +971,6 @@ def test_multi_asset_sensor_has_assets():
             repository_def=my_repo,
         )
         passing_sensor(ctx)
-
-
-def test_multi_asset_sensor_invalid_partitions():
-    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
-
-    @asset(partitions_def=static_partitions_def)
-    def static_partitions_asset():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2020-01-01"))
-    def daily_asset():
-        return 1
-
-    @repository
-    def my_repo():
-        return [static_partitions_asset, daily_asset]
-
-    with instance_for_test() as instance:
-        with build_multi_asset_sensor_context(
-            monitored_assets=[static_partitions_asset.key],
-            instance=instance,
-            repository_def=my_repo,
-        ) as context:
-            with pytest.raises(DagsterInvalidInvocationError):
-                context.get_downstream_partition_keys(
-                    "2020-01-01",
-                    to_asset_key=AssetKey("static_partitions_asset"),
-                    from_asset_key=AssetKey("daily_asset"),
-                )
 
 
 def test_partitions_multi_asset_sensor_context():
@@ -445,7 +992,9 @@ def test_partitions_multi_asset_sensor_context():
         "yay", selection="daily_partitions_asset", partitions_def=daily_partitions_def
     )
 
-    @multi_asset_sensor(monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key])
+    @multi_asset_sensor(
+        monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key], job=asset_job
+    )
     def two_asset_sensor(context):
         partition_1 = next(
             iter(
@@ -477,8 +1026,14 @@ def test_partitions_multi_asset_sensor_context():
             instance=instance,
             repository_def=my_repo,
         )
-        assert two_asset_sensor(ctx).tags["dagster/partition"] == "2022-08-01"
-        assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
+        sensor_data = two_asset_sensor.evaluate_tick(ctx)
+        assert len(sensor_data.run_requests) == 1
+        assert sensor_data.run_requests[0].partition_key == "2022-08-01"
+        assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert (
+            ctx.cursor == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
+            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 5, {}]}'
+        )
 
 
 @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
@@ -545,6 +1100,45 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
         after_cursor_partitions_asset_sensor(ctx)
 
 
+def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
+    @asset
+    def my_asset():
+        return Output(99)
+
+    @job
+    def my_job():
+        pass
+
+    @asset_sensor(asset_key=my_asset.key, job=my_job)
+    def my_asset_sensor(context):
+        return RunRequest(run_key=context.cursor, run_config={})
+
+    @multi_asset_sensor(monitored_assets=[my_asset.key])
+    def my_multi_asset_sensor(context):
+        ctx.advance_all_cursors()
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            instance=instance,
+        )
+        materialize([my_asset], instance=instance)
+        my_asset_sensor.evaluate_tick(ctx)
+
+        assert ctx.cursor == "3"
+
+        # simulate changing a @asset_sensor to a @multi_asset_sensor with the same name and
+        # therefore inheriting the same cursor.
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[my_asset.key],
+            instance=instance,
+            repository_def=my_repo,
+            cursor=ctx.cursor,
+        )
+        my_multi_asset_sensor(ctx)
+
+        assert ctx.cursor == "{\"AssetKey(['my_asset'])\": [null, 3, {}]}"
+
+
 def test_multi_asset_sensor_all_partitions_materialized():
     @multi_asset_sensor(monitored_assets=[july_asset.key])
     def asset_sensor(context):
@@ -571,43 +1165,15 @@ def test_multi_asset_sensor_all_partitions_materialized():
         asset_sensor(ctx)
 
 
-def test_multi_asset_sensor_custom_partition_mapping():
-    class LastDownstreamPartitionMapping(PartitionMapping):
-        def get_upstream_partitions_for_partition_range(
-            self,
-            downstream_partition_key_range: Optional[PartitionKeyRange],
-            downstream_partitions_def: Optional[PartitionsDefinition],
-            upstream_partitions_def: PartitionsDefinition,
-        ) -> PartitionKeyRange:
-            raise NotImplementedError()
-
-        def get_downstream_partitions_for_partition_range(
-            self,
-            upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[PartitionsDefinition],
-            upstream_partitions_def: PartitionsDefinition,
-        ) -> PartitionKeyRange:
-            if not isinstance(downstream_partitions_def, PartitionsDefinition):
-                raise DagsterInvariantViolationError(
-                    "Expected downstream_partitions_def to be a PartitionsDefinition"
-                )
-            first_partition_key = downstream_partitions_def.get_first_partition_key()
-            assert first_partition_key is not None
-            return PartitionKeyRange(first_partition_key, first_partition_key)
-
+def test_multi_asset_sensor_partition_mapping():
     @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
     def july_daily_partitions():
         return 1
 
     @asset(
         partitions_def=DailyPartitionsDefinition("2022-08-01"),
-        ins={
-            "upstream": AssetIn(
-                key=july_daily_partitions.key, partition_mapping=LastDownstreamPartitionMapping()
-            )
-        },
     )
-    def downstream_daily_partitions(upstream):  # pylint: disable=unused-argument
+    def downstream_daily_partitions(july_daily_partitions):
         return 1
 
     @repository
@@ -616,20 +1182,20 @@ def test_multi_asset_sensor_custom_partition_mapping():
 
     @multi_asset_sensor(monitored_assets=[july_daily_partitions.key])
     def asset_sensor(context):
-        for partition_key, _ in context.latest_materialization_records_by_partition(
+        for partition_key in context.latest_materialization_records_by_partition(
             july_daily_partitions.key
-        ).items():
+        ).keys():
             for downstream_partition in context.get_downstream_partition_keys(
                 partition_key,
                 to_asset_key=downstream_daily_partitions.key,
                 from_asset_key=july_daily_partitions.key,
             ):
-                assert downstream_partition == "2022-08-01"
+                assert downstream_partition == "2022-08-10"
 
     with instance_for_test() as instance:
         materialize(
             [july_daily_partitions],
-            partition_key="2022-07-10",
+            partition_key="2022-08-10",
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
@@ -681,9 +1247,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
             context.advance_cursor({august_asset.key: materialization})
 
             assert (
-                context._get_cursor(  # pylint: disable=protected-access
-                    july_asset.key
-                ).latest_consumed_event_partition
+                context._get_cursor(july_asset.key).latest_consumed_event_partition  # noqa: SLF001
                 == "2022-07-10"
             )
 
@@ -701,6 +1265,25 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         after_cursor_partitions_asset_sensor(ctx)
         materialize([august_asset], partition_key="2022-08-05", instance=instance)
         after_cursor_partitions_asset_sensor(ctx)
+
+
+def test_multi_asset_sensor_no_unconsumed_events():
+    @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
+    def my_sensor(context):
+        # This call reads unconsumed event IDs from the cursor, fetches them via get_event_records,
+        # and caches them in memory
+        context.latest_materialization_records_by_partition_and_asset()
+        # Assert that when no unconsumed events exist in the cursor, no events are cached
+        assert context._initial_unconsumed_events_by_id == {}  # noqa: SLF001
+
+    with instance_for_test() as instance:
+        materialize([july_asset], partition_key="2022-08-04", instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[july_asset.key, july_asset_2.key],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        my_sensor(ctx)
 
 
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
@@ -734,6 +1317,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
         bob,
         candace,
         danny,
+        earth,
         edgar,
         fiona,
         george,
@@ -747,7 +1331,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
 
     @repository
     def my_repo():
-        return [alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
+        return [earth, alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
@@ -802,7 +1386,7 @@ def test_multi_asset_sensor_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_2022_07_10_mat < july_asset_cursor.latest_consumed_event_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
         # Second materialization for 2022-07-10 is after cursor so should not be unconsumed
@@ -815,7 +1399,7 @@ def test_multi_asset_sensor_unconsumed_events():
         # no longer show up in the cursor. The storage ID of the cursor should stay the same.
         invocation_num += 1
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-10"
         assert (
             second_july_cursor.latest_consumed_event_id
@@ -859,7 +1443,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         first_storage_id = july_asset_cursor.latest_consumed_event_id
         assert first_storage_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
@@ -875,7 +1459,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
             instance=instance,
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-06"
         assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {}
         assert july_asset_cursor.latest_consumed_event_id > first_storage_id
@@ -902,7 +1486,7 @@ def test_error_when_max_num_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert july_asset_cursor.latest_consumed_event_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-25"
         assert len(july_asset_cursor.trailing_unconsumed_partitioned_event_ids) == 24
@@ -945,7 +1529,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
                 get_partition_key_from_ordered_record(record) for record in ordered_records
             ] == ["2022-07-01", "2022-07-04", "2022-07-02"]
 
-            for _, event_log_entry in records_dict.items():
+            for event_log_entry in records_dict.values():
                 context.advance_cursor({july_asset.key: event_log_entry})
 
     with instance_for_test() as instance:
@@ -961,7 +1545,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_july_cursor.latest_consumed_event_id
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-03"
         assert len(first_july_cursor.trailing_unconsumed_partitioned_event_ids) == 2
@@ -974,7 +1558,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
                 instance=instance,
             )
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-02"
         assert (
             second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
@@ -1011,7 +1595,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_july_cursor.latest_consumed_event_id
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-05"
 
@@ -1043,7 +1627,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert (
             second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
         )
@@ -1061,7 +1645,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_sensor(context):
-        my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
+        my_asset_cursor = context._get_cursor(my_asset.key)  # noqa: SLF001
         assert my_asset_cursor.latest_consumed_event_id is not None
 
     @repository
@@ -1070,9 +1654,13 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
@@ -1082,9 +1670,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == records.storage_id
         )
         my_sensor(ctx)
@@ -1105,11 +1691,9 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[
                 my_asset.key
-            ].event_log_entry.dagster_event.materialization.metadata_entries[
-                0
-            ].entry_data == BoolMetadataValue(
-                value=True
-            )
+            ].event_log_entry.dagster_event.materialization.metadata[
+                "evaluated"
+            ] == MetadataValue.bool(True)
 
     @repository
     def my_repo():
@@ -1117,9 +1701,13 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = list(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
-        )[0]
+        records = next(
+            iter(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            )
+        )
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
@@ -1129,9 +1717,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == records.storage_id
         )
         my_sensor(ctx)
@@ -1178,15 +1764,11 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == my_asset_cursor
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset_2.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset_2.key).latest_consumed_event_id  # noqa: SLF001
             == my_asset_2_cursor
         )
 
@@ -1235,3 +1817,49 @@ def test_error_not_thrown_for_skip_reason():
             instance=instance,
         )
         test_unconsumed_events_sensor(ctx)
+
+
+def test_dynamic_partitions_sensor():
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    @asset(partitions_def=dynamic_partitions_def)
+    def fruits_asset():
+        return 1
+
+    my_job = define_asset_job("fruits_job", [fruits_asset], partitions_def=dynamic_partitions_def)
+
+    @repository
+    def my_repo():
+        return [fruits_asset]
+
+    @sensor(job=my_job)
+    def test_sensor(context):
+        context.instance.add_dynamic_partitions(dynamic_partitions_def.name, ["apple"])
+        return RunRequest(partition_key="apple")
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        run_request = test_sensor(ctx)
+        assert run_request.partition_key == "apple"
+
+
+def test_sensor_invocation_runconfig() -> None:
+    class MyConfig(Config):
+        a_str: str
+        an_int: int
+
+    # Test no arg invocation
+    @sensor(job_name="foo_job")
+    def basic_sensor():
+        return RunRequest(
+            run_key=None,
+            run_config=RunConfig(ops={"foo": MyConfig(a_str="foo", an_int=55)}),
+            tags={},
+        )
+
+    assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
+        "foo": {"config": {"a_str": "foo", "an_int": 55}}
+    }

@@ -1,4 +1,3 @@
-import dagster._check as check
 import pytest
 from dagster import (
     AssetKey,
@@ -260,8 +259,12 @@ def test_reexecute_from_failure_successful_run(instance):
     ) as result:
         assert result.success
 
-    with pytest.raises(check.CheckError, match="run that is not failed"):
-        ReexecutionOptions.from_failure(result.run_id, instance)
+    with pytest.raises(DagsterInvariantViolationError, match="run that is not failed"):
+        execute_job(
+            reconstructable(emit_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
 
 
 def highly_nested_job():
@@ -379,9 +382,9 @@ def echo(x):
 @op
 def fail_once(context: OpExecutionContext, x):
     key = context.op_handle.name
-    if context.instance.run_storage.kvs_get({key}).get(key):
+    if context.instance.run_storage.get_cursor_values({key}).get(key):
         return x
-    context.instance.run_storage.kvs_set({key: "true"})
+    context.instance.run_storage.set_cursor_values({key: "true"})
     raise Exception("failed (just this once)")
 
 

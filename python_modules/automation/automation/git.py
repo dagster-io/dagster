@@ -10,11 +10,7 @@ def git_check_status() -> None:
     changes = subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip()
 
     if changes != "":
-        raise Exception(
-            "Bailing: Cannot publish with changes present in git repo:\n{changes}".format(
-                changes=changes
-            )
-        )
+        raise Exception(f"Bailing: Cannot publish with changes present in git repo:\n{changes}")
 
 
 def git_user() -> str:
@@ -41,8 +37,7 @@ def git_push(tag: Optional[str] = None, dry_run: bool = True, cwd: Optional[str]
                 [
                     "git",
                     "push",
-                    "https://{github_username}:{github_token}@github.com/dagster-io/dagster.git"
-                    .format(github_username=github_username, github_token=github_token),
+                    f"https://{github_username}:{github_token}@github.com/dagster-io/dagster.git",
                     tag,
                 ],
                 dry_run=dry_run,
@@ -52,9 +47,7 @@ def git_push(tag: Optional[str] = None, dry_run: bool = True, cwd: Optional[str]
             [
                 "git",
                 "push",
-                "https://{github_username}:{github_token}@github.com/dagster-io/dagster.git".format(
-                    github_username=github_username, github_token=github_token
-                ),
+                f"https://{github_username}:{github_token}@github.com/dagster-io/dagster.git",
             ],
             dry_run=dry_run,
             cwd=cwd,
@@ -127,7 +120,7 @@ def set_git_tag(tag: str, signed: bool = False, dry_run: bool = True) -> str:
             raise Exception(
                 "Bailing: cannot sign tag. You may find "
                 "https://stackoverflow.com/q/39494631/324449 helpful. Original error "
-                "output:\n{output}".format(output=str(exc_info.output))
+                f"output:\n{exc_info.output}"
             )
 
         match = re.search(
@@ -147,11 +140,9 @@ def set_git_tag(tag: str, signed: bool = False, dry_run: bool = True) -> str:
 def git_commit_updates(repo_dir: str, message: str) -> None:
     cmds = [
         "git add -A",
-        'git commit -m "{}"'.format(message),
+        f'git commit -m "{message}"',
     ]
 
-    print(  # pylint: disable=print-call
-        "Committing to {} with message {}".format(repo_dir, message)
-    )
+    print(f"Committing to {repo_dir} with message {message}")  # noqa: T201
     for cmd in cmds:
         subprocess.call(cmd, cwd=repo_dir, shell=True)

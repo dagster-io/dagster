@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import json
 import logging
 import os
@@ -90,11 +89,9 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
         compose_command += ["--env-file", env_file]
 
     if service:
-        compose_command += ["--file", str(docker_compose_yml), "rm", "--volumes"]
-
-        compose_command.append(service)
-
+        compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", service]
         subprocess.check_call(compose_command)
+
     else:
         compose_command += [
             "--file",
@@ -103,7 +100,6 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
             "--volumes",
             "--remove-orphans",
         ]
-
         subprocess.check_call(compose_command)
 
 
@@ -128,40 +124,18 @@ def connect_container_to_network(container, network):
     # subprocess.run instead of subprocess.check_call so we don't fail when
     # trying to connect a container to a network that it's already connected to
     try:
-        subprocess.check_call(  # pylint: disable=subprocess-run-check
-            ["docker", "network", "connect", network, container]
-        )
-        logging.info(
-            "Connected {container} to network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        subprocess.check_call(["docker", "network", "connect", network, container])
+        logging.info(f"Connected {container} to network {network}.")
     except subprocess.CalledProcessError:
-        logging.warning(
-            "Unable to connect {container} to network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.warning(f"Unable to connect {container} to network {network}.")
 
 
 def disconnect_container_from_network(container, network):
     try:
         subprocess.check_call(["docker", "network", "disconnect", network, container])
-        logging.info(
-            "Disconnected {container} from network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.info(f"Disconnected {container} from network {network}.")
     except subprocess.CalledProcessError:
-        logging.warning(
-            "Unable to disconnect {container} from network {network}.".format(
-                container=container,
-                network=network,
-            )
-        )
+        logging.warning(f"Unable to disconnect {container} from network {network}.")
 
 
 def hostnames(network):

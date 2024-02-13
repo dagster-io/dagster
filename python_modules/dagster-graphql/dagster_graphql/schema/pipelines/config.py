@@ -16,7 +16,7 @@ from dagster._config import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster._core.host_representation.represented import RepresentedPipeline
+from dagster._core.host_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
 from graphene.types.generic import GenericScalar
 
@@ -206,9 +206,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 incoming_fields=error.error_data.incoming_fields,
             )
         else:
-            check.failed(
-                "Error type not supported {error_data}".format(error_data=repr(error.error_data))
-            )
+            check.failed(f"Error type not supported {error.error_data!r}")
 
 
 class GrapheneRuntimeMismatchConfigError(graphene.ObjectType):
@@ -306,7 +304,7 @@ class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
 
     @staticmethod
     def for_validation_errors(represented_pipeline, errors):
-        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         check.list_param(errors, "errors", of_type=DagsterEvaluationError)
         return GrapheneRunConfigValidationInvalid(
             pipeline_name=represented_pipeline.name,

@@ -17,7 +17,7 @@ def test_ops_compile_and_execute():
     ]
 
     for op, has_context_arg in ops:
-        op(None) if has_context_arg else op()  # pylint: disable=expression-not-assigned
+        op(None) if has_context_arg else op()
 
 
 def test_partition_config_ops_compile_and_execute():

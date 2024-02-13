@@ -1,33 +1,50 @@
 import io
 import random
-from typing import Dict
+from typing import Any, Dict, Optional
 from unittest import mock
 
 from dagster import resource
+from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.cached_method import cached_method
 
 from dagster_azure.blob import FakeBlobServiceClient
 
-from .resources import ADLS2Resource
 from .utils import ResourceNotFoundError
 
 
+@dagster_maintained_resource
 @resource({"account_name": str})
 def fake_adls2_resource(context):
     return FakeADLS2Resource(account_name=context.resource_config["account_name"])
 
 
-class FakeADLS2Resource(ADLS2Resource):
+class FakeADLS2Resource(ConfigurableResource):
     """Stateful mock of an ADLS2Resource for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
     """
 
-    def __init__(
-        self, account_name, credential="fake-creds"
-    ):  # pylint: disable=unused-argument,super-init-not-called
-        self._adls2_client = FakeADLS2ServiceClient(account_name)
-        self._blob_client = FakeBlobServiceClient(account_name)
-        self._lease_client_constructor = FakeLeaseClient
+    account_name: str
+    storage_account: Optional[str] = None
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    @property
+    @cached_method
+    def adls2_client(self) -> "FakeADLS2ServiceClient":
+        return FakeADLS2ServiceClient(self.account_name)
+
+    @property
+    @cached_method
+    def blob_client(self) -> FakeBlobServiceClient:
+        return FakeBlobServiceClient(self.account_name)
+
+    @property
+    def lease_client_constructor(self) -> Any:
+        return FakeLeaseClient
 
 
 class FakeLeaseClient:
@@ -36,9 +53,9 @@ class FakeLeaseClient:
         self.id = None
 
         # client needs a ref to self to check if a given lease is valid
-        self.client._lease = self
+        self.client._lease = self  # noqa: SLF001
 
-    def acquire(self, lease_duration=-1):  # pylint: disable=unused-argument
+    def acquire(self, lease_duration=-1):
         if self.id is None:
             self.id = random.randint(0, 2**9)
         else:

@@ -11,16 +11,14 @@ from airflow import (
 from airflow.models import Connection, TaskInstance
 from dagster_airflow import DagsterCloudOperator
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
-# pylint: disable=no-name-in-module,import-error
 if airflow_version >= "2.0.0":
     from airflow.utils.state import DagRunState, TaskInstanceState
     from airflow.utils.types import DagRunType
-# pylint: enable=no-name-in-module,import-error
 
 
-DATA_INTERVAL_START = pendulum.datetime(2021, 9, 13)  # pylint: disable=pendulum-create
+DATA_INTERVAL_START = pendulum.datetime(2021, 9, 13)
 DATA_INTERVAL_END = DATA_INTERVAL_START + timedelta(days=1)
 if airflow_version >= "2.0.0":
     MOCK_DAGSTER_CONNECTION = Connection(
@@ -37,7 +35,7 @@ else:
     )
 
 
-@requires_airflow_db
+@requires_local_db
 class TestDagsterOperator(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")

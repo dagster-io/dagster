@@ -143,13 +143,13 @@ def test_output_execute_log_stdout(capfd):
         execute_execute_command(
             kwargs={
                 "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                "attribute": "stdout_pipeline",
+                "attribute": "stdout_job",
             },
             instance=instance,
         )
 
         captured = capfd.readouterr()
-        # All pipeline execute output currently logged to stderr
+        # All job execution output currently logged to stderr
         assert "HELLO WORLD" in captured.err
 
         execute_execute_command(
@@ -177,7 +177,7 @@ def test_output_execute_log_stderr(capfd):
             execute_execute_command(
                 kwargs={
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "attribute": "stderr_pipeline",
+                    "attribute": "stderr_job",
                 },
                 instance=instance,
             )
@@ -251,7 +251,7 @@ def test_invalid_parameters(args):
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
-            match=re.escape("Invalid set of CLI arguments for loading repository/pipeline"),
+            match=re.escape("Invalid set of CLI arguments for loading repository/job"),
         ):
             execute_execute_command(
                 kwargs=args,
@@ -291,7 +291,7 @@ def test_attribute_is_wrong_thing():
             DagsterInvariantViolationError,
             match=re.escape(
                 "Loadable attributes must be either a JobDefinition, GraphDefinition,"
-                " PipelineDefinition, AssetGroup, or RepositoryDefinition. Got 123."
+                " or RepositoryDefinition. Got 123."
             ),
         ):
             execute_execute_command(
@@ -300,7 +300,7 @@ def test_attribute_is_wrong_thing():
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
-                    "attribute": "not_a_repo_or_pipeline",
+                    "attribute": "not_a_repo_or_job",
                 },
                 instance=instance,
             )
@@ -312,7 +312,7 @@ def test_attribute_fn_returns_wrong_thing():
             DagsterInvariantViolationError,
             match=re.escape(
                 "Loadable attributes must be either a JobDefinition, GraphDefinition,"
-                " PipelineDefinition, AssetGroup, or RepositoryDefinition."
+                " or RepositoryDefinition."
             ),
         ):
             execute_execute_command(
@@ -321,7 +321,7 @@ def test_attribute_fn_returns_wrong_thing():
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
-                    "attribute": "not_a_repo_or_pipeline_fn",
+                    "attribute": "not_a_repo_or_job_fn",
                 },
                 instance=instance,
             )
@@ -474,3 +474,26 @@ def test_execute_command_help():
     result = runner.invoke(job_execute_command, ["--help"])
 
     assert "multiple times" not in result.stdout
+
+
+def test_op_selection():
+    runner = CliRunner()
+    with instance_for_test() as instance:
+        runner_job_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-j",
+                "foo",
+                "--op-selection",
+                "*do_something",
+            ],
+        )
+
+        runs = instance.get_run_records()
+        assert len(runs) == 1
+        conn = instance.get_records_for_run(run_id=runs[0].dagster_run.run_id)
+        observed_steps = {record.event_log_entry.step_key for record in conn.records}
+        assert "do_something" in observed_steps
+        assert "do_input" not in observed_steps

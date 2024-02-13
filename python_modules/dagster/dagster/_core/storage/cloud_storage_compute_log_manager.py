@@ -5,9 +5,12 @@ import time
 from abc import abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence, Union
+from typing import IO, Iterator, Optional, Sequence, Union
+
+from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.captured_log_manager import (
     CapturedLogContext,
     CapturedLogData,
@@ -29,8 +32,10 @@ from dagster._core.storage.local_compute_log_manager import (
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
 
+LogSubscription: TypeAlias = Union[CapturedLogSubscription, ComputeLogSubscription]
 
-class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
+
+class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_DagsterInstance]):
     """Abstract class that uses the local compute log manager to capture logs and stores them in
     remote cloud storage.
     """
@@ -38,62 +43,46 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     @property
     @abstractmethod
     def local_manager(self) -> LocalComputeLogManager:
-        """
-        Returns a LocalComputeLogManager.
-        """
+        """Returns a LocalComputeLogManager."""
 
     @property
     @abstractmethod
     def upload_interval(self) -> Optional[int]:
-        """
-        Returns the interval in which partial compute logs are uploaded to cloud storage.
-        """
+        """Returns the interval in which partial compute logs are uploaded to cloud storage."""
 
     @abstractmethod
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
-    ):
-        """
-        Deletes logs for a given log_key or prefix.
-        """
+    ) -> None:
+        """Deletes logs for a given log_key or prefix."""
 
     @abstractmethod
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
-        """
-        Calculates a download url given a log key and compute io type.
-        """
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
+        """Calculates a download url given a log key and compute io type."""
 
     @abstractmethod
-    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
-        """
-        Returns a display path given a log key and compute io type.
-        """
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
+        """Returns a display path given a log key and compute io type."""
 
     @abstractmethod
     def cloud_storage_has_logs(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> bool:
-        """
-        Returns whether the cloud storage contains logs for a given log key.
-        """
+        """Returns whether the cloud storage contains logs for a given log key."""
 
     @abstractmethod
     def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
-    ):
-        """
-        Uploads the logs for a given log key from local storage to cloud storage.
-        """
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> None:
+        """Uploads the logs for a given log key from local storage to cloud storage."""
 
     def download_from_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
-    ):
-        """
-        Downloads the logs for a given log key from cloud storage to local storage.
-        """
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> None:
+        """Downloads the logs for a given log key from cloud storage to local storage."""
 
     @contextmanager
-    def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
         with self._poll_for_local_upload(log_key):
             with self.local_manager.capture_logs(log_key) as context:
                 yield context
@@ -102,7 +91,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Generator[Optional[IO], None, None]:
+    ) -> Iterator[Optional[IO]]:
         with self.local_manager.open_log_stream(log_key, io_type) as f:
             yield f
         self._on_capture_complete(log_key)
@@ -117,8 +106,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         # check remote storage
         return self.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
 
-    def _log_data_for_type(self, log_key, io_type, offset, max_bytes):
-        if self._has_local_file(log_key, io_type):
+    def log_data_for_type(
+        self, log_key: Sequence[str], io_type: ComputeIOType, offset: int, max_bytes: Optional[int]
+    ):
+        if self.has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]
             )
@@ -145,10 +136,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
         stdout_offset, stderr_offset = self.local_manager.parse_cursor(cursor)
-        stdout, new_stdout_offset = self._log_data_for_type(
+        stdout, new_stdout_offset = self.log_data_for_type(
             log_key, ComputeIOType.STDOUT, stdout_offset, max_bytes
         )
-        stderr, new_stderr_offset = self._log_data_for_type(
+        stderr, new_stderr_offset = self.log_data_for_type(
             log_key, ComputeIOType.STDERR, stderr_offset, max_bytes
         )
         return CapturedLogData(
@@ -178,23 +169,23 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
         subscription = CapturedLogSubscription(self, log_key, cursor)
-        self.on_subscribe(subscription)
+        self.on_subscribe(subscription)  # type: ignore
         return subscription
 
     def unsubscribe(self, subscription):
         self.on_unsubscribe(subscription)
 
-    def _has_local_file(self, log_key, io_type):
+    def has_local_file(self, log_key: Sequence[str], io_type: ComputeIOType):
         local_path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return os.path.exists(local_path)
 
-    def _should_download(self, log_key, io_type):
-        return not self._has_local_file(log_key, io_type) and self.cloud_storage_has_logs(
+    def _should_download(self, log_key: Sequence[str], io_type: ComputeIOType):
+        return not self.has_local_file(log_key, io_type) and self.cloud_storage_has_logs(
             log_key, io_type
         )
 
     @contextmanager
-    def _poll_for_local_upload(self, log_key):
+    def _poll_for_local_upload(self, log_key: Sequence[str]) -> Iterator[None]:
         if not self.upload_interval:
             yield
             return
@@ -204,8 +195,8 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
             target=_upload_partial_logs,
             args=(self, log_key, thread_exit, self.upload_interval),
             name="upload-watch",
+            daemon=True,
         )
-        thread.daemon = True
         thread.start()
         yield
         thread_exit.set()
@@ -216,10 +207,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     #
     ###############################################
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
         log_key = self.local_manager.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
+            dagster_run.run_id, step_key or dagster_run.job_name
         )
         with self.local_manager.capture_logs(log_key):
             yield
@@ -229,11 +220,11 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def get_local_path(self, run_id, key, io_type):
         return self.local_manager.get_local_path(run_id, key, io_type)
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    def on_watch_start(self, dagster_run, step_key):
+        self.local_manager.on_watch_start(dagster_run, step_key)
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
+    def on_watch_finish(self, dagster_run, step_key):
+        self.local_manager.on_watch_finish(dagster_run, step_key)
 
     def is_watch_completed(self, run_id, key):
         return self.local_manager.is_watch_completed(run_id, key) or self.cloud_storage_has_logs(
@@ -242,7 +233,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
 
     def download_url(self, run_id, key, io_type):
         if not self.is_watch_completed(run_id, key):
-            return self.local_manager.download_url(run_id, key, io_type)
+            return None
 
         log_key = self.local_manager.build_log_key_for_run(run_id, key)
         return self.download_url_for_type(log_key, io_type)
@@ -250,7 +241,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         log_key = self.local_manager.build_log_key_for_run(run_id, key)
 
-        if self._has_local_file(log_key, io_type):
+        if self.has_local_file(log_key, io_type):
             data = self.local_manager.read_logs_file(run_id, key, io_type, cursor, max_bytes)
             return self._from_local_file_data(run_id, key, io_type, data)
         elif self.cloud_storage_has_logs(log_key, io_type):
@@ -303,7 +294,7 @@ class PollingComputeLogSubscriptionManager:
         self._shutdown_event = None
         self._polling_thread = None
 
-    def _log_key(self, subscription):
+    def _log_key(self, subscription: LogSubscription) -> Sequence[str]:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -315,7 +306,7 @@ class PollingComputeLogSubscriptionManager:
     def _watch_key(self, log_key: Sequence[str]) -> str:
         return json.dumps(log_key)
 
-    def _start_polling_thread(self):
+    def _start_polling_thread(self) -> None:
         if self._polling_thread:
             return
 
@@ -324,22 +315,20 @@ class PollingComputeLogSubscriptionManager:
             target=self._poll,
             args=[self._shutdown_event],
             name="polling-compute-log-subscription",
+            daemon=True,
         )
-        self._polling_thread.daemon = True
         self._polling_thread.start()
 
-    def _stop_polling_thread(self):
+    def _stop_polling_thread(self) -> None:
         if not self._polling_thread:
             return
 
         old_shutdown_event = self._shutdown_event
-        old_shutdown_event.set()  # set to signal to the old thread to die
+        old_shutdown_event.set()  # set to signal to the old thread to die  # type: ignore
         self._polling_thread = None
         self._shutdown_event = None
 
-    def add_subscription(
-        self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]
-    ):
+    def add_subscription(self, subscription: LogSubscription) -> None:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -355,7 +344,7 @@ class PollingComputeLogSubscriptionManager:
             watch_key = self._watch_key(log_key)
             self._subscriptions[watch_key].append(subscription)
 
-    def is_complete(self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]):
+    def is_complete(self, subscription: LogSubscription) -> bool:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -364,7 +353,7 @@ class PollingComputeLogSubscriptionManager:
             return self._manager.is_watch_completed(subscription.run_id, subscription.key)
         return self._manager.is_capture_complete(subscription.log_key)
 
-    def remove_subscription(self, subscription):
+    def remove_subscription(self, subscription: LogSubscription) -> None:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -380,7 +369,7 @@ class PollingComputeLogSubscriptionManager:
         if not len(self._subscriptions) and self._polling_thread:
             self._stop_polling_thread()
 
-    def remove_all_subscriptions(self, log_key):
+    def remove_all_subscriptions(self, log_key: Sequence[str]) -> None:
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
@@ -388,24 +377,24 @@ class PollingComputeLogSubscriptionManager:
         if not len(self._subscriptions) and self._polling_thread:
             self._stop_polling_thread()
 
-    def notify_subscriptions(self, log_key):
+    def notify_subscriptions(self, log_key: Sequence[str]) -> None:
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def _poll(self, shutdown_event):
+    def _poll(self, shutdown_event: threading.Event) -> None:
         while True:
             if shutdown_event.is_set():
                 return
             # need to do something smarter here that keeps track of updates
-            for _, subscriptions in self._subscriptions.items():
+            for subscriptions in self._subscriptions.values():
                 for subscription in subscriptions:
                     if shutdown_event.is_set():
                         return
                     subscription.fetch()
             time.sleep(SUBSCRIPTION_POLLING_INTERVAL)
 
-    def dispose(self):
+    def dispose(self) -> None:
         if self._shutdown_event:
             self._shutdown_event.set()
 
@@ -415,7 +404,7 @@ def _upload_partial_logs(
     log_key: Sequence[str],
     thread_exit: threading.Event,
     interval: int,
-):
+) -> None:
     while True:
         time.sleep(interval)
         if thread_exit.is_set() or compute_log_manager.is_capture_complete(log_key):

@@ -2,7 +2,9 @@ import json
 import logging
 import re
 import sys
+import threading
 from contextlib import contextmanager
+from functools import partial
 
 import pytest
 from dagster import (
@@ -20,17 +22,11 @@ from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    DagsterRun,
-    ModeDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
-)
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"
@@ -84,7 +80,7 @@ def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         dl.debug("test")
         dl.info("test")
@@ -99,26 +95,26 @@ def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
-            dl.foo("test")  # pylint: disable=no-member
+            dl.foo("test")
 
 
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
-        dl.log(3, "test")  # pylint: disable=no-member
+        dl.log(3, "test")
 
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(job_name="system", run_id="123"),
         )
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
@@ -128,15 +124,15 @@ def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
     dagster_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
-        pipeline_name="error_monster",
+        job_name="error_monster",
         step_key="start.materialization.output.result.0",
-        solid_handle=NodeHandle("start", None),
+        node_handle=NodeHandle("start", None),
         step_kind_value="MATERIALIZATION_THUNK",
         logging_tags={
-            "pipeline": "error_monster",
+            "job": "error_monster",
             "step_key": "start.materialization.output.result.0",
-            "solid": "start",
-            "solid_definition": "emit_num",
+            "op": "start",
+            "op_definition": "emit_num",
         },
         event_specific_data=StepFailureData(
             error=SerializableErrorInfo(
@@ -151,7 +147,7 @@ def test_multiline_logging_complex():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(run_id="123", pipeline_name="error_monster"),
+            dagster_run=DagsterRun(run_id="123", job_name="error_monster"),
         )
         dl.log_dagster_event(logging.INFO, msg, dagster_event)
 
@@ -184,7 +180,7 @@ def _setup_test_two_handler_log_mgr():
     return DagsterLogManager.create(
         loggers=[],
         handlers=[test_info_handler, test_warn_handler],
-        pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+        dagster_run=DagsterRun(job_name="system", run_id="123"),
     )
 
 
@@ -202,15 +198,15 @@ def test_handler_in_log_manager(capsys):
 
 def test_handler_in_log_manager_with_tags(capsys):
     dl = _setup_test_two_handler_log_mgr()
-    dl = dl.with_tags(**{"pipeline_name": "test_pipeline"})
+    dl = dl.with_tags(**{"job_name": "test_job"})
 
     dl.info("test")
     dl.warning("test")
 
     out, _ = capsys.readouterr()
 
-    assert re.search(r"INFO :: test_pipeline - 123 - test", out)
-    assert len(re.findall(r"WARNING :: test_pipeline - 123 - test", out)) == 2
+    assert re.search(r"INFO :: test_job - 123 - test", out)
+    assert len(re.findall(r"WARNING :: test_job - 123 - test", out)) == 2
 
 
 class CaptureHandler(logging.Handler):
@@ -221,7 +217,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)  # pylint: disable=print-call
+            print(self.output + record.msg)  # noqa: T201
         self.captured.append(record)
 
 
@@ -231,7 +227,7 @@ def test_capture_handler_log_records():
     dl = DagsterLogManager.create(
         loggers=[],
         handlers=[capture_handler],
-        pipeline_run=DagsterRun(run_id="123456", pipeline_name="pipeline"),
+        dagster_run=DagsterRun(run_id="123456", job_name="pipeline"),
     ).with_tags(step_key="some_step")
 
     dl.info("info")
@@ -254,19 +250,19 @@ def test_capture_handler_log_records():
 def test_default_context_logging():
     called = {}
 
-    @solid(input_defs=[], output_defs=[])
-    def default_context_solid(context):
+    @op
+    def default_context_op(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
+        for logger in context.log._dagster_handler._loggers:  # noqa: SLF001
             assert logger.level == logging.DEBUG
 
-    execute_solid(default_context_solid)
+    wrap_op_in_graph_and_execute(default_context_op)
 
     assert called["yes"]
 
 
 def test_colored_console_logger_with_integer_log_level():
-    @pipeline
+    @job
     def pipe():
         pass
 
@@ -274,19 +270,19 @@ def test_colored_console_logger_with_integer_log_level():
         InitLoggerContext(
             {"name": "dagster", "log_level": 4},
             colored_console_logger,
-            pipeline_def=pipe,
+            job_def=pipe,
         )
     )
 
 
 def test_json_console_logger(capsys):
-    @solid
+    @op
     def hello_world(context):
         context.log.info("Hello, world!")
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         hello_world,
-        mode_def=ModeDefinition(logger_defs={"json": json_console_logger}),
+        logger_defs={"json": json_console_logger},
         run_config={"loggers": {"json": {"config": {}}}},
     )
 
@@ -302,21 +298,21 @@ def test_json_console_logger(capsys):
     assert found_msg
 
 
-def test_pipeline_logging(capsys):
-    @solid
+def test_job_logging(capsys):
+    @op
     def foo(context):
         context.log.info("bar")
         return 0
 
-    @solid
+    @op
     def foo2(context, _in1):
         context.log.info("baz")
 
-    @pipeline
+    @job
     def pipe():
         foo2(foo())
 
-    execute_pipeline(pipe)
+    pipe.execute_in_process()
 
     captured = capsys.readouterr()
     expected_log_regexes = [
@@ -344,14 +340,14 @@ def test_resource_logging(capsys):
 
         return fn
 
-    @solid(required_resource_keys={"foo", "bar"})
+    @op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         process,
-        mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
+        resources={"foo": foo_resource, "bar": bar_resource},
     )
 
     captured = capsys.readouterr()
@@ -367,33 +363,33 @@ def test_resource_logging(capsys):
 
 
 def test_io_context_logging(capsys):
-    @solid
-    def logged_solid(context):
+    @op
+    def logged_op(context):
         context.get_step_execution_context().get_output_context(
-            StepOutputHandle("logged_solid", "result")
-        ).log.debug("test OUTPUT debug logging from logged_solid.")
+            StepOutputHandle("logged_op", "result")
+        ).log.debug("test OUTPUT debug logging from logged_op.")
         context.get_step_execution_context().for_input_manager(
-            "logged_solid", {}, {}, None, source_handle=None
-        ).log.debug("test INPUT debug logging from logged_solid.")
+            "logged_op", {}, {}, None, source_handle=None
+        ).log.debug("test INPUT debug logging from logged_op.")
 
-    result = execute_solid(logged_solid)
+    result = wrap_op_in_graph_and_execute(logged_op)
     assert result.success
 
     captured = capsys.readouterr()
 
-    assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
-    assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+    assert re.search("test OUTPUT debug logging from logged_op.", captured.err, re.MULTILINE)
+    assert re.search("test INPUT debug logging from logged_op.", captured.err, re.MULTILINE)
 
 
-@solid
-def log_solid(context):
+@op
+def log_op(context):
     context.log.info("Hello world")
     context.log.error("My test error")
 
 
-@pipeline
-def log_pipeline():
-    log_solid()
+@job
+def log_job():
+    log_op()
 
 
 def test_conf_file_logging(capsys):
@@ -403,7 +399,10 @@ def test_conf_file_logging(capsys):
                 "handlers": {
                     "handlerOne": {
                         "class": "logging.StreamHandler",
+                        # "class": "logging.FileHandler",
                         "level": "INFO",
+                        # "filename": "/Users/smackesey/stm/desktop/mydaglog.log",
+                        # "mode": "a",
                         "stream": "ext://sys.stdout",
                     },
                     "handlerTwo": {
@@ -417,7 +416,7 @@ def test_conf_file_logging(capsys):
     }
 
     with instance_for_test(overrides=config_settings) as instance:
-        execute_pipeline(log_pipeline, instance=instance)
+        log_job.execute_in_process(instance=instance)
 
     out, _ = capsys.readouterr()
 
@@ -444,7 +443,7 @@ def test_custom_class_handler(capsys):
     }
 
     with instance_for_test(overrides=config_settings) as instance:
-        execute_pipeline(log_pipeline, instance=instance)
+        log_job.execute_in_process(instance=instance)
 
     out, _ = capsys.readouterr()
 
@@ -464,24 +463,56 @@ def test_error_when_logger_defined_yaml():
 
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(overrides=config_settings) as instance:
-            execute_pipeline(log_pipeline, instance=instance)
+            log_job.execute_in_process(instance=instance)
+
+
+def test_python_multithread_context_logging():
+    def logging_background_thread(thread_name, context):
+        for i in range(1, 4):
+            context.log.info(f"Background thread: {thread_name}, message #: {i}")
+
+    @op
+    def logged_op(context):
+        threads = []
+        for thread_name in range(1, 5):
+            thread = threading.Thread(
+                target=partial(logging_background_thread, thread_name, context),
+            )
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+    @job
+    def foo_job():
+        logged_op()
+
+    with instance_for_test() as instance:
+        result = foo_job.execute_in_process(instance=instance)
+        logs = instance.event_log_storage.get_logs_for_run(result.run_id)
+
+    relevant_logs = [log for log in logs if "Background thread: " in log.user_message]
+
+    # We would expect 3 log messages per our 4 threads
+    assert len(relevant_logs) == 3 * 4
 
 
 def test_python_log_level_context_logging():
-    @solid
-    def logged_solid(context):
+    @op
+    def logged_op(context):
         context.log.error("some error")
 
-    @pipeline
-    def pipe():
-        logged_solid()
+    @job
+    def foo_job():
+        logged_op()
 
     with instance_for_test() as instance:
-        result = execute_pipeline(pipe, instance=instance)
+        result = foo_job.execute_in_process(instance=instance)
         logs_default = instance.event_log_storage.get_logs_for_run(result.run_id)
 
     with instance_for_test(overrides={"python_logs": {"python_log_level": "CRITICAL"}}) as instance:
-        result = execute_pipeline(pipe, instance=instance)
+        result = foo_job.execute_in_process(instance=instance)
         logs_critical = instance.event_log_storage.get_logs_for_run(result.run_id)
 
     assert len(logs_critical) > 0  # DagsterEvents should still be logged

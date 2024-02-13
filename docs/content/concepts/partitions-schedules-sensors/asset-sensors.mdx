@@ -1,29 +1,31 @@
 ---
-title: Asset Sensors | Dagster
+title: "Asset Sensors | Dagster Docs"
 description: Asset sensors allow you to instigate runs when asset materializations occur.
 ---
 
-# Asset Sensors
+# Asset sensors
 
 Asset sensors allow you to instigate runs when materializations occur.
 
+---
+
 ## Relevant APIs
 
-| Name                                                       | Description                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="RunRequest" />                           | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                                                                                                  |
-| <PyObject object="SkipReason" />                           | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                                                                                                            |
-| <PyObject object="asset_sensor" decorator />               | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                                                                                                   |
-| <PyObject object="AssetSensorDefinition"  />               | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                                                                                                 |
-| <PyObject object="freshness_policy_sensor" decorator />    | The decorator used to define a freshness policy sensor. The decorated function is an evaluation function that takes in a <PyObject object="FreshnessPolicySensorEvaluationContext" />. The decorator returns a <PyObject object="FreshnessPolicySensorDefinition" />                                                                                                    |
-| <PyObject object="FreshnessPolicySensorDefinition"  />     | A special sensor definition class for freshness policy sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="freshness_policy_sensor" decorator /> which returns a <PyObject object="FreshnessPolicySensorDefinition"  />                                                                                 |
-| <PyObject object="multi_asset_sensor" decorator />         | The decorator used to define an asset sensor that can monitor multiple assets at a time. The decorated function is an evaluation function that takes in a <PyObject object="MultiAssetSensorEvaluationContext" /> which has methods to fetch materialization events for the monitored assets. The decorator returns an <PyObject object="MultiAssetSensorDefinition" /> |
-| <PyObject object="MultiAssetSensorDefinition"  />          | A special sensor definition class for multi asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="multi_asset_sensor" decorator /> which returns a <PyObject object="MultiAssetSensorDefinition"  />                                                                                                |
-| <PyObject object="MultiSensorEvaluationContext"  />        | The context object passed to a multi asset sensor evaluation function. Has methods for fetching materialization events for assets                                                                                                                                                                                                                                       |
-| <PyObject object="build_multi_asset_sensor_context"    />  | A function that constructs an instance of <PyObject object="MultiAssetSensorEvaluationContext" />, This is intended to be used to test a multi asset sensor.                                                                                                                                                                                                            |
-| <PyObject object="build_asset_reconciliation_sensor"    /> | A function that constructs a sensor that will automatically keep a set of assets updated when their parents are materialized.                                                                                                                                                                                                                                           |
+| Name                                                      | Description                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="RunRequest" />                          | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                                                                                                  |
+| <PyObject object="SkipReason" />                          | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                                                                                                            |
+| <PyObject object="asset_sensor" decorator />              | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                                                                                                   |
+| <PyObject object="AssetSensorDefinition"  />              | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                                                                                                 |
+| <PyObject object="freshness_policy_sensor" decorator />   | The decorator used to define a freshness policy sensor. The decorated function is an evaluation function that takes in a `FreshnessPolicySensorContext`. The decorator returns a <PyObject object="FreshnessPolicySensorDefinition" />                                                                                                                                  |
+| <PyObject object="FreshnessPolicySensorDefinition"  />    | A special sensor definition class for freshness policy sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="freshness_policy_sensor" decorator /> which returns a <PyObject object="FreshnessPolicySensorDefinition"  />                                                                                 |
+| <PyObject object="multi_asset_sensor" decorator />        | The decorator used to define an asset sensor that can monitor multiple assets at a time. The decorated function is an evaluation function that takes in a <PyObject object="MultiAssetSensorEvaluationContext" /> which has methods to fetch materialization events for the monitored assets. The decorator returns an <PyObject object="MultiAssetSensorDefinition" /> |
+| <PyObject object="MultiAssetSensorDefinition"  />         | A special sensor definition class for multi asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="multi_asset_sensor" decorator /> which returns a <PyObject object="MultiAssetSensorDefinition"  />                                                                                                |
+| <PyObject object="MultiAssetSensorEvaluationContext"  />  | The context object passed to a multi asset sensor evaluation function. Has methods for fetching materialization events for assets                                                                                                                                                                                                                                       |
+| <PyObject object="build_multi_asset_sensor_context"    /> | A function that constructs an instance of <PyObject object="MultiAssetSensorEvaluationContext" />, This is intended to be used to test a multi asset sensor.                                                                                                                                                                                                            |
+| ---                                                       |                                                                                                                                                                                                                                                                                                                                                                         |
 
-## Asset sensors
+## Defining an asset sensor
 
 An asset sensor checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
 
@@ -32,30 +34,72 @@ One benefit of this pattern is that it enables cross-job and even cross-code-loc
 Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
+from dagster import (
+    AssetKey,
+    EventLogEntry,
+    RunConfig,
+    SensorEvaluationContext,
+    asset_sensor,
+)
 
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
+        run_config=RunConfig(
+            ops={
+                "read_materialization": ReadMaterializationConfig(
+                    asset_key=list(asset_event.dagster_event.asset_key.path)
+                )
             }
-        },
+        ),
     )
 ```
 
-## Freshness policy sensors <Experimental />
+---
+
+## Testing an asset sensor
+
+To write a unit test for an asset sensor, you first need to construct a context object using a test instance that can log <PyObject object="AssetMaterialization" /> events.
+
+You can then directly invoke your asset sensor with that context and evaluate the results.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_asset_sensor_test_marker endbefore=end_asset_sensor_test_marker
+from dagster import DagsterInstance, build_sensor_context, materialize
+
+
+def test_my_asset_sensor():
+    @asset
+    def my_table():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    ctx = build_sensor_context(instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], SkipReason)
+
+    materialize([my_table], instance=instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], RunRequest)
+```
+
+---
+
+## Freshness policy sensors
+
+<Note>
+  Freshness policy sensors are <strong>experimental</strong>.
+</Note>
 
 A freshness policy sensor checks the freshness of a given selection of assets on each tick, and performs some action in response to that status.
 
-The <PyObject object="FreshnessPolicySensorEvaluationContext" /> has a `current_minutes_late` property, specifying how many minutes late the asset is with respect to its <PyObject object="FreshnessPolicy" />, as well as `previous_minutes_late`, the number of minutes late that asset was on the previous sensor tick. Each tick, the decorated function will be run for each asset within the `asset_selection` that has a `FreshnessPolicy` defined.
+`FreshnessPolicySensorContext` has a `current_minutes_late` property, specifying how many minutes late the asset is with respect to its <PyObject object="FreshnessPolicy" />, as well as `previous_minutes_late`, the number of minutes late that asset was on the previous sensor tick. Each tick, the decorated function will be run for each asset within the `asset_selection` that has a `FreshnessPolicy` defined.
 
 Currently, freshness policy sensors do not support returning or yielding values (such as RunRequests) from their execution function.
 
@@ -67,18 +111,24 @@ from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
 def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.minutes_late is None or context.previous_minutes_late is None:
+    if context.minutes_overdue is None or context.previous_minutes_overdue is None:
         return
 
-    if context.minutes_late >= 10 and context.previous_minutes_late < 10:
+    if context.minutes_overdue >= 10 and context.previous_minutes_overdue < 10:
         send_alert(
-            f"Asset with key {context.asset_key} is now more than 10 minutes late."
+            f"Asset with key {context.asset_key} is now more than 10 minutes overdue."
         )
-    elif context.minutes_late == 0 and context.previous_minutes_late >= 10:
+    elif context.minutes_overdue == 0 and context.previous_minutes_overdue >= 10:
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
-## Multi-asset sensors <Experimental />
+---
+
+## Multi-asset sensors
+
+<Note>
+  Multi-asset sensors are <strong>experimental</strong>.
+</Note>
 
 ### Triggering runs upon materializations
 
@@ -169,9 +219,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
         materializations_by_asset,
     ) in context.latest_materialization_records_by_partition_and_asset().items():
         if set(materializations_by_asset.keys()) == set(context.asset_keys):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 context.advance_cursor({asset_key: materialization})
     return run_requests
@@ -210,9 +258,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
                 for asset_key in context.asset_keys
             ]
         ):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 if asset_key in context.asset_keys:
                     context.advance_cursor({asset_key: materialization})
@@ -225,79 +271,17 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
   of updating a weekly asset when upstream daily assets are materialized.
 </Note>
 
-## Asset reconciliation sensor
-
-<Note>
-  Asset reconciliation sensors are <strong>experimental</strong>.
-</Note>
-
-Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize them if they're "unreconciled". An asset is considered "unreconciled" if any of:
-
-- The sensor has never tried to materialize it and it has never been materialized.
-- Any of its parents have been materialized more recently than it has.
-- Any of its parents are unreconciled.
-- It is not up to date with respect to its FreshnessPolicy (see [Freshness-based scheduling](#freshness-based-scheduling)).
-
-The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
-
-You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor endbefore=end_asset_reconciliation_sensor
-defs = Definitions(
-    assets=[asset1, asset2, asset3, asset4],
-    sensors=[
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset1, asset3, asset4),
-            name="asset_reconciliation_sensor",
-        ),
-    ],
-)
-```
-
-This sensor will materialize each selected asset `asset1`, `asset3`, and `asset4` whenever any of its parents materialize.
-
-### With partitioned assets
-
-The asset reconciliation sensor automatically materializes any "unreconciled" partitions, following the same conditions for reconciliation as un-partitioned assets. When all upstream partition dependencies are materialized for a given partition, the asset reconciliation sensor will trigger materializations for any downstream asset partitions. Upstream partition materializations thereafter will trigger materializations downstream for all dependencies.
-
-In the following asset graph, each asset has partitions `[a, b, c]`. Say that `asset1`, `asset3`, and `asset4` are selected in the asset reconciliation sensor, and are currently unreconciled:
-
-<Image
-alt="Partitioned asset graph"
-src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset-graph.png"
-width={3138}
-height={2114}
-/>
-
-Because each partition of `asset1` is currently unreconciled, the sensor will immediately trigger materializations for each partition of `asset1`. Because `asset3` depends on `asset2` and no partitions have been materialized in `asset2`, the sensor will not trigger materializations for `asset3`.
-
-If we materialize partition `"a"` of `asset2`, each upstream dependency of partition `"a"` of `asset3` will be materialized. Because these partitions were materialized more recently than `asset3`, the sensor will materialize partition `"a"` of `asset3`. Since partition `"a"` of `asset4` is downstream and has no other dependencies, the sensor will materialize this partition in the same run. In the following tick, the sensor recognizes it triggered a materialization of `asset4` and thus does not trigger any materializations.
-
-### Freshness-based scheduling
-
-<Note>
-  This feature is currently <strong>Experimental</strong>.
-</Note>
-
-Setting a `FreshnessPolicy` on an asset specifies how up-to-date the data in that asset is expected to be. The asset reconciliation sensor created using `build_asset_reconciliation_sensor` will kick off runs to keep that data in line with the defined policy.
-
-To minimize unnecessary computation, the sensor will take into account a few bits of information when determining if it needs to kick off a run for a given asset:
-
-- A timestamp of the upstream data that is incorporated into the current state of the asset. This is calculated by finding the most recent materialization of that asset, then recursively finding the most recent materializations of its parents that happened before that event. The minimum timestamp found this way will be used as the current data time.
-- Any in-progress runs that will update that asset in the near future. If an in-progress run will update an asset to an acceptable data time, then a new run will not be kicked off.
-- The constraints specifying what upstream data must be incorporated into the state of an asset by certain times. If waiting some amount of time to kick off a materialization of an asset will allow multiple constraints to be satisfied at once, then the asset will not be materialized on that tick.
-
-The sensor will only kick off runs for assets specified in the `asset_selection` argument of `build_asset_reconciliation_sensor`. If an asset in this selection is downstream of an asset outside of the selection, the sensor will not kick off a run of the selected asset until a materialization event for the upstream asset is created.
+---
 
 ## Examples
 
-### Monitoring daily assets to materialize a weekly asset using a `multi_asset_sensor`
+### Monitoring daily assets to materialize a weekly asset using a multi_asset_sensor
 
 <Note>
   The functionality demonstrated by this custom sensor is identical to the
-  functionality provided by `build_asset_reconciliation_sensor`. However, this
-  example provides a starting point for those wishing to customize this behavior
-  beyond what the pre-built sensor supports.
+  functionality provided by eager <code>AutoMaterializePolicy</code>s. However,
+  this example provides a starting point for those wishing to customize this
+  behavior beyond what the pre-built sensor supports.
 </Note>
 
 The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition has a new materialization, the weekly partition will materialize.
@@ -341,9 +325,9 @@ def trigger_weekly_asset_from_daily_asset(context):
             if context.all_partitions_materialized(
                 AssetKey("upstream_daily_1"), daily_partitions_in_week
             ):
-                run_requests_by_partition[
-                    weekly_partitions[0]
-                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
+                run_requests_by_partition[weekly_partitions[0]] = RunRequest(
+                    partition_key=weekly_partitions[0]
+                )
                 # Advance the cursor so we only check event log records past the cursor
                 context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
     return list(run_requests_by_partition.values())

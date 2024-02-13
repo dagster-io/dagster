@@ -28,6 +28,10 @@ class Resources:
     def __getattr__(self, name: str) -> Any:
         raise DagsterUnknownResourceError(name)
 
+    @property
+    def original_resource_dict(self) -> Mapping[str, object]:
+        raise NotImplementedError()
+
 
 class ScopedResourcesBuilder(
     NamedTuple(
@@ -55,6 +59,8 @@ class ScopedResourcesBuilder(
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
+        from dagster._config.pythonic_config import IAttachDifferentObjectToOpContext
+
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -78,26 +84,46 @@ class ScopedResourcesBuilder(
             for key in required_resource_keys
             if key in self.resource_instance_dict
         }
+        resources_to_attach_to_context = {
+            k: (
+                v.get_object_to_set_on_execution_context()
+                if isinstance(v, IAttachDifferentObjectToOpContext)
+                else v
+            )
+            for k, v in resource_instance_dict.items()
+        }
 
         # If any of the resources are generators, add the IContainsGenerator subclass to flag that
         # this is the case.
         if self.contains_generator:
 
             class _ScopedResourcesContainsGenerator(
-                namedtuple("_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                namedtuple(
+                    "_ScopedResourcesContainsGenerator",
+                    list(resources_to_attach_to_context.keys()),
+                ),
                 Resources,
                 IContainsGenerator,
             ):
-                ...
+                @property
+                def original_resource_dict(self) -> Mapping[str, object]:
+                    return resource_instance_dict
 
-            return _ScopedResourcesContainsGenerator(**resource_instance_dict)  # type: ignore[call-arg]
+            return _ScopedResourcesContainsGenerator(**resources_to_attach_to_context)
 
         else:
 
             class _ScopedResources(
-                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                namedtuple("_ScopedResources", list(resources_to_attach_to_context.keys())),
                 Resources,
             ):
-                ...
+                @property
+                def original_resource_dict(self) -> Mapping[str, object]:
+                    return resource_instance_dict
 
-            return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+            return _ScopedResources(**resources_to_attach_to_context)
+
+    @classmethod
+    def build_empty(cls) -> Resources:
+        """Returns an empty Resources object, equivalent to ScopedResourcesBuilder().build(None)."""
+        return cls().build(None)

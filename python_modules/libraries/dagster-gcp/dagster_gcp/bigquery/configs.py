@@ -18,24 +18,6 @@ from .types import (
 )
 
 
-def bq_resource_config():
-    project = Field(
-        StringSource,
-        description="""Project ID for the project which the client acts on behalf of. Will be passed
-        when creating a dataset / job. If not passed, falls back to the default inferred from the
-        environment.""",
-        is_required=False,
-    )
-
-    location = Field(
-        StringSource,
-        description="(Optional) Default location for jobs / datasets / tables.",
-        is_required=False,
-    )
-
-    return {"project": project, "location": location}
-
-
 def _define_shared_fields():
     """The following fields are shared between both QueryJobConfig and LoadJobConfig."""
     clustering_fields = Field(
@@ -118,9 +100,10 @@ def _define_shared_fields():
 
 
 def define_bigquery_query_config():
-    """See:
+    """Config schema for BigQuery.
 
-    https://googleapis.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html
+    See:
+        https://googleapis.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html
     """
     sf = _define_shared_fields()
 

@@ -4,9 +4,8 @@ from papermill.log import logger
 from .compat import ExecutionError, is_papermill_2
 
 if is_papermill_2():
-    # pylint: disable=import-error,no-name-in-module
     from papermill.clientwrap import PapermillNotebookClient
-    from papermill.engines import NBClientEngine  # pylint: disable=import-error
+    from papermill.engines import NBClientEngine
     from papermill.utils import merge_kwargs, remove_args
 
     class DagstermillNotebookClient(PapermillNotebookClient):
@@ -75,9 +74,9 @@ if is_papermill_2():
             return DagstermillNotebookClient(nb_man, **final_kwargs).execute()
 
 else:
-    from papermill.engines import NBConvertEngine  # type: ignore  # (papermill 1 compat)
-    from papermill.preprocess import (
-        PapermillExecutePreprocessor,  # type: ignore  # (papermill 1 compat)
+    from papermill.engines import NBConvertEngine
+    from papermill.preprocess import (  # type: ignore  # (papermill 1 compat)
+        PapermillExecutePreprocessor,
     )
 
     class DagstermillExecutePreprocessor(PapermillExecutePreprocessor):
@@ -110,7 +109,7 @@ else:
 
             return nb_man.nb, resources
 
-    class DagstermillEngine(NBConvertEngine):  # type: ignore  # (papermill 1 compat)
+    class DagstermillEngine(NBConvertEngine):
         @classmethod
         def execute_managed_notebook(
             cls,

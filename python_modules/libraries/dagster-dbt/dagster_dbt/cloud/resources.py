@@ -8,17 +8,18 @@ from urllib.parse import urlencode, urljoin
 
 import requests
 from dagster import (
+    ConfigurableResource,
     Failure,
-    Field,
-    IntSource,
+    IAttachDifferentObjectToOpContext,
     MetadataValue,
-    StringSource,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import deep_merge_dicts
+from pydantic import Field
 from requests.exceptions import RequestException
 
 from .types import DbtCloudOutput
@@ -42,7 +43,7 @@ class DbtCloudRunStatus(str, Enum):
 
 # TODO: This resource should be a wrapper over an existing client for a accessing dbt Cloud,
 # rather than using requests to the API directly.
-class DbtCloudResource:
+class DbtCloudClient:
     """This class exposes methods on top of the dbt Cloud REST API v2.
 
     For a complete set of documentation on the dbt Cloud Administrative REST API, including expected
@@ -100,8 +101,7 @@ class DbtCloudResource:
         return_text: bool = False,
         base_url: Optional[str] = None,
     ) -> Any:
-        """
-        Creates and sends a request to the desired dbt Cloud API endpoint.
+        """Creates and sends a request to the desired dbt Cloud API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -149,8 +149,7 @@ class DbtCloudResource:
     def list_jobs(
         self, project_id: int, order_by: Optional[str] = "-id"
     ) -> Sequence[Mapping[str, Any]]:
-        """
-        List all dbt jobs in a dbt Cloud project.
+        """List all dbt jobs in a dbt Cloud project.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -171,8 +170,7 @@ class DbtCloudResource:
         )
 
     def get_job(self, job_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a given dbt job from the dbt Cloud API.
+        """Gets details about a given dbt job from the dbt Cloud API.
 
         Args:
             job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to
@@ -184,8 +182,7 @@ class DbtCloudResource:
         return self.make_request("GET", f"{self._account_id}/jobs/{job_id}/")
 
     def update_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
-        """
-        Updates specific properties of a dbt job.
+        """Updates specific properties of a dbt job.
 
         Documentation on the full set of potential parameters can be found here:
         https://docs.getdbt.com/dbt-cloud/api-v2#operation/updateJobById.
@@ -213,8 +210,7 @@ class DbtCloudResource:
         )
 
     def run_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
-        """
-        Initializes a run for a job.
+        """Initializes a run for a job.
 
         Overrides for specific properties can be set by passing in values to the kwargs. A full list
         of overridable properties can be found here:
@@ -253,8 +249,7 @@ class DbtCloudResource:
         offset: int = 0,
         limit: int = 100,
     ) -> Sequence[Mapping[str, object]]:
-        """
-        Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
+        """Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
         using the job_definition_id. It supports pagination using offset and limit as well and
         can be configured to load a variety of related information about the runs.
 
@@ -291,8 +286,7 @@ class DbtCloudResource:
     def get_run(
         self, run_id: int, include_related: Optional[Sequence[str]] = None
     ) -> Mapping[str, Any]:
-        """
-        Gets details about a specific job run.
+        """Gets details about a specific job run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -312,8 +306,7 @@ class DbtCloudResource:
         )
 
     def get_run_steps(self, run_id: int) -> Sequence[str]:
-        """
-        Gets the steps of an initialized dbt Cloud run.
+        """Gets the steps of an initialized dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -329,8 +322,7 @@ class DbtCloudResource:
         return steps_override or steps
 
     def cancel_run(self, run_id: int) -> Mapping[str, Any]:
-        """
-        Cancels a dbt Cloud run.
+        """Cancels a dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -345,8 +337,7 @@ class DbtCloudResource:
         return self.make_request("POST", f"{self._account_id}/runs/{run_id}/cancel/")
 
     def list_run_artifacts(self, run_id: int, step: Optional[int] = None) -> Sequence[str]:
-        """
-        Lists the paths of the available run artifacts from a completed dbt Cloud run.
+        """Lists the paths of the available run artifacts from a completed dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -370,8 +361,7 @@ class DbtCloudResource:
         )
 
     def get_run_artifact(self, run_id: int, path: str, step: Optional[int] = None) -> str:
-        """
-        The string contents of a run artifact from a dbt Cloud run.
+        """The string contents of a run artifact from a dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -394,8 +384,7 @@ class DbtCloudResource:
         )["text"]
 
     def get_manifest(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        The parsed contents of a manifest.json file created by a completed run.
+        """The parsed contents of a manifest.json file created by a completed run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -411,8 +400,7 @@ class DbtCloudResource:
         return json.loads(self.get_run_artifact(run_id, "manifest.json", step=step))
 
     def get_run_results(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        The parsed contents of a run_results.json file created by a completed run.
+        """The parsed contents of a run_results.json file created by a completed run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -434,8 +422,7 @@ class DbtCloudResource:
         poll_timeout: Optional[float] = None,
         href: Optional[str] = None,
     ) -> Mapping[str, Any]:
-        """
-        Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
+        """Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
         run does not complete successfully.
 
         Args:
@@ -483,10 +470,8 @@ class DbtCloudResource:
                 ):
                     self.cancel_run(run_id)
                     raise Failure(
-                        (
-                            f"Run {run_id} timed out after "
-                            f"{datetime.datetime.now() - poll_start}. Attempted to cancel."
-                        ),
+                        f"Run {run_id} timed out after "
+                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
                         metadata={"run_page_url": MetadataValue.url(href)},
                     )
 
@@ -516,8 +501,7 @@ class DbtCloudResource:
         poll_timeout: Optional[float] = None,
         **kwargs,
     ) -> DbtCloudOutput:
-        """
-        Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
+        """Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
         if the run does not complete successfully.
 
         Args:
@@ -554,8 +538,7 @@ class DbtCloudResource:
         return output
 
     def get_job_environment_variables(self, project_id: int, job_id: int) -> Mapping[str, Any]:
-        """
-        Get the dbt Cloud environment variables for a specific job.
+        """Get the dbt Cloud environment variables for a specific job.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -575,8 +558,7 @@ class DbtCloudResource:
     def set_job_environment_variable(
         self, project_id: int, job_id: int, environment_variable_id: int, name: str, value: str
     ) -> Mapping[str, Any]:
-        """
-        Set the dbt Cloud environment variables for a specific job.
+        """Set the dbt Cloud environment variables for a specific job.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -604,66 +586,82 @@ class DbtCloudResource:
         )
 
 
-# This is a temporary shim to support the old resource name.
-DbtCloudResourceV2 = DbtCloudResource
+class DbtCloudResource(DbtCloudClient):
+    pass
 
 
+class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """This resource helps interact with dbt Cloud connectors."""
+
+    auth_token: str = Field(
+        description=(
+            "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
+            " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
+            " Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for"
+            " instructions on creating a Service Account token."
+        ),
+    )
+    account_id: int = Field(
+        description=(
+            "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
+            " the dbt Cloud UI, e.g."
+            " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
+        ),
+    )
+    disable_schedule_on_trigger: bool = Field(
+        default=True,
+        description=(
+            "Specifies if you would like any job that is triggered using this "
+            "resource to automatically disable its schedule."
+        ),
+    )
+    request_max_retries: int = Field(
+        default=3,
+        description=(
+            "The maximum number of times requests to the dbt Cloud API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = Field(
+        default=0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+    dbt_cloud_host: str = Field(
+        default=DBT_DEFAULT_HOST,
+        description=(
+            "The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/)."
+        ),
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def get_dbt_client(self) -> DbtCloudClient:
+        context = self.get_resource_context()
+        assert context.log
+
+        return DbtCloudClient(
+            auth_token=self.auth_token,
+            account_id=self.account_id,
+            disable_schedule_on_trigger=self.disable_schedule_on_trigger,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            log=context.log,
+            dbt_cloud_host=self.dbt_cloud_host,
+        )
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_dbt_client()
+
+
+@dagster_maintained_resource
 @resource(
-    config_schema={
-        "auth_token": Field(
-            StringSource,
-            is_required=True,
-            description=(
-                "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
-                " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
-                " Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for"
-                " instructions on creating a Service Account token."
-            ),
-        ),
-        "account_id": Field(
-            IntSource,
-            is_required=True,
-            description=(
-                "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
-                " the dbt Cloud UI, e.g."
-                " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
-            ),
-        ),
-        "disable_schedule_on_trigger": Field(
-            bool,
-            default_value=True,
-            description=(
-                "Specifies if you would like any job that is triggered using this "
-                "resource to automatically disable its schedule."
-            ),
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description=(
-                "The maximum number of times requests to the dbt Cloud API should be retried "
-                "before failing."
-            ),
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-        "dbt_cloud_host": Field(
-            config=StringSource,
-            default_value=DBT_DEFAULT_HOST,
-            description=(
-                "The hostname where dbt cloud is being hosted (e.g."
-                " https://my_org.cloud.getdbt.com/)."
-            ),
-        ),
-    },
+    config_schema=DbtCloudClientResource.to_config_schema(),
     description="This resource helps interact with dbt Cloud connectors",
 )
 def dbt_cloud_resource(context) -> DbtCloudResource:
-    """
-    This resource allows users to programatically interface with the dbt Cloud Administrative REST
+    """This resource allows users to programatically interface with the dbt Cloud Administrative REST
     API (v2) to launch jobs and monitor their progress. This currently implements only a subset of
     the functionality exposed by the API.
 

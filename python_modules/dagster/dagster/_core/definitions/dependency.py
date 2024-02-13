@@ -21,17 +21,16 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeAlias, TypeVar
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster._utils import frozentags
+from dagster._utils import hash_collection
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -46,6 +45,9 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
     from .resource_requirement import ResourceRequirement
+
+T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
+DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
 
 
 class NodeInvocation(
@@ -99,18 +101,20 @@ class NodeInvocation(
             cls,
             name=check.str_param(name, "name"),
             alias=check.opt_str_param(alias, "alias"),
-            tags=frozentags(check.opt_mapping_param(tags, "tags", value_type=str, key_type=str)),
-            hook_defs=frozenset(
-                check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-            ),
+            tags=check.opt_mapping_param(tags, "tags", value_type=str, key_type=str),
+            hook_defs=check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition),
             retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
 
+    # Needs to be hashable because this class is used as a key in dependencies dicts
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
+
 
 class Node(ABC):
-    """
-    Node invocation within a graph. Identified by its name inside the graph.
-    """
+    """Node invocation within a graph. Identified by its name inside the graph."""
 
     name: str
     definition: "NodeDefinition"
@@ -188,9 +192,8 @@ class Node(ABC):
         return self.definition.output_dict
 
     @property
-    def tags(self) -> frozentags:
-        # Type-ignore temporarily pending assessment of right data structure for `tags`
-        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
+    def tags(self) -> Mapping[str, str]:
+        return {**self.definition.tags, **self._additional_tags}
 
     def container_maps_input(self, input_name: str) -> bool:
         return (
@@ -333,33 +336,9 @@ class OpNode(Node):
         return f"op '{self.name}'"
 
 
-class NodeHandleSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # persist using legacy name SolidHandle
-        storage["__class__"] = "SolidHandle"
-        return storage
-
-
-@whitelist_for_serdes(serializer=NodeHandleSerializer)
-class NodeHandle(
-    # mypy does not yet support recursive types
-    # NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])
-    NamedTuple("_NodeHandle", [("name", str), ("parent", Any)])
-):
-    """
-    A structured object to identify nodes in the potentially recursive graph structure.
-    """
+@whitelist_for_serdes(storage_name="SolidHandle")
+class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])):
+    """A structured object to identify nodes in the potentially recursive graph structure."""
 
     def __new__(cls, name: str, parent: Optional["NodeHandle"]):
         return super(NodeHandle, cls).__new__(
@@ -387,7 +366,7 @@ class NodeHandle(
         Returns:
             List[str]:
         """
-        path = []
+        path: List[str] = []
         cur = self
         while cur:
             path.append(cur.name)
@@ -430,7 +409,6 @@ class NodeHandle(
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
@@ -440,9 +418,7 @@ class NodeHandle(
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            "Handle {handle} does not descend from {ancestor}".format(
-                handle=self.to_string(), ancestor=ancestor.to_string()
-            ),
+            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
@@ -457,7 +433,6 @@ class NodeHandle(
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
@@ -520,21 +495,13 @@ class NodeHandle(
 class NodeInputHandle(
     NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
 ):
-    """
-    A structured object to uniquely identify inputs in the potentially recursive graph structure.
-    """
+    """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
-    """
-    A structured object to uniquely identify outputs in the potentially recursive graph structure.
-    """
-
-
-# previous name for NodeHandle was SolidHandle
-register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
+    """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
@@ -573,10 +540,6 @@ class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDef
         return self.node.name
 
     @property
-    def solid_name(self) -> str:
-        return self.node.name
-
-    @property
     def input_name(self) -> str:
         return self.input_def.name
 
@@ -602,10 +565,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def __repr__(self):
         return self._inner_str()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.node.name, self.output_def.name))
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         return self.node.name == other.node.name and self.output_def.name == other.output_def.name
 
     def describe(self) -> str:
@@ -619,6 +582,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def is_dynamic(self) -> bool:
         return self.output_def.is_dynamic
 
+    @property
+    def output_name(self) -> str:
+        return self.output_def.name
+
 
 class DependencyType(Enum):
     DIRECT = "DIRECT"
@@ -626,15 +593,14 @@ class DependencyType(Enum):
     DYNAMIC_COLLECT = "DYNAMIC_COLLECT"
 
 
-class IDependencyDefinition(ABC):  # pylint: disable=no-init
+class IDependencyDefinition(ABC):
     @abstractmethod
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         pass
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different node outputs.
-        """
+        """The result passed to the corresponding input will be a List made from different node outputs."""
 
 
 class DependencyDefinition(
@@ -675,33 +641,18 @@ class DependencyDefinition(
 
 
     Args:
-        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
+        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
             passed between the two nodes originates.
         output (Optional[str]): The name of the output that is depended on. (default: "result")
         description (Optional[str]): Human-readable description of this dependency.
-        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
-            passed between the two nodes originates.
     """
 
     def __new__(
         cls,
-        solid: Optional[str] = None,
+        node: str,
         output: str = DEFAULT_OUTPUT,
         description: Optional[str] = None,
-        node: Optional[str] = None,
     ):
-        if solid and node:
-            raise DagsterInvalidDefinitionError(
-                "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition."
-                " Please use one or the other."
-            )
-
-        if not solid and not node:
-            raise DagsterInvalidDefinitionError(
-                "Expected node parameter to be str for DependencyDefinition"
-            )
-
-        node = node or solid
         return super(DependencyDefinition, cls).__new__(
             cls,
             check.str_param(node, "node"),
@@ -712,7 +663,9 @@ class DependencyDefinition(
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
+    @public
     def is_fan_in(self) -> bool:
+        """Return True if the dependency is fan-in (always False for DependencyDefinition)."""
         return False
 
     def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
@@ -737,7 +690,7 @@ class MultiDependencyDefinition(
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a job or pipeline whose keys represent the dependent ops or graphs and dependent
+    dependency structure of a job whose keys represent the dependent ops or graphs and dependent
     input, so this object only contains information about the dependee.
 
     Concretely, if the input named 'input' of op_c depends on the outputs named 'result' of
@@ -791,83 +744,126 @@ class MultiDependencyDefinition(
             elif dep is MappedInputPlaceholder:
                 pass
             else:
-                check.failed("Unexpected dependencies entry {}".format(dep))
+                check.failed(f"Unexpected dependencies entry {dep}")
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
     def is_fan_in(self) -> bool:
+        """Return `True` if the dependency is fan-in (always True for MultiDependencyDefinition)."""
         return True
 
     @public
     def get_dependencies_and_mappings(
         self,
     ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
 
+class BlockingAssetChecksDependencyDefinition(
+    IDependencyDefinition,
+    NamedTuple(
+        "_BlockingAssetChecksDependencyDefinition",
+        [
+            (
+                "asset_check_dependencies",
+                Sequence[DependencyDefinition],
+            ),
+            ("other_dependency", Optional[DependencyDefinition]),
+        ],
+    ),
+):
+    """An input that depends on a set of outputs that correspond to upstream asset checks, and also
+    optionally depends on a single upstream output that does not correspond to an asset check.
+
+    We model this with a different kind of DependencyDefinition than MultiDependencyDefinition,
+    because we treat the value that's passed to the input parameter differently: we ignore the asset
+    check dependencies and only pass a single value, instead of a fanned-in list.
+    """
+
+    @public
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
+        if self.other_dependency:
+            return [*self.asset_check_dependencies, self.other_dependency]
+        else:
+            return self.asset_check_dependencies
+
+    @public
+    def is_fan_in(self) -> bool:
+        return False
+
+    @public
+    def get_dependencies_and_mappings(
+        self,
+    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        return self.get_node_dependencies()
+
+
 class DynamicCollectDependencyDefinition(
-    NamedTuple("_DynamicCollectDependencyDefinition", [("solid_name", str), ("output_name", str)]),
+    NamedTuple("_DynamicCollectDependencyDefinition", [("node_name", str), ("output_name", str)]),
     IDependencyDefinition,
 ):
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
-        return [DependencyDefinition(self.solid_name, self.output_name)]
+        return [DependencyDefinition(self.node_name, self.output_name)]
 
     def is_fan_in(self) -> bool:
         return True
 
 
-DepTypeAndOutputs = Tuple[
+DepTypeAndOutputs: TypeAlias = Tuple[
     DependencyType,
     Union[NodeOutput, List[Union[NodeOutput, Type["MappedInputPlaceholder"]]]],
 ]
 
-InputToOutputMap = Dict[NodeInput, DepTypeAndOutputs]
+InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
 
 
 def _create_handle_dict(
-    solid_dict: Mapping[str, Node],
-    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
+    node_dict: Mapping[str, Node],
+    dep_dict: DependencyMapping[str],
 ) -> InputToOutputMap:
     from .composition import MappedInputPlaceholder
 
-    check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
+    check.mapping_param(node_dict, "node_dict", key_type=str, value_type=Node)
     check.two_dim_mapping_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputMap = {}
 
-    for solid_name, input_dict in dep_dict.items():
-        from_solid = solid_dict[solid_name]
+    for node_name, input_dict in dep_dict.items():
+        from_node = node_dict[node_name]
         for input_name, dep_def in input_dict.items():
-            if isinstance(dep_def, MultiDependencyDefinition):
+            if isinstance(
+                dep_def, (MultiDependencyDefinition, BlockingAssetChecksDependencyDefinition)
+            ):
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
-                        handles.append(solid_dict[inner_dep.node].get_output(inner_dep.output))
+                        handles.append(node_dict[inner_dep.node].get_output(inner_dep.output))
                     elif inner_dep is MappedInputPlaceholder:
                         handles.append(inner_dep)
                     else:
                         check.failed(
-                            "Unexpected MultiDependencyDefinition dependencies type {}".format(
-                                inner_dep
-                            )
+                            f"Unexpected MultiDependencyDefinition dependencies type {inner_dep}"
                         )
 
-                handle_dict[from_solid.get_input(input_name)] = (DependencyType.FAN_IN, handles)
+                handle_dict[from_node.get_input(input_name)] = (DependencyType.FAN_IN, handles)
 
             elif isinstance(dep_def, DependencyDefinition):
-                handle_dict[from_solid.get_input(input_name)] = (
+                handle_dict[from_node.get_input(input_name)] = (
                     DependencyType.DIRECT,
-                    solid_dict[dep_def.node].get_output(dep_def.output),
+                    node_dict[dep_def.node].get_output(dep_def.output),
                 )
             elif isinstance(dep_def, DynamicCollectDependencyDefinition):
-                handle_dict[from_solid.get_input(input_name)] = (
+                handle_dict[from_node.get_input(input_name)] = (
                     DependencyType.DYNAMIC_COLLECT,
-                    solid_dict[dep_def.solid_name].get_output(dep_def.output_name),
+                    node_dict[dep_def.node_name].get_output(dep_def.output_name),
                 )
 
             else:
@@ -878,37 +874,50 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
-        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
+    def from_definitions(
+        nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
+    ) -> "DependencyStructure":
+        return DependencyStructure(
+            list(dep_dict.keys()),
+            _create_handle_dict(nodes, dep_dict),
+            dep_dict,
+        )
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
     _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
     _dynamic_fan_out_index: Dict[str, NodeOutput]
     _collect_index: Dict[str, Set[NodeOutput]]
+    _deps_by_node_name: DependencyMapping[str]
 
-    def __init__(self, node_names: Sequence[str], input_to_output_map: InputToOutputMap):
+    def __init__(
+        self,
+        node_names: Sequence[str],
+        input_to_output_map: InputToOutputMap,
+        deps_by_node_name: DependencyMapping[str],
+    ):
         self._node_names = node_names
         self._input_to_output_map = input_to_output_map
+        self._deps_by_node_name = deps_by_node_name
 
         # Building up a couple indexes here so that one can look up all the upstream output handles
-        # or downstream input handles in O(1). Without this, this can become O(N^2) where N is solid
+        # or downstream input handles in O(1). Without this, this can become O(N^2) where N is node
         # count during the GraphQL query in particular
 
-        # solid_name => input_handle => list[output_handle]
+        # node_name => input_handle => list[output_handle]
         self._node_input_index = defaultdict(dict)
 
-        # solid_name => output_handle => list[input_handle]
+        # node_name => output_handle => list[input_handle]
         self._node_output_index = defaultdict(lambda: defaultdict(list))
 
-        # solid_name => dynamic output_handle that this solid will dupe for
+        # node_name => dynamic output_handle that this node will dupe for
         self._dynamic_fan_out_index = {}
 
-        # solid_name => set of dynamic output_handle this collects over
+        # node_name => set of dynamic output_handle this collects over
         self._collect_index = defaultdict(set)
 
         for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
             if dep_type == DependencyType.FAN_IN:
-                node_output_list = []
+                node_output_list: List[NodeOutput] = []
                 for node_output in node_output_or_list:
                     if not isinstance(node_output, NodeOutput):
                         continue
@@ -969,16 +978,16 @@ class DependencyStructure:
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of dynamic output"
-                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a node'
-                " that is already downstream of another dynamic output. Nodes cannot be downstream"
-                " of more than one dynamic output"
+                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a'
+                " node that is already downstream of another dynamic output. Nodes cannot be"
+                " downstream of more than one dynamic output"
             )
 
         if self._collect_index.get(node_input.node_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be both downstream of dynamic output "
                 f"{node_output.describe()} and collect over dynamic output "
-                f"{list(self._collect_index[node_input.node_name])[0].describe()}."
+                f"{next(iter(self._collect_index[node_input.node_name])).describe()}."
             )
 
         if self._dynamic_fan_out_index.get(node_input.node_name) is None:
@@ -1017,7 +1026,7 @@ class DependencyStructure:
     def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:
         check.str_param(node_name, "node_name")
 
-        # flatten out all outputs that feed into the inputs of this solid
+        # flatten out all outputs that feed into the inputs of this node
         return [
             output_handle
             for output_handle_list in self._node_input_index[node_name].values()
@@ -1027,8 +1036,7 @@ class DependencyStructure:
     def input_to_upstream_outputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
-        """
-        Returns a Dict[NodeInput, List[NodeOutput]] that encodes
+        """Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
@@ -1039,8 +1047,7 @@ class DependencyStructure:
     def output_to_downstream_inputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeOutput, Sequence[NodeInput]]:
-        """
-        Returns a Dict[NodeOutput, List[NodeInput]] that
+        """Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
         dictionary.
         """
@@ -1062,6 +1069,9 @@ class DependencyStructure:
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
         return cast(NodeOutput, dep)
+
+    def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
+        return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
 
     def has_fan_in_deps(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)

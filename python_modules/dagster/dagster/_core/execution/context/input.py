@@ -9,18 +9,22 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+    MetadataValue,
+)
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+)
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
@@ -35,47 +39,20 @@ if TYPE_CHECKING:
 
 
 class InputContext:
-    """
-    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
     Users should not instantiate this object directly. In order to construct
     an `InputContext` for testing an IO Manager's `load_input` method, use
     :py:func:`dagster.build_input_context`.
 
-    Attributes:
-        name (Optional[str]): The name of the input that we're loading.
-        config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
-            InputDefinition that we're loading for.
-            This property only contains metadata passed in explicitly with :py:class:`AssetIn`
-            or :py:class:`In`. To access metadata of an upstream asset or operation definition,
-            use the metadata in :py:attr:`.InputContext.upstream_output`.
-        upstream_output (Optional[OutputContext]): Info about the output that produced the object
-            we're loading.
-        dagster_type (Optional[DagsterType]): The type of this input.
-            Dagster types do not propagate from an upstream output to downstream inputs,
-            and this property only captures type information for the input that is either
-            passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
-            infered from type hints. For an asset input, the Dagster type from the upstream
-            asset definition is ignored.
-        log (Optional[DagsterLogManager]): The log manager to use for this input.
-        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the resource that initializes the
-            input manager. If using the :py:func:`@root_input_manager` decorator, these resources
-            correspond to those requested with the `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
-
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import IOManager, InputContext
 
-        from dagster import IOManager, InputContext
-
-        class MyIOManager(IOManager):
-            def load_input(self, context: InputContext):
-                ...
-
+            class MyIOManager(IOManager):
+                def load_input(self, context: InputContext):
+                    ...
     """
 
     def __init__(
@@ -83,16 +60,15 @@ class InputContext:
         *,
         name: Optional[str] = None,
         job_name: Optional[str] = None,
-        solid_def: Optional["OpDefinition"] = None,
+        op_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         upstream_output: Optional["OutputContext"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
         resource_config: Optional[Mapping[str, Any]] = None,
         resources: Optional[Union["Resources", Mapping[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
-        op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
         asset_partitions_subset: Optional[PartitionsSubset] = None,
@@ -104,12 +80,9 @@ class InputContext:
 
         self._name = name
         self._job_name = job_name
-        check.invariant(
-            solid_def is None or op_def is None, "Can't provide both a solid_def and an op_def arg"
-        )
-        self._solid_def = solid_def or op_def
+        self._op_def = op_def
         self._config = config
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._upstream_output = upstream_output
         self._dagster_type = dagster_type
         self._log = log_manager
@@ -131,13 +104,12 @@ class InputContext:
             self._resources_cm = build_resources(
                 check.opt_mapping_param(resources, "resources", key_type=str)
             )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+            self._resources = self._resources_cm.__enter__()
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
-        self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
         self._instance = instance
 
     def __enter__(self):
@@ -147,11 +119,11 @@ class InputContext:
 
     def __exit__(self, *exc):
         if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._resources_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
 
     @property
     def instance(self) -> DagsterInstance:
@@ -162,7 +134,7 @@ class InputContext:
             )
         return self._instance
 
-    @public  # type: ignore
+    @public
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
@@ -170,9 +142,10 @@ class InputContext:
         """
         return self._name is not None
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
+        """The name of the input that we're loading."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -190,51 +163,50 @@ class InputContext:
             )
         return self._job_name
 
-    @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
-    @property
-    def solid_def(self) -> "OpDefinition":
-        if self._solid_def is None:
-            raise DagsterInvariantViolationError(
-                "Attempting to access solid_def, "
-                "but it was not provided when constructing the InputContext"
-            )
-
-        return self._solid_def
-
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
-        from dagster._core.definitions import OpDefinition
-
-        if self._solid_def is None:
+        """The definition of the op that's loading the input."""
+        if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the InputContext"
             )
 
-        return cast(OpDefinition, self._solid_def)
+        return self._op_def
 
-    @public  # type: ignore
+    @public
     @property
     def config(self) -> Any:
+        """The config attached to the input that we're loading."""
         return self._config
 
-    @public  # type: ignore
+    @public
     @property
-    def metadata(self) -> Optional[Mapping[str, Any]]:
+    def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of metadata that is assigned to the InputDefinition that we're loading for.
+        This property only contains metadata passed in explicitly with :py:class:`AssetIn`
+        or :py:class:`In`. To access metadata of an upstream asset or operation definition,
+        use the metadata in :py:attr:`.InputContext.upstream_output`.
+        """
         return self._metadata
 
-    @public  # type: ignore
+    @public
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
+        """Info about the output that produced the object we're loading."""
         return self._upstream_output
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this input.
+        Dagster types do not propagate from an upstream output to downstream inputs,
+        and this property only captures type information for the input that is either
+        passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
+        infered from type hints. For an asset input, the Dagster type from the upstream
+        asset definition is ignored.
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -243,9 +215,10 @@ class InputContext:
 
         return self._dagster_type
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this input."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -254,14 +227,19 @@ class InputContext:
 
         return self._log
 
-    @public  # type: ignore
+    @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
+        """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Any:
+        """The resources required by the resource that initializes the
+        input manager. If using the :py:func:`@input_manager` decorator, these resources
+        correspond to those requested with the `required_resource_keys` parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -276,14 +254,18 @@ class InputContext:
             )
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_key(self) -> bool:
+        """Returns True if an asset is being loaded as input, otherwise returns False. A return value of False
+        indicates that an output from an op is being loaded as the input.
+        """
         return self._asset_key is not None
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self) -> AssetKey:
+        """The ``AssetKey`` of the asset that is being loaded as an input."""
         if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
@@ -291,7 +273,7 @@ class InputContext:
 
         return self._asset_key
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
@@ -319,13 +301,13 @@ class InputContext:
 
         return self._step_context
 
-    @public  # type: ignore
+    @public
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
-    @public  # type: ignore
+    @public
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -339,12 +321,13 @@ class InputContext:
 
         return self._partition_key
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_partitions(self) -> bool:
+        """Returns True if the asset being loaded as input is partitioned."""
         return self._asset_partitions_subset is not None
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key(self) -> str:
         """The partition key for input asset.
@@ -366,7 +349,7 @@ class InputContext:
                 f"but the number of input partitions != 1: '{subset}'."
             )
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
@@ -380,18 +363,18 @@ class InputContext:
                 "Tried to access asset_partition_key_range, but the asset is not partitioned.",
             )
 
-        partition_key_ranges = subset.get_partition_key_ranges()
+        partition_key_ranges = subset.get_partition_key_ranges(
+            self.asset_partitions_def, dynamic_partitions_store=self.instance
+        )
         if len(partition_key_ranges) != 1:
             check.failed(
-                (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(partition_key_ranges)}) key ranges associated with this input."
-                ),
+                "Tried to access asset_partition_key_range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
         """The partition keys for input asset.
@@ -405,14 +388,15 @@ class InputContext:
 
         return list(self._asset_partitions_subset.get_partition_keys())
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         subset = self._asset_partitions_subset
 
@@ -421,24 +405,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        if not isinstance(subset, TimeWindowPartitionsSubset):
-            check.failed(
-                (
-                    "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                    " with time windows."
-                ),
-            )
-
-        time_windows = subset.included_time_windows
-        if len(time_windows) != 1:
-            check.failed(
-                (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(time_windows)}) partitions associated with this input."
-                ),
-            )
-
-        return time_windows[0]
+        return self.step_context.asset_partitions_time_window_for_input(self.name)
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -469,6 +436,11 @@ class InputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """The sequence of strings making up the AssetKey for the asset being loaded as an input.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, materialized with
+        partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
@@ -501,7 +473,7 @@ class InputContext:
         from dagster._core.events import DagsterEvent
 
         metadata = check.mapping_param(metadata, "metadata", key_type=str)
-        self._metadata_entries.extend(normalize_metadata(metadata, []))
+        self._metadata = {**self._metadata, **normalize_metadata(metadata)}
         if self.has_asset_key:
             check.opt_str_param(description, "description")
 
@@ -541,23 +513,23 @@ class InputContext:
         """
         return self._observations
 
-    def consume_metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
-        result = self._metadata_entries
-        self._metadata_entries = []
+    def consume_metadata(self) -> Mapping[str, MetadataValue]:
+        result = self._metadata
+        self._metadata = {}
         return result
 
 
 def build_input_context(
     name: Optional[str] = None,
     config: Optional[Any] = None,
-    metadata: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[ArbitraryMetadataMapping] = None,
     upstream_output: Optional["OutputContext"] = None,
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
     resources: Optional[Mapping[str, Any]] = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
-    asset_key: Optional["AssetKey"] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
@@ -583,11 +555,12 @@ def build_input_context(
         resources (Optional[Dict[str, Any]]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        asset_key (Optional[Union[AssetKey, Sequence[str], str]]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
-        asset_partition_key_range (Optional[str]): The range of asset partition keys to load.
+        asset_partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
+            to load.
         asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
             being loaded.
 
@@ -602,7 +575,7 @@ def build_input_context(
     from dagster._core.definitions import OpDefinition, PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
-    from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
@@ -613,7 +586,7 @@ def build_input_context(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
-    asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
     asset_partition_key_range = check.opt_inst_param(
         asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
@@ -623,7 +596,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range
+            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -651,13 +624,16 @@ def build_input_context(
 
 
 class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
-    """For build_input_context when no PartitionsDefinition has been provided"""
+    """For build_input_context when no PartitionsDefinition has been provided."""
 
     def __init__(self, key_range: PartitionKeyRange):
         self._key_range = key_range
 
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None
+        self,
+        partitions_def: "PartitionsDefinition",
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
@@ -668,7 +644,10 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
             raise NotImplementedError()
 
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None
+        self,
+        partitions_def: "PartitionsDefinition",
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
         return [self._key_range]
 
@@ -676,7 +655,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 
@@ -684,7 +665,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @property
-    def partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         raise NotImplementedError()
 
     def __len__(self) -> int:
@@ -696,5 +677,21 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     @classmethod
     def from_serialized(
         cls, partitions_def: "PartitionsDefinition", serialized: str
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: "PartitionsDefinition",
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        raise NotImplementedError()
+
+    @classmethod
+    def empty_subset(
+        cls, partitions_def: Optional["PartitionsDefinition"] = None
     ) -> "PartitionsSubset":
         raise NotImplementedError()

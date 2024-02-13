@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 from .partitioned_job import my_partitioned_config
 
@@ -45,14 +45,13 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
 from .static_partitioned_job import continent_job, CONTINENTS
 
 # start_static_partition
-from dagster import schedule
+from dagster import schedule, RunRequest
 
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
-        yield request
+        yield RunRequest(run_key=c, partition_key=c)
 
 
 # end_static_partition
@@ -62,10 +61,7 @@ def continent_schedule():
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(
-        partition_key="Antarctica", run_key=None
-    )
-    yield request
+    return RunRequest(partition_key="Antarctica")
 
 
 # end_single_partition

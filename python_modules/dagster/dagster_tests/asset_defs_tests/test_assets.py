@@ -1,28 +1,34 @@
 import ast
 import datetime
 import tempfile
+from typing import Sequence
 
 import pytest
 from dagster import (
+    AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     DagsterEventType,
     DailyPartitionsDefinition,
+    Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
+    IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
     Out,
     Output,
     ResourceDefinition,
-    build_op_context,
+    build_asset_context,
     define_asset_job,
     fs_io_manager,
     graph,
     io_manager,
+    job,
     materialize,
     materialize_to_memory,
     op,
@@ -30,10 +36,23 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.asset_decorator import graph_asset
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+)
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Nothing
 
 
 def test_with_replaced_asset_keys():
@@ -42,7 +61,7 @@ def test_with_replaced_asset_keys():
         assert input1
         assert input2
 
-    replaced = asset1.with_prefix_or_group(
+    replaced = asset1.with_attributes(
         output_asset_key_replacements={
             AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
         },
@@ -67,10 +86,16 @@ def test_with_replaced_asset_keys():
 @pytest.mark.parametrize(
     "subset,expected_keys,expected_inputs,expected_outputs",
     [
-        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 3, 3),
+        # there are 5 inputs here, because in addition to in1, in2, and in3, "artificial" inputs are
+        # needed for both a and b, as c depends on both and could be executed in a separate step
+        # depending on how it is subset. in these cases, the step that contains c will need to
+        # have inputs for a and b to connect to.
+        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 5, 3),
         ("foo,bar,baz", None, 0, 0),
-        ("in1,a,b,c", "a,b,c", 3, 3),
-        ("foo,in1,a,b,c,bar", "a,b,c", 3, 3),
+        # see above
+        ("in1,a,b,c", "a,b,c", 5, 3),
+        # see above
+        ("foo,in1,a,b,c,bar", "a,b,c", 5, 3),
         ("foo,in1,in2,in3,a,bar", "a", 2, 1),
         ("foo,in1,in2,a,b,bar", "a,b", 2, 2),
         ("in1,in2,in3,b", "b", 0, 1),
@@ -86,10 +111,12 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
-    subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
+    subbed = abc_.subset_for(
+        {AssetKey(key) for key in subset.split(",")}, selected_asset_check_keys=None
+    )
 
     assert subbed.keys == (
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
@@ -107,10 +134,78 @@ def test_retain_group():
     def bar():
         pass
 
-    replaced = bar.with_prefix_or_group(
+    replaced = bar.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
+
+
+def test_with_replaced_description() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(description="foo"),
+            "bar": AssetOut(description="bar"),
+            "baz": AssetOut(description="baz"),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # If there's no replacement description for the asset key, the original description is retained.
+    replaced = abc.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
+        AssetKey("baz"): "baz",
+    }
+
+
+def test_with_replaced_metadata() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(metadata={"foo": "foo"}),
+            "bar": AssetOut(metadata={"bar": "bar"}),
+            "baz": AssetOut(metadata={"baz": "baz"}),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # If there's no replacement metadata for the asset key, the original metadata is retained.
+    replaced = abc.with_attributes(metadata_by_key={})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(metadata_by_key={AssetKey(["bar"]): {"bar": "bar_prime"}})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar_prime"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
 
 
 def test_retain_freshness_policy():
@@ -120,13 +215,56 @@ def test_retain_freshness_policy():
     def bar():
         pass
 
-    replaced = bar.with_prefix_or_group(
+    replaced = bar.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
         replaced.freshness_policies_by_key[AssetKey(["baz"])]
         == bar.freshness_policies_by_key[AssetKey(["bar"])]
     )
+
+
+def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
+    fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
+    fpb = FreshnessPolicy(
+        maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
+    )
+    ampa = AutoMaterializePolicy.eager()
+    ampb = AutoMaterializePolicy.lazy()
+
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(inp):
+        return inp + 1
+
+    @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut()})
+    def my_graph():
+        f = foo()
+        return bar(f), bar(f), bar(f)
+
+    my_graph_asset = AssetsDefinition.from_graph(
+        my_graph,
+        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
+    )
+
+    replaced = my_graph_asset.with_attributes(
+        output_asset_key_replacements={
+            AssetKey("a"): AssetKey("aa"),
+            AssetKey("b"): AssetKey("bb"),
+            AssetKey("c"): AssetKey("cc"),
+        }
+    )
+    assert replaced.freshness_policies_by_key[AssetKey("aa")] == fpa
+    assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
+    assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
+
+    assert replaced.auto_materialize_policies_by_key[AssetKey("aa")] == ampa
+    assert replaced.auto_materialize_policies_by_key[AssetKey("bb")] == ampb
+    assert replaced.auto_materialize_policies_by_key.get(AssetKey("cc")) is None
 
 
 def test_retain_metadata_graph():
@@ -141,7 +279,7 @@ def test_retain_metadata_graph():
     md = {"foo": "bar", "baz": 12.5}
     original = AssetsDefinition.from_graph(bar, metadata_by_output_name={"result": md})
 
-    replaced = original.with_prefix_or_group(
+    replaced = original.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
@@ -162,7 +300,7 @@ def test_retain_group_subset():
         can_subset=True,
     )
 
-    subset = ma.subset_for({AssetKey("b")})
+    subset = ma.subset_for({AssetKey("b")}, selected_asset_check_keys=None)
     assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
@@ -171,12 +309,12 @@ def test_retain_partition_mappings():
         ins={"input_last": AssetIn(["input_last"], partition_mapping=LastPartitionMapping())},
         partitions_def=DailyPartitionsDefinition(datetime.datetime(2022, 1, 1)),
     )
-    def bar_(input_last):  # pylint: disable=unused-argument
+    def bar_(input_last):
         pass
 
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
 
-    replaced = bar_.with_prefix_or_group(
+    replaced = bar_.with_attributes(
         input_asset_key_replacements={
             AssetKey(["input_last"]): AssetKey(["input_last2"]),
         }
@@ -197,10 +335,10 @@ def test_chain_replace_and_subset_for():
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
-    replaced_1 = abc_.with_prefix_or_group(
+    replaced_1 = abc_.with_attributes(
         output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
         input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
     )
@@ -218,11 +356,12 @@ def test_chain_replace_and_subset_for():
     }
 
     subbed_1 = replaced_1.subset_for(
-        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")}
+        {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")},
+        selected_asset_check_keys=None,
     )
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
-    replaced_2 = subbed_1.with_prefix_or_group(
+    replaced_2 = subbed_1.with_attributes(
         output_asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
@@ -256,18 +395,62 @@ def test_chain_replace_and_subset_for():
             AssetKey(["again", "foo", "bar_in1"]),
             AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["c"]),
-        }
+        },
+        selected_asset_check_keys=None,
     )
     assert subbed_2.keys == {AssetKey(["again", "foo", "foo_a"])}
 
 
 def test_fail_on_subset_for_nonsubsettable():
     @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
-    def abc_(context, start):  # pylint: disable=unused-argument
+    def abc_(context, start):
         pass
 
     with pytest.raises(CheckError, match="can_subset=False"):
-        abc_.subset_for({AssetKey("start"), AssetKey("a")})
+        abc_.subset_for({AssetKey("start"), AssetKey("a")}, selected_asset_check_keys=None)
+
+
+def test_fail_for_non_topological_order():
+    @multi_asset(
+        outs={
+            "a": AssetOut(),
+            "b": AssetOut(),
+        },
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("a")},
+        },
+    )
+    def foo():
+        yield Output(True, "b")
+        yield Output(True, "a")
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Asset "b" was yielded before its dependency "a"'
+    ):
+        materialize_to_memory([foo])
+
+
+def test_from_graph_internal_deps():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(x):
+        return x + 2
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def baz():
+        x = foo()
+        return {"a": x, "b": bar(x)}
+
+    baz_asset = AssetsDefinition.from_graph(
+        baz,
+        keys_by_output_name={"a": AssetKey(["a"]), "b": AssetKey(["b"])},
+        internal_asset_deps={"a": set(), "b": {AssetKey("a")}},
+    )
+    assert materialize_to_memory([baz_asset])
 
 
 def test_to_source_assets():
@@ -275,14 +458,18 @@ def test_to_source_assets():
     def my_asset():
         ...
 
-    assert my_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        )
-    ]
+    assert (
+        my_asset.to_source_assets()
+        == [my_asset.to_source_asset()]
+        == [
+            SourceAsset(
+                AssetKey(["my_asset"]),
+                metadata={"a": "b"},
+                io_manager_key="abc",
+                description="blablabla",
+            )
+        ]
+    )
 
     @multi_asset(
         outs={
@@ -304,24 +491,32 @@ def test_to_source_assets():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
+    my_asset_name_source_asset = SourceAsset(
+        AssetKey(["my_asset_name"]),
+        metadata={"a": "b"},
+        io_manager_key="abc",
+        description="blablabla",
+    )
+    my_other_asset_source_asset = SourceAsset(
+        AssetKey(["my_other_asset"]),
+        metadata={"c": "d"},
+        io_manager_key="def",
+        description="ablablabl",
+    )
+
     assert my_multi_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset_name"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        ),
-        SourceAsset(
-            AssetKey(["my_other_asset"]),
-            metadata={"c": "d"},
-            io_manager_key="def",
-            description="ablablabl",
-        ),
+        my_asset_name_source_asset,
+        my_other_asset_source_asset,
     ]
+
+    assert (
+        my_multi_asset.to_source_asset(AssetKey(["my_other_asset"])) == my_other_asset_source_asset
+    )
+    assert my_multi_asset.to_source_asset("my_other_asset") == my_other_asset_source_asset
 
 
 def test_coerced_asset_keys():
-    @asset(ins={"input1": AssetIn(asset_key=["Asset", "1"])})
+    @asset(ins={"input1": AssetIn(key=["Asset", "1"])})
     def asset1(input1):
         assert input1
 
@@ -344,7 +539,26 @@ def test_asset_with_io_manager_def():
     def the_asset():
         pass
 
-    result = AssetGroup([the_asset]).materialize()
+    result = materialize([the_asset])
+    assert result.success
+    assert events == ["entered for the_asset"]
+
+
+def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
+    events = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            events.append(f"entered for {context.step_key}")
+
+        def load_input(self, _context):
+            pass
+
+    @asset(io_manager_def=MyIOManager())
+    def the_asset():
+        pass
+
+    result = materialize([the_asset])
     assert result.success
     assert events == ["entered for the_asset"]
 
@@ -368,14 +582,14 @@ def test_multiple_assets_io_manager_defs():
     def other_asset():
         return 6
 
-    AssetGroup([the_asset, other_asset]).materialize()
+    materialize([the_asset, other_asset])
 
     assert num_times[0] == 2
 
-    the_asset_key = [key for key in io_manager_inst.values.keys() if key[1] == "the_asset"][0]
+    the_asset_key = next(key for key in io_manager_inst.values.keys() if key[1] == "the_asset")
     assert io_manager_inst.values[the_asset_key] == 5
 
-    other_asset_key = [key for key in io_manager_inst.values.keys() if key[1] == "other_asset"][0]
+    other_asset_key = next(key for key in io_manager_inst.values.keys() if key[1] == "other_asset")
     assert io_manager_inst.values[other_asset_key] == 6
 
 
@@ -390,9 +604,9 @@ def test_asset_with_io_manager_key_only():
     def the_asset():
         return 5
 
-    AssetGroup([the_asset], resource_defs={"the_key": the_io_manager}).materialize()
+    materialize([the_asset], resources={"the_key": the_io_manager})
 
-    assert list(io_manager_inst.values.values())[0] == 5
+    assert next(iter(io_manager_inst.values.values())) == 5
 
 
 def test_asset_both_io_manager_args_provided():
@@ -435,7 +649,9 @@ def test_asset_invocation_resource_overrides():
         assert context.resources.foo == "foo_resource"
         assert context.resources.bar == "bar_resource"
 
-    asset_reqs_resources(build_op_context(resources={"foo": "foo_resource", "bar": "bar_resource"}))
+    asset_reqs_resources(
+        build_asset_context(resources={"foo": "foo_resource", "bar": "bar_resource"})
+    )
 
     @asset(
         resource_defs={
@@ -451,7 +667,7 @@ def test_asset_invocation_resource_overrides():
         DagsterInvalidInvocationError,
         match="resource 'foo' provided on both the definition and invocation context.",
     ):
-        asset_resource_overrides(build_op_context(resources={"foo": "override_foo"}))
+        asset_resource_overrides(build_asset_context(resources={"foo": "override_foo"}))
 
 
 def test_asset_invocation_resource_errors():
@@ -465,13 +681,7 @@ def test_asset_invocation_resource_errors():
     def asset_uses_resources(context):
         assert context.resources.used == "foo"
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "asset_uses_resources" has required resources, but no context was provided',
-    ):
-        asset_uses_resources(None)
-
-    asset_uses_resources(build_op_context())
+    asset_uses_resources(build_asset_context())
 
     @asset(required_resource_keys={"foo"})
     def required_key_not_provided(_):
@@ -483,7 +693,7 @@ def test_asset_invocation_resource_errors():
             "resource with key 'foo' required by op 'required_key_not_provided' was not provided."
         ),
     ):
-        required_key_not_provided(build_op_context())
+        required_key_not_provided(build_asset_context())
 
 
 def test_multi_asset_resources_execution():
@@ -516,8 +726,8 @@ def test_multi_asset_resources_execution():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
-            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+            "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
@@ -651,6 +861,34 @@ def test_group_name_requirements():
         def bad_name():
             return 2
 
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Empty asset group name was provided, which is not permitted."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        ),
+    ):
+
+        @asset(group_name="")
+        def empty_name():
+            return 3
+
+
+def test_from_graph_w_check_specs():
+    @op
+    def my_op():
+        pass
+
+    @graph(out={"my_out": GraphOut()})
+    def my_graph():
+        return my_op()
+
+    my_asset = AssetsDefinition.from_graph(
+        my_graph, check_specs=[AssetCheckSpec("check1", asset="my_out")]
+    )
+
+    assert list(my_asset.check_specs) == [AssetCheckSpec("check1", asset=AssetKey(["my_out"]))]
+
 
 def test_from_graph_w_key_prefix():
     @op
@@ -665,11 +903,18 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
+    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    description = "This is a description!"
+    metadata = {"test_metadata": "This is some metadata"}
+
     the_asset = AssetsDefinition.from_graph(
         graph_def=silly_graph,
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        freshness_policies_by_output_name={"result": freshness_policy},
+        descriptions_by_output_name={"result": description},
+        metadata_by_output_name={"result": metadata},
         group_name="abc",
     )
     assert the_asset.keys_by_output_name["result"].path == [
@@ -683,6 +928,18 @@ def test_from_graph_w_key_prefix():
 
     assert the_asset.group_names_by_key == {
         AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
+
+    assert the_asset.freshness_policies_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): freshness_policy
+    }
+
+    assert the_asset.descriptions_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): description
+    }
+
+    assert the_asset.metadata_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): metadata
     }
 
     str_prefix = AssetsDefinition.from_graph(
@@ -704,11 +961,18 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
+    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    description = "This is a description!"
+    metadata = {"test_metadata": "This is some metadata"}
+
     the_asset = AssetsDefinition.from_op(
         op_def=foo,
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        freshness_policies_by_output_name={"result": freshness_policy},
+        descriptions_by_output_name={"result": description},
+        metadata_by_output_name={"result": metadata},
         group_name="abc",
     )
 
@@ -723,6 +987,18 @@ def test_from_op_w_key_prefix():
 
     assert the_asset.group_names_by_key == {
         AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
+
+    assert the_asset.freshness_policies_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): freshness_policy
+    }
+
+    assert the_asset.descriptions_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): description
+    }
+
+    assert the_asset.metadata_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): metadata
     }
 
     str_prefix = AssetsDefinition.from_op(
@@ -748,17 +1024,13 @@ def test_from_op_w_configured():
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
 
 
-def get_step_keys_from_run(instance):
+def get_step_keys_from_run(instance: DagsterInstance) -> Sequence[str]:
     engine_events = list(
         instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
     )
-    metadata_entries = engine_events[
-        0
-    ].event_log_entry.dagster_event.engine_event_data.metadata_entries
-    step_metadata = next(
-        iter([metadata for metadata in metadata_entries if metadata.label == "step_keys"])
-    )
-    return ast.literal_eval(step_metadata.value.value)
+    metadata = engine_events[0].event_log_entry.get_dagster_event().engine_event_data.metadata
+    step_metadata = metadata["step_keys"]
+    return ast.literal_eval(step_metadata.value)  # type: ignore
 
 
 def get_num_events(instance, run_id, event_type):
@@ -781,10 +1053,11 @@ def test_graph_backed_asset_subset():
         return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
 
     asset_job = define_asset_job("yay").resolve(
-        [
-            AssetsDefinition.from_graph(my_graph, can_subset=True),
-        ],
-        [],
+        asset_graph=AssetGraph.from_assets(
+            [
+                AssetsDefinition.from_graph(my_graph, can_subset=True),
+            ]
+        )
     )
 
     with instance_for_test() as instance:
@@ -809,10 +1082,11 @@ def test_graph_backed_asset_partial_output_selection():
         return one, two
 
     asset_job = define_asset_job("yay").resolve(
-        [
-            AssetsDefinition.from_graph(graph_asset, can_subset=True),
-        ],
-        [],
+        asset_graph=AssetGraph.from_assets(
+            [
+                AssetsDefinition.from_graph(graph_asset, can_subset=True),
+            ]
+        ),
     )
 
     with instance_for_test() as instance:
@@ -855,15 +1129,18 @@ def test_input_subsetting_graph_backed_asset():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            with_resources(
-                [
-                    upstream_1,
-                    upstream_2,
-                    AssetsDefinition.from_graph(my_graph, can_subset=True),
-                ],
-                resource_defs={"io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})},
-            ),
-            [],
+            asset_graph=AssetGraph.from_assets(
+                with_resources(
+                    [
+                        upstream_1,
+                        upstream_2,
+                        AssetsDefinition.from_graph(my_graph, can_subset=True),
+                    ],
+                    resource_defs={
+                        "io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})
+                    },
+                ),
+            )
         )
         with instance_for_test() as instance:
             # test first bar alias
@@ -948,6 +1225,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
     def op_1(context):
         assert context.selected_output_names == selected_output_names_op_1
+        assert (num_materializations != 3) == context.is_subset
         if "out_1" in context.selected_output_names:
             yield Output(1, output_name="out_1")
         if "out_2" in context.selected_output_names:
@@ -956,6 +1234,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"add_one_1": Out(is_required=False), "add_one_2": Out(is_required=False)})
     def add_one(context, x):
         assert context.selected_output_names == selected_output_names_op_2
+        assert (num_materializations != 3) == context.is_subset
         if "add_one_1" in context.selected_output_names:
             yield Output(x, output_name="add_one_1")
         if "add_one_2" in context.selected_output_names:
@@ -968,8 +1247,9 @@ def test_graph_backed_asset_subset_context(
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
     asset_job = define_asset_job("yay").resolve(
-        [AssetsDefinition.from_graph(three, can_subset=True)],
-        [],
+        asset_graph=AssetGraph.from_assets(
+            [AssetsDefinition.from_graph(three, can_subset=True)],
+        )
     )
 
     with instance_for_test() as instance:
@@ -1048,8 +1328,9 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
         }
 
     asset_job = define_asset_job("yay").resolve(
-        [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
-        [],
+        asset_graph=AssetGraph.from_assets(
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+        )
     )
 
     with instance_for_test() as instance:
@@ -1109,8 +1390,9 @@ def test_nested_graph_subset_context(
         return {"a": a, "b": b, "c": c, "d": d}
 
     asset_job = define_asset_job("yay").resolve(
-        [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
-        [],
+        asset_graph=AssetGraph.from_assets(
+            [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
+        )
     )
 
     with instance_for_test() as instance:
@@ -1128,7 +1410,7 @@ def test_graph_backed_asset_reused():
         return 1
 
     @op
-    def foo(upstream):  # pylint: disable=unused-argument
+    def foo(upstream):
         return 1
 
     @graph
@@ -1145,29 +1427,32 @@ def test_graph_backed_asset_reused():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            with_resources(
-                [
-                    upstream,
-                    AssetsDefinition.from_graph(
-                        graph_asset,
-                        keys_by_output_name={
-                            "result": AssetKey("asset_one"),
-                        },
-                        can_subset=True,
-                    ),
-                    AssetsDefinition.from_graph(
-                        graph_asset,
-                        keys_by_output_name={
-                            "result": AssetKey("duplicate_one"),
-                        },
-                        can_subset=True,
-                    ),
-                    one_downstream,
-                    duplicate_one_downstream,
-                ],
-                resource_defs={"io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})},
-            ),
-            [],
+            asset_graph=AssetGraph.from_assets(
+                with_resources(
+                    [
+                        upstream,
+                        AssetsDefinition.from_graph(
+                            graph_asset,
+                            keys_by_output_name={
+                                "result": AssetKey("asset_one"),
+                            },
+                            can_subset=True,
+                        ),
+                        AssetsDefinition.from_graph(
+                            graph_asset,
+                            keys_by_output_name={
+                                "result": AssetKey("duplicate_one"),
+                            },
+                            can_subset=True,
+                        ),
+                        one_downstream,
+                        duplicate_one_downstream,
+                    ],
+                    resource_defs={
+                        "io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})
+                    },
+                ),
+            )
         )
 
         with instance_for_test() as instance:
@@ -1243,3 +1528,529 @@ def test_self_dependency():
     resources = {"io_manager": MyIOManager()}
     materialize([a], partition_key="2020-01-01", resources=resources)
     materialize([a], partition_key="2020-01-02", resources=resources)
+
+
+def test_context_assets_def():
+    @asset
+    def a(context):
+        assert context.assets_def == a
+        return 1
+
+    @asset
+    def b(context, a):
+        assert context.assets_def == b
+        return 2
+
+    asset_job = define_asset_job("yay", [a, b]).resolve(
+        asset_graph=AssetGraph.from_assets(
+            [a, b],
+        )
+    )
+
+    asset_job.execute_in_process()
+
+
+def test_invalid_context_assets_def():
+    @op
+    def my_op(context):
+        context.assets_def  # noqa: B018
+
+    @job
+    def my_job():
+        my_op()
+
+    with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
+        my_job.execute_in_process()
+
+
+def test_asset_takes_bare_resource():
+    class BareObjectResource:
+        pass
+
+    executed = {}
+
+    @asset(resource_defs={"bare_resource": BareObjectResource()})
+    def blah(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    defs = Definitions(assets=[blah])
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert executed["yes"]
+
+
+def test_asset_key_with_prefix():
+    assert AssetKey("foo").with_prefix("prefix") == AssetKey(["prefix", "foo"])
+    assert AssetKey("foo").with_prefix(["prefix_one", "prefix_two"]) == AssetKey(
+        ["prefix_one", "prefix_two", "foo"]
+    )
+
+    with pytest.raises(CheckError):
+        AssetKey("foo").with_prefix(1)
+
+
+def _exec_asset(asset_def, selection=None):
+    result = materialize([asset_def], selection=selection)
+    assert result.success
+    return result.asset_materializations_for_node(asset_def.node_def.name)
+
+
+def test_multi_asset_return_none():
+    #
+    # non-optional Nothing
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing),
+            "asset2": AssetOut(dagster_type=Nothing),
+        },
+    )
+    def my_function():
+        # ...materialize assets without IO manager
+        pass
+
+    # via job
+    _exec_asset(my_function)
+
+    # direct invoke
+    my_function()
+
+    #
+    # optional (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing, is_required=False),
+            "asset2": AssetOut(dagster_type=Nothing, is_required=False),
+        },
+        can_subset=True,
+    )
+    def subset(context: AssetExecutionContext):
+        # ...use context.selected_asset_keys materialize subset of assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(subset)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        subset(build_asset_context())
+
+    #
+    # untyped (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(),
+            "asset2": AssetOut(),
+        },
+    )
+    def untyped():
+        # ...materialize assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(untyped)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        untyped()
+
+
+def test_direct_instantiation_invalid_partition_mapping():
+    @op
+    def my_op():
+        return 1
+
+    with pytest.raises(CheckError, match="received a partition mapping"):
+        AssetsDefinition(
+            keys_by_input_name={},
+            keys_by_output_name={"my_output": AssetKey("foo")},
+            node_def=my_op,
+            partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
+        )
+
+
+def test_return_materialization():
+    #
+    # status quo - use add add_output_metadata
+    #
+    @asset
+    def add(context: AssetExecutionContext):
+        context.add_output_metadata(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(add)
+    assert len(mats) == 1
+    # working with core metadata repr values sucks, ie IntMetadataValue
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # may want to update this pattern to work better...
+    #
+    @asset
+    def logged(context: AssetExecutionContext):
+        context.log_event(
+            AssetMaterialization(
+                asset_key=context.asset_key,
+                metadata={"one": 1},
+            )
+        )
+
+    mats = _exec_asset(logged)
+    # ... currently get implicit materialization for output + logged event
+    assert len(mats) == 2
+    assert "one" in mats[0].metadata
+    # assert mats[0].tags # fails
+    # assert "one" in mats[1].metadata  # fails
+    assert mats[1].tags
+
+    #
+    # main exploration
+    #
+    @asset
+    def ret_untyped(context: AssetExecutionContext):
+        return MaterializeResult(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(ret_untyped)
+    assert len(mats) == 1, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # key mismatch
+    #
+    @asset
+    def ret_mismatch(context: AssetExecutionContext):
+        return MaterializeResult(
+            asset_key="random",
+            metadata={"one": 1},
+        )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Asset key random not found in AssetsDefinition",
+    ):
+        mats = _exec_asset(ret_mismatch)
+
+
+def test_multi_asset_no_out():
+    #
+    # base case
+    #
+    table_A = AssetSpec("table_A")
+    table_B = AssetSpec("table_B")
+
+    @multi_asset(specs=[table_A, table_B])
+    def basic():
+        pass
+
+    mats = _exec_asset(basic)
+
+    result = basic()
+    assert result is None
+
+    #
+    # internal deps
+    #
+    table_C = AssetSpec("table_C", deps=[table_A, table_B])
+
+    @multi_asset(specs=[table_A, table_B, table_C])
+    def basic_deps():
+        pass
+
+    _exec_asset(basic_deps)
+    assert table_A.key in basic_deps.asset_deps[table_C.key]
+    assert table_B.key in basic_deps.asset_deps[table_C.key]
+
+    result = basic_deps()
+    assert result is None
+
+    #
+    # sub-setting
+    #
+    @multi_asset(
+        specs=[table_A, table_B],
+        can_subset=True,
+    )
+    def basic_subset(context: AssetExecutionContext):
+        for key in context.selected_asset_keys:
+            yield MaterializeResult(asset_key=key)
+
+    mats = _exec_asset(basic_subset, ["table_A"])
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
+
+    # selected_asset_keys breaks direct invocation
+    # basic_subset(build_asset_context())
+
+    #
+    # optional
+    #
+    @multi_asset(
+        specs=[table_A, AssetSpec("table_B", skippable=True)],
+    )
+    def basic_optional(context: AssetExecutionContext):
+        yield MaterializeResult(asset_key="table_A")
+
+    mats = _exec_asset(basic_optional)
+    assert table_A.key in {mat.asset_key for mat in mats}
+    assert table_B.key not in {mat.asset_key for mat in mats}
+
+    basic_optional(build_asset_context())
+
+    #
+    # metadata
+    #
+    @multi_asset(specs=[table_A, table_B])
+    def metadata(context: AssetExecutionContext):
+        yield MaterializeResult(asset_key="table_A", metadata={"one": 1})
+        yield MaterializeResult(asset_key="table_B", metadata={"two": 2})
+
+    mats = _exec_asset(metadata)
+    assert len(mats) == 2
+    assert mats[0].metadata["one"]
+    assert mats[1].metadata["two"]
+
+    # yielded event processing unresolved for assets
+    # results = list(metadata(build_asset_context()))
+    # assert len(results) == 2
+
+
+def test_multi_asset_nodes_out_names():
+    sales_users = AssetSpec(["sales", "users"])
+    marketing_users = AssetSpec(["marketing", "users"])
+
+    @multi_asset(specs=[sales_users, marketing_users])
+    def users():
+        pass
+
+    assert len(users.op.output_defs) == 2
+    assert {out_def.name for out_def in users.op.output_defs} == {"sales_users", "marketing_users"}
+
+
+def test_asset_spec_deps():
+    @asset
+    def table_A():
+        pass
+
+    table_b = AssetSpec("table_B", deps=[table_A])
+    table_c = AssetSpec("table_C", deps=[table_A, table_b])
+    table_b_no_dep = AssetSpec("table_B")
+    table_c_no_dep = AssetSpec("table_C")
+
+    @multi_asset(specs=[table_b, table_c])
+    def deps_in_specs():
+        ...
+
+    result = materialize([deps_in_specs, table_A])
+    assert result.success
+    mats = result.get_asset_materialization_events()
+    assert len(mats) == 3
+    # first event should be A materialization
+    assert mats[0].asset_key == table_A.key
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Can not pass deps and specs"):
+
+        @multi_asset(specs=[table_b_no_dep, table_c_no_dep], deps=["table_A"])
+        def no_deps_in_specs():
+            ...
+
+    @multi_asset(specs=[table_b, table_c])
+    def also_input(table_A):
+        ...
+
+    result = materialize([also_input, table_A])
+    assert result.success
+    mats = result.get_asset_materialization_events()
+    assert len(mats) == 3
+    # first event should be A materialization
+    assert mats[0].asset_key == table_A.key
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="do not have dependencies on the passed AssetSpec",
+    ):
+
+        @multi_asset(specs=[table_b, table_c])
+        def rogue_input(table_X):
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="do not have dependencies on the passed AssetSpec",
+    ):
+
+        @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
+        def no_spec_deps_but_input(table_A):
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="specify deps on the AssetSpecs directly",
+    ):
+
+        @multi_asset(
+            specs=[table_b_no_dep, table_c_no_dep],
+            deps=[table_A],
+        )
+        def use_deps():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="specify deps on the AssetSpecs directly",
+    ):
+
+        @multi_asset(
+            specs=[table_b_no_dep, table_c_no_dep],
+            internal_asset_deps={"table_C": {AssetKey("table_B")}},
+        )
+        def use_internal_deps():
+            ...
+
+
+def test_asset_key_on_context():
+    @asset
+    def test_asset_key_on_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["test_asset_key_on_context"])
+
+    @asset(key_prefix=["a_prefix"])
+    def test_asset_key_on_context_with_prefix(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["a_prefix", "test_asset_key_on_context_with_prefix"])
+
+    materialize([test_asset_key_on_context, test_asset_key_on_context_with_prefix])
+
+
+def test_multi_asset_asset_key_on_context():
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+        }
+    )
+    def asset_key_context(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["my_string_asset"])
+
+    materialize([asset_key_context])
+
+    @multi_asset(
+        outs={
+            "my_string_asset": AssetOut(),
+            "my_int_asset": AssetOut(),
+        }
+    )
+    def two_assets_key_context(context: AssetExecutionContext):
+        return context.asset_key, 12
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([two_assets_key_context])
+
+    # test with AssetSpecs
+
+    spec1 = AssetSpec(key="spec1")
+
+    @multi_asset(specs=[spec1])
+    def asset_key_context_with_specs(context: AssetExecutionContext):
+        assert context.asset_key == AssetKey(["spec1"])
+
+    materialize([asset_key_context_with_specs])
+
+    spec2 = AssetSpec(key="spec2")
+    spec3 = AssetSpec(key="spec3")
+
+    @multi_asset(specs=[spec2, spec3])
+    def asset_key_context_with_two_specs(context: AssetExecutionContext):
+        context.log.info(context.asset_key)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot call `context.asset_key` in a multi_asset with more than one asset",
+    ):
+        materialize([asset_key_context_with_two_specs])
+
+
+def test_graph_asset_explicit_coercible_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    # conversion
+    @graph_asset(key="my_graph_asset")
+    def _specified_elsewhere() -> int:
+        return my_op()
+
+    assert _specified_elsewhere.key == AssetKey(["my_graph_asset"])
+
+
+def test_graph_asset_explicit_fully_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    @graph_asset(key=AssetKey("my_graph_asset"))
+    def _specified_elsewhere() -> int:
+        return my_op()
+
+    assert _specified_elsewhere.key == AssetKey(["my_graph_asset"])
+
+
+def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
+    @op
+    def my_op() -> int:
+        return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(name="a_name", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
+        ),
+    ):
+
+        @graph_asset(name="a_name", key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
+        def _specified_elsewhere() -> int:
+            return my_op()
+
+        assert _specified_elsewhere  # appease linter

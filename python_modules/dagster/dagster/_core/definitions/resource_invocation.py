@@ -29,9 +29,7 @@ def resource_invocation_result(
 
     resource_fn = resource_def.resource_fn
     val_or_gen = (
-        resource_fn(_init_context)  # type: ignore  # fmt: skip
-        if has_at_least_one_parameter(resource_fn)  # type: ignore  # fmt: skip
-        else resource_fn()  # type: ignore  # (strict type guard)
+        resource_fn(_init_context) if has_at_least_one_parameter(resource_fn) else resource_fn()  # type: ignore  # (strict type guard)
     )
     if inspect.isgenerator(val_or_gen):
 
@@ -57,7 +55,7 @@ def _check_invocation_requirements(
         build_init_resource_context,
     )
 
-    context_provided = has_at_least_one_parameter(resource_def.resource_fn)  # type: ignore  # fmt: skip
+    context_provided = has_at_least_one_parameter(resource_def.resource_fn)
     if context_provided and resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
             "Resource has required resources, but no context was provided. Use the "
@@ -67,7 +65,7 @@ def _check_invocation_requirements(
 
     if context_provided and init_context is not None and resource_def.required_resource_keys:
         ensure_requirements_satisfied(
-            init_context._resource_defs,  # pylint: disable=protected-access
+            init_context._resource_defs,  # noqa: SLF001
             list(resource_def.get_resource_requirements()),
         )
 

@@ -1,0 +1,10 @@
+group_name: assets_dsl_example
+assets:
+  - asset_key: "foo/bar"
+    # replace "sql" with whatever information is needed for your assets
+    sql: "SELECT 1, 2, 3"
+  - asset_key: "foo/baz"
+    description: "This is a description of the baz asset"
+    deps:
+      - "foo/bar"
+    sql: "INSERT into baz SELECT * from bar"

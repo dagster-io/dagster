@@ -2,16 +2,18 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Mapping, Optional
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
+from typing_extensions import Self
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
 from dagster._config import StringSource
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -33,7 +35,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed consolidated event log storage intended for test cases only.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To explicitly specify the consolidated SQLite for event log storage, you can add a block such as
@@ -50,7 +52,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     The ``base_dir`` param tells the event log storage where on disk to store the database.
     """
 
-    def __init__(self, base_dir, inst_data=None):
+    def __init__(self, base_dir, inst_data: Optional[ConfigurableClassData] = None):
         self._base_dir = check.str_param(base_dir, "base_dir")
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
         self._secondary_index_cache = {}
@@ -71,9 +73,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def config_type(cls):
         return {"base_dir": StringSource}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
-        return ConsolidatedSqliteEventLogStorage(inst_data=inst_data, **config_value)
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
+        return cls(inst_data=inst_data, **config_value)
 
     def _init_db(self):
         mkdir_p(self._base_dir)
@@ -85,7 +89,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 SqlEventLogStorageMetadata.create_all(engine)
-                engine.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
@@ -97,11 +101,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     @contextmanager
     def _connect(self):
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
         return self._connect()
@@ -114,7 +116,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return bool(engine.dialect.has_table(engine.connect(), table_name))
 
     def get_db_path(self):
-        return os.path.join(self._base_dir, "{}.db".format(SQLITE_EVENT_LOG_FILENAME))
+        return os.path.join(self._base_dir, f"{SQLITE_EVENT_LOG_FILENAME}.db")
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
@@ -142,6 +144,10 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
 
         self._watchers[run_id][callback] = cursor
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
 
     def on_modified(self):
         keys = [

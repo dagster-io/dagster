@@ -1,5 +1,9 @@
 from .resources import (
+    FakeRedshiftClient as FakeRedshiftClient,
+    FakeRedshiftClientResource as FakeRedshiftClientResource,
     FakeRedshiftResource as FakeRedshiftResource,
+    RedshiftClient as RedshiftClient,
+    RedshiftClientResource as RedshiftClientResource,
     RedshiftError as RedshiftError,
     RedshiftResource as RedshiftResource,
     fake_redshift_resource as fake_redshift_resource,

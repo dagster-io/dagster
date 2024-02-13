@@ -3,39 +3,47 @@ import signal
 import subprocess
 import sys
 from contextlib import contextmanager
+from io import TextIOWrapper
+from subprocess import Popen
 from time import sleep
-from typing import NamedTuple, Optional
+from typing import Any, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.errors import DagsterError
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+from dagster._serdes.serdes import (
+    deserialize_value,
+    serialize_value,
     whitelist_for_serdes,
 )
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    ExceptionInfo,
+    SerializableErrorInfo,
+    serializable_error_info_from_exc_info,
+)
 
 
-def write_unary_input(input_file, obj):
+def write_unary_input(input_file: str, obj: NamedTuple) -> None:
     check.str_param(input_file, "input_file")
     check.not_none_param(obj, "obj")
     with open(os.path.abspath(input_file), "w", encoding="utf8") as fp:
-        fp.write(serialize_dagster_namedtuple(obj))
+        fp.write(serialize_value(obj))
 
 
-def read_unary_input(input_file):
+def read_unary_input(input_file: str) -> Tuple[object, ...]:
     check.str_param(input_file, "input_file")
     with open(os.path.abspath(input_file), "r", encoding="utf8") as fp:
-        return deserialize_json_to_dagster_namedtuple(fp.read())
+        return deserialize_value(fp.read(), NamedTuple)
 
 
-def ipc_write_unary_response(output_file, obj):
+def ipc_write_unary_response(output_file: str, obj: NamedTuple) -> None:
     check.not_none_param(obj, "obj")
     with ipc_write_stream(output_file) as stream:
         stream.send(obj)
 
 
-def read_unary_response(output_file, timeout=30, ipc_process=None):
+def read_unary_response(
+    output_file: str, timeout: int = 30, ipc_process: "Optional[Popen[Any]]" = None
+) -> Optional[NamedTuple]:
     messages = list(ipc_read_event_stream(output_file, timeout=timeout, ipc_process=ipc_process))
     check.invariant(len(messages) == 1)
     return messages[0]
@@ -54,8 +62,7 @@ class IPCErrorMessage(
         [("serializable_error_info", SerializableErrorInfo), ("message", Optional[str])],
     )
 ):
-    """
-    This represents a user error encountered during the IPC call. This indicates a business
+    """This represents a user error encountered during the IPC call. This indicates a business
     logic error, rather than a protocol. Consider this a "task failed successfully"
     use case.
     """
@@ -77,34 +84,33 @@ class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
 
 
 class DagsterIPCProtocolError(DagsterError):
-    """
-    This indicates that something went wrong with the protocol. E.g. the
+    """This indicates that something went wrong with the protocol. E.g. the
     process being called did not emit an IPCStartMessage first.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: str):
         self.message = message
         super(DagsterIPCProtocolError, self).__init__(message)
 
 
 class FileBasedWriteStream:
-    def __init__(self, file_path):
+    def __init__(self, file_path: str):
         check.str_param("file_path", file_path)
         self._file_path = file_path
 
-    def send(self, dagster_named_tuple):
+    def send(self, dagster_named_tuple: NamedTuple) -> None:
         _send(self._file_path, dagster_named_tuple)
 
-    def send_error(self, exc_info, message=None):
+    def send_error(self, exc_info: ExceptionInfo, message: Optional[str] = None) -> None:
         _send_error(self._file_path, exc_info, message=message)
 
 
-def _send(file_path, obj):
+def _send(file_path: str, obj: NamedTuple) -> None:
     with open(os.path.abspath(file_path), "a+", encoding="utf8") as fp:
-        fp.write(serialize_dagster_namedtuple(obj) + "\n")
+        fp.write(serialize_value(obj) + "\n")
 
 
-def _send_error(file_path, exc_info, message):
+def _send_error(file_path: str, exc_info: ExceptionInfo, message: Optional[str]) -> None:
     return _send(
         file_path,
         IPCErrorMessage(
@@ -114,7 +120,7 @@ def _send_error(file_path, exc_info, message):
 
 
 @contextmanager
-def ipc_write_stream(file_path):
+def ipc_write_stream(file_path: str) -> Iterator[FileBasedWriteStream]:
     check.str_param("file_path", file_path)
     _send(file_path, IPCStartMessage())
     try:
@@ -125,26 +131,26 @@ def ipc_write_stream(file_path):
         _send(file_path, IPCEndMessage())
 
 
-def _process_line(file_pointer, sleep_interval=0.1):
+def _process_line(file_pointer: TextIOWrapper, sleep_interval: float = 0.1) -> Optional[NamedTuple]:
     while True:
         line = file_pointer.readline()
         if line:
-            return deserialize_json_to_dagster_namedtuple(line.rstrip())
+            return deserialize_value(line.rstrip(), NamedTuple)
         sleep(sleep_interval)
 
 
-def _poll_process(ipc_process):
+def _poll_process(ipc_process: "Optional[Popen[Any]]") -> None:
     if not ipc_process:
         return
     if ipc_process.poll() is not None:
         raise DagsterIPCProtocolError(
-            "Process exited with return code {return_code} while waiting for events".format(
-                return_code=ipc_process.returncode
-            )
+            f"Process exited with return code {ipc_process.returncode} while waiting for events"
         )
 
 
-def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
+def ipc_read_event_stream(
+    file_path: str, timeout: int = 30, ipc_process: "Optional[Popen[Any]]" = None
+) -> Iterator[Optional[NamedTuple]]:
     # Wait for file to be ready
     sleep_interval = 0.1
     elapsed_time = 0
@@ -155,9 +161,7 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
     if not os.path.exists(file_path):
         raise DagsterIPCProtocolError(
-            "Timeout: read stream has not received any data in {timeout} seconds".format(
-                timeout=timeout
-            )
+            f"Timeout: read stream has not received any data in {timeout} seconds"
         )
 
     with open(os.path.abspath(file_path), "r", encoding="utf8") as file_pointer:
@@ -171,8 +175,8 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
         # Process start message
         if not isinstance(message, IPCStartMessage):
             raise DagsterIPCProtocolError(
-                "Attempted to read stream at file {file_path}, but first message was not an "
-                "IPCStartMessage".format(file_path=file_path)
+                f"Attempted to read stream at file {file_path}, but first message was not an "
+                "IPCStartMessage"
             )
 
         message = _process_line(file_pointer)
@@ -187,36 +191,34 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
-def open_ipc_subprocess(parts, **kwargs):
-    """Sets the correct flags to support graceful termination - the new subprocess will be in
-    its own process group so that CTRL-Cing the parent process doesn't immediately interrupt
-    the child process as well.
-    """
+def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> "Popen[Any]":
+    """Sets the correct flags to support graceful termination."""
     check.list_param(parts, "parts", str)
 
     creationflags = 0
-    preexec_fn = None
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-    else:
-        # Works on all UNIX systems (but not WASI, see: https://docs.python.org/3/library/os.html#os.setpgrp)
-        preexec_fn = os.setpgrp
-    return subprocess.Popen(parts, creationflags=creationflags, preexec_fn=preexec_fn, **kwargs)
+
+    return subprocess.Popen(
+        parts,
+        creationflags=creationflags,
+        **kwargs,
+    )
 
 
-def interrupt_ipc_subprocess(proc):
+def interrupt_ipc_subprocess(proc: "Popen[Any]") -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
-        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        proc.send_signal(signal.CTRL_BREAK_EVENT)
     else:
         proc.send_signal(signal.SIGINT)
 
 
-def interrupt_ipc_subprocess_pid(pid):
+def interrupt_ipc_subprocess_pid(pid: int) -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
         os.kill(pid, signal.SIGINT)

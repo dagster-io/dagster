@@ -10,7 +10,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import get_import_error_message, import_module_from_path
-from dagster._utils import alter_sys_path, frozenlist
+from dagster._utils import alter_sys_path, hash_collection
 
 
 class CodePointer(ABC):
@@ -53,8 +53,7 @@ class CodePointer(ABC):
 
 
 def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
-    """
-    In config files, you often put file paths that are meant to be relative
+    """In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.
     """
     check.str_param(relative_path_in_file, "relative_path_in_file")
@@ -65,9 +64,7 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
 
 
 def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
-    """
-    Takes a path to a python file and returns a loaded module.
-    """
+    """Takes a path to a python file and returns a loaded module."""
     check.str_param(python_file, "python_file")
     check.opt_str_param(working_directory, "working_directory")
 
@@ -182,21 +179,22 @@ class FileCodePointer(
 
     def describe(self) -> str:
         if self.working_directory:
-            return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
-                self=self
-            )
+            return f"{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]"
         else:
-            return "{self.python_file}::{self.fn_name}".format(self=self)
+            return f"{self.python_file}::{self.fn_name}"
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
-    from dagster._core.definitions import AssetGroup
+    from dagster._core.definitions.load_assets_from_modules import (
+        assets_from_modules,
+    )
     from dagster._core.workspace.autodiscovery import LOAD_ALL_ASSETS
 
     if fn_name == LOAD_ALL_ASSETS:
         # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular
         # attribute, we should load all the assets in the module.
-        return AssetGroup.from_modules([module])
+        module_assets, module_source_assets, _ = assets_from_modules([module])
+        return [*module_assets, *module_source_assets]
     else:
         if not hasattr(module, fn_name):
             raise DagsterInvariantViolationError(f"{fn_name} not found {error_suffix}")
@@ -227,7 +225,7 @@ class ModuleCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.fn_name}".format(self=self)
+        return f"from {self.module} import {self.fn_name}"
 
 
 @whitelist_for_serdes
@@ -253,7 +251,7 @@ class PackageCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.attribute}".format(self=self)
+        return f"from {self.module} import {self.attribute}"
 
 
 def get_python_file_from_target(target: object) -> Optional[str]:
@@ -294,17 +292,8 @@ class CustomPointer(
             check.invariant(isinstance(reconstructable_kwarg[0], str), "Bad kwarg key")
             check.invariant(
                 len(reconstructable_kwarg) == 2,
-                "Bad kwarg of length {length}, should be 2".format(
-                    length=len(reconstructable_kwarg)
-                ),
+                f"Bad kwarg of length {len(reconstructable_kwarg)}, should be 2",
             )
-
-        # These are frozenlists, rather than lists, so that they can be hashed and the pointer
-        # stored in the lru_cache on the repository and pipeline get_definition methods
-        reconstructable_args = frozenlist(reconstructable_args)
-        reconstructable_kwargs = frozenlist(
-            [frozenlist(reconstructable_kwarg) for reconstructable_kwarg in reconstructable_kwargs]
-        )
 
         return super(CustomPointer, cls).__new__(
             cls,
@@ -324,3 +313,13 @@ class CustomPointer(
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `CodePointer` attribute
+    # - `CustomCodePointer` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash

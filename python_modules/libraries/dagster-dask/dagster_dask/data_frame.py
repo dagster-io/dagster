@@ -4,12 +4,10 @@
 # the symbols we are accessing as public (though they are intending to). Should be fixed in later
 # releases of dask. See: https://github.com/dask/dask/issues/9710
 
-import contextlib
 
 import dask.dataframe as dd
 from dagster import (
     Any,
-    AssetMaterialization,
     Bool,
     DagsterInvariantViolationError,
     DagsterType,
@@ -17,15 +15,12 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    MetadataEntry,
     Permissive,
     Selector,
     Shape,
     String,
     TypeCheck,
-    _check as check,
     dagster_type_loader,
-    dagster_type_materializer,
 )
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
@@ -480,9 +475,7 @@ def dataframe_loader(_context, config):
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
     if read_type not in DataFrameReadTypes:
-        raise DagsterInvariantViolationError(
-            "Unsupported read_type {read_type}.".format(read_type=read_type)
-        )
+        raise DagsterInvariantViolationError(f"Unsupported read_type {read_type}.")
 
     # Get the metadata entry for the read_type in order to know which function
     # to call and whether it uses path as the first argument. And, make
@@ -503,83 +496,13 @@ def dataframe_loader(_context, config):
     return df
 
 
-def _dataframe_materializer_config():
-    to_fields = {
-        write_to: Permissive(
-            {
-                option_name: Field(
-                    option_args[0],
-                    is_required=option_args[1],
-                    description=option_args[2],
-                )
-                for option_name, option_args in to_opts["options"].items()
-            }
-        )
-        for write_to, to_opts in DataFrameToTypes.items()
-    }
-
-    return Shape(
-        {
-            "to": Field(
-                Selector(to_fields),
-            ),
-            **{
-                util_name: util_spec["options"]
-                for util_name, util_spec in DataFrameUtilities.items()
-            },
-        }
-    )
-
-
-@dagster_type_materializer(_dataframe_materializer_config())
-def dataframe_materializer(_context, config, dask_df):
-    check.inst_param(dask_df, "dask_df", dd.DataFrame)
-
-    to_specs = config["to"]
-
-    # Apply any utility functions in preparation for materialization
-    dask_df = apply_utilities_to_df(dask_df, config)
-    dask_df = dask_df.persist()
-
-    # Materialize to specified types
-    for to_type, to_options in to_specs.items():
-        if to_type not in DataFrameToTypes:
-            check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
-
-        # Get the metadata entry for the read_type in order to know which method
-        # to call and whether it uses path as the first argument. And, make
-        # to_options mutable if we need to pop off a path argument.
-        to_meta = DataFrameToTypes[to_type]
-        to_options = dict(to_options)
-
-        # Get the to function and prepare its arguments.
-        to_function = to_meta["function"]
-        to_path = to_options.pop("path") if to_meta.get("is_path_based", False) else None
-        to_args = [to_path] if to_path else []
-        to_kwargs = to_options
-
-        # Get the Dask client from the dask resource, if available.
-        client_context = (
-            _context.resources.dask.client.as_current()
-            if hasattr(_context.resources, "dask")
-            else contextlib.suppress()
-        )
-        with client_context:
-            to_function(dask_df, *to_args, **to_kwargs)
-
-        if to_path:
-            yield AssetMaterialization.file(to_path)
-
-
 def df_type_check(_, value):
     if not isinstance(value, dd.DataFrame):
         return TypeCheck(success=False)
     return TypeCheck(
         success=True,
-        metadata_entries=[
-            # string cast columns since they may be things like datetime
-            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
-        ],
+        # string cast columns since they may be things like datetime
+        metadata={"metadata": {"columns": list(map(str, value.columns))}},
     )
 
 
@@ -590,6 +513,5 @@ DataFrame = DagsterType(
     One Dask DataFrame operation triggers many operations on the constituent Pandas DataFrames.
     See https://docs.dask.org/en/latest/dataframe.html""",
     loader=dataframe_loader,
-    materializer=dataframe_materializer,
     type_check_fn=df_type_check,
 )

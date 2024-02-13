@@ -1,3 +1,4 @@
+import gc
 import os
 import tempfile
 import time
@@ -21,13 +22,14 @@ from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-from dagster._legacy import DagsterRun
+from packaging import version
+from sqlalchemy import __version__ as sqlalchemy_version
 
 
 def test_fs_stores():
@@ -102,7 +104,9 @@ def test_init_compute_log_with_bad_config_module():
                 default_flow_style=False,
             )
         with pytest.raises(check.CheckError, match="Couldn't import module"):
-            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(  # noqa: B018
+                InstanceRef.from_dir(tmpdir_path)
+            ).compute_log_manager
 
 
 MOCK_HAS_RUN_CALLED = False
@@ -113,26 +117,26 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        pipeline_run = DagsterRun("foo_pipeline", "new_run")
-        assert instance.get_run_by_id(pipeline_run.run_id) is None
+        dagster_run = DagsterRun("foo_job", "new_run")
+        assert instance.get_run_by_id(dagster_run.run_id) is None
 
-        instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
+        instance.add_run(dagster_run)
 
-        assert instance.get_runs() == [pipeline_run]
+        assert instance.get_runs() == [dagster_run]
 
-        assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
+        assert instance.get_run_by_id(dagster_run.run_id) == dagster_run
 
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
-            # pylint: disable=protected-access
+
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -142,17 +146,16 @@ def test_get_run_by_id():
         assert instance.get_run_by_id(run.run_id) is None
 
     # Run is created after we check whether it exists, but deleted before we can get it
-    global MOCK_HAS_RUN_CALLED  # pylint:disable=global-statement
+    global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):
-            global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
-            # pylint: disable=protected-access
+            global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:
@@ -249,24 +252,57 @@ def test_run_step_stats_with_retries():
         assert not _called
 
 
-@pytest.mark.skip(
-    reason=(
-        "Flakey test. See"
-        " https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes"
-    )
-)
 def test_threaded_ephemeral_instance(caplog):
-    def _instantiate_ephemeral_instance():
-        with DagsterInstance.ephemeral() as instance:
-            instance.get_runs_count()  # call run storage
-            instance.all_asset_keys()  # call event log storage
+    # prevent GC from firing during this to prevent false positives on thread warnings
+    gc.disable()
+    try:
+        n = 5
 
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="ephemeral_worker") as executor:
-        executor.submit(_instantiate_ephemeral_instance)
-        executor.submit(_instantiate_ephemeral_instance)
-        executor.submit(_instantiate_ephemeral_instance)
+        with DagsterInstance.ephemeral() as shared_instance:
 
-    assert (
-        "SQLite objects created in a thread can only be used in that same thread."
-        not in caplog.text
-    )
+            def _instantiate_ephemeral_instance(_):
+                with DagsterInstance.ephemeral() as instance:
+                    instance.get_runs_count()  # call run storage
+                    instance.all_asset_keys()  # call event log storage
+                    assert instance.root_directory  # access TemporaryDirectory
+                    shared_instance.get_runs_count()
+                    shared_instance.all_asset_keys()
+                    assert shared_instance.root_directory
+                return True
+
+            with ThreadPoolExecutor(
+                max_workers=n, thread_name_prefix="ephemeral_worker"
+            ) as executor:
+                results = executor.map(_instantiate_ephemeral_instance, range(n))
+                assert all(results)
+
+        # old SQL alchemy has issue that causes warning to fire
+        if version.parse(sqlalchemy_version) > version.parse("1.3.24"):
+            assert (
+                "SQLite objects created in a thread can only be used in that same thread."
+                not in caplog.text
+            )
+    finally:
+        gc.enable()
+
+
+def test_threadsafe_local_temp_instance():
+    n = 25
+    gc.collect()
+    baseline = len(DagsterInstance._TEMP_DIRS)  # noqa: SLF001
+    shared = DagsterInstance.local_temp()
+
+    def _run(_):
+        shared.root_directory  # noqa: B018
+        with DagsterInstance.local_temp() as instance:
+            instance.root_directory  # noqa: B018
+        return True
+
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        results = executor.map(_run, range(n))
+        assert all(results)
+
+    shared = None
+    gc.collect()
+
+    assert baseline == len(DagsterInstance._TEMP_DIRS)  # noqa: SLF001

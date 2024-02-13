@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -19,17 +18,26 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+    RawMetadataValue,
+)
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils.backcompat import ExperimentalWarning
 
-from ..errors import DagsterInvalidSubsetError
+from ..errors import (
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
+from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
@@ -84,29 +92,6 @@ class AssetOutputInfo(
         )
 
 
-def _resolve_input_to_destinations(
-    name: str, node_def: NodeDefinition, handle: NodeHandle
-) -> Sequence[NodeInputHandle]:
-    """
-    Recursively follow input mappings to find all op inputs for a graph input.
-    """
-    if not isinstance(node_def, GraphDefinition):
-        # must be in the op definition
-        return [NodeInputHandle(node_handle=handle, input_name=name)]
-    all_destinations: List[NodeInputHandle] = []
-    for mapping in node_def.input_mappings:
-        if mapping.graph_input_name != name:
-            continue
-        # recurse into graph structure
-        all_destinations += _resolve_input_to_destinations(
-            # update name to be the mapped input name
-            name=mapping.maps_to.input_name,
-            node_def=node_def.solid_named(mapping.maps_to.solid_name).definition,
-            handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
-        )
-    return all_destinations
-
-
 def _resolve_output_to_destinations(
     output_name: str, node_def: NodeDefinition, handle: NodeHandle
 ) -> Sequence[NodeInputHandle]:
@@ -119,26 +104,26 @@ def _resolve_output_to_destinations(
         if mapping.graph_output_name != output_name:
             continue
         output_pointer = mapping.maps_from
-        output_node = node_def.solid_named(output_pointer.solid_name)
+        output_node = node_def.node_named(output_pointer.node_name)
 
         all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
-                NodeHandle(output_pointer.solid_name, parent=handle),
+                NodeHandle(output_pointer.node_name, parent=handle),
             )
         )
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
             node_def.dependency_structure.output_to_downstream_inputs_for_node(
-                output_pointer.solid_name
+                output_pointer.node_name
             ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
             all_destinations.append(
                 NodeInputHandle(
-                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
                 )
             )
 
@@ -152,8 +137,7 @@ def _build_graph_dependencies(
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> None:
-    """
-    Scans through every node in the graph, making a recursive call when a node is a graph.
+    """Scans through every node in the graph, making a recursive call when a node is a graph.
 
     Builds two dictionaries:
 
@@ -177,7 +161,7 @@ def _build_graph_dependencies(
             )
             outputs_by_graph_handle[curr_node_handle] = {
                 mapping.graph_output_name: NodeOutputHandle(
-                    NodeHandle(mapping.maps_from.solid_name, parent=curr_node_handle),
+                    NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
                     mapping.maps_from.output_name,
                 )
                 for mapping in sub_node.definition.output_mappings
@@ -201,8 +185,7 @@ def _get_dependency_node_output_handles(
     ],
     node_output_handle: NodeOutputHandle,
 ) -> Sequence[NodeOutputHandle]:
-    """
-    Given a node output handle, return all upstream op node output handles. All node output handles
+    """Given a node output handle, return all upstream op node output handles. All node output handles
     belong in the same graph-backed asset node.
 
     Arguments:
@@ -261,8 +244,7 @@ def _get_dependency_node_output_handles(
 def get_dep_node_handles_of_graph_backed_asset(
     graph_def: GraphDefinition, assets_def: "AssetsDefinition"
 ) -> Mapping[AssetKey, Set[NodeHandle]]:
-    """
-    Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
+    """Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
 
     Arguments:
@@ -285,8 +267,7 @@ def asset_key_to_dep_node_handles(
     graph_def: GraphDefinition,
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> Tuple[Mapping[AssetKey, Set[NodeHandle]], Mapping[AssetKey, Sequence[NodeOutputHandle]]]:
-    """
-    For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
+    """For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
     within the asset's node that are upstream dependencies of the asset.
 
     Returns a tuple with two objects:
@@ -318,13 +299,8 @@ def asset_key_to_dep_node_handles(
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
         dep_node_output_handles_by_node: Dict[
             NodeOutputHandle, Sequence[NodeOutputHandle]
-        ] = (
-            {}
-        )  # memoized map of node output handles to all node output handle dependencies that are from ops
+        ] = {}  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            output_def = assets_defs.node_def.output_def_named(output_name)
-            output_name = output_def.name
-
             dep_nodes_by_asset_key[
                 asset_key
             ] = []  # first element in list is node that outputs asset
@@ -347,7 +323,7 @@ def asset_key_to_dep_node_handles(
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
     # handle internal_asset_deps within graph-backed assets
-    for _, assets_def in assets_defs_by_node_handle.items():
+    for assets_def in assets_defs_by_node_handle.values():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue
@@ -383,76 +359,8 @@ def asset_key_to_dep_node_handles(
     return dep_node_set_by_asset_key, dep_node_outputs_by_asset_key
 
 
-def _asset_mappings_for_node(
-    node_def: NodeDefinition, node_handle: Optional[NodeHandle]
-) -> Tuple[
-    Mapping[NodeInputHandle, AssetKey],
-    Mapping[NodeOutputHandle, AssetOutputInfo],
-    Mapping[AssetKey, AbstractSet[AssetKey]],
-    Mapping[AssetKey, str],
-]:
-    """
-    Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
-    encoded on their inputs/outputs.
-    """
-    check.inst_param(node_def, "node_def", NodeDefinition)
-    check.opt_inst_param(node_handle, "node_handle", NodeHandle)
-
-    asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
-    asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
-    asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-    io_manager_by_asset: Dict[AssetKey, str] = {}
-    if not isinstance(node_def, GraphDefinition):
-        # must be in an op (or solid)
-        if node_handle is None:
-            check.failed("Must have node_handle for non-graph NodeDefinition")
-
-        input_asset_keys: Set[AssetKey] = set()
-
-        for input_def in node_def.input_defs:
-            input_key = input_def.hardcoded_asset_key
-            if input_key:
-                input_asset_keys.add(input_key)
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_def.name)
-                asset_key_by_input[input_handle] = input_key
-
-        for output_def in node_def.output_defs:
-            output_key = output_def.hardcoded_asset_key
-            if output_key:
-                output_handle = NodeOutputHandle(node_handle, output_def.name)
-                asset_info_by_output[output_handle] = AssetOutputInfo(
-                    key=output_key,
-                    partitions_fn=output_def.get_asset_partitions,
-                    partitions_def=output_def.asset_partitions_def,
-                    code_version=output_def.code_version,
-                )
-                # assume output depends on all inputs
-                asset_deps[output_key] = input_asset_keys
-
-                io_manager_by_asset[output_key] = output_def.io_manager_key
-    else:
-        # keep recursing through structure
-        for sub_node_name, sub_node in node_def.node_dict.items():
-            (
-                n_asset_key_by_input,
-                n_asset_info_by_output,
-                n_asset_deps,
-                n_io_manager_by_asset,
-            ) = _asset_mappings_for_node(
-                node_def=sub_node.definition,
-                node_handle=NodeHandle(sub_node_name, parent=node_handle),
-            )
-            asset_key_by_input.update(n_asset_key_by_input)
-            asset_info_by_output.update(n_asset_info_by_output)
-            asset_deps.update(n_asset_deps)
-            io_manager_by_asset.update(n_io_manager_by_asset)
-
-    return asset_key_by_input, asset_info_by_output, asset_deps, io_manager_by_asset
-
-
-class AssetLayer:
-    """
-    Stores all of the asset-related information for a Dagster job / pipeline. Maps each
+class AssetLayer(NamedTuple):
+    """Stores all of the asset-related information for a Dagster job. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
     dependencies between each asset.
 
@@ -465,130 +373,46 @@ class AssetLayer:
             keys for each asset key produced by this job.
     """
 
-    _asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
-    _asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
-    _asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
-    _dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
-    _source_assets_by_key: Mapping[AssetKey, "SourceAsset"]
-    _asset_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
-    _asset_defs_by_node_handle: Mapping[NodeHandle, Set["AssetsDefinition"]]
-    _io_manager_keys_by_asset_key: Mapping[AssetKey, str]
-    _partition_mappings_by_asset_dep: Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
-
-    def __init__(
-        self,
-        asset_keys_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
-        asset_info_by_node_output_handle: Optional[
-            Mapping[NodeOutputHandle, AssetOutputInfo]
-        ] = None,
-        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
-        dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
-        assets_defs: Optional[Sequence["AssetsDefinition"]] = None,
-        source_asset_defs: Optional[Sequence["SourceAsset"]] = None,
-        io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
-        node_output_handles_to_dep_asset_keys: Optional[
-            Mapping[NodeOutputHandle, Set[AssetKey]]
-        ] = None,
-        partition_mappings_by_asset_dep: Optional[
-            Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
-        ] = None,
-    ):
-        from dagster._core.definitions import SourceAsset
-
-        self._asset_keys_by_node_input_handle = check.opt_mapping_param(
-            asset_keys_by_node_input_handle,
-            "asset_keys_by_node_input_handle",
-            key_type=NodeInputHandle,
-            value_type=AssetKey,
-        )
-        self._asset_info_by_node_output_handle = check.opt_mapping_param(
-            asset_info_by_node_output_handle,
-            "asset_info_by_node_output_handle",
-            key_type=NodeOutputHandle,
-            value_type=AssetOutputInfo,
-        )
-        self._asset_deps = check.opt_mapping_param(
-            asset_deps, "asset_deps", key_type=AssetKey, value_type=set
-        )
-        self._dependency_node_handles_by_asset_key = check.opt_mapping_param(
-            dependency_node_handles_by_asset_key,
-            "dependency_node_handles_by_asset_key",
-            key_type=AssetKey,
-            value_type=Set,
-        )
-        self._source_assets_by_key = {
-            source_asset.key: source_asset
-            for source_asset in check.opt_sequence_param(
-                source_asset_defs, "source_assets_defs", of_type=SourceAsset
-            )
-        }
-        self._assets_defs_by_key = {
-            key: assets_def
-            for assets_def in check.opt_sequence_param(assets_defs, "assets_defs")
-            for key in assets_def.keys
-        }
-
-        # keep an index from node handle to the AssetsDefinition for that node
-        self._assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {}
-        for asset_key, node_handles in self._dependency_node_handles_by_asset_key.items():
-            for node_handle in node_handles:
-                self._assets_defs_by_node_handle[node_handle] = self._assets_defs_by_key[asset_key]
-
-        self._io_manager_keys_by_asset_key = check.opt_mapping_param(
-            io_manager_keys_by_asset_key,
-            "io_manager_keys_by_asset_key",
-            key_type=AssetKey,
-            value_type=str,
-        )
-
-        # Used to store the asset key dependencies of op node handles within graph backed assets
-        # See AssetLayer.downstream_dep_assets for more information
-        self._node_output_handle_to_dep_asset_keys = check.opt_mapping_param(
-            node_output_handles_to_dep_asset_keys,
-            "node_output_handles_to_dep_asset_keys",
-            key_type=NodeOutputHandle,
-            value_type=set,
-        )
-
-        self._partition_mappings_by_asset_dep = partition_mappings_by_asset_dep or {}
-
-    @staticmethod
-    def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Scrape asset info off of InputDefinition/OutputDefinition instances."""
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
-            graph_def, None
-        )
-        return AssetLayer(
-            asset_keys_by_node_input_handle=asset_by_input,
-            asset_info_by_node_output_handle=asset_by_output,
-            asset_deps=asset_deps,
-            io_manager_keys_by_asset_key=io_manager_by_asset,
-        )
+    assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
+    assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
+    asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
+    asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
+    check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
+    asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
+    dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
+    source_assets_by_key: Mapping[AssetKey, "SourceAsset"]
+    io_manager_keys_by_asset_key: Mapping[AssetKey, str]
+    # Used to store the asset key dependencies of op node handles within graph backed assets
+    # See AssetLayer.downstream_dep_assets for more information
+    dep_asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, Set[AssetKey]]
+    partition_mappings_by_asset_dep: Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
+    asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"]
+    node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle]
+    check_names_by_asset_key_by_node_handle: Mapping[
+        NodeHandle, Mapping[AssetKey, AbstractSet[str]]
+    ]
 
     @staticmethod
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
-        assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        assets_defs_by_outer_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"],
+        observable_source_assets_by_node_handle: Mapping[NodeHandle, "SourceAsset"],
         source_assets: Sequence["SourceAsset"],
         resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
-        """
-        Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
+        """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
 
         Args:
             graph_def (GraphDefinition): The graph for the JobDefinition that we're generating
                 this AssetLayer for.
-            assets_defs_by_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
+            assets_defs_by_outer_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        check.mapping_param(
-            assets_defs_by_node_handle, "assets_defs_by_node_handle", key_type=NodeHandle
-        )
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
+        check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         io_manager_by_asset: Dict[AssetKey, str] = {
             source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
@@ -598,9 +422,12 @@ class AssetLayer:
         (
             dep_node_handles_by_asset_key,
             dep_node_output_handles_by_asset_key,
-        ) = asset_key_to_dep_node_handles(graph_def, assets_defs_by_node_handle)
+        ) = asset_key_to_dep_node_handles(graph_def, assets_defs_by_outer_node_handle)
 
-        for node_handle, assets_def in assets_defs_by_node_handle.items():
+        node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
+        check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
+
+        for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             for key in assets_def.keys:
                 asset_deps[key] = resolved_asset_deps.get_resolved_upstream_asset_keys(
                     assets_def, key
@@ -610,11 +437,10 @@ class AssetLayer:
                 resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                     assets_def, input_name
                 )
-                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = resolved_asset_key
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_key_by_input[input_handle] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
-                node_input_handles = _resolve_input_to_destinations(
-                    input_name, assets_def.node_def, node_handle
-                )
+                node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
 
@@ -642,7 +468,10 @@ class AssetLayer:
                     return set(
                         cast(
                             PartitionsDefinition, context.asset_partitions_def
-                        ).get_partition_keys_in_range(context.asset_partition_key_range)
+                        ).get_partition_keys_in_range(
+                            context.asset_partition_key_range,
+                            dynamic_partitions_store=context.step_context.instance,
+                        )
                     )
 
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
@@ -663,87 +492,228 @@ class AssetLayer:
                     }
                 )
 
-        node_output_handles_to_dep_asset_keys = defaultdict(set)
+            if len(assets_def.check_specs_by_output_name) > 0:
+                check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
+
+                for output_name, check_spec in assets_def.check_specs_by_output_name.items():
+                    (
+                        inner_output_def,
+                        inner_node_handle,
+                    ) = assets_def.node_def.resolve_output_to_origin(
+                        output_name, handle=node_handle
+                    )
+                    node_output_handle = NodeOutputHandle(
+                        check.not_none(inner_node_handle), inner_output_def.name
+                    )
+                    node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
+                    check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
+                        check_spec.name
+                    )
+                    check_key_by_output[node_output_handle] = check_spec.key
+
+        dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
             for node_output_handle in node_output_handles:
-                node_output_handles_to_dep_asset_keys[node_output_handle].add(asset_key)
+                dep_asset_keys_by_node_output_handle[node_output_handle].add(asset_key)
+
+        for node_handle, checks_def in asset_checks_defs_by_node_handle.items():
+            check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
+            for output_name, check_spec in checks_def.specs_by_output_name.items():
+                inner_output_def, inner_node_handle = checks_def.node_def.resolve_output_to_origin(
+                    output_name, handle=node_handle
+                )
+                node_output_handle = NodeOutputHandle(
+                    check.not_none(inner_node_handle), inner_output_def.name
+                )
+                node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
+                check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
+                    check_spec.name
+                )
+                check_key_by_output[node_output_handle] = check_spec.key
+
+            for input_name, asset_key in checks_def.asset_keys_by_input_name.items():
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_key_by_input[input_handle] = asset_key
+                # resolve graph input to list of op inputs that consume it
+                node_input_handles = checks_def.node_def.resolve_input_to_destinations(input_handle)
+                for node_input_handle in node_input_handles:
+                    asset_key_by_input[node_input_handle] = asset_key
+
+        assets_defs_by_key = {
+            key: assets_def
+            for assets_def in assets_defs_by_outer_node_handle.values()
+            for key in assets_def.keys
+        }
+
+        source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+        for node_handle, source_asset in observable_source_assets_by_node_handle.items():
+            node_def = cast(NodeDefinition, source_asset.node_def)
+            check.invariant(len(node_def.output_defs) == 1)
+            output_name = node_def.output_defs[0].name
+            # resolve graph output to the op output it comes from
+            inner_output_def, inner_node_handle = node_def.resolve_output_to_origin(
+                output_name, handle=node_handle
+            )
+            node_output_handle = NodeOutputHandle(
+                check.not_none(inner_node_handle), inner_output_def.name
+            )
+
+            asset_info_by_output[node_output_handle] = AssetOutputInfo(
+                source_asset.key,
+                partitions_fn=None,
+                partitions_def=source_asset.partitions_def,
+                is_required=True,
+                code_version=inner_output_def.code_version,
+            )
+
+        assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
+            # nodes for assets
+            **{
+                node_handle: assets_defs_by_key[asset_key]
+                for asset_key, node_handles in dep_node_handles_by_asset_key.items()
+                for node_handle in node_handles
+            },
+            # nodes for asset checks. Required for AssetsDefs that have selected checks
+            # but not assets
+            **{
+                node_handle: assets_def
+                for node_handle, assets_def in assets_defs_by_outer_node_handle.items()
+                if assets_def.check_keys
+            },
+        }
 
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
+            check_key_by_node_output_handle=check_key_by_output,
             asset_deps=asset_deps,
+            assets_defs_by_node_handle=assets_defs_by_node_handle,
             dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
-            assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
-            source_asset_defs=source_assets,
+            assets_defs_by_key=assets_defs_by_key,
+            source_assets_by_key=source_assets_by_key,
             io_manager_keys_by_asset_key=io_manager_by_asset,
-            node_output_handles_to_dep_asset_keys=node_output_handles_to_dep_asset_keys,
+            dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,
             partition_mappings_by_asset_dep=partition_mappings_by_asset_dep,
+            asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
+            node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
+            check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
         )
-
-    @property
-    def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetOutputInfo]:
-        return self._asset_info_by_node_output_handle
-
-    @property
-    def io_manager_keys_by_asset_key(self) -> Mapping[AssetKey, str]:
-        return self._io_manager_keys_by_asset_key
 
     def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
-            asset_key in self._asset_deps,
-            "AssetKey '{asset_key}' is not produced by this JobDefinition.",
+            asset_key in self.asset_deps,
+            f"AssetKey '{asset_key}' is not produced by this JobDefinition.",
         )
-        return self._asset_deps[asset_key]
+        return self.asset_deps[asset_key]
 
-    @property
-    def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeHandle]]:
-        return self._dependency_node_handles_by_asset_key
+    def downstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        return {k for k, v in self.asset_deps.items() if asset_key in v}
 
     @property
     def asset_keys(self) -> Iterable[AssetKey]:
-        return self._dependency_node_handles_by_asset_key.keys()
-
-    @property
-    def source_assets_by_key(self) -> Mapping[AssetKey, "SourceAsset"]:
-        return self._source_assets_by_key
-
-    @property
-    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
-        return self._assets_defs_by_key
+        return self.dependency_node_handles_by_asset_key.keys()
 
     @property
     def has_assets_defs(self) -> bool:
         return len(self.assets_defs_by_key) > 0
 
+    @property
+    def has_asset_check_defs(self) -> bool:
+        return len(self.asset_checks_defs_by_node_handle) > 0
+
+    def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
+
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
-        return self._assets_defs_by_key[asset_key]
+        return self.assets_defs_by_key[asset_key]
 
     def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
         matching_handles = [
             handle
-            for handle, asset_info in self._asset_info_by_node_output_handle.items()
+            for handle, asset_info in self.asset_info_by_node_output_handle.items()
             if asset_info.key == asset_key
         ]
         check.invariant(len(matching_handles) == 1)
         return matching_handles[0]
 
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
-        return self._assets_defs_by_node_handle.get(node_handle)
+        return self.assets_defs_by_node_handle.get(node_handle)
+
+    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+        assets_def = self.assets_def_for_node(node_handle)
+        if not assets_def or len(assets_def.keys_by_output_name.keys()) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot call `asset_key_for_node` in a multi_asset with more than one asset."
+                " Multiple asset keys defined."
+            )
+        return next(iter(assets_def.keys_by_output_name.values()))
+
+    def asset_check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
+        assets_def_for_node = self.assets_def_for_node(node_handle)
+        checks_def_for_node = self.asset_checks_def_for_node(node_handle)
+
+        if assets_def_for_node is not None:
+            check.invariant(checks_def_for_node is None)
+            return list(assets_def_for_node.check_specs)
+        elif checks_def_for_node is not None:
+            return list(checks_def_for_node.specs)
+        else:
+            return []
+
+    def get_spec_for_asset_check(
+        self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
+    ) -> Optional[AssetCheckSpec]:
+        asset_checks_def_or_assets_def = self.asset_checks_defs_by_node_handle.get(
+            node_handle
+        ) or self.assets_defs_by_node_handle.get(node_handle)
+        return (
+            asset_checks_def_or_assets_def.get_spec_for_check_key(asset_check_key)
+            if asset_checks_def_or_assets_def
+            else None
+        )
+
+    def get_check_names_by_asset_key_for_node_handle(
+        self, node_handle: NodeHandle
+    ) -> Mapping[AssetKey, AbstractSet[str]]:
+        return self.check_names_by_asset_key_by_node_handle[node_handle]
+
+    def asset_checks_def_for_node(
+        self, node_handle: NodeHandle
+    ) -> Optional["AssetChecksDefinition"]:
+        return self.asset_checks_defs_by_node_handle.get(node_handle)
+
+    @property
+    def asset_checks_defs(self) -> Iterable[AssetChecksDefinition]:
+        return self.asset_checks_defs_by_node_handle.values()
+
+    def get_output_name_for_asset_check(self, asset_check_key: AssetCheckKey) -> str:
+        """Output name in the leaf op."""
+        return self.node_output_handles_by_asset_check_key[asset_check_key].output_name
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
-        return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+        return self.asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+
+    def input_for_asset_key(self, node_handle: NodeHandle, key: AssetKey) -> Optional[str]:
+        return next(
+            (
+                input_handle.input_name
+                for input_handle, k in self.asset_keys_by_node_input_handle.items()
+                if k == key
+            ),
+            None,
+        )
 
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
-        return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
-
-    def is_source_for_asset(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.source_assets_by_key
+        return self.io_manager_keys_by_asset_key.get(asset_key, "io_manager")
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
         return (
             asset_key in self.source_assets_by_key
             and self.source_assets_by_key[asset_key].is_observable
         )
+
+    def is_materializable_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
 
     def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
         assets_def = self.assets_defs_by_key.get(asset_key)
@@ -756,49 +726,57 @@ class AssetLayer:
         else:
             return None
 
-    def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
-        if asset_key in self._source_assets_by_key:
-            metadata = self._source_assets_by_key[asset_key].metadata
-            return (
-                {key: cast(RawMetadataValue, value.value) for key, value in metadata.items()}
-                if metadata
-                else None
-            )
-        elif asset_key in self._assets_defs_by_key:
-            return self._assets_defs_by_key[asset_key].metadata_by_key[asset_key]
+    def metadata_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[Mapping[str, ArbitraryMetadataMapping]]:
+        if asset_key in self.source_assets_by_key:
+            raw_metadata = self.source_assets_by_key[asset_key].raw_metadata
+            return raw_metadata or None
+        elif asset_key in self.assets_defs_by_key:
+            return self.assets_defs_by_key[asset_key].metadata_by_key[asset_key]
         else:
             check.failed(f"Couldn't find key {asset_key}")
 
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetOutputInfo]:
-        return self._asset_info_by_node_output_handle.get(
-            NodeOutputHandle(node_handle, output_name)
-        )
+        return self.asset_info_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
+
+    def asset_key_for_output(self, node_handle: NodeHandle, output_name: str) -> Optional[AssetKey]:
+        asset_info = self.asset_info_for_output(node_handle, output_name)
+        if asset_info:
+            return asset_info.key
+        else:
+            return None
+
+    def asset_check_key_for_output(
+        self, node_handle: NodeHandle, output_name: str
+    ) -> Optional[AssetCheckKey]:
+        return self.check_key_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
         group_names: Dict[AssetKey, str] = {
             key: assets_def.group_names_by_key[key]
-            for key, assets_def in self._assets_defs_by_key.items()
+            for key, assets_def in self.assets_defs_by_key.items()
             if key in assets_def.group_names_by_key
         }
 
         group_names.update(
             {
                 key: source_asset_def.group_name
-                for key, source_asset_def in self._source_assets_by_key.items()
+                for key, source_asset_def in self.source_assets_by_key.items()
             }
         )
 
         return group_names
 
     def partitions_def_for_asset(self, asset_key: AssetKey) -> Optional["PartitionsDefinition"]:
-        assets_def = self._assets_defs_by_key.get(asset_key)
+        assets_def = self.assets_defs_by_key.get(asset_key)
 
         if assets_def is not None:
             return assets_def.partitions_def
         else:
-            source_asset = self._source_assets_by_key.get(asset_key)
+            source_asset = self.source_assets_by_key.get(asset_key)
             if source_asset is not None:
                 return source_asset.partitions_def
 
@@ -807,11 +785,10 @@ class AssetLayer:
     def partition_mapping_for_node_input(
         self, node_handle: NodeHandle, upstream_asset_key: AssetKey
     ) -> Optional["PartitionMapping"]:
-        return self._partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
+        return self.partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
-        """
-        Given the node handle of an op within a graph-backed asset and an output name,
+        """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 
         For example, for the following asset:
@@ -840,7 +817,7 @@ class AssetLayer:
         Calling downstream_dep_assets with node handle add_one will return:
         - {AssetKey("asset_two")} if output_name="result"
         """
-        return self._node_output_handle_to_dep_asset_keys.get(
+        return self.dep_asset_keys_by_node_output_handle.get(
             NodeOutputHandle(node_handle, output_name), set()
         )
 
@@ -849,105 +826,141 @@ def build_asset_selection_job(
     name: str,
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
+    asset_checks: Iterable["AssetChecksDefinition"],
     executor_def: Optional[ExecutorDefinition] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
 ) -> "JobDefinition":
-    from dagster._core.definitions.assets_job import (
-        build_assets_job,
-        build_source_asset_observation_job,
-    )
+    from dagster._core.definitions.assets_job import build_assets_job
 
-    if asset_selection:
-        (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
-        included_source_assets = _subset_source_assets(source_assets, asset_selection)
-
-    else:
+    if asset_selection is None and asset_check_selection is None:
+        # no selections, include everything
         included_assets = list(assets)
         excluded_assets = []
-        included_source_assets = []
+        included_source_assets = list(source_assets)
+        included_checks_defs = list(asset_checks)
+    else:
+        # Filter to assets that match either selected assets or include a selected check.
+        # E.g. a multi asset can be included even if it's not in asset_selection, if it has a selected check
+        # defined with check_specs
+        (included_assets, excluded_assets) = _subset_assets_defs(
+            assets, asset_selection or set(), asset_check_selection
+        )
+        included_source_assets = _subset_source_assets(source_assets, asset_selection or set())
+
+        if asset_check_selection is None:
+            # If assets were selected and checks are None, then include all checks on the selected assets.
+            # Note: once we start explicitly passing in asset checks instead of None from the front end,
+            # we can remove this logic.
+            included_checks_defs = [
+                asset_check
+                for asset_check in asset_checks
+                if asset_check.asset_key in check.not_none(asset_selection)
+            ]
+        else:
+            # Otherwise, filter to explicitly selected checks defs
+            included_checks_defs = [
+                asset_check
+                for asset_check in asset_checks
+                if [spec for spec in asset_check.specs if spec.key in asset_check_selection]
+            ]
 
     if partitions_def:
         for asset in included_assets:
             check.invariant(
                 asset.partitions_def == partitions_def or asset.partitions_def is None,
-                (
-                    f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
-                    f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
-                    f"{partitions_def}."
-                ),
+                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                f"{partitions_def}.",
             )
 
-    # We should disallow simultaneous selection of assets and source assets (but for
-    # backcompat we will simply ignore the source asset selection if any regular assets are
-    # selected).
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        if len(included_assets) > 0:
-            asset_job = build_assets_job(
-                name=name,
-                assets=included_assets,
-                config=config,
-                source_assets=[*source_assets, *excluded_assets],
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
-        else:
-            asset_job = build_source_asset_observation_job(
-                name=name,
-                source_assets=included_source_assets,
-                config=config,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
+    if len(included_assets) or len(included_checks_defs) > 0:
+        # Job materializes assets and/or executes checks
+        final_assets = included_assets
+        final_asset_checks = included_checks_defs
+        final_source_assets = [*source_assets, *excluded_assets]
+    else:
+        # Job only observes source assets
+        final_assets = []
+        final_asset_checks = []
+        final_source_assets = included_source_assets
 
-    return asset_job
+    return build_assets_job(
+        name=name,
+        assets=final_assets,
+        asset_checks=final_asset_checks,
+        config=config,
+        source_assets=final_source_assets,
+        resource_defs=resource_defs,
+        executor_def=executor_def,
+        partitions_def=partitions_def,
+        description=description,
+        tags=tags,
+        metadata=metadata,
+        hooks=hooks,
+        op_retry_policy=op_retry_policy,
+        _asset_selection_data=asset_selection_data,
+    )
 
 
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
+    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+) -> Tuple[
+    Sequence["AssetsDefinition"],
+    Sequence["AssetsDefinition"],
+]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    from dagster._core.definitions import AssetsDefinition
-
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 
     for asset in set(assets):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
+
+        # if specific checks were selected, only include those
+        if selected_asset_check_keys is not None:
+            selected_check_subset = selected_asset_check_keys & asset.check_keys
+        # if no checks were selected, filter to checks that target selected assets
+        else:
+            selected_check_subset = {
+                handle for handle in asset.check_keys if handle.asset_key in selected_subset
+            }
+
         # all assets in this def are selected
-        if selected_subset == asset.keys:
+        if selected_subset == asset.keys and selected_check_subset == asset.check_keys:
             included_assets.add(asset)
         # no assets in this def are selected
-        elif len(selected_subset) == 0:
+        elif len(selected_subset) == 0 and len(selected_check_subset) == 0:
             excluded_assets.add(asset)
         elif asset.can_subset:
             # subset of the asset that we want
-            subset_asset = asset.subset_for(selected_asset_keys)
+            subset_asset = asset.subset_for(selected_asset_keys, selected_check_subset)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
-            excluded_assets.add(asset.subset_for(asset.keys - subset_asset.keys))
+            excluded_assets.add(
+                asset.subset_for(
+                    selected_asset_keys=asset.keys - subset_asset.keys,
+                    selected_asset_check_keys=(asset.check_keys - subset_asset.check_keys),
+                )
+            )
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
-                f"contains asset keys {sorted(list(asset.keys))}, but "
+                f"contains asset keys {sorted(list(asset.keys))} and check keys "
+                f"{sorted(list(asset.check_keys))}, but "
                 f"attempted to select only {sorted(list(selected_subset))}. "
                 "This AssetsDefinition does not support subsetting. Please select all "
                 "asset keys produced by this asset."

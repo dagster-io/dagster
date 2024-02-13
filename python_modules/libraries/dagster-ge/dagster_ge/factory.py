@@ -3,21 +3,23 @@ from typing import Any, Dict
 
 import great_expectations as ge
 from dagster import (
+    ConfigurableResource,
     ExpectationResult,
+    IAttachDifferentObjectToOpContext,
     In,
-    MetadataEntry,
     MetadataValue,
-    Noneable,
+    OpExecutionContext,
     Out,
     Output,
-    StringSource,
     _check as check,
     op,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
+from pydantic import Field
 
 try:
     # ge < v0.13.0
@@ -27,12 +29,25 @@ except ImportError:
     from great_expectations.core.util import convert_to_json_serializable
 
 
-@resource(config_schema={"ge_root_dir": Noneable(StringSource)})
+class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    ge_root_dir: str = Field(
+        default=None,
+        description="The root directory for your Great Expectations project.",
+    )
+
+    def get_data_context(self):
+        if self.ge_root_dir is None:
+            return ge.data_context.DataContext()
+        return ge.data_context.DataContext(context_root_dir=self.ge_root_dir)
+
+    def get_object_to_set_on_execution_context(self):
+        return self.get_data_context()
+
+
+@dagster_maintained_resource
+@resource(config_schema=GEContextResource.to_config_schema())
 def ge_data_context(context):
-    if context.resource_config["ge_root_dir"] is None:
-        yield ge.data_context.DataContext()
-    else:
-        yield ge.data_context.DataContext(context_root_dir=context.resource_config["ge_root_dir"])
+    return GEContextResource.from_resource_context(context).get_data_context()
 
 
 def ge_validation_op_factory(
@@ -52,7 +67,7 @@ def ge_validation_op_factory(
         validation_operator_name (Optional[str]): what validation operator to run  -- defaults to
             None, which generates an ephemeral validator.  If you want to save data docs, use
             'action_list_operator'.
-            See https://docs.greatexpectations.io/en/latest/reference/core_concepts/validation_operators_and_actions.html
+            See https://legacy.docs.greatexpectations.io/en/0.12.1/reference/core_concepts/validation_operators_and_actions.html#
         input_dagster_type (DagsterType): the Dagster type used to type check the input to the op.
             Defaults to `dagster_pandas.DataFrame`.
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the
@@ -83,8 +98,9 @@ def ge_validation_op_factory(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         if validation_operator_name is not None:
             validation_operator = validation_operator_name
         else:
@@ -104,7 +120,7 @@ def ge_validation_op_factory(
         batch = data_context.get_batch(final_batch_kwargs, suite)
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = data_context.run_validation_operator(
             validation_operator, assets_to_validate=[batch], run_id=run_id
@@ -116,12 +132,9 @@ def ge_validation_op_factory(
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=res["success"],
-            metadata_entries=[
-                meta_stats,
-            ],
+            metadata={"Expectation Results": MetadataValue.md(md_str)},
         )
         yield Output(res)
 
@@ -196,8 +209,9 @@ def ge_validation_op_factory_v3(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         validator_kwargs = {
             "datasource_name": datasource_name,
             "data_connector_name": data_connector_name,
@@ -211,7 +225,7 @@ def ge_validation_op_factory_v3(
 
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = validator.validate(run_id=run_id)
 
@@ -221,10 +235,9 @@ def ge_validation_op_factory_v3(
         )
         md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=bool(results["success"]),
-            metadata_entries=[meta_stats],
+            metadata={"Expectation Results": MetadataValue.md(md_str)},
         )
         yield Output(results.to_json_dict())
 

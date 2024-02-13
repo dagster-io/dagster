@@ -42,6 +42,16 @@ def instance_template() -> HelmTemplate:
     )
 
 
+@pytest.fixture()
+def env_configmap_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/configmap-env-daemon.yaml",
+        model=models.V1ConfigMap,
+    )
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     helm_values = DagsterHelmValues.construct(
@@ -144,7 +154,7 @@ def test_daemon_image(template: HelmTemplate):
 
 def test_queued_run_coordinator(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             runCoordinator=RunCoordinator.construct(
@@ -175,7 +185,7 @@ def test_queued_run_coordinator(
 
 def test_queued_run_coordinator_unique_values(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             runCoordinator=RunCoordinator.construct(
@@ -208,8 +218,25 @@ def test_queued_run_coordinator_unique_values(
 
 def test_run_monitoring_defaults(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct()
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 0
+
+
+def test_run_monitoring_disabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": False})
+    )
 
     configmaps = instance_template.render(helm_values)
 
@@ -220,9 +247,9 @@ def test_run_monitoring_defaults(
     assert "run_monitoring" not in instance
 
 
-def test_run_monitoring(
+def test_run_monitoring_enabled_default(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True})
     )
@@ -233,14 +260,13 @@ def test_run_monitoring(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_monitoring"]["enabled"] is True
-
-    assert "max_resume_run_attempts" not in instance["run_monitoring"]
+    assert "run_monitoring" in instance
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 0
 
 
 def test_run_monitoring_no_max_resume_run_attempts(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxResumeRunAttempts": 0})
     )
@@ -257,7 +283,7 @@ def test_run_monitoring_no_max_resume_run_attempts(
 
 def test_run_monitoring_set_max_resume_run_attempts(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxResumeRunAttempts": 2})
     )
@@ -272,11 +298,97 @@ def test_run_monitoring_set_max_resume_run_attempts(
     assert instance["run_monitoring"]["max_resume_run_attempts"] == 2
 
 
-def test_run_retries(
+def test_sensor_schedule_threading_default(
     instance_template: HelmTemplate,
-):  # pylint: disable=redefined-outer-name
+):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+
+def test_schedule_threading_disabled(
+    instance_template: HelmTemplate,
+):
     helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(runRetries={"enabled": True})
+        dagsterDaemon=Daemon.construct(schedules={"useThreads": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+
+    assert "schedules" not in instance
+
+
+def test_sensor_threading_disabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(sensors={"useThreads": False})
+    )
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+    assert "sensors" not in instance
+
+
+def test_run_retries_default(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_retries"]["enabled"] is True
+    assert "max_retries" not in instance["run_retries"]
+
+
+def test_run_retries_disabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runRetries={"enabled": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "run_retries" not in instance
+
+
+def test_run_retries_max_retries(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runRetries={"enabled": True, "maxRetries": 4})
     )
 
     configmaps = instance_template.render(helm_values)
@@ -286,6 +398,7 @@ def test_run_retries(
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
     assert instance["run_retries"]["enabled"] is True
+    assert instance["run_retries"]["max_retries"] == 4
 
 
 def test_daemon_labels(template: HelmTemplate):
@@ -356,9 +469,28 @@ def test_sensor_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     sensors_config = instance["sensors"]
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["sensors"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            sensors=Sensors.construct(
+                useThreads=True,
+                numWorkers=4,
+                numSubmitWorkers=8,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    sensors_config = instance["sensors"]
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+    assert instance["sensors"]["num_submit_workers"] == 8
 
 
 def test_scheduler_threading(instance_template: HelmTemplate):
@@ -375,9 +507,24 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     schedules_config = instance["schedules"]
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["schedules"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            schedules=Schedules.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    schedules_config = instance["schedules"]
     assert schedules_config.keys() == schedules_daemon_config().config_type.fields.keys()
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+    assert instance["schedules"]["num_submit_workers"] == 8
 
 
 def test_scheduler_name(template: HelmTemplate):
@@ -388,3 +535,103 @@ def test_scheduler_name(template: HelmTemplate):
     [daemon_deployment] = template.render(helm_values)
 
     assert daemon_deployment.spec.template.spec.scheduler_name == "custom"
+
+
+def test_init_container_resources(template: HelmTemplate):
+    init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(initContainerResources=init_container_resources)
+    )
+
+    [webserver_deployment] = template.render(helm_values)
+
+    assert len(webserver_deployment.spec.template.spec.init_containers) == 2
+
+    assert all(
+        container.resources
+        == k8s_model_from_dict(
+            k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
+            k8s_snake_case_dict(
+                k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
+                init_container_resources,
+            ),
+        )
+        for container in webserver_deployment.spec.template.spec.init_containers
+    )
+
+
+def test_automount_svc_acct_token(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert daemon_deployment.spec.template.spec.automount_service_account_token
+
+
+def test_env(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+    [daemon_deployment] = template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 2
+
+    # env list gets written to deployment
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+                {
+                    "name": "TEST_ENV_FROM",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.uid", "apiVersion": "v1"}},
+                },
+            ]
+        )
+    )
+    [daemon_deployment] = template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 4
+    assert daemon_deployment.spec.template.spec.containers[0].env[2].name == "TEST_ENV"
+    assert daemon_deployment.spec.template.spec.containers[0].env[2].value == "test_value"
+    assert daemon_deployment.spec.template.spec.containers[0].env[3].name == "TEST_ENV_FROM"
+    assert (
+        daemon_deployment.spec.template.spec.containers[0].env[3].value_from.field_ref.field_path
+        == "metadata.uid"
+    )
+
+    # env dict doesn't get written to deployment
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 2
+
+
+def test_env_configmap(env_configmap_template):
+    # env list doesn't get rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+                {
+                    "name": "TEST_ENV_FROM",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.uid", "apiVersion": "v1"}},
+                },
+            ]
+        )
+    )
+    [cm] = env_configmap_template.render(helm_values)
+    assert len(cm.data) == 5
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert "TEST_ENV" not in cm.data
+
+    # env dict gets rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [cm] = env_configmap_template.render(helm_values)
+    assert len(cm.data) == 6
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert cm.data["TEST_ENV"] == "test_value"

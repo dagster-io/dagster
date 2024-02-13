@@ -5,11 +5,9 @@ import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import DagBag
 from dagster import AssetKey, asset, materialize
-from dagster_airflow import (
-    load_assets_from_airflow_dag,
-)
+from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
 ASSET_DAG = """
 from airflow import models
@@ -37,11 +35,18 @@ with models.DAG(
     baz = BashOperator(
         task_id="baz", bash_command="echo baz"
     )
+
+with models.DAG(
+    dag_id="other_dag", default_args=default_args, schedule_interval='0 0 * * *', tags=['example'],
+) as other_dag:
+    foo = BashOperator(
+        task_id="foo", bash_command="echo foo"
+    )
 """
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_airflow_db
+@requires_local_db
 def test_load_assets_from_airflow_dag():
     with tempfile.TemporaryDirectory(suffix="assets") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -70,8 +75,14 @@ def test_load_assets_from_airflow_dag():
             },
         )
 
+        other_dag = dag_bag.get_dag(dag_id="other_dag")
+        other_assets = load_assets_from_airflow_dag(
+            dag=other_dag,
+        )
+
         result = materialize(
-            [*assets, new_upstream_asset],
+            [*assets, new_upstream_asset, *other_assets],
             partition_key="2023-02-01T00:00:00",
+            resources={"airflow_db": make_ephemeral_airflow_db_resource()},
         )
         assert result.success

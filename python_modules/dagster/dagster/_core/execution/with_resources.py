@@ -1,10 +1,10 @@
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
 
 from dagster import _check as check
+from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._utils.merger import merge_dicts
 
 from ..._config import Shape
-from ..definitions import ResourceDefinition
 from ..definitions.resource_requirement import ResourceAddable
 from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
 from ..errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
@@ -14,7 +14,7 @@ T = TypeVar("T", bound=ResourceAddable)
 
 def with_resources(
     definitions: Iterable[T],
-    resource_defs: Mapping[str, ResourceDefinition],
+    resource_defs: Mapping[str, object],
     resource_config_by_key: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[T]:
     """Adds dagster resources to copies of resource-requiring dagster definitions.
@@ -27,8 +27,8 @@ def with_resources(
 
     Args:
         definitions (Iterable[ResourceAddable]): Dagster definitions to provide resources to.
-        resource_defs (Mapping[str, ResourceDefinition]):
-            Mapping of resource keys to ResourceDefinition objects to satisfy
+        resource_defs (Mapping[str, object]):
+            Mapping of resource keys to objects to satisfy
             resource requirements of provided dagster definitions.
         resource_config_by_key (Optional[Mapping[str, Any]]):
             Specifies config for provided resources. The key in this dictionary
@@ -73,8 +73,11 @@ def with_resources(
         resource_config_by_key, "resource_config_by_key"
     )
 
-    resource_defs = merge_dicts(
-        {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema}, resource_defs
+    resource_defs = wrap_resources_for_execution(
+        merge_dicts(
+            {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+            resource_defs,
+        )
     )
 
     for key, resource_def in resource_defs.items():
@@ -84,7 +87,7 @@ def with_resources(
                 raise DagsterInvalidInvocationError(
                     f"Error with config for resource key '{key}': Expected a "
                     "dictionary of the form {'config': ...}, but received "
-                    f"{str(resource_config)}"
+                    f"{resource_config}"
                 )
 
             outer_config_shape = Shape({"config": resource_def.get_config_field()})

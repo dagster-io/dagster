@@ -1,13 +1,23 @@
 from functools import wraps
+from typing import AbstractSet, Callable, Dict, Hashable, Mapping, Tuple, Type, TypeVar
+
+from typing_extensions import Concatenate, ParamSpec
 
 from dagster import _check as check
 
-NO_VALUE_IN_CACHE_SENTINEL = object()
+S = TypeVar("S")
+T = TypeVar("T")
+T_Callable = TypeVar("T_Callable", bound=Callable)
+P = ParamSpec("P")
 
 
-def cached_method(method):
-    """
-    Caches the results of a method call.
+NO_ARGS_HASH_VALUE = 0
+
+CACHED_METHOD_FIELD_SUFFIX = "_cached__internal__"
+
+
+def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
+    """Caches the results of a method call.
 
     Usage:
 
@@ -41,31 +51,27 @@ def cached_method(method):
     With this decorator, the first two would point to the same cache entry, and non-kwarg arguments
     are not allowed.
     """
+    cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
 
     @wraps(method)
-    def helper(self, *args, **kwargs):
-        cache_attr_name = method.__name__ + "_cache"
+    def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
         if not hasattr(self, cache_attr_name):
-            cache = {}
+            cache: Dict[Hashable, T] = {}
             setattr(self, cache_attr_name, cache)
         else:
             cache = getattr(self, cache_attr_name)
 
         key = _make_key(args, kwargs)
-        cached_result = cache.get(key, NO_VALUE_IN_CACHE_SENTINEL)
-        if cached_result is not NO_VALUE_IN_CACHE_SENTINEL:
-            return cached_result
-        else:
+        if key not in cache:
             result = method(self, *args, **kwargs)
             cache[key] = result
-            return result
+        return cache[key]
 
-    return helper
+    return _cached_method_wrapper
 
 
 class _HashedSeq(list):
-    """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432.
+    """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432.
 
     This class guarantees that hash() will be called no more than once
     per element.  This is important because the lru_cache() will hash
@@ -74,17 +80,20 @@ class _HashedSeq(list):
 
     __slots__ = "hashvalue"
 
-    def __init__(self, tup):  # pylint: disable=super-init-not-called
+    def __init__(self, tup: Tuple[object, ...]):
         self[:] = tup
         self.hashvalue = hash(tup)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.hashvalue
 
 
-def _make_key(args, kwds, fasttypes={int, str}):  # pylint: disable=dangerous-default-value
-    """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
+def _make_key(
+    args: Tuple[object, ...],
+    kwds: Mapping[str, object],
+    fasttypes: AbstractSet[Type[object]] = {int, str},
+) -> Hashable:
+    """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than
@@ -93,18 +102,21 @@ def _make_key(args, kwds, fasttypes={int, str}):  # pylint: disable=dangerous-de
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
     """
-    check.invariant(
-        not args,
-        (
-            "@cached_method does not support non-keyword arguments, because doing so would enable "
-            "functionally identical sets of arguments to correpond to different cache keys."
-        ),
-    )
-    key = tuple()
-    if kwds:
-        key = tuple(sorted(kwds.items()))
-    else:
-        key = tuple()
-    if len(key) == 1 and type(key[0]) in fasttypes:
-        return key[0]
-    return _HashedSeq(key)
+    if args:
+        check.failed(
+            "@cached_method does not support non-keyword arguments, because doing so would"
+            " enable functionally identical sets of arguments to correspond to different cache"
+            " keys.",
+        )
+
+    # if no args return a shared value
+    if not kwds:
+        return NO_ARGS_HASH_VALUE
+
+    # if single fast (str/int) arg, use that value for hash
+    if len(kwds) == 1:
+        k, v = next(iter(kwds.items()))
+        if type(v) in fasttypes:
+            return f"{k}.{v}"
+
+    return _HashedSeq(tuple(sorted(kwds.items())))

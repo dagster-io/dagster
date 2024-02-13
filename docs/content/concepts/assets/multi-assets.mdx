@@ -31,7 +31,7 @@ The function responsible for computing the contents of any software-defined asse
 The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of the function.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
-from dagster import AssetOut, multi_asset
+from dagster import AssetOut, multi_asset, AssetExecutionContext
 
 
 @multi_asset(
@@ -45,6 +45,41 @@ def my_function():
 ```
 
 By default, the names of the outputs will be used to form the asset keys of the multi-asset. The decorated function will be used to create the op for these assets and must emit an output for each of them. In this case, we can emit multiple outputs by returning a tuple of values, one for each asset.
+
+### Conditional materialization
+
+In some cases, an asset may not need to be updated in storage each time the decorated function is executed. You can use the `is_required` parameter along with `yield` syntax to implement this behavior.
+
+If the `is_required` parameter is set to `False` on an output, and your function does not `yield` an <PyObject object="Output" /> object for that output, then no asset materialization event will be created, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+
+```python file=/concepts/assets/multi_asset_conditional_materialization.py
+import random
+
+from dagster import AssetOut, Output, asset, multi_asset
+
+
+@multi_asset(
+    outs={"asset1": AssetOut(is_required=False), "asset2": AssetOut(is_required=False)}
+)
+def assets_1_and_2():
+    if random.randint(1, 10) < 5:
+        yield Output([1, 2, 3, 4], output_name="asset1")
+
+    if random.randint(1, 10) < 5:
+        yield Output([6, 7, 8, 9], output_name="asset2")
+
+
+@asset
+def downstream1(asset1):
+    # will not run when assets_1_and_2 doesn't materialize the asset1
+    return asset1 + [5]
+
+
+@asset
+def downstream2(asset2):
+    # will not run when assets_1_and_2 doesn't materialize the asset2
+    return asset2 + [10]
+```
 
 ### Subsetting multi-assets
 
@@ -65,10 +100,10 @@ from dagster import AssetOut, Output, multi_asset
     },
     can_subset=True,
 )
-def split_actions(context):
-    if "a" in context.selected_output_names:
+def split_actions(context: AssetExecutionContext):
+    if "a" in context.op_execution_context.selected_output_names:
         yield Output(value=123, output_name="a")
-    if "b" in context.selected_output_names:
+    if "b" in context.op_execution_context.selected_output_names:
         yield Output(value=456, output_name="b")
 ```
 
@@ -78,7 +113,7 @@ Because our outputs are now optional, we can no longer rely on returning a tuple
 
 When a multi-asset is created, it is assumed that each output asset depends on all of the input assets. This may not always be the case, however.
 
-In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in Dagit and for parsing selections over your asset graph.
+In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in the Dagster UI and for parsing selections over your asset graph.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
 from dagster import AssetKey, AssetOut, Output, multi_asset
@@ -97,3 +132,21 @@ def my_complex_assets(a, b):
     # d only depends on b
     yield Output(value=b + 1, output_name="d")
 ```
+
+### Multi-asset code versions
+
+Multi-assets may assign different code versions for each of their outputs:
+
+```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
+@multi_asset(
+    outs={
+        "a": AssetOut(code_version="1"),
+        "b": AssetOut(code_version="2"),
+    }
+)
+def multi_asset_with_versions():
+    yield Output(100, "a")
+    yield Output(200, "b")
+```
+
+Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.

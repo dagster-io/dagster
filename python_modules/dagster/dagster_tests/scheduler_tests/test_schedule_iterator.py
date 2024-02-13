@@ -126,3 +126,59 @@ def test_empty_cron_string_union():
 
     with pytest.raises(CheckError):
         next(schedule_execution_time_iterator(start_time.timestamp(), [], "US/Pacific"))
+
+
+def test_first_monday():
+    # start sunday 1/1/2023
+    start_time = create_pendulum_time(year=2023, month=1, day=1, tz="US/Pacific")
+    iterator = schedule_execution_time_iterator(
+        start_time.timestamp(), "0 0 * * mon#1", "US/Pacific"
+    )
+    # monday 1/2
+    assert next(iterator) == create_pendulum_time(year=2023, month=1, day=2, tz="US/Pacific")
+    # monday 2/6
+    assert next(iterator) == create_pendulum_time(year=2023, month=2, day=6, tz="US/Pacific")
+    # monday 3/6
+    assert next(iterator) == create_pendulum_time(year=2023, month=3, day=6, tz="US/Pacific")
+
+
+def test_on_tick_boundary_simple():
+    # Saturday
+    start_time = create_pendulum_time(year=2022, month=1, day=1, hour=2, tz="UTC")
+
+    time_iter = schedule_execution_time_iterator(
+        start_time.timestamp(),
+        [
+            "0 3 * * *",  # 03:00 every day
+        ],
+        "UTC",
+    )
+    # Test an entire week's cycle
+    next_timestamps = [next(time_iter).timestamp() for _ in range(8)]
+
+    expected_next_timestamps = [
+        create_pendulum_time(year=2022, month=1, day=i + 1, hour=3, tz="UTC").timestamp()
+        for i in range(8)
+    ]
+    assert next_timestamps == expected_next_timestamps
+
+
+def test_on_tick_boundary_complex():
+    # Saturday
+    start_time = create_pendulum_time(year=2022, month=1, day=1, hour=2, tz="UTC")
+
+    time_iter = schedule_execution_time_iterator(
+        start_time.timestamp(),
+        [
+            "0 3 * * MON-FRI",  # 03:00 every day MON-FRI
+        ],
+        "UTC",
+    )
+    # Test an entire week's cycle
+    next_timestamps = [next(time_iter).timestamp() for _ in range(10)]
+
+    expected_next_timestamps = [
+        create_pendulum_time(year=2022, month=1, day=i + 1, hour=3, tz="UTC").timestamp()
+        for i in (*range(2, 7), *range(9, 14))  # skip SAT and SUN
+    ]
+    assert next_timestamps == expected_next_timestamps

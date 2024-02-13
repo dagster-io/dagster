@@ -1,6 +1,6 @@
 from dagster._core.host_representation import ExternalExecutionPlan
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
+from dagster._core.snap import create_execution_plan_snapshot_id, create_job_snapshot_id
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
@@ -13,21 +13,21 @@ def test_run_created_in_0_7_9_snapshot_id_change():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'
 
-        old_pipeline_snapshot_id = "88528edde2ed64da3c39cca0da8ba2f7586c1a5d"
+        old_job_snapshot_id = "88528edde2ed64da3c39cca0da8ba2f7586c1a5d"
         old_execution_plan_snapshot_id = "2246f8e5a10d21e15fbfa3773d7b2d0bc1fa9d3d"
 
-        historical_pipeline = instance.get_historical_pipeline(old_pipeline_snapshot_id)
-        pipeline_snapshot = historical_pipeline.pipeline_snapshot
+        historical_job = instance.get_historical_job(old_job_snapshot_id)
+        job_snapshot = historical_job.job_snapshot
         ep_snapshot = instance.get_execution_plan_snapshot(old_execution_plan_snapshot_id)
 
         # It is the pipeline snapshot that changed
         # Verify that snapshot ids are not equal. This changed in 0.7.10
-        created_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-        assert created_snapshot_id != old_pipeline_snapshot_id
+        created_snapshot_id = create_job_snapshot_id(job_snapshot)
+        assert created_snapshot_id != old_job_snapshot_id
 
         # verify that both are accessible off of the historical pipeline
-        assert historical_pipeline.computed_pipeline_snapshot_id == created_snapshot_id
-        assert historical_pipeline.identifying_pipeline_snapshot_id == old_pipeline_snapshot_id
+        assert historical_job.computed_job_snapshot_id == created_snapshot_id
+        assert historical_job.identifying_job_snapshot_id == old_job_snapshot_id
 
         # We also changed execution plan schema in 0.7.11.post1
         assert create_execution_plan_snapshot_id(ep_snapshot) != old_execution_plan_snapshot_id
@@ -38,7 +38,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 
 # Scripts to create this (run against 0.7.9)
 #
-# from dagster importsolid, DagsterInstance, execute_pipeline
+# from dagster import solid, DagsterInstance, execute_pipeline
 # from dagster._core.snap.utils import create_snapshot_id
 #
 # from dagster.serdes import serialize_pp

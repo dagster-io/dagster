@@ -9,153 +9,38 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 ---
 
-## Bootstrapping a new project
+## Step 1: Bootstrap a new project
+
+<Note>
+  If you don't already have Dagster installed, verify you meet the{" "}
+  <a href="/getting-started/install">installation requirements</a> before
+  continuing.
+</Note>
 
 You can scaffold a new project using the default project skeleton, or start with one of the official Dagster examples.
+
+To learn more about the default files in a Dagster project, refer to the [Dagster project file reference](/guides/understanding-dagster-project-files).
 
 <TabGroup>
 <TabItem name="Default project skeleton">
 
 ### Using the default project skeleton
 
-To get started, you can run:
+To get started, run:
 
 ```bash
 pip install dagster
 dagster project scaffold --name my-dagster-project
 ```
 
-The command `dagster project scaffold` generates a folder structure with a single Dagster code location and other files such as `pyproject.toml` and `setup.py`. This helps you to quickly start with an empty project with everything set up.
+The `dagster project scaffold` command generates a folder structure with a single Dagster code location and other files, such as `pyproject.toml` and `setup.py`. This takes care of setting things up with an empty project, enabling you to quickly get started.
 
-Here's a breakdown of the files and directories that are generated:
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "25%",
-        }}
-      >
-        File/Directory
-      </th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>my_dagster_project/</td>
-      <td>A Python package that contains your new Dagster code.</td>
-    </tr>
-    <tr>
-      <td>my_dagster_project_tests/</td>
-      <td>
-        A Python package that contains tests for <code>my_dagster_project</code>.
-      </td>
-    </tr>
-    <tr>
-      <td>README.md</td>
-      <td>A description and starter guide for your new Dagster project.</td>
-    </tr>
-    <tr>
-      <td>pyproject.toml</td>
-      <td>
-        A file that specifies package core metadata in static, tool-agnostic
-        way.
-        <br />
-        It includes a <code>tool.dagster</code> section which references to the Python
-        package with your Dagster definitions defined and discoverable at the top-level.
-        This allows you to type just
-        <code>dagster dev</code> without any parameters in order to load your Dagster code.
-        Visit <a href="/concepts/code-locations">Code Locations</a> to learn more.
-        <br />
-        <br /> <strong>Note:</strong> <code>pyproject.toml</code> was introduced
-        in <a href="https://peps.python.org/pep-0518/https://peps.python.org/pep-0518/">
-          PEP-518
-        </a> and meant to replace <code>setup.py</code>, but we may still include
-        a <code>setup.py</code> for compatibility with tools that do not use this
-        spec.
-      </td>
-    </tr>
-    <tr>
-      <td>setup.py</td>
-      <td>
-        A build script with Python package dependencies for your new project as
-        a package.
-      </td>
-    </tr>
-    <tr>
-      <td>setup.cfg</td>
-      <td>
-        An ini file that contains option defaults for <code>setup.py</code>{" "}
-        commands.
-      </td>
-    </tr>
-
-  </tbody>
-</table>
-
-Inside of the `my_dagster_project/` directory, the following files and directories are generated:
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "25%",
-        }}
-      >
-        File/Directory
-      </th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>my_dagster_project/__init__.py</td>
-      <td>
-        The <code>__init__.py</code> file includes a{" "}
-        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in an installed package.
-        <br />
-        Refer to the <a href="/concepts/code-locations#load-definitions-in-an-installed-package">Code locations documentation</a> to learn other ways to deploy and load your Dagster code.
-      </td>
-    </tr>
-    <tr>
-      <td>my_dagster_project/assets.py</td>
-      <td>
-        A Python module that contains {" "}
-        <a href="/concepts/assets/software-defined-assets">software-defined assets</a>.
-        <br />
-        <br />
-        <strong>Note:</strong> As your project grows, we recommend organizing assets in sub-packages or sub-modules.
-        For example, you can put all analytics related assets in a <code>my_dagster_project/assets/analytics/</code>
-        folder and use <PyObject object="load_assets_from_package_module" /> in the top-level definitions
-        to load them, rather than needing to manually add assets to the top-level definitions every time
-        you define one. Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
-        load assets from single Python files. Read more about best practices in the <a href="/guides/dagster/example_project">Fully Featured Project guide</a>.
-      </td>
-    </tr>
-
-  </tbody>
-</table>
 </TabItem>
 <TabItem name="Official example">
 
 ### Using an official example
 
-Alternatively, you can start with one of the official Dagster examples.
-
-To get started, you can run:
+To get started using an official Dagster example, run:
 
 ```bash
 pip install dagster
@@ -173,54 +58,60 @@ For more info about the examples, visit the [Dagster GitHub repository](https://
 
 ---
 
-## Getting started
+## Step 2: Install project dependencies
 
-The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
+The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`.
+
+To install it as a package and its Python dependencies, run:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
 <Note>
-  By using the <code>--editable</code> flag, <code>pip</code> will install your
-  code location as a Python package in{" "}
+  Using the <code>--editable</code> (<code>-e</code>) flag instructs{" "}
+  <code>pip</code> to install your code location as a Python package in{" "}
   <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
     "editable mode"
   </a>{" "}
-  so that as you develop, local code changes will automatically apply.
+  so that as you develop, local code changes are automatically applied.
 </Note>
 
-Then, start the Dagit web server:
+---
+
+## Step 3: Start the Dagster UI
+
+To start the [Dagster UI](/concepts/webserver/ui), run:
 
 ```bash
 dagster dev
 ```
 
-Open <http://localhost:3000> with your browser to see the project.
+**Note**: This command also starts the [Dagster daemon](/deployment/dagster-daemon). Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info.
 
-Now, you can start writing assets in `my_dagster_project/assets.py`.
+Use your browser to open <http://localhost:3000> to view the project.
 
 ---
 
-## Development
+## Step 4: Development
 
 - [Adding new Python dependencies](#adding-new-python-dependencies)
-- [Environment variables and secrets](#environment-variables-and-secrets)
-- [Unit testing](#unit-testing)
+- [Environment variables and secrets](#using-environment-variables-and-secrets)
+- [Unit testing](#adding-and-running-unit-tests)
 
 ### Adding new Python dependencies
 
 You can specify new Python dependencies in `setup.py`.
 
-### Environment variables and secrets
+### Using environment variables and secrets
 
 <EnvironmentVariablesIntro />
 
 Refer to the [Using environment variables and secrets in Dagster code guide](/guides/dagster/using-environment-variables-and-secrets) for more info and examples.
 
-### Unit testing
+### Adding and running unit tests
 
-Tests can be added in the `my_dagster_project_tests` directory and you can run tests using `pytest`:
+Tests can be added in the `my_dagster_project_tests` directory and run using `pytest`:
 
 ```bash
 pytest my_dagster_project_tests
@@ -228,11 +119,38 @@ pytest my_dagster_project_tests
 
 ---
 
-## Deployment
+## Next steps
 
-Once your project is ready to move to production, check out our recommendation for [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production).
+Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/dagster/transitioning-data-pipelines-from-development-to-production).
 
 Check out the following resources to learn more about deployment options:
 
 - [Dagster Cloud](/dagster-cloud) - Deploy using Dagster-managed infrastructure
-- [Your own infrastructure](/deployment) - Deploy to your own infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+- [Your own infrastructure](/deployment) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Intro to Dagster tutorial"
+    href="/tutorial"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Running Dagster locally"
+    href="/guides/running-dagster-locally"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Structuring your Dagster project"
+    href="/guides/dagster/recommended-project-structure"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster project file reference"
+    href="/guides/understanding-dagster-project-files"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster example project repository"
+    href="https://github.com/dagster-io/dagster/tree/master/examples"
+  ></ArticleListItem>
+</ArticleList>

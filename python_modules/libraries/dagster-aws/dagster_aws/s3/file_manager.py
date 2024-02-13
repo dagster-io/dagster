@@ -36,7 +36,7 @@ class S3FileHandle(FileHandle):
     @property
     def s3_path(self) -> str:
         """str: The file's S3 URL."""
-        return "s3://{bucket}/{key}".format(bucket=self.s3_bucket, key=self.s3_key)
+        return f"s3://{self.s3_bucket}/{self.s3_key}"
 
 
 class S3FileManager(FileManager):
@@ -96,7 +96,7 @@ class S3FileManager(FileManager):
         return S3FileHandle(self._s3_bucket, s3_key)
 
     def get_full_key(self, file_key):
-        return "{base_key}/{file_key}".format(base_key=self._s3_base_key, file_key=file_key)
+        return f"{self._s3_base_key}/{file_key}"
 
     def delete_local_temp(self):
         self._temp_file_manager.close()

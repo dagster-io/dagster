@@ -1,21 +1,33 @@
-from dagster import config_mapping, graph, op
+from dagster import Config, config_mapping, graph, op
 
 
-@op(config_schema={"n": float})
-def add_n(context, number):
-    return number + context.op_config["n"]
+class AddNConfig(Config):
+    n: float
 
 
-@op(config_schema={"m": float})
-def multiply_by_m(context, number):
-    return number * context.op_config["m"]
+@op
+def add_n(config: AddNConfig, number):
+    return number + config.n
 
 
-@config_mapping(config_schema={"from_unit": str})
-def generate_config(val):
-    if val["from_unit"] == "celsius":
+class MultiplyByMConfig(Config):
+    m: float
+
+
+@op
+def multiply_by_m(config: MultiplyByMConfig, number):
+    return number * config.m
+
+
+class ToFahrenheitConfig(Config):
+    from_unit: str
+
+
+@config_mapping
+def generate_config(config_in: ToFahrenheitConfig):
+    if config_in.from_unit == "celsius":
         n = 32
-    elif val["from_unit"] == "kelvin":
+    elif config_in.from_unit == "kelvin":
         n = -459.67
     else:
         raise ValueError()

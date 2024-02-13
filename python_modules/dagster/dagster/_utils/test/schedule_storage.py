@@ -4,9 +4,18 @@ import time
 import pendulum
 import pytest
 
+from dagster import StaticPartitionsDefinition
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetConditionSnapshot,
+    AssetSubsetWithMetadata,
+)
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -18,12 +27,12 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven import get_current_datetime_in_utc
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:
-    """
-    You can extend this class to easily run these set of tests on any schedule storage. When extending,
+    """You can extend this class to easily run these set of tests on any schedule storage. When extending,
     you simply need to override the `schedule_storage` fixture and return your implementation of
     `ScheduleStorage`.
 
@@ -34,7 +43,7 @@ class TestScheduleStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def schedule_storage(self):  # pylint: disable=arguments-differ
+        def schedule_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -53,10 +62,16 @@ class TestScheduleStorage:
     def can_purge(self):
         return True
 
+    def can_store_auto_materialize_asset_evaluations(self):
+        return True
+
+    def can_get_single_tick(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),
@@ -100,12 +115,38 @@ class TestScheduleStorage:
         assert schedule.instigator_data.cron_schedule == "* * * * *"
         assert schedule.instigator_data.start_timestamp is None
 
+    def test_instigator_status_backcompat(self, storage):
+        assert storage
+
+        schedule = self.build_schedule(
+            "my_instigator_status_backcompat",
+            "* * * * *",
+            status=InstigatorStatus.AUTOMATICALLY_RUNNING,
+        )
+        storage.add_instigator_state(schedule)
+        schedules = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+        )
+        assert len(schedules) == 1
+
+        schedule = schedules[0]
+        assert schedule.instigator_name == "my_instigator_status_backcompat"
+        assert schedule.instigator_data.cron_schedule == "* * * * *"
+        assert schedule.instigator_data.start_timestamp is None
+        assert schedule.status == InstigatorStatus.DECLARED_IN_CODE
+
     def test_add_multiple_schedules(self, storage):
         assert storage
 
-        schedule = self.build_schedule("my_schedule", "* * * * *")
-        schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
-        schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
+        schedule = self.build_schedule("my_schedule", "* * * * *", status=InstigatorStatus.RUNNING)
+        schedule_2 = self.build_schedule(
+            "my_schedule_2", "* * * * *", status=InstigatorStatus.STOPPED
+        )
+        schedule_3 = self.build_schedule(
+            "my_schedule_3", "* * * * *", status=InstigatorStatus.DECLARED_IN_CODE
+        )
 
         storage.add_instigator_state(schedule)
         storage.add_instigator_state(schedule_2)
@@ -121,6 +162,25 @@ class TestScheduleStorage:
         assert any(s.instigator_name == "my_schedule" for s in schedules)
         assert any(s.instigator_name == "my_schedule_2" for s in schedules)
         assert any(s.instigator_name == "my_schedule_3" for s in schedules)
+
+        running = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE},
+        )
+        assert len(running) == 2
+        assert "my_schedule" in [state.instigator_name for state in running]
+        assert "my_schedule_3" in [state.instigator_name for state in running]
+
+        stopped = storage.all_instigator_state(
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
+            {InstigatorStatus.STOPPED},
+        )
+        assert len(stopped) == 1
+        assert stopped[0].instigator_name == "my_schedule_2"
 
     def test_get_schedule_state(self, storage):
         assert storage
@@ -264,8 +324,14 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
-        assert updated_tick.status == TickStatus.SUCCESS
+        assert not tick.end_timestamp
+
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum_freeze_time(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
+            assert updated_tick.status == TickStatus.SUCCESS
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -283,9 +349,14 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
+        assert not tick.end_timestamp
 
-        updated_tick = tick.with_status(TickStatus.SKIPPED)
-        assert updated_tick.status == TickStatus.SKIPPED
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum_freeze_time(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SKIPPED)
+            assert updated_tick.status == TickStatus.SKIPPED
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -304,11 +375,15 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(
-            TickStatus.FAILURE,
-            error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
-        )
-        assert updated_tick.status == TickStatus.FAILURE
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum_freeze_time(freeze_datetime):
+            updated_tick = tick.with_status(
+                TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
+            )
+            assert updated_tick.status == TickStatus.FAILURE
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -481,7 +556,9 @@ class TestScheduleStorage:
         four_days_ago = now.subtract(days=4).timestamp()
         one_day_ago = now.subtract(days=1).timestamp()
 
-        storage.create_tick(self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED))
+        five_days_ago_tick = storage.create_tick(
+            self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
+        )
         storage.create_tick(self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
         ticks = storage.get_ticks("my_sensor", "my_sensor")
@@ -495,6 +572,9 @@ class TestScheduleStorage:
             "my_sensor", "my_sensor", after=five_days_ago + 1, before=one_day_ago - 1
         )
         assert len(ticks) == 1
+
+        if self.can_get_single_tick():
+            assert storage.get_tick(five_days_ago_tick.tick_id)
 
     def test_update_sensor_tick_to_success(self, storage):
         assert storage
@@ -647,3 +727,228 @@ class TestScheduleStorage:
         assert len(ticks_by_origin["sensor_one"]) == 1
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
+
+    def test_auto_materialize_asset_evaluations(self, storage) -> None:
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        condition_snapshot = AssetConditionSnapshot("foo", "bar", "")
+
+        for _ in range(2):  # test idempotency
+            storage.add_auto_materialize_asset_evaluations(
+                evaluation_id=10,
+                asset_evaluations=[
+                    AssetConditionEvaluation(
+                        condition_snapshot=condition_snapshot,
+                        true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
+                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
+                        start_timestamp=0,
+                        end_timestamp=1,
+                        subsets_with_metadata=[],
+                        child_evaluations=[],
+                    ).with_run_ids(set()),
+                    AssetConditionEvaluation(
+                        condition_snapshot=condition_snapshot,
+                        true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                        start_timestamp=0,
+                        end_timestamp=1,
+                        subsets_with_metadata=[
+                            AssetSubsetWithMetadata(
+                                AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                                {"foo": MetadataValue.text("bar")},
+                            )
+                        ],
+                        child_evaluations=[],
+                    ).with_run_ids(set()),
+                ],
+            )
+
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_one"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+                "asset_one"
+            )
+            assert res[0].evaluation_id == 10
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_two"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+                "asset_two"
+            )
+            assert res[0].evaluation_id == 10
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+
+            res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
+
+            assert len(res) == 2
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+                "asset_one"
+            )
+            assert res[0].evaluation_id == 10
+            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+
+            assert res[1].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+                "asset_two"
+            )
+            assert res[1].evaluation_id == 10
+            assert res[1].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AssetConditionEvaluation(
+                    condition_snapshot=condition_snapshot,
+                    start_timestamp=0,
+                    end_timestamp=1,
+                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    subsets_with_metadata=[],
+                    child_evaluations=[],
+                ).with_run_ids(set()),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[1].evaluation_id == 10
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1, cursor=11
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 10
+
+        # add a mix of keys - one that already is using the unique index and one that is not
+
+        eval_one = AssetConditionEvaluation(
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            start_timestamp=0,
+            end_timestamp=1,
+            true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+            candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+            subsets_with_metadata=[],
+            child_evaluations=[],
+        ).with_run_ids(set())
+
+        eval_asset_three = AssetConditionEvaluation(
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            start_timestamp=0,
+            end_timestamp=1,
+            true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
+            candidate_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
+            subsets_with_metadata=[],
+            child_evaluations=[],
+        ).with_run_ids(set())
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                eval_one,
+                eval_asset_three,
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_one.evaluation
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_three"), limit=100
+        )
+
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_asset_three.evaluation
+
+    def test_auto_materialize_asset_evaluations_with_partitions(self, storage) -> None:
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+        subset = partitions_def.empty_subset().with_partition_keys(["a"])
+        asset_subset = AssetSubset(asset_key=AssetKey("asset_two"), value=subset)
+        asset_subset_with_metadata = AssetSubsetWithMetadata(
+            asset_subset,
+            {"foo": MetadataValue.text("bar"), "baz": MetadataValue.asset(AssetKey("asset_one"))},
+        )
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AssetConditionEvaluation(
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    start_timestamp=0,
+                    end_timestamp=1,
+                    true_subset=asset_subset,
+                    candidate_subset=asset_subset,
+                    subsets_with_metadata=[asset_subset_with_metadata],
+                    child_evaluations=[],
+                ).with_run_ids(set()),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_two"), limit=100
+        )
+        assert len(res) == 1
+        assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+            "asset_two"
+        )
+        assert res[0].evaluation_id == 10
+        assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+
+        assert (
+            res[0].get_evaluation_with_run_ids(None).evaluation.subsets_with_metadata[0]
+            == asset_subset_with_metadata
+        )
+
+    def test_purge_asset_evaluations(self, storage) -> None:
+        if not self.can_purge():
+            pytest.skip("Storage cannot purge")
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AssetConditionEvaluation(
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    start_timestamp=0,
+                    end_timestamp=1,
+                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    subsets_with_metadata=[],
+                    child_evaluations=[],
+                ).with_run_ids(set()),
+            ],
+        )
+
+        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 1
+
+        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 0

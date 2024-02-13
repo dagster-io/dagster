@@ -1,8 +1,20 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .resources import datahub_kafka_emitter, datahub_rest_emitter
+from .resources import (
+    DatahubConnection,
+    DatahubKafkaEmitterResource,
+    DatahubRESTEmitterResource,
+    datahub_kafka_emitter,
+    datahub_rest_emitter,
+)
 from .version import __version__
 
-check_dagster_package_version("dagster-datahub", __version__)
+DagsterLibraryRegistry.register("dagster-datahub", __version__)
 
-__all__ = ["datahub_rest_emitter", "datahub_kafka_emitter"]
+__all__ = [
+    "datahub_rest_emitter",
+    "datahub_kafka_emitter",
+    "DatahubKafkaEmitterResource",
+    "DatahubConnection",
+    "DatahubRESTEmitterResource",
+]

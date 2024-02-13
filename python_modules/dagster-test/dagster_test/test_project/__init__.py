@@ -3,28 +3,31 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
+from typing import Any, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
 from dagster._core.execution.context.output import build_output_context
 from dagster._core.host_representation import (
-    ExternalPipeline,
+    ExternalJob,
     ExternalSchedule,
-    GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
@@ -35,12 +38,16 @@ from dagster._utils import file_relative_path, git_repository_root
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
+def cleanup_memoized_results(
+    job_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
+) -> None:
     # Clean up any memoized outputs from the s3 bucket
     from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
     execution_plan = create_execution_plan(
-        pipeline_def, run_config=run_config, instance_ref=instance.get_ref(), mode=mode_str
+        job_def,
+        run_config=run_config,
+        instance_ref=instance.get_ref(),
     )
 
     with build_resources(
@@ -54,9 +61,9 @@ def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
                 name=step_output_handle.output_name,
                 version=version,
             )
-            # pylint: disable=protected-access
-            key = io_manager._get_path(output_context)
-            io_manager._rm_object(key)
+
+            key = io_manager._get_path(output_context)  # noqa: SLF001
+            io_manager.unlink(key)
 
 
 def get_test_repo_path():
@@ -94,7 +101,7 @@ def find_local_test_image(docker_image):
     try:
         client = docker.from_env()
         client.images.get(docker_image)
-        print(  # pylint: disable=print-call
+        print(  # noqa: T201
             "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
             "docker rmi {image}".format(image=docker_image)
         )
@@ -111,46 +118,47 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(
-    pipeline_name, container_image=None, container_context=None, filename=None
-):
+def get_test_project_recon_job(
+    job_name: str,
+    container_image: Optional[str] = None,
+    container_context: Optional[Mapping[str, object]] = None,
+    filename: Optional[str] = None,
+) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructablePipelineForTest(
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
-            file_relative_path(__file__, f"test_pipelines/{filename}"),
+            file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
-        ).get_reconstructable_pipeline(pipeline_name)
+        ).get_reconstructable_job(job_name)
     )
 
 
-class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
-    def __new__(  # pylint: disable=signature-differs
+class ReOriginatedReconstructableJobForTest(ReconstructableJob):
+    def __new__(
         cls,
-        reconstructable_pipeline,
+        reconstructable_job: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructablePipelineForTest, cls).__new__(
+        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
             cls,
-            reconstructable_pipeline.repository,
-            reconstructable_pipeline.pipeline_name,
-            reconstructable_pipeline.solid_selection_str,
-            reconstructable_pipeline.solids_to_execute,
+            reconstructable_job.repository,
+            reconstructable_job.job_name,
+            reconstructable_job.op_selection,
         )
 
     def get_python_origin(self):
-        """
-        Hack! Inject origin that the docker-celery images will use. The BK image uses a different
+        """Hack! Inject origin that the docker-celery images will use. The BK image uses a different
         directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
-        the test that creates the ReconstructablePipeline. As a result the normal origin won't
+        the test that creates the ReconstructableJob. As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
-            self.pipeline_name,
+        return JobPythonOrigin(
+            self.job_name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    "/dagster_test/test_project/test_pipelines/repo.py",
+                    "/dagster_test/test_project/test_jobs/repo.py",
                     "define_demo_execution_repo",
                 ),
                 container_image=self.repository.container_image,
@@ -160,31 +168,30 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         )
 
 
-class ReOriginatedExternalPipelineForTest(ExternalPipeline):
+class ReOriginatedExternalJobForTest(ExternalJob):
     def __init__(
-        self, external_pipeline, container_image=None, container_context=None, filename=None
+        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
-        super(ReOriginatedExternalPipelineForTest, self).__init__(
-            external_pipeline.external_pipeline_data,
-            external_pipeline.repository_handle,
+        super(ReOriginatedExternalJobForTest, self).__init__(
+            external_job.external_job_data,
+            external_job.repository_handle,
         )
 
     def get_python_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
-            self._pipeline_index.name,
+        return JobPythonOrigin(
+            self._job_index.name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    f"/dagster_test/test_project/test_pipelines/{self._filename}",
+                    f"/dagster_test/test_project/test_jobs/{self._filename}",
                     "define_demo_execution_repo",
                 ),
                 container_image=self._container_image,
@@ -193,19 +200,18 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
             ),
         )
 
-    def get_external_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+    def get_external_origin(self) -> ExternalJobOrigin:
+        """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalPipelineOrigin(
+        return ExternalJobOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=InProcessRepositoryLocationOrigin(
+                code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
-                        python_file=f"/dagster_test/test_project/test_pipelines/{self._filename}",
+                        python_file=f"/dagster_test/test_project/test_jobs/{self._filename}",
                         attribute="define_demo_execution_repo",
                     ),
                     container_image=self._container_image,
@@ -213,31 +219,30 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 repository_name="demo_execution_repo",
             ),
-            pipeline_name=self._pipeline_index.name,
+            job_name=self._job_index.name,
         )
 
 
 class ReOriginatedExternalScheduleForTest(ExternalSchedule):
     def __init__(
         self,
-        external_schedule,
+        external_schedule: ExternalSchedule,
         container_image=None,
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,
+            external_schedule._external_schedule_data,  # noqa: SLF001
             external_schedule.handle.repository_handle,
         )
 
     def get_external_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
+        """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
         return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                code_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,
                     location_name="user-code-deployment-1",
@@ -249,9 +254,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
     @property
     def selector_id(self):
-        """
-        Hack! Inject a selector that matches the one that the k8s helm chart will use.
-        """
+        """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(
                 "user-code-deployment-1",
@@ -268,7 +271,7 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
         instance,
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
-            python_file=file_relative_path(__file__, f"test_pipelines/{filename}"),
+            python_file=file_relative_path(__file__, f"test_jobs/{filename}"),
             attribute="define_demo_execution_repo",
         ),
         container_image=container_image,
@@ -277,36 +280,34 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_pipeline_hierarchy(
-    instance, pipeline_name, container_image=None, filename=None
+def get_test_project_external_job_hierarchy(
+    instance, job_name, container_image=None, filename=None
 ):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
-        location = workspace.get_repository_location(workspace.repository_location_names[0])
+        location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        pipeline = repo.get_full_external_job(pipeline_name)
-        yield workspace, location, repo, pipeline
+        job = repo.get_full_external_job(job_name)
+        yield workspace, location, repo, job
 
 
 @contextmanager
 def get_test_project_external_repo(instance, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
-        location = workspace.get_repository_location(workspace.repository_location_names[0])
+        location = workspace.get_code_location(workspace.code_location_names[0])
         yield location, location.get_repository("demo_execution_repo")
 
 
 @contextmanager
-def get_test_project_workspace_and_external_pipeline(
-    instance, pipeline_name, container_image=None, filename=None
+def get_test_project_workspace_and_external_job(
+    instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_pipeline_hierarchy(
-        instance, pipeline_name, container_image, filename
-    ) as (
+    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,
-        pipeline,
+        job,
     ):
-        yield workspace, pipeline
+        yield workspace, job
 
 
 @contextmanager
@@ -347,8 +348,6 @@ def get_test_project_docker_image():
             majmin=majmin, image_version="latest"
         )
 
-    final_docker_image = "{repository}/{image_name}:{tag}".format(
-        repository=docker_repository, image_name=image_name, tag=docker_image_tag
-    )
-    print("Using Docker image: %s" % final_docker_image)  # pylint: disable=print-call
+    final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
+    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

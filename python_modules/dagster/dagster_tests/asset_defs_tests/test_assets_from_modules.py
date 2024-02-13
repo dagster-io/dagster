@@ -1,11 +1,12 @@
 import re
-from typing import cast
+from typing import Sequence, Union, cast
 
 import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
+    FreshnessPolicy,
     SourceAsset,
     asset,
     load_assets_from_current_module,
@@ -13,10 +14,11 @@ from dagster import (
     load_assets_from_package_module,
     load_assets_from_package_name,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
-get_unique_asset_identifier = (
-    lambda asset: asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
+get_unique_asset_identifier = lambda asset: (
+    asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
 )
 
 
@@ -30,7 +32,27 @@ def check_asset_group(assets):
             assert a.group_name == "my_cool_group"
 
 
-def check_asset_prefix(prefix, assets):
+def check_freshness_policy(assets, freshness_policy):
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
+            for asset_key in asset_keys:
+                assert a.freshness_policies_by_key.get(asset_key) == freshness_policy, asset_key
+
+
+def check_auto_materialize_policy(assets, auto_materialize_policy):
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
+            for asset_key in asset_keys:
+                assert (
+                    a.auto_materialize_policies_by_key.get(asset_key) == auto_materialize_policy
+                ), asset_key
+
+
+def assert_assets_have_prefix(
+    prefix: Union[str, Sequence[str]], assets: Sequence[AssetsDefinition]
+) -> None:
     for a in assets:
         if isinstance(a, AssetsDefinition):
             asset_keys = a.keys
@@ -39,6 +61,29 @@ def check_asset_prefix(prefix, assets):
                 if len(observed_prefix) == 1:
                     observed_prefix = observed_prefix[0]
                 assert observed_prefix == prefix
+
+
+def get_assets_def_with_key(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]], key: AssetKey
+) -> AssetsDefinition:
+    assets_by_key = {
+        key: assets_def
+        for assets_def in assets
+        if isinstance(assets_def, AssetsDefinition)
+        for key in assets_def.keys
+    }
+    return assets_by_key[key]
+
+
+def get_source_asset_with_key(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]], key: AssetKey
+) -> SourceAsset:
+    source_assets_by_key = {
+        source_asset.key: source_asset
+        for source_asset in assets
+        if isinstance(source_asset, SourceAsset)
+    }
+    return source_assets_by_key[key]
 
 
 def test_load_assets_from_package_name():
@@ -140,6 +185,37 @@ def test_respect_existing_groups():
         load_assets_from_current_module(group_name="yay")
 
 
+def test_load_assets_with_freshness_policy():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    assets = load_assets_from_modules(
+        [asset_package, module_with_assets],
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=50),
+    )
+    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+
+    assets = load_assets_from_package_module(
+        asset_package, freshness_policy=FreshnessPolicy(maximum_lag_minutes=50)
+    )
+    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+
+
+def test_load_assets_with_auto_materialize_policy():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    assets = load_assets_from_modules(
+        [asset_package, module_with_assets], auto_materialize_policy=AutoMaterializePolicy.eager()
+    )
+    check_auto_materialize_policy(assets, AutoMaterializePolicy.eager())
+
+    assets = load_assets_from_package_module(
+        asset_package, auto_materialize_policy=AutoMaterializePolicy.lazy()
+    )
+    check_auto_materialize_policy(assets, AutoMaterializePolicy.lazy())
+
+
 @pytest.mark.parametrize(
     "prefix",
     [
@@ -153,10 +229,50 @@ def test_prefix(prefix):
     from .asset_package import module_with_assets
 
     assets = load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
-    check_asset_prefix(prefix, assets)
+    assert_assets_have_prefix(prefix, assets)
 
     assets = load_assets_from_package_module(asset_package, key_prefix=prefix)
-    check_asset_prefix(prefix, assets)
+    assert_assets_have_prefix(prefix, assets)
+
+
+def _load_assets_from_module_with_assets(**kwargs):
+    from .asset_package import module_with_assets
+
+    return load_assets_from_modules([module_with_assets], **kwargs)
+
+
+@pytest.mark.parametrize(
+    "load_fn",
+    [
+        _load_assets_from_module_with_assets,
+        lambda **kwargs: load_assets_from_package_name(
+            "dagster_tests.asset_defs_tests.asset_package", **kwargs
+        ),
+    ],
+)
+def test_source_key_prefix(load_fn):
+    prefix = ["foo", "my_cool_prefix"]
+    assets_without_prefix_sources = load_fn(key_prefix=prefix)
+    assert get_source_asset_with_key(assets_without_prefix_sources, AssetKey(["elvis_presley"]))
+    assert get_assets_def_with_key(
+        assets_without_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
+    ).dependency_keys == {
+        AssetKey(["elvis_presley"]),
+        AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
+    }
+
+    assets_with_prefix_sources = load_fn(
+        key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
+    )
+    assert get_source_asset_with_key(
+        assets_with_prefix_sources, AssetKey(["bar", "cooler_prefix", "elvis_presley"])
+    )
+    assert get_assets_def_with_key(
+        assets_with_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
+    ).dependency_keys == {
+        AssetKey(["bar", "cooler_prefix", "elvis_presley"]),
+        AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
+    }
 
 
 @pytest.mark.parametrize(
@@ -175,9 +291,7 @@ def test_prefix(prefix):
     ],
 )
 def test_load_assets_cacheable(load_fn, prefix):
-    """
-    Tests the load-from-module and load-from-package-name functinos with cacheable assets
-    """
+    """Tests the load-from-module and load-from-package-name functinos with cacheable assets."""
     from . import asset_package_with_cacheable
 
     assets_defs = load_fn(asset_package_with_cacheable)
@@ -203,4 +317,4 @@ def test_load_assets_cacheable(load_fn, prefix):
             cacheable_def.compute_cacheable_data()
         )
 
-        check_asset_prefix(prefix, resolved_asset_defs)
+        assert_assets_have_prefix(prefix, resolved_asset_defs)

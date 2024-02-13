@@ -1,12 +1,9 @@
 ####################################################################################################
 #
 # DAGSTER BUILDKITE TEST IMAGE BUILDER
-#
-# This Dockerfile specifies an image with a test Dagster project. It is built
-# during every run of BK. The base image is `buildkite-test-image-builder-base`.
+# This image is used to bootstrap the test image building process
 #
 ####################################################################################################
-# This image is used to bootstrap the test image building process
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}"
 

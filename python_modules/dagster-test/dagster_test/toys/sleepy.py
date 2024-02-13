@@ -1,4 +1,3 @@
-# pylint:disable=no-member
 from time import sleep
 from typing import List, Tuple
 
@@ -10,7 +9,7 @@ from dagster._core.execution.context.compute import OpExecutionContext
 def sleeper(context, units: List[int]) -> int:
     tot = 0
     for sec in units:
-        context.log.info("Sleeping for {} seconds".format(sec))
+        context.log.info(f"Sleeping for {sec} seconds")
         sleep(sec)
         tot += sec
 

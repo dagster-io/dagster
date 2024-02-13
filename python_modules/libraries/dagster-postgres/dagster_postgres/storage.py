@@ -1,8 +1,9 @@
 from typing import Optional
 
 from dagster import _check as check
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.base_storage import DagsterStorage
-from dagster._core.storage.config import pg_config
+from dagster._core.storage.config import PostgresStorageConfig, pg_config
 from dagster._core.storage.event_log import EventLogStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
@@ -18,7 +19,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
     """Postgres-backed dagster storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-daemon`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-daemon`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for storage, you can add a block such as the following to your
@@ -33,7 +34,12 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, postgres_url, should_autocreate_tables=True, inst_data=None):
+    def __init__(
+        self,
+        postgres_url,
+        should_autocreate_tables=True,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
             should_autocreate_tables, "should_autocreate_tables"
@@ -45,15 +51,17 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+    ) -> "DagsterPostgresStorage":
         return DagsterPostgresStorage(
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),

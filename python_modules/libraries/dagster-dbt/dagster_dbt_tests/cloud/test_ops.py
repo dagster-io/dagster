@@ -1,8 +1,10 @@
+from typing import Any
+
 import pytest
 import responses
 from dagster import Failure, job
 from dagster._check import CheckError
-from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+from dagster_dbt import DbtCloudClientResource, dbt_cloud_resource, dbt_cloud_run_op
 
 from .utils import (
     SAMPLE_ACCOUNT_ID,
@@ -15,22 +17,26 @@ from .utils import (
 )
 
 
+@pytest.fixture(name="dbt_cloud", params=["pythonic", "legacy"])
+def dbt_cloud_fixture(request) -> Any:
+    if request.param == "pythonic":
+        yield DbtCloudClientResource(auth_token="some_auth_token", account_id=SAMPLE_ACCOUNT_ID)
+    else:
+        yield dbt_cloud_resource.configured(
+            {"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID}
+        )
+
+
 @pytest.mark.parametrize(
     "final_status,expected_behavior",
     [("Success", 0), ("Error", 1), ("Cancelled", 1), ("Running", 2), ("FooBarBaz", 3)],
 )
-def test_run_materializations(final_status, expected_behavior):
+def test_run_materializations(final_status, expected_behavior, dbt_cloud):
     my_dbt_cloud = dbt_cloud_run_op.configured(
         {"job_id": SAMPLE_JOB_ID, "poll_interval": 0.05, "poll_timeout": 1}, name="my_dbt_cloud"
     )
 
-    @job(
-        resource_defs={
-            "dbt_cloud": dbt_cloud_resource.configured(
-                {"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID}
-            )
-        }
-    )
+    @job(resource_defs={"dbt_cloud": dbt_cloud})
     def dbt_job():
         my_dbt_cloud()
 

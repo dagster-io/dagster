@@ -1,0 +1,46 @@
+# name: test_mode_fetch_loggers[0]
+  dict({
+    'pipelineOrError': dict({
+      '__typename': 'Pipeline',
+      'modes': list([
+        dict({
+          'loggers': list([
+            dict({
+              'configField': dict({
+                'configType': dict({
+                  'fields': list([
+                    dict({
+                      'configType': dict({
+                        'key': 'String',
+                      }),
+                      'name': 'log_level',
+                    }),
+                    dict({
+                      'configType': dict({
+                        'key': 'String',
+                      }),
+                      'name': 'prefix',
+                    }),
+                  ]),
+                  'key': 'Shape.37a85e53844c27abff7868c5c2e6a32d7fd1c308',
+                }),
+              }),
+              'description': None,
+              'name': 'bar',
+            }),
+            dict({
+              'configField': dict({
+                'configType': dict({
+                  'key': 'String',
+                }),
+              }),
+              'description': None,
+              'name': 'foo',
+            }),
+          ]),
+          'name': 'default',
+        }),
+      ]),
+    }),
+  })
+# ---

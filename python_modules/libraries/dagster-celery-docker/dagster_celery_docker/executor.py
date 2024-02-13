@@ -5,7 +5,6 @@ from dagster import (
     DagsterInstance,
     Executor,
     Field,
-    MetadataEntry,
     Permissive,
     StringSource,
     _check as check,
@@ -16,8 +15,8 @@ from dagster._cli.api import ExecuteStepArgs
 from dagster._core.events import EngineEventData
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.merger import merge_dicts
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
@@ -192,12 +191,13 @@ class CeleryDockerExecutor(Executor):
 
 def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=plan_context.pipeline_run.run_id,
+        job_origin=plan_context.reconstructable_job.get_python_origin(),
+        run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,
     )
 
     task = create_docker_task(app)
@@ -208,7 +208,7 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key="{queue}.execute_step_docker".format(queue=queue),
+        routing_key=f"{queue}.execute_step_docker",
     )
 
 
@@ -224,25 +224,25 @@ def create_docker_task(celery_app, **task_kwargs):
             check.dict_param(
                 execute_step_args_packed,
                 "execute_step_args_packed",
-            )
+            ),
+            as_type=ExecuteStepArgs,
         )
-        check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
 
         check.dict_param(docker_config, "docker_config")
 
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
+        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
         check.inst(
-            pipeline_run,
+            dagster_run,
             DagsterRun,
-            "Could not load run {}".format(execute_step_args.pipeline_run_id),
+            f"Could not load run {execute_step_args.run_id}",
         )
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
-            else pipeline_run.pipeline_code_origin.repository_origin.container_image
+            else dagster_run.job_code_origin.repository_origin.container_image
         )
 
         if not docker_image:
@@ -259,21 +259,21 @@ def create_docker_task(celery_app, **task_kwargs):
 
         # Post event for starting execution
         engine_event = instance.report_engine_event(
-            "Executing steps {} in Docker container {}".format(step_keys_str, docker_image),
-            pipeline_run,
+            f"Executing steps {step_keys_str} in Docker container {docker_image}",
+            dagster_run,
             EngineEventData(
-                [
-                    MetadataEntry("Step keys", value=step_keys_str),
-                    MetadataEntry("Image", value=docker_image),
-                    MetadataEntry("Celery worker", value=self.request.hostname),
-                ],
+                {
+                    "Step keys": step_keys_str,
+                    "Image": docker_image,
+                    "Celery worker": self.request.hostname,
+                },
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryDockerExecutor,
             step_key=execute_step_args.step_keys_to_execute[0],
         )
 
-        serialized_events = [serialize_dagster_namedtuple(engine_event)]
+        serialized_events = [serialize_value(engine_event)]
 
         docker_env = {}
         if docker_config.get("env_vars"):
@@ -310,14 +310,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
-            entries = [MetadataEntry("Job image", value=docker_image)]
+            metadata = {"Job image": docker_image}
             if err.stderr is not None:
-                entries.append(MetadataEntry("Docker stderr", value=err.stderr))
+                metadata["Docker stderr"] = err.stderr
 
             instance.report_engine_event(
-                "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
-                pipeline_run,
-                EngineEventData(entries),
+                f"Failed to run steps {step_keys_str} in Docker container {docker_image}",
+                dagster_run,
+                EngineEventData(metadata),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],
             )
@@ -327,7 +327,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 raise Exception("No response from execute_step in CeleryDockerExecutor")
 
             events = filter_dagster_events_from_cli_logs(res.split("\n"))
-            serialized_events += [serialize_dagster_namedtuple(event) for event in events]
+            serialized_events += [serialize_value(event) for event in events]
 
         return serialized_events
 

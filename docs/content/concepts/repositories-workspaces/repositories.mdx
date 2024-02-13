@@ -1,6 +1,6 @@
 ---
 title: Repositories | Dagster Docs
-description: A repository is a collection of jobs, schedules, and sensor definitions that the Dagster CLI, Dagit and the Dagster Daemon can target to load them.
+description: A repository is a collection of jobs, schedules, and sensor definitions that the Dagster CLI, Dagster webserver, and the Dagster daemon can target to load them.
 ---
 
 # Repositories
@@ -13,12 +13,12 @@ description: A repository is a collection of jobs, schedules, and sensor definit
   info.
 </Note>
 
-A repository is a collection of software-defined assets, jobs, schedules, and sensors. Repositories are loaded as a unit by the Dagster CLI, Dagit and the dagster-daemon.
+A repository is a collection of software-defined assets, jobs, schedules, and sensors. Repositories are loaded as a unit by the Dagster CLI, Dagster webserver, and the Dagster daemon.
 
 A convenient way to organize your job and other definitions, each repository:
 
 - Includes various definitions: [Software-defined assets](/concepts/assets/software-defined-assets), [Jobs](/concepts/ops-jobs-graphs/jobs), [Schedules](/concepts/partitions-schedules-sensors/schedules), and [Sensors](/concepts/partitions-schedules-sensors/sensors).
-- Is loaded in a different process than Dagster system processes like Dagit. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
+- Is loaded in a different process than Dagster system processes like the webserver. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
 - Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 
 You can set up multiple repositories and load them all at once by creating a `workspace.yaml` file. This can be useful for grouping jobs and other artifacts by team for organizational purposes. Refer to the [Workspace documentation](/concepts/code-locations/workspace-files) to learn more about setting up multiple repositories.
@@ -114,12 +114,12 @@ dagster dev -f repo.py
 Now you can see that all the assets and jobs in this repository are listed in the left sidebar. Assets are organized in groups. In our example, `asset1` and `asset2` are placed in the `default` group because they were not explicitly assigned a group. `asset3` is in `mygroup`.
 
 <Image
-alt="repo-dagit"
-src="/images/concepts/repo-dagit.png"
+alt="repo-ui"
+src="/images/concepts/repo-ui.png"
 width={4032}
 height={2454}
 />
 
 You can also use `-m` to specify a module where the repository lives (See [`dagster dev`](/\_apidocs/cli#dagster-dev) for the full list of ways to locate a repository).
 
-Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the Workspace, which determines all of the available repositories available to Dagit. See [Workspace](/concepts/code-locations/workspace-files) for more details.
+Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the Workspace, which determines all of the available repositories available to the webserver/UI. See [Workspace](/concepts/code-locations/workspace-files) for more details.

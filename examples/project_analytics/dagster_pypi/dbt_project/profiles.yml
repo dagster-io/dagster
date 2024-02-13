@@ -1,0 +1,14 @@
+dbt_project:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: dbt_duckdb.db
+      schema: dagster_pypi
+    prod:
+      type: bigquery
+      dataset: dagster_analytics
+      location: US
+      method: oauth
+      project: "{{ env_var('BIGQUERY_PROJECT', '') }}"
+      threads: 4

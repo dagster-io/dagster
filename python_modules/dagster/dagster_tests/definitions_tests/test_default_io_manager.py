@@ -8,6 +8,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.test_utils import environ, instance_for_test
@@ -75,7 +76,9 @@ def foo_io_manager_asset(context):
 
 
 def create_asset_job():
-    return define_asset_job(name="foo_io_manager_asset_job").resolve([foo_io_manager_asset], [])
+    return define_asset_job(name="foo_io_manager_asset_job").resolve(
+        asset_graph=AssetGraph.from_assets([foo_io_manager_asset])
+    )
 
 
 def test_asset_override_default_io_manager(instance):

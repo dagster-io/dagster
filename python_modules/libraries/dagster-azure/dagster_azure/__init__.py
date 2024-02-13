@@ -1,5 +1,5 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .version import __version__
 
-check_dagster_package_version("dagster-azure", __version__)
+DagsterLibraryRegistry.register("dagster-azure", __version__)

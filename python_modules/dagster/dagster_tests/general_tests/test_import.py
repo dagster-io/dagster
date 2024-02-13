@@ -25,6 +25,7 @@ def test_import_perf():
     # ensure expensive libraries which should not be needed for basic definitions are not imported
     assert "grpc" not in import_profile
     assert "sqlalchemy" not in import_profile
+    assert "upath." not in import_profile  # dont conflate with import of upath_io_manager
 
     # one way to debug imports is to `pip install tuna` then run
     # python -X importtime python_modules/dagster/dagster_tests/general_tests/simple.py &> /tmp/import.txt && tuna /tmp/import.txt

@@ -56,8 +56,7 @@ def is_closed_python_dict_type(ttype):
 
 
 def is_closed_python_tuple_type(ttype):
-    """
-    A "closed" generic type has all of its type parameters parameterized
+    """A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
 
     e.g.
@@ -71,8 +70,7 @@ def is_closed_python_tuple_type(ttype):
 
 
 def is_closed_python_set_type(ttype):
-    """
-    A "closed" generic type has all of its type parameters parameterized
+    """A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
 
     e.g.

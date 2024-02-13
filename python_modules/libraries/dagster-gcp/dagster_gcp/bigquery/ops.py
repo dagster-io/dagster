@@ -40,8 +40,7 @@ def _preprocess_config(cfg):
 
 
 def bq_op_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
+    """Executes BigQuery SQL queries.
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
@@ -60,7 +59,7 @@ def bq_op_for_queries(sql_queries):
         required_resource_keys={"bigquery"},
         tags={"kind": "sql", "sql": "\n".join(sql_queries)},
     )
-    def _bq_fn(context):  # pylint: disable=unused-argument
+    def _bq_fn(context):
         query_job_config = _preprocess_config(context.op_config.get("query_job_config", {}))
 
         # Retrieve results as pandas DataFrames

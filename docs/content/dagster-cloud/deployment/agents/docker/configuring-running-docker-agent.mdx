@@ -82,7 +82,6 @@ docker run \
   --network=dagster_cloud_agent \
   --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  --restart on-failure \
   -it docker.io/dagster/dagster-cloud-agent:latest \
   dagster-cloud agent run /opt/dagster/app
 ```
@@ -90,9 +89,9 @@ docker run \
 This command:
 
 - Starts the agent with your local `dagster.yaml` mounted as a volume
-- Starts the system Docker socket mounted as a volume, allowing the agent to launch containers. The `--restart-on-failure` argument will ensure that if it fails, Docker will restart it.
+- Starts the system Docker socket mounted as a volume, allowing the agent to launch containers.
 
-To view the agent in Dagster Cloud, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+To view the agent in Dagster Cloud, click the Dagster icon in the top left to navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 <Image
 alt="Instance Status"
@@ -118,7 +117,6 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
     --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
     --volume /var/run/docker.sock:/var/run/docker.sock \
     --volume ~/.docker/config.json:/root/.docker/config.json:ro \
-    --restart on-failure \
     -it docker.io/dagster/dagster-cloud-agent:latest \
     dagster-cloud agent run /opt/dagster/app
 ```
@@ -127,6 +125,6 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-cloud/developing-testing/code-locations) using the agent.
+- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-cloud/managing-deployments/code-locations) using the agent.
 
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-cloud/developing-testing/code-locations) guide for more info.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-cloud/managing-deployments/code-locations) guide for more info.

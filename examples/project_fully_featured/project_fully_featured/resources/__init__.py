@@ -1,29 +1,31 @@
 import os
 
 from dagster._utils import file_relative_path
-from dagster_aws.s3 import s3_resource
-from dagster_dbt import dbt_cli_resource
+from dagster_aws.s3 import S3Resource
+from dagster_aws.s3.io_manager import S3PickleIOManager
+from dagster_dbt import DbtCliResource
 from dagster_pyspark import pyspark_resource
 
-from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
-from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
+from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import (
-    local_partitioned_parquet_io_manager,
-    s3_partitioned_parquet_io_manager,
+    LocalPartitionedParquetIOManager,
+    S3PartitionedParquetIOManager,
 )
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
-dbt_local_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "local"}
+dbt_local_resource = DbtCliResource(
+    project_dir=DBT_PROJECT_DIR,
+    target="local",
 )
-dbt_staging_resource = dbt_cli_resource.configured(
-    {"profiles-dir": DBT_PROFILES_DIR, "project-dir": DBT_PROJECT_DIR, "target": "staging"}
+dbt_staging_resource = DbtCliResource(
+    project_dir=DBT_PROJECT_DIR,
+    target="staging",
 )
-dbt_prod_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "prod"}
+dbt_prod_resource = DbtCliResource(
+    project_dir=DBT_PROJECT_DIR,
+    target="prod",
 )
 
 
@@ -53,37 +55,39 @@ SHARED_SNOWFLAKE_CONF = {
 }
 
 RESOURCES_PROD = {
-    "s3_bucket": "hackernews-elementl-prod",
-    "io_manager": common_bucket_s3_pickle_io_manager,
-    "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
-    "pyspark": configured_pyspark,
+    "io_manager": S3PickleIOManager(
+        s3_resource=S3Resource.configure_at_launch(),
+        s3_bucket="hackernews-elementl-prod",
+    ),
+    "parquet_io_manager": S3PartitionedParquetIOManager(
+        pyspark=configured_pyspark, s3_bucket="hackernews-elementl-dev"
+    ),
+    "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_prod_resource,
 }
 
 
 RESOURCES_STAGING = {
-    "s3_bucket": "hackernews-elementl-dev",
-    "io_manager": common_bucket_s3_pickle_io_manager,
-    "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": SnowflakeIOManager(
-        dict(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF)
+    "io_manager": S3PickleIOManager(
+        s3_resource=S3Resource.configure_at_launch(),
+        s3_bucket="hackernews-elementl-dev",
     ),
-    "pyspark": configured_pyspark,
+    "parquet_io_manager": S3PartitionedParquetIOManager(
+        pyspark=configured_pyspark, s3_bucket="hackernews-elementl-dev"
+    ),
+    "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_staging_resource,
 }
 
 
 RESOURCES_LOCAL = {
-    "parquet_io_manager": local_partitioned_parquet_io_manager,
-    "warehouse_io_manager": duckdb_partitioned_parquet_io_manager.configured(
-        {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
+    "parquet_io_manager": LocalPartitionedParquetIOManager(pyspark=configured_pyspark),
+    "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
+        pyspark=configured_pyspark,
+        duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb"),
     ),
-    "pyspark": configured_pyspark,
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
 }

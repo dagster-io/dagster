@@ -1,5 +1,7 @@
 import json
 import logging
+import threading
+import traceback
 from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
 
@@ -13,34 +15,40 @@ from dagster._utils.log import create_console_logger
 
 
 class DispatchingLogHandler(logging.Handler):
-    """
-    Proxies logging records to a set of downstream loggers which themselves will route to their own
+    """Proxies logging records to a set of downstream loggers which themselves will route to their own
     set of handlers.  Needed to bridge to the set of dagster logging utilities which were
     implemented as loggers rather than log handlers.
     """
 
     def __init__(self, downstream_loggers: List[logging.Logger]):
-        self._should_capture = True
+        # Setting up a local thread context here to allow the DispatchingLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         self._downstream_loggers = [*downstream_loggers]
         super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return self._should_capture
+        if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable through the __init__()
+            # we need to set a default value for all other threads here.
+            self._local_thread_context.should_capture = True
+        return self._local_thread_context.should_capture
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add metadata, and have handlers handle it."""
         try:
-            self._should_capture = False
+            self._local_thread_context.should_capture = False
             for logger in self._downstream_loggers:
                 logger.handle(record)
         finally:
-            self._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class CapturedLogHandler(logging.Handler):
-    """
-    Persist logging records to an IO stream controlled by the CapturedLogManager.
-    """
+    """Persist logging records to an IO stream controlled by the CapturedLogManager."""
 
     def __init__(self, write_stream: IO):
         self._write_stream = write_stream
@@ -53,12 +61,17 @@ class CapturedLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         self._has_logged = True
-        self._write_stream.write(_seven.json.dumps(record.__dict__) + "\n")
+
+        record_dict = record.__dict__
+        exc_info = record_dict.get("exc_info")
+        if exc_info:
+            record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
+
+        self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
 
 
 class InstigationLogger(logging.Logger):
-    """
-    Logger exposed on the evaluation context of sensor/schedule evaluation functions.  This is tied
+    """Logger exposed on the evaluation context of sensor/schedule evaluation functions.  This is tied
     to the Python logging system by setting up a custom logging handler that writes JSON payloads
     representing the log events to the dagster-managed captured log manager.  These log events are
     persisted, using the given log_key, which is stored on the sensor/schedule tick. These logs can
@@ -70,7 +83,7 @@ class InstigationLogger(logging.Logger):
 
     def __init__(
         self,
-        log_key: Optional[List[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
         instance: Optional[DagsterInstance] = None,
         repository_name: Optional[str] = None,
         name: Optional[str] = None,
@@ -117,11 +130,10 @@ class InstigationLogger(logging.Logger):
                 },
             )
             record.msg = " - ".join([self._repository_name, self._name, message])
+            record.args = tuple()
         return record
 
-    def makeRecord(  # pylint: disable=signature-differs
-        self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
-    ):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
         return self._annotate_record(record)
 

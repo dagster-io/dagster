@@ -29,16 +29,16 @@ class Enum:
     def write(self, printer):
         printer.line(self.name.title() + " = Enum(")
         with printer.with_indent():
-            printer.line("name='{}',".format(self.name.title()))
+            printer.line(f"name='{self.name.title()}',")
             printer.line("enum_values=[")
             with printer.with_indent():
                 if self.enum_descriptions:
                     for name, value in zip(self.enum_names, self.enum_descriptions):
-                        prefix = "EnumValue('{}', description='''".format(name)
+                        prefix = f"EnumValue('{name}', description='''"
                         printer.block(value + "'''),", initial_indent=prefix)
                 else:
                     for name in self.enum_names:
-                        printer.line("EnumValue('{}'),".format(name))
+                        printer.line(f"EnumValue('{name}'),")
 
             printer.line("],")
         printer.line(")")
@@ -86,12 +86,12 @@ class Field:
 
                         # This v is a terminal scalar type, print directly
                         if isinstance(v, str):
-                            printer.line("'{}': {},".format(k, v))
+                            printer.line(f"'{k}': {v},")
 
                         # Recurse nested fields
                         else:
                             with printer.with_indent():
-                                printer.append("'{}': ".format(k))
+                                printer.append(f"'{k}': ")
                             v.write(printer)
                             printer.append(",")
                 printer.line("},")
@@ -128,7 +128,7 @@ class ParsedConfig(namedtuple("_ParsedConfig", "name configs enums")):
 
     def write_configs(self, base_path):
         configs_filename = "configs_%s.py" % self.name
-        print("Writing", configs_filename)  # pylint: disable=print-call
+        print("Writing", configs_filename)  # noqa: T201
         with open(os.path.join(base_path, configs_filename), "wb") as f:
             f.write(self.configs)
 
@@ -185,7 +185,7 @@ class ConfigParser:
 
         # Print type tree
         prefix = "|" + ("-" * 4 * depth) + " " if depth > 0 else ""
-        print(prefix + (name or obj.get("type")))  # pylint: disable=print-call
+        print(prefix + (name or obj.get("type")))  # noqa: T201
 
         # Switch on object type
         obj_type = obj.get("type")

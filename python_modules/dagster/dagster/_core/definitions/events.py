@@ -1,5 +1,4 @@
 import re
-import warnings
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -19,27 +18,29 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 
 from .metadata import (
-    MetadataEntry,
+    MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
-    PartitionMetadataEntry,
     RawMetadataValue,
-    last_file_comp,
     normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.context.output import OutputContext
+
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
-ASSET_KEY_LEGACY_DELIMITER = "."
 
 
 def parse_asset_key_string(s: str) -> Sequence[str]:
@@ -92,10 +93,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return super(AssetKey, cls).__new__(cls, path=path)
 
     def __str__(self):
-        return "AssetKey({})".format(self.path)
+        return f"AssetKey({self.path})"
 
     def __repr__(self):
-        return "AssetKey({})".format(self.path)
+        return f"AssetKey({self.path})"
 
     def __hash__(self):
         return hash(tuple(self.path))
@@ -110,20 +111,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
                 return False
         return True
 
-    def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
-        """
-        E.g. '["first_component", "second_component"]'.
-        """
-        if not self.path:
-            return None
-        if legacy:
-            return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
+    def to_string(self) -> str:
+        """E.g. '["first_component", "second_component"]'."""
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
-        """
-        E.g. "first_component/second_component".
-        """
+        """E.g. "first_component/second_component"."""
         return ASSET_KEY_DELIMITER.join(self.path)
 
     def to_python_identifier(self, suffix: Optional[str] = None) -> str:
@@ -156,10 +149,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return AssetKey(path)
 
     @staticmethod
-    def get_db_prefix(path: Sequence[str], legacy: Optional[bool] = False):
+    def get_db_prefix(path: Sequence[str]):
         check.sequence_param(path, "path", of_type=str)
-        if legacy:
-            return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
@@ -170,7 +161,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return {"path": self.path}
 
     @staticmethod
-    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
+    def from_coercible(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -184,10 +175,30 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         else:
             check.failed(f"Unexpected type for AssetKey: {type(arg)}")
 
+    @staticmethod
+    def from_coercible_or_definition(
+        arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"],
+    ) -> "AssetKey":
+        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.source_asset import SourceAsset
+
+        if isinstance(arg, AssetsDefinition):
+            return arg.key
+        elif isinstance(arg, SourceAsset):
+            return arg.key
+        else:
+            return AssetKey.from_coercible(arg)
+
+    def has_prefix(self, prefix: Sequence[str]) -> bool:
+        return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
+
+    def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
+        prefix = key_prefix_from_coercible(prefix)
+        return AssetKey(list(prefix) + list(self.path))
+
 
 class AssetKeyPartitionKey(NamedTuple):
-    """
-    An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
+    """An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
     partition of a partitioned asset.
     """
 
@@ -199,6 +210,26 @@ CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 
 
+def check_opt_coercible_to_asset_key_prefix_param(
+    prefix: Optional[CoercibleToAssetKeyPrefix], param_name: str
+) -> Optional[Sequence[str]]:
+    try:
+        return key_prefix_from_coercible(prefix) if prefix is not None else None
+    except check.CheckError:
+        raise check.ParameterCheckError(
+            f'Param "{param_name}" is not a string or a sequence of strings'
+        )
+
+
+def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence[str]:
+    if isinstance(key_prefix, str):
+        return [key_prefix]
+    elif isinstance(key_prefix, list):
+        return key_prefix
+    else:
+        check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
+
+
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 
 
@@ -206,7 +237,7 @@ DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 class AssetLineageInfo(
     NamedTuple("_AssetLineageInfo", [("asset_key", AssetKey), ("partitions", AbstractSet[str])])
 ):
-    def __new__(cls, asset_key, partitions=None):
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]] = None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
@@ -215,8 +246,9 @@ class AssetLineageInfo(
 T = TypeVar("T")
 
 
+@experimental_param(param="data_version")
 class Output(Generic[T]):
-    """Event corresponding to one of a op's outputs.
+    """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
     one output, or when they also yield events of other types, or when defining a op using the
@@ -230,57 +262,61 @@ class Output(Generic[T]):
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
-        metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
-            (Experimental) A set of metadata entries to attach to events related to this Output.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        data_version (Optional[DataVersion]): (Experimental) A data version to manually set
+            for the asset.
     """
 
     def __init__(
         self,
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        data_version: Optional[DataVersion] = None,
     ):
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries,
-            "metadata_entries",
-            of_type=(MetadataEntry, PartitionMetadataEntry),
-        )
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
     @property
-    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
-        return self._metadata_entries
+    def metadata(self) -> MetadataMapping:
+        return self._metadata
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Any:
+        """Any: The value returned by the compute function."""
         return self._value
 
-    @public  # type: ignore
+    @public
     @property
     def output_name(self) -> str:
+        """str: Name of the corresponding :py:class:`Out`."""
         return self._output_name
+
+    @public
+    @property
+    def data_version(self) -> Optional[DataVersion]:
+        """Optional[DataVersion]: A data version that was manually set on the `Output`."""
+        return self._data_version
 
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, Output)
             and self.value == other.value
             and self.output_name == other.output_name
-            and self.metadata_entries == other.metadata_entries
+            and self.metadata == other.metadata
         )
 
 
 class DynamicOutput(Generic[T]):
-    """
-    Variant of :py:class:`Output <dagster.Output>` used to support
+    """Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
     one item in a set that can be processed individually with ``map`` or gathered
     with ``collect``.
@@ -297,8 +333,6 @@ class DynamicOutput(Generic[T]):
         output_name (Optional[str]):
             Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
-        metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
-            (Experimental) A set of metadata entries to attach to events related to this output.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -310,35 +344,35 @@ class DynamicOutput(Generic[T]):
         value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
         self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
         self._output_name = check.str_param(output_name, "output_name")
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
         self._value = value
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
     @property
-    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
-        return self._metadata_entries
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._metadata
 
-    @public  # type: ignore
+    @public
     @property
     def mapping_key(self) -> str:
+        """The mapping_key that was set for this DynamicOutput at instantiation."""
         return self._mapping_key
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> T:
+        """The value that is returned by the compute function for this DynamicOut."""
         return self._value
 
-    @public  # type: ignore
+    @public
     @property
     def output_name(self) -> str:
+        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with."""
         return self._output_name
 
     def __eq__(self, other: object) -> bool:
@@ -347,18 +381,21 @@ class DynamicOutput(Generic[T]):
             and self.value == other.value
             and self.output_name == other.output_name
             and self.mapping_key == other.mapping_key
-            and self.metadata_entries == other.metadata_entries
+            and self.metadata == other.metadata
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class AssetObservation(
     NamedTuple(
         "_AssetObservation",
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("partition", PublicAttr[Optional[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
@@ -368,7 +405,6 @@ class AssetObservation(
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the asset.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -381,18 +417,17 @@ class AssetObservation(
 
     def __new__(
         cls,
-        asset_key: Union[Sequence[str], AssetKey, str],
+        asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, Sequence):
+        else:
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
@@ -403,18 +438,15 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
         return super(AssetObservation, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=normed_metadata,
             tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -423,15 +455,38 @@ class AssetObservation(
     def label(self) -> str:
         return " ".join(self.asset_key.path)
 
+    @property
+    def data_version(self) -> Optional[str]:
+        return self.tags.get(DATA_VERSION_TAG)
 
-@whitelist_for_serdes
+
+UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
+
+
+class AssetMaterializationSerializer(NamedTupleSerializer):
+    # There are old `Materialization` objects in storage. We set the default value for asset key to
+    # be `AssetKey(["__undefined__"])` to ensure that we can load these objects, without needing to
+    # allow for the construction of new `AssetMaterialization` objects with no defined AssetKey.
+    def before_unpack(self, context, unpacked_dict: Any) -> Any:
+        # cover both the case where "asset_key" is not present at all and where it is None
+        if unpacked_dict.get("asset_key") is None:
+            unpacked_dict["asset_key"] = AssetKey(UNDEFINED_ASSET_KEY_PATH)
+        return unpacked_dict
+
+
+@whitelist_for_serdes(
+    old_storage_names={"Materialization"},
+    serializer=AssetMaterializationSerializer,
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class AssetMaterialization(
     NamedTuple(
         "_AssetMaterialization",
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("partition", PublicAttr[Optional[str]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
@@ -446,14 +501,12 @@ class AssetMaterialization(
     framework.
 
     Op authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in Dagit.
+    computations, enabling tooling like the Assets dashboard in the Dagster UI.
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
             job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary
-            metadata about the materialized value.
         partition (Optional[str]): The name of the partition
             that was materialized.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -468,10 +521,9 @@ class AssetMaterialization(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
@@ -479,7 +531,7 @@ class AssetMaterialization(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, Sequence):
+        else:
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
@@ -491,9 +543,8 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
         partition = check.opt_str_param(partition, "partition")
@@ -513,7 +564,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=normalize_metadata(metadata, metadata_entries),
+            metadata=normed_metadata,
             tags=tags,
             partition=partition,
         )
@@ -544,120 +595,15 @@ class AssetMaterialization(
             metadata={"path": MetadataValue.path(path)},
         )
 
-    @public  # type: ignore
-    @property
-    def metadata(self) -> MetadataMapping:
-        # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
-
-class MaterializationSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_unpacked(cls, unpacked_dict, klass):
-        # override the default `from_storage_dict` implementation in order to skip the deprecation
-        # warning for historical Materialization events, loaded from event_log storage
-        return Materialization(skip_deprecation_warning=True, **unpacked_dict)
-
-
-@whitelist_for_serdes(serializer=MaterializationSerializer)
-class Materialization(
-    NamedTuple(
-        "_Materialization",
-        [
-            ("label", str),
-            ("description", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
-            ("asset_key", AssetKey),
-            ("partition", Optional[str]),
-        ],
-    )
-):
-    """Event indicating that an op has materialized a value.
-
-    Solid compute functions may yield events of this type whenever they wish to indicate to the
-    Dagster framework (and the end user) that they have produced a materialized value as a
-    side effect of computation. Unlike outputs, materializations can not be passed to other ops,
-    and their persistence is controlled by op logic, rather than by the Dagster framework.
-
-    Solid authors should use these events to organize metadata about the side effects of their
-    computations to enable downstream tooling like artifact catalogues and diff tools.
-
-    Args:
-        label (str): A short display name for the materialized value.
-        description (Optional[str]): A longer human-radable description of the materialized value.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            materialized value.
-        asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
-            across runs
-        partition (Optional[str]): The name of the partition that was materialized.
-    """
-
-    def __new__(
-        cls,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
-        asset_key: Optional[Union[str, AssetKey]] = None,
-        partition: Optional[str] = None,
-        skip_deprecation_warning: Optional[bool] = False,
-    ):
-        if asset_key and isinstance(asset_key, str):
-            asset_key = AssetKey(parse_asset_key_string(asset_key))
-        else:
-            check.opt_inst_param(asset_key, "asset_key", AssetKey)
-
-        asset_key = cast(AssetKey, asset_key)
-        if not label:
-            check.param_invariant(
-                asset_key and asset_key.path,
-                "label",
-                "Either label or asset_key with a path must be provided",
-            )
-            label = asset_key.to_string()
-
-        if not skip_deprecation_warning:
-            warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
-
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-
-        return super(Materialization, cls).__new__(
-            cls,
-            label=check.str_param(label, "label"),
-            description=check.opt_str_param(description, "description"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
-            ),
-            asset_key=asset_key,
-            partition=check.opt_str_param(partition, "partition"),
-        )
-
-    @staticmethod
-    def file(
-        path: str,
-        description: Optional[str] = None,
-        asset_key: Optional[Union[str, AssetKey]] = None,
-    ) -> "Materialization":
-        """Static constructor for standard materializations corresponding to files on disk.
-
-        Args:
-            path (str): The path to the file.
-            description (Optional[str]): A human-readable description of the materialization.
-        """
-        return Materialization(
-            label=last_file_comp(path),
-            description=description,
-            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
-            asset_key=asset_key,
-        )
-
-    @property
-    def tags(self) -> Mapping[str, str]:
-        return {}
-
-
-@whitelist_for_serdes
+@deprecated(
+    breaking_version="1.7",
+    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+)
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class ExpectationResult(
     NamedTuple(
         "_ExpectationResult",
@@ -665,7 +611,7 @@ class ExpectationResult(
             ("success", PublicAttr[bool]),
             ("label", PublicAttr[Optional[str]]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
         ],
     )
 ):
@@ -679,8 +625,6 @@ class ExpectationResult(
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
         description (Optional[str]): A longer human-readable description of the expectation.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            expectation.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -692,33 +636,32 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
 
         return super(ExpectationResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=normed_metadata,
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class TypeCheck(
     NamedTuple(
         "_TypeCheck",
         [
             ("success", PublicAttr[bool]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", PublicAttr[Sequence[MetadataEntry]]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
         ],
     )
 ):
@@ -729,13 +672,11 @@ class TypeCheck(
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
-    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+    Op compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.
         description (Optional[str]): A human-readable description of the type check.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            type check.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -746,21 +687,17 @@ class TypeCheck(
         cls,
         success: bool,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
 
         return super(TypeCheck, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=normed_metadata,
         )
 
 
@@ -773,8 +710,6 @@ class Failure(Exception):
 
     Args:
         description (Optional[str]): A human-readable description of the failure.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            failure.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -787,24 +722,19 @@ class Failure(Exception):
     def __init__(
         self,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
         self.allow_retries = check.opt_bool_param(allow_retries, "allow_retries", True)
 
 
 class RetryRequested(Exception):
-    """
-    An exception to raise from an op to indicate that it should be retried.
+    """An exception to raise from an op to indicate that it should be retried.
 
     Args:
         max_retries (Optional[int]):
@@ -939,4 +869,4 @@ class HookExecutionResult(
         )
 
 
-UserEvent = Union[Materialization, AssetMaterialization, AssetObservation, ExpectationResult]
+UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]

@@ -47,7 +47,7 @@ In this section we will:
 
 - Write our assets
 - Add run configuration for the Snowflake I/O manager
-- Materialize assets in Dagit
+- Materialize assets in the Dagster UI
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
@@ -56,21 +56,24 @@ Let’s start by writing our three assets. We'll use Pandas DataFrames to intera
 import pandas as pd
 import requests
 
-from dagster import asset
+from dagster import Config, asset
+
+
+class ItemsConfig(Config):
+    base_item_id: int
 
 
 @asset(
-    config_schema={"N": int},
     io_manager_key="snowflake_io_manager",
 )
-def items(context) -> pd.DataFrame:
+def items(config: ItemsConfig) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
     max_id = requests.get(
         "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
     ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         rows.append(requests.get(item_url, timeout=5).json())
 
@@ -96,26 +99,24 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_pandas_io_manager`.
+Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
 from development_to_production.assets import comments, items, stories
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 resources = {
-    "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-        {
-            "account": "abc1234.us-east-1",
-            "user": "me@company.com",
-            # password in config is bad practice
-            "password": "my_super_secret_password",
-            "database": "LOCAL",
-            "schema": "ALICE",
-        }
+    "snowflake_io_manager": SnowflakePandasIOManager(
+        account="abc1234.us-east-1",
+        user="me@company.com",
+        # password in config is bad practice
+        password="my_super_secret_password",
+        database="LOCAL",
+        schema="ALICE",
     ),
 }
 
@@ -133,7 +134,7 @@ width={1538}
 height={730}
 />
 
-We can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
+We can materialize the assets in the UI and ensure that the data appears in Snowflake as we expect:
 
 <Image
 alt="alt"
@@ -157,7 +158,7 @@ Now that our assets work locally, we can start the deployment process! We'll fir
 
 ### Production
 
-We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_pandas_io_manager`. But if we were to simply update the values we set for local development, we would run into an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
+We want to store the assets in a production Snowflake database, so we need to update the configuration for the `SnowflakePandasIOManager`. But if we were to simply update the values we set for local development, we would run into an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
 
 Instead, we can determine the configuration for resources based on the environment:
 
@@ -167,27 +168,23 @@ Instead, we can determine the configuration for resources based on the environme
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
 resources = {
     "local": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "me@company.com",
-                # password in config is bad practice
-                "password": "my_super_secret_password",
-                "database": "LOCAL",
-                "schema": "ALICE",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="me@company.com",
+            # password in config is bad practice
+            password="my_super_secret_password",
+            database="LOCAL",
+            schema="ALICE",
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "dev@company.com",
-                # password in config is bad practice
-                "password": "company_super_secret_password",
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="dev@company.com",
+            # password in config is bad practice
+            password="company_super_secret_password",
+            database="PRODUCTION",
+            schema="HACKER_NEWS",
         ),
     },
 }
@@ -207,7 +204,7 @@ We still have some problems with this setup:
 1. Developers need to remember to change `user` and `password` to their credentials and `schema` to their name when developing locally.
 2. Passwords are being stored in code.
 
-We can easily solve these problems because the Snowflake I/O manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
+We can easily solve these problems using <PyObject object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
 # __init__.py
@@ -215,25 +212,21 @@ We can easily solve these problems because the Snowflake I/O manager accepts con
 
 resources = {
     "local": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "DEV_SNOWFLAKE_USER"},
-                "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
-                "database": "LOCAL",
-                "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("DEV_SNOWFLAKE_USER"),
+            password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
+            database="LOCAL",
+            schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "system@company.com",
-                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="system@company.com",
+            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
+            database="PRODUCTION",
+            schema="HACKER_NEWS",
         ),
     },
 }
@@ -248,7 +241,7 @@ defs = Definitions(
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster Cloud users**, we recommend using [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our [comprehensive guide to branch deployments](/guides/dagster/branch_deployments) to learn how to use branch deployments to verify data pipelines before deploying them to production.
+- **For Dagster Cloud users**, we recommend using [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our [comprehensive guide to branch deployments](/guides/dagster/branch_deployments) to learn how to use branch deployments to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
@@ -257,14 +250,12 @@ resources = {
     "local": {...},
     "production": {...},
     "staging": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "system@company.com",
-                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-                "database": "STAGING",
-                "schema": "HACKER_NEWS",
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user="system@company.com",
+            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
+            database="STAGING",
+            schema="HACKER_NEWS",
         ),
     },
 }
@@ -299,11 +290,11 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from dagster import ConfigurableResource
 
-class HNAPIClient:
-    """
-    Hacker News client that fetches live data
-    """
+
+class HNAPIClient(ConfigurableResource):
+    """Hacker News client that fetches live data."""
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
@@ -315,6 +306,11 @@ class HNAPIClient:
         return requests.get(
             "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
         ).json()
+
+    @property
+    def item_field_names(self) -> list:
+        # omitted for brevity, see full code example for implementation
+        return []
 ```
 
 We'll also need to update the `items` asset to use this client as a resource:
@@ -323,19 +319,19 @@ We'll also need to update the `items` asset to use this client as a resource:
 # assets.py
 
 
+class ItemsConfig(Config):
+    base_item_id: int
+
+
 @asset(
-    config_schema={"N": int},
-    required_resource_keys={"hn_client"},
     io_manager_key="snowflake_io_manager",
 )
-def items(context) -> pd.DataFrame:
+def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    hn_client = context.resources.hn_client
-
     max_id = hn_client.fetch_max_item_id()
     rows = []
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
 
     result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
@@ -353,7 +349,7 @@ def items(context) -> pd.DataFrame:
   </a> on GitHub.
 </Note>
 
-We'll also need to add an instance of `HNApiClient` to `resources` in our `Definitions` object.
+We'll also need to add an instance of `HNAPIClient` to `resources` in our `Definitions` object.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=end_hn_resource
 resource_defs = {
@@ -370,9 +366,7 @@ Now we can write a stubbed version of the Hacker News resource. We want to make 
 
 
 class StubHNClient:
-    """
-    Hacker News Client that returns fake data
-    """
+    """Hacker News Client that returns fake data."""
 
     def __init__(self):
         self.data = {
@@ -392,7 +386,7 @@ class StubHNClient:
         return 2
 
     @property
-    def item_field_names(self):
+    def item_field_names(self) -> list:
         return ["id", "type", "title", "by"]
 ```
 
@@ -413,11 +407,10 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 
 def test_items():
-    context = build_op_context(
-        resources={"hn_client": StubHNClient()},
-        op_config={"N": StubHNClient().fetch_max_item_id()},
+    hn_dataset = items(
+        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+        hn_client=StubHNClient(),
     )
-    hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
     expected_data = pd.DataFrame(StubHNClient().data.values()).rename(

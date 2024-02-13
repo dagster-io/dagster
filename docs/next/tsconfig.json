@@ -11,6 +11,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "allowUnreachableCode": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "baseUrl": ".",

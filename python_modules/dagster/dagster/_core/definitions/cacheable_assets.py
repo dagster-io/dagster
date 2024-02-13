@@ -2,19 +2,21 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, make_readonly_value
+from dagster._utils import hash_collection
 
 
 @whitelist_for_serdes
@@ -31,6 +33,11 @@ class AssetsDefinitionCacheableData(
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
             ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
+            (
+                "auto_materialize_policies_by_output_name",
+                Optional[Mapping[str, AutoMaterializePolicy]],
+            ),
+            ("backfill_policy", Optional[BackfillPolicy]),
         ],
     )
 ):
@@ -45,36 +52,15 @@ class AssetsDefinitionCacheableData(
         internal_asset_deps: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
         group_name: Optional[str] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        key_prefix: Optional[Sequence[str]] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
+        auto_materialize_policies_by_output_name: Optional[
+            Mapping[str, AutoMaterializePolicy]
+        ] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
-        keys_by_input_name = check.opt_nullable_mapping_param(
-            keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
-        )
-
-        keys_by_output_name = check.opt_nullable_mapping_param(
-            keys_by_output_name, "keys_by_output_name", key_type=str, value_type=AssetKey
-        )
-
-        internal_asset_deps = check.opt_nullable_mapping_param(
-            internal_asset_deps, "internal_asset_deps", key_type=str, value_type=(set, frozenset)
-        )
-
-        metadata_by_output_name = check.opt_nullable_mapping_param(
-            metadata_by_output_name, "metadata_by_output_name", key_type=str, value_type=dict
-        )
-
-        freshness_policies_by_output_name = check.opt_nullable_mapping_param(
-            freshness_policies_by_output_name,
-            "freshness_policies_by_output_name",
-            key_type=str,
-            value_type=FreshnessPolicy,
-        )
-
-        key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
-
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
             # check that the value is JSON serializable
@@ -84,24 +70,56 @@ class AssetsDefinitionCacheableData(
 
         return super().__new__(
             cls,
-            keys_by_input_name=frozendict(keys_by_input_name) if keys_by_input_name else None,
-            keys_by_output_name=frozendict(keys_by_output_name) if keys_by_output_name else None,
-            internal_asset_deps=frozendict(
-                {k: frozenset(v) for k, v in internal_asset_deps.items()}
-            )
-            if internal_asset_deps
-            else None,
+            keys_by_input_name=check.opt_nullable_mapping_param(
+                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+            ),
+            keys_by_output_name=check.opt_nullable_mapping_param(
+                keys_by_output_name, "keys_by_output_name", key_type=str, value_type=AssetKey
+            ),
+            internal_asset_deps=check.opt_nullable_mapping_param(
+                internal_asset_deps,
+                "internal_asset_deps",
+                key_type=str,
+                value_type=(set, frozenset),
+            ),
             group_name=check.opt_str_param(group_name, "group_name"),
-            metadata_by_output_name=make_readonly_value(metadata_by_output_name)
-            if metadata_by_output_name
-            else None,
-            key_prefix=frozenlist(key_prefix) if key_prefix else None,
+            metadata_by_output_name=check.opt_nullable_mapping_param(
+                metadata_by_output_name, "metadata_by_output_name", key_type=str
+            ),
+            key_prefix=(
+                [key_prefix]
+                if isinstance(key_prefix, str)
+                else check.opt_list_param(key_prefix, "key_prefix", of_type=str)
+            ),
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
-            extra_metadata=make_readonly_value(extra_metadata) if extra_metadata else None,
-            freshness_policies_by_output_name=frozendict(freshness_policies_by_output_name)
-            if freshness_policies_by_output_name
-            else None,
+            extra_metadata=extra_metadata,
+            freshness_policies_by_output_name=check.opt_nullable_mapping_param(
+                freshness_policies_by_output_name,
+                "freshness_policies_by_output_name",
+                key_type=str,
+                value_type=FreshnessPolicy,
+            ),
+            auto_materialize_policies_by_output_name=check.opt_nullable_mapping_param(
+                auto_materialize_policies_by_output_name,
+                "auto_materialize_policies_by_output_name",
+                key_type=str,
+                value_type=AutoMaterializePolicy,
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
+            ),
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
+    # - `RepositoryLoadData` has a `Mapping` attribute containing `AssetsDefinitionCacheableData`
+    # - `AssetsDefinitionCacheableData` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class CacheableAssetsDefinition(ResourceAddable, ABC):
@@ -110,9 +128,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
 
     @property
     def unique_id(self) -> str:
-        """
-        A unique identifier, which can be used to index the cacheable data.
-        """
+        """A unique identifier, which can be used to index the cacheable data."""
         return self._unique_id
 
     @abstractmethod
@@ -134,22 +150,25 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
     ) -> "CacheableAssetsDefinition":
         return ResourceWrappedCacheableAssetsDefinition(self, resource_defs)
 
-    def with_prefix_or_group(
+    def with_attributes(
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        freshness_policy: Optional[
+            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+        ] = None,
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
             output_asset_key_replacements=output_asset_key_replacements,
             input_asset_key_replacements=input_asset_key_replacements,
             group_names_by_key=group_names_by_key,
+            freshness_policy=freshness_policy,
         )
 
     def with_prefix_for_all(self, prefix: CoercibleToAssetKeyPrefix) -> "CacheableAssetsDefinition":
-        """
-        Utility method which allows setting an asset key prefix for all assets in this
+        """Utility method which allows setting an asset key prefix for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
         construction.
         """
@@ -158,20 +177,28 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         prefix = check.is_list(prefix, of_type=str)
         return PrefixOrGroupWrappedCacheableAssetsDefinition(self, prefix_for_all_assets=prefix)
 
-    def with_group_for_all(self, group_name: str) -> "CacheableAssetsDefinition":
-        """
-        Utility method which allows setting an asset group for all assets in this
+    def with_attributes_for_all(
+        self,
+        group_name: Optional[str],
+        freshness_policy: Optional[FreshnessPolicy],
+        auto_materialize_policy: Optional[AutoMaterializePolicy],
+        backfill_policy: Optional[BackfillPolicy],
+    ) -> "CacheableAssetsDefinition":
+        """Utility method which allows setting attributes for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
         construction.
         """
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
-            self, group_name_for_all_assets=group_name
+            self,
+            group_name_for_all_assets=group_name,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
+            backfill_policy=backfill_policy,
         )
 
 
 class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
-    """
-    Wraps an instance of CacheableAssetsDefinition, applying transformed_assets_def to the
+    """Wraps an instance of CacheableAssetsDefinition, applying transformed_assets_def to the
     generated AssetsDefinition objects. This lets e.g. users define resources on
     the cacheable assets at repo creation time which are not actually bound until
     the assets themselves are created.
@@ -198,8 +225,7 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @abstractmethod
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
-        """
-        Implement this method to transform the AssetsDefinition objects
+        """Implement this method to transform the AssetsDefinition objects
         generated by the underlying, wrapped CacheableAssetsDefinition.
         """
         raise NotImplementedError()
@@ -207,14 +233,13 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 def _map_to_hashable(mapping: Mapping[Any, Any]) -> bytes:
     return json.dumps(
-        {json.dumps(k, sort_keys=True): (v) for k, v in mapping.items()},
+        {json.dumps(k, sort_keys=True): v for k, v in mapping.items()},
         sort_keys=True,
     ).encode("utf-8")
 
 
 class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition):
-    """
-    Represents a CacheableAssetsDefinition that has been wrapped with an asset
+    """Represents a CacheableAssetsDefinition that has been wrapped with an asset
     prefix mapping or group name mapping.
     """
 
@@ -226,12 +251,22 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         group_name_for_all_assets: Optional[str] = None,
         prefix_for_all_assets: Optional[List[str]] = None,
+        freshness_policy: Optional[
+            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+        ] = None,
+        auto_materialize_policy: Optional[
+            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+        ] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         self._output_asset_key_replacements = output_asset_key_replacements or {}
         self._input_asset_key_replacements = input_asset_key_replacements or {}
         self._group_names_by_key = group_names_by_key or {}
         self._group_name_for_all_assets = group_name_for_all_assets
         self._prefix_for_all_assets = prefix_for_all_assets
+        self._freshness_policy = freshness_policy
+        self._auto_materialize_policy = auto_materialize_policy
+        self._backfill_policy = backfill_policy
 
         check.invariant(
             not (group_name_for_all_assets and group_names_by_key),
@@ -242,21 +277,17 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
                 prefix_for_all_assets
                 and (output_asset_key_replacements or input_asset_key_replacements)
             ),
-            (
-                "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
-                " input_asset_key_replacements"
-            ),
+            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
+            " input_asset_key_replacements",
         )
 
         super().__init__(
-            unique_id=f"{wrapped._unique_id}_prefix_or_group_{self._get_hash()}",
+            unique_id=f"{wrapped.unique_id}_prefix_or_group_{self._get_hash()}",
             wrapped=wrapped,
         )
 
     def _get_hash(self) -> str:
-        """
-        Generate a stable hash of the various prefix/group mappings.
-        """
+        """Generate a stable hash of the various prefix/group mappings."""
         contents = hashlib.sha1()
         if self._output_asset_key_replacements:
             contents.update(
@@ -292,7 +323,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         group_names_by_key = (
             {
                 k: self._group_name_for_all_assets
-                for k in assets_def.asset_keys
+                for k in assets_def.keys
                 if self._group_name_for_all_assets
             }
             if self._group_name_for_all_assets
@@ -301,11 +332,13 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         output_asset_key_replacements = (
             {
                 k: AssetKey(
-                    path=self._prefix_for_all_assets + list(k.path)
-                    if self._prefix_for_all_assets
-                    else k.path
+                    path=(
+                        self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
                 )
-                for k in assets_def.asset_keys
+                for k in assets_def.keys
             }
             if self._prefix_for_all_assets
             else self._output_asset_key_replacements
@@ -313,26 +346,29 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         input_asset_key_replacements = (
             {
                 k: AssetKey(
-                    path=self._prefix_for_all_assets + list(k.path)
-                    if self._prefix_for_all_assets
-                    else k.path
+                    path=(
+                        self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
                 )
                 for k in assets_def.dependency_keys
             }
             if self._prefix_for_all_assets
             else self._input_asset_key_replacements
         )
-        return assets_def.with_prefix_or_group(
+        return assets_def.with_attributes(
             output_asset_key_replacements=output_asset_key_replacements,
             input_asset_key_replacements=input_asset_key_replacements,
             group_names_by_key=group_names_by_key,
+            freshness_policy=self._freshness_policy,
+            auto_materialize_policy=self._auto_materialize_policy,
+            backfill_policy=self._backfill_policy,
         )
 
 
 class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition):
-    """
-    Represents a CacheableAssetsDefinition that has been wrapped with resources.
-    """
+    """Represents a CacheableAssetsDefinition that has been wrapped with resources."""
 
     def __init__(
         self,
@@ -342,14 +378,12 @@ class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition)
         self._resource_defs = resource_defs
 
         super().__init__(
-            unique_id=f"{wrapped._unique_id}_resources_{self._get_hash()}",
+            unique_id=f"{wrapped.unique_id}_resources_{self._get_hash()}",
             wrapped=wrapped,
         )
 
     def _get_hash(self) -> str:
-        """
-        Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description.
-        """
+        """Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description."""
         contents = hashlib.sha1()
         contents.update(
             _map_to_hashable(

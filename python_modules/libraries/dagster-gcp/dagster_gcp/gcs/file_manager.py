@@ -10,7 +10,7 @@ from dagster._core.storage.file_manager import (
     TempfileManager,
     check_file_like_obj,
 )
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 
 class GCSFileHandle(FileHandle):
@@ -38,7 +38,7 @@ class GCSFileHandle(FileHandle):
     @property
     def gcs_path(self) -> str:
         """str: The file's GCS URL."""
-        return "gs://{bucket}/{key}".format(bucket=self.gcs_bucket, key=self.gcs_key)
+        return f"gs://{self.gcs_bucket}/{self.gcs_key}"
 
 
 class GCSFileManager(FileManager):
@@ -100,7 +100,7 @@ class GCSFileManager(FileManager):
         return GCSFileHandle(self._gcs_bucket, gcs_key)
 
     def get_full_key(self, file_key):
-        return "{base_key}/{file_key}".format(base_key=self._gcs_base_key, file_key=file_key)
+        return f"{self._gcs_base_key}/{file_key}"
 
     def delete_local_temp(self):
         self._temp_file_manager.close()

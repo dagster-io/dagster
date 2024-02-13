@@ -23,8 +23,9 @@ RUN git clone --depth 1 https://github.com/dagster-io/dagster.git \
     && cd dagster \
     && pip install \
         -e python_modules/dagster \
+        -e python_modules/dagster-pipes \
         -e python_modules/dagster-graphql \
-        -e python_modules/dagit \
+        -e python_modules/dagster-webserver \
         -e python_modules/libraries/dagster-celery[flower,redis,kubernetes] \
         -e python_modules/libraries/dagster-postgres \
         -e python_modules/libraries/dagster-pandas \
@@ -51,3 +52,6 @@ RUN apt-get update -yqq \
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*

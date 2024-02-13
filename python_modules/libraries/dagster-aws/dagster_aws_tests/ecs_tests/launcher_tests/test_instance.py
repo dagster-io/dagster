@@ -24,14 +24,14 @@ def test_run_task_kwargs(instance_cm):
 def test_invalid_kwargs_field(instance_cm):
     with pytest.raises(Exception, match="Found an unexpected key foo in run_task_kwargs"):
         with instance_cm(config={"run_task_kwargs": {"foo": "bar"}}) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
     with pytest.raises(Exception):
         with instance_cm(
             config={"taskDefinition": "my-task-def"},
             match="Use the `taskDefinition` config field to pass in a task definition to run",
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
     with pytest.raises(Exception):
         with instance_cm(
@@ -40,7 +40,7 @@ def test_invalid_kwargs_field(instance_cm):
                 "Task overrides are set by the run launcher and cannot be set in run_task_kwargs."
             ),
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
 
 def test_task_definition_config(instance_cm, task_definition):
@@ -56,7 +56,7 @@ def test_task_definition_config(instance_cm, task_definition):
         with instance_cm(
             config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
     with environ({"FOO": "dagster"}):
         with instance_cm(

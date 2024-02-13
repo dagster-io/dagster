@@ -3,18 +3,23 @@ Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` p
 ```yaml
 # dagster_cloud.yaml
 
-container_context:
-  ecs:
-    env_vars:
-      - DATABASE_NAME=testing
-      - DATABASE_PASSWORD
-    secrets:
-      - name: "MY_API_TOKEN"
-        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
-      - name: "MY_PASSWORD"
-        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
-    secrets_tags:
-      - "my_tag_name"
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      ecs:
+        env_vars:
+          - DATABASE_NAME=testing
+          - DATABASE_PASSWORD
+        secrets:
+          - name: "MY_API_TOKEN"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
+          - name: "MY_PASSWORD"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+        secrets_tags:
+          - "my_tag_name"
 ```
 
 <ReferenceTable>

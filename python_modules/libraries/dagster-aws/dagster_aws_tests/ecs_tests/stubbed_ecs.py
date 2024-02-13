@@ -13,8 +13,7 @@ from botocore.stub import Stubber
 
 
 def stubbed(function):
-    """
-    A decorator that activates/deactivates the Stubber and makes sure all
+    """A decorator that activates/deactivates the Stubber and makes sure all
     expected calls are made.
 
     The general pattern for stubbing a new method is:
@@ -91,8 +90,7 @@ class StubStorage:
 
 
 class StubbedEcs:
-    """
-    A class that stubs ECS responses using botocore's Stubber:
+    """A class that stubs ECS responses using botocore's Stubber:
     https://botocore.amazonaws.com/v1/documentation/api/latest/reference/stubber.html.
 
     Stubs are minimally sufficient for testing existing Dagster ECS behavior;
@@ -183,9 +181,7 @@ class StubbedEcs:
 
     @stubbed
     def list_account_settings(self, **kwargs):
-        """
-        Only taskLongArnFormat has a default value.
-        """
+        """Only taskLongArnFormat has a default value."""
         if kwargs.get("effectiveSettings"):
             account_settings = {
                 **self.storage.default_account_settings,
@@ -211,9 +207,7 @@ class StubbedEcs:
 
     @stubbed
     def list_tags_for_resource(self, **kwargs):
-        """
-        Only task tagging is stubbed; other resources won't work.
-        """
+        """Only task tagging is stubbed; other resources won't work."""
         arn = kwargs.get("resourceArn")
 
         if self._task_exists(arn) and self._long_arn_enabled():
@@ -246,8 +240,7 @@ class StubbedEcs:
 
     @stubbed
     def list_tasks(self, **kwargs):
-        """
-        Only filtering by family and cluster is stubbed.
+        """Only filtering by family and cluster is stubbed.
         TODO: Pagination.
         """
         cluster = self._cluster(kwargs.get("cluster"))
@@ -367,8 +360,7 @@ class StubbedEcs:
 
     @stubbed
     def run_task(self, **kwargs):
-        """
-        run_task is an endpoint with complex behaviors and consequently is not
+        """run_task is an endpoint with complex behaviors and consequently is not
         exhaustively stubbed.
         """
         try:
@@ -424,10 +416,21 @@ class StubbedEcs:
                     "memory": task_definition["memory"],
                 }
 
+                if kwargs.get("launchType"):
+                    task["launchType"] = kwargs["launchType"]
+
+                if kwargs.get("capacityProviderStrategy"):
+                    task["capacityProviderName"] = kwargs["capacityProviderStrategy"][0][
+                        "capacityProvider"
+                    ]
+
+                if tags:
+                    task["tags"] = tags
+
                 if vpc_configuration:
-                    for subnet in vpc_configuration["subnets"]:
+                    for subnet_name in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
-                        subnet = ec2.Subnet(subnet)
+                        subnet = ec2.Subnet(subnet_name)
                         # The provided subnet doesn't exist
                         subnet.load()
 
@@ -492,9 +495,7 @@ class StubbedEcs:
 
     @stubbed
     def tag_resource(self, **kwargs):
-        """
-        Only task tagging is stubbed; other resources won't work.
-        """
+        """Only task tagging is stubbed; other resources won't work."""
         tags = kwargs.get("tags")
         arn = kwargs.get("resourceArn")
 
@@ -537,9 +538,9 @@ class StubbedEcs:
 
     def _long_arn_enabled(self):
         settings = self.list_account_settings(effectiveSettings=True)["settings"]
-        task_arn_format_setting = [
+        task_arn_format_setting = next(
             setting for setting in settings if setting["name"] == "taskLongArnFormat"
-        ][0]
+        )
         return task_arn_format_setting["value"] != "disabled"
 
     def _valid_cpu_and_memory(self, cpu, memory):

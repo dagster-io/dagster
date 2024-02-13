@@ -7,14 +7,14 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@elementl.com": "eng-buildkite-rex",
-    "dish@elementl.com": "eng-buildkite-dish",
-    "johann@elementl.com": "eng-buildkite-johann",
+    "rex@dagsterlabs.com": "eng-buildkite-rex",
+    "dish@dagsterlabs.com": "eng-buildkite-dish",
+    "johann@dagsterlabs.com": "eng-buildkite-johann",
 }
 
 # ########################
@@ -65,6 +65,12 @@ WaitStep: TypeAlias = Literal["wait"]
 
 BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
+BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
+
+
+def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
+    return isinstance(step, dict) and "commands" in step
+
 
 # ########################
 # ##### FUNCTIONS
@@ -113,7 +119,7 @@ def check_for_release() -> bool:
 
     version: Dict[str, object] = {}
     with open("python_modules/dagster/dagster/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     if git_tag == version["__version__"]:
         return True
@@ -125,13 +131,11 @@ def network_buildkite_container(network_name: str) -> List[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
-        "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
+        "export CONTAINER_ID=`cat /etc/hostname`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...
-        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
-            network_name=network_name
-        ),
+        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
     ]
 
 
@@ -199,12 +203,45 @@ def skip_if_no_python_changes():
     return "No python changes"
 
 
+def skip_if_no_yaml_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+        return None
+
+    return "No yaml changes"
+
+
+def skip_if_no_non_docs_markdown_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+        return None
+
+    return "No markdown changes outside of docs"
+
+
 @functools.lru_cache(maxsize=None)
+def has_helm_changes():
+    return any(Path("helm") in path.parents for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
+def has_storage_test_fixture_changes():
+    # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
+    return any(
+        Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+        for path in ChangedFiles.all
+    )
+
+
 def skip_if_no_helm_changes():
     if not is_feature_branch():
         return None
 
-    if any(Path("helm") in path.parents for path in ChangedFiles.all):
+    if has_helm_changes():
         logging.info("Run helm steps because files in the helm directory changed")
         return None
 

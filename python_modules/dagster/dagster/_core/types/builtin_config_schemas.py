@@ -1,5 +1,4 @@
 import pickle
-import warnings
 
 import dagster._check as check
 import dagster._seven as seven
@@ -15,9 +14,9 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import disable_dagster_warnings
 
-from .config_schema import dagster_type_loader, dagster_type_materializer
+from .config_schema import dagster_type_loader
 
 
 def define_typed_input_schema_dict(value_config_type):
@@ -32,7 +31,7 @@ def define_typed_input_schema_dict(value_config_type):
 
 
 def load_type_input_schema_dict(value):
-    file_type, file_options = list(value.items())[0]
+    file_type, file_options = next(iter(value.items()))
     if file_type == "value":
         return file_options
     elif file_type == "json":
@@ -43,7 +42,7 @@ def load_type_input_schema_dict(value):
         with open(file_options["path"], "rb") as ff:
             return pickle.load(ff)
     else:
-        check.failed("Unsupported key {key}".format(key=file_type))
+        check.failed(f"Unsupported key {file_type}")
 
 
 def define_any_input_schema():
@@ -66,8 +65,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     check.inst_param(config_scalar_type, "config_scalar_type", ConfigType)
     check.param_invariant(config_scalar_type.kind == ConfigTypeKind.SCALAR, "config_scalar_type")
     # TODO: https://github.com/dagster-io/dagster/issues/3084
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+    with disable_dagster_warnings():
 
         @dagster_type_loader(
             ScalarUnion(
@@ -87,46 +85,13 @@ def define_path_dict_field():
     return {"path": Field(ConfigStringInstance)}
 
 
-def define_builtin_scalar_output_schema(scalar_name):
-    check.str_param(scalar_name, "scalar_name")
-
-    schema_cls = Selector({"json": define_path_dict_field(), "pickle": define_path_dict_field()})
-
-    @dagster_type_materializer(schema_cls)
-    def _buildint_materializer(_context, config_value, runtime_value):
-        from dagster._core.events import AssetMaterialization
-
-        file_type, file_options = list(config_value.items())[0]
-
-        if file_type == "json":
-            json_file_path = file_options["path"]
-            json_value = seven.json.dumps({"value": runtime_value})
-            with open(json_file_path, "w", encoding="utf8") as ff:
-                ff.write(json_value)
-            return AssetMaterialization.file(json_file_path)
-        elif file_type == "pickle":
-            pickle_file_path = file_options["path"]
-            with open(pickle_file_path, "wb") as ff:
-                pickle.dump(runtime_value, ff)
-            return AssetMaterialization.file(pickle_file_path)
-        else:
-            check.failed("Unsupported file type: {file_type}".format(file_type=file_type))
-
-    return _buildint_materializer
-
-
 class BuiltinSchemas:
     ANY_INPUT = define_any_input_schema()
-    ANY_OUTPUT = define_builtin_scalar_output_schema("Any")
 
     BOOL_INPUT = define_builtin_scalar_input_schema("Bool", ConfigBoolInstance)
-    BOOL_OUTPUT = define_builtin_scalar_output_schema("Bool")
 
     FLOAT_INPUT = define_builtin_scalar_input_schema("Float", ConfigFloatInstance)
-    FLOAT_OUTPUT = define_builtin_scalar_output_schema("Float")
 
     INT_INPUT = define_builtin_scalar_input_schema("Int", ConfigIntInstance)
-    INT_OUTPUT = define_builtin_scalar_output_schema("Int")
 
     STRING_INPUT = define_builtin_scalar_input_schema("String", ConfigStringInstance)
-    STRING_OUTPUT = define_builtin_scalar_output_schema("String")

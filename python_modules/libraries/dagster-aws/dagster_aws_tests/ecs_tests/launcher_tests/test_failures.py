@@ -10,7 +10,8 @@ def test_run_task_failure(ecs, instance, workspace, run):
                 "tasks": [],
                 "failures": [
                     {"arn": "failing-arn-1", "reason": "boom", "detail": "detailed boom 1"},
-                    {"arn": "failing-arn-2", "reason": "boom", "detail": "detailed boom 2"},
+                    {"arn": "missing-detail", "reason": "too succinct"},
+                    {"reason": "ran out of arns"},
                 ],
             },
             expected_params={**kwargs},
@@ -24,5 +25,8 @@ def test_run_task_failure(ecs, instance, workspace, run):
     with pytest.raises(Exception) as ex:
         instance.launch_run(run.run_id, workspace)
 
-    assert ex.match("Task failing-arn-1 failed because boom: detailed boom 1")
-    assert ex.match("Task failing-arn-2 failed because boom: detailed boom 2")
+    assert ex.match(
+        "Task failing-arn-1 failed. Failure reason: boom Failure details: detailed boom 1\n"
+    )
+    assert ex.match("\nTask missing-detail failed. Failure reason: too succinct\n")
+    assert ex.match("Task failed. Failure reason: ran out of arns")

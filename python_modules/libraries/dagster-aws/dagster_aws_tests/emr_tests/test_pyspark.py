@@ -5,17 +5,15 @@ from unittest import mock
 
 import pytest
 from dagster import reconstructable
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.input import In
 from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterSubprocessError
+from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrError, EmrJobRunner
@@ -38,8 +36,8 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
+@op(
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
 def make_df_solid(context):
@@ -52,67 +50,67 @@ def make_df_solid(context):
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(DataFrame)},
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
 def filter_df_solid(_, people):
     return people.filter(people["age"] < 30)
 
 
-MODE_DEFS = [
-    ModeDefinition(
-        "prod",
-        resource_defs={
-            "pyspark_step_launcher": emr_pyspark_step_launcher,
-            "pyspark": pyspark_resource,
-            "s3": s3_resource,
-        },
-    ),
-    ModeDefinition(
-        "local",
-        resource_defs={
-            "pyspark_step_launcher": no_step_launcher,
-            "pyspark": pyspark_resource,
-        },
-    ),
-]
+PROD_RESOURCES = {
+    "pyspark_step_launcher": emr_pyspark_step_launcher,
+    "pyspark": pyspark_resource,
+    "s3": s3_resource,
+}
+
+LOCAL_RESOURCES = {
+    "pyspark_step_launcher": no_step_launcher,
+    "pyspark": pyspark_resource,
+}
 
 
-@pipeline(mode_defs=MODE_DEFS)
-def pyspark_pipe():
+@graph
+def pyspark_graph():
     filter_df_solid(make_df_solid())
 
 
-def define_pyspark_pipe():
-    return pyspark_pipe
+def define_pyspark_job_prod():
+    return pyspark_graph.to_job(resource_defs=PROD_RESOURCES)
 
 
-@solid(
+def define_pyspark_job_local():
+    return pyspark_graph.to_job(resource_defs=LOCAL_RESOURCES)
+
+
+@op(
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def do_nothing_solid(_):
+def noop_op(_):
     pass
 
 
-@pipeline(mode_defs=MODE_DEFS)
-def do_nothing_pipe():
-    do_nothing_solid()
+@graph
+def noop_graph():
+    noop_op()
 
 
-def define_do_nothing_pipe():
-    return do_nothing_pipe
+def define_noop_job_prod():
+    return noop_graph.to_job(resource_defs=PROD_RESOURCES, executor_def=in_process_executor)
 
 
+def define_noop_job_local():
+    return noop_graph.to_job(resource_defs=LOCAL_RESOURCES, executor_def=in_process_executor)
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_local():
-    result = execute_pipeline(
-        pipeline=pyspark_pipe,
-        mode="local",
-        run_config={"solids": {"blah": {"config": {"foo": "a string", "bar": 123}}}},
+    result = define_pyspark_job_local().execute_in_process(
+        run_config={"ops": {"blah": {"config": {"foo": "a string", "bar": 123}}}},
     )
     assert result.success
 
@@ -120,12 +118,11 @@ def test_local():
 @mock_emr
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_do_nothing_pipe), mode="local", instance=instance
-        )
-        mock_read_events.return_value = instance.all_logs(result.run_id)
+        with execute_job(reconstructable(define_noop_job_local), instance=instance) as result:
+            mock_read_events.return_value = instance.all_logs(result.run_id)
 
     run_job_flow_args = dict(
         Instances={
@@ -136,7 +133,7 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
             "SlaveInstanceType": "c3.xlarge",
         },
         JobFlowRole="EMR_EC2_DefaultRole",
-        LogUri="s3://{bucket}/log".format(bucket=mock_s3_bucket.name),
+        LogUri=f"s3://{mock_s3_bucket.name}/log",
         Name="cluster",
         ServiceRole="EMR_DefaultRole",
         VisibleToAllUsers=True,
@@ -148,25 +145,27 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
     context = create_test_pipeline_execution_context()
     cluster_id = job_runner.run_job_flow(context.log, run_job_flow_args)
 
-    result = execute_pipeline(
-        pipeline=reconstructable(define_do_nothing_pipe),
-        mode="prod",
-        run_config={
-            "resources": {
-                "pyspark_step_launcher": {
-                    "config": deep_merge_dicts(
-                        BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG,
-                        {
-                            "cluster_id": cluster_id,
-                            "staging_bucket": mock_s3_bucket.name,
-                        },
-                    ),
-                }
+    with instance_for_test() as instance:
+        with execute_job(
+            reconstructable(define_noop_job_prod),
+            instance=instance,
+            raise_on_error=True,
+            run_config={
+                "resources": {
+                    "pyspark_step_launcher": {
+                        "config": deep_merge_dicts(
+                            BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG,
+                            {
+                                "cluster_id": cluster_id,
+                                "staging_bucket": mock_s3_bucket.name,
+                            },
+                        ),
+                    }
+                },
             },
-        },
-    )
-    assert result.success
-    assert mock_is_emr_step_complete.called
+        ) as result:
+            assert result.success
+            assert mock_is_emr_step_complete.called
 
 
 def sync_code():
@@ -233,23 +232,25 @@ def sync_code():
 def test_do_it_live_emr():
     sync_code()
 
-    result = execute_pipeline(
-        reconstructable(define_pyspark_pipe),
-        mode="prod",
-        run_config={
-            "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
-            "resources": {
-                "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
+    with instance_for_test() as instance:
+        with execute_job(
+            reconstructable(define_pyspark_job_prod),
+            instance=instance,
+            run_config={
+                "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
+                "resources": {
+                    "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
+                },
             },
-        },
-    )
-    assert result.success
+        ) as result:
+            assert result.success
 
 
 @mock.patch("boto3.resource")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
 @mock.patch("dagster._core.events.log_step_event")
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):

@@ -27,24 +27,24 @@ class AnError(Exception):
     pass
 
 
-class ThrowAnErrorCommand(ChildProcessCommand):  # pylint: disable=no-init
+class ThrowAnErrorCommand(ChildProcessCommand):
     def execute(self):
         raise AnError("Oh noes!")
 
 
-class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
+class CrashyCommand(ChildProcessCommand):
     def execute(self):
         # access inner API to simulate hard crash
-        os._exit(1)  # pylint: disable=protected-access
+        os._exit(1)
 
 
-class SegfaultCommand(ChildProcessCommand):  # pylint: disable=no-init
+class SegfaultCommand(ChildProcessCommand):
     def execute(self):
         # access inner API to simulate hard crash
         segfault()
 
 
-class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
+class LongRunningCommand(ChildProcessCommand):
     def execute(self):
         time.sleep(0.5)
         yield 1

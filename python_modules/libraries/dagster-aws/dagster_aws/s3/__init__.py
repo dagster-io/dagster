@@ -4,7 +4,9 @@ from .file_manager import (
     S3FileManager as S3FileManager,
 )
 from .io_manager import (
+    ConfigurablePickledObjectS3IOManager as ConfigurablePickledObjectS3IOManager,
     PickledObjectS3IOManager as PickledObjectS3IOManager,
+    S3PickleIOManager as S3PickleIOManager,
     s3_pickle_io_manager as s3_pickle_io_manager,
 )
 from .ops import (
@@ -12,6 +14,8 @@ from .ops import (
     file_handle_to_s3 as file_handle_to_s3,
 )
 from .resources import (
+    S3FileManagerResource as S3FileManagerResource,
+    S3Resource as S3Resource,
     s3_file_manager as s3_file_manager,
     s3_resource as s3_resource,
 )

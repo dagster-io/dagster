@@ -39,4 +39,4 @@ def test_jobs_attr():
         DagsterInvalidDefinitionError,
         match="No job was provided to ScheduleDefinition.",
     ):
-        schedule.job  # pylint: disable=pointless-statement
+        schedule.job  # noqa: B018

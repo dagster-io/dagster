@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
-from .utils import CommandStep, message_contains, safe_getenv
+from .utils import CommandStep, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 
@@ -72,8 +72,12 @@ class CommandStepBuilder:
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"]
         settings["network"] = "kind"
 
-        # Pass through all BUILDKITE* envvars so our test analytics are properly tagged
-        buildkite_envvars = [env for env in list(os.environ.keys()) if env.startswith("BUILDKITE")]
+        # Pass through all BUILDKITE* and CI* envvars so our test analytics are properly tagged
+        buildkite_envvars = [
+            env
+            for env in list(os.environ.keys())
+            if env.startswith("BUILDKITE") or env.startswith("CI_")
+        ]
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
@@ -133,8 +137,6 @@ class CommandStepBuilder:
         return self
 
     def with_skip(self, skip_reason: Optional[str]) -> "CommandStepBuilder":
-        if message_contains("NO_SKIP"):
-            return self
         if skip_reason:
             self._step["skip"] = skip_reason
         return self

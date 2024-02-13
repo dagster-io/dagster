@@ -3,23 +3,30 @@ from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .asset_graph import InternalAssetGraph
 from .decorators.schedule_decorator import schedule
 from .job_definition import JobDefinition
-from .partition import PartitionsDefinition
+from .multi_dimensional_partitions import MultiPartitionsDefinition
+from .partition import (
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
     DefaultScheduleStatus,
+    RunRequestIterator,
     ScheduleDefinition,
     ScheduleEvaluationContext,
 )
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    get_time_partitions_def,
+    has_one_dimension_time_window_partitioning,
+)
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
-    """
-    Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
+    """Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
     the PartitionsDefinition, so we can't resolve the schedule cadence.
     """
 
@@ -33,39 +40,27 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
 
-    def resolve(self, asset_graph: InternalAssetGraph) -> ScheduleDefinition:
-        selected_assets = self.job.selection.resolve(asset_graph)
-        partitions_defs = {
-            cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-            for asset_key in selected_assets
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-        if len(partitions_defs) == 0:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but none of the assets"
-                " are partitioned."
-            )
-        if len(partitions_defs) > 1:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but some of the assets"
-                " have different PartitionsDefinitions."
+    def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
+        partitions_def = resolved_job.partitions_def
+        if partitions_def is None:
+            check.failed(
+                f"Job '{resolved_job.name}' provided to build_schedule_from_partitioned_job must"
+                " contain partitioned assets or a partitions definition."
             )
 
-        time_window_partitions_def = _check_time_window_partitions_def(next(iter(partitions_defs)))
+        partitions_def = _check_valid_schedule_partitions_def(partitions_def)
+        time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
 
-        cron_schedule = time_window_partitions_def.get_cron_schedule(
-            self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
-        )
-
-        return ScheduleDefinition(
-            job=self.job,
+        return schedule(
             name=self.name,
-            execution_fn=_get_schedule_evaluation_fn(
-                time_window_partitions_def, self.job, self.tags
+            cron_schedule=time_partitions_def.get_cron_schedule(
+                self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
             ),
-            execution_timezone=time_window_partitions_def.timezone,
-            cron_schedule=cron_schedule,
-        )
+            job=resolved_job,
+            default_status=self.default_status,
+            execution_timezone=time_partitions_def.timezone,
+            description=self.description,
+        )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
 
 
 def build_schedule_from_partitioned_job(
@@ -78,12 +73,14 @@ def build_schedule_from_partitioned_job(
     day_of_month: Optional[int] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     tags: Optional[Mapping[str, str]] = None,
+    cron_schedule: Optional[str] = None,
+    execution_timezone: Optional[str] = None,
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
-    """
-    Creates a schedule from a time window-partitioned job or a job that targets
-    time window-partitioned assets.
+    """Creates a schedule from a time window-partitioned job a job that targets
+    time window-partitioned or statically-partitioned assets. The job can also be
+    multipartitioned, as long as one of the partitions dimensions is time-partitioned.
 
-    The schedule executes at the cadence specified by the partitioning of the job or assets.
+    The schedule executes at the cadence specified by the time partitioning of the job or assets.
 
     Examples:
         .. code-block:: python
@@ -130,10 +127,23 @@ def build_schedule_from_partitioned_job(
     """
     check.invariant(
         not (day_of_week and day_of_month),
-        (
-            "Cannot provide both day_of_month and day_of_week parameter to"
-            " build_schedule_from_partitioned_job."
+        "Cannot provide both day_of_month and day_of_week parameter to"
+        " build_schedule_from_partitioned_job.",
+    )
+
+    check.invariant(
+        not (
+            (cron_schedule or execution_timezone)
+            and (
+                day_of_month is not None
+                or day_of_week is not None
+                or hour_of_day is not None
+                or minute_of_hour is not None
+            )
         ),
+        "Cannot provide both cron_schedule / execution_timezone parameters and"
+        " day_of_month / day_of_week / hour_of_day / minute_of_hour parameters to"
+        " build_schedule_from_partitioned_job.",
     )
 
     if isinstance(job, UnresolvedAssetJobDefinition) and job.partitions_def is None:
@@ -153,48 +163,112 @@ def build_schedule_from_partitioned_job(
         if partitions_def is None:
             check.failed("The provided job is not partitioned")
 
-        time_window_partitions_def = _check_time_window_partitions_def(partitions_def)
-
-        cron_schedule = time_window_partitions_def.get_cron_schedule(
-            minute_of_hour, hour_of_day, day_of_week, day_of_month
-        )
+        partitions_def = _check_valid_schedule_partitions_def(partitions_def)
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            check.not_none(
+                cron_schedule,
+                "Creating a schedule from a static partitions definition requires a cron schedule",
+            )
+        else:
+            if cron_schedule or execution_timezone:
+                check.failed(
+                    "Cannot provide cron_schedule or execution_timezone to"
+                    " build_schedule_from_partitioned_job for a time-partitioned job."
+                )
+            time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
+            cron_schedule = time_partitions_def.get_cron_schedule(
+                minute_of_hour, hour_of_day, day_of_week, day_of_month
+            )
+            execution_timezone = time_partitions_def.timezone
 
         return schedule(
-            cron_schedule=cron_schedule,
+            cron_schedule=cron_schedule,  # type: ignore[arg-type]
             job=job,
             default_status=default_status,
-            execution_timezone=time_window_partitions_def.timezone,
+            execution_timezone=execution_timezone,
             name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
             description=check.opt_str_param(description, "description"),
         )(_get_schedule_evaluation_fn(partitions_def, job, tags))
 
 
 def _get_schedule_evaluation_fn(
-    partitions_def: PartitionsDefinition, job, tags
-) -> Callable[[ScheduleEvaluationContext], Union[SkipReason, RunRequest]]:
+    partitions_def: PartitionsDefinition,
+    job: Union[JobDefinition, UnresolvedAssetJobDefinition],
+    tags: Optional[Mapping[str, str]] = None,
+) -> Callable[[ScheduleEvaluationContext], Union[SkipReason, RunRequest, RunRequestIterator]]:
     def schedule_fn(context):
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.
-        partition_key = partitions_def.get_last_partition_key(context.scheduled_execution_time)
-        if partition_key is None:
-            return SkipReason("The job's PartitionsDefinition has no partitions")
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            partition_key = partitions_def.get_last_partition_key(context.scheduled_execution_time)
+            if partition_key is None:
+                return SkipReason("The job's PartitionsDefinition has no partitions")
 
-        return job.run_request_for_partition(
-            partition_key=partition_key, run_key=partition_key, tags=tags
-        )
+            return job.run_request_for_partition(
+                partition_key=partition_key,
+                run_key=partition_key,
+                tags=tags,
+                current_time=context.scheduled_execution_time,
+            )
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            return [
+                job.run_request_for_partition(
+                    partition_key=key,
+                    run_key=key,
+                    tags=tags,
+                    current_time=context.scheduled_execution_time,
+                )
+                for key in partitions_def.get_partition_keys(
+                    current_time=context.scheduled_execution_time
+                )
+            ]
+        else:
+            check.invariant(isinstance(partitions_def, MultiPartitionsDefinition))
+            time_window_dimension = partitions_def.time_window_dimension
+            partition_key = time_window_dimension.partitions_def.get_last_partition_key(
+                context.scheduled_execution_time
+            )
+            if partition_key is None:
+                return SkipReason("The job's PartitionsDefinition has no partitions")
+
+            return [
+                job.run_request_for_partition(
+                    partition_key=key,
+                    run_key=key,
+                    tags=tags,
+                    current_time=context.scheduled_execution_time,
+                    dynamic_partitions_store=context.instance if context.instance_ref else None,
+                )
+                for key in partitions_def.get_multipartition_keys_with_dimension_value(
+                    time_window_dimension.name,
+                    partition_key,
+                    dynamic_partitions_store=context.instance if context.instance_ref else None,
+                )
+            ]
 
     return schedule_fn
 
 
-def _check_time_window_partitions_def(
+def _check_valid_schedule_partitions_def(
     partitions_def: PartitionsDefinition,
-) -> TimeWindowPartitionsDefinition:
-    if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+) -> Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition]:
+    if not has_one_dimension_time_window_partitioning(partitions_def) and not isinstance(
+        partitions_def, StaticPartitionsDefinition
+    ):
         raise DagsterInvalidDefinitionError(
-            "Tried to build a partitioned schedule from an asset job, but the assets"
-            " aren't partitioned by time window."
+            "Tried to build a partitioned schedule from an asset job, but received an invalid"
+            " partitions definition. The permitted partitions definitions are: \n1."
+            " TimeWindowPartitionsDefinition\n2. MultiPartitionsDefinition with a single"
+            " TimeWindowPartitionsDefinition dimension\n3. StaticPartitionsDefinition"
         )
 
-    return partitions_def
+    return cast(
+        Union[
+            TimeWindowPartitionsDefinition,
+            MultiPartitionsDefinition,
+            StaticPartitionsDefinition,
+        ],
+        partitions_def,
+    )
 
 
 schedule_from_partitions = build_schedule_from_partitioned_job

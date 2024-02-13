@@ -48,29 +48,28 @@ Now, you can create issues in GitHub from Dagster with the GitHub resource:
    import os
 
    from dagster import job, op
-   from dagster_github import github_resource
+   from dagster_github import GithubResource
 
 
-   @op(resource_defs={'github'})
-   def github_op(context):
-       context.resources.github.create_issue(
+   @op
+   def github_op(github: GithubResource):
+       github.get_client().create_issue(
            repo_name='dagster',
            repo_owner='dagster-io',
            title='Dagster\'s first github issue',
            body='this open source thing seems like a pretty good idea',
        )
 
-   @job(resource_defs={'github': github_resource})
+   @job(resource_defs={
+        'github': GithubResource(
+            github_app_id=os.getenv('GITHUB_APP_ID'),
+            github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+            github_installation_id=os.getenv('GITHUB_INSTALLATION_ID')
+    )})
    def github_job():
        github_op()
 
-   github_job.execute_in_process(
-       run_config={'resources': {'github': {'config': {
-           "github_app_id": os.getenv('GITHUB_APP_ID'),
-           "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
-           "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
-       }}}}
-   )
+   github_job.execute_in_process()
 
 Run the above code, and you'll see the issue appear in GitHub:
 :raw-html-m2r:`<img width="636" src="https://user-images.githubusercontent.com/5943242/72079909-c6012300-32c9-11ea-8acc-19e6f5f3d067.png">`
@@ -80,16 +79,16 @@ as part of your github config like below.
 
 .. code-block:: python
 
-   github_job.execute_in_process(
-       run_config={'resources': {'github': {'config': {
-           "github_app_id": os.getenv('GITHUB_APP_ID'),
-           "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
-           "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
-           "github_hostname": os.getenv('GITHUB_HOSTNAME'),
-       }}}}
+    GithubResource(
+        github_app_id=os.getenv('GITHUB_APP_ID'),
+        github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+        github_installation_id=os.getenv('GITHUB_INSTALLATION_ID'),
+        github_hostname=os.getenv('GITHUB_HOSTNAME'),
+    )
 
-By provisioning ``github_resource`` as a Dagster job resource, you can post to GitHub from
-within any op execution.
+
+By provisioning ``GithubResource`` as a Dagster resource, you can post to GitHub from
+within any asset or op execution.
 
 Executing GraphQL queries
 -------------------------
@@ -102,9 +101,9 @@ Executing GraphQL queries
    from dagster_github import github_resource
 
 
-   @op(resource_defs={'github'})
-   def github_op(context):
-       context.resources.github.execute(
+   @op
+   def github_op(github: GithubResource):
+       github.get_client().execute(
            query="""
            query get_repo_id($repo_name: String!, $repo_owner: String!) {
                repository(name: $repo_name, owner: $repo_owner) {
@@ -115,19 +114,25 @@ Executing GraphQL queries
            variables={"repo_name": repo_name, "repo_owner": repo_owner},
        )
 
-   @job(resource_defs={'github': github_resource})
+   @job(resource_defs={
+        'github': GithubResource(
+            github_app_id=os.getenv('GITHUB_APP_ID'),
+            github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+            github_installation_id=os.getenv('GITHUB_INSTALLATION_ID')
+    )})
    def github_job():
        github_op()
 
-   github_job.execute_in_process(
-       run_config={'resources': {'github': {'config': {
-           "github_app_id": os.getenv('GITHUB_APP_ID'),
-           "github_app_private_rsa_key": os.getenv('GITHUB_PRIVATE_KEY'),
-           "github_installation_id": os.getenv('GITHUB_INSTALLATION_ID'),
-       }}}}
-   )
+   github_job.execute_in_process()
 
 .. currentmodule:: dagster_github
+
+.. autoconfigurable:: GithubResource
+  :annotation: ResourceDefinition
+
+
+Legacy
+=======
 
 .. autoconfigurable:: github_resource
   :annotation: ResourceDefinition

@@ -14,25 +14,28 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     ContextManager,
     Dict,
     Generator,
     Generic,
-    Iterable,
+    Hashable,
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
-    Sized,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -42,17 +45,23 @@ from typing import (
 )
 
 import packaging.version
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
 
+from .internal_init import IHasInternalInit as IHasInternalInit
+
 if sys.version_info > (3,):
-    from pathlib import Path  # pylint: disable=import-error
+    from pathlib import Path
 else:
-    from pathlib2 import Path  # pylint: disable=import-error
+    from pathlib2 import Path
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        RepositoryDefinition,
+    )
     from dagster._core.events import DagsterEvent
 
 K = TypeVar("K")
@@ -67,13 +76,49 @@ PICKLE_PROTOCOL = 4
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
+PrintFn: TypeAlias = Callable[[Any], None]
+
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
+DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
+
+
+def check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
+    if not debug_crash_flags:
+        return
+
+    kill_signal_or_exception = debug_crash_flags.get(key)
+
+    if not kill_signal_or_exception:
+        return
+
+    if isinstance(kill_signal_or_exception, Exception):
+        raise kill_signal_or_exception
+
+    os.kill(os.getpid(), kill_signal_or_exception)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
 def library_version_from_core_version(core_version: str) -> str:
-    release = parse_package_version(core_version).release
+    parsed_version = parse_package_version(core_version)
+
+    release = parsed_version.release
     if release[0] >= 1:
-        return ".".join(["0", str(16 + release[1]), str(release[2])])
+        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
+
+        if parsed_version.is_prerelease:
+            library_version = library_version + "".join(
+                [str(pre) for pre in check.not_none(parsed_version.pre)]
+            )
+
+        if parsed_version.is_postrelease:
+            library_version = library_version + "post" + str(parsed_version.post)
+
+        return library_version
     else:
         return core_version
 
@@ -123,8 +168,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
 
 
 def script_relative_path(file_path: str) -> str:
-    """
-    Useful for testing with local files. Use a path relative to where the
+    """Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
     ran the test.
@@ -157,7 +201,7 @@ def camelcase(string: str) -> str:
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager
@@ -196,91 +240,55 @@ def mkdir_p(path: str) -> str:
             raise
 
 
-# TODO: Make frozendict generic for type annotations
-# https://github.com/dagster-io/dagster/issues/3641
-class frozendict(dict):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyDict")
+def hash_collection(
+    collection: Union[
+        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
+    ],
+) -> int:
+    """Hash a mutable collection or immutable collection containing mutable elements.
 
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item
-    #  in __reduce__ tuple). Since we want to disable __setitem__ and still inherit dict, we
-    # override this behavior by defining __reduce__. We return the 3rd item in the tuple, which is
-    # passed to __setstate__, allowing us to restore the frozendict.
+    This is useful for hashing Dagster-specific NamedTuples that contain mutable lists or dicts.
+    The default NamedTuple __hash__ function assumes the contents of the NamedTuple are themselves
+    hashable, and will throw an error if they are not. This can occur when trying to e.g. compute a
+    cache key for the tuple for use with `lru_cache`.
 
-    def __reduce__(self):
-        return (frozendict, (), dict(self))
+    This alternative implementation will recursively process collection elements to convert basic
+    lists and dicts to tuples prior to hashing. It is recommended to cache the result:
 
-    def __setstate__(self, state):
-        self.__init__(state)
+    Example:
+        .. code-block:: python
 
-    __setitem__ = __readonly__
-    __delitem__ = __readonly__
-    pop = __readonly__  # type: ignore[assignment]
-    popitem = __readonly__
-    clear = __readonly__
-    update = __readonly__  # type: ignore[assignment]
-    setdefault = __readonly__  # type: ignore[assignment]
-    del __readonly__
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-
-class frozenlist(list):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyList")
-
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # Like frozendict, implement __reduce__ and __setstate__ to handle pickling.
-    # Otherwise, __setstate__ will be called to restore the frozenlist, causing
-    # a RuntimeError because frozenlist is not mutable.
-
-    def __reduce__(self):
-        return (frozenlist, (), list(self))
-
-    def __setstate__(self, state):
-        self.__init__(state)
-
-    __setitem__ = __readonly__  # type: ignore[assignment]
-    __delitem__ = __readonly__
-    append = __readonly__
-    clear = __readonly__
-    extend = __readonly__
-    insert = __readonly__
-    pop = __readonly__
-    remove = __readonly__
-    reverse = __readonly__
-    sort = __readonly__  # type: ignore[assignment]
-
-    def __hash__(self):
-        return hash(tuple(self))
+            def __hash__(self):
+                if not hasattr(self, '_hash'):
+                    self._hash = hash_named_tuple(self)
+                return self._hash
+    """
+    assert isinstance(
+        collection, (list, dict, set, tuple)
+    ), f"Cannot hash collection of type {type(collection)}"
+    return hash(make_hashable(collection))
 
 
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]:
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]:
     ...
 
 
 @overload
-def make_readonly_value(value: T) -> T:
+def make_hashable(value: Any) -> Any:
     ...
 
 
-def make_readonly_value(value: Any) -> Any:
-    if isinstance(value, list):
-        return frozenlist(list(map(make_readonly_value, value)))
-    elif isinstance(value, dict):
-        return frozendict({key: make_readonly_value(value) for key, value in value.items()})
-    elif isinstance(value, set):
-        return frozenset(map(make_readonly_value, value))
+def make_hashable(value: Any) -> Any:
+    if isinstance(value, dict):
+        return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
+    elif isinstance(value, (list, tuple, set)):
+        return tuple([make_hashable(x) for x in value])
     else:
         return value
 
@@ -313,7 +321,7 @@ def check_script(path, return_code=0):
         raise
 
 
-def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
+def check_cli_execute_file_job(path, pipeline_fn_name, env_file=None):
     from dagster._core.test_utils import instance_for_test
 
     with instance_for_test():
@@ -336,7 +344,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         try:
             subprocess.check_output(cli_cmd)
         except subprocess.CalledProcessError as cpe:
-            print(cpe)  # pylint: disable=print-call
+            print(cpe)  # noqa: T201
             raise cpe
 
 
@@ -377,7 +385,7 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
 
 
 def ensure_gen(
-    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]]
+    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
         thing_or_gen = cast(T, thing_or_gen)
@@ -439,9 +447,11 @@ def start_termination_thread(termination_event):
     check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event, args=(termination_event,), name="kill-on-event"
+        target=_kill_on_event,
+        args=(termination_event,),
+        name="kill-on-event",
+        daemon=True,
     )
-    int_thread.daemon = True
     int_thread.start()
 
 
@@ -461,27 +471,9 @@ def iterate_with_context(
         yield next_output
 
 
-def datetime_as_float(dt):
+def datetime_as_float(dt: datetime.datetime) -> float:
     check.inst_param(dt, "dt", datetime.datetime)
     return float((dt - EPOCH).total_seconds())
-
-
-# hashable frozen string to string dict
-class frozentags(frozendict, Mapping[str, str]):
-    def __init__(self, *args, **kwargs):
-        super(frozentags, self).__init__(*args, **kwargs)
-        check.dict_param(self, "self", key_type=str, value_type=str)
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-    def updated_with(self, new_tags):
-        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
-        updated = dict(self)
-        for key, value in new_tags.items():
-            updated[key] = value
-
-        return frozentags(updated)
 
 
 T_GeneratedContext = TypeVar("T_GeneratedContext")
@@ -503,7 +495,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
 
     def __init__(
         self,
-        generator: Generator[Union["DagsterEvent", T_GeneratedContext], None, None],
+        generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
         object_cls: Type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):
@@ -529,7 +521,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
                     self.object,
                     "self.object",
                     self.object_cls,
-                    "generator never yielded object of type {}".format(self.object_cls.__name__),
+                    f"generator never yielded object of type {self.object_cls.__name__}",
                 )
 
     def get_object(self) -> T_GeneratedContext:
@@ -624,7 +616,7 @@ def restore_sys_modules() -> Iterator[None]:
 
 def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
-        import psutil  # pylint: disable=import-error
+        import psutil
 
         return psutil.pid_exists(pid=pid)
     else:
@@ -637,9 +629,7 @@ def process_is_alive(pid: int) -> bool:
 
 
 def compose(*args):
-    """
-    Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
-    """
+    """Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x))."""  # noqa: D402
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
@@ -671,10 +661,9 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
 def traced(func: T_Callable) -> T_Callable:
-    """
-    A decorator that keeps track of how many times a function is called.
-    """
+    """A decorator that keeps track of how many times a function is called."""
 
+    @functools.wraps(func)
     def inner(*args, **kwargs):
         counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
@@ -700,8 +689,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
         if posix_signal == get_terminate_signal():
             exit_clause = (
-                exit_clause
-                + " This usually indicates that the process was"
+                exit_clause + " This usually indicates that the process was"
                 " killed by the operating system due to running out of"
                 " memory. Possible solutions include increasing the"
                 " amount of memory available to the run, reducing"
@@ -714,13 +702,75 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
     return prefix + " " + exit_clause
 
 
-def len_iter(iterable: Iterable[object]) -> int:
-    if isinstance(iterable, Sized):
-        return len(iterable)
-    return sum(1 for _ in iterable)
+def last_file_comp(path: str) -> str:
+    return os.path.basename(os.path.normpath(path))
 
 
-def iter_to_list(iterable: Iterable[T]) -> List[T]:
-    if isinstance(iterable, List):
-        return iterable
-    return list(iterable)
+def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
+    return isinstance(obj, tuple) and hasattr(obj, "_fields")
+
+
+def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
+    return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[True] = ...,
+) -> "RepositoryDefinition":
+    ...
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[False] = ...,
+) -> Optional["RepositoryDefinition"]:
+    ...
+
+
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = None,
+    repository: Optional["RepositoryDefinition"] = None,
+    error_on_none: bool = True,
+) -> Optional["RepositoryDefinition"]:
+    """Normalizes the arguments that take a RepositoryDefinition or Definitions object to a
+    RepositoryDefinition.
+
+    This is intended to handle both the case where a single argument takes a
+    `Union[RepositoryDefinition, Definitions]` or separate keyword arguments accept
+    `RepositoryDefinition` or `Definitions`.
+    """
+    from dagster._core.definitions.definitions_class import Definitions
+
+    if (definitions_or_repository and repository) or (
+        error_on_none and not (definitions_or_repository or repository)
+    ):
+        check.failed("Exactly one of `definitions` or `repository_def` must be provided.")
+    elif isinstance(definitions_or_repository, Definitions):
+        return definitions_or_repository.get_repository_def()
+    elif definitions_or_repository:
+        return definitions_or_repository
+    elif repository:
+        return repository
+    else:
+        return None
+
+
+def xor(a, b):
+    return bool(a) != bool(b)
+
+
+def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
+    with open(path_or_fd, "r") as output_stream:
+        while True:
+            line = output_stream.readline()
+            if line:
+                yield line
+            elif should_stop():
+                break
+            else:
+                time.sleep(0.01)

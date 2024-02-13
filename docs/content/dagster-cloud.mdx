@@ -10,13 +10,15 @@ Dagster Cloud provides robust, managed infrastructure, elegant CI/CD capability,
 
 ## Getting started
 
-Learn how to set up your Dagster Cloud account and select a deployment type:
+Learn how to set up your Dagster Cloud account! Check out the [Getting started guide](/dagster-cloud/getting-started) for everything you need to get up and running.
+
+---
+
+## Understanding deployment types
+
+Dagster Cloud currently offers two deployment options to meet your needs: Serverless and Hybrid. Learn about your options and how to manage your selection in Dagster Cloud.
 
 <ArticleList>
-  <ArticleListItem
-    title="Getting started guide"
-    href="/dagster-cloud/getting-started"
-  ></ArticleListItem>
   <ArticleListItem
     title="Serverless deployment"
     href="/dagster-cloud/deployment/serverless"
@@ -27,61 +29,9 @@ Learn how to set up your Dagster Cloud account and select a deployment type:
   ></ArticleListItem>
 </ArticleList>
 
----
+### Managing Hybrid Deployment agents
 
-## Managing your account
-
-Learn to manage your Dagster Cloud account, including user authentication, monitoring, and alerting.
-
-<ArticleList>
-  <ArticleListItem
-    title="Managing users"
-    href="/dagster-cloud/account/managing-users"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Managing user and agent tokens"
-    href="/dagster-cloud/account/managing-user-agent-tokens"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Setting up alerts"
-    href="/dagster-cloud/account/setting-up-alerts"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Configuring authentication
-
-Secure your account using our out-of-the-box support for Google and GitHub SSO, or take full control with SAML SSO:
-
-<ArticleList>
-  <ArticleListItem
-    href="/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
-    title="Azure Active Directory"
-  ></ArticleListItem>
-  <ArticleListItem
-    href="/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
-    title="Google Workspace"
-  ></ArticleListItem>
-  <ArticleListItem
-    href="/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
-    title="Okta"
-  ></ArticleListItem>
-  <ArticleListItem
-    href="/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
-    title="OneLogin"
-  ></ArticleListItem>
-  <ArticleListItem
-    href="/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
-    title="PingOne"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Managing a Hybrid Deployment agent
-
-Dagster Cloud uses an agent that is responsible for executing your code. If you're using [Hybrid Deployment](/dagster-cloud/deployment/hybrid), you'll need to spin up and maintain an agent in your infrastructure.
+Hybrid Deployments use an agent that is responsible for executing your code. Learn how to spin up and maintain an agent in your infrastructure.
 
 <ArticleList>
   <ArticleListItem
@@ -89,7 +39,7 @@ Dagster Cloud uses an agent that is responsible for executing your code. If you'
     title="Amazon Elastic Container Service (ECS) agents"
   ></ArticleListItem>
   <ArticleListItem
-    href="/dagster-cloud//deployment/agents/docker"
+    href="/dagster-cloud/deployment/agents/docker"
     title="Docker agents"
   ></ArticleListItem>
   <ArticleListItem
@@ -112,41 +62,103 @@ Dagster Cloud uses an agent that is responsible for executing your code. If you'
 
 ---
 
-## Developing and testing
+## Managing organization settings
+
+<ArticleList>
+  <ArticleListItem
+    title="Managing user and agent tokens"
+    href="/dagster-cloud/account/managing-user-agent-tokens"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Managing authentication and users
+
+Learn how to manage users and permissions in Dagster Cloud. You can secure your account using our out-of-the-box support for Google and GitHub SSO, or take full control with SAML SSO.
+
+<ArticleList>
+  <ArticleListItem
+    title="Managing users and permissions in Dagster Cloud"
+    href="/dagster-cloud/account/managing-users"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
+    title="Azure Active Directory SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
+    title="Google Workspace SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/okta/saml-sso"
+    title="Okta SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
+    title="OneLogin SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+    title="PingOne SAML SSO"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Managing deployments
 
 Learn how to deploy your code to Dagster Cloud, use command line tools, set up CI/CD, and define environment variables.
 
 <ArticleList>
   <ArticleListItem
-    title="Using environment variables and secrets"
-    href="/dagster-cloud/developing-testing/environment-variables-and-secrets"
+    title="Managing full deployments"
+    href="/dagster-cloud/managing-deployments/managing-deployments"
   ></ArticleListItem>
   <ArticleListItem
-    title="Setting up environment variables using Hybrid agent configuration"
-    href="/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+    title="Deployment settings reference"
+    href="/dagster-cloud/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up alerts"
+    href="dagster-cloud/managing-deployments/setting-up-alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Adding and managing code locations"
+    href="/dagster-cloud/managing-deployments/code-locations"
   ></ArticleListItem>
   <ArticleListItem
     title="Using the dagster-cloud CLI"
-    href="/dagster-cloud/developing-testing/dagster-cloud-cli"
+    href="/dagster-cloud/managing-deployments/dagster-cloud-cli"
+  ></ArticleListItem>
+</ArticleList>
+
+### Environment variables and secrets
+
+<ArticleList>
+  <ArticleListItem
+    title="Using environment variables and secrets"
+    href="/dagster-cloud/managing-deployments/environment-variables-and-secrets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Adding and managing Dagster code"
-    href="/dagster-cloud/developing-testing/code-locations"
+    title="Setting up environment variables using Hybrid agent configuration"
+    href="/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents"
   ></ArticleListItem>
-  <ArticleListItem
-    title="Managing full deployments"
-    href="/dagster-cloud/developing-testing/managing-deployments"
-  ></ArticleListItem>
+</ArticleList>
+
+### Branch deployments
+
+<ArticleList>
   <ArticleListItem
     title="Using Branch Deployments for Continous Integration (CI)"
-    href="/dagster-cloud/developing-testing/branch-deployments"
+    href="/dagster-cloud/managing-deployments/branch-deployments"
   ></ArticleListItem>
   <ArticleListItem
     title="Setting up Branch Deployments with GitHub Actions"
-    href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+    href="/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github"
   ></ArticleListItem>
   <ArticleListItem
     title="Setting up Branch Deployments with the dagster-cloud CLI"
-    href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+    href="/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
   ></ArticleListItem>
 </ArticleList>

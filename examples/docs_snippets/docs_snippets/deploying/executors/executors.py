@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=reimported
+# ruff: isort: skip_file
+
 # start_executor_on_job
 from dagster import graph, job, multiprocess_executor
 

@@ -1,6 +1,5 @@
 dagster
-dagit
+dagster-webserver
 matplotlib
 pandas
 wordcloud
-

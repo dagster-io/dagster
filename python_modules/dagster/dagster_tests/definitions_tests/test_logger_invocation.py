@@ -2,7 +2,6 @@ import logging
 
 import pytest
 from dagster import Field, build_init_logger_context, graph, job, logger, op
-from dagster._check import CheckError
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 from dagster._core.utils import coerce_valid_log_level
 
@@ -21,23 +20,21 @@ def test_logger_invocation_arguments():
             "provided when invoking."
         ),
     ):
-        foo_logger()  # pylint: disable=no-value-for-parameter
+        foo_logger()
 
     # Check that proper error is thrown when logger def is invoked with wrong context arg name
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Logger initialization expected argument '_my_context'",
     ):
-        foo_logger(  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
-            context=build_init_logger_context()
-        )
+        foo_logger(context=build_init_logger_context())
 
     # Check that proper error is thrown when logger def is invoked with too many args
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Initialization of logger received multiple arguments.",
     ):
-        foo_logger(build_init_logger_context(), 5)  # pylint: disable=too-many-function-args
+        foo_logger(build_init_logger_context(), 5)
 
     ret_logger = foo_logger(build_init_logger_context())
 
@@ -135,29 +132,13 @@ def sample_graph():
     my_op()
 
 
-def test_logger_pipeline_def():
-    @logger
-    def pipe_logger(init_context):
-        assert init_context.pipeline_def.name == "sample_job"
-
-    pipe_logger(build_init_logger_context(pipeline_def=sample_job))
-
-    with pytest.raises(AssertionError):
-        pipe_logger(build_init_logger_context(pipeline_def=sample_graph.to_job()))
-
-
 def test_logger_job_def():
     @logger
     def job_logger(init_context):
         assert init_context.job_def.name == "sample_job"
 
     job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
-    job_logger(build_init_logger_context(pipeline_def=sample_graph.to_job(name="sample_job")))
+    job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
 
     with pytest.raises(AssertionError):
         job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="foo")))
-
-
-def test_logger_both_def():
-    with pytest.raises(CheckError, match="pipeline_def and job_def"):
-        build_init_logger_context(pipeline_def=sample_job, job_def=sample_graph.to_job())

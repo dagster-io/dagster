@@ -7,7 +7,6 @@ import pandas as pd
 import pandera as pa
 from dagster import (
     DagsterType,
-    MetadataEntry,
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
@@ -16,7 +15,7 @@ from dagster import (
     TypeCheckContext,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .version import __version__
 
@@ -36,7 +35,7 @@ from .version import __version__
 if TYPE_CHECKING:
     ValidatableDataFrame = pd.DataFrame
 
-check_dagster_package_version("dagster-pandera", __version__)
+DagsterLibraryRegistry.register("dagster-pandera", __version__)
 
 # ########################
 # ##### VALID DATAFRAME CLASSES
@@ -55,15 +54,14 @@ VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> DagsterType:
-    """
-    Convert a Pandera dataframe schema to a `DagsterType`.
+    """Convert a Pandera dataframe schema to a `DagsterType`.
 
     The generated Dagster type will be given an automatically generated `name`. The schema's `title`
     property, `name` property, or class name (in that order) will be used. If neither `title` or
     `name` is defined, a name of the form `DagsterPanderaDataframe<n>` is generated.
 
     Additional metadata is also extracted from the Pandera schema and attached to the returned
-    `DagsterType` in an `MetadataEntry` object. The extracted metadata includes:
+    `DagsterType` as a metadata dictionary. The extracted metadata includes:
 
     - Descriptions on the schema and constituent columns and checks.
     - Data types for each column.
@@ -96,7 +94,7 @@ def pandera_schema_to_dagster_type(
 
     name = _extract_name_from_pandera_schema(schema)
     norm_schema = (
-        schema.to_schema()  # type: ignore[attr-defined]
+        schema.to_schema()
         if isinstance(schema, type) and issubclass(schema, pa.SchemaModel)
         else schema
     )
@@ -107,9 +105,10 @@ def pandera_schema_to_dagster_type(
         type_check_fn=type_check_fn,
         name=name,
         description=norm_schema.description,
-        metadata_entries=[
-            MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
-        ],
+        metadata={
+            "schema": MetadataValue.table_schema(tschema),
+        },
+        typing_type=pd.DataFrame,
     )
 
 
@@ -117,13 +116,13 @@ def pandera_schema_to_dagster_type(
 _anonymous_schema_name_generator = (f"DagsterPanderaDataframe{i}" for i in itertools.count(start=1))
 
 
-def _extract_name_from_pandera_schema(  # type: ignore[return]
+def _extract_name_from_pandera_schema(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> str:
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
         return (
-            getattr(schema.Config, "title", None)  # type: ignore[attr-defined]
-            or getattr(schema.Config, "name", None)  # type: ignore[attr-defined]
+            getattr(schema.Config, "title", None)
+            or getattr(schema.Config, "name", None)
             or schema.__name__
         )
     elif isinstance(schema, pa.DataFrameSchema):
@@ -203,7 +202,7 @@ def _pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
 
 
 def _pandera_schema_wide_checks_to_table_constraints(
-    checks: Sequence[Union[pa.Check, pa.Hypothesis]]
+    checks: Sequence[Union[pa.Check, pa.Hypothesis]],
 ) -> TableConstraints:
     return TableConstraints(other=[_pandera_check_to_table_constraint(check) for check in checks])
 
@@ -218,7 +217,8 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
         unique=pa_column.unique,
         other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name: str = check.not_none(pa_column.name, "name")
+    name = check.not_none(pa_column.name, "name")
+    name = name if isinstance(name, str) else "/".join(name)
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),

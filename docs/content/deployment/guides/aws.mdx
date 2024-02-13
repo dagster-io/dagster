@@ -1,11 +1,11 @@
 ---
 title: Deploying Dagster to Amazon Web Services | Dagster
-description: To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events, and S3 can act as an IO manager.
+description: To deploy Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
 ---
 
 # Deploying Dagster to Amazon Web Services
 
-This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host Dagit and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.
+This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host the Dagster webserver and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.
 
 ---
 
@@ -33,11 +33,11 @@ storage:
 In this case, you'll want to ensure that:
 
 - You provide the right connection strings for your RDS instance
-- The node or container hosting Dagit is able to connect to RDS
+- The node or container hosting the webserver is able to connect to RDS
 
-Be sure that this file is present and `DAGSTER_HOME` is set on the node where Dagit is running.
+Be sure that this file is present and `DAGSTER_HOME` is set on the node where the webserver is running.
 
-**Note**: Using RDS for run and event log storage doesn't require that Dagit be running in the cloud. If you're connecting a local Dagit instance to a remote RDS storage, verify that your local node is able to connect to RDS.
+**Note**: Using RDS for run and event log storage doesn't require that the webserver be running in the cloud. If you're connecting a local webserver instance to a remote RDS storage, verify that your local node is able to connect to RDS.
 
 ---
 
@@ -47,7 +47,7 @@ Be sure that this file is present and `DAGSTER_HOME` is set on the node where Da
 
 The Deploying on ECS example on GitHub demonstrates how to configure the [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration/) to manage all of the required AWS resources that Dagster needs to run on ECS. The example includes:
 
-- A Dagit container for loading and launching jobs
+- A webserver container for loading and launching jobs
 - A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
 - A Postgres container for persistent storage
 - A container with user job code
@@ -60,7 +60,7 @@ The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an EC
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
-When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
+When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
 
 Alternatively, you can define your own task definition in your `dagster.yaml`:
 
@@ -73,9 +73,9 @@ run_launcher:
     container_name: "my_container_name"
 ```
 
-### Customizing CPU and memory in ECS
+### Customizing CPU, memory, and ephemeral storage in ECS
 
-You can set the `run_launcher.config.run_resources` field to customize the default memory and CPU resources for Dagster runs. For example:
+You can set the `run_launcher.config.run_resources` field to customize the default resources for Dagster runs. For example:
 
 ```yaml
 run_launcher:
@@ -84,10 +84,13 @@ run_launcher:
   config:
     run_resources:
       cpu: 256
-      memory: 512
+      memory: 512 # In MiB
+      ephemeral_storage: 128 # In GiB
 ```
 
-You can also use job tags to customize the CPU and memory of every run for a particular job:
+**Note**: Fargate tasks only support [certain combinations of CPU and memory](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) and values of ephemeral storage between 21 and 200 GiB (the default is set to 20 GiB).
+
+You can also use job tags to customize the CPU, memory, or ephemeral storage of every run for a particular job:
 
 ```py
 from dagster import job, op
@@ -100,15 +103,14 @@ def my_op(context):
   tags = {
     "ecs/cpu": "256",
     "ecs/memory": "512",
+    "ecs/ephemeral_storage": "40",
   }
 )
 def my_job():
   my_op()
 ```
 
-If the `ecs/cpu` or `ecs/memory` tags are set, they will override any defaults set on the run launcher.
-
-**Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+If these tags are set, they will override any defaults set on the run launcher.
 
 ### Customizing the launched run's task
 
@@ -123,6 +125,42 @@ run_launcher:
   config:
     run_task_kwargs:
       launchType: "EC2"
+```
+
+or to set the capacity provider strategy to run in Fargate Spot instances:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    run_task_kwargs:
+      capacityProviderStrategy:
+        - capacityProvider: "FARGATE_SPOT"
+```
+
+You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of every run for a particular job:
+
+```py
+from dagster import job, op
+
+@op()
+def my_op(context):
+  context.log.info('running')
+
+@job(
+  tags = {
+    "ecs/run_task_kwargs": {
+      "capacityProviderStrategy": [
+        {
+          "capacityProvider": "FARGATE_SPOT",
+        },
+      ],
+    },
+  }
+)
+def my_job():
+  my_op()
 ```
 
 Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:
@@ -144,7 +182,7 @@ run_launcher:
     secrets_tag: "my-tag-name"
 ```
 
-In this example, any secret tagged with `my-tag-name` will be included as an environment variable with the name and value as that secret.
+In this example, any secret tagged with a key `my-tag-name` will be included as an environment variable with the name and value as that secret. The value of the tag is ignored.
 
 Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
 

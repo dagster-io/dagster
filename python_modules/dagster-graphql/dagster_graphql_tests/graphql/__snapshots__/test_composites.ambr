@@ -1,0 +1,472 @@
+# name: TestComposites.test_composites[0]
+  dict({
+    'pipelineOrError': dict({
+      '__typename': 'Pipeline',
+      'name': 'composites_job',
+      'solidHandles': list([
+        dict({
+          'handleID': 'add_four',
+          'solid': dict({
+            'definition': dict({
+              'inputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'num',
+                  }),
+                  'mappedInput': dict({
+                    'definition': dict({
+                      'name': 'num',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                }),
+              ]),
+              'outputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'result',
+                  }),
+                  'mappedOutput': dict({
+                    'definition': dict({
+                      'name': 'result',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                }),
+              ]),
+              'solids': list([
+                dict({
+                  'name': 'adder_1',
+                }),
+                dict({
+                  'name': 'adder_2',
+                }),
+              ]),
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                ]),
+              }),
+            ]),
+            'name': 'add_four',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'div_four',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_1',
+          'solid': dict({
+            'definition': dict({
+              'inputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'num',
+                  }),
+                  'mappedInput': dict({
+                    'definition': dict({
+                      'name': 'num',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                }),
+              ]),
+              'outputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'result',
+                  }),
+                  'mappedOutput': dict({
+                    'definition': dict({
+                      'name': 'result',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                }),
+              ]),
+              'solids': list([
+                dict({
+                  'name': 'adder_1',
+                }),
+                dict({
+                  'name': 'adder_2',
+                }),
+              ]),
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                ]),
+              }),
+            ]),
+            'name': 'adder_1',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_1.adder_1',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                ]),
+              }),
+            ]),
+            'name': 'adder_1',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_1.adder_2',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+            'name': 'adder_2',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_2',
+          'solid': dict({
+            'definition': dict({
+              'inputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'num',
+                  }),
+                  'mappedInput': dict({
+                    'definition': dict({
+                      'name': 'num',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                }),
+              ]),
+              'outputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'result',
+                  }),
+                  'mappedOutput': dict({
+                    'definition': dict({
+                      'name': 'result',
+                    }),
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                }),
+              ]),
+              'solids': list([
+                dict({
+                  'name': 'adder_1',
+                }),
+                dict({
+                  'name': 'adder_2',
+                }),
+              ]),
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+            'name': 'adder_2',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_2.adder_1',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                ]),
+              }),
+            ]),
+            'name': 'adder_1',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_2',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'add_four.adder_2.adder_2',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'adder_1',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+            'name': 'adder_2',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'div_four',
+          'solid': dict({
+            'definition': dict({
+              'inputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'num',
+                  }),
+                  'mappedInput': dict({
+                    'definition': dict({
+                      'name': 'num',
+                    }),
+                    'solid': dict({
+                      'name': 'div_1',
+                    }),
+                  }),
+                }),
+              ]),
+              'outputMappings': list([
+                dict({
+                  'definition': dict({
+                    'name': 'result',
+                  }),
+                  'mappedOutput': dict({
+                    'definition': dict({
+                      'name': 'result',
+                    }),
+                    'solid': dict({
+                      'name': 'div_2',
+                    }),
+                  }),
+                }),
+              ]),
+              'solids': list([
+                dict({
+                  'name': 'div_1',
+                }),
+                dict({
+                  'name': 'div_2',
+                }),
+              ]),
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'add_four',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+            'name': 'div_four',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'div_four.div_1',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                ]),
+              }),
+            ]),
+            'name': 'div_1',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'div_2',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        dict({
+          'handleID': 'div_four.div_2',
+          'solid': dict({
+            'definition': dict({
+            }),
+            'inputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'num',
+                }),
+                'dependsOn': list([
+                  dict({
+                    'solid': dict({
+                      'name': 'div_1',
+                    }),
+                  }),
+                ]),
+              }),
+            ]),
+            'name': 'div_2',
+            'outputs': list([
+              dict({
+                'definition': dict({
+                  'name': 'result',
+                }),
+                'dependedBy': list([
+                ]),
+              }),
+            ]),
+          }),
+        }),
+      ]),
+    }),
+  })
+# ---

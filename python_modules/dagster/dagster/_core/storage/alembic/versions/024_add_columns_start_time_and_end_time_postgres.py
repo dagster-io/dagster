@@ -16,9 +16,6 @@ branch_labels = None
 depends_on = None
 
 
-# pylint: disable=no-member
-
-
 def upgrade():
     inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()

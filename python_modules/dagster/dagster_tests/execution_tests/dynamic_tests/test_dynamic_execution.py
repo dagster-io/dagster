@@ -77,7 +77,7 @@ def dynamic_echo(_, nums):
 
 
 @job
-def dynamic_pipeline():
+def dynamic_job():
     numbers = emit(num_range())
     dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
     n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
@@ -132,7 +132,7 @@ def _run_configs():
 def test_map(run_config):
     with instance_for_test() as instance:
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=run_config,
         ) as result:
@@ -163,7 +163,7 @@ def test_map(run_config):
 def test_map_empty(run_config):
     with instance_for_test() as instance:
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=merge_dicts({"ops": {"num_range": {"config": {"range": 0}}}}, run_config),
         ) as result:
@@ -178,7 +178,7 @@ def test_map_empty(run_config):
 def test_map_selection(run_config):
     with instance_for_test() as instance:
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=merge_dicts({"ops": {"emit": {"inputs": {"num": 2}}}}, run_config),
             op_selection=["emit*", "emit_ten"],
@@ -235,7 +235,7 @@ def test_tags():
             emit.name: {"result": ["0", "1", "2"]},
         },
     )
-    plan = create_execution_plan(dynamic_pipeline, known_state=known_state)
+    plan = create_execution_plan(dynamic_job, known_state=known_state)
 
     assert plan.get_step_by_key(emit.name).tags == {"first": "1"}
 
@@ -249,14 +249,14 @@ def test_tags():
 def test_full_reexecute():
     with instance_for_test() as instance:
         result_1 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=_in_proc_cfg(),
         )
         assert result_1.success
 
         result_2 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=_in_proc_cfg(),
             reexecution_options=ReexecutionOptions(
@@ -273,14 +273,14 @@ def test_full_reexecute():
 def test_partial_reexecute(run_config):
     with instance_for_test() as instance:
         result_1 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=run_config,
         )
         assert result_1.success
 
         result_2 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=run_config,
             reexecution_options=ReexecutionOptions(
@@ -291,7 +291,7 @@ def test_partial_reexecute(run_config):
         assert result_2.success
 
         result_3 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=run_config,
             reexecution_options=ReexecutionOptions(
@@ -328,14 +328,14 @@ def test_fan_out_in_out_in(run_config):
 def test_select_dynamic_step_and_downstream():
     with instance_for_test() as instance:
         result_1 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=_in_proc_cfg(),
         )
         assert result_1.success
 
         result_2 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=_in_proc_cfg(),
             reexecution_options=ReexecutionOptions(
@@ -346,7 +346,7 @@ def test_select_dynamic_step_and_downstream():
         assert result_2.success
 
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             run_config=_in_proc_cfg(),
             instance=instance,
             reexecution_options=ReexecutionOptions(
@@ -366,7 +366,7 @@ def test_select_dynamic_step_and_downstream():
             assert result_3.output_for_node("double_total") == 120
 
         result_4 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=result_1.run_id,
@@ -382,7 +382,7 @@ def test_select_dynamic_step_and_downstream():
         assert "multiply_by_two[0]" not in keys_4
 
         result_5 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=result_1.run_id,
@@ -401,7 +401,7 @@ def test_select_dynamic_step_and_downstream():
 def test_bad_step_selection():
     with instance_for_test() as instance:
         result_1 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=_in_proc_cfg(),
         )
@@ -411,7 +411,7 @@ def test_bad_step_selection():
         # both the dynamic outputting step key and something resolved by it in the previous run
         with pytest.raises(DagsterExecutionStepNotFoundError):
             execute_job(
-                reconstructable(dynamic_pipeline),
+                reconstructable(dynamic_job),
                 instance=instance,
                 reexecution_options=ReexecutionOptions(
                     parent_run_id=result_1.run_id,
@@ -492,7 +492,7 @@ def test_select_dynamic_step_with_non_static_mapping():
 def test_map_fail(run_config):
     with instance_for_test() as instance:
         result = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=merge_dicts({"ops": {"emit": {"config": {"fail": True}}}}, run_config),
             raise_on_error=False,
@@ -507,7 +507,7 @@ def test_map_fail(run_config):
 def test_map_reexecute_after_fail(run_config):
     with instance_for_test() as instance:
         result_1 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=merge_dicts(
                 run_config,
@@ -518,7 +518,7 @@ def test_map_reexecute_after_fail(run_config):
         assert not result_1.success
 
         result_2 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             run_config=run_config,
             reexecution_options=ReexecutionOptions(
@@ -595,7 +595,7 @@ def test_fan_in_skips():
 def test_collect_optional():
     @op(out=Out(is_required=False))
     def optional_out_op():
-        if False:  # pylint: disable=using-constant-test
+        if False:
             yield None
 
     @op(out=DynamicOut())
@@ -621,7 +621,7 @@ def test_collect_optional():
 def test_non_required_dynamic_collect_skips():
     @op(out=DynamicOut(is_required=False))
     def producer():
-        if False:  # pylint: disable=using-constant-test
+        if False:
             yield DynamicOutput("yay")
 
     @op

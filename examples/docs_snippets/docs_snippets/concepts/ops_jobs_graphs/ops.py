@@ -1,9 +1,9 @@
-# isort: skip_file
-# pylint: disable=unused-argument,reimported
+# ruff: isort: skip_file
+
 
 import requests
 
-from dagster import DagsterType, In, Nothing, Out, op
+from dagster import DagsterType, In, Nothing, Out, op, OpExecutionContext, Config
 
 
 class MockResponse:
@@ -30,10 +30,16 @@ def my_op():
 
 
 # start_configured_op_marker
-@op(config_schema={"api_endpoint": str})
-def my_configurable_op(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
+from dagster import Config
+
+
+class MyOpConfig(Config):
+    api_endpoint: str
+
+
+@op
+def my_configurable_op(config: MyOpConfig):
+    data = requests.get(f"{config.api_endpoint}/data").json()
     return data
 
 
@@ -88,10 +94,9 @@ def my_multi_output_op():
 
 
 # start_op_context_marker
-@op(config_schema={"name": str})
-def context_op(context):
-    name = context.op_config["name"]
-    context.log.info(f"My name is {name}")
+@op
+def context_op(context: OpExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
 
 
 # end_op_context_marker
@@ -103,8 +108,7 @@ def my_op_factory(
     ins=None,
     **kwargs,
 ):
-    """
-    Args:
+    """Args:
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 

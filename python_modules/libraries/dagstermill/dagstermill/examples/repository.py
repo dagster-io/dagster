@@ -6,15 +6,14 @@ from dagster import (
     AssetIn,
     AssetSelection,
     Field,
+    FilesystemIOManager,
     In,
-    Int,
     List,
     Out,
     ResourceDefinition,
     String,
     asset,
     define_asset_job,
-    fs_io_manager,
     graph,
     job,
     mem_io_manager,
@@ -23,11 +22,16 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._config.pythonic_config import Config
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 import dagstermill
-from dagstermill.io_managers import local_output_notebook_io_manager
+from dagstermill.io_managers import (
+    ConfigurableLocalOutputNotebookIOManager,
+    local_output_notebook_io_manager,
+)
 
 try:
     from dagster_pandas import DataFrame
@@ -56,7 +60,7 @@ class BasicTest:
         self.x = x
 
     def __repr__(self):
-        return "BasicTest: {x}".format(x=str(self.x))
+        return f"BasicTest: {self.x}"
 
 
 def nb_test_path(name):
@@ -79,7 +83,7 @@ def test_nb_op(name, **kwargs):
 
 common_resource_defs = {
     "output_notebook_io_manager": local_output_notebook_io_manager,
-    "io_manager": fs_io_manager,  # TODO check if necessary
+    "io_manager": FilesystemIOManager(),  # TODO check if necessary
 }
 
 hello_world = test_nb_op("hello_world", outs={})
@@ -87,6 +91,18 @@ hello_world = test_nb_op("hello_world", outs={})
 
 @job(resource_defs=common_resource_defs)
 def hello_world_job():
+    hello_world()
+
+
+@job(
+    resource_defs={
+        "output_notebook_io_manager": (
+            ConfigurableLocalOutputNotebookIOManager.configure_at_launch()
+        ),
+        "io_manager": FilesystemIOManager(),
+    }
+)
+def hello_world_job_struct_resource() -> None:
     hello_world()
 
 
@@ -134,6 +150,31 @@ goodbye_config = test_nb_op(
 def hello_world_config_job():
     hello_world_config()
     goodbye_config()
+
+
+class HelloWorldConfig(Config):
+    greeting: str = "hello"
+
+
+hello_world_config_struct = test_nb_op("hello_world_config_struct", config_schema=HelloWorldConfig)
+
+
+class GoodbyeConfig(Config):
+    farewell: str = "goodbye"
+
+
+goodbye_config_struct = test_nb_op(
+    name="goodbye_config_struct",
+    path=nb_test_path("print_dagstermill_context_op_config"),
+    output_notebook_name="notebook",
+    config_schema=GoodbyeConfig,
+)
+
+
+@job(resource_defs=common_resource_defs)
+def hello_world_config_job_struct() -> None:
+    hello_world_config_struct()
+    goodbye_config_struct()
 
 
 @job(resource_defs=common_resource_defs)
@@ -239,9 +280,9 @@ def double_add_job():
     add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
-@op(config_schema=Int)
-def load_constant(context):
-    return context.op_config
+@op
+def load_constant(config: int) -> int:
+    return config
 
 
 @job(resource_defs=common_resource_defs)
@@ -262,12 +303,12 @@ def error_job():
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     # We need type-ignores here because type checkers don't understand the `*_PRESENT` kwargs.
-    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})  # type: ignore
+    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
 
     # FIXME add an output to this
-    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # type: ignore
+    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})
 
-    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # type: ignore
+    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})
 
     @job(resource_defs=common_resource_defs)
     def tutorial_job():
@@ -344,7 +385,7 @@ def filepicklelist_resource(init_context):
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_job():
@@ -355,7 +396,7 @@ def resource_job():
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_with_exception_job():
@@ -536,8 +577,8 @@ yield_event_asset = dagstermill.define_dagstermill_asset(
 )
 
 
-# this is hacky. We need a ReconstructablePipeline to run dagstermill, and
-# ReconstructablePipeline.for_module() find the jobs defined in this file. So we need to resolve all
+# this is hacky. We need a ReconstructableJob to run dagstermill, and
+# ReconstructableJob.for_module() find the jobs defined in this file. So we need to resolve all
 # of the asset jobs outside of the repository function.
 assets = with_resources(
     [
@@ -563,7 +604,7 @@ assets = with_resources(
 def make_resolved_job(asset):
     return define_asset_job(
         name=f"{asset.key.to_user_string()}_job", selection=AssetSelection.assets(asset).upstream()
-    ).resolve(assets, [])
+    ).resolve(asset_graph=AssetGraph.from_assets(assets))
 
 
 hello_world_asset_job = make_resolved_job(hello_world_asset)
@@ -585,6 +626,7 @@ def notebook_repo():
         bad_kernel_job,
         error_job,
         hello_world_job,
+        hello_world_job_struct_resource,
         hello_world_with_custom_tags_and_description_job,
         hello_world_config_job,
         hello_world_explicit_yield_job,

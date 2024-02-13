@@ -139,6 +139,16 @@ class GrapheneAssetMetadataEntry(graphene.ObjectType):
         name = "AssetMetadataEntry"
 
 
+class GrapheneJobMetadataEntry(graphene.ObjectType):
+    jobName = graphene.NonNull(graphene.String)
+    repositoryName = graphene.Field(graphene.String)
+    locationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "JobMetadataEntry"
+
+
 class GrapheneNullMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
@@ -163,5 +173,6 @@ def types():
         GrapheneUrlMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GrapheneAssetMetadataEntry,
+        GrapheneJobMetadataEntry,
         GrapheneNullMetadataEntry,
     ]

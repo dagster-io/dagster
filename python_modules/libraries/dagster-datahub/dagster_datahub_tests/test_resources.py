@@ -2,7 +2,13 @@ import datahub.emitter.mce_builder as builder
 import pytest
 import responses
 from dagster import DagsterResourceFunctionError, OpExecutionContext, build_op_context, op
-from dagster_datahub import datahub_kafka_emitter, datahub_rest_emitter
+from dagster_datahub import (
+    DatahubConnection,
+    DatahubKafkaEmitterResource,
+    DatahubRESTEmitterResource,
+    datahub_kafka_emitter,
+    datahub_rest_emitter,
+)
 from datahub.configuration.common import ConfigurationError
 from datahub.emitter.kafka_emitter import MCE_KEY
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
@@ -39,6 +45,39 @@ def test_datahub_rest_emitter_resource():
             resources={
                 "datahub": datahub_rest_emitter.configured({"connection": "http://foobar:8080"})
             }
+        )
+        datahub_op(context)
+
+
+@responses.activate
+def test_datahub_rest_emitter_resource_pythonic() -> None:
+    @op
+    def datahub_op(datahub: DatahubRESTEmitterResource):
+        assert datahub is not None
+        dataset_properties = DatasetPropertiesClass(
+            description="This table stored the canonical User profile",
+            customProperties={"governance": "ENABLED"},
+        )
+
+        # Construct a MetadataChangeProposalWrapper object.
+        metadata_event = MetadataChangeProposalWrapper(
+            entityType="dataset",
+            changeType=ChangeTypeClass.UPSERT,
+            entityUrn=builder.make_dataset_urn("bigquery", "my-project.my-dataset.user-table"),
+            aspectName="datasetProperties",
+            aspect=dataset_properties,
+        )
+        datahub.get_emitter().test_connection()
+        datahub.get_emitter().emit(metadata_event)
+
+    with responses.RequestsMock() as rsps:
+        # Creating the datahub_rest_emitter resource will run the DatahubRestEmitter.test_connection() method.
+        # The response needs to be mocked out prior to the resource gets instantiated.
+        # This is because creating the resource its the config endpoint as a healthcheck.
+        rsps.add(rsps.GET, "http://foobar:8080/config", status=200, json={"noCode": "true"})
+        rsps.add(rsps.POST, "http://foobar:8080/aspects?action=ingestProposal", status=200, json={})
+        context = build_op_context(
+            resources={"datahub": DatahubRESTEmitterResource(connection="http://foobar:8080")}
         )
         datahub_op(context)
 
@@ -90,6 +129,29 @@ def test_datahub_kafka_emitter_resource():
     datahub_op(context)
 
 
+def test_datahub_kafka_emitter_resource_pythonic() -> None:
+    executed = {}
+
+    @op
+    def datahub_op(datahub: DatahubKafkaEmitterResource):
+        assert datahub is not None
+        assert datahub.get_emitter() is not None
+        executed["datahub_op"] = True
+
+    context = build_op_context(
+        resources={
+            "datahub": DatahubKafkaEmitterResource(
+                connection=DatahubConnection(
+                    bootstrap="foobar:9092", schema_registry_url="http://foobar:8081"
+                )
+            )
+        }
+    )
+    datahub_op(context)
+
+    assert executed["datahub_op"]
+
+
 def test_datahub_kafka_emitter_resource_failure():
     @op(required_resource_keys={"datahub"})
     def datahub_op(context: OpExecutionContext):
@@ -104,7 +166,6 @@ def test_datahub_kafka_emitter_resource_failure():
                             "bootstrap": "foobar:9092",
                             "schema_registry_url": "http://foobar:8081",
                         },
-                        "topic": "NewTopic",
                         "topic_routes": {MCE_KEY: "NewTopic"},
                     }
                 )

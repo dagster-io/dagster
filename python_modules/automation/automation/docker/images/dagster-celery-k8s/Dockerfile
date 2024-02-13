@@ -15,4 +15,4 @@ RUN pip install \
     dagster-celery-k8s \
     dagster-gcp \
     dagster-graphql \
-    dagit
+    dagster-webserver

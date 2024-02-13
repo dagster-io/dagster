@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import inspect
+import json
 import os
 import sys
 from functools import lru_cache
@@ -9,6 +8,8 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -32,35 +33,36 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._utils import frozenlist, make_readonly_value
+from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._utils import hash_collection
 
 from .events import AssetKey
-from .pipeline_base import IPipeline
+from .job_base import IJob
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
         RepositoryLoadData,
     )
+    from dagster._core.definitions.source_asset import SourceAsset
 
-    from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
 
 
-def get_ephemeral_repository_name(pipeline_name: str) -> str:
-    check.str_param(pipeline_name, "pipeline_name")
-    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
+def get_ephemeral_repository_name(job_name: str) -> str:
+    check.str_param(job_name, "job_name")
+    return f"__repository__{job_name}"
 
 
 @whitelist_for_serdes
@@ -84,7 +86,7 @@ class ReconstructableRepository(
         executable_path: Optional[str] = None,
         entry_point: Optional[Sequence[str]] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        repository_load_data: Optional["RepositoryLoadData"] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
@@ -94,12 +96,12 @@ class ReconstructableRepository(
             container_image=check.opt_str_param(container_image, "container_image"),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_context=(
-                make_readonly_value(check.mapping_param(container_context, "container_context"))
+                check.mapping_param(container_context, "container_context")
                 if container_context is not None
                 else None
             ),
@@ -116,8 +118,8 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
-        return ReconstructablePipeline(self, name)
+    def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
+        return ReconstructableJob(self, name)
 
     @classmethod
     def for_file(
@@ -127,7 +129,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         if not working_directory:
             working_directory = os.getcwd()
         return cls(
@@ -144,7 +146,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         return cls(
             ModuleCodePointer(module, fn_name, working_directory),
             container_image=container_image,
@@ -163,225 +165,183 @@ class ReconstructableRepository(
     def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
 
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructableJob` uses `lru_cache`
+    # - `ReconstructableJob` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has `Sequence` attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
-@whitelist_for_serdes
-class ReconstructablePipeline(
+
+class ReconstructableJobSerializer(NamedTupleSerializer):
+    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+        solid_selection_str = unpacked_dict.get("solid_selection_str")
+        solids_to_execute = unpacked_dict.get("solids_to_execute")
+        if solid_selection_str:
+            unpacked_dict["op_selection"] = json.loads(solid_selection_str)
+        elif solids_to_execute:
+            unpacked_dict["op_selection"] = solids_to_execute
+        return unpacked_dict
+
+    def after_pack(self, **packed_dict: Any) -> Dict[str, Any]:
+        if packed_dict["op_selection"]:
+            packed_dict["solid_selection_str"] = json.dumps(packed_dict["op_selection"]["__set__"])
+        else:
+            packed_dict["solid_selection_str"] = None
+        del packed_dict["op_selection"]
+        return packed_dict
+
+
+@whitelist_for_serdes(
+    serializer=ReconstructableJobSerializer,
+    storage_name="ReconstructablePipeline",
+    storage_field_names={
+        "job_name": "pipeline_name",
+    },
+)
+class ReconstructableJob(
     NamedTuple(
-        "_ReconstructablePipeline",
+        "_ReconstructableJob",
         [
             ("repository", ReconstructableRepository),
-            ("pipeline_name", str),
-            ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("job_name", str),
+            ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     ),
-    IPipeline,
+    IJob,
 ):
-    """Defines a reconstructable pipeline. When your pipeline/job must cross process boundaries,
-    Dagster must know how to reconstruct the pipeline/job on the other side of the process boundary.
+    """Defines a reconstructable job. When your job must cross process boundaries, Dagster must know
+    how to reconstruct the job on the other side of the process boundary.
 
     Args:
         repository (ReconstructableRepository): The reconstructable representation of the repository
-            the pipeline/job belongs to.
-        pipeline_name (str): The name of the pipeline/job.
-        solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
-            solid/op selection. None if no selection is specified, i.e. the entire pipeline/job will
-            be run.
-        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
-            is specified, i.e. the entire pipeline/job will be run.
-        asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
+            the job belongs to.
+        job_name (str): The name of the job.
+        op_selection (Optional[AbstractSet[str]]): A set of op query strings. Ops matching any of
+            these queries will be selected. None if no selection is specified.
+        asset_selection (Optional[AbstractSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.
     """
 
     def __new__(
         cls,
         repository: ReconstructableRepository,
-        pipeline_name: str,
-        solid_selection_str: Optional[str] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        job_name: str,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        return super(ReconstructablePipeline, cls).__new__(
+        op_selection = set(op_selection) if op_selection else None
+        return super(ReconstructableJob, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
-            solids_to_execute=solids_to_execute,
-            asset_selection=asset_selection,
+            job_name=check.str_param(job_name, "job_name"),
+            op_selection=check.opt_nullable_set_param(op_selection, "op_selection", of_type=str),
+            asset_selection=check.opt_nullable_set_param(
+                asset_selection, "asset_selection", AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckKey
+            ),
         )
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
-    ) -> ReconstructablePipeline:
+    ) -> "ReconstructableJob":
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
-
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
-    @lru_cache(maxsize=1)  # type: ignore
-    def get_definition(self) -> Union[JobDefinition, "PipelineDefinition"]:
+    @lru_cache(maxsize=1)
+    def get_definition(self) -> "JobDefinition":
         return self.repository.get_definition().get_maybe_subset_job_def(
-            self.pipeline_name,
-            self.solid_selection,
+            self.job_name,
+            self.op_selection,
             self.asset_selection,
-            self.solids_to_execute,
+            self.asset_check_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
-    def _subset_for_execution(
+    def get_subset(
         self,
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]],
-    ) -> "ReconstructablePipeline":
-        # no selection
-        if solid_selection is None and solids_to_execute is None and asset_selection is None:
-            return ReconstructablePipeline(
-                repository=self.repository,
-                pipeline_name=self.pipeline_name,
-            )
-
-        from dagster._core.definitions import JobDefinition, PipelineDefinition
-
-        pipeline_def = self.get_definition()
-        if isinstance(pipeline_def, JobDefinition):
-            # jobs use pre-resolved selection
-            # when subselecting a job
-            # * job subselection depend on solid_selection rather than solids_to_execute
-            # * we'll resolve the op selection later in the stack
-            if solid_selection is None:
-                # when the pre-resolution info is unavailable (e.g. subset from existing run),
-                # we need to fill the solid_selection in order to pass the value down to deeper stack.
-                solid_selection = list(solids_to_execute) if solids_to_execute else None
-            return ReconstructablePipeline(
-                repository=self.repository,
-                pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=None,
-                asset_selection=asset_selection,
-            )
-        elif isinstance(pipeline_def, PipelineDefinition):  # type: ignore
-            # when subselecting a pipeline
-            # * pipeline subselection depend on solids_to_excute rather than solid_selection
-            # * we resolve a list of solid selection queries to a frozenset of qualified solid names
-            #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-            if solid_selection and solids_to_execute is None:
-                # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
-            return ReconstructablePipeline(
-                repository=self.repository,
-                pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
-            )
-        else:
-            raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
-
-    def subset_for_execution(
-        self,
-        solid_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructablePipeline":
-        # take a list of unresolved selection queries
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        check.invariant(
-            not (solid_selection and asset_selection),
-            "solid_selection and asset_selection cannot both be provided as arguments",
-        )
-
-        return self._subset_for_execution(
-            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
-        )
-
-    def subset_for_execution_from_existing_pipeline(
-        self,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> ReconstructablePipeline:
-        # take a frozenset of resolved solid names from an existing pipeline
-        # so there's no need to parse the selection
-
-        check.invariant(
-            not (solids_to_execute and asset_selection),
-            "solids_to_execute and asset_selection cannot both be provided as arguments",
-        )
-
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        return self._subset_for_execution(
-            solids_to_execute=solids_to_execute,
-            solid_selection=None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "ReconstructableJob":
+        if op_selection and (asset_selection or asset_check_selection):
+            check.failed(
+                "op_selection and asset_selection or asset_check_selection cannot both be provided"
+                " as arguments",
+            )
+        op_selection = set(op_selection) if op_selection else None
+        return ReconstructableJob(
+            repository=self.repository,
+            job_name=self.job_name,
+            op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
         )
 
     def describe(self) -> str:
-        return '"{name}" in repository ({repo})'.format(
-            repo=self.repository.pointer.describe, name=self.pipeline_name
-        )
+        return f'"{self.job_name}" in repository ({self.repository.pointer.describe})'
 
     @staticmethod
-    def for_file(python_file: str, fn_name: str) -> ReconstructablePipeline:
-        return bootstrap_standalone_recon_pipeline(
-            FileCodePointer(python_file, fn_name, os.getcwd())
-        )
+    def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
+        return bootstrap_standalone_recon_job(FileCodePointer(python_file, fn_name, os.getcwd()))
 
     @staticmethod
-    def for_module(module: str, fn_name: str) -> ReconstructablePipeline:
-        return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
+    def for_module(module: str, fn_name: str) -> "ReconstructableJob":
+        return bootstrap_standalone_recon_job(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
 
     @staticmethod
-    def from_dict(val: Mapping[str, object]) -> ReconstructablePipeline:
+    def from_dict(val: Mapping[str, Any]) -> "ReconstructableJob":
         check.mapping_param(val, "val")
 
         inst = unpack_value(val)
         check.invariant(
-            isinstance(inst, ReconstructablePipeline),
-            "Deserialized object is not instance of ReconstructablePipeline, got {type}".format(
-                type=type(inst)
-            ),
+            isinstance(inst, ReconstructableJob),
+            f"Deserialized object is not instance of ReconstructableJob, got {type(inst)}",
         )
-        return inst
+        return inst  # type: ignore  # (illegible runtime check)
 
-    def get_python_origin(self) -> PipelinePythonOrigin:
-        return PipelinePythonOrigin(self.pipeline_name, self.repository.get_python_origin())
+    def get_python_origin(self) -> JobPythonOrigin:
+        return JobPythonOrigin(self.job_name, self.repository.get_python_origin())
 
     def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
 
     def get_module(self) -> Optional[str]:
-        """Return the module the pipeline is found in, the origin is a module code pointer."""
+        """Return the module the job is found in, the origin is a module code pointer."""
         pointer = self.get_python_origin().get_repo_pointer()
         if isinstance(pointer, ModuleCodePointer):
             return pointer.module
 
         return None
 
+    # Allow this to be hashed for `lru_cache` in `get_definition`
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
-ReconstructableJob = ReconstructablePipeline
 
+def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
+    """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructableJob` from a
+    function that returns a :py:class:`~dagster.JobDefinition`/:py:class:`~dagster.JobDefinition`,
+    or a function decorated with :py:func:`@job <dagster.job>`.
 
-def reconstructable(target: Callable[..., "PipelineDefinition"]) -> ReconstructablePipeline:
-    """
-    Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
-    function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
-    or a function decorated with :py:func:`@pipeline <dagster.pipeline>`/:py:func:`@job <dagster.job>`.
-
-    When your pipeline/job must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline/job
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
     Passing a job created with ``~dagster.GraphDefinition.to_job`` to ``reconstructable()``,
@@ -402,7 +362,7 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
         reconstructable(define_my_job)
 
     This function implements a very conservative strategy for reconstruction, so that its behavior
-    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of pipelines
+    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of jobs
     or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
     call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
@@ -431,9 +391,9 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
 
             reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    from dagster._core.definitions import JobDefinition
 
-    if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+    if not seven.is_function_or_decorator_instance_of(target, JobDefinition):
         if isinstance(target, JobDefinition):
             raise DagsterInvariantViolationError(
                 "Reconstructable target was not a function returning a job definition, or a job "
@@ -445,7 +405,7 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
-            "by a decorated function, got {type}.".format(type=type(target)),
+            f"by a decorated function, got {type(target)}.",
         )
 
     if seven.is_lambda(target):
@@ -457,12 +417,10 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
-            'Reconstructable target "{target.__name__}" has a different '
-            '__qualname__ "{target.__qualname__}" indicating it is not '
+            f'Reconstructable target "{target.__name__}" has a different '
+            f'__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_job.".format(
-                target=target
-            )
+            "defined at module scope instead, or use build_reconstructable_job."
         )
 
     try:
@@ -471,23 +429,23 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
             and hasattr(target, "__name__")
             and getattr(inspect.getmodule(target), "__name__", None) != "__main__"
         ):
-            return ReconstructablePipeline.for_module(target.__module__, target.__name__)
+            return ReconstructableJob.for_module(target.__module__, target.__name__)
     except:
         pass
 
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive "
+            "reconstructable() can not reconstruct jobs defined in interactive "
             "environments like <stdin>, IPython, or Jupyter notebooks. "
-            "Use a pipeline defined in a module or file instead, or use build_reconstructable_job."
+            "Use a job defined in a module or file instead, or use build_reconstructable_job."
         )
 
     pointer = FileCodePointer(
         python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
     )
 
-    return bootstrap_standalone_recon_pipeline(pointer)
+    return bootstrap_standalone_recon_job(pointer)
 
 
 @experimental
@@ -497,9 +455,8 @@ def build_reconstructable_job(
     reconstructable_args: Optional[Tuple[object]] = None,
     reconstructable_kwargs: Optional[Mapping[str, object]] = None,
     reconstructor_working_directory: Optional[str] = None,
-) -> ReconstructablePipeline:
-    """
-    Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructablePipeline`.
+) -> ReconstructableJob:
+    """Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructableJob`.
 
     When your job must cross process boundaries, e.g., for execution on multiple nodes or in
     different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
@@ -585,65 +542,71 @@ def build_reconstructable_job(
 
     pointer = CustomPointer(reconstructor_pointer, _reconstructable_args, _reconstructable_kwargs)
 
-    pipeline_def = pipeline_def_from_pointer(pointer)
+    job_def = job_def_from_pointer(pointer)
 
-    return ReconstructablePipeline(
+    return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
-        pipeline_name=pipeline_def.name,
+        job_name=job_def.name,
     )
 
 
-# back compat, in case users have imported these directly
-build_reconstructable_pipeline = build_reconstructable_job
-build_reconstructable_target = build_reconstructable_job
-
-
-def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> ReconstructablePipeline:
-    # So this actually straps the the pipeline for the sole
-    # purpose of getting the pipeline name. If we changed ReconstructablePipeline
-    # to get the pipeline on demand in order to get name, we could avoid this.
-    pipeline_def = pipeline_def_from_pointer(pointer)
-    return ReconstructablePipeline(
+def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
+    # So this actually straps the the job for the sole
+    # purpose of getting the job name. If we changed ReconstructableJob
+    # to get the job on demand in order to get name, we could avoid this.
+    job_def = job_def_from_pointer(pointer)
+    return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
-        pipeline_name=pipeline_def.name,
+        job_name=job_def.name,
     )
 
 
 LoadableDefinition: TypeAlias = Union[
-    "PipelineDefinition",
+    "JobDefinition",
     "RepositoryDefinition",
     "PendingRepositoryDefinition",
     "GraphDefinition",
-    "AssetGroup",
+    "Sequence[Union[AssetsDefinition, SourceAsset]]",
 ]
 
 T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
 
 
-def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from dagster._core.definitions import AssetGroup
+def _is_list_of_assets(
+    definition: LoadableDefinition,
+) -> bool:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
 
+    return isinstance(definition, list) and all(
+        isinstance(item, (AssetsDefinition, SourceAsset)) for item in definition
+    )
+
+
+def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
-    if not isinstance(
-        definition,
-        (
-            PipelineDefinition,
-            RepositoryDefinition,
-            PendingRepositoryDefinition,
-            GraphDefinition,
-            AssetGroup,
-            Definitions,
-        ),
+    if not (
+        isinstance(
+            definition,
+            (
+                JobDefinition,
+                RepositoryDefinition,
+                PendingRepositoryDefinition,
+                GraphDefinition,
+                Definitions,
+            ),
+        )
+        or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
+            f"or RepositoryDefinition. Got {definition!r}."
         )
-    return definition  # type: ignore
+    return definition
 
 
 def load_def_in_module(
@@ -671,18 +634,15 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from dagster._core.definitions import AssetGroup
-
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if isinstance(
         target,
         (
-            AssetGroup,
             GraphDefinition,
-            PipelineDefinition,
+            JobDefinition,
             PendingRepositoryDefinition,
             RepositoryDefinition,
         ),
@@ -694,33 +654,30 @@ def def_from_pointer(
 
     if seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
-            "Error invoking function at {target} with no arguments. "
-            "Reconstructable target must be callable with no arguments".format(
-                target=pointer.describe()
-            )
+            f"Error invoking function at {pointer.describe()} with no arguments. "
+            "Reconstructable target must be callable with no arguments"
         )
 
-    return _check_is_loadable(target())  # type: ignore
+    return _check_is_loadable(target())
 
 
-def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
-    from .pipeline_definition import PipelineDefinition
+def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
+    from .job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
-    if isinstance(target, PipelineDefinition):
+    if isinstance(target, JobDefinition):
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy"
+        "CodePointer ({str}) must resolve to a JobDefinition (or JobDefinition for legacy"
         " code). Received a {type}".format(str=pointer.describe(), type=type(target))
     )
 
 
 @overload
-# NOTE: mypy can't handle these overloads but pyright can
-def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
+def repository_def_from_target_def(
+    target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     ...
@@ -736,33 +693,35 @@ def repository_def_from_target_def(
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> Optional["RepositoryDefinition"]:
-    from dagster._core.definitions import AssetGroup
-
+    from .assets import AssetsDefinition
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import PipelineDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
+    from .source_asset import SourceAsset
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
         target = target.get_inner_repository_for_loading_process()
 
-    # special case - we can wrap a single pipeline in a repository
-    if isinstance(target, (PipelineDefinition, GraphDefinition)):
-        # consider including pipeline name in generated repo name
+    # special case - we can wrap a single job in a repository
+    if isinstance(target, (JobDefinition, GraphDefinition)):
+        # consider including job name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
         )
-    elif isinstance(target, AssetGroup):
+    elif isinstance(target, list) and all(
+        isinstance(item, (AssetsDefinition, SourceAsset)) for item in target
+    ):
         return RepositoryDefinition(
             name=SINGLETON_REPOSITORY_NAME,
-            repository_data=CachingRepositoryData.from_list([target]),
+            repository_data=CachingRepositoryData.from_list(target),
         )
     elif isinstance(target, RepositoryDefinition):
         return target
@@ -783,8 +742,8 @@ def repository_def_from_pointer(
     repo_def = repository_def_from_target_def(target, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
-            "CodePointer ({str}) must resolve to a "
-            "RepositoryDefinition, JobDefinition, or PipelineDefinition. "
-            "Received a {type}".format(str=pointer.describe(), type=type(target))
+            f"CodePointer ({pointer.describe()}) must resolve to a "
+            "RepositoryDefinition, JobDefinition, or JobDefinition. "
+            f"Received a {type(target)}"
         )
     return repo_def

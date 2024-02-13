@@ -91,6 +91,61 @@ def test_wait_for_job_success():
     assert not mock_client.sleeper.mock_calls
 
 
+def test_create_job_success():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    # Finishes without issue
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
+def test_create_job_failure_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(status=500, reason="Bad"),
+        kubernetes.client.rest.ApiException(status=500, reason="Worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="Even worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="The worst"),
+    ]
+
+    with pytest.raises(DagsterK8sAPIRetryLimitExceeded):
+        mock_client.create_namespaced_job_with_retries(
+            body=V1Job(metadata=a_job_metadata),
+            namespace=namespace,
+        )
+
+
+def test_create_job_with_idempotence_api_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(
+            status=500, reason="This is a lie, I actually made the job"
+        ),
+        kubernetes.client.rest.ApiException(status=409, reason="Job already exists"),
+    ]
+
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
 def test_wait_for_job_success_with_api_errors():
     mock_client = create_mocked_client()
 
@@ -329,6 +384,29 @@ def test_long_running_job():
     assert len(mock_client.sleeper.mock_calls) == 1
 
 
+def test_job_succeded_after_failure():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    # failed job
+    failed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(active=1, failed=1, succeeded=0))
+    completed_job = V1Job(
+        metadata=a_job_metadata, status=V1JobStatus(active=0, failed=0, succeeded=1)
+    )
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [failed_job, completed_job]
+
+    mock_client.wait_for_job_success(job_name, namespace)
+
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 2
+
+
 ###
 # retrieve_pod_logs
 ###
@@ -344,19 +422,30 @@ def test_retrieve_pod_logs():
     assert mock_client.retrieve_pod_logs("pod", "namespace") == "a_string"
 
 
-def _pod_list_for_container_status(container_status):
-    return V1PodList(items=[V1Pod(status=V1PodStatus(container_statuses=[container_status]))])
+def _pod_list_for_container_status(*container_statuses, init_container_statuses=None):
+    return V1PodList(
+        items=[
+            V1Pod(
+                status=V1PodStatus(
+                    container_statuses=container_statuses,
+                    init_container_statuses=init_container_statuses,
+                )
+            )
+        ]
+    )
 
 
-def _ready_running_status():
-    return _create_status(state=V1ContainerState(running=V1ContainerStateRunning()), ready=True)
+def _ready_running_status(name="a_name"):
+    return _create_status(
+        state=V1ContainerState(running=V1ContainerStateRunning()), ready=True, name=name
+    )
 
 
-def _create_status(state, ready):
+def _create_status(state, ready, name="a_name"):
     return V1ContainerStatus(
         image="an_image",
         image_id="an_image_id",
-        name="a_name",
+        name=name,
         restart_count=0,
         state=state,
         ready=ready,
@@ -367,9 +456,7 @@ def _create_status(state, ready):
 # wait_for_pod_success
 ###
 def test_wait_for_pod_success():
-    """
-    Ready pod right away.
-    """
+    """Ready pod right away."""
     mock_client = create_mocked_client()
 
     single_ready_running_pod = _pod_list_for_container_status(_ready_running_status())
@@ -429,7 +516,7 @@ def test_wait_for_statuses_then_success():
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            "Waiting for pod container status to be set by kubernetes...",
+            "Waiting for pod init_container or container status to be set by kubernetes...",
             'Pod "%s" is ready, done waiting' % pod_name,
         ],
     )
@@ -506,10 +593,16 @@ def test_running_but_not_ready():
 def test_wait_for_ready_but_terminated():
     mock_client = create_mocked_client()
 
+    ignored_container = _create_status(
+        state=V1ContainerState(terminated=V1ContainerStateTerminated(exit_code=1)),
+        ready=False,
+        name="ignored",
+    )
     single_pod_terminated_successful = _pod_list_for_container_status(
+        ignored_container,
         _create_status(
             state=V1ContainerState(terminated=V1ContainerStateTerminated(exit_code=0)), ready=False
-        )
+        ),
     )
 
     mock_client.core_api.list_namespaced_pod.side_effect = [
@@ -517,14 +610,18 @@ def test_wait_for_ready_but_terminated():
     ]
 
     pod_name = "a_pod"
+    container_name = "a_name"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+    mock_client.wait_for_pod(
+        pod_name=pod_name, namespace="namespace", ignore_containers={"ignored"}
+    )
 
     assert_logger_calls(
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
+            f"Container {container_name} in {pod_name} has exited successfully",
+            f"Pod {pod_name} exited successfully",
         ],
     )
 
@@ -555,13 +652,14 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
     mock_client.retrieve_pod_logs = retrieve_pod_logs_mock
 
     pod_name = "a_pod"
+    container_name = "a_name"
 
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert (
         str(exc_info.value)
-        == 'Pod did not exit successfully. Failed with message: "error_message" '
+        == f'Pod {pod_name} terminated but some containers exited with errors:\nContainer "{container_name}" failed with message: "error_message" '
         'and pod logs: "raw_logs_ret_val"'
     )
 
@@ -583,6 +681,7 @@ def test_wait_for_termination_ready_then_terminate():
     ]
 
     pod_name = "a_pod"
+    container_name = "a_name"
 
     mock_client.wait_for_pod(
         pod_name=pod_name, namespace="namespace", wait_for_state=WaitForPodState.Terminated
@@ -592,7 +691,8 @@ def test_wait_for_termination_ready_then_terminate():
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
+            f"Container {container_name} in {pod_name} has exited successfully",
+            f"Pod {pod_name} exited successfully",
         ],
     )
 
@@ -611,6 +711,92 @@ def test_waiting_for_pod_initialize():
         )
     )
     single_ready_running_pod = _pod_list_for_container_status(_ready_running_status())
+
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        single_waiting_pod,
+        single_ready_running_pod,
+    ]
+
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+
+    assert_logger_calls(
+        mock_client.logger,
+        [
+            'Waiting for pod "%s"' % pod_name,
+            'Waiting for pod "%s" to initialize...' % pod_name,
+            'Pod "%s" is ready, done waiting' % pod_name,
+        ],
+    )
+    # slept only once
+    assert len(mock_client.sleeper.mock_calls) == 1
+
+
+def test_waiting_for_pod_initialize_with_ignored_containers():
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=3))
+    ignored_waiting_container_status = _create_status(
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+        name="ignored",
+    )
+    ignored_ready = _ready_running_status(name="ignored")
+    waiting_container_status = _create_status(
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    ready = _ready_running_status()
+
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        _pod_list_for_container_status(
+            ignored_waiting_container_status,
+            waiting_container_status,
+        ),
+        _pod_list_for_container_status(
+            ignored_ready,
+            waiting_container_status,
+        ),
+        _pod_list_for_container_status(
+            ignored_ready,
+            ready,
+        ),
+    ]
+
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(
+        pod_name=pod_name, namespace="namespace", ignore_containers={"ignored"}
+    )
+
+    assert_logger_calls(
+        mock_client.logger,
+        [
+            'Waiting for pod "%s"' % pod_name,
+            'Waiting for pod "%s" to initialize...' % pod_name,
+            'Waiting for pod "%s" to initialize...' % pod_name,
+            'Pod "%s" is ready, done waiting' % pod_name,
+        ],
+    )
+    # slept only once
+    assert len(mock_client.sleeper.mock_calls) == 2
+
+
+def test_waiting_for_pod_initialize_with_init_container():
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=2))
+    waiting_container_status = _create_status(
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    single_waiting_pod = _pod_list_for_container_status(
+        waiting_container_status, init_container_statuses=[waiting_container_status]
+    )
+    single_ready_running_pod = _pod_list_for_container_status(
+        waiting_container_status, init_container_statuses=[_ready_running_status()]
+    )
 
     mock_client.core_api.list_namespaced_pod.side_effect = [
         single_waiting_pod,
@@ -686,9 +872,7 @@ def test_valid_failure_waiting_reasons():
         pod_name = "a_pod"
         with pytest.raises(DagsterK8sError) as exc_info:
             mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
-        assert str(exc_info.value) == 'Failed: Reason="{reason}" Message="bad things"'.format(
-            reason=reason
-        )
+        assert f'Failed: Reason="{reason}" Message="bad things"' in str(exc_info.value)
 
 
 def test_bad_waiting_state():

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item, frozendict
+from dagster._utils import ensure_single_item
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .errors import (
@@ -17,6 +17,7 @@ from .errors import (
     create_missing_required_field_error,
     create_missing_required_fields_error,
     create_none_not_allowed_error,
+    create_pydantic_env_var_error,
     create_scalar_error,
     create_selector_multiple_fields_error,
     create_selector_multiple_fields_no_field_selected_error,
@@ -50,7 +51,7 @@ def is_config_scalar_valid(config_type_snap: ConfigTypeSnap, config_value: objec
         # historical snapshot without scalar kind. do no validation
         return True
     else:
-        check.failed("Not a supported scalar {}".format(config_type_snap))
+        check.failed(f"Not a supported scalar {config_type_snap}")
 
 
 def validate_config(config_schema: object, config_value: T) -> EvaluateValueResult[T]:
@@ -80,6 +81,8 @@ def validate_config_from_snap(
 
 
 def _validate_config(context: ValidationContext, config_value: object) -> EvaluateValueResult[Any]:
+    from dagster._config.field_utils import EnvVar, IntEnvVar
+
     check.inst_param(context, "context", ValidationContext)
 
     kind = context.config_type_snap.kind
@@ -100,6 +103,13 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
     if kind == ConfigTypeKind.SCALAR:
         if not is_config_scalar_valid(context.config_type_snap, config_value):
             return EvaluateValueResult.for_error(create_scalar_error(context, config_value))
+        # If user passes an EnvVar or IntEnvVar to a non-structured run config dictionary, throw explicit error
+        if context.config_type_snap.scalar_kind == ConfigScalarKind.STRING and isinstance(
+            config_value, (EnvVar, IntEnvVar)
+        ):
+            return EvaluateValueResult.for_error(
+                create_pydantic_env_var_error(context, config_value)
+            )
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
@@ -116,7 +126,7 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
     elif kind == ConfigTypeKind.SCALAR_UNION:
         return _validate_scalar_union_config(context, config_value)
     else:
-        check.failed("Unsupported ConfigTypeKind {}".format(kind))
+        check.failed(f"Unsupported ConfigTypeKind {kind}")
 
 
 def _validate_scalar_union_config(
@@ -168,7 +178,7 @@ def validate_selector_config(
     # If there is a single field defined on the selector and if it is optional
     # it passes validation. (e.g. a single logger "console")
     if config_value == {}:
-        return _validate_empty_selector_config(context)  # type: ignore
+        return _validate_empty_selector_config(context)
 
     # Now we ensure that the used-provided config has only a a single entry
     # and then continue the validation pass
@@ -191,29 +201,31 @@ def validate_selector_config(
 
     child_evaluate_value_result = _validate_config(
         context.for_field_snap(field_snap),
-        # This is a very particular special case where we want someone
-        # to be able to select a selector key *without* a value
-        #
-        # e.g.
-        # storage:
-        #   filesystem:
-        #
-        # And we want the default values of the child elements of filesystem:
-        # to "fill in"
-        {}
-        if field_value is None
-        and ConfigTypeKind.has_fields(
-            context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
-        )
-        else field_value,
+        (
+            # This is a very particular special case where we want someone
+            # to be able to select a selector key *without* a value
+            #
+            # e.g.
+            # storage:
+            #   filesystem:
+            #
+            # And we want the default values of the child elements of filesystem:
+            # to "fill in"
+            {}
+            if field_value is None
+            and ConfigTypeKind.has_fields(
+                context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
+            )
+            else field_value
+        ),
     )
 
     if child_evaluate_value_result.success:
         return EvaluateValueResult.for_value(  # type: ignore
-            frozendict({field_name: child_evaluate_value_result.value})
+            {field_name: child_evaluate_value_result.value}
         )
     else:
-        return child_evaluate_value_result  # type: ignore
+        return child_evaluate_value_result
 
 
 def _validate_shape_config(
@@ -289,7 +301,7 @@ def _validate_shape_config(
     if errors:
         return EvaluateValueResult.for_errors(errors)
     else:
-        return EvaluateValueResult.for_value(frozendict(config_value))  # type: ignore
+        return EvaluateValueResult.for_value(config_value)  # type: ignore
 
 
 def validate_permissive_shape_config(
@@ -304,7 +316,7 @@ def validate_permissive_shape_config(
 
 def validate_map_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Mapping[str, object]]:
+) -> EvaluateValueResult[Mapping[object, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.MAP)
     check.not_none_param(config_value, "config_value")
@@ -325,7 +337,7 @@ def validate_map_config(
         if not result.success:
             errors += cast(List, result.errors)
 
-    return EvaluateValueResult(not bool(errors), frozendict(config_value), errors)  # type: ignore
+    return EvaluateValueResult(not bool(errors), config_value, errors)
 
 
 def validate_shape_config(
@@ -401,7 +413,7 @@ def validate_array_config(
         else:
             errors.extend(check.not_none(result.errors))
 
-    return EvaluateValueResult(not bool(errors), values, errors)  # type: ignore
+    return EvaluateValueResult(not bool(errors), values, errors)
 
 
 def validate_enum_config(
@@ -422,7 +434,7 @@ def validate_enum_config(
 
 def process_config(
     config_type: object, config_dict: Mapping[str, object]
-) -> EvaluateValueResult[Mapping[str, object]]:
+) -> EvaluateValueResult[Mapping[str, Any]]:
     config_type = resolve_to_config_type(config_type)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)

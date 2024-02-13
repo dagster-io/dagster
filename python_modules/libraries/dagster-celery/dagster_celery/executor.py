@@ -108,23 +108,24 @@ def _submit_task(app, plan_context, step, queue, priority, known_state):
     from .tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=plan_context.pipeline_run.run_id,
+        job_origin=plan_context.reconstructable_job.get_python_origin(),
+        run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,  # Not actually checked by the celery task
     )
 
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=plan_context.reconstructable_pipeline.to_dict(),
+        executable_dict=plan_context.reconstructable_job.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key="{queue}.execute_plan".format(queue=queue),
+        routing_key=f"{queue}.execute_plan",
     )
 
 

@@ -1,9 +1,10 @@
 import dask.dataframe as dd
 import pytest
-from dagster import file_relative_path
-from dagster._legacy import InputDefinition, execute_solid, solid
+from dagster import file_relative_path, op
+from dagster._core.definitions.input import In
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_dask import DataFrame
-from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
+from dagster_dask.data_frame import DataFrameReadTypes
 from dagster_dask.utils import DataFrameUtilities
 from dask.dataframe.utils import assert_eq
 
@@ -22,27 +23,27 @@ def create_dask_df():
     ],
 )
 def test_dataframe_inputs(file_type):
-    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+    @op(ins={"input_df": In(DataFrame)})
     def return_df(_, input_df):
         return input_df
 
     file_name = file_relative_path(__file__, f"num.{file_type}")
 
-    read_result = execute_solid(
+    read_result = wrap_op_in_graph_and_execute(
         return_df,
         run_config={
-            "solids": {
+            "ops": {
                 "return_df": {"inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}}
             }
         },
+        do_input_mapping=False,
     )
     assert read_result.success
     assert assert_eq(read_result.output_value(), create_dask_df())
 
 
 def test_dataframe_loader_config_keys_dont_overlap():
-    """
-    Test that the read_keys, which are deprecated, do not overlap with
+    """Test that the read_keys, which are deprecated, do not overlap with
     the normal loader config_keys.
     """
     config_keys = set(DataFrameUtilities.keys())
@@ -50,15 +51,3 @@ def test_dataframe_loader_config_keys_dont_overlap():
     read_keys = set(DataFrameReadTypes.keys())
 
     assert len(config_keys.intersection(read_keys)) == 0
-
-
-def test_dataframe_materializer_config_keys_dont_overlap():
-    """
-    Test that the to_keys, which are deprecated, do not overlap with
-    the normal materializer config_keys.
-    """
-    config_keys = set(DataFrameUtilities.keys())
-    config_keys.add("to")
-    to_keys = set(DataFrameToTypes.keys())
-
-    assert len(config_keys.intersection(to_keys)) == 0

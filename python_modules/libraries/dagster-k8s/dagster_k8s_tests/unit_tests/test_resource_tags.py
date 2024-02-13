@@ -1,9 +1,8 @@
 import pytest
-from dagster import DynamicOutput
+from dagster import DynamicOut, DynamicOutput, job, op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._legacy import DynamicOutputDefinition, pipeline, solid
 from dagster_k8s.job import (
     K8S_RESOURCE_REQUIREMENTS_KEY,
     USER_DEFINED_K8S_CONFIG_KEY,
@@ -15,7 +14,7 @@ from dagster_k8s.job import (
 # CPU units are millicpu
 # Memory units are MiB
 def test_backcompat_resource_tags():
-    @solid(
+    @op(
         tags={
             K8S_RESOURCE_REQUIREMENTS_KEY: {
                 "requests": {"cpu": "250m", "memory": "64Mi"},
@@ -38,22 +37,22 @@ def test_backcompat_resource_tags():
 
 
 def test_bad_deprecated_resource_tags():
-    @pipeline(
+    @job(
         tags={
             K8S_RESOURCE_REQUIREMENTS_KEY: {
                 "other": {"cpu": "250m", "memory": "64Mi"},
             }
         }
     )
-    def resource_tags_pipeline():
+    def resource_tags_job():
         pass
 
     with pytest.raises(DagsterInvalidConfigError):
-        get_user_defined_k8s_config(resource_tags_pipeline.tags)
+        get_user_defined_k8s_config(resource_tags_job.tags)
 
 
 def test_user_defined_k8s_config_tags():
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -78,7 +77,7 @@ def test_user_defined_k8s_config_tags():
     assert resources["limits"]["cpu"] == "500m"
     assert resources["limits"]["memory"] == "2560Mi"
 
-    @solid
+    @op
     def no_resource_tags_solid(_):
         pass
 
@@ -87,11 +86,11 @@ def test_user_defined_k8s_config_tags():
 
 
 def test_tags_to_plan():
-    @solid
+    @op
     def blank(_):
         pass
 
-    @pipeline
+    @job
     def k8s_ready():
         blank.tag(
             {
@@ -107,7 +106,7 @@ def test_tags_to_plan():
         )()
 
     plan = create_execution_plan(k8s_ready)
-    step = list(plan.step_dict.values())[0]
+    step = next(iter(plan.step_dict.values()))
 
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
@@ -121,7 +120,7 @@ def test_tags_to_plan():
 
 
 def test_tags_to_dynamic_plan():
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -136,7 +135,7 @@ def test_tags_to_dynamic_plan():
     def multiply_inputs(_, x):
         return 2 * x
 
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -147,15 +146,15 @@ def test_tags_to_dynamic_plan():
                 }
             }
         },
-        output_defs=[DynamicOutputDefinition()],
+        out=DynamicOut(),
     )
     def emit(_):
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))
 
-    @pipeline
+    @job
     def k8s_ready():
-        return emit().map(multiply_inputs)
+        emit().map(multiply_inputs)
 
     known_state = KnownExecutionState(
         {},
@@ -196,15 +195,15 @@ def test_tags_to_dynamic_plan():
 
 
 def test_bad_user_defined_k8s_config_tags():
-    @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: {"other": {}}})
-    def my_pipeline():
+    @job(tags={USER_DEFINED_K8S_CONFIG_KEY: {"other": {}}})
+    def my_job():
         pass
 
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Received unexpected config entry "other" at the root',
     ):
-        get_user_defined_k8s_config(my_pipeline.tags)
+        get_user_defined_k8s_config(my_job.tags)
 
 
 def test_user_defined_config_from_tags():
@@ -217,15 +216,13 @@ def test_user_defined_config_from_tags():
         },
         "pod_template_spec_metadata": {"namespace": "pod_template_spec_value"},
         "pod_spec_config": {"dns_policy": "pod_spec_config_value"},
-        "job_config": {"status": {"completed_indexes": "job_config_value"}},
+        "job_config": {"status": {"active": 1}},
         "job_metadata": {"namespace": "job_metadata_value"},
         "job_spec_config": {"backoff_limit": 120},
     }
 
-    @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: config_args})
-    def my_pipeline():
+    @job(tags={USER_DEFINED_K8S_CONFIG_KEY: config_args})
+    def my_job():
         pass
 
-    assert get_user_defined_k8s_config(my_pipeline.tags) == UserDefinedDagsterK8sConfig(
-        **config_args
-    )
+    assert get_user_defined_k8s_config(my_job.tags) == UserDefinedDagsterK8sConfig(**config_args)

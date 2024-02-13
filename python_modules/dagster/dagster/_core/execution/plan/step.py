@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Type,
     Union,
     cast,
 )
@@ -18,7 +17,7 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._core.definitions.utils import validate_tags
-from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
@@ -29,15 +28,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.dependency import NodeHandle
 
 
-class StepKindSerializer(DefaultEnumSerializer):
-    @classmethod
-    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+class StepKindSerializer(EnumSerializer["StepKind"]):
+    def unpack(self, storage_str: str) -> "StepKind":
         # old name for unresolved mapped
         if storage_str == "UNRESOLVED":
-            value = "UNRESOLVED_MAPPED"
+            return StepKind.UNRESOLVED_MAPPED
         else:
-            value = storage_str
-        return super().value_from_storage_str(value, klass)
+            return StepKind[storage_str]
 
 
 @whitelist_for_serdes(serializer=StepKindSerializer)
@@ -48,7 +45,7 @@ class StepKind(Enum):
 
 
 def is_executable_step(
-    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]
+    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"],
 ) -> TypeGuard["ExecutionStep"]:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
@@ -72,7 +69,7 @@ class IExecutionStep:
 
     @property
     @abstractmethod
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         pass
 
     @property
@@ -123,7 +120,7 @@ class ExecutionStep(
         "_ExecutionStep",
         [
             ("handle", Union[StepHandle, ResolvedFromDynamicStepHandle]),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("step_input_dict", Mapping[str, StepInput]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
@@ -133,14 +130,12 @@ class ExecutionStep(
     ),
     IExecutionStep,
 ):
-    """
-    A fully resolved step in the execution graph.
-    """
+    """A fully resolved step in the execution graph."""
 
     def __new__(
         cls,
         handle: Union[StepHandle, ResolvedFromDynamicStepHandle],
-        pipeline_name: str,
+        job_name: str,
         step_inputs: Sequence[StepInput],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
@@ -150,7 +145,7 @@ class ExecutionStep(
         return super(ExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", (StepHandle, ResolvedFromDynamicStepHandle)),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             step_input_dict={
                 si.name: si
                 for si in check.sequence_param(step_inputs, "step_inputs", of_type=StepInput)
@@ -163,8 +158,8 @@ class ExecutionStep(
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
-                    "pipeline_name": pipeline_name,
-                    "solid_name": handle.solid_handle.name,
+                    "job_name": job_name,
+                    "op_name": handle.node_handle.name,
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
@@ -173,12 +168,12 @@ class ExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+    def node_handle(self) -> "NodeHandle":
+        return self.handle.node_handle
 
     @property
-    def solid_name(self) -> str:
-        return self.solid_handle.name
+    def op_name(self) -> str:
+        return self.node_handle.name
 
     @property
     def kind(self) -> StepKind:
@@ -214,19 +209,19 @@ class ExecutionStep(
             deps.update(inp.dependency_keys)
         return deps
 
-    def get_mapping_key(self):
+    def get_mapping_key(self) -> Optional[str]:
         if isinstance(self.handle, ResolvedFromDynamicStepHandle):
             return self.handle.mapping_key
 
         return None
 
 
-class UnresolvedMappedExecutionStep(  # type: ignore
+class UnresolvedMappedExecutionStep(
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
             ("handle", UnresolvedStepHandle),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
@@ -234,14 +229,12 @@ class UnresolvedMappedExecutionStep(  # type: ignore
     ),
     IExecutionStep,
 ):
-    """
-    A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
-    """
+    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys."""
 
     def __new__(
         cls,
         handle: UnresolvedStepHandle,
-        pipeline_name: str,
+        job_name: str,
         step_inputs: Sequence[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
@@ -249,7 +242,7 @@ class UnresolvedMappedExecutionStep(  # type: ignore
         return super(UnresolvedMappedExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             step_input_dict={
                 si.name: si
                 for si in check.sequence_param(
@@ -264,8 +257,8 @@ class UnresolvedMappedExecutionStep(  # type: ignore
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+    def node_handle(self) -> "NodeHandle":
+        return self.handle.node_handle
 
     @property
     def key(self) -> str:
@@ -315,7 +308,7 @@ class UnresolvedMappedExecutionStep(  # type: ignore
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
         keys = self.resolved_by_step_keys
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_output_name(self) -> str:
@@ -329,7 +322,7 @@ class UnresolvedMappedExecutionStep(  # type: ignore
             len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
         )
 
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:
@@ -360,8 +353,8 @@ class UnresolvedMappedExecutionStep(  # type: ignore
 
             execution_steps.append(
                 ExecutionStep(
-                    handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
-                    pipeline_name=self.pipeline_name,
+                    handle=ResolvedFromDynamicStepHandle(self.handle.node_handle, mapped_key),
+                    job_name=self.job_name,
                     step_inputs=resolved_inputs,
                     step_outputs=self.step_outputs,
                     tags=self.tags,
@@ -381,12 +374,12 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(  # type: ignore
+class UnresolvedCollectExecutionStep(
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [
             ("handle", StepHandle),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
@@ -394,14 +387,12 @@ class UnresolvedCollectExecutionStep(  # type: ignore
     ),
     IExecutionStep,
 ):
-    """
-    A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
-    """
+    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves."""
 
     def __new__(
         cls,
         handle: StepHandle,
-        pipeline_name: str,
+        job_name: str,
         step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
@@ -409,7 +400,7 @@ class UnresolvedCollectExecutionStep(  # type: ignore
         return super(UnresolvedCollectExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", StepHandle),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             step_input_dict={
                 si.name: si
                 for si in check.sequence_param(
@@ -424,8 +415,8 @@ class UnresolvedCollectExecutionStep(  # type: ignore
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+    def node_handle(self) -> "NodeHandle":
+        return self.handle.node_handle
 
     @property
     def key(self) -> str:
@@ -498,7 +489,7 @@ class UnresolvedCollectExecutionStep(  # type: ignore
 
         return ExecutionStep(
             handle=self.handle,
-            pipeline_name=self.pipeline_name,
+            job_name=self.job_name,
             step_inputs=resolved_inputs,
             step_outputs=self.step_outputs,
             tags=self.tags,

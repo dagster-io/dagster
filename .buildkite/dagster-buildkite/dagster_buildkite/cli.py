@@ -16,4 +16,4 @@ def dagster() -> None:
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_dagster_oss_main_steps()
     buildkite_yaml = buildkite_yaml_for_steps(steps)
-    print(buildkite_yaml)  # pylint: disable=print-call
+    print(buildkite_yaml)  # noqa: T201

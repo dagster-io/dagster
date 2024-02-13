@@ -1,9 +1,12 @@
-from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
+from typing import Any, Dict, List, Optional
+
+from dagster import Config, In, Nothing, Out, Output, op
+from pydantic import Field
 
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
 
-_DEFAULT_OP_PROPS = dict(
+_DEFAULT_OP_PROPS: Dict[str, Any] = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
@@ -14,22 +17,17 @@ _DEFAULT_OP_PROPS = dict(
 def _get_doc(op_name: str, dbt_command: str) -> str:
     return f"""
 This op executes a ``dbt {dbt_command}`` command. It requires the use of a dbt resource, which can be
-set to execute this command through the CLI (using the :py:class:`~dagster_dbt.dbt_cli_resource`) or
-over RPC (using the :py:class:`~dbt_rpc_sync_resource`).
+set to execute this command through the CLI (using the :py:class:`~dagster_dbt.dbt_cli_resource`).
 
 Examples:
 
 .. code-block:: python
 
     from dagster import job
-    from dagster_dbt import {op_name}, dbt_cli_resource, dbt_rpc_sync_resource
+    from dagster_dbt import {op_name}, dbt_cli_resource
 
     @job(resource_defs={{"dbt":dbt_cli_resource}})
     def my_dbt_cli_job():
-        {op_name}()
-
-    @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-    def my_dbt_rpc_job():
         {op_name}()
     """
 
@@ -38,95 +36,87 @@ Examples:
 # double-splatted, so we type-ignore the below op declarations.
 
 
-@op(  # type: ignore
-    **_DEFAULT_OP_PROPS,
-    config_schema={
-        "yield_asset_events": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations and asset observations corresponding to the results of "
-                "the dbt operation will be yielded when the op executes. Default: True"
-            ),
+class DbtBuildOpConfig(Config):
+    yield_asset_events: bool = Field(
+        default=True,
+        description=(
+            "If True, materializations and asset observations corresponding to the results of "
+            "the dbt operation will be yielded when the op executes. Default: True"
         ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["dbt"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
+    )
+    asset_key_prefix: List[str] = Field(
+        default=["dbt"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
         ),
-    },
-)
-def dbt_build_op(context):
+    )
+
+
+@op(**_DEFAULT_OP_PROPS)
+def dbt_build_op(context, config: DbtBuildOpConfig) -> Any:
     dbt_output = context.resources.dbt.build()
-    if context.op_config["yield_asset_events"] and "results" in dbt_output.result:
+    if config.yield_asset_events and "results" in dbt_output.result:
         yield from generate_events(
             dbt_output,
-            node_info_to_asset_key=lambda info: context.op_config["asset_key_prefix"]
+            node_info_to_asset_key=lambda info: config.asset_key_prefix
             + info["unique_id"].split("."),
             manifest_json=context.resources.dbt.get_manifest_json(),
         )
     yield Output(dbt_output)
 
 
-@op(  # type: ignore
-    **_DEFAULT_OP_PROPS,
-    config_schema={
-        "yield_materializations": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the op executes. Default: True"
-            ),
+class DbtRunOpConfig(Config):
+    yield_materializations: bool = Field(
+        default=True,
+        description=(
+            "If True, materializations corresponding to the results of the dbt operation will "
+            "be yielded when the op executes. Default: True"
         ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["dbt"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
+    )
+    asset_key_prefix: Optional[List[str]] = Field(
+        default=["dbt"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
         ),
-    },
-)
-def dbt_run_op(context):
+    )
+
+
+@op(**_DEFAULT_OP_PROPS)
+def dbt_run_op(context, config: DbtRunOpConfig):
     dbt_output = context.resources.dbt.run()
-    if context.op_config["yield_materializations"] and "results" in dbt_output.result:
-        yield from generate_materializations(
-            dbt_output, asset_key_prefix=context.op_config["asset_key_prefix"]
-        )
+    if config.yield_materializations and "results" in dbt_output.result:
+        yield from generate_materializations(dbt_output, asset_key_prefix=config.asset_key_prefix)
     yield Output(dbt_output)
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_compile_op(context):
     return context.resources.dbt.compile()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_ls_op(context):
     return context.resources.dbt.ls()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_test_op(context):
     return context.resources.dbt.test()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_snapshot_op(context):
     return context.resources.dbt.snapshot()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_seed_op(context):
     return context.resources.dbt.seed()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 

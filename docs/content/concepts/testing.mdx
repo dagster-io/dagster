@@ -5,7 +5,7 @@ description: Dagster enables you to build testable and maintainable data applica
 
 # Testing
 
-Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
+Dagster enables you to build testable and maintainable data applications. It provides ways to allow you to unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
 
 In data applications, testing computations and jobs is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
@@ -20,11 +20,12 @@ This page demonstrates how Dagster addresses these challenges:
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                                                          |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
+| Name                                                               | Description                                                                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
+| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
+| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                                      |
 
 ---
 
@@ -35,7 +36,7 @@ Consider the following:
 - Principal: Errors that can be caught by unit tests should be caught by unit tests.
 - Corollary: Do not attempt to unit test for errors that unit tests cannot catch.
 
-Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
+Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or a data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
 
 Unit tests are not acceptance tests. They should not be the judge of whether a computation is correct. However, unit testing -- when properly scoped -- is still valuable in data applications. There are massive classes of errors that we can address without interacting with external services and catch earlier in the process: refactoring errors, syntax errors in interpreted languages, configuration errors, graph structure errors, and so on. Errors caught in a fast feedback loop of unit testing can be addressed orders of magnitude faster than those caught during an expensive batch computation in staging or production.
 
@@ -77,7 +78,7 @@ from dagster import op
 
 
 @op
-def get_data_without_resource(context):
+def get_data_without_resource():
     dummy_data = [1, 2, 3]
     # Do not call external apis in tests
     # return call_api()
@@ -89,16 +90,21 @@ def get_data_without_resource(context):
 Dagster allows you to define multiple "jobs" from the same computation graph. With resources, you can modify the op above to:
 
 ```python file=/concepts/resources/tests.py startafter=start_test_after_marker endbefore=end_test_after_marker
-from dagster import graph, op
+from dagster import graph, op, ConfigurableResource, OpExecutionContext
 
 
-@op(required_resource_keys={"api"})
-def get_data(context):
-    return context.resources.api.call()
+class MyApi(ConfigurableResource):
+    def call(self):
+        ...
 
 
 @op
-def do_something(context, data):
+def get_data(api: MyApi):
+    return api.call()
+
+
+@op
+def do_something(context: OpExecutionContext, data):
     output = process(data)
     return output
 
@@ -109,7 +115,7 @@ def download():
 
 
 # The prod job for the download graph.
-download_job = download.to_job(resource_defs={"api": api_client})
+download_job = download.to_job(resource_defs={"api": MyApi()})
 ```
 
 In this example, we define the business logic (i.e., jobs and ops) within a computation graph, independent of any particular environment. From this computation graph, we define a production job using the resources that define our production environment.
@@ -179,43 +185,112 @@ def test_inputs_op_with_invocation():
     assert my_op_with_inputs(5, 6) == 11
 ```
 
-If your op requires contextual information such as resources or config, this can be provided using the <PyObject module="dagster" object="build_op_context"/> function.
+#### Testing ops with config
+
+If your op has a config schema, you can pass a config value to the invocation. The following op relies on attached config:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_config endbefore=end_op_requires_config
+from dagster import Config
+
+
+class MyOpConfig(Config):
+    my_int: int
+
+
+@op
+def op_requires_config(config: MyOpConfig):
+    return config.my_int * 2
+```
+
+That config can be passed to the invocation.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_config endbefore=end_op_invocation_config
+def test_op_with_config():
+    assert op_requires_config(MyOpConfig(my_int=5)) == 10
+```
+
+#### Testing ops with resources
+
+If your op requires resources, you can specify them as arguments when invoking the op.
 
 Consider the following op, which requires a resource `foo`.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
-@op(required_resource_keys={"foo"})
-def op_requires_foo(context):
-    return f"found {context.resources.foo}"
+from dagster import ConfigurableResource
+
+
+class FooResource(ConfigurableResource):
+    my_string: str
+
+
+@op
+def op_requires_foo(foo: FooResource):
+    return f"found {foo.my_string}"
 ```
 
-We construct the context using <PyObject module="dagster" object="build_op_context"/>. Note how we can directly provide a resource instance, instead of having to create a mock resource definition.
+We can directly instantiate and pass an instance of the resource to the invocation.
 
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_context_marker endbefore=end_test_op_context_marker
-from dagster import build_op_context
-
-
-def test_op_with_context():
-    context = build_op_context(resources={"foo": "bar"})
-    assert op_requires_foo(context) == "found bar"
-```
-
-We can also provide a resource definition to <PyObject module="dagster" object="build_op_context"/>. It does not have a `resource_config` argument, so any config should be supplied to the resource via the <PyObject module="dagster" object="ResourceDefinition" method="configured"/> API.
-
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_def_marker endbefore=end_test_resource_def_marker
-@resource(config_schema={"my_str": str})
-def my_foo_resource(context):
-    return context.resource_config["my_str"]
-
-
-def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
-    assert op_requires_foo(context) == "found bar"
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_resource_marker endbefore=end_test_op_resource_marker
+def test_op_with_resource():
+    assert op_requires_foo(FooResource(my_string="bar")) == "found bar"
 ```
 
 Note that when directly invoking ops, I/O managers specified on inputs and outputs are not used.
+
+#### Testing ops with complex resources
+
+If your ops rely on more complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state_ops endbefore=end_new_resource_testing_with_state_ops dedent=4
+from dagster import ConfigurableResource, op
+import mock
+
+class MyClient:
+    ...
+
+    def query(self, body: str):
+        ...
+
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def get_client(self):
+        return MyClient(self.username, self.password)
+
+@op
+def my_op(client: MyClientResource):
+    return client.get_client().query("SELECT * FROM my_table")
+
+def test_my_op():
+    class FakeClient:
+        def query(self, body: str):
+            assert body == "SELECT * FROM my_table"
+            return "my_result"
+
+    mocked_client_resource = mock.Mock()
+    mocked_client_resource.get_client.return_value = FakeClient()
+
+    assert my_op(mocked_client_resource) == "my_result"
+```
+
+#### Testing ops that rely on context
+
+Finally, if your op relies on context, you can build and pass a context. The following op uses the context logger:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_context_marker endbefore=end_op_requires_context_marker
+@op
+def context_op(context: OpExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
+```
+
+We can build a context and pass it to the invocation using the <PyObject object="build_op_context" /> utility:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_invocation_context_marker endbefore=end_op_invocation_context_marker
+def test_op_with_context():
+    context = build_op_context()
+    context_op(context)
+```
 
 ### Testing software-defined assets
 
@@ -253,35 +328,55 @@ def test_asset_with_inputs():
     assert asset_with_inputs(5, 6) == 11
 ```
 
-Any resources defined on your asset - either directly, or using <PyObject object="with_resources" /> - will be picked up when invoking the asset. When using resources, it is required to provide a context using <PyObject object="build_op_context" />.
+#### Testing assets with config
 
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
-from dagster import asset, resource, build_op_context, with_resources
+If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
-
-@asset(required_resource_keys={"service"})
-def asset_reqs_service(context):
-    service = context.resources.service
-    ...
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_config_asset endbefore=end_test_config_asset
+from dagster import asset, Config
 
 
-@resource
-def service():
-    ...
+class MyAssetConfig(Config):
+    my_string: str
 
 
-# asset_with_service now has resource service specified.
-asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
+@asset
+def asset_requires_config(config: MyAssetConfig) -> str:
+    return config.my_string
 
 
-def test_asset_with_service():
-    # When invoking asset_with_service, service resource will
-    # automatically be used.
-    result = asset_with_service(build_op_context())
+def test_asset_requires_config():
+    result = asset_requires_config(config=MyAssetConfig(my_string="foo"))
     ...
 ```
 
-Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, it will result in a <PyObject object="DagsterInvalidInvocationError" />.
+#### Testing assets with resources
+
+If your asset requires resources, you can specify them as arguments when invoking the asset directly.
+
+Consider the following asset, which requires a resource `bar`.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
+from dagster import asset, ConfigurableResource
+
+
+class BarResource(ConfigurableResource):
+    my_string: str
+
+
+@asset
+def asset_requires_bar(bar: BarResource) -> str:
+    return bar.my_string
+
+
+def test_asset_requires_bar():
+    result = asset_requires_bar(bar=BarResource(my_string="bar"))
+    ...
+```
+
+#### Testing assets with complex resources
+
+In order to test assets which rely on complex resources, such as those that build separate clients, a common pattern is to use tools such as the `mock` library to fake your resource and associated client. See the section on [Testing ops with complex resources](#testing-ops-with-complex-resources) for an example.
 
 ### Testing multiple software-defined assets together
 
@@ -313,20 +408,29 @@ def test_data_assets():
 Mock resources can be provided directly using `materialize_to_memory`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_resources endbefore=end_materialize_resources
-from dagster import asset, resource, materialize_to_memory
+from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-@asset(required_resource_keys={"service"})
-def asset_requires_service(context):
-    service = context.resources.service
+class MyServiceResource(ConfigurableResource):
     ...
 
 
-def test_asset_requires_service():
+@asset
+def asset_requires_service(service: MyServiceResource):
+    ...
+
+
+@asset
+def other_asset_requires_service(service: MyServiceResource):
+    ...
+
+
+def test_assets_require_service():
     # Mock objects can be provided directly.
     result = materialize_to_memory(
-        [asset_requires_service], resources={"service": mock.MagicMock()}
+        [asset_requires_service, other_asset_requires_service],
+        resources={"service": mock.MagicMock()},
     )
     assert result.success
     ...
@@ -337,14 +441,17 @@ def test_asset_requires_service():
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
+from dagster import RunConfig
+
+
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={
-            "ops": {
-                "add_one": {"inputs": {"num": 2}},
-                "add_two": {"inputs": {"num": 3}},
+        run_config=RunConfig(
+            ops={
+                "add_one": AddOneConfig(num=2),
+                "add_two": AddTwoConfig(num=3),
             }
-        }
+        )
     )
 
     assert result.success
@@ -360,9 +467,7 @@ The event stream is the most generic way that an op communicates what happened d
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
 def test_event_stream():
-    job_result = emit_events_job.execute_in_process(
-        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
-    )
+    job_result = emit_events_job.execute_in_process()
 
     assert job_result.success
 
@@ -372,7 +477,6 @@ def test_event_stream():
     events_for_step = job_result.events_for_node("emit_events_op")
     assert [se.event_type for se in events_for_step] == [
         DagsterEventType.STEP_START,
-        DagsterEventType.STEP_INPUT,
         DagsterEventType.STEP_EXPECTATION_RESULT,
         DagsterEventType.ASSET_MATERIALIZATION,
         DagsterEventType.STEP_OUTPUT,
@@ -380,10 +484,9 @@ def test_event_stream():
         DagsterEventType.STEP_SUCCESS,
     ]
 
-    # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
+    # ops communicate what they did via the event stream, viewable in tools (e.g. the Dagster UI)
     (
         _start,
-        _input_event,
         expectation_event,
         materialization_event,
         _num_output_event,

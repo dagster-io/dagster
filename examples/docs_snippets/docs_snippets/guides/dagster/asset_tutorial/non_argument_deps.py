@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# ruff: isort: skip_file
 import csv
 
 import requests
@@ -15,15 +15,13 @@ def cereals():
 
 @asset
 def nabisco_cereals(cereals):
-    """Cereals manufactured by Nabisco"""
+    """Cereals manufactured by Nabisco."""
     return [row for row in cereals if row["mfr"] == "N"]
 
 
 @asset
 def cereal_protein_fractions(cereals):
-    """
-    For each cereal, records its protein content as a fraction of its total mass.
-    """
+    """For each cereal, records its protein content as a fraction of its total mass."""
     result = {}
     for cereal in cereals:
         total_grams = float(cereal["weight"]) * 28.35
@@ -34,9 +32,7 @@ def cereal_protein_fractions(cereals):
 
 @asset
 def highest_protein_nabisco_cereal(nabisco_cereals, cereal_protein_fractions):
-    """
-    The name of the nabisco cereal that has the highest protein content.
-    """
+    """The name of the nabisco cereal that has the highest protein content."""
     sorted_by_protein = sorted(
         nabisco_cereals, key=lambda cereal: cereal_protein_fractions[cereal["name"]]
     )
@@ -61,7 +57,7 @@ def cereal_ratings_zip() -> None:
 import zipfile
 
 
-@asset(non_argument_deps={"cereal_ratings_zip"})
+@asset(deps=[cereal_ratings_zip])
 def cereal_ratings_csv() -> None:
     with zipfile.ZipFile("cereal-ratings.csv.zip", "r") as zip_ref:
         zip_ref.extractall(".")
@@ -71,7 +67,7 @@ def cereal_ratings_csv() -> None:
 
 
 # nabisco_cereal_ratings_start
-@asset(non_argument_deps={"cereal_ratings_csv"})
+@asset(deps=[cereal_ratings_csv])
 def nabisco_cereal_ratings(nabisco_cereals):
     with open("cereal-ratings.csv", "r") as f:
         cereal_ratings = {

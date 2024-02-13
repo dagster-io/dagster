@@ -39,7 +39,7 @@ def test_compute_log_manager(
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -127,7 +127,7 @@ def test_compute_log_manager(
 def test_compute_log_manager_from_config(storage_account, container, credential):
     prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -137,21 +137,16 @@ compute_logs:
     secret_key: {credential}
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
-""".format(
-        storage_account=storage_account, container=container, credential=credential, prefix=prefix
-    )
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert (
-        instance.compute_log_manager._storage_account  # pylint: disable=protected-access
-        == storage_account
-    )
-    assert instance.compute_log_manager._container == container  # pylint: disable=protected-access
-    assert instance.compute_log_manager._blob_prefix == prefix  # pylint: disable=protected-access
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
+    assert instance.compute_log_manager._container == container  # noqa: SLF001
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
@@ -190,7 +185,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
         storage_account,
         container,
         credential,
-    ):  # pylint: disable=arguments-differ
+    ):
         with mock.patch(
             "dagster_azure.blob.compute_log_manager.generate_blob_sas"
         ) as generate_blob_sas, mock.patch(
@@ -215,7 +210,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
         storage_account,
         container,
         credential,
-    ):  # pylint: disable=arguments-differ
+    ):
         with mock.patch(
             "dagster_azure.blob.compute_log_manager.generate_blob_sas"
         ) as generate_blob_sas, mock.patch(
@@ -234,7 +229,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, captured_log_manager):  # pylint: disable=arguments-differ
+    def read_manager(self, captured_log_manager):
         yield captured_log_manager
 
 
@@ -257,7 +252,7 @@ def test_compute_log_manager_default_azure_credential(
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -346,7 +341,7 @@ def test_compute_log_manager_default_azure_credential(
 def test_compute_log_manager_from_config_default_azure_credential(storage_account, container):
     prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -357,21 +352,16 @@ compute_logs:
     prefix: "{prefix}"
     default_azure_credential:
       exclude_environment_credentials: true
-""".format(
-        storage_account=storage_account, container=container, prefix=prefix
-    )
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert (
-        instance.compute_log_manager._storage_account  # pylint: disable=protected-access
-        == storage_account
-    )
-    assert instance.compute_log_manager._container == container  # pylint: disable=protected-access
-    assert instance.compute_log_manager._blob_prefix == prefix  # pylint: disable=protected-access
-    assert instance.compute_log_manager._default_azure_credential == {
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
+    assert instance.compute_log_manager._container == container  # noqa: SLF001
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
+    assert instance.compute_log_manager._default_azure_credential == {  # noqa: SLF001
         "exclude_environment_credentials": True
-    }  # pylint: disable=protected-access
+    }

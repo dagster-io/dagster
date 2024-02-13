@@ -6,11 +6,12 @@ from typing import Any, Mapping, Optional, cast
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
 import requests
-from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook  # type: ignore  # (airflow 1 compat)
+from airflow.hooks.base_hook import BaseHook  # type: ignore
 from airflow.models import Connection
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
+
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 class DagsterHook(BaseHook):
@@ -58,10 +59,10 @@ class DagsterHook(BaseHook):
         url: str = "",
         user_token: Optional[str] = None,
     ) -> None:
-        if airflow_version >= "2.0.0":
+        if is_airflow_2_loaded_in_environment():
             super().__init__()
         else:
-            super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
+            super().__init__(source=None)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id
@@ -70,7 +71,7 @@ class DagsterHook(BaseHook):
             raise AirflowException(
                 "Cannot set both dagster_conn_id and organization_id/deployment_name"
             )
-        if dagster_conn_id is not None and airflow_version >= "2.0.0":
+        if dagster_conn_id is not None and is_airflow_2_loaded_in_environment():
             conn = self.get_connection(dagster_conn_id)
             base_url = conn.login if conn.login else "https://dagster.cloud/"
             if base_url == "https://dagster.cloud/":
@@ -175,7 +176,7 @@ fragment PythonErrorFragment on PythonError {
         else:
             raise AirflowException(
                 "Error launching run:"
-                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
+                f" {response_json['data']['launchPipelineExecution']['message']}"
             )
 
     def wait_for_run(
@@ -264,10 +265,6 @@ mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
       }
       __typename
     }
-    ... on UnauthorizedError {
-      message
-      __typename
-    }
     ...PythonErrorFragment
   }
 }
@@ -296,5 +293,5 @@ fragment PythonErrorFragment on PythonError {
         ):
             raise AirflowException(
                 "Error terminating run:"
-                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                f" {response_json['data']['terminatePipelineExecution']['message']}"
             )

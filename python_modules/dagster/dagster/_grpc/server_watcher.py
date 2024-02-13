@@ -20,8 +20,7 @@ def watch_grpc_server_thread(
     watch_interval=None,
     max_reconnect_attempts=None,
 ):
-    """
-    This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
+    """This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
     functions in case of a change.
 
     The following loop polls the GetServerId endpoint to check if either:
@@ -157,6 +156,6 @@ def create_grpc_watch_thread(
             max_reconnect_attempts,
         ],
         name="grpc-server-watch",
+        daemon=True,
     )
-    thread.daemon = True
     return shutdown_event, thread

@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_airflow/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -18,16 +18,14 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-airflow",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -36,7 +34,7 @@ setup(
         f"dagster{pin}",
         "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
-        "pendulum",
+        "pendulum<3",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
@@ -45,13 +43,17 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            "apache-airflow>=2.0.0,<2.5.1",
+            "apache-airflow>=2.0.0,<2.8",
             "boto3>=1.26.7",
+            # Flask-session 0.6 is incompatible with certain airflow-provided test
+            # utilities.
+            "flask-session<0.6.0",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
-            "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",
@@ -65,10 +67,13 @@ setup(
             # https://github.com/dagster-io/dagster/issues/3858
             "sqlalchemy>=1.0,<1.4.0",
             "marshmallow-sqlalchemy<0.26.0",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+        ],
+        "test": [
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
     },
     entry_points={
-        "console_scripts": ["dagster-airflow = dagster_airflow.cli:main"],
         # airflow 1.0/2.0 plugin format
         "airflow.plugins": ["dagster_airflow = dagster_airflow.__init__:DagsterAirflowPlugin"],
         # airflow 2.0 provider format

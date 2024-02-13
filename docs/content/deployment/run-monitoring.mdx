@@ -7,16 +7,16 @@ description: Features for managing run failures in Dagster.
 
 Dagster can detect hanging runs and restart crashed [run workers](/deployment/overview#job-execution-flow). Using run monitoring requires:
 
-- Using a run launcher other than the <PyObject object="DefaultRunLauncher" />
 - Running the Dagster Daemon
 - Enabling run monitoring in the Dagster Instance:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
-# Opt in to the experimental Monitoring Daemon
+# Opt in to run monitoring
 run_monitoring:
   enabled: true
-  # values below are the defaults, and don't need to be specified execpt to override them
+  # values below are the defaults, and don't need to be specified except to override them
   start_timeout_seconds: 180
+  cancel_timeout_seconds: 180
   max_resume_run_attempts: 3 # experimental if above 0
   poll_interval_seconds: 120
 ```
@@ -25,7 +25,37 @@ run_monitoring:
 
 When Dagster launches a run, the run stays in STARTING status until the run worker spins up and marks the run as STARTED. In the event that some failure causes the run worker to not spin up, the run might be stuck in STARTING status. The `start_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as failed.
 
+## Run cancelation timeouts
+
+When Dagster terminates a run, the run moves into CANCELING status and sends a termination signal to the run worker. When the run worker cleans up its resources, it moves into CANCELED status. In the event that some failure causes the run worker to not spin down cleanly, the run might be stuck in CANCELING status. The `cancel_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as canceled.
+
+## General run timeouts
+
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). `MAX_RUNTIME_SECONDS_TAG` can be used to set a timeout on a per-run basis. If the run exceeds this timeout, and run monitoring is enabled, it will be marked as failed.
+
+The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
+
+```python file=/deploying/monitoring_daemon/run_timeouts.py startafter=start_timeout
+from dagster import MAX_RUNTIME_SECONDS_TAG, define_asset_job, job
+
+
+@job(tags={MAX_RUNTIME_SECONDS_TAG: 10})
+def my_job():
+    ...
+
+
+asset_job = define_asset_job(
+    name="some_job", selection="*", tags={MAX_RUNTIME_SECONDS_TAG: 10}
+)
+# end_timeout
+```
+
 ## Detecting run worker crashes
+
+<Note>
+  Detecting run worker crashes only works when using a run launcher other than
+  the <PyObject object="DefaultRunLauncher" />.
+</Note>
 
 It's possible for a run worker process to crash during a run. This can happen for a variety of reasons (the host it's running on could go down, it could run out of memory, etc.). Without the monitoring daemon, there are two possible outcomes, neither desirable:
 

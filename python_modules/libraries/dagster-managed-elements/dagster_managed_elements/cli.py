@@ -2,20 +2,18 @@ import functools
 import importlib
 import logging
 import sys
-import warnings
 from types import ModuleType
 from typing import Optional, Sequence
 
 import click
 import click_spinner
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import disable_dagster_warnings
 
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
 
 def _deepgetattr(obj, attr: str):
-    """
-    Recursive getattr that allows for nested attributes.
+    """Recursive getattr that allows for nested attributes.
 
     https://stackoverflow.com/a/14324459
     """
@@ -36,8 +34,7 @@ def get_reconcilable_objects_from_module(
         sys.path.append(module_dir)
 
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
+        with disable_dagster_warnings():
             current_level = logging.getLogger().level
             logging.getLogger().setLevel(logging.ERROR)
             module = importlib.import_module(module_str)
@@ -61,8 +58,7 @@ def get_reconcilable_objects_from_module(
 
 
 def get_reconcilable_objects(module: ModuleType) -> Sequence[ManagedElementReconciler]:
-    """
-    Collect all ManagedElementReconciler-implementing objects in the root of the
+    """Collect all ManagedElementReconciler-implementing objects in the root of the
     module.
     """
     return [

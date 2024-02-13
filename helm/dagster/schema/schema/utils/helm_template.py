@@ -27,7 +27,8 @@ class HelmTemplate:
     output: Optional[str] = None
     model: Optional[Any] = None
     release_name: str = "release-name"
-    api_client: ApiClient = ApiClient()
+    api_client: ApiClient = ApiClient()  # noqa: RUF009
+    namespace: str = "default"
 
     def render(
         self,
@@ -45,7 +46,7 @@ class HelmTemplate:
             values_json = (
                 json.loads(values.json(exclude_none=True, by_alias=True)) if values else values_dict
             )
-            pprint(values_json)
+            pprint(values_json)  # noqa: T203
             content = yaml.dump(values_json)
             tmp_file.write(content.encode())
             tmp_file.flush()
@@ -56,6 +57,8 @@ class HelmTemplate:
                 self.release_name,
                 helm_dir_path,
                 "--debug",
+                "--namespace",
+                self.namespace,
                 "--values",
                 tmp_file.name,
             ]
@@ -71,14 +74,15 @@ class HelmTemplate:
                     command += ["--show-only", self.output]
                     templates = subprocess.check_output(command)
 
-            print("\n--- Helm Templates ---")  # pylint: disable=print-call
-            print(templates.decode())  # pylint: disable=print-call
+            print("\n--- Helm Templates ---")  # noqa: T201
+            print(templates.decode())  # noqa: T201
 
             k8s_objects = [k8s_object for k8s_object in yaml.full_load_all(templates) if k8s_object]
             if self.model:
                 k8s_objects = [
-                    self.api_client._ApiClient__deserialize_model(  # pylint: disable=W0212
-                        k8s_object, self.model
+                    self.api_client._ApiClient__deserialize_model(  # noqa: SLF001
+                        k8s_object,
+                        self.model,
                     )
                     for k8s_object in k8s_objects
                 ]

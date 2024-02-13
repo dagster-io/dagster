@@ -4,7 +4,7 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Mapping, Optional, Sequence, Set, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
 
 import nbformat
 import papermill
@@ -16,9 +16,11 @@ from dagster import (
     _check as check,
     _seven,
 )
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
@@ -38,7 +40,7 @@ from .translator import DagsterTranslator
 
 
 def _clean_path_for_windows(notebook_path: str) -> str:
-    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    """In windows, the notebook can't render in the Dagster UI unless the C: prefix is removed.
     os.path.splitdrive will split the path into (drive, tail), so just return the tail.
     """
     return os.path.splitdrive(notebook_path)[1]
@@ -104,21 +106,24 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_papermill_parameters(step_context, inputs, output_log_path, compute_descriptor):
-    check.inst_param(step_context, "step_context", StepExecutionContext)
+def get_papermill_parameters(
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, object],
+    output_log_path: str,
+    compute_descriptor: str,
+) -> Mapping[str, object]:
     check.param_invariant(
         isinstance(step_context.run_config, dict),
         "step_context",
         "StepExecutionContext must have valid run_config",
     )
-    check.dict_param(inputs, "inputs", key_type=str)
 
     run_id = step_context.run_id
     temp_dir = get_system_temp_directory()
     marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
-    if not isinstance(step_context.pipeline, ReconstructablePipeline):
+    if not isinstance(step_context.job, ReconstructableJob):
         if compute_descriptor == "asset":
             raise DagstermillError(
                 "Can't execute a dagstermill asset that is not reconstructable. "
@@ -130,7 +135,7 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
                 "Use the reconstructable() function if executing from python"
             )
 
-    dm_executable_dict = step_context.pipeline.to_dict()
+    dm_executable_dict = step_context.job.to_dict()
 
     dm_context_dict = {
         "output_log_path": output_log_path,
@@ -138,15 +143,15 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
         "run_config": step_context.run_config,
     }
 
-    dm_solid_handle_kwargs = step_context.solid_handle._asdict()
+    dm_node_handle_kwargs = step_context.node_handle._asdict()
     dm_step_key = step_context.step.key
 
     parameters = {}
 
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
-    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
-    parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
+    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.dagster_run)
+    parameters["__dm_node_handle_kwargs"] = dm_node_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
     parameters["__dm_step_key"] = dm_step_key
     parameters["__dm_input_names"] = list(inputs.keys())
@@ -154,100 +159,140 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
     return parameters
 
 
-def _dm_compute(
-    dagster_factory_name,
-    name,
-    notebook_path,
-    output_notebook_name=None,
-    asset_key_prefix=None,
-    output_notebook=None,
-    save_notebook_on_failure=False,
-):
-    check.str_param(name, "name")
-    check.str_param(notebook_path, "notebook_path")
-    check.opt_str_param(output_notebook_name, "output_notebook_name")
-    check.opt_list_param(asset_key_prefix, "asset_key_prefix")
-    check.opt_str_param(output_notebook, "output_notebook")
+def execute_notebook(
+    step_context: StepExecutionContext,
+    name: str,
+    save_notebook_on_failure: bool,
+    notebook_path: str,
+    output_notebook_dir: str,
+    inputs: Mapping[str, object],
+) -> str:
+    with safe_tempfile_path() as output_log_path:
+        prefix = str(uuid.uuid4())
+        parameterized_notebook_path = os.path.join(output_notebook_dir, f"{prefix}-inter.ipynb")
 
-    def _t_fn(step_context, inputs):
-        check.inst_param(step_context, "step_context", OpExecutionContext)
+        executed_notebook_path = os.path.join(output_notebook_dir, f"{prefix}-out.ipynb")
+
+        # Scaffold the registration here
+        nb = load_notebook_node(notebook_path)
+        compute_descriptor = "op"
+        nb_no_parameters = replace_parameters(
+            step_context,
+            nb,
+            get_papermill_parameters(
+                step_context,
+                inputs,
+                output_log_path,
+                compute_descriptor,
+            ),
+        )
+        write_ipynb(nb_no_parameters, parameterized_notebook_path)
+
+        try:
+            papermill_engines.register("dagstermill", DagstermillEngine)
+            papermill.execute_notebook(
+                input_path=parameterized_notebook_path,
+                output_path=executed_notebook_path,
+                engine_name="dagstermill",
+                log_output=True,
+            )
+
+        except Exception as ex:
+            step_context.log.warn(
+                "Error when attempting to materialize executed notebook: {exc}".format(
+                    exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
+                )
+            )
+
+            if isinstance(ex, ExecutionError):
+                exception_name = ex.ename  # type: ignore
+                if exception_name in ["RetryRequested", "Failure"]:
+                    step_context.log.warn(
+                        f"Encountered raised {exception_name} in notebook. Use"
+                        " dagstermill.yield_event with RetryRequested or Failure to trigger"
+                        " their behavior."
+                    )
+
+            if save_notebook_on_failure:
+                storage_dir = step_context.instance.storage_directory()
+                storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
+                with open(storage_path, "wb") as dest_file_obj:
+                    with open(executed_notebook_path, "rb") as obj:
+                        dest_file_obj.write(obj.read())
+
+                step_context.log.info(f"Failed notebook written to {storage_path}")
+
+            raise
+
+    step_context.log.debug(f"Notebook execution complete for {name} at {executed_notebook_path}.")
+
+    return executed_notebook_path
+
+
+def _handle_events_from_notebook(
+    step_context: StepExecutionContext, executed_notebook_path: str
+) -> Iterable:
+    # deferred import for perf
+    import scrapbook
+
+    output_nb = scrapbook.read_notebook(executed_notebook_path)
+
+    for output_name in step_context.op_def.output_dict.keys():
+        data_dict = output_nb.scraps.data_dict
+        if output_name in data_dict:
+            # read outputs that were passed out of process via io manager from `yield_result`
+            step_output_handle = StepOutputHandle(
+                step_key=step_context.step.key,
+                output_name=output_name,
+            )
+            output_context = step_context.get_output_context(step_output_handle)
+            io_manager = step_context.get_io_manager(step_output_handle)
+            value = io_manager.load_input(
+                build_input_context(
+                    upstream_output=output_context, dagster_type=output_context.dagster_type
+                )
+            )
+
+            yield Output(value, output_name)
+
+    for key, value in output_nb.scraps.items():
+        if key.startswith("event-"):
+            with open(value.data, "rb") as fd:
+                event = pickle.loads(fd.read())
+                if isinstance(event, (Failure, RetryRequested)):
+                    raise event
+                else:
+                    yield event
+
+
+def _make_dagstermill_compute_fn(
+    dagster_factory_name: str,
+    name: str,
+    notebook_path: str,
+    output_notebook_name: Optional[str] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
+    output_notebook: Optional[str] = None,
+    save_notebook_on_failure: bool = False,
+) -> Callable:
+    def _t_fn(op_context: OpExecutionContext, inputs: Mapping[str, object]) -> Iterable:
         check.param_invariant(
-            isinstance(step_context.run_config, dict),
+            isinstance(op_context.run_config, dict),
             "context",
             "StepExecutionContext must have valid run_config",
         )
 
-        step_execution_context = step_context.get_step_execution_context()
+        step_context = op_context.get_step_execution_context()
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
-            with safe_tempfile_path() as output_log_path:
-                prefix = str(uuid.uuid4())
-                parameterized_notebook_path = os.path.join(
-                    output_notebook_dir, f"{prefix}-inter.ipynb"
-                )
-
-                executed_notebook_path = os.path.join(output_notebook_dir, f"{prefix}-out.ipynb")
-
-                # Scaffold the registration here
-                nb = load_notebook_node(notebook_path)
-                compute_descriptor = "op"
-                nb_no_parameters = replace_parameters(
-                    step_execution_context,
-                    nb,
-                    get_papermill_parameters(
-                        step_execution_context,
-                        inputs,
-                        output_log_path,
-                        compute_descriptor,
-                    ),
-                )
-                write_ipynb(nb_no_parameters, parameterized_notebook_path)
-
-                try:
-                    papermill_engines.register("dagstermill", DagstermillEngine)
-                    papermill.execute_notebook(
-                        input_path=parameterized_notebook_path,
-                        output_path=executed_notebook_path,
-                        engine_name="dagstermill",
-                        log_output=True,
-                    )
-
-                except Exception as ex:
-                    step_execution_context.log.warn(
-                        "Error when attempting to materialize executed notebook: {exc}".format(
-                            exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                        )
-                    )
-                    # pylint: disable=no-member
-                    # compat:
-                    if isinstance(ex, ExecutionError) and (
-                        ex.ename == "RetryRequested" or ex.ename == "Failure"
-                    ):
-                        step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use"
-                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
-                            " their behavior."
-                        )
-
-                    if save_notebook_on_failure:
-                        storage_dir = step_context.instance.storage_directory()
-                        storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
-                        with open(storage_path, "wb") as dest_file_obj:
-                            with open(executed_notebook_path, "rb") as obj:
-                                dest_file_obj.write(obj.read())
-
-                        step_execution_context.log.info(
-                            f"Failed notebook written to {storage_path}"
-                        )
-
-                    raise
-
-            step_execution_context.log.debug(
-                "Notebook execution complete for {name} at {executed_notebook_path}.".format(
-                    name=name,
-                    executed_notebook_path=executed_notebook_path,
-                )
+            executed_notebook_path = execute_notebook(
+                step_context,
+                name=name,
+                inputs=inputs,
+                save_notebook_on_failure=save_notebook_on_failure,
+                notebook_path=notebook_path,
+                output_notebook_dir=output_notebook_dir,
             )
+
             if output_notebook_name is not None:
                 # yield output notebook binary stream as an op output
                 with open(executed_notebook_path, "rb") as fd:
@@ -260,7 +305,7 @@ def _dm_compute(
                     # use binary mode when when moving the file since certain file_managers such as S3
                     # may try to hash the contents
                     with open(executed_notebook_path, "rb") as fd:
-                        executed_notebook_file_handle = step_context.resources.file_manager.write(
+                        executed_notebook_file_handle = op_context.resources.file_manager.write(
                             fd, mode="wb", ext="ipynb"
                         )
                         executed_notebook_materialization_path = (
@@ -268,7 +313,7 @@ def _dm_compute(
                         )
 
                     yield AssetMaterialization(
-                        asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
+                        asset_key=[*(asset_key_prefix or []), f"{name}_output_notebook"],
                         description="Location of output notebook in file manager",
                         metadata={
                             "path": MetadataValue.path(executed_notebook_materialization_path),
@@ -278,10 +323,10 @@ def _dm_compute(
                 except Exception:
                     # if file manager writing errors, e.g. file manager is not provided, we throw a warning
                     # and fall back to the previously stored temp executed notebook.
-                    step_context.log.warning(
+                    op_context.log.warning(
                         "Error when attempting to materialize executed notebook using file"
                         " manager:"
-                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}\nNow"
                         " falling back to local: notebook execution was temporarily materialized"
                         f" at {executed_notebook_path}\nIf you have supplied a file manager and"
                         " expect to use it for materializing the notebook, please include"
@@ -292,40 +337,7 @@ def _dm_compute(
                 if output_notebook is not None:
                     yield Output(executed_notebook_file_handle, output_notebook)
 
-            # deferred import for perf
-            import scrapbook
-
-            output_nb = scrapbook.read_notebook(executed_notebook_path)
-
-            for (
-                output_name,
-                _,
-            ) in step_execution_context.solid_def.output_dict.items():
-                data_dict = output_nb.scraps.data_dict
-                if output_name in data_dict:
-                    # read outputs that were passed out of process via io manager from `yield_result`
-                    step_output_handle = StepOutputHandle(
-                        step_key=step_execution_context.step.key,
-                        output_name=output_name,
-                    )
-                    output_context = step_execution_context.get_output_context(step_output_handle)
-                    io_manager = step_execution_context.get_io_manager(step_output_handle)
-                    value = io_manager.load_input(
-                        build_input_context(
-                            upstream_output=output_context, dagster_type=output_context.dagster_type
-                        )
-                    )
-
-                    yield Output(value, output_name)
-
-            for key, value in output_nb.scraps.items():
-                if key.startswith("event-"):
-                    with open(value.data, "rb") as fd:
-                        event = pickle.loads(fd.read())
-                        if isinstance(event, (Failure, RetryRequested)):
-                            raise event
-                        else:
-                            yield event
+            yield from _handle_events_from_notebook(step_context, executed_notebook_path)
 
     return _t_fn
 
@@ -343,7 +355,7 @@ def define_dagstermill_op(
     tags: Optional[Mapping[str, Any]] = None,
     io_manager_key: Optional[str] = None,
     save_notebook_on_failure: bool = False,
-):
+) -> OpDefinition:
     """Wrap a Jupyter notebook in a op.
 
     Arguments:
@@ -406,23 +418,22 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
+
     return OpDefinition(
         name=name,
-        compute_fn=_dm_compute(
+        compute_fn=_make_dagstermill_compute_fn(
             "define_dagstermill_op",
             name,
             notebook_path,

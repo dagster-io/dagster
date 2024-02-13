@@ -17,15 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Example Airflow DAG that shows the complex DAG structure.
+"""Example Airflow DAG that shows the complex DAG structure.
 """
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
 from airflow import models
-from airflow.operators.bash_operator import BashOperator  # type: ignore  # (airflow 1 compat)
-from airflow.operators.python_operator import PythonOperator  # type: ignore  # (airflow 1 compat)
+from airflow.operators.bash_operator import BashOperator  # type: ignore
+from airflow.operators.python_operator import PythonOperator  # type: ignore
 from airflow.utils.dates import days_ago
 from airflow.utils.helpers import chain
 
@@ -158,7 +157,7 @@ with models.DAG(
     # Search
     search_catalog = PythonOperator(
         task_id="search_catalog",
-        python_callable=lambda: print("search_catalog"),  # pylint: disable=print-call
+        python_callable=lambda: print("search_catalog"),  # noqa: T201
     )
 
     search_catalog_result = BashOperator(

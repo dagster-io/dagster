@@ -1,8 +1,8 @@
-# isort: skip_file
+# ruff: isort: skip_file
 import json
 import logging
 
-from dagster import Field, job, logger, op
+from dagster import Field, job, logger, op, OpExecutionContext
 
 # start_custom_logger_marker_0
 
@@ -34,7 +34,7 @@ def json_console_logger(init_context):
 
 
 @op
-def hello_logs(context):
+def hello_logs(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 

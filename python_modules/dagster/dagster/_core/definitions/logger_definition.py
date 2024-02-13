@@ -1,4 +1,3 @@
-import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
@@ -14,7 +13,9 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    import logging
+
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
@@ -29,7 +30,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     Args:
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
-            on ``context.log`` are called from within job/pipeline compute logic.
+            on ``context.log`` are called from within job compute logic.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`. If not set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of this logger.
@@ -68,7 +69,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 args[0],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
             )
             return logger_invocation_result(self, context)
         else:
@@ -80,24 +81,29 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 kwargs[context_param_name],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
             )
 
             return logger_invocation_result(self, context)
 
-    @public  # type: ignore
+    @public
     @property
     def logger_fn(self) -> "InitLoggerFunction":
+        """Callable[[InitLoggerContext], logging.Logger]: The function that will be invoked to
+        instantiate the logger.
+        """
         return self._logger_fn
 
-    @public  # type: ignore
+    @public
     @property
     def config_schema(self) -> Any:
+        """Any: The schema for the logger's config. Configuration data available in `init_context.logger_config`."""
         return self._config_schema
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the logger."""
         return self._description
 
     def copy_for_configured(
@@ -158,7 +164,6 @@ def logger(
 
 def build_init_logger_context(
     logger_config: Any = None,
-    pipeline_def: Optional["PipelineDefinition"] = None,
     job_def: Optional["JobDefinition"] = None,
 ) -> "UnboundInitLoggerContext":
     """Builds logger initialization context from provided parameters.
@@ -170,8 +175,6 @@ def build_init_logger_context(
 
     Args:
         logger_config (Any): The config to provide during initialization of logger.
-        pipeline_def (Optional[PipelineDefinition]): The pipeline definition that the logger will be
-            used with.
         job_def (Optional[JobDefinition]): The job definition that the logger will be used with.
 
     Examples:
@@ -180,20 +183,9 @@ def build_init_logger_context(
             context = build_init_logger_context()
             logger_to_init(context)
     """
-    from dagster._core.definitions import JobDefinition, PipelineDefinition
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import UnboundInitLoggerContext
 
-    check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.opt_inst_param(job_def, "job_def", JobDefinition)
 
-    check.invariant(
-        not (pipeline_def and job_def),
-        (
-            "In build_init_logger_context, you may only specify one of the pipeline_def and job_def"
-            " parameters, not both."
-        ),
-    )
-
-    return UnboundInitLoggerContext(
-        logger_config=logger_config, pipeline_def=pipeline_def or job_def
-    )
+    return UnboundInitLoggerContext(logger_config=logger_config, job_def=job_def)

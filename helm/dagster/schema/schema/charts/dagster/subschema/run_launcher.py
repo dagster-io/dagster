@@ -47,6 +47,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     labels: Optional[Dict[str, str]]
     failPodOnRunFailure: Optional[bool]
     schedulerName: Optional[str]
+    jobNamespace: Optional[str]
 
     class Config:
         extra = Extra.forbid

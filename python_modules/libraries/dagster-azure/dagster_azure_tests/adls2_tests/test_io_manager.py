@@ -17,25 +17,29 @@ from dagster import (
     build_input_context,
     build_output_context,
     graph,
-    materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster_azure.adls2.io_manager import (
+    PickledObjectADLS2IOManager,
+    adls2_pickle_io_manager,
+)
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
+from upath import UPath
 
 
 def fake_io_manager_factory(io_manager):
@@ -102,20 +106,20 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
+            job=InMemoryJob(job),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -141,14 +145,12 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
     # Verify that when the IO manager needs to delete recursively, it is able to do so,
     # by removing the whole path for the run
-    recursive_path = "/".join(
-        [
-            io_manager.prefix,
-            "storage",
-            run_id,
-        ]
+    recursive_path = UPath(
+        io_manager.prefix,
+        "storage",
+        run_id,
     )
-    io_manager._rm_object(recursive_path)  # pylint: disable=protected-access
+    io_manager.unlink(recursive_path)
 
 
 @pytest.mark.nettest
@@ -174,20 +176,20 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
+            job=InMemoryJob(job),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -214,8 +216,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
-            pipeline_run=pipeline_run,
+            job=InMemoryJob(job),
+            dagster_run=dagster_run,
             run_config=run_config,
             instance=instance,
         )
@@ -267,19 +269,38 @@ def test_asset_io_manager(storage_account, file_system, credential):
     def upstream(asset3):
         return asset3 + 1
 
+    SourceAsset(f"source1_{_id}", partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+
+    # prepopulate storage with source asset
+    io_manager = PickledObjectADLS2IOManager(
+        file_system=file_system,
+        adls2_client=create_adls2_client(storage_account, credential),
+        blob_client=create_blob_client(storage_account, credential),
+        lease_client_constructor=DataLakeLeaseClient,
+    )
+    for partition_key in ["foo", "bar"]:
+        context = build_output_context(
+            step_key=f"source1_{_id}",
+            name="result",
+            run_id=make_new_run_id(),
+            dagster_type=resolve_dagster_type(int),
+            partition_key=partition_key,
+        )
+        io_manager.handle_output(context, 1)
+
     @asset(
         name=f"downstream_{_id}",
         ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},
     )
-    def downstream(upstream):
+    def downstream(upstream, source):
         assert upstream == 7
-        return 1 + upstream
+        return 1 + upstream + source["foo"] + source["bar"]
 
-    asset_group = AssetGroup(
-        [upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
-        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
-    )
-    asset_job = asset_group.build_job(name="my_asset_job")
+    asset_job = Definitions(
+        assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
+        resources={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
+        jobs=[define_asset_job("my_asset_job")],
+    ).get_job_def("my_asset_job")
 
     run_config = {
         "resources": {
@@ -309,31 +330,3 @@ def test_with_fake_adls2_resource():
 
     result = job.execute_in_process(run_config=run_config)
     assert result.success
-
-
-def test_nothing():
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(non_argument_deps={"asset1"})
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": adls2_pickle_io_manager.configured(
-                    {"adls2_file_system": "fake_file_system"}
-                ),
-                "adls2": fake_adls2_resource.configured({"account_name": "my_account"}),
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata_entries) == 0

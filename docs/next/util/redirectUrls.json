@@ -1,5 +1,15 @@
 [
   {
+    "source": "/deployment/guides/running-locally",
+    "destination": "/guides/running-dagster-locally",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/project-file-reference",
+    "destination": "/guides/understanding-dagster-project-files",
+    "statusCode": 302
+  },
+  {
     "source": "/install",
     "destination": "/getting-started",
     "statusCode": 302
@@ -22,6 +32,11 @@
   {
     "source": "/tutorial/basics_solids",
     "destination": "/tutorial/intro-tutorial/configuring-solids",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/automating-pipelines",
+    "destination": "/concepts/automation",
     "statusCode": 302
   },
   {
@@ -64,7 +79,11 @@
     "destination": "/tutorial/advanced-tutorial/scheduling",
     "statusCode": 302
   },
-  { "source": "/overview", "destination": "/concepts", "statusCode": 302 },
+  {
+    "source": "/overview", 
+    "destination": "/concepts", 
+    "statusCode": 302
+  },
   {
     "source": "/overview/solids-pipelines/solids",
     "destination": "/concepts/solids-pipelines/solids",
@@ -75,7 +94,6 @@
     "destination": "/concepts/solids-pipelines/solids",
     "statusCode": 302
   },
-
   {
     "source": "/overview/solids-pipelines/pipelines",
     "destination": "/concepts/solids-pipelines/pipelines",
@@ -100,11 +118,6 @@
   {
     "source": "/overview/execution",
     "destination": "/concepts/solids-pipelines/executing",
-    "statusCode": 302
-  },
-  {
-    "source": "/examples/pipeline_unittesting",
-    "destination": "/concepts/solids-pipelines/testing",
     "statusCode": 302
   },
   {
@@ -170,13 +183,11 @@
     "destination": "/concepts/partitions-schedules-sensors/partitions",
     "statusCode": 302
   },
-
   {
     "source": "/overview/partitions-backfill/backfill",
     "destination": "/concepts/partitions-schedules-sensors/backfills",
     "statusCode": 302
   },
-
   {
     "source": "/overview/schedules-sensors/schedules",
     "destination": "/concepts/partitions-schedules-sensors/schedules",
@@ -188,7 +199,6 @@
     "destination": "/concepts/partitions-schedules-sensors/sensors",
     "statusCode": 302
   },
-
   {
     "source": "/overview/instances/dagster-instance",
     "destination": "/deployment/dagster-instance",
@@ -215,6 +225,11 @@
     "statusCode": 302
   },
   {
+    "source": "/guides/dagster/pythonic-config",
+    "destination": "/concepts/configuration/config-schema",
+    "statusCode": 302
+  },
+  {
     "source": "/guides/dagster/asset-tutorial",
     "destination": "/tutorial/assets/defining-an-asset",
     "statusCode": 302
@@ -231,7 +246,17 @@
   },
   {
     "source": "/guides/dagster/asset-tutorial/testing-assets",
-    "destination": "/tutorial/assets/testing-assets",
+    "destination": "/guides/dagster/testing-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/assets/testing-assets",
+    "destination": "/guides/dagster/testing-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/pythonic-resources",
+    "destination": "/concepts/resources",
     "statusCode": 302
   },
   {
@@ -400,12 +425,6 @@
     "destination": "/concepts/solids-pipelines/pipelines#pipeline-tags",
     "statusCode": 302
   },
-
-  {
-    "source": "/examples/pipeline_unittesting",
-    "destination": "/concepts/solids-pipelines/testing",
-    "statusCode": 302
-  },
   {
     "source": "/examples/basic_pyspark",
     "destination": "/integrations/pyspark",
@@ -414,17 +433,6 @@
   {
     "source": "/examples/dynamic_graph",
     "destination": "/concepts/solids-pipelines/pipelines#dynamic-fan-out",
-    "statusCode": 302
-  },
-
-  {
-    "source": "/examples/simple_lakehouse",
-    "destination": "/guides/dagster/lakehouse",
-    "statusCode": 302
-  },
-  {
-    "source": "/examples/multi_type_lakehouse",
-    "destination": "/guides/dagster/multi-type-lakehouse",
     "statusCode": 302
   },
   {
@@ -588,8 +596,23 @@
     "statusCode": 302
   },
   {
+    "source": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso",
+    "destination": "/dagster-cloud/account/authentication/okta/saml-sso",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing",
+    "destination": "/dagster-cloud/managing-deployments",
+    "statusCode": 302
+  },
+  {
     "source": "/dagster-cloud/developing-testing/environment-variables",
-    "destination": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
+    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
+    "destination": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
     "statusCode": 302
   },
   {
@@ -600,6 +623,56 @@
   {
     "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
     "destination": "/dagster-cloud/getting-started",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/managing-deployments",
+    "destination": "/dagster-cloud/managing-deployments/managing-deployments",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
+    "destination": "/dagster-cloud/managing-deployments/deployment-settings-reference",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/account/setting-up-alerts",
+    "destination": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/code-locations",
+    "destination": "/dagster-cloud/managing-deployments/code-locations",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/dagster-cloud-cli",
+    "destination": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents",
+    "destination": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments",
+    "destination": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments",
     "statusCode": 302
   },
   {
@@ -620,6 +693,61 @@
   {
     "source": "/tutorial/ops-jobs/testable",
     "destination": "/guides/dagster/intro-to-ops-jobs/testable",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/scheduling-assets",
+    "destination": "/concepts/assets/asset-auto-execution",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-one",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-two",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-three",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/non-argument-deps",
+    "destination": "/concepts/assets/software-defined-assets#defining-basic-dependencies",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/managing-your-own-io",
+    "destination": "/tutorial/saving-your-data",
+    "statusCode": 302
+  },
+  {
+    "source": "/concepts/assets/asset-materializations",
+    "destination": "/concepts/ops-jobs-graphs/op-events#asset-materializations",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/releases",
+    "destination": "/about/releases",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/telemetry",
+    "destination": "/about/telemetry",
+    "statusCode": 302
+  },
+  {
+    "source": "/:version(\\d+.\\d+.\\d+)/:slug*",
+    "destination": "/:slug*",
     "statusCode": 302
   }
 ]

@@ -2,9 +2,10 @@
 
 This example builds a daily ETL pipeline that interacts with Google Cloud Platform (GCP). At a high level, this project shows how to ingest data from external sources to BigQuery, explore and transform the data, and materialize outputs that help visualize the data.
 
-*New to Dagster? Learn what Dagster is [in Concepts](https://docs.dagster.io/concepts) or [in the hands-on Tutorials](https://docs.dagster.io/tutorial).*
+_New to Dagster? Learn what Dagster is [in Concepts](https://docs.dagster.io/concepts) or [in the hands-on Tutorials](https://docs.dagster.io/tutorial)._
 
 This guide covers:
+
 - [Dagster + GCP starter kit](#dagster--gcp-starter-kit)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
@@ -15,23 +16,19 @@ This guide covers:
   - [Step 1: Materializing assets](#step-1-materializing-assets)
   - [Step 2: Viewing and monitoring assets](#step-2-viewing-and-monitoring-assets)
   - [Step 3: Scheduling a daily job](#step-3-scheduling-a-daily-job)
-    - [(Optional) Running daemon locally](#optional-running-daemon-locally)
   - [Learning more](#learning-more)
     - [Changing the code locally](#changing-the-code-locally)
-    - [Writing a custom I/O manager](#writing-a-custom-io-manager)
     - [Adding new Python dependencies](#adding-new-python-dependencies)
     - [Testing](#testing)
-
 
 ## Introduction
 
 This starter kit includes:
+
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
 - Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
-- A custom I/O Manager that stores Pandas DataFrames to BigQuery Tables and reads the tables into DataFrames, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle the Google service account credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
-
 
 In this project, we're building an analytical pipeline that explores popular topics on HackerNews.
 
@@ -58,14 +55,14 @@ To connect to GCP, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we write a custom [`bigquery_pandas_io_manager`](./quickstart_gcp/io_managers.py) to write outputs to BigQuery and read inputs from it.
+In this example, we use [BigQueryPandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) to write outputs to BigQuery and read inputs from it. The configurations of the BigQuery connection are defined [in `quickstart_gcp/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
 
-The configurations of the Bigquery connection are defined in [`quickstart_gcp/repository.py`](./quickstart_gcp/repository.py), which requires the following environment variables:
-- `BIGQUERY_SERVICE_ACCOUNT_CREDENTIALS`
-  - *Note: In this example, we use [`from_service_account_info`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_info) to set up the GCP connection. It accepts a dictionary corresponding to the JSON file contents, so the value of this environment variable needs to be a JSON string. If you'd like to refer to the JSON file path instead, change the I/O manager to use [`from_service_account_file`](https://googleapis.dev/python/google-auth/1.7.0/reference/google.oauth2.service_account.html#google.oauth2.service_account.Credentials.from_service_account_file).
 - `BIGQUERY_PROJECT_ID`
 
+To authenticate with Bigquery, you can either use the `gcloud` CLI, or set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to point at a credentials file. See [this page](https://cloud.google.com/docs/authentication/provide-credentials-adc). If neither of these authentication methods is feasible (for example if you are deploying this project in Dagster Serverless and cannot upload a credentials file) you can use the `gcp_credentials` configuration for the `BigQueryPandasIOManager`. See the `BigQueryPandasIOManager` [documentation](https://docs.dagster.io/_apidocs/libraries/dagster-gcp-pandas#dagster_gcp_pandas.BigQueryPandasIOManager) for more information.
+
 You can declare environment variables in various ways:
+
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
 - **Dagster Cloud**: [Using the Dagster Cloud UI](https://docs.dagster.io/master/dagster-cloud/developing-testing/environment-variables-and-secrets#using-the-dagster-cloud-ui) to manage environment variables
 - **Dagster Open Source**: How environment variables are set for Dagster projects deployed on your infrastructure depends on where Dagster is deployed. Read about how to declare environment variables [here](https://docs.dagster.io/master/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables).
@@ -88,10 +85,10 @@ First, install your Dagster repository as a Python package. By using the `--edit
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```bash
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -122,7 +119,6 @@ This project also comes with ways to better organize the assets:
 - **Grouping assets**. We've also assigned all three assets to the group `hackernews`, which is accomplished by providing the `group_name` argument to the `@asset` decorator. Grouping assets can help keep assets organized as your project grows. Learn about asset grouping [here](https://docs.dagster.io/concepts/assets/software-defined-assets#assigning-assets-to-groups).
 - **Adding descriptions.** In the asset graph, the UI also shows the description of each asset. You can specify the description of an asset in the `description` argument to `@asset`. When the argument is not provided and the decorated function has a docstring, Dagster will use the docstring as the description. In this example, the UI is using the docstrings as the descriptions.
 
-
 Now that we've got a basic understanding of Dagster assets, let's materialize them.
 
 <p align="center">
@@ -143,11 +139,11 @@ You'll see an indicator pop up with the launched run ID. Click **View** to monit
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-1-4-compute-logs.png" />
 </p>
 
-The process will run for a bit. While it's running, you should see the real-time compute logs printed in the UI. *(It may take 1-2 minutes to fetch all top 500 stories from HackerNews in the `hackernews_topstories` step).*
+The process will run for a bit. While it's running, you should see the real-time compute logs printed in the UI. _(It may take 1-2 minutes to fetch all top 500 stories from HackerNews in the `hackernews_topstories` step)._
 
 ## Step 2: Viewing and monitoring assets
 
-When you materialize an asset, the object returned by your asset function is saved. Dagster makes it easy to save these results to disk, to blob storage, to a database, or to any other system. In this example the assets are saved to the file system. In addition to the asset materialization,  your asset functions can also generate metadata that is directly visible in Dagster. To view the materialization details and metadata, click on the "ASSET_MATERIALIZATION" event. In this example, the `hackernews_stories_word_cloud` asset materializes a plot that is saved to disk, but we also add the plot as metadata to make it visible in Dagster.
+When you materialize an asset, the object returned by your asset function is saved. Dagster makes it easy to save these results to disk, to blob storage, to a database, or to any other system. In this example the assets are saved to the file system. In addition to the asset materialization, your asset functions can also generate metadata that is directly visible in Dagster. To view the materialization details and metadata, click on the "ASSET_MATERIALIZATION" event. In this example, the `hackernews_stories_word_cloud` asset materializes a plot that is saved to disk, but we also add the plot as metadata to make it visible in Dagster.
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-5-asset-in-logs.png" />
@@ -159,7 +155,7 @@ Click **Show Markdown**. You'll see a word cloud of the top 500 HackerNews story
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-6-hackernews_word_cloud.png" />
 </p>
 
-The metadata is recorded in the `hackernews_topstories_word_cloud` asset [in `quickstart_gcp/assets/hackernews.py`](./quickstart_gcp/assets/hackernews.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations.  This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
+The metadata is recorded in the `hackernews_topstories_word_cloud` asset [in `quickstart_gcp/assets/hackernews.py`](./quickstart_gcp/assets/hackernews.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-7-view-assets.png" />
@@ -200,39 +196,13 @@ You can now turn on the schedule switch to set up the daily job we defined in [q
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-2-schedule-on.png" />
 </p>
 
-### (Optional) Running daemon locally
-
-If you're running Dagster locally, you will see a warning that your daemon isn’t running.
-
-<p align="center">
-    <img height="300" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-3-daemon-warning.png" />
-</p>
-
-<details><summary>👈 Expand to learn how to set up a local daemon</summary>
-
-If you want to enable Dagster [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for your jobs, start the [Dagster daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp` may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-In this case, go to the project root directory and run:
-```bash
-dagster-daemon run
-```
-
-Once your Dagster daemon is running, the schedules that are turned on will start running.
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-4-daemon-on.png" />
-</p>
-
-</details>
-
 <br />
 <br />
 
 Congratulations 🎉 You now have a daily job running in production!
 
 ---
+
 ## Learning more
 
 ### Changing the code locally
@@ -240,6 +210,7 @@ Congratulations 🎉 You now have a daily job running in production!
 When developing pipelines locally, be sure to click the **Reload definition** button in the Dagster UI after you change the code. This ensures that Dagster picks up the latest changes you made.
 
 You can reload the code using the **Deployment** page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -249,6 +220,7 @@ You can reload the code using the **Deployment** page:
 </details>
 
 Or from the left nav or on each job page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -256,10 +228,6 @@ Or from the left nav or on each job page:
 </p>
 
 </details>
-
-### Writing a custom I/O manager
-
-This example comes with a custom I/O manager. To learn more about I/O managers and see more examples, check out the [I/O Manager concept page](https://docs.dagster.io/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables).
 
 ### Adding new Python dependencies
 

@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .client import (
     DagsterGraphQLClient as DagsterGraphQLClient,
@@ -11,4 +11,4 @@ from .client import (
 )
 from .version import __version__ as __version__
 
-check_dagster_package_version("dagster-graphql", __version__)
+DagsterLibraryRegistry.register("dagster-graphql", __version__)

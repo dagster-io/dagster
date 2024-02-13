@@ -3,7 +3,7 @@ loggers:
     config:
       log_level: DEBUG
 
-solids:
+ops:
   count_letters:
     inputs:
       word:

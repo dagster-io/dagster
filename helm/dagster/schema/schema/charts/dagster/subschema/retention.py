@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, Extra
 
@@ -21,6 +21,7 @@ class Retention(BaseModel):
     enabled: bool
     sensor: TickRetention
     schedule: TickRetention
+    autoMaterialize: Optional[TickRetention]
 
     class Config:
         extra = Extra.forbid

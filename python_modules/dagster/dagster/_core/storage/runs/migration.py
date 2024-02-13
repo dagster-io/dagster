@@ -1,14 +1,18 @@
 from contextlib import ExitStack
+from typing import AbstractSet, Any, Callable, Iterator, Mapping, Optional, cast
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from sqlalchemy.engine import Connection
 from tqdm import tqdm
+from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
-from dagster._serdes import deserialize_as
+from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._serdes import deserialize_value
 
 from ...execution.job_backfill import PartitionBackfill
-from ..pipeline_run import DagsterRun, DagsterRunStatus
+from ..dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
@@ -20,20 +24,23 @@ RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps 
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 
+PrintFn: TypeAlias = Callable[[Any], None]
+MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
+
 # for `dagster instance migrate`, paired with schema changes
-REQUIRED_DATA_MIGRATIONS = {
+REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
     RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
     BULK_ACTION_TYPES: lambda: migrate_bulk_actions,
 }
 # for `dagster instance reindex`, optionally run for better read performance
-OPTIONAL_DATA_MIGRATIONS = {
+OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_START_END: lambda: migrate_run_start_end,
 }
 
 CHUNK_SIZE = 100
 
-UNSTARTED_RUN_STATUSES = {
+UNSTARTED_RUN_STATUSES: Final[AbstractSet[DagsterRunStatus]] = {
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.MANAGED,
@@ -41,7 +48,9 @@ UNSTARTED_RUN_STATUSES = {
 }
 
 
-def chunked_run_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
+def chunked_run_iterator(
+    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+) -> Iterator[DagsterRun]:
     with ExitStack() as stack:
         if print_fn:
             run_count = storage.get_runs_count()
@@ -61,10 +70,12 @@ def chunked_run_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
                 yield run
 
             if progress:
-                progress.update(len(chunk))  # pylint: disable=no-member
+                progress.update(len(chunk))
 
 
-def chunked_run_records_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
+def chunked_run_records_iterator(
+    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+) -> Iterator[RunRecord]:
     with ExitStack() as stack:
         if print_fn:
             run_count = storage.get_runs_count()
@@ -80,16 +91,15 @@ def chunked_run_records_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
             has_more = chunk_size and len(chunk) >= chunk_size
 
             for run in chunk:
-                cursor = run.pipeline_run.run_id
+                cursor = run.dagster_run.run_id
                 yield run
 
             if progress:
-                progress.update(len(chunk))  # pylint: disable=no-member
+                progress.update(len(chunk))
 
 
-def migrate_run_partition(storage, print_fn=None):
-    """
-    Utility method to build an asset key index from the data in existing event log records.
+def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     if print_fn:
@@ -104,15 +114,13 @@ def migrate_run_partition(storage, print_fn=None):
         storage.add_run_tags(run.run_id, run.tags)
 
 
-def migrate_run_start_end(storage, print_fn=None):
-    """
-    Utility method that updates the start and end times of historical runs using the completed event log.
-    """
+def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    """Utility method that updates the start and end times of historical runs using the completed event log."""
     if print_fn:
         print_fn("Querying run and event log storage.")
 
     for run_record in chunked_run_records_iterator(storage, print_fn):
-        if run_record.pipeline_run.status in UNSTARTED_RUN_STATUSES:
+        if run_record.dagster_run.status in UNSTARTED_RUN_STATUSES:
             continue
 
         # commented out here to ensure that previously written timestamps that may not have
@@ -120,7 +128,7 @@ def migrate_run_start_end(storage, print_fn=None):
         # if run_record.start_time:
         #     continue
 
-        add_run_stats(storage, run_record.pipeline_run.run_id)
+        add_run_stats(storage, run_record.dagster_run.run_id)
 
 
 def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
@@ -133,14 +141,12 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
     if not isinstance(run_storage, SqlRunStorage):
         return
 
-    instance = check.inst_param(
-        run_storage._instance, "instance", DagsterInstance  # pylint: disable=protected-access
-    )
+    instance = check.inst_param(run_storage._instance, "instance", DagsterInstance)  # noqa: SLF001
     run_stats = instance.get_run_stats(run_id)
 
     with run_storage.connect() as conn:
         conn.execute(
-            RunsTable.update()  # pylint: disable=no-value-for-parameter
+            RunsTable.update()
             .where(RunsTable.c.run_id == run_id)
             .values(
                 start_time=run_stats.start_time,
@@ -149,7 +155,7 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
         )
 
 
-def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
+def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
     if not isinstance(run_storage, SqlRunStorage):
@@ -159,12 +165,12 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
         print_fn("Querying run storage.")
 
     subquery = (
-        db.select([RunTagsTable.c.run_id.label("tags_run_id")])
+        db_select([RunTagsTable.c.run_id.label("tags_run_id")])
         .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
         .alias("tag_subquery")
     )
     base_query = (
-        db.select([RunsTable.c.run_body, RunsTable.c.id])
+        db_select([RunsTable.c.run_body, RunsTable.c.id])
         .select_from(
             RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.tags_run_id, isouter=True)
         )
@@ -188,20 +194,20 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_as(row[0], DagsterRun)
+                run = deserialize_value(cast(str, row[0]), DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 
 
-def write_repo_tag(conn, run: DagsterRun):
-    if not run.external_pipeline_origin:
+def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
+    if not run.external_job_origin:
         # nothing to do
         return
 
-    repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
+    repository_label = run.external_job_origin.external_repository_origin.get_label()
     try:
         conn.execute(
-            RunTagsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            RunTagsTable.insert().values(
                 run_id=run.run_id,
                 key=REPOSITORY_LABEL_TAG,
                 value=repository_label,
@@ -212,7 +218,7 @@ def write_repo_tag(conn, run: DagsterRun):
         pass
 
 
-def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
+def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
     if not isinstance(run_storage, SqlRunStorage):
@@ -222,7 +228,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
         print_fn("Querying run storage.")
 
     base_query = (
-        db.select([BulkActionsTable.c.body, BulkActionsTable.c.id])
+        db_select([BulkActionsTable.c.body, BulkActionsTable.c.id])
         .where(BulkActionsTable.c.action_type.is_(None))
         .order_by(db.asc(BulkActionsTable.c.id))
         .limit(CHUNK_SIZE)
@@ -243,7 +249,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                backfill = deserialize_as(row[0], PartitionBackfill)
+                backfill = deserialize_value(row[0], PartitionBackfill)  # type: ignore  # (pyright bug)
                 storage_id = row[1]
                 conn.execute(
                     BulkActionsTable.update()

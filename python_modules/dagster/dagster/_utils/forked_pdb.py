@@ -1,4 +1,4 @@
-import pdb  # noqa: T100
+import pdb
 import sys
 
 
@@ -20,7 +20,7 @@ class ForkedPdb(pdb.Pdb):
 
             # some other complicated stuff
 
-    You can initiate pipeline execution via dagit and use the pdb debugger to examine/step through
+    You can initiate pipeline execution via the webserver and use the pdb debugger to examine/step through
     execution at the breakpoint.
     """
 

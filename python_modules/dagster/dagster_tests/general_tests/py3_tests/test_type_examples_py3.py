@@ -132,17 +132,17 @@ def sum_job():
 
 @op
 def repeat(_, spec: Dict) -> str:
-    return spec["word"] * spec["times"]  # type: ignore
+    return spec["word"] * spec["times"]
 
 
 @op
 def set_op(_, set_input: Set[String]) -> List[String]:
-    return sorted([x for x in set_input])  # type: ignore
+    return sorted([x for x in set_input])
 
 
 @op
 def tuple_op(_, tuple_input: Tuple[String, Int, Float]) -> List:
-    return [x for x in tuple_input]  # type: ignore
+    return [x for x in tuple_input]
 
 
 @op
@@ -191,13 +191,13 @@ def test_concat():
     assert res.output_value() == "foobar"
 
 
-def test_nothing_pipeline():
+def test_nothing_job():
     res = nothing_job.execute_in_process()
     assert res.output_for_node("wait") is None
     assert res.output_for_node("done") == "done"
 
 
-def test_nothing_int_pipeline():
+def test_nothing_int_job():
     res = nothing_int_job.execute_in_process()
     assert res.output_for_node("wait_int") == 1
     assert res.output_for_node("done") == "done"
@@ -213,7 +213,7 @@ def test_concat_list():
     assert res.output_value() == "foobarbaz"
 
 
-def test_sum_pipeline():
+def test_sum_job():
     res = sum_job.execute_in_process()
     assert res.output_for_node("sum_op") == 6
 
@@ -319,7 +319,7 @@ def div_y_var(context, x: Float) -> float:
 
 @op(config_schema=Field(String))
 def hello(context) -> str:
-    return "Hello, {friend}!".format(friend=context.op_config)
+    return f"Hello, {context.op_config}!"
 
 
 @op(config_schema=Field(String))

@@ -1,6 +1,6 @@
-from dagster_airflow.factory import make_airflow_dag
+from dagster_airflow.factory import make_airflow_dag  # type: ignore  # (old airflow)
 
-dag, steps = make_airflow_dag(  # type: ignore  # (unused code?)
+dag, steps = make_airflow_dag(
     module_name="docs_snippets.intro_tutorial.airflow",
     pipeline_name="hello_cereal_pipeline",
     run_config={"storage": {"filesystem": {"config": {"base_dir": "/container_tmp"}}}},

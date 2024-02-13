@@ -1,4 +1,4 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Set
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -19,7 +19,7 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct
@@ -28,25 +28,22 @@ from dagster._utils.error import SerializableErrorInfo
 CURRENT_SNAPSHOT_VERSION = 1
 
 
-def create_execution_plan_snapshot_id(execution_plan_snapshot) -> str:
+def create_execution_plan_snapshot_id(execution_plan_snapshot: "ExecutionPlanSnapshot") -> str:
     check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
     return create_snapshot_id(execution_plan_snapshot)
 
 
-class ExecutionPlanSnapshotSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"repository_load_data"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=ExecutionPlanSnapshotSerializer)
+@whitelist_for_serdes(
+    storage_field_names={"job_snapshot_id": "pipeline_snapshot_id"},
+    skip_when_empty_fields={"repository_load_data"},
+)
 class ExecutionPlanSnapshot(
     NamedTuple(
         "_ExecutionPlanSnapshot",
         [
             ("steps", Sequence["ExecutionStepSnap"]),
             ("artifacts_persisted", bool),
-            ("pipeline_snapshot_id", str),
+            ("job_snapshot_id", str),
             ("step_keys_to_execute", Sequence[str]),
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
@@ -64,11 +61,12 @@ class ExecutionPlanSnapshot(
     # added step_output_versions
     # removed step_output_versions
     # added repository_load_data
+
     def __new__(
         cls,
         steps: Sequence["ExecutionStepSnap"],
         artifacts_persisted: bool,
-        pipeline_snapshot_id: str,
+        job_snapshot_id: str,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
@@ -79,7 +77,7 @@ class ExecutionPlanSnapshot(
             cls,
             steps=check.sequence_param(steps, "steps", of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.str_param(job_snapshot_id, "job_snapshot_id"),
             step_keys_to_execute=check.opt_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
@@ -123,7 +121,7 @@ class ExecutionPlanSnapshotErrorData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle_id": "solid_handle_id"})
 class ExecutionStepSnap(
     NamedTuple(
         "_ExecutionStepSnap",
@@ -131,7 +129,7 @@ class ExecutionStepSnap(
             ("key", str),
             ("inputs", Sequence["ExecutionStepInputSnap"]),
             ("outputs", Sequence["ExecutionStepOutputSnap"]),
-            ("solid_handle_id", str),
+            ("node_handle_id", str),
             ("kind", StepKind),
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
             ("tags", Optional[Mapping[str, str]]),
@@ -144,7 +142,7 @@ class ExecutionStepSnap(
         key: str,
         inputs: Sequence["ExecutionStepInputSnap"],
         outputs: Sequence["ExecutionStepOutputSnap"],
-        solid_handle_id: str,
+        node_handle_id: str,
         kind: StepKind,
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
         tags: Optional[Mapping[str, str]] = None,
@@ -155,7 +153,7 @@ class ExecutionStepSnap(
             key=check.str_param(key, "key"),
             inputs=check.sequence_param(inputs, "inputs", ExecutionStepInputSnap),
             outputs=check.sequence_param(outputs, "outputs", ExecutionStepOutputSnap),
-            solid_handle_id=check.str_param(solid_handle_id, "solid_handle_id"),
+            node_handle_id=check.str_param(node_handle_id, "node_handle_id"),
             kind=check.inst_param(kind, "kind", StepKind),
             metadata_items=check.sequence_param(
                 metadata_items, "metadata_items", ExecutionPlanMetadataItemSnap
@@ -199,14 +197,14 @@ class ExecutionStepInputSnap(
         return [output_handle.step_key for output_handle in self.upstream_output_handles]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class ExecutionStepOutputSnap(
     NamedTuple(
         "_ExecutionStepOutputSnap",
         [
             ("name", str),
             ("dagster_type_key", str),
-            ("solid_handle", Optional[NodeHandle]),
+            ("node_handle", Optional[NodeHandle]),
             ("properties", Optional[StepOutputProperties]),
         ],
     )
@@ -215,14 +213,14 @@ class ExecutionStepOutputSnap(
         cls,
         name: str,
         dagster_type_key: str,
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         properties: Optional[StepOutputProperties] = None,
     ):
         return super(ExecutionStepOutputSnap, cls).__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
-            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
+            check.opt_inst_param(node_handle, "node_handle", NodeHandle),
             check.opt_inst_param(properties, "properties", StepOutputProperties),
         )
 
@@ -255,12 +253,12 @@ def _snapshot_from_step_input(step_input):
     )
 
 
-def _snapshot_from_step_output(step_output):
+def _snapshot_from_step_output(step_output: StepOutput) -> ExecutionStepOutputSnap:
     check.inst_param(step_output, "step_output", StepOutput)
     return ExecutionStepOutputSnap(
         name=step_output.name,
         dagster_type_key=step_output.dagster_type_key,
-        solid_handle=step_output.solid_handle,
+        node_handle=step_output.node_handle,
         properties=step_output.properties,
     )
 
@@ -281,17 +279,19 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
             list(map(_snapshot_from_step_output, execution_step.step_outputs)),
             key=lambda so: so.name,
         ),
-        solid_handle_id=execution_step.solid_handle.to_string(),
+        node_handle_id=execution_step.node_handle.to_string(),
         kind=execution_step.kind,
-        metadata_items=sorted(
-            [
-                ExecutionPlanMetadataItemSnap(key=key, value=value)
-                for key, value in execution_step.tags.items()
-            ],
-            key=lambda md: md.key,
-        )
-        if execution_step.tags
-        else [],
+        metadata_items=(
+            sorted(
+                [
+                    ExecutionPlanMetadataItemSnap(key=key, value=value)
+                    for key, value in execution_step.tags.items()
+                ],
+                key=lambda md: md.key,
+            )
+            if execution_step.tags
+            else []
+        ),
         tags=execution_step.tags,
         step_handle=execution_step.handle,
     )
@@ -308,7 +308,7 @@ def snapshot_from_execution_plan(
             list(map(_snapshot_from_execution_step, execution_plan.steps)), key=lambda es: es.key
         ),
         artifacts_persisted=execution_plan.artifacts_persisted,
-        pipeline_snapshot_id=pipeline_snapshot_id,
+        job_snapshot_id=pipeline_snapshot_id,
         step_keys_to_execute=execution_plan.step_keys_to_execute,
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,

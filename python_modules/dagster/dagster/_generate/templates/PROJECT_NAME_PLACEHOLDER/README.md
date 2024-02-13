@@ -10,10 +10,10 @@ First, install your Dagster code location as a Python package. By using the --ed
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```bash
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -21,7 +21,6 @@ Open http://localhost:3000 with your browser to see the project.
 You can start writing assets in `{{ repo_name }}/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
 
 ## Development
-
 
 ### Adding new Python dependencies
 
@@ -37,13 +36,7 @@ pytest {{ repo_name }}_tests
 
 ### Schedules and sensors
 
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within /tmp may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-```bash
-dagster-daemon run
-```
+If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
 
 Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
 

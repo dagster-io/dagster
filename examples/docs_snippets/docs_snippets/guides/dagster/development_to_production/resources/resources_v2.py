@@ -1,13 +1,13 @@
 from typing import Any, Dict, Optional
 
+from dagster import ConfigurableResource
+
 # start_mock
 # resources.py
 
 
 class StubHNClient:
-    """
-    Hacker News Client that returns fake data
-    """
+    """Hacker News Client that returns fake data."""
 
     def __init__(self):
         self.data = {
@@ -27,7 +27,7 @@ class StubHNClient:
         return 2
 
     @property
-    def item_field_names(self):
+    def item_field_names(self) -> list:
         return ["id", "type", "title", "by"]
 
 

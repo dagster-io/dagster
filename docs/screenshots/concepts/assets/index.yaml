@@ -1,10 +1,3 @@
-- id: asset-materialization.png
-  workspace: examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py
-  steps:
-    - run the job
-    - click on the run
-  vetted: false
-
 - id: observation.png
   workspace: examples/docs_snippets/docs_snippets/concepts/assets/observations.py
   steps:

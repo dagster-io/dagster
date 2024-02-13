@@ -1,9 +1,19 @@
+import time
 import warnings
+from concurrent.futures import as_completed
+from contextvars import ContextVar
+from typing import Dict, List, NamedTuple
 
 import dagster.version
 import pytest
+from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.test_utils import environ
-from dagster._core.utils import check_dagster_package_version, parse_env_var
+from dagster._core.utils import (
+    InheritContextThreadPoolExecutor,
+    check_dagster_package_version,
+    parse_env_var,
+)
+from dagster._utils import hash_collection, library_version_from_core_version
 
 
 def test_parse_env_var_no_equals():
@@ -53,3 +63,82 @@ def test_check_dagster_package_version(monkeypatch):
 
     with pytest.warns(Warning):  # patch version
         check_dagster_package_version("foo", "0.17.1")
+
+
+def test_library_version_from_core_version():
+    assert library_version_from_core_version("1.1.16") == "0.17.16"
+    assert library_version_from_core_version("0.17.16") == "0.17.16"
+    assert library_version_from_core_version("1.1.16pre0") == "0.17.16rc0"
+    assert library_version_from_core_version("1.1.16rc0") == "0.17.16rc0"
+    assert library_version_from_core_version("1.1.16post0") == "0.17.16post0"
+
+
+def test_library_registry():
+    assert DagsterLibraryRegistry.get() == {"dagster": dagster.version.__version__}
+
+
+def test_hash_collection():
+    # lists have different hashes depending on order
+    assert hash_collection([1, 2, 3]) == hash_collection([1, 2, 3])
+    assert hash_collection([1, 2, 3]) != hash_collection([2, 1, 3])
+
+    # dicts have same hash regardless of order
+    assert hash_collection({"a": 1, "b": 2}) == hash_collection({"b": 2, "a": 1})
+
+    assert hash_collection(set(range(10))) == hash_collection(set(range(10)))
+
+    with pytest.raises(AssertionError):
+        hash_collection(object())
+
+    class Foo(NamedTuple):
+        a: List[int]
+        b: Dict[str, int]
+        c: str
+
+    with pytest.raises(Exception):
+        hash(Foo([1, 2, 3], {"a": 1}, "alpha"))
+
+    class Bar(Foo):
+        def __hash__(self):
+            return hash_collection(self)
+
+    assert hash(Bar([1, 2, 3], {"a": 1}, "alpha")) == hash(Bar([1, 2, 3], {"a": 1}, "alpha"))
+
+
+def test_inherit_context_threadpool():
+    id_cv = ContextVar("id")
+
+    def in_thread(id_passed):
+        assert id_passed == id_cv.get()
+        return True
+
+    with InheritContextThreadPoolExecutor(max_workers=1) as executor:
+        futures = []
+        for i in range(10):
+            id_cv.set(i)
+            futures.append(executor.submit(in_thread, i))
+
+        for f in as_completed(futures):
+            assert f.result()
+
+
+def test_inherit_context_threadpool_properties():
+    def sleepy_thread():
+        time.sleep(1)
+        return True
+
+    with InheritContextThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for i in range(10):
+            futures.append(executor.submit(sleepy_thread))
+
+        time.sleep(0.1)
+        assert executor.max_workers == 5
+        assert executor.num_running_futures == 5
+        assert executor.num_queued_futures == 5
+
+        for f in as_completed(futures):
+            assert f.result()
+
+        assert executor.num_running_futures == 0
+        assert executor.num_queued_futures == 0

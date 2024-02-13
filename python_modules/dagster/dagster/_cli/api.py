@@ -3,8 +3,8 @@ import json
 import logging
 import os
 import sys
+import threading
 import zlib
-from contextlib import ExitStack
 from typing import Any, Callable, Optional, cast
 
 import click
@@ -15,35 +15,37 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster._core.definitions.metadata import MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import coerce_valid_log_level
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
+from dagster._grpc.server import DagsterApiServer
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
-from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
-from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.hosted_user_process import recon_job_from_origin
+from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+
+from .utils import get_instance_for_cli
 
 
 @click.group(name="api", hidden=True)
 def api_cli():
-    """
-    [INTERNAL] These commands are intended to support internal use cases. Users should generally
+    """[INTERNAL] These commands are intended to support internal use cases. Users should generally
     not invoke these commands interactively.
     """
 
@@ -58,64 +60,55 @@ def api_cli():
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
     with capture_interrupts():
-        args = deserialize_as(input_json, ExecuteRunArgs)
+        args = deserialize_value(input_json, ExecuteRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+                buffer.append(serialize_value(event))
 
             return_code = _execute_run_command_body(
-                args.pipeline_run_id,
+                args.run_id,
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
-
-            for line in buffer:
-                click.echo(line)
 
             if return_code != 0:
                 sys.exit(return_code)
 
 
 def _execute_run_command_body(
-    pipeline_run_id: str,
+    run_id: str,
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
 ) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
-            instance, pipeline_run_id
+            instance, run_id
         )
     else:
         cancellation_thread, cancellation_thread_shutdown_event = None, None
 
-    pipeline_run: DagsterRun = check.not_none(
-        instance.get_run_by_id(pipeline_run_id),
-        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    dagster_run = check.not_none(
+        instance.get_run_by_id(run_id),
+        f"Run with id '{run_id}' not found for run execution.",
     )
 
     check.inst(
-        pipeline_run.pipeline_code_origin,
-        PipelinePythonOrigin,
-        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+        dagster_run.job_code_origin,
+        JobPythonOrigin,
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_pipeline_from_origin(
-        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
-    )
+    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for run (pid: {pid}).".format(pid=pid),
-        pipeline_run,
+        f"Started process for run (pid: {pid}).",
+        dagster_run,
         EngineEventData.in_process(pid),
     )
 
@@ -123,8 +116,8 @@ def _execute_run_command_body(
 
     try:
         for event in core_execute_run(
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
             inject_env_vars=True,
         ):
@@ -144,12 +137,12 @@ def _execute_run_command_body(
                 if cancellation_thread.is_alive():
                     instance.report_engine_event(
                         "Cancellation thread did not shutdown gracefully",
-                        pipeline_run,
+                        dagster_run,
                     )
 
         instance.report_engine_event(
-            "Process for run exited (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            f"Process for run exited (pid: {pid}).",
+            dagster_run,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
@@ -165,62 +158,53 @@ def _execute_run_command_body(
 @click.argument("input_json", type=click.STRING)
 def resume_run_command(input_json):
     with capture_interrupts():
-        args = deserialize_as(input_json, ResumeRunArgs)
+        args = deserialize_value(input_json, ResumeRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+                buffer.append(serialize_value(event))
 
             return_code = _resume_run_command_body(
-                args.pipeline_run_id,
+                args.run_id,
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
-
-            for line in buffer:
-                click.echo(line)
 
             if return_code != 0:
                 sys.exit(return_code)
 
 
 def _resume_run_command_body(
-    pipeline_run_id: Optional[str],
+    run_id: Optional[str],
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
 ):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
-            instance, pipeline_run_id
+            instance, run_id
         )
     else:
         cancellation_thread, cancellation_thread_shutdown_event = None, None
-    pipeline_run = check.not_none(
-        instance.get_run_by_id(pipeline_run_id),  # type: ignore
-        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    dagster_run = check.not_none(
+        instance.get_run_by_id(run_id),  # type: ignore
+        f"Run with id '{run_id}' not found for run execution.",
     )
     check.inst(
-        pipeline_run.pipeline_code_origin,
-        PipelinePythonOrigin,
-        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+        dagster_run.job_code_origin,
+        JobPythonOrigin,
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_pipeline_from_origin(
-        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
-    )
+    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for resuming pipeline (pid: {pid}).".format(pid=pid),
-        pipeline_run,
+        f"Started process for resuming job (pid: {pid}).",
+        dagster_run,
         EngineEventData.in_process(pid),
     )
 
@@ -228,8 +212,8 @@ def _resume_run_command_body(
 
     try:
         for event in core_execute_run(
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
             resume_from_failure=True,
             inject_env_vars=True,
@@ -251,25 +235,25 @@ def _resume_run_command_body(
                 if cancellation_thread.is_alive():
                     instance.report_engine_event(
                         "Cancellation thread did not shutdown gracefully",
-                        pipeline_run,
+                        dagster_run,
                     )
         instance.report_engine_event(
-            "Process for pipeline exited (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            f"Process for job exited (pid: {pid}).",
+            dagster_run,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
 
 
-def get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute):
+def get_step_stats_by_key(instance, dagster_run, step_keys_to_execute):
     # When using the k8s executor, there whould only ever be one step key
-    step_stats = instance.get_run_step_stats(pipeline_run.run_id, step_keys=step_keys_to_execute)
+    step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
     step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
     return step_stats_by_key
 
 
-def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
-    step_stats_by_key = get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute)
+def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
+    step_stats_by_key = get_step_stats_by_key(instance, dagster_run, step_keys_to_execute)
 
     for step_key in step_keys_to_execute:
         step_stat_for_key = step_stats_by_key.get(step_key)
@@ -284,14 +268,14 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
         # so that we don't cause the "Encountered failed job pods" error.
         #
         # Instead, the step will be marked as being in an unknown state by the executor and the
-        # pipeline will fail accordingly.
+        # job will fail accordingly.
         if current_attempt == 1 and step_stat_for_key:
             # If this is the first attempt, there shouldn't be any step stats for this
             # event yet.
             instance.report_engine_event(
-                "Attempted to run {step_key} again even though it was already started. "
-                "Exiting to prevent re-running the step.".format(step_key=step_key),
-                pipeline_run,
+                f"Attempted to run {step_key} again even though it was already started. "
+                "Exiting to prevent re-running the step.",
+                dagster_run,
             )
             return False
         elif current_attempt > 1 and step_stat_for_key:
@@ -300,19 +284,17 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
 
             if step_stat_for_key.attempts != current_attempt - 1:
                 instance.report_engine_event(
-                    "Attempted to run retry attempt {current_attempt} for step {step_key} again "
+                    f"Attempted to run retry attempt {current_attempt} for step {step_key} again "
                     "even though it was already started. Exiting to prevent re-running "
-                    "the step.".format(current_attempt=current_attempt, step_key=step_key),
-                    pipeline_run,
+                    "the step.",
+                    dagster_run,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
             instance.report_engine_event(
-                "Attempting to retry attempt {current_attempt} for step {step_key} "
-                "but there is no record of the original attempt".format(
-                    current_attempt=current_attempt, step_key=step_key
-                ),
-                pipeline_run,
+                f"Attempting to retry attempt {current_attempt} for step {step_key} "
+                "but there is no record of the original attempt",
+                dagster_run,
             )
             return False
 
@@ -343,30 +325,27 @@ def execute_step_command(input_json, compressed_input_json):
         if compressed_input_json:
             input_json = zlib.decompress(base64.b64decode(compressed_input_json.encode())).decode()
 
-        args = deserialize_as(input_json, ExecuteStepArgs)
+        args = deserialize_value(input_json, ExecuteStepArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
-            pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
+            dagster_run = instance.get_run_by_id(args.run_id)
 
             buff = []
 
             for event in _execute_step_command_body(
                 args,
                 instance,
-                pipeline_run,
+                dagster_run,
             ):
-                buff.append(serialize_dagster_namedtuple(event))
+                buff.append(serialize_value(event))
 
-            for line in buff:
-                click.echo(line)
+            if args.print_serialized_events:
+                for line in buff:
+                    click.echo(line)
 
 
 def _execute_step_command_body(
-    args: ExecuteStepArgs, instance: DagsterInstance, pipeline_run: DagsterRun
+    args: ExecuteStepArgs, instance: DagsterInstance, dagster_run: DagsterRun
 ):
     single_step_key = (
         args.step_keys_to_execute[0]
@@ -375,97 +354,90 @@ def _execute_step_command_body(
     )
     try:
         check.inst(
-            pipeline_run,
+            dagster_run,
             DagsterRun,
-            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
+            f"Run with id '{args.run_id}' not found for step execution",
         )
         check.inst(
-            pipeline_run.pipeline_code_origin,
-            PipelinePythonOrigin,
-            "Pipeline run with id '{}' does not include an origin.".format(args.pipeline_run_id),
+            dagster_run.job_code_origin,
+            JobPythonOrigin,
+            f"Run with id '{args.run_id}' does not include an origin.",
         )
 
         location_name = (
-            pipeline_run.external_pipeline_origin.location_name
-            if pipeline_run.external_pipeline_origin
+            dagster_run.external_job_origin.location_name
+            if dagster_run.external_job_origin
             else None
         )
 
         instance.inject_env_vars(location_name)
 
-        log_manager = create_context_free_log_manager(instance, pipeline_run)
+        log_manager = create_context_free_log_manager(instance, dagster_run)
 
         yield DagsterEvent.step_worker_started(
             log_manager,
-            pipeline_run.pipeline_name,
+            dagster_run.job_name,
             message="Step worker started"
             + (f' for "{single_step_key}".' if single_step_key else "."),
-            metadata_entries=(
-                [
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ]
-            ),
+            metadata={"pid": MetadataValue.text(str(os.getpid()))},
             step_key=single_step_key,
         )
 
         if args.should_verify_step:
             success = verify_step(
                 instance,
-                pipeline_run,
+                dagster_run,
                 check.not_none(args.known_state).get_retry_state(),
                 args.step_keys_to_execute,
             )
             if not success:
                 return
 
-        if pipeline_run.has_repository_load_data:
+        if dagster_run.has_repository_load_data:
             repository_load_data = instance.get_execution_plan_snapshot(
-                check.not_none(pipeline_run.execution_plan_snapshot_id)
+                check.not_none(dagster_run.execution_plan_snapshot_id)
             ).repository_load_data
         else:
             repository_load_data = None
 
-        recon_pipeline = (
-            recon_pipeline_from_origin(
-                cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
-            )
+        recon_job = (
+            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
-            .subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute, pipeline_run.asset_selection
+            .get_subset(
+                op_selection=dagster_run.resolved_op_selection,
+                asset_selection=dagster_run.asset_selection,
+                asset_check_selection=dagster_run.asset_check_selection,
             )
         )
 
         execution_plan = create_execution_plan(
-            recon_pipeline,
-            run_config=pipeline_run.run_config,
+            recon_job,
+            run_config=dagster_run.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
-            mode=pipeline_run.mode,
             known_state=args.known_state,
             repository_load_data=repository_load_data,
         )
 
         yield from execute_plan_iterator(
             execution_plan,
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
-            run_config=pipeline_run.run_config,
+            run_config=dagster_run.run_config,
             retry_mode=args.retry_mode,
         )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield instance.report_engine_event(
             message="Step execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             step_key=single_step_key,
         )
         raise
     except Exception:
         yield instance.report_engine_event(
-            (
-                "An exception was thrown during step execution that is likely a framework error,"
-                " rather than an error in user code."
-            ),
-            pipeline_run,
+            "An exception was thrown during step execution that is likely a framework error,"
+            " rather than an error in user code.",
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             step_key=single_step_key,
         )
@@ -499,12 +471,14 @@ def _execute_step_command_body(
     envvar="DAGSTER_GRPC_HOST",
 )
 @click.option(
-    "--max_workers",
+    "--max-workers",
+    "--max_workers",  # for backwards compatibility
     "-n",
     type=click.INT,
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the GRPC server",
+    envvar="DAGSTER_GRPC_MAX_WORKERS",
 )
 @click.option(
     "--heartbeat",
@@ -529,7 +503,7 @@ def _execute_step_command_body(
     help=(
         "Wait until the first LoadRepositories call to actually load the repositories, instead of"
         " waiting to load them when the server is launched. Useful for surfacing errors when the"
-        " server is managed directly from Dagit"
+        " server is managed directly from the Dagster UI."
     ),
     envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
@@ -560,15 +534,6 @@ def _execute_step_command_body(
     envvar="DAGSTER_EMPTY_WORKING_DIRECTORY",
 )
 @click.option(
-    "--ipc-output-file",
-    type=click.Path(),
-    help=(
-        "[INTERNAL] This option should generally not be used by users. Internal param used by"
-        " dagster when it automatically spawns gRPC servers to communicate the success or failure"
-        " of the server launching."
-    ),
-)
-@click.option(
     "--fixed-server-id",
     type=click.STRING,
     required=False,
@@ -578,20 +543,20 @@ def _execute_step_command_body(
     ),
 )
 @click.option(
-    "--override-system-timezone",
-    type=click.STRING,
+    "--log-level",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    show_default=True,
     required=False,
-    help=(
-        "[INTERNAL] This option should generally not be used by users. Override the system "
-        "timezone for tests."
-    ),
+    default="info",
+    help="Level at which to log output from the code server process",
 )
 @click.option(
-    "--log-level",
-    type=click.STRING,
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
     required=False,
-    default="INFO",
-    help="Level at which to log output from the gRPC server process",
+    default="colored",
+    help="Format of the log output from the code server process",
 )
 @click.option(
     "--container-image",
@@ -632,6 +597,14 @@ def _execute_step_command_body(
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@click.option(
+    "--enable-metrics",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
+    envvar="DAGSTER_ENABLE_SERVER_METRICS",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -640,19 +613,25 @@ def grpc_command(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
-    ipc_output_file=None,
     fixed_server_id=None,
-    override_system_timezone=None,
     log_level="INFO",
+    log_format="colored",
     use_python_environment_entry_point=False,
     container_image=None,
     container_context=None,
     location_name=None,
     instance_ref=None,
     inject_env_vars_from_instance=False,
+    enable_metrics=False,
     **kwargs,
 ):
-    from dagster._core.test_utils import mock_system_timezone
+    check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
+
+    check.invariant(
+        max_workers is None or max_workers > 1 if heartbeat else True,
+        "max_workers must be greater than 1 or set to None if heartbeat is True. "
+        "If set to None, the server will use the gRPC default.",
+    )
 
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
@@ -661,8 +640,10 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    configure_loggers(log_level=coerce_valid_log_level(log_level))
-    logger = logging.getLogger("dagster")
+    setup_interrupt_handlers()
+
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
+    logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
@@ -695,56 +676,69 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
-    with ExitStack() as exit_stack:
-        if override_system_timezone:
-            exit_stack.enter_context(mock_system_timezone(override_system_timezone))
+    code_desc = " "
+    if loadable_target_origin:
+        if loadable_target_origin.python_file:
+            code_desc = f" for file {loadable_target_origin.python_file} "
+        elif loadable_target_origin.package_name:
+            code_desc = f" for package {loadable_target_origin.package_name} "
+        elif loadable_target_origin.module_name:
+            code_desc = f" for module {loadable_target_origin.module_name} "
 
-        server = DagsterGrpcServer(
-            port=port,
-            socket=socket,
-            host=host,
-            loadable_target_origin=loadable_target_origin,
-            max_workers=max_workers,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            ipc_output_file=ipc_output_file,
-            fixed_server_id=fixed_server_id,
-            entry_point=(
-                get_python_environment_entry_point(sys.executable)
-                if use_python_environment_entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_image=container_image,
-            container_context=json.loads(container_context)
-            if container_context is not None
-            else None,
-            inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
-            location_name=location_name,
-        )
+    server_desc = (
+        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code server{code_desc}in process {os.getpid()}"
+    )
 
-        code_desc = " "
-        if loadable_target_origin:
-            if loadable_target_origin.python_file:
-                code_desc = f" for file {loadable_target_origin.python_file} "
-            elif loadable_target_origin.package_name:
-                code_desc = f" for package {loadable_target_origin.package_name} "
-            elif loadable_target_origin.module_name:
-                code_desc = f" for module {loadable_target_origin.module_name} "
+    logger.info("Starting %s", server_desc)
 
-        server_desc = (
-            f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
-            if port
-            else f"Dagster code server{code_desc}in process {os.getpid()}"
-        )
+    server_termination_event = threading.Event()
+    threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
+    api_servicer = DagsterApiServer(
+        server_termination_event=server_termination_event,
+        logger=logger,
+        loadable_target_origin=loadable_target_origin,
+        heartbeat=heartbeat,
+        heartbeat_timeout=heartbeat_timeout,
+        lazy_load_user_code=lazy_load_user_code,
+        fixed_server_id=fixed_server_id,
+        entry_point=(
+            get_python_environment_entry_point(sys.executable)
+            if use_python_environment_entry_point
+            else DEFAULT_DAGSTER_ENTRY_POINT
+        ),
+        container_image=container_image,
+        container_context=(
+            json.loads(container_context) if container_context is not None else None
+        ),
+        inject_env_vars_from_instance=inject_env_vars_from_instance,
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+        location_name=location_name,
+        enable_metrics=enable_metrics,
+        server_threadpool_executor=threadpool_executor,
+    )
 
-        logger.info("Started %s", server_desc)
+    server = DagsterGrpcServer(
+        server_termination_event=server_termination_event,
+        dagster_api_servicer=api_servicer,
+        port=port,
+        socket=socket,
+        host=host,
+        logger=logger,
+        enable_metrics=enable_metrics,
+        threadpool_executor=threadpool_executor,
+    )
 
-        try:
-            server.serve()
-        finally:
-            logger.info("Shutting down %s", server_desc)
+    logger.info("Started %s", server_desc)
+
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        # Terminate cleanly on interrupt
+        logger.info("Code server was interrupted")
+    finally:
+        logger.info("Shutting down %s", server_desc)
 
 
 @api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")

@@ -1,6 +1,6 @@
-# isort: skip_file
-# pylint: disable=unused-argument
-# pylint: disable=reimported
+# ruff: isort: skip_file
+
+
 from dagster import ResourceDefinition
 
 api_client = ResourceDefinition.mock_resource()
@@ -15,7 +15,7 @@ from dagster import op
 
 
 @op
-def get_data_without_resource(context):
+def get_data_without_resource():
     dummy_data = [1, 2, 3]
     # Do not call external apis in tests
     # return call_api()
@@ -25,16 +25,21 @@ def get_data_without_resource(context):
 # end_test_before_marker
 
 # start_test_after_marker
-from dagster import graph, op
+from dagster import graph, op, ConfigurableResource, OpExecutionContext
 
 
-@op(required_resource_keys={"api"})
-def get_data(context):
-    return context.resources.api.call()
+class MyApi(ConfigurableResource):
+    def call(self):
+        ...
 
 
 @op
-def do_something(context, data):
+def get_data(api: MyApi):
+    return api.call()
+
+
+@op
+def do_something(context: OpExecutionContext, data):
     output = process(data)
     return output
 
@@ -45,7 +50,7 @@ def download():
 
 
 # The prod job for the download graph.
-download_job = download.to_job(resource_defs={"api": api_client})
+download_job = download.to_job(resource_defs={"api": MyApi()})
 
 
 # end_test_after_marker

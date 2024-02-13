@@ -1,4 +1,5 @@
 import tempfile
+from typing import Any, Mapping, Sequence
 
 import pytest
 from dagster import (
@@ -9,23 +10,26 @@ from dagster import (
     graph,
     op,
     resource,
-    root_input_manager,
 )
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.definitions.version_strategy import VersionStrategy
-from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.api import ReexecutionOptions, create_execution_plan, execute_job
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, reexecute_pipeline
 
-from .memoized_dev_loop_pipeline import asset_pipeline
+from .memoized_dev_loop_job import op_job
 
 
-def get_step_keys_to_execute(pipeline, run_config, mode, instance):
+def get_step_keys_to_execute(
+    job_def: JobDefinition, run_config: Mapping[str, Any], instance: DagsterInstance
+) -> Sequence[str]:
     return create_execution_plan(
-        pipeline,
+        job_def,
         run_config,
-        mode,
         instance_ref=instance.get_ref(),
         tags={MEMOIZED_RUN_TAG: "true"},
     ).step_keys_to_execute
@@ -35,55 +39,55 @@ def test_dev_loop_changing_versions():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir) as instance:
             run_config = {
-                "solids": {
-                    "create_string_1_asset": {"config": {"input_str": "apple"}},
-                    "take_string_1_asset": {"config": {"input_str": "apple"}},
+                "ops": {
+                    "create_string_1_asset_op": {"config": {"input_str": "apple"}},
+                    "take_string_1_asset_op": {"config": {"input_str": "apple"}},
                 },
                 "resources": {"io_manager": {"config": {"base_dir": temp_dir}}},
             }
 
-            result = execute_pipeline(
-                asset_pipeline,
+            with execute_job(
+                reconstructable(op_job),
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
+            ) as result:
+                assert result.success
+
             # Ensure that after one memoized execution, with no change to run config, that upon the next
             # computation, there are no step keys to execute.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(op_job, run_config, instance)
 
-            run_config["solids"]["take_string_1_asset"]["config"]["input_str"] = "banana"
+            run_config["ops"]["take_string_1_asset_op"]["config"]["input_str"] = "banana"
 
             # Ensure that after changing run config that affects only the `take_string_1_asset` step, we
             # only need to execute that step.
-            assert get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance) == [
-                "take_string_1_asset"
+            assert get_step_keys_to_execute(op_job, run_config, instance) == [
+                "take_string_1_asset_op"
             ]
-            result = reexecute_pipeline(
-                asset_pipeline,
-                parent_run_id=result.run_id,
+            with execute_job(
+                reconstructable(op_job),
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=result.run_id,
+                ),
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
+            ) as result:
+                assert result.success
 
             # After executing with the updated run config, ensure that there are no unmemoized steps.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(op_job, run_config, instance)
 
             # Ensure that the pipeline runs, but with no steps.
-            result = execute_pipeline(
-                asset_pipeline,
+            with execute_job(
+                reconstructable(op_job),
                 run_config=run_config,
-                mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
-            assert len(result.step_event_list) == 0
+            ) as result:
+                assert result.success
+                assert len(result.all_node_events) == 0
 
 
 def test_memoization_with_default_strategy():
@@ -256,14 +260,14 @@ def test_version_strategy_depends_from_context():
     class ContextDependantVersionStrategy(VersionStrategy):
         def get_op_version(self, context):
             version_strategy_called.append("versioned")
-            solid_arg = context.solid_config["arg"]
+            solid_arg = context.op_config["arg"]
             return version[solid_arg]
 
         def get_resource_version(self, context):
             resource_arg = context.resource_config["arg"]
             return version[resource_arg]
 
-    run_config = {"solids": {"my_op": {"config": {"arg": "foo"}}}}
+    run_config = {"ops": {"my_op": {"config": {"arg": "foo"}}}}
 
     @op
     def my_op():
@@ -322,7 +326,7 @@ def test_version_strategy_depends_from_context():
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
 
-def test_version_strategy_root_input_manager():
+def test_version_strategy_input_manager():
     class MyVersionStrategy(VersionStrategy):
         def get_op_version(self, _):
             return "foo"
@@ -330,11 +334,11 @@ def test_version_strategy_root_input_manager():
         def get_resource_version(self, _):
             return "foo"
 
-    @root_input_manager
+    @input_manager
     def my_input_manager(_):
         return 5
 
-    @op(ins={"x": In(root_manager_key="my_input_manager")})
+    @op(ins={"x": In(input_manager_key="my_input_manager")})
     def my_op(x):
         return x
 
@@ -376,12 +380,12 @@ def test_dynamic_memoization_error():
 
     @graph
     def dynamic_graph():
-        x = emit().map(return_input)  # pylint: disable=no-member
+        x = emit().map(return_input)
         return_input(x.collect())
 
     @graph
     def just_mapping_graph():
-        emit().map(return_input)  # pylint: disable=no-member
+        emit().map(return_input)
 
     with instance_for_test() as instance:
         for cur_graph in [dynamic_graph, just_mapping_graph]:

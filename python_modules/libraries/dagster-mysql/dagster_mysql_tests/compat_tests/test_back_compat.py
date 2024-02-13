@@ -1,10 +1,12 @@
-# pylint: disable=protected-access
+# ruff: noqa: SLF001
+import datetime
 import os
 import subprocess
 import tempfile
 from urllib.parse import urlparse
 
 import pytest
+import sqlalchemy as db
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -18,32 +20,41 @@ from dagster import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.migration.bigint_migration import run_bigint_migration
+from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
-from sqlalchemy import create_engine, inspect
 
 
 def get_columns(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(c["name"] for c in db.inspect(conn).get_columns(table_name))
 
 
 def get_indexes(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(i["name"] for i in db.inspect(conn).get_indexes(table_name))
 
 
 def get_tables(instance):
-    return instance.run_storage._engine.table_names()
+    with instance.run_storage.connect() as conn:
+        return db.inspect(conn).get_table_names()
 
 
 def _reconstruct_from_file(conn_string, path, _username="root", _password="test"):
     parse_result = urlparse(conn_string)
     hostname = parse_result.hostname
     port = parse_result.port
-    engine = create_engine(conn_string)
-    engine.execute("drop schema test;")
-    engine.execute("create schema test;")
+    engine = db.create_engine(conn_string)
+    with engine.connect() as conn:
+        with conn.begin():
+            conn.execute(db.text("drop schema test;"))
+            conn.execute(db.text("create schema test;"))
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
-    subprocess.check_call(f"mysql -uroot -h{hostname} -P{port} test < {path}", shell=True, env=env)
+    subprocess.check_call(
+        f"mysql -uroot -h{hostname} -P{port} -ptest test < {path}", shell=True, env=env
+    )
     return hostname, port
 
 
@@ -159,25 +170,25 @@ def test_jobs_selector_id_migration(conn_string):
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -187,7 +198,7 @@ def test_jobs_selector_id_migration(conn_string):
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -341,3 +352,165 @@ def test_add_cached_status_data_column(conn_string):
 
             instance.upgrade()
             assert new_columns <= get_columns(instance, "asset_keys")
+
+
+def test_add_dynamic_partitions_table(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "dynamic_partitions" not in get_tables(instance)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    import sqlalchemy as db
+
+    query = db_select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys(conn_string):
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "id" not in get_columns(instance, "kvs")
+            # trigger insert, and update
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in get_columns(instance, "instance_info")
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in get_columns(instance, "daemon_heartbeats")
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in get_columns(instance, "kvs")
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in get_columns(instance, "instance_info")
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in get_columns(instance, "daemon_heartbeats")
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+
+
+def test_bigint_migration(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key.sql"),
+    )
+
+    def _get_integer_id_tables(conn):
+        inspector = db.inspect(conn)
+        integer_tables = set()
+        for table in inspector.get_table_names():
+            type_by_col_name = {c["name"]: c["type"] for c in db.inspect(conn).get_columns(table)}
+            id_type = type_by_col_name.get("id")
+            if id_type and str(id_type) == "INTEGER":
+                integer_tables.add(table)
+        return integer_tables
+
+    def _assert_autoincrement_id(conn):
+        inspector = db.inspect(conn)
+        for table in inspector.get_table_names():
+            id_cols = [col for col in inspector.get_columns(table) if col["name"] == "id"]
+            if id_cols:
+                id_col = id_cols[0]
+                assert id_col["autoincrement"]
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            with instance.run_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
+            with instance.event_log_storage.index_connection() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
+            with instance.schedule_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
+
+            run_bigint_migration(instance)
+
+            with instance.run_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
+            with instance.event_log_storage.index_connection() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
+            with instance.schedule_storage.connect() as conn:
+                assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)

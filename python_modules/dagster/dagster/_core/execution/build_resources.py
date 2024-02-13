@@ -13,12 +13,12 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.resources_init import resource_initialization_manager
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
-from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig, config_map_resources
 
 from .api import ephemeral_instance_if_missing
-from .context_creation_pipeline import initialize_console_manager
+from .context_creation_job import initialize_console_manager
 
 
 def get_mapped_resource_config(
@@ -43,13 +43,13 @@ def build_resources(
     resources: Mapping[str, Any],
     instance: Optional[DagsterInstance] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
-    pipeline_run: Optional[DagsterRun] = None,
+    dagster_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
     This API allows for using resources in an independent context. Resources will be initialized
-    with the provided run config, and optionally, pipeline_run. The resulting resources will be
+    with the provided run config, and optionally, dagster_run. The resulting resources will be
     yielded on a dictionary keyed identically to that provided for `resource_defs`. Upon exiting the
     context, resources will also be torn down safely.
 
@@ -61,8 +61,8 @@ def build_resources(
             resources on.
         resource_config (Optional[Mapping[str, Any]]): A dict representing the config to be
             provided to each resource during initialization and teardown.
-        pipeline_run (Optional[PipelineRun]): The pipeline run to provide during resource
-            initialization and teardown. If the provided resources require either the `pipeline_run`
+        dagster_run (Optional[PipelineRun]): The pipeline run to provide during resource
+            initialization and teardown. If the provided resources require either the `dagster_run`
             or `run_id` attributes of the provided context during resource initialization and/or
             teardown, this must be provided, or initialization will fail.
         log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
@@ -93,9 +93,9 @@ def build_resources(
         resources_manager = resource_initialization_manager(
             resource_defs=resource_defs,
             resource_configs=mapped_resource_config,
-            log_manager=log_manager if log_manager else initialize_console_manager(pipeline_run),
+            log_manager=log_manager if log_manager else initialize_console_manager(dagster_run),
             execution_plan=None,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             resource_keys_to_init=set(resource_defs.keys()),
             instance=dagster_instance,
             emit_persistent_events=False,
@@ -113,18 +113,28 @@ def build_resources(
 
 
 def wrap_resources_for_execution(
-    resources: Optional[Mapping[str, Any]] = None
-) -> Mapping[str, ResourceDefinition]:
-    resources = check.opt_mapping_param(resources, "resources", key_type=str)
-    resource_defs = {}
+    resources: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, ResourceDefinition]:
+    return (
+        {
+            resource_key: wrap_resource_for_execution(resource)
+            for resource_key, resource in resources.items()
+        }
+        if resources
+        else {}
+    )
+
+
+def wrap_resource_for_execution(resource: Any) -> ResourceDefinition:
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
+
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.
-    for resource_key, resource in resources.items():
-        if isinstance(resource, ResourceDefinition):
-            resource_defs[resource_key] = resource
-        elif isinstance(resource, IOManager):
-            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
-        else:
-            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-
-    return resource_defs
+    if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
+        return resource.get_resource_definition()
+    elif isinstance(resource, ResourceDefinition):
+        return resource
+    elif isinstance(resource, IOManager):
+        return IOManagerDefinition.hardcoded_io_manager(resource)
+    else:
+        return ResourceDefinition.hardcoded_resource(resource)

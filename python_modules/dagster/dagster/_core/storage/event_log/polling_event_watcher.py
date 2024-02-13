@@ -3,11 +3,10 @@ from typing import Callable, List, MutableMapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.base import EventLogCursor, EventLogStorage
 
-from .sql_event_log import SqlEventLogStorage
-
-POLLING_CADENCE = 0.1  # 100 ms
+INIT_POLL_PERIOD = 0.250  # 250ms
+MAX_POLL_PERIOD = 16.0  # 16s
 
 
 class CallbackAfterCursor(NamedTuple):
@@ -32,9 +31,9 @@ class SqlPollingEventWatcher:
         INVARIANTS: _dict_lock protects _run_id_to_watcher_dict
     """
 
-    def __init__(self, event_log_storage: SqlEventLogStorage):
+    def __init__(self, event_log_storage: EventLogStorage):
         self._event_log_storage = check.inst_param(
-            event_log_storage, "event_log_storage", SqlEventLogStorage
+            event_log_storage, "event_log_storage", EventLogStorage
         )
 
         # INVARIANT: dict_lock protects _run_id_to_watcher_dict
@@ -84,7 +83,7 @@ class SqlPollingEventWatcher:
                         watcher_thread.should_thread_exit.set()
                 for run_id in self._run_id_to_watcher_dict:
                     self._run_id_to_watcher_dict[run_id].join()
-                del self._run_id_to_watcher_dict
+                self._run_id_to_watcher_dict = {}
 
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
@@ -100,16 +99,16 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     """
 
-    def __init__(self, event_log_storage: SqlEventLogStorage, run_id: str):
+    def __init__(self, event_log_storage: EventLogStorage, run_id: str):
         super(SqlPollingRunIdEventWatcherThread, self).__init__()
         self._event_log_storage = check.inst_param(
-            event_log_storage, "event_log_storage", SqlEventLogStorage
+            event_log_storage, "event_log_storage", EventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._callback_fn_list_lock: threading.Lock = threading.Lock()
         self._callback_fn_list: List[CallbackAfterCursor] = []
         self._should_thread_exit = threading.Event()
-        self.name = f"mysql-event-watch-run-id-{self._run_id}"
+        self.name = f"sql-event-watch-run-id-{self._run_id}"
 
     @property
     def should_thread_exit(self) -> threading.Event:
@@ -155,9 +154,10 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
         Uses max_index_so_far as a cursor in the DB to make sure that only new records are retrieved.
         """
         cursor = None
-        while not self._should_thread_exit.wait(POLLING_CADENCE):
+        wait_time = INIT_POLL_PERIOD
+        while not self._should_thread_exit.wait(wait_time):
             conn = self._event_log_storage.get_records_for_run(self._run_id, cursor=cursor)
-            cursor = conn.cursor if conn.cursor else cursor
+            cursor = conn.cursor
             for event_record in conn.records:
                 with self._callback_fn_list_lock:
                     for callback_with_cursor in self._callback_fn_list:
@@ -170,3 +170,4 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
                                 event_record.event_log_entry,
                                 str(EventLogCursor.from_storage_id(event_record.storage_id)),
                             )
+            wait_time = INIT_POLL_PERIOD if conn.records else min(wait_time * 2, MAX_POLL_PERIOD)

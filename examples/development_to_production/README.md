@@ -8,6 +8,7 @@ correctness.
 To follow along with this example, you can read this [guide](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production).
 
 ## Setup
+
 To run this example locally
 
 ```
@@ -16,5 +17,5 @@ cd my-dagster-project
 pip install -e ".[dev]"
 
 # Load it in the web UI
-dagit
+dagster-webserver
 ```

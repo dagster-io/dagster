@@ -6,6 +6,7 @@ config:
   dagster_home: {{ .Values.global.dagsterHome | quote }}
   instance_config_map: "{{ template "dagster.fullname" .}}-instance"
   postgres_password_secret: {{ include "dagster.postgresql.secretName" . | quote }}
+  job_namespace: {{ $celeryK8sRunLauncherConfig.jobNamespace | default .Release.Namespace }}
   broker:
     env: DAGSTER_CELERY_BROKER_URL
   backend:

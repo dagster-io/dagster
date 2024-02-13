@@ -1,0 +1,40 @@
+---
+title: "DuckDB + Dagster"
+description: Store your Dagster assets in DuckDB
+---
+
+# DuckDB + Dagster
+
+Using Dagster's [Software-defined Assets](/concepts/assets/software-defined-assets) and DuckDB I/O manager, you can easily interact with DuckDB tables alongside other Dagster assets.
+
+Managing your DuckDB tables with Dagster enables you to:
+
+- Use Python to analyze your data stored in DuckDB without writing custom SQL queries to fetch the data
+- Visualize the data dependencies between tables
+- Selectively update the contents of your tables
+- Integrate your DuckDB tables with other tools in your data stack
+
+Additionally, since DuckDB is a local database, you can use the DuckDB I/O manager to test assets that use the Snowflake or BigQuery I/O managers in production scenarios.
+
+---
+
+## DuckDB and Dagster tutorial
+
+In this tutorial, you'll learn how to store and load Dagster's [Software-defined Assets](/concepts/assets/software-defined-assets) in DuckDB. [Click here to get started](/integrations/duckdb/using-duckdb-with-dagster).
+
+By the end of the tutorial, you will have a connection to your DuckDB instance and a handful of assets that create tables in DuckDB or read existing tables from DuckDB.
+
+---
+
+## References
+
+<ArticleList>
+  <ArticleListItem
+    title="Additional DuckDB features"
+    href="/integrations/duckdb/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="DuckDB API reference"
+    href="/\_apidocs/libraries/dagster-duckdb"
+  ></ArticleListItem>
+</ArticleList>

@@ -1,0 +1,4 @@
+locations:
+  - location_name: pipes_external_airflow_demo
+    code_source:
+      package_name: pipes_external_airflow_demo

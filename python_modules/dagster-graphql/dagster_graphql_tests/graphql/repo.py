@@ -8,39 +8,49 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import List, Tuple
+from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckKey,
+    AssetCheckResult,
+    AssetCheckSpec,
+    AssetExecutionContext,
+    AssetIn,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    AutoMaterializePolicy,
+    BackfillPolicy,
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
+    DynamicOut,
     DynamicOutput,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
+    In,
     Int,
     IOManager,
     IOManagerDefinition,
     Map,
-    MetadataEntry,
     Noneable,
     Nothing,
+    OpExecutionContext,
+    Out,
     Output,
-    Partition,
     PythonObjectDagsterType,
     ScheduleDefinition,
-    ScheduleEvaluationContext,
+    SensorResult,
     SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
@@ -50,94 +60,88 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
+    TimeWindowPartitionMapping,
+    WeeklyPartitionsDefinition,
     _check as check,
     asset,
+    asset_check,
+    asset_sensor,
     dagster_type_loader,
-    dagster_type_materializer,
     daily_partitioned_config,
     define_asset_job,
+    freshness_policy_sensor,
     graph,
     job,
     logger,
     multi_asset,
+    multi_asset_sensor,
     op,
     repository,
     resource,
+    run_failure_sensor,
+    run_status_sensor,
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
+    with_resources,
+)
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
-    AssetGroup,
-    DynamicOutputDefinition,
-    InputDefinition,
-    Materialization,
-    ModeDefinition,
-    OpExecutionContext,
-    OutputDefinition,
-    PartitionSetDefinition,
-    PresetDefinition,
     build_assets_job,
-    daily_schedule,
-    hourly_schedule,
-    lambda_solid,
-    monthly_schedule,
-    pipeline,
-    solid,
-    weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
-    infer_pipeline_selector,
+    infer_job_selector,
     main_repo_location_name,
     main_repo_name,
 )
+from typing_extensions import Literal, Never
+
+T = TypeVar("T")
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
-def df_input_schema(_context, path):
+def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
     with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
-
-
-@dagster_type_materializer(String)
-def df_output_schema(_context, path, value):
-    with open(path, "w", encoding="utf8") as fd:
-        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
-        writer.writeheader()
-        writer.writerows(rowdicts=value)
-
-    return AssetMaterialization.file(path)
 
 
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name="PoorMansDataFrame",
     loader=df_input_schema,
-    materializer=df_output_schema,
 )
 
 
 @contextmanager
-def define_test_out_of_process_context(instance):
+def define_test_out_of_process_context(
+    instance: DagsterInstance,
+) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
     with define_out_of_process_context(__file__, main_repo_name(), instance) as context:
         yield context
@@ -148,7 +152,21 @@ def create_main_recon_repo():
 
 
 @contextmanager
-def get_main_workspace(instance):
+def get_workspace_process_context(instance: DagsterInstance) -> Iterator[WorkspaceProcessContext]:
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "repo.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context
+
+
+@contextmanager
+def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -162,148 +180,122 @@ def get_main_workspace(instance):
 
 
 @contextmanager
-def get_main_external_repo(instance):
+def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
     with get_main_workspace(instance) as workspace:
-        location = workspace.get_repository_location(main_repo_location_name())
+        location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("num", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+@op(
+    ins={"num": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def sum_solid(num):
+def sum_op(num):
     sum_df = deepcopy(num)
     for x in sum_df:
         x["sum"] = int(x["num1"]) + int(x["num2"])
     return sum_df
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+@op(
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def sum_sq_solid(sum_df):
+def sum_sq_op(sum_df):
     sum_sq_df = deepcopy(sum_df)
     for x in sum_sq_df:
         x["sum_sq"] = int(x["sum"]) ** 2
     return sum_sq_df
 
 
-@solid(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_defs=[OutputDefinition(PoorMansDataFrame)],
+@op(
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def df_expectations_solid(_context, sum_df):
+def df_expectations_op(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
     yield ExpectationResult(label="other_expectation", success=True)
     yield Output(sum_df)
 
 
-def csv_hello_world_solids_config():
-    return {
-        "solids": {
-            "sum_solid": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
-        }
-    }
+def csv_hello_world_ops_config():
+    return {"ops": {"sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}}}
 
 
-@solid(config_schema={"file": Field(String)})
+@op(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config["file"], "w", encoding="utf8") as ff:
+    with open(context.op_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
         time.sleep(0.1)
 
 
-@pipeline
-def infinite_loop_pipeline():
+@job
+def infinite_loop_job():
     loop()
 
 
-@solid
-def noop_solid(_):
+@op
+def noop_op(_):
     pass
 
 
-@pipeline
-def noop_pipeline():
-    noop_solid()
+# Won't pass cloud-webserver test suite without `in_process_executor`.
+@job(executor_def=in_process_executor)
+def noop_job():
+    noop_op()
 
 
-@solid
-def solid_asset_a(_):
+@op
+def op_asset_a(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
-@solid
-def solid_asset_b(_, num):
+@op
+def op_asset_b(_, num):
     yield AssetMaterialization(asset_key="b")
     time.sleep(0.1)
     yield AssetMaterialization(asset_key="c")
     yield Output(num)
 
 
-@solid
-def solid_partitioned_asset(_):
+@op
+def op_partitioned_asset(_):
     yield AssetMaterialization(asset_key="a", partition="partition_1")
     yield Output(1)
 
 
-@solid
-def tag_asset_solid(_):
+@op
+def tag_asset_op(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
-def lineage_solid_factory(solid_name_prefix, key, partitions=None):
-    @solid(
-        name=f"{solid_name_prefix}_{key}",
-        output_defs=[OutputDefinition(asset_key=AssetKey(key), asset_partitions=partitions)],
-    )
-    def _solid(_, _in1):
-        yield Output(1)
-
-    return _solid
+@job
+def single_asset_job():
+    op_asset_a()
 
 
-@pipeline
-def single_asset_pipeline():
-    solid_asset_a()
+@job
+def multi_asset_job():
+    op_asset_b(op_asset_a())
 
 
-@pipeline
-def multi_asset_pipeline():
-    solid_asset_b(solid_asset_a())
+@job
+def partitioned_asset_job():
+    op_partitioned_asset()
 
 
-@pipeline
-def partitioned_asset_pipeline():
-    solid_partitioned_asset()
+@job
+def asset_tag_job():
+    tag_asset_op()
 
 
-@pipeline
-def asset_tag_pipeline():
-    tag_asset_solid()
-
-
-@pipeline
-def asset_lineage_pipeline():
-    lineage_solid_factory("alp", "b")(lineage_solid_factory("alp", "a")(noop_solid()))
-
-
-@pipeline
-def partitioned_asset_lineage_pipeline():
-    lineage_solid_factory("palp", "b", set("1"))(
-        lineage_solid_factory("palp", "a", set("1"))(noop_solid())
-    )
-
-
-@pipeline
-def pipeline_with_expectations():
-    @solid(output_defs=[])
+@job
+def job_with_expectations():
+    @op(out={})
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -312,7 +304,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Just because."}},
         )
 
-    @solid(output_defs=[])
+    @op(out={})
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -321,7 +313,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
-    @solid(output_defs=[])
+    @op(out={})
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label="no_metadata", description="Successful")
 
@@ -330,25 +322,25 @@ def pipeline_with_expectations():
     emit_successful_expectation_no_metadata()
 
 
-@pipeline
+@job
 def more_complicated_config():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(String),
             "field_two": Field(String, is_required=False),
             "field_three": Field(String, is_required=False, default_value="some_value"),
         }
     )
-    def a_solid_with_three_field_config(_context):
+    def op_with_three_field_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_three_field_config()
+    noop_op()
+    op_with_three_field_config()
 
 
-@pipeline
+@job
 def config_with_map():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(Map(str, int, key_label_name="username")),
             "field_two": Field({bool: int}, is_required=False),
@@ -359,19 +351,17 @@ def config_with_map():
             ),
         }
     )
-    def a_solid_with_map_config(_context):
+    def op_with_map_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_map_config()
+    noop_op()
+    op_with_map_config()
 
 
-@pipeline
+@job
 def more_complicated_nested_config():
-    @solid(
-        name="a_solid_with_multilayered_config",
-        input_defs=[],
-        output_defs=[],
+    @op(
+        name="op_with_multilayered_config",
         config_schema={
             "field_any": Any,
             "field_one": String,
@@ -383,130 +373,126 @@ def more_complicated_nested_config():
                 "field_six_nullable_int_list": Field([Noneable(int)], is_required=False),
             },
         },
+        out={},
     )
-    def a_solid_with_multilayered_config(_):
+    def op_with_multilayered_config(_):
         return None
 
-    a_solid_with_multilayered_config()
+    op_with_multilayered_config()
 
 
-@pipeline(
-    mode_defs=[default_mode_def_for_test],
-    preset_defs=[
-        PresetDefinition.from_files(
-            name="prod",
-            config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_prod.yaml")
-            ],
-        ),
-        PresetDefinition.from_files(
-            name="test",
-            config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_test.yaml")
-            ],
-        ),
-        PresetDefinition(
-            name="test_inline",
-            run_config={
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
-                    }
-                }
-            },
-        ),
-    ],
-)
+@job(executor_def=in_process_executor)
 def csv_hello_world():
-    sum_sq_solid(sum_df=sum_solid())
+    sum_sq_op(sum_df=sum_op())
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_with_expectations():
-    ss = sum_solid()
-    sum_sq_solid(sum_df=ss)
-    df_expectations_solid(sum_df=ss)
+    ss = sum_op()
+    sum_sq_op(sum_df=ss)
+    df_expectations_op(sum_df=ss)
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_two():
-    sum_solid()
+    sum_op()
 
 
-@solid
-def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+@op
+def op_that_gets_tags(context):
+    return context.run.tags
 
 
-@pipeline(mode_defs=[default_mode_def_for_test], tags={"tag_key": "tag_value"})
+@job(tags={"tag_key": "tag_value"})
 def hello_world_with_tags():
-    solid_that_gets_tags()
+    op_that_gets_tags()
 
 
-@solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
-def solid_def(_):
+@op(name="op_with_list", ins={}, out={}, config_schema=[int])
+def op_def(_):
     return None
 
 
-@pipeline
-def pipeline_with_input_output_metadata():
-    @solid(
-        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
-        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+@job
+def job_with_input_output_metadata():
+    @op(
+        ins={"foo": In(Int, metadata={"a": "b"})},
+        out={"bar": Out(Int, metadata={"c": "d"})},
     )
-    def solid_with_input_output_metadata(foo):
+    def op_with_input_output_metadata(foo):
         return foo + 1
 
-    solid_with_input_output_metadata()
+    op_with_input_output_metadata()
 
 
-@pipeline
-def pipeline_with_list():
-    solid_def()
+@job
+def job_with_list():
+    op_def()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def csv_hello_world_df_input():
-    sum_sq_solid(sum_solid())
+    sum_sq_op(sum_op())
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def no_config_pipeline():
-    @lambda_solid
+integers_partitions = StaticPartitionsDefinition([str(i) for i in range(10)])
+
+integers_config = PartitionedConfig(
+    partitions_def=integers_partitions,
+    run_config_for_partition_fn=lambda partition: {},
+    tags_for_partition_fn=lambda partition: {"foo": partition.name},
+)
+
+
+@job(partitions_def=integers_partitions, config=integers_config)
+def integers():
+    @op
+    def return_integer():
+        return 1
+
+    return_integer()
+
+
+alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
+
+
+@job(partitions_def=alpha_partitions)
+def no_config_job():
+    @op
     def return_hello():
         return "Hello"
 
     return_hello()
 
 
-@pipeline
-def no_config_chain_pipeline():
-    @lambda_solid
+@job
+def no_config_chain_job():
+    @op
     def return_foo():
         return "foo"
 
-    @lambda_solid
-    def return_hello_world(_):
+    @op
+    def return_hello_world(_foo):
         return "Hello World"
 
     return_hello_world(return_foo())
 
 
-@pipeline
-def scalar_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(String))
+@job
+def scalar_output_job():
+    @op(out=Out(String))
     def return_str():
         return "foo"
 
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def return_int():
         return 34234
 
-    @lambda_solid(output_def=OutputDefinition(Bool))
+    @op(out=Out(Bool))
     def return_bool():
         return True
 
-    @lambda_solid(output_def=OutputDefinition(Any))
+    @op(out=Out(Any))
     def return_any():
         return "dkjfkdjfe"
 
@@ -516,9 +502,9 @@ def scalar_output_pipeline():
     return_any()
 
 
-@pipeline
-def pipeline_with_enum_config():
-    @solid(
+@job
+def job_with_enum_config():
+    @op(
         config_schema=Enum(
             "TestEnum",
             [
@@ -534,9 +520,9 @@ def pipeline_with_enum_config():
     takes_an_enum()
 
 
-@pipeline
-def naughty_programmer_pipeline():
-    @lambda_solid
+@job
+def naughty_programmer_job():
+    @op
     def throw_a_thing():
         try:
             try:
@@ -547,24 +533,25 @@ def naughty_programmer_pipeline():
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
-            raise Exception("Even more outer exception") from e
+            # throw a Failure here so we can test metadata
+            raise Failure("Even more outer exception", metadata={"top_level": True}) from e
 
     throw_a_thing()
 
 
-@pipeline
-def pipeline_with_invalid_definition_error():
+@job
+def job_with_invalid_definition_error():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -591,46 +578,29 @@ def double_adder_resource(init_context):
     )
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="add_mode",
-            resource_defs={"op": adder_resource},
-            description="Mode that adds things",
-        ),
-        ModeDefinition(
-            name="mult_mode",
-            resource_defs={"op": multer_resource},
-            description="Mode that multiplies things",
-        ),
-        ModeDefinition(
-            name="double_adder",
-            resource_defs={"op": double_adder_resource},
-            description="Mode that adds two numbers to thing",
-        ),
-    ],
-    preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
-)
-def multi_mode_with_resources():
-    @solid(required_resource_keys={"op"})
-    def apply_to_three(context):
-        return context.resources.op(3)
-
-    apply_to_three()
-
-
 @resource(config_schema=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"R1": req_resource})])
-def required_resource_pipeline():
-    @solid(required_resource_keys={"R1"})
-    def solid_with_required_resource(_):
-        return 1
+@op(required_resource_keys={"R1"})
+def op_with_required_resource(_):
+    return 1
 
-    solid_with_required_resource()
+
+@job(resource_defs={"R1": req_resource})
+def required_resource_job():
+    op_with_required_resource()
+
+
+@resource(config_schema=Field(Int))
+def req_resource_config(_):
+    return 1
+
+
+@job(resource_defs={"R1": req_resource_config})
+def required_resource_config_job():
+    op_with_required_resource()
 
 
 @logger(config_schema=Field(str))
@@ -647,7 +617,7 @@ def bar_logger(init_context):
             self.prefix = prefix
             super(BarLogger, self).__init__(name, *args, **kwargs)
 
-        def log(self, lvl, msg, *args, **kwargs):  # pylint: disable=arguments-differ
+        def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
             super(BarLogger, self).log(lvl, msg, *args, **kwargs)
 
@@ -655,30 +625,11 @@ def bar_logger(init_context):
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="foo_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"foo": foo_logger},
-            description="Mode with foo logger",
-        ),
-        ModeDefinition(
-            name="bar_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"bar": bar_logger},
-            description="Mode with bar logger",
-        ),
-        ModeDefinition(
-            name="foobar_mode",
-            resource_defs={"io_manager": fs_io_manager},
-            logger_defs={"foo": foo_logger, "bar": bar_logger},
-            description="Mode with multiple loggers",
-        ),
-    ]
+@job(
+    logger_defs={"foo": foo_logger, "bar": bar_logger},
 )
-def multi_mode_with_loggers():
-    @solid
+def loggers_job():
+    @op
     def return_six(context):
         context.log.critical("OMG!")
         return 6
@@ -686,22 +637,22 @@ def multi_mode_with_loggers():
     return_six()
 
 
-@pipeline
-def composites_pipeline():
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@job
+def composites_job():
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def div_two(num):
         return num / 2
 
-    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-    def add_two(num):
+    @graph
+    def add_two(num: int) -> int:
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-    def add_four(num):
+    @graph
+    def add_four(num: int) -> int:
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
     @graph
@@ -711,66 +662,58 @@ def composites_pipeline():
     div_four(add_four())
 
 
-@pipeline
-def materialization_pipeline():
-    @solid
+@job
+def materialization_job():
+    @op
     def materialize(_):
         yield AssetMaterialization(
             asset_key="all_types",
             description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
+            metadata={
+                "text": "text is cool",
+                "url": MetadataValue.url("https://bigty.pe/neato"),
+                "path": MetadataValue.path("/tmp/awesome"),
+                "json": {"is_dope": True},
+                "python class": MetadataValue.python_artifact(AssetMaterialization),
+                "python_function": MetadataValue.python_artifact(file_relative_path),
+                "float": 1.2,
+                "int": 1,
+                "float NaN": float("nan"),
+                "long int": LONG_INT,
+                "pipeline run": MetadataValue.dagster_run("fake_run_id"),
+                "my asset": AssetKey("my_asset"),
+                "table": MetadataValue.table(
+                    records=[
+                        TableRecord(dict(foo=1, bar=2)),
+                        TableRecord(dict(foo=3, bar=4)),
+                    ],
                 ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-                MetadataEntry(
-                    "table",
-                    value=MetadataValue.table(
-                        records=[
-                            TableRecord(foo=1, bar=2),
-                            TableRecord(foo=3, bar=4),
-                        ],
-                    ),
-                ),
-                MetadataEntry(
-                    "table_schema",
-                    value=TableSchema(
-                        columns=[
-                            TableColumn(
-                                name="foo",
-                                type="integer",
-                                constraints=TableColumnConstraints(unique=True),
-                            ),
-                            TableColumn(name="bar", type="string"),
-                        ],
-                        constraints=TableConstraints(
-                            other=["some constraint"],
+                "table_schema": TableSchema(
+                    columns=[
+                        TableColumn(
+                            name="foo",
+                            type="integer",
+                            constraints=TableColumnConstraints(unique=True),
                         ),
+                        TableColumn(name="bar", type="string"),
+                    ],
+                    constraints=TableConstraints(
+                        other=["some constraint"],
                     ),
                 ),
-            ],
+                "my job": MetadataValue.job("materialization_job", location_name="test_location"),
+            },
         )
         yield Output(None)
 
     materialize()
 
 
-@pipeline
-def spew_pipeline():
-    @solid
+@job
+def spew_job():
+    @op
     def spew(_):
-        print("HELLO WORLD")  # pylint: disable=print-call
+        print("HELLO WORLD")  # noqa: T201
 
     spew()
 
@@ -786,22 +729,18 @@ def retry_config_resource(context):
     return context.resource_config["count"]
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "retry_count": retry_config_resource,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "io_manager": fs_io_manager,
+        "retry_count": retry_config_resource,
+    }
 )
 def eventually_successful():
-    @solid
+    @op
     def spawn() -> int:
         return 0
 
-    @solid(
+    @op(
         required_resource_keys={"retry_count"},
     )
     def fail(context: OpExecutionContext, depth: int) -> int:
@@ -810,11 +749,11 @@ def eventually_successful():
 
         return depth + 1
 
-    @solid
+    @op
     def reset(depth: int) -> int:
         return depth
 
-    @solid
+    @op
     def collect(fan_in: List[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
@@ -827,21 +766,19 @@ def eventually_successful():
     collect([f1, f2, f3])
 
 
-@pipeline
+# The tests that use this rely on it using in-process execution.
+@job(executor_def=in_process_executor)
 def hard_failer():
-    @solid(
+    @op(
         config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
-        output_defs=[OutputDefinition(Int)],
     )
-    def hard_fail_or_0(context):
-        if context.solid_config["fail"]:
+    def hard_fail_or_0(context) -> int:
+        if context.op_config["fail"]:
             segfault()
         return 0
 
-    @solid(
-        input_defs=[InputDefinition("n", Int)],
-    )
-    def increment(_, n):
+    @op
+    def increment(_, n: int) -> int:
         return n + 1
 
     increment(hard_fail_or_0())
@@ -857,70 +794,66 @@ def resource_b(_):
     return "B"
 
 
-@solid(required_resource_keys={"a"})
+@op(required_resource_keys={"a"})
 def start(context):
     assert context.resources.a == "A"
     return 1
 
 
-@solid(required_resource_keys={"b"})
-def will_fail(context, num):  # pylint: disable=unused-argument
+@op(required_resource_keys={"b"})
+def will_fail(context, num):
     assert context.resources.b == "B"
     raise Exception("fail")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "a": resource_a,
-                "b": resource_b,
-                "io_manager": fs_io_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "a": resource_a,
+        "b": resource_b,
+        "io_manager": fs_io_manager,
+    }
 )
-def retry_resource_pipeline():
+def retry_resource_job():
     will_fail(start())
 
 
-@solid(
+@op(
     config_schema={"fail": bool},
-    input_defs=[InputDefinition("inp", str)],
-    output_defs=[
-        OutputDefinition(str, "start_fail", is_required=False),
-        OutputDefinition(str, "start_skip", is_required=False),
-    ],
+    ins={"inp": In(str)},
+    out={
+        "start_fail": Out(str, is_required=False),
+        "start_skip": Out(str, is_required=False),
+    },
 )
-def can_fail(context, inp):  # pylint: disable=unused-argument
-    if context.solid_config["fail"]:
+def can_fail(context, inp):
+    if context.op_config["fail"]:
         raise Exception("blah")
 
     yield Output("okay perfect", "start_fail")
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(str, "success", is_required=False),
-        OutputDefinition(str, "skip", is_required=False),
-    ],
+@op(
+    out={
+        "success": Out(str, is_required=False),
+        "skip": Out(str, is_required=False),
+    },
 )
 def multi(_):
     yield Output("okay perfect", "success")
 
 
-@solid
+@op
 def passthrough(_, value):
     return value
 
 
-@solid(input_defs=[InputDefinition("start", Nothing)], output_defs=[])
+@op(ins={"start": In(Nothing)}, out={})
 def no_output(_):
     yield ExpectationResult(True)
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def retry_multi_output_pipeline():
+@job
+def retry_multi_output_job():
     multi_success, multi_skip = multi()
     fail, skip = can_fail(multi_success)
     no_output.alias("child_multi_skip")(multi_skip)
@@ -928,13 +861,13 @@ def retry_multi_output_pipeline():
     no_output.alias("grandchild_fail")(passthrough.alias("child_fail")(fail))
 
 
-@pipeline(tags={"foo": "bar"}, mode_defs=[default_mode_def_for_test])
-def tagged_pipeline():
-    @lambda_solid
-    def simple_solid():
+@job(tags={"foo": "bar"})
+def tagged_job():
+    @op
+    def simple_op():
         return "Hello"
 
-    simple_solid()
+    simple_op()
 
 
 @resource
@@ -942,70 +875,60 @@ def disable_gc(_context):
     # Workaround for termination signals being raised during GC and getting swallowed during
     # tests
     try:
-        print("Disabling GC")  # pylint: disable=print-call
+        print("Disabling GC")  # noqa: T201
         gc.disable()
         yield
     finally:
-        print("Re-enabling GC")  # pylint: disable=print-call
+        print("Re-enabling GC")  # noqa: T201
         gc.enable()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
-    ]
+# Using in-process executor prevents test flaking
+@job(
+    resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc},
+    executor_def=in_process_executor,
 )
-def retry_multi_input_early_terminate_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int))
+def retry_multi_input_early_terminate_job():
+    @op(out=Out(Int))
     def return_one():
         return 1
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
         required_resource_keys={"disable_gc"},
     )
-    def get_input_one(context, one):
-        if context.solid_config["wait_to_terminate"]:
+    def get_input_one(context, one: int) -> int:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
         required_resource_keys={"disable_gc"},
     )
-    def get_input_two(context, one):
-        if context.solid_config["wait_to_terminate"]:
+    def get_input_two(context, one: int) -> int:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
 
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("input_one", Int),
-            InputDefinition("input_two", Int),
-        ],
-        output_def=OutputDefinition(Int),
-    )
-    def sum_inputs(input_one, input_two):
+    @op
+    def sum_inputs(input_one: int, input_two: int) -> int:
         return input_one + input_two
 
     step_one = return_one()
     sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def dynamic_pipeline():
-    @solid
+@job
+def dynamic_job():
+    @op
     def multiply_by_two(context, y):
         context.log.info("multiply_by_two is returning " + str(y * 2))
         return y * 2
 
-    @solid
+    @op
     def multiply_inputs(context, y, ten, should_fail):
         current_run = context.instance.get_run_by_id(context.run_id)
         if should_fail:
@@ -1014,20 +937,19 @@ def dynamic_pipeline():
         context.log.info("multiply_inputs is returning " + str(y * ten))
         return y * ten
 
-    @solid
+    @op
     def emit_ten(_):
         return 10
 
-    @solid(output_defs=[DynamicOutputDefinition()])
+    @op(out=DynamicOut())
     def emit(_):
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))
 
-    @solid
+    @op
     def sum_numbers(_, nums):
         return sum(nums)
 
-    # pylint: disable=no-member
     multiply_by_two.alias("double_total")(
         sum_numbers(
             emit()
@@ -1039,192 +961,123 @@ def dynamic_pipeline():
     )
 
 
-def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
-    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
+@job
+def basic_job():
+    pass
+
+
+def get_retry_multi_execution_params(
+    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
+) -> Mapping[str, Any]:
+    selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
         "mode": "default",
         "selector": selector,
         "runConfigData": {
-            "solids": {"can_fail": {"config": {"fail": should_fail}}},
+            "ops": {"can_fail": {"config": {"fail": should_fail}}},
         },
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
+            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else [],
         },
     }
 
 
-def last_empty_partition(context, partition_set_def):
-    check.inst_param(context, "context", ScheduleEvaluationContext)
-    partition_set_def = check.inst_param(
-        partition_set_def, "partition_set_def", PartitionSetDefinition
-    )
-
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if not partitions:
-        return None
-    selected = None
-    for partition in reversed(partitions):
-        filters = RunsFilter.for_partition(partition_set_def, partition)
-        matching = context.instance.get_runs(filters)
-        if not any(run.status == DagsterRunStatus.SUCCESS for run in matching):
-            selected = partition
-            break
-    return selected
-
-
 def define_schedules():
-    integer_partition_set = PartitionSetDefinition(
-        name="scheduled_integer_partitions",
-        pipeline_name="no_config_pipeline",
-        partition_fn=lambda: [Partition(x) for x in range(1, 10)],
-        tags_fn_for_partition=lambda _partition: {"test": "1234"},
+    no_config_job_hourly_schedule = ScheduleDefinition(
+        name="no_config_job_hourly_schedule",
+        cron_schedule="0 0 * * *",
+        job_name="no_config_job",
     )
 
-    no_config_pipeline_hourly_schedule = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule",
+    no_config_job_hourly_schedule_with_config_fn = ScheduleDefinition(
+        name="no_config_job_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
-    )
-
-    no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule_with_config_fn",
-        cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
         should_execute=lambda _context: False,
     )
 
     dynamic_config = ScheduleDefinition(
         name="dynamic_config",
         cron_schedule="0 0 * * *",
-        job_name="no_config_pipeline",
+        job_name="no_config_job",
     )
 
-    partition_based = integer_partition_set.create_schedule_definition(
-        schedule_name="partition_based",
-        cron_schedule="0 0 * * *",
-        partition_selector=last_empty_partition,
-    )
+    def get_cron_schedule(
+        delta: datetime.timedelta, schedule_type: Literal["daily", "hourly"] = "daily"
+    ) -> str:
+        time = (datetime.datetime.now() + delta).time()
+        hour = time.hour if schedule_type == "daily" else "*"
+        return f"{time.minute} {hour} * * *"
 
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-    )
-    def partition_based_decorator(_date):
-        return {}
+    def throw_error() -> Never:
+        raise Exception("This is an error")
 
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+    @schedule(
+        cron_schedule=get_cron_schedule(datetime.timedelta(hours=2)),
+        job_name="no_config_job",
         default_status=DefaultScheduleStatus.RUNNING,
     )
-    def running_in_code_schedule(_date):
-        return {}
-
-    @daily_schedule(
-        pipeline_name="multi_mode_with_loggers",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        mode="foo_mode",
-    )
-    def partition_based_multi_mode_decorator(_date):
-        return {}
-
-    @hourly_schedule(
-        pipeline_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_hourly_decorator(_date):
-        return {}
-
-    @daily_schedule(
-        pipeline_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=2),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_daily_decorator(_date):
-        return {}
-
-    @monthly_schedule(
-        pipeline_name="no_config_chain_pipeline",
-        start_date=(today_at_midnight().subtract(days=100)).replace(day=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_monthly_decorator(_date):
-        return {}
-
-    @weekly_schedule(
-        pipeline_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=50),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_weekly_decorator(_date):
+    def running_in_code_schedule(_context):
         return {}
 
     # Schedules for testing the user error boundary
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # noqa: F821
+    @schedule(
+        cron_schedule="@daily",
+        job_name="no_config_job",
+        should_execute=lambda _: throw_error(),
     )
-    def should_execute_error_schedule(_date):
+    def should_execute_error_schedule(_context):
         return {}
 
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # noqa: F821
+    @schedule(
+        cron_schedule="@daily",
+        job_name="no_config_job",
+        tags_fn=lambda _: throw_error(),
     )
-    def tags_error_schedule(_date):
+    def tags_error_schedule(_context):
         return {}
 
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
+    @schedule(
+        cron_schedule="@daily",
+        job_name="no_config_job",
     )
-    def run_config_error_schedule(_date):
-        return asdf  # noqa: F821
+    def run_config_error_schedule(_context):
+        throw_error()
 
-    @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight("US/Central") - datetime.timedelta(days=1),
+    @schedule(
+        cron_schedule="@daily",
+        job_name="no_config_job",
         execution_timezone="US/Central",
     )
-    def timezone_schedule(_date):
+    def timezone_schedule(_context):
         return {}
 
-    tagged_pipeline_schedule = ScheduleDefinition(
-        name="tagged_pipeline_schedule",
+    tagged_job_schedule = ScheduleDefinition(
+        name="tagged_job_schedule",
         cron_schedule="0 0 * * *",
-        job_name="tagged_pipeline",
+        job_name="tagged_job",
     )
 
-    tagged_pipeline_override_schedule = ScheduleDefinition(
-        name="tagged_pipeline_override_schedule",
+    tagged_job_override_schedule = ScheduleDefinition(
+        name="tagged_job_override_schedule",
         cron_schedule="0 0 * * *",
-        job_name="tagged_pipeline",
+        job_name="tagged_job",
         tags={"foo": "notbar"},
     )
 
     invalid_config_schedule = ScheduleDefinition(
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
-        job_name="pipeline_with_enum_config",
-        run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
+        job_name="job_with_enum_config",
+        run_config={"ops": {"takes_an_enum": {"config": "invalid"}}},
     )
 
     @schedule(
@@ -1234,179 +1087,195 @@ def define_schedules():
     def composite_cron_schedule(_context):
         return {}
 
+    @schedule(
+        cron_schedule="* * * * *", job=basic_job, default_status=DefaultScheduleStatus.RUNNING
+    )
+    def past_tick_schedule():
+        return {}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def provide_config_schedule():
+        return {"ops": {"the_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def always_error():
+        raise Exception("darnit")
+
     return [
         run_config_error_schedule,
-        no_config_pipeline_hourly_schedule,
-        no_config_pipeline_hourly_schedule_with_config_fn,
+        no_config_job_hourly_schedule,
+        no_config_job_hourly_schedule_with_config_fn,
         no_config_should_execute,
         dynamic_config,
-        partition_based,
-        partition_based_decorator,
-        partition_based_multi_mode_decorator,
-        solid_selection_hourly_decorator,
-        solid_selection_daily_decorator,
-        solid_selection_monthly_decorator,
-        solid_selection_weekly_decorator,
         should_execute_error_schedule,
-        tagged_pipeline_schedule,
-        tagged_pipeline_override_schedule,
+        tagged_job_schedule,
+        tagged_job_override_schedule,
         tags_error_schedule,
         timezone_schedule,
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
+        past_tick_schedule,
+        provide_config_schedule,
+        always_error,
     ]
 
 
-def define_partitions():
-    integer_set = PartitionSetDefinition(
-        name="integer_partition",
-        pipeline_name="no_config_pipeline",
-        solid_selection=["return_hello"],
-        mode="default",
-        partition_fn=lambda: [Partition(i) for i in range(10)],
-        tags_fn_for_partition=lambda partition: {"foo": partition.name},
-    )
-
-    enum_set = PartitionSetDefinition(
-        name="enum_partition",
-        pipeline_name="noop_pipeline",
-        partition_fn=lambda: ["one", "two", "three"],
-    )
-
-    chained_partition_set = PartitionSetDefinition(
-        name="chained_integer_partition",
-        pipeline_name="chained_failure_pipeline",
-        mode="default",
-        partition_fn=lambda: [Partition(i) for i in range(10)],
-    )
-
-    alphabet_partition_set = PartitionSetDefinition(
-        name="alpha_partition",
-        pipeline_name="no_config_pipeline",
-        partition_fn=lambda: list(string.ascii_lowercase),
-    )
-
-    return [integer_set, enum_set, chained_partition_set, alphabet_partition_set]
-
-
 def define_sensors():
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def always_no_config_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def always_error_sensor(_):
         raise Exception("OOPS")
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
+    def update_cursor_sensor(context):
+        if not context.cursor:
+            cursor = 0
+        else:
+            cursor = int(context.cursor)
+        cursor += 1
+        context.update_cursor(str(cursor))
+
+    @sensor(job_name="no_config_job")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def never_no_config_sensor(_):
         return SkipReason("never")
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="dynamic_partitioned_assets_job")
+    def dynamic_partition_requesting_sensor(_):
+        yield SensorResult(
+            run_requests=[RunRequest(partition_key="new_key")],
+            dynamic_partitions_requests=[
+                DynamicPartitionsDefinition(name="foo").build_add_request(
+                    ["new_key", "new_key2", "existent_key"]
+                ),
+                DynamicPartitionsDefinition(name="foo").build_delete_request(
+                    ["old_key", "nonexistent_key"]
+                ),
+            ],
+        )
+
+    @sensor(job_name="no_config_job")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
-    @sensor(job_name="no_config_pipeline", minimum_interval_seconds=60)
+    @sensor(job_name="no_config_job", minimum_interval_seconds=60)
     def custom_interval_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline", default_status=DefaultSensorStatus.RUNNING)
+    @sensor(job_name="no_config_job", default_status=DefaultSensorStatus.RUNNING)
     def running_in_code_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(job_name="no_config_pipeline")
+    @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
+
+        try:
+            raise Exception("hi hi")
+        except Exception:
+            context.log.exception("goodbye goodbye")
+
         return SkipReason()
+
+    @sensor(asset_selection=AssetSelection.all())
+    def every_asset_sensor(_):
+        return SkipReason("just kidding")
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
+    def run_status(_):
+        return SkipReason("always skip")
+
+    @asset_sensor(asset_key=AssetKey("foo"), job=single_asset_job)
+    def single_asset_sensor():
+        pass
+
+    @multi_asset_sensor(monitored_assets=[], job=single_asset_job)
+    def many_asset_sensor(_):
+        pass
+
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def fresh_sensor(_):
+        pass
+
+    @run_failure_sensor
+    def the_failure_sensor():
+        pass
+
+    automation_policy_sensor = AutomationPolicySensorDefinition(
+        "my_automation_policy_sensor",
+        asset_selection=AssetSelection.keys("fresh_diamond_bottom"),
+    )
 
     return [
         always_no_config_sensor,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
+        dynamic_partition_requesting_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
         logging_sensor,
+        update_cursor_sensor,
+        run_status,
+        single_asset_sensor,
+        many_asset_sensor,
+        fresh_sensor,
+        the_failure_sensor,
+        automation_policy_sensor,
+        every_asset_sensor,
     ]
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def chained_failure_pipeline():
-    @lambda_solid
+# The tests that use this rely on it using in-process execution.
+@job(executor_def=in_process_executor, partitions_def=integers_partitions)
+def chained_failure_job():
+    @op
     def always_succeed():
         return "hello"
 
-    @lambda_solid
-    def conditionally_fail(_):
+    @op
+    def conditionally_fail(_upstream):
         if os.path.isfile(
             os.path.join(
                 get_system_temp_directory(),
-                "chained_failure_pipeline_conditionally_fail",
+                "chained_failure_job_conditionally_fail",
             )
         ):
             raise Exception("blah")
 
         return "hello"
 
-    @lambda_solid
-    def after_failure(_):
+    @op
+    def after_failure(_upstream):
         return "world"
 
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline
-def backcompat_materialization_pipeline():
-    @solid
-    def backcompat_materialize(_):
-        yield Materialization(
-            asset_key="all_types",
-            description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
-                ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-            ],
-        )
-        yield Output(None)
-
-    backcompat_materialize()
-
-
 @graph
 def simple_graph():
-    noop_solid()
+    noop_op()
 
 
 @graph
@@ -1414,13 +1283,13 @@ def composed_graph():
     simple_graph()
 
 
-@job(config={"ops": {"a_solid_with_config": {"config": {"one": "hullo"}}}})
+@job(config={"ops": {"op_with_config": {"config": {"one": "hullo"}}}})
 def job_with_default_config():
     @op(config_schema={"one": Field(String)})
-    def a_solid_with_config(context):
+    def op_with_config(context):
         return context.op_config["one"]
 
-    a_solid_with_config()
+    op_with_config()
 
 
 @resource(config_schema={"file": Field(String)})
@@ -1443,15 +1312,13 @@ dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 @asset
 def first_asset(
     dummy_source_asset,
-):  # pylint: disable=redefined-outer-name,unused-argument
+):
     return 1
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
-    """
-    Asset that hangs forever, used to test in-progress ops.
-    """
+def hanging_asset(context, first_asset):
+    """Asset that hangs forever, used to test in-progress ops."""
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1462,7 +1329,7 @@ def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name
 @asset
 def never_runs_asset(
     hanging_asset,
-):  # pylint: disable=redefined-outer-name,unused-argument
+):
     pass
 
 
@@ -1483,7 +1350,7 @@ def my_op():
 
 
 @op(required_resource_keys={"hanging_asset_resource"})
-def hanging_op(context, my_op):  # pylint: disable=unused-argument
+def hanging_op(context, my_op):
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1492,7 +1359,7 @@ def hanging_op(context, my_op):  # pylint: disable=unused-argument
 
 
 @op
-def never_runs_op(hanging_op):  # pylint: disable=unused-argument
+def never_runs_op(hanging_op):
     pass
 
 
@@ -1510,17 +1377,18 @@ def memoization_job():
 
 
 @asset
-def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
+def downstream_asset(hanging_graph):
     return 1
 
 
-hanging_graph_asset_job = AssetGroup(
-    [hanging_graph_asset, downstream_asset],
+hanging_graph_asset_job = build_assets_job(
+    name="hanging_graph_asset_job",
+    assets=[hanging_graph_asset, downstream_asset],
     resource_defs={
         "hanging_asset_resource": hanging_asset_resource,
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
     },
-).build_job("hanging_graph_asset_job")
+)
 
 
 @asset
@@ -1529,14 +1397,25 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):  # pylint: disable=redefined-outer-name
+def asset_two(asset_one):
     return asset_one + 1
 
 
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
-static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+@asset
+def executable_asset() -> None:
+    pass
+
+
+unexecutable_asset = next(iter(external_assets_from_specs([AssetSpec("unexecutable_asset")])))
+
+executable_test_job = build_assets_job(
+    name="executable_test_job", assets=[executable_asset, unexecutable_asset]
+)
+
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
 @asset(partitions_def=static_partitions_def)
@@ -1545,15 +1424,38 @@ def upstream_static_partitioned_asset():
 
 
 @asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_1(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
+def middle_static_partitioned_asset_2(upstream_static_partitioned_asset):
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
 def downstream_static_partitioned_asset(
-    upstream_static_partitioned_asset,
-):  # pylint: disable=redefined-outer-name
-    assert upstream_static_partitioned_asset
+    middle_static_partitioned_asset_1, middle_static_partitioned_asset_2
+):
+    assert middle_static_partitioned_asset_1
+    assert middle_static_partitioned_asset_2
 
 
-static_partitioned_assets_job = build_assets_job(
-    "static_partitioned_assets_job",
-    assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):
+    assert upstream_dynamic_partitioned_asset
+
+
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    assets=[upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
 )
 
 
@@ -1585,10 +1487,15 @@ def upstream_time_partitioned_asset():
     return 1
 
 
-@asset(partitions_def=hourly_partition)
+@asset(
+    partitions_def=hourly_partition,
+    ins={
+        "upstream_time_partitioned_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping())
+    },
+)
 def downstream_time_partitioned_asset(
     upstream_time_partitioned_asset,
-):  # pylint: disable=redefined-outer-name
+):
     return upstream_time_partitioned_asset + 1
 
 
@@ -1596,6 +1503,23 @@ time_partitioned_assets_job = build_assets_job(
     "time_partitioned_assets_job",
     [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
 )
+
+
+@asset
+def unpartitioned_upstream_of_partitioned():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
+    return unpartitioned_upstream_of_partitioned
+
+
+@asset(partitions_def=WeeklyPartitionsDefinition("2023-01-01"))
+def downstream_weekly_partitioned_asset(
+    upstream_daily_partitioned_asset,
+):
+    return upstream_daily_partitioned_asset + 1
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
@@ -1607,6 +1531,43 @@ partition_materialization_job = build_assets_job(
     "partition_materialization_job",
     assets=[yield_partition_materialization],
     executor_def=in_process_executor,
+)
+
+
+@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+def fail_partition_materialization(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("fail_partition_materialization")
+    yield Output(5)
+
+
+fail_partition_materialization_job = build_assets_job(
+    "fail_partition_materialization_job",
+    assets=[fail_partition_materialization],
+    executor_def=in_process_executor,
+)
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    required_resource_keys={"hanging_asset_resource"},
+)
+def hanging_partition_asset(context):
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+hanging_partition_asset_job = build_assets_job(
+    "hanging_partition_asset_job",
+    assets=[hanging_partition_asset],
+    executor_def=in_process_executor,
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
 )
 
 
@@ -1660,17 +1621,26 @@ def nested_job():
     plus_one(subgraph())
 
 
+@job
+def req_config_job():
+    @op(config_schema={"foo": str})
+    def the_op():
+        pass
+
+    the_op()
+
+
 @asset
 def asset_1():
     yield Output(3)
 
 
-@asset(non_argument_deps={AssetKey("asset_1")})
+@asset(deps=[AssetKey("asset_1")])
 def asset_2():
     raise Exception("foo")
 
 
-@asset(non_argument_deps={AssetKey("asset_2")})
+@asset(deps=[AssetKey("asset_2")])
 def asset_3():
     yield Output(7)
 
@@ -1681,35 +1651,35 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo(context: AssetExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def bar(context: AssetExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo_bar(context: AssetExecutionContext, foo, bar):
+    assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def baz(context: AssetExecutionContext, foo_bar):
+    assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def unconnected(context: AssetExecutionContext):
+    assert context.job_def.asset_selection_data is not None
 
 
-asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+foo_job = build_assets_job("foo_job", [foo, bar, foo_bar, baz, unconnected])
 
 
 @asset(group_name="group_1")
@@ -1752,7 +1722,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset(non_argument_deps={AssetKey("diamond_source")})
+@asset(deps=[AssetKey("diamond_source")])
 def fresh_diamond_top():
     return 1
 
@@ -1767,7 +1737,10 @@ def fresh_diamond_right(fresh_diamond_top):
     return fresh_diamond_top + 1
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+@asset(
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    auto_materialize_policy=AutoMaterializePolicy.lazy(),
+)
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 
@@ -1790,17 +1763,70 @@ def multipartitions_2(multipartitions_1):
     return multipartitions_1
 
 
-# For now the only way to add assets to repositories is via AssetGroup
-# When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
-named_groups_job = AssetGroup(
+@asset(partitions_def=multipartitions_def)
+def multipartitions_fail(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("multipartitions_fail")
+    return 1
+
+
+no_partitions_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "a": StaticPartitionsDefinition([]),
+        "b": StaticPartitionsDefinition([]),
+    }
+)
+
+
+@asset(partitions_def=no_partitions_multipartitions_def)
+def no_multipartitions_1():
+    return 1
+
+
+dynamic_in_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+        "static": StaticPartitionsDefinition(["a", "b", "c"]),
+    }
+)
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_success():
+    return 1
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success):
+    raise Exception("oops")
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def single_run_backfill_policy_asset(context):
+    pass
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-03"),
+    backfill_policy=BackfillPolicy.multi_run(10),
+)
+def multi_run_backfill_policy_asset(context):
+    pass
+
+
+named_groups_job = build_assets_job(
+    "named_groups_job",
     [
         grouped_asset_1,
         grouped_asset_2,
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
-    ]
-).build_job("named_groups_job")
+    ],
+)
 
 
 @repository
@@ -1808,10 +1834,11 @@ def empty_repo():
     return []
 
 
-def define_pipelines():
+def define_jobs():
     return [
-        asset_tag_pipeline,
-        composites_pipeline,
+        asset_tag_job,
+        basic_job,
+        composites_job,
         csv_hello_world_df_input,
         csv_hello_world_two,
         csv_hello_world_with_expectations,
@@ -1820,39 +1847,37 @@ def define_pipelines():
         eventually_successful,
         hard_failer,
         hello_world_with_tags,
-        infinite_loop_pipeline,
-        materialization_pipeline,
+        infinite_loop_job,
+        integers,
+        materialization_job,
         more_complicated_config,
         more_complicated_nested_config,
         config_with_map,
-        multi_asset_pipeline,
-        multi_mode_with_loggers,
-        multi_mode_with_resources,
-        naughty_programmer_pipeline,
+        multi_asset_job,
+        loggers_job,
+        naughty_programmer_job,
         nested_job,
-        no_config_chain_pipeline,
-        no_config_pipeline,
-        noop_pipeline,
-        partitioned_asset_pipeline,
-        pipeline_with_enum_config,
-        pipeline_with_expectations,
-        pipeline_with_input_output_metadata,
-        pipeline_with_invalid_definition_error,
-        pipeline_with_list,
-        required_resource_pipeline,
-        retry_multi_input_early_terminate_pipeline,
-        retry_multi_output_pipeline,
-        retry_resource_pipeline,
-        scalar_output_pipeline,
-        single_asset_pipeline,
-        spew_pipeline,
+        no_config_chain_job,
+        no_config_job,
+        noop_job,
+        partitioned_asset_job,
+        job_with_enum_config,
+        job_with_expectations,
+        job_with_input_output_metadata,
+        job_with_invalid_definition_error,
+        job_with_list,
+        required_resource_job,
+        required_resource_config_job,
+        retry_multi_input_early_terminate_job,
+        retry_multi_output_job,
+        retry_resource_job,
+        scalar_output_job,
+        single_asset_job,
+        spew_job,
         static_partitioned_job,
-        tagged_pipeline,
-        chained_failure_pipeline,
-        dynamic_pipeline,
-        asset_lineage_pipeline,
-        partitioned_asset_lineage_pipeline,
-        backcompat_materialization_pipeline,
+        tagged_job,
+        chained_failure_job,
+        dynamic_job,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
@@ -1860,16 +1885,32 @@ def define_pipelines():
         hanging_job,
         two_ins_job,
         two_assets_job,
-        static_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        fail_partition_materialization_job,
+        hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
-        asset_group_job,
+        asset_check_job,
+        foo_job,
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
+        req_config_job,
+        executable_test_job,
     ]
+
+
+typed_assets_job = define_asset_job(
+    "typed_assets",
+    AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
+)
+
+
+@schedule(cron_schedule="* * * * *", job=typed_assets_job)
+def asset_job_schedule():
+    return {}
 
 
 def define_asset_jobs():
@@ -1877,16 +1918,34 @@ def define_asset_jobs():
         untyped_asset,
         typed_asset,
         typed_multi_asset,
-        define_asset_job(
-            "typed_assets",
-            AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
-        ),
+        typed_assets_job,
         multipartitions_1,
         multipartitions_2,
         define_asset_job(
             "multipartitions_job",
             AssetSelection.assets(multipartitions_1, multipartitions_2),
             partitions_def=multipartitions_def,
+        ),
+        no_multipartitions_1,
+        define_asset_job(
+            "no_multipartitions_job",
+            AssetSelection.assets(no_multipartitions_1),
+            partitions_def=no_partitions_multipartitions_def,
+        ),
+        multipartitions_fail,
+        define_asset_job(
+            "multipartitions_fail_job",
+            AssetSelection.assets(multipartitions_fail),
+            partitions_def=multipartitions_def,
+        ),
+        dynamic_in_multipartitions_success,
+        dynamic_in_multipartitions_fail,
+        define_asset_job(
+            "dynamic_in_multipartitions_success_job",
+            AssetSelection.assets(
+                dynamic_in_multipartitions_success, dynamic_in_multipartitions_fail
+            ),
+            partitions_def=dynamic_in_multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,
@@ -1896,27 +1955,107 @@ def define_asset_jobs():
         define_asset_job(
             "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
+        upstream_daily_partitioned_asset,
+        downstream_weekly_partitioned_asset,
+        unpartitioned_upstream_of_partitioned,
+        upstream_static_partitioned_asset,
+        middle_static_partitioned_asset_1,
+        middle_static_partitioned_asset_2,
+        downstream_static_partitioned_asset,
+        define_asset_job(
+            "static_partitioned_assets_job",
+            AssetSelection.assets(upstream_static_partitioned_asset).downstream(),
+        ),
+        with_resources(
+            [hanging_partition_asset],
+            {
+                "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+                "hanging_asset_resource": hanging_asset_resource,
+            },
+        ),
+        subsettable_checked_multi_asset,
+        checked_multi_asset_job,
+        check_in_op_asset,
+        asset_check_job,
+        single_run_backfill_policy_asset,
+        multi_run_backfill_policy_asset,
     ]
 
 
-@repository
-def test_repo():
-    return (
-        define_pipelines()
-        + define_schedules()
-        + define_sensors()
-        + define_partitions()
-        + define_asset_jobs()
+@asset_check(asset=asset_1, description="asset_1 check")
+def my_check(asset_1):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "bar",
+            "baz": "quux",
+        },
     )
 
 
-@repository
+@asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
+def check_in_op_asset():
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
+
+
+asset_check_job = build_assets_job(
+    "asset_check_job", [asset_1, check_in_op_asset], asset_checks=[my_check]
+)
+
+
+@multi_asset(
+    outs={
+        "one": AssetOut(key="one", is_required=False),
+        "two": AssetOut(key="two", is_required=False),
+    },
+    check_specs=[
+        AssetCheckSpec("my_check", asset="one"),
+        AssetCheckSpec("my_other_check", asset="one"),
+    ],
+    can_subset=True,
+)
+def subsettable_checked_multi_asset(context: OpExecutionContext):
+    if AssetKey("one") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+    if AssetKey("two") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
+    if AssetCheckKey(AssetKey("one"), "my_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_check", passed=True)
+    if AssetCheckKey(AssetKey("one"), "my_other_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_other_check", passed=True)
+
+
+checked_multi_asset_job = define_asset_job(
+    "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
+)
+
+
+def define_asset_checks():
+    return [
+        my_check,
+    ]
+
+
+@repository(default_executor_def=in_process_executor)
+def test_repo():
+    return [
+        *define_jobs(),
+        *define_schedules(),
+        asset_job_schedule,
+        *define_sensors(),
+        *define_asset_jobs(),
+        *define_asset_checks(),
+    ]
+
+
+defs = Definitions()
+
+
+@repository(default_executor_def=in_process_executor)
 def test_dict_repo():
     return {
-        "pipelines": {pipeline.name: pipeline for pipeline in define_pipelines()},
+        "jobs": {job.name: job for job in define_jobs()},
         "schedules": {schedule.name: schedule for schedule in define_schedules()},
         "sensors": {sensor.name: sensor for sensor in define_sensors()},
-        "partition_sets": {
-            partition_set.name: partition_set for partition_set in define_partitions()
-        },
     }

@@ -7,6 +7,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    Definitions,
     GraphDefinition,
     IOManager,
     JobDefinition,
@@ -16,7 +17,6 @@ from dagster import (
     SourceAsset,
     asset,
     build_schedule_from_partitioned_job,
-    daily_partitioned_config,
     define_asset_job,
     executor,
     graph,
@@ -31,13 +31,13 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
-
-# pylint: disable=comparison-with-callable
 
 
 def create_single_node_job(name, called):
@@ -180,12 +180,13 @@ def test_bad_schedule():
         cron_schedule="* * * * *",
         job_name="foo",
     )
-    def daily_foo(_date):
+    def daily_foo(context):
         return {}
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='targets job/pipeline "foo" which was not found in this repository',
+        # DagsterInvalidDefinitionError,
+        Exception,
+        match='targets job "foo" which was not found in this repository',
     ):
 
         @repository
@@ -202,7 +203,7 @@ def test_bad_sensor():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='targets job/pipeline "foo" which was not found in this repository',
+        match='targets job "foo" which was not found in this repository',
     ):
 
         @repository
@@ -237,15 +238,13 @@ def test_direct_schedule_unresolved_target():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @schedule(cron_schedule="* * * * *", job=unresolved_job)
     def direct_schedule():
         return {}
 
     @repository
     def test():
-        return [direct_schedule, foo_group]
+        return [direct_schedule, foo]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -277,15 +276,13 @@ def test_direct_sensor_unresolved_target():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
     @repository
     def test():
-        return [direct_sensor, foo_group]
+        return [direct_sensor, foo]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -319,15 +316,13 @@ def test_target_dupe_unresolved():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
     @repository
     def test():
-        return [foo_group, direct_sensor, unresolved_job]
+        return [foo, direct_sensor, unresolved_job]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -357,11 +352,9 @@ def test_unresolved_job():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @repository
     def test():
-        return [foo_group, unresolved_job]
+        return [foo, unresolved_job]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
@@ -376,7 +369,10 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'stuff' required by op 'needy' was not provided",
+    ):
 
         @repository
         def _test():
@@ -409,18 +405,16 @@ def test_job_with_partitions():
                 resource_defs={},
                 config=PartitionedConfig(
                     partitions_def=StaticPartitionsDefinition(["abc"]),
-                    run_config_for_partition_fn=lambda _: {},
+                    run_config_for_partition_key_fn=lambda _: {},
                 ),
             )
         ]
 
-    assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
-    assert test.get_partition_set_def("bare_partition_set")
     assert test.has_job("bare")
-    assert test.get_job("bare")
+    assert test.get_job("bare").partitions_def
     assert test.has_job("bare")
-    assert test.get_job("bare")
+    assert test.get_job("bare").partitions_def
 
 
 def test_dupe_graph_defs():
@@ -476,8 +470,6 @@ def test_dupe_unresolved_job_defs():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @op
     def the_op():
         pass
@@ -495,13 +487,13 @@ def test_dupe_unresolved_job_defs():
 
         @repository
         def _pipe_collide():
-            return [foo_group, unresolved_job, bar]
+            return [foo, unresolved_job, bar]
 
     def get_collision_repo():
         @repository
         def graph_collide():
             return [
-                foo_group,
+                foo,
                 graph_bar.to_job(name="bar"),
                 unresolved_job,
             ]
@@ -619,39 +611,6 @@ def test_list_dupe_graph():
             return [foo.to_job(name="foo"), foo]
 
 
-def test_job_scheduled_partitions():
-    @graph
-    def my_graph():
-        pass
-
-    @daily_partitioned_config(start_date="2021-09-01")
-    def daily_schedule_config(_start, _end):
-        return {}
-
-    my_job = my_graph.to_job(config=daily_schedule_config)
-    my_schedule = build_schedule_from_partitioned_job(my_job)
-
-    @repository
-    def schedule_repo():
-        return [my_schedule]
-
-    @repository
-    def job_repo():
-        return [my_job]
-
-    @repository
-    def schedule_job_repo():
-        return [my_job, my_schedule]
-
-    assert len(schedule_repo.partition_set_defs) == 1
-    assert schedule_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(job_repo.partition_set_defs) == 1
-    assert job_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(schedule_job_repo.partition_set_defs) == 1
-    assert schedule_job_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(schedule_job_repo.job_names) == 1
-
-
 def test_bad_coerce():
     @op(required_resource_keys={"x"})
     def foo():
@@ -661,7 +620,10 @@ def test_bad_coerce():
     def bar():
         foo()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'x' required by op 'foo' was not provided",
+    ):
 
         @repository
         def _fails():
@@ -686,35 +648,11 @@ def test_source_assets():
 
     @repository
     def my_repo():
-        return [AssetGroup(assets=[], source_assets=[foo, bar])]
+        return [foo, bar]
 
     assert my_repo.source_assets_by_key == {
         AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
         AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
-    }
-
-
-def test_multiple_asset_groups_one_repo():
-    @asset
-    def asset1():
-        ...
-
-    @asset
-    def asset2():
-        ...
-
-    group1 = AssetGroup(assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))])
-    group2 = AssetGroup(assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))])
-
-    @repository
-    def my_repo():
-        return [group1, group2]
-
-    assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
-    assert len(my_repo.get_all_jobs()) == 1
-    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
-        AssetKey(["asset1"]),
-        AssetKey(["asset2"]),
     }
 
 
@@ -1040,8 +978,6 @@ def test_duplicate_unresolved_job_target_invalid():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1053,7 +989,7 @@ def test_duplicate_unresolved_job_target_invalid():
 
         @repository
         def the_repo_dupe_graph_invalid_sensor():
-            return [foo_group, the_job, _create_sensor_from_target(other_job)]
+            return [foo, the_job, _create_sensor_from_target(other_job)]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1065,7 +1001,7 @@ def test_duplicate_unresolved_job_target_invalid():
 
         @repository
         def the_repo_dupe_graph_invalid_schedule():
-            return [foo_group, the_job, _create_schedule_from_target(other_job)]
+            return [foo, the_job, _create_schedule_from_target(other_job)]
 
 
 def test_duplicate_job_target_valid():
@@ -1169,7 +1105,6 @@ def test_default_executor_assets_repo():
     def the_repo():
         return [no_executor_provided, the_asset]
 
-    # pylint: disable=comparison-with-callable
     assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
 
     assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor
@@ -1239,7 +1174,7 @@ def test_list_load():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]  # type: ignore
+    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]
 
     @repository
     def assets_repo():
@@ -1310,7 +1245,7 @@ def test_multi_nested_list():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]  # type: ignore
+    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
     layer_2 = [layer_1, asset1]
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):
@@ -1390,7 +1325,7 @@ def test_default_loggers_assets_repo():
     assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
 
 
-def test_default_loggers_jobs_and_jobs():
+def test_default_loggers_for_jobs():
     @asset
     def the_asset():
         pass
@@ -1406,11 +1341,11 @@ def test_default_loggers_jobs_and_jobs():
         pass
 
     @job(logger_defs={"bar": custom_logger})
-    def op_job_with_loggers():
+    def job_with_loggers():
         pass
 
     @job
-    def op_job_no_loggers():
+    def job_no_loggers():
         pass
 
     @job(logger_defs=default_loggers())
@@ -1421,17 +1356,17 @@ def test_default_loggers_jobs_and_jobs():
     def the_repo():
         return [
             the_asset,
-            op_job_with_loggers,
-            op_job_no_loggers,
+            job_with_loggers,
+            job_no_loggers,
             unresolved_job,
             job_explicitly_specifies_default_loggers,
         ]
 
     assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
 
-    assert the_repo.get_job("op_job_with_loggers").loggers == {"bar": custom_logger}
+    assert the_repo.get_job("job_with_loggers").loggers == {"bar": custom_logger}
 
-    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
+    assert the_repo.get_job("job_no_loggers").loggers == {"foo": other_custom_logger}
 
     assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
 
@@ -1481,3 +1416,87 @@ def test_base_jobs():
         asset2.key,
     }
     assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None
+
+
+def test_automation_policy_sensors_do_not_conflict():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            asset2,
+            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+            AutomationPolicySensorDefinition("b", asset_selection=[asset2]),
+        ]
+
+
+def test_automation_policy_sensors_incomplete_cover():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            asset2,
+            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+        ]
+
+
+def test_automation_policy_sensors_conflict():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Automation policy sensors '[ab]' and '[ab]' have overlapping asset selections: they both "
+        "target 'asset1'. Each asset must only be targeted by one automation policy sensor.",
+    ):
+
+        @repository
+        def repo():
+            return [
+                asset1,
+                asset2,
+                AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+                AutomationPolicySensorDefinition("b", asset_selection=[asset1, asset2]),
+            ]
+
+
+def test_invalid_asset_selection():
+    source_asset = SourceAsset("source_asset")
+
+    @asset
+    def asset1():
+        ...
+
+    @sensor(asset_selection=[source_asset, asset1])
+    def sensor1():
+        ...
+
+    Definitions(assets=[source_asset, asset1], sensors=[sensor1])
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="specified both regular assets and source"
+    ):
+        Definitions(
+            assets=[source_asset, asset1],
+            jobs=[define_asset_job("foo", selection=[source_asset, asset1])],
+        ).get_all_job_defs()

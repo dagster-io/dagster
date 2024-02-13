@@ -1,4 +1,15 @@
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dateutil
 from dagster import (
@@ -26,13 +37,14 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def _get_input_name(node_info: Mapping[str, Any]) -> str:
+def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     # * can be present when sources are sharded tables
-    return node_info["unique_id"].replace(".", "_").replace("*", "_star")
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
 
 
-def _get_output_name(node_info: Mapping[str, Any]) -> str:
-    return node_info["unique_id"].split(".")[-1]
+def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    # hyphens are valid in dbt model names, but not in output names
+    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -77,8 +89,7 @@ def result_to_events(
     extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     generate_asset_outputs: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
-    """
-    This is a hacky solution that attempts to consolidate parsing many of the potential formats
+    """This is a hacky solution that attempts to consolidate parsing many of the potential formats
     that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
     as well as RPC responses for a similar time period, but as the RPC response schema is not documented
     nor enforced, this can become out of date easily.
@@ -119,7 +130,9 @@ def result_to_events(
         metadata.update(extra_metadata)
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
-    node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    dbt_resource_props = (
+        manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    )
 
     node_resource_type = _resource_type(unique_id)
 
@@ -127,27 +140,27 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=_get_output_name(node_info),
+                output_name=output_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
             yield AssetMaterialization(
-                asset_key=node_info_to_asset_key(node_info),
+                asset_key=node_info_to_asset_key(dbt_resource_props),
                 description=f"dbt node: {unique_id}",
                 metadata=metadata,
             )
     # can only associate tests with assets if we have manifest_json available
-    elif node_resource_type == "test" and manifest_json:
+    elif node_resource_type == "test" and manifest_json and status != "skipped":
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
             # the upstream id can reference a node or a source
-            node_info = manifest_json["nodes"].get(upstream_id) or manifest_json["sources"].get(
-                upstream_id
-            )
-            if node_info is None:
+            dbt_resource_props = manifest_json["nodes"].get(upstream_id) or manifest_json[
+                "sources"
+            ].get(upstream_id)
+            if dbt_resource_props is None:
                 continue
-            upstream_asset_key = node_info_to_asset_key(node_info)
+            upstream_asset_key = node_info_to_asset_key(dbt_resource_props)
             yield AssetObservation(
                 asset_key=upstream_asset_key,
                 metadata={
@@ -163,8 +176,7 @@ def generate_events(
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-    """
-    This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
+    """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
 
     Information parsed from a :py:class:`~DbtOutput` object.
@@ -186,22 +198,17 @@ def generate_materializations(
     dbt_output: DbtOutput,
     asset_key_prefix: Optional[Sequence[str]] = None,
 ) -> Iterator[AssetMaterialization]:
-    """
-    This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
+    """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command.
 
     Information parsed from a :py:class:`~DbtOutput` object.
-
-    Note that this will not work with output from the `dbt_rpc_resource`, because this resource does
-    not wait for a response from the RPC server before returning. Instead, use the
-    `dbt_rpc_sync_resource`, which will wait for execution to complete.
 
     Examples:
         .. code-block:: python
 
             from dagster import op, Output
             from dagster_dbt.utils import generate_materializations
-            from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
+            from dagster_dbt import dbt_cli_resource
 
             @op(required_resource_keys={"dbt"})
             def my_custom_dbt_run(context):
@@ -214,10 +221,6 @@ def generate_materializations(
             @job(resource_defs={{"dbt":dbt_cli_resource}})
             def my_dbt_cli_job():
                 my_custom_dbt_run()
-
-            @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-            def my_dbt_rpc_job():
-                my_custom_dbt_run()
     """
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -228,3 +231,48 @@ def generate_materializations(
         ),
     ):
         yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+
+
+def select_unique_ids_from_manifest(
+    select: str,
+    exclude: str,
+    manifest_json: Mapping[str, Any],
+) -> AbstractSet[str]:
+    """Method to apply a selection string to an existing manifest.json file."""
+    import dbt.graph.cli as graph_cli
+    import dbt.graph.selector as graph_selector
+    from dbt.contracts.graph.manifest import Manifest
+    from dbt.flags import GLOBAL_FLAGS
+    from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
+    from networkx import DiGraph
+
+    manifest = Manifest.from_dict(manifest_json)
+    child_map = manifest_json["child_map"]
+
+    graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
+
+    # create a parsed selection from the select string
+    setattr(GLOBAL_FLAGS, "INDIRECT_SELECTION", IndirectSelection.Eager)
+    setattr(GLOBAL_FLAGS, "WARN_ERROR", True)
+    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
+
+    if exclude:
+        parsed_exclude_spec = graph_cli.parse_union([exclude], False)
+        parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
+
+    # execute this selection against the graph
+    selector = graph_selector.NodeSelector(graph, manifest)
+    selected, _ = selector.select_nodes(parsed_spec)
+    return selected
+
+
+def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
+    manifest: Mapping[str, Any],
+) -> Mapping[str, Mapping[str, Any]]:
+    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
+    return {
+        **manifest["nodes"],
+        **manifest["sources"],
+        **manifest["exposures"],
+        **manifest["metrics"],
+    }

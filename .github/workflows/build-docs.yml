@@ -1,0 +1,92 @@
+name: Deploy Docs
+on:
+  push:
+    branches:
+      - master
+      - "release-*" # older verions of the docs
+      - docs-prod # prod
+    paths:
+      - docs/**
+  pull_request:
+    paths:
+      - docs/**
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Deploy to Vercel Previews on pull request, push to master branch, or push to release-* branch
+      - name: Get branch preview subdomain
+        if: |
+          github.event_name == 'pull_request' || 
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
+        run: |
+          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
+          echo "$BRANCH_PREVIEW_SUBDOMAIN"
+          echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
+
+      - name: Checkout master/release branch
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-'))
+        uses: actions/checkout@v3
+
+      - name: Get PR fetch depth
+        if: ${{ github.event.pull_request }}
+        run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        if: ${{ github.event.pull_request }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+
+      - name: Get changed docs files for PR comment
+        if: ${{ github.event.pull_request }}
+        run: |
+          echo "Head ref is $GITHUB_HEAD_SHA"
+          git fetch origin $GITHUB_HEAD_SHA
+          # Compare the commit the branch is based on to its head to list changed files
+          CHANGED_MDX_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.mdx')
+          CHANGES_ENTRY=$(echo "$CHANGED_MDX_FILES" | sed 's/\.mdx$//' | sed 's/^docs\/content/- {{deploymentUrl}}/')
+          CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
+          echo "$CHANGES_ENTRY"
+          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "CHANGES_ENTRY<<$EOF" >> $GITHUB_ENV
+          echo "$CHANGES_ENTRY" >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV
+        env:
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Publish Preview to Vercel
+        uses: amondnet/vercel-action@v25
+        if: |
+          github.event_name == 'pull_request' || 
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
+        with:
+          github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagster.dagster-docs.io
+
+      # Deploy to Vercel Production on push to docs-prod branch
+      - name: Checkout docs-prod branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
+        uses: actions/checkout@v3
+
+      - name: Publish to Vercel Production
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}

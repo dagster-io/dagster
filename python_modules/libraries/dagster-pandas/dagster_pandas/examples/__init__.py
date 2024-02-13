@@ -1,7 +1,7 @@
 from dagster import (
+    FilesystemIOManager,
     config_from_files,
     file_relative_path,
-    fs_io_manager,
     graph,
     in_process_executor,
     repository,
@@ -51,7 +51,7 @@ def papermill_pandas_hello_world_graph():
 
 
 papermill_pandas_hello_world_test = papermill_pandas_hello_world_graph.to_job(
-    resource_defs={"io_manager": fs_io_manager},
+    resource_defs={"io_manager": FilesystemIOManager()},
     config=config_from_files(
         [
             file_relative_path(
@@ -63,7 +63,7 @@ papermill_pandas_hello_world_test = papermill_pandas_hello_world_graph.to_job(
 )
 
 papermill_pandas_hello_world_prod = papermill_pandas_hello_world_graph.to_job(
-    resource_defs={"io_manager": fs_io_manager},
+    resource_defs={"io_manager": FilesystemIOManager()},
     config=config_from_files(
         [
             file_relative_path(

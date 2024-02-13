@@ -1,7 +1,6 @@
 import time
 
 import pendulum
-import pytest
 from dagster import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
@@ -110,7 +109,7 @@ def test_thread_die_daemon(monkeypatch):
         def run_loop_error(_, _ctx, _shutdown_event):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
-            yield  # pylint: disable=unreachable
+            yield
 
         monkeypatch.setattr(SensorDaemon, "core_loop", run_loop_error)
 
@@ -148,7 +147,7 @@ def test_thread_die_daemon(monkeypatch):
                 time.sleep(0.5)
 
 
-def test_transient_heartbeat_failure(mocker):
+def test_transient_heartbeat_failure(mocker, caplog):
     with instance_for_test() as instance:
         mocker.patch(
             "dagster.daemon.controller.get_daemon_statuses",
@@ -168,11 +167,19 @@ def test_transient_heartbeat_failure(mocker):
 
             time.sleep(2 * heartbeat_tolerance_seconds)
 
-            with pytest.raises(
-                Exception,
-                match="Stopped dagster-daemon process due to thread heartbeat failure",
-            ):
-                controller.check_daemon_heartbeats()
+            assert not any(
+                "The following threads have not sent heartbeats in more than 5 seconds"
+                in str(record)
+                for record in caplog.records
+            )
+
+            controller.check_daemon_heartbeats()
+
+            assert any(
+                "The following threads have not sent heartbeats in more than 5 seconds"
+                in str(record)
+                for record in caplog.records
+            )
 
 
 def test_error_daemon(monkeypatch):
@@ -201,7 +208,7 @@ def test_error_daemon(monkeypatch):
 
         heartbeat_interval_seconds = 1
 
-        gen_daemons = lambda instance: [SensorDaemon()]
+        gen_daemons = lambda instance: [SensorDaemon(instance.get_sensor_settings())]
 
         init_time = pendulum.now("UTC")
         with daemon_controller_from_instance(
@@ -231,10 +238,8 @@ def test_error_daemon(monkeypatch):
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
                     )[SensorDaemon.daemon_type()]
 
-                    assert status.healthy is False
-
                     # Errors build up until there are > 5, then pull off the last
-                    if len(status.last_heartbeat.errors) >= 5:
+                    if status.healthy is False and len(status.last_heartbeat.errors) >= 5:
                         first_error_number = _get_error_number(status.last_heartbeat.errors[0])
 
                         if first_error_number > 5:

@@ -1,3 +1,3 @@
-### Summary & Motivation
+## Summary & Motivation
 
-### How I Tested These Changes
+## How I Tested These Changes

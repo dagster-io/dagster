@@ -4,19 +4,23 @@ import shutil
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import BinaryIO, Optional, TextIO, Union
+from typing import BinaryIO, ContextManager, Iterator, Optional, TextIO, Union
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import Field, StringSource
-from dagster._core.definitions.resource_definition import resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
 
 from .temp_file_manager import TempfileManager
 
+IOStream: TypeAlias = Union[TextIO, BinaryIO]
 
-# pylint: disable=no-init
+
 class FileHandle(ABC):
     """A reference to a file as manipulated by a FileManager.
 
@@ -29,7 +33,7 @@ class FileHandle(ABC):
     such as S3.
     """
 
-    @public  # type: ignore
+    @public
     @property
     @abstractmethod
     def path_desc(self) -> str:
@@ -43,20 +47,20 @@ class LocalFileHandle(FileHandle):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
-    @public  # type: ignore
+    @public
     @property
     def path(self) -> str:
         """The file's path."""
         return self._path
 
-    @public  # type: ignore
+    @public
     @property
     def path_desc(self) -> str:
         """A representation of the file path for display purposes only."""
         return self._path
 
 
-class FileManager(ABC):  # pylint: disable=no-init
+class FileManager(ABC):
     """Base class for all file managers in dagster.
 
     The file manager is an interface that can be implemented by resources to provide abstract
@@ -91,7 +95,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @public
     @abstractmethod
-    def delete_local_temp(self):
+    def delete_local_temp(self) -> None:
         """Delete all local temporary files created by previous calls to
         :py:meth:`~dagster._core.storage.file_manager.FileManager.copy_handle_to_local_temp`.
 
@@ -101,7 +105,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @public
     @abstractmethod
-    def read(self, file_handle: FileHandle, mode: str = "rb") -> Union[TextIO, BinaryIO]:
+    def read(self, file_handle: FileHandle, mode: str = "rb") -> ContextManager[IOStream]:
         """Return a file-like stream for the file handle.
 
         This may incur an expensive network call for file managers backed by object stores
@@ -132,9 +136,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @public
     @abstractmethod
-    def write(
-        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: Optional[str] = None
-    ) -> FileHandle:
+    def write(self, file_obj: IOStream, mode: str = "wb", ext: Optional[str] = None) -> FileHandle:
         """Write the bytes contained within the given file object into the file manager.
 
         Args:
@@ -165,8 +167,9 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})  # type: ignore  # (mypy bug)
-def local_file_manager(init_context):
+@dagster_maintained_resource
+@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
+def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """FileManager that provides abstract access to a local filesystem.
 
     By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
@@ -221,27 +224,28 @@ def local_file_manager(init_context):
     """
     return LocalFileManager(
         base_dir=init_context.resource_config.get(
-            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")
+            "base_dir",
+            os.path.join(init_context.instance.storage_directory(), "file_manager"),  # type: ignore  # (possible none)
         )
     )
 
 
-def check_file_like_obj(obj):
+def check_file_like_obj(obj: object) -> None:
     check.invariant(obj and hasattr(obj, "read") and hasattr(obj, "write"))
 
 
 class LocalFileManager(FileManager):
-    def __init__(self, base_dir):
+    def __init__(self, base_dir: str):
         self.base_dir = base_dir
         self._base_dir_ensured = False
         self._temp_file_manager = TempfileManager()
 
     @staticmethod
-    def for_instance(instance, run_id):
+    def for_instance(instance: DagsterInstance, run_id: str) -> "LocalFileManager":
         check.inst_param(instance, "instance", DagsterInstance)
         return LocalFileManager(instance.file_manager_directory(run_id))
 
-    def ensure_base_dir_exists(self):
+    def ensure_base_dir_exists(self) -> None:
         if self._base_dir_ensured:
             return
 
@@ -249,9 +253,9 @@ class LocalFileManager(FileManager):
 
         self._base_dir_ensured = True
 
-    def copy_handle_to_local_temp(self, file_handle):
+    def copy_handle_to_local_temp(self, file_handle: FileHandle) -> str:
         check.inst_param(file_handle, "file_handle", FileHandle)
-        with self.read(file_handle, "rb") as handle_obj:
+        with self.read(file_handle, "rb") as handle_obj:  # type: ignore  # (??)
             temp_file_obj = self._temp_file_manager.tempfile()
             temp_file_obj.write(handle_obj.read())
             temp_name = temp_file_obj.name
@@ -259,24 +263,26 @@ class LocalFileManager(FileManager):
             return temp_name
 
     @contextmanager
-    def read(self, file_handle, mode="rb"):
+    def read(self, file_handle: LocalFileHandle, mode: str = "rb") -> Iterator[IOStream]:
         check.inst_param(file_handle, "file_handle", LocalFileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
 
         encoding = None if mode == "rb" else "utf8"
         with open(file_handle.path, mode, encoding=encoding) as file_obj:
-            yield file_obj
+            yield file_obj  # type: ignore  # (??)
 
-    def read_data(self, file_handle):
+    def read_data(self, file_handle: LocalFileHandle) -> bytes:
         with self.read(file_handle, mode="rb") as file_obj:
-            return file_obj.read()
+            return file_obj.read()  # type: ignore  # (??)
 
-    def write_data(self, data, ext=None):
+    def write_data(self, data: bytes, ext: Optional[str] = None):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(self, file_obj, mode="wb", ext=None):
+    def write(
+        self, file_obj: IOStream, mode: str = "wb", ext: Optional[str] = None
+    ) -> LocalFileHandle:
         check_file_like_obj(file_obj)
         check.opt_str_param(ext, "ext")
 
@@ -288,8 +294,8 @@ class LocalFileManager(FileManager):
 
         encoding = None if "b" in mode else "utf8"
         with open(dest_file_path, mode, encoding=encoding) as dest_file_obj:
-            shutil.copyfileobj(file_obj, dest_file_obj)
+            shutil.copyfileobj(file_obj, dest_file_obj)  # type: ignore  # (??)
             return LocalFileHandle(dest_file_path)
 
-    def delete_local_temp(self):
+    def delete_local_temp(self) -> None:
         self._temp_file_manager.close()

@@ -31,6 +31,7 @@ class GCSComputeLogManager(BaseModel):
     prefix: Optional[StringSource]
     jsonCredentialsEnvvar: Optional[StringSource]
     uploadInterval: Optional[int]
+    showUrlOnly: Optional[bool]
 
 
 class S3ComputeLogManager(BaseModel):
@@ -44,6 +45,8 @@ class S3ComputeLogManager(BaseModel):
     skipEmptyFiles: Optional[bool]
     uploadInterval: Optional[int]
     uploadExtraArgs: Optional[dict]
+    showUrlOnly: Optional[bool]
+    region: Optional[StringSource]
 
 
 class ComputeLogManagerConfig(BaseModel):

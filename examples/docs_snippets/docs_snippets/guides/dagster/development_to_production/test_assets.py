@@ -1,8 +1,6 @@
 import pandas as pd
 
-from dagster import build_op_context
-
-from .assets_v2 import items
+from .assets_v2 import ItemsConfig, items
 from .resources.resources_v2 import StubHNClient
 
 # start
@@ -10,11 +8,10 @@ from .resources.resources_v2 import StubHNClient
 
 
 def test_items():
-    context = build_op_context(
-        resources={"hn_client": StubHNClient()},
-        op_config={"N": StubHNClient().fetch_max_item_id()},
+    hn_dataset = items(
+        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
+        hn_client=StubHNClient(),
     )
-    hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
     expected_data = pd.DataFrame(StubHNClient().data.values()).rename(

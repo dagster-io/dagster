@@ -16,18 +16,16 @@ from dagster import (
     op,
     resource,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
-from dagster._legacy import solid
 
 
 def get_solids():
-    @solid
+    @op
     def emit_one():
         return 1
 
-    @solid
+    @op
     def add(x, y):
         return x + y
 
@@ -107,7 +105,7 @@ def test_execute_graph():
 
 
 def test_graph_with_required_resources():
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def basic_reqs(context):
         return context.resources.a
 
@@ -128,13 +126,13 @@ def test_graph_with_required_resources():
 
 def test_executor_config_ignored_by_execute_in_process():
     # Ensure that execute_in_process is able to properly ignore provided executor config.
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         return 0
 
     @graph
     def my_graph():
-        my_solid()
+        my_op()
 
     my_job = my_graph.to_job(
         config={"execution": {"config": {"multiprocess": {"max_concurrent": 5}}}}
@@ -180,15 +178,18 @@ def test_output_for_node_not_found():
     result = basic.execute_in_process()
     assert result.success
 
-    with pytest.raises(KeyError, match="name_doesnt_exist"):
+    with pytest.raises(DagsterInvariantViolationError, match="name_doesnt_exist"):
         result.output_for_node("op_exists", "name_doesnt_exist")
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Could not find top-level output 'name_doesnt_exist'"
+        DagsterInvariantViolationError,
+        match="Could not find top-level output 'name_doesnt_exist'",
     ):
         result.output_value("name_doesnt_exist")
 
-    with pytest.raises(CheckError, match="basic has no op named op_doesnt_exist"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="basic has no op named op_doesnt_exist"
+    ):
         result.output_for_node("op_doesnt_exist")
 
 
@@ -238,9 +239,7 @@ def test_partitions_key():
     @op
     def my_op(context):
         assert (
-            context._step_execution_context.plan_data.pipeline_run.tags[  # pylint: disable=protected-access
-                "dagster/partition"
-            ]
+            context._step_execution_context.plan_data.dagster_run.tags["dagster/partition"]  # noqa: SLF001
             == "2020-01-01"
         )
 
@@ -335,8 +334,16 @@ def test_dynamic_output_for_node():
     result = myjob.execute_in_process()
 
     # assertions
-    assert result.output_for_node("return_as_tuple", "output1") == {"0": 0, "1": 1, "2": 2}
-    assert result.output_for_node("return_as_tuple", "output2") == {"0": 5, "1": 5, "2": 5}
+    assert result.output_for_node("return_as_tuple", "output1") == {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+    }
+    assert result.output_for_node("return_as_tuple", "output2") == {
+        "0": 5,
+        "1": 5,
+        "2": 5,
+    }
 
 
 def test_execute_in_process_input_values():
@@ -383,7 +390,6 @@ def test_retries_exceeded():
 
 
 def test_execute_in_process_defaults_override():
-    # pylint: disable=comparison-with-callable
     @op
     def some_op(context):
         assert context.job_def.resource_defs["io_manager"] == mem_io_manager

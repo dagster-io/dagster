@@ -1,26 +1,26 @@
 ---
-title: Upgrading to software-defined assets | Dagster Docs
-description: Understand when, why, and how to use software-defined assets (SDAs) in Dagster, as well as how SDAs work with other core Dagster concepts.
+title: Upgrading to Software-defined Assets | Dagster Docs
+description: Understand when, why, and how to use Software-defined Assets (SDAs) in Dagster, as well as how SDAs work with other core Dagster concepts.
 ---
 
-# Upgrading to software-defined assets
+# Upgrading to Software-defined Assets
 
-Familiar with ops and graphs? Want to understand when, why, and how to use software-defined assets in Dagster? If so, this guide is for you. We'll also demonstrate what some common Dagster jobs look like before and after using software-defined assets.
+Familiar with ops and graphs? Want to understand when, why, and how to use Software-defined Assets in Dagster? If so, this guide is for you. We'll also demonstrate what some common Dagster jobs look like before and after using Software-defined Assets.
 
 Before we jump in, here's a quick refresher:
 
 - An **asset** is a persistent object in storage, such as a table, machine learning (ML) model, or file.
 - An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as its input and produce transformed tabular data as its output.
 - A [**graph**](/concepts/ops-jobs-graphs/graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
-- A [**software-defined asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
+- A [**Software-defined Asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
 **Software-defined assets aren't a replacement for Dagster's core computational concepts** - ops are, in fact, the core unit of computation that occurs **within an asset**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
 
 ---
 
-## Why use software-defined assets?
+## Why use Software-defined Assets?
 
-Using software-defined assets means building Dagster jobs in a way that declares _ahead of time_ the assets they produce and consume. This is different than using the <PyObject object="AssetMaterialization" /> API, which only informs Dagster at runtime about the assets a job interacted with.
+Using Software-defined Assets means building Dagster jobs in a way that declares _ahead of time_ the assets they produce and consume. This is different than using the <PyObject object="AssetMaterialization" /> API, which only informs Dagster at runtime about the assets a job interacted with.
 
 Preemptively declaring assets offers distinct advantages, including:
 
@@ -30,13 +30,13 @@ Preemptively declaring assets offers distinct advantages, including:
 
 ### Lineage
 
-As software-defined assets know what other assets they depend on, an asset's lineage can be [viewed easily in Dagit](/concepts/assets/software-defined-assets#viewing-assets-in-dagit).
+As Software-defined Assets know what other assets they depend on, an asset's lineage can be [viewed easily in the Dagster UI](/concepts/assets/software-defined-assets#viewing-assets-in-the-ui).
 
 Assets help track and define cross-job dependencies. For example, when viewing a job that materializes assets, you can navigate to the jobs that produce the assets that it depends on. Additionally, when an upstream asset has been updated more recently than a downstream asset, Dagster will indicate that the downstream asset might be out of date.
 
 ### Direct operation
 
-Using software-defined assets enables you to directly operate them in Dagit. On the [Asset's Details page](/concepts/dagit/dagit#asset-details), you can:
+Using Software-defined Assets enables you to directly operate them in the UI. On the [Asset's Details page](/concepts/webserver/ui#asset-details), you can:
 
 - View the materialization history of the asset
 - Check when the next materialization will occur
@@ -47,27 +47,27 @@ Using software-defined assets enables you to directly operate them in Dagit. On 
 
 Software-defined assets provide sizeable improvements when it comes to code ergonomics:
 
-- **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use <PyObject object="graph" decorator /> and <PyObject object="job" decorator /> to wire dependencies between ops.
+- **You'll usually write less code**. Specifying the inputs to a Software-defined Asset defines the assets it depends on. This means you don't need to use <PyObject object="graph" decorator /> and <PyObject object="job" decorator /> to wire dependencies between ops.
 
   This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [I/O manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
 
-- **You no longer have to choose between easy dependency tracking and manageable organization.** Without software-defined assets, you're often forced to:
+- **You no longer have to choose between easy dependency tracking and manageable organization.** Without Software-defined Assets, you're often forced to:
 
   - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
   - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
 
-  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
+  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for input managers.
 
 ---
 
-## When should I use software-defined assets?
+## When should I use Software-defined Assets?
 
-You should use software-defined assets when:
+You should use Software-defined Assets when:
 
 - You’re using Dagster to produce or maintain assets, AND
 - You know what those assets will be before you launch any runs.
 
-Note that using software-defined assets in one job doesn’t mean they need to be used in all your jobs. If your use case doesn't meet these criteria, you can still use graphs and ops.
+Note that using Software-defined Assets in one job doesn’t mean they need to be used in all your jobs. If your use case doesn't meet these criteria, you can still use graphs and ops.
 
 Still not sure? Check out these examples to see what's a good fit and what isn't:
 
@@ -145,11 +145,11 @@ Still not sure? Check out these examples to see what's a good fit and what isn't
 
 ---
 
-## How do I upgrade jobs to use software-defined assets?
+## How do I upgrade jobs to use Software-defined Assets?
 
-Let's say you've written jobs that you want to enrich using software-defined assets. Assuming assets are known and being updated, what would upgrading look like?
+Let's say you've written jobs that you want to enrich using Software-defined Assets. Assuming assets are known and being updated, what would upgrading look like?
 
-Generally, every op output in a job that corresponds to a long-lived object in storage should have a software-defined asset. The following examples demonstrate some realistic Dagster jobs, both with and without software-defined assets:
+Generally, every op output in a job that corresponds to a long-lived object in storage should have a Software-defined Asset. The following examples demonstrate some realistic Dagster jobs, both with and without Software-defined Assets:
 
 - [A job that materializes two interdependent tables](#materialize-two-interdependent-tables)
 - [A job that materializes two interdependent tables without an I/O manager](#materialize-two-interdependent-tables-without-an-io-manager)
@@ -157,7 +157,7 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 
 <Note>
   This isn't an exhaustive list! We're adding the ability to define jobs that
-  materialize software-defined assets and then run arbitrary ops. Interested?
+  materialize Software-defined Assets and then run arbitrary ops. Interested?
   We'd love to hear from you in{" "}
   <a href="https://dagster.io/slack" target="new">
     Slack
@@ -172,11 +172,11 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 ### Materialize two interdependent tables
 
 <TabGroup>
-<TabItem name="Without software-defined assets">
+<TabItem name="Without Software-defined Assets">
 
-This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and root input managers.
+This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and input managers.
 
-The goal of each op in the job is to produce an asset. However, because the job doesn't use the software-defined asset APIs, Dagster is unaware of this:
+The goal of each op in the job is to produce an asset. However, because the job doesn't use the Software-defined Asset APIs, Dagster is unaware of this:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_io_manager.py
 from pandas import DataFrame
@@ -187,7 +187,7 @@ from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
 
 @op(
-    ins={"raw_users": In(root_manager_key="warehouse")},
+    ins={"raw_users": In(input_manager_key="warehouse")},
     out={"users": Out(io_manager_key="warehouse")},
 )
 def build_users(raw_users: DataFrame) -> DataFrame:
@@ -212,9 +212,9 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem name="With software-defined assets">
+<TabItem name="With Software-defined Assets">
 
-Here's what an equivalent job looks like using software-defined assets:
+Here's what an equivalent job looks like using Software-defined Assets:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
@@ -257,9 +257,9 @@ defs = Definitions(
 ### Materialize two interdependent tables without an I/O manager
 
 <TabGroup>
-<TabItem name="Without software-defined assets">
+<TabItem name="Without Software-defined Assets">
 
-This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and root input managers:
+This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and input managers:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
@@ -294,27 +294,29 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem name="With software-defined assets">
+<TabItem name="With Software-defined Assets">
 
-Here's an example of an equivalent job that uses software-defined assets:
+Here's an example of an equivalent job that uses Software-defined Assets:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import Definitions, asset, define_asset_job
+from dagster import Definitions, SourceAsset, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
+raw_users = SourceAsset(key="raw_users")
 
-@asset(non_argument_deps={"raw_users"})
-def users():
+
+@asset(deps=[raw_users])
+def users() -> None:
     raw_users_df = read_sql("select * from raw_users", con=create_db_connection())
     users_df = raw_users_df.dropna()
     users_df.to_sql(name="users", con=create_db_connection())
 
 
-@asset(non_argument_deps={"users"})
-def user_recommender_model():
+@asset(deps=[users])
+def user_recommender_model() -> None:
     users_df = read_sql("select * from users", con=create_db_connection())
     users_recommender_model = train_recommender_model(users_df)
     pickle_to_s3(users_recommender_model, key="users_recommender_model")
@@ -335,7 +337,7 @@ defs = Definitions(
 ### Not all ops produce assets
 
 <TabGroup>
-<TabItem name="Without software-defined assets">
+<TabItem name="Without Software-defined Assets">
 
 This example demonstrates a job where some of the ops (`extract_products` and `get_categories`) don't produce assets of their own. Instead, they produce transient data that downstream ops will use to produce assets:
 
@@ -359,7 +361,7 @@ def get_categories(products: DataFrame) -> DataFrame:
 
 @op
 def write_products_table(products: DataFrame) -> None:
-    products.to_sql(name="categories", con=create_db_connection())
+    products.to_sql(name="products", con=create_db_connection())
 
 
 @op
@@ -380,11 +382,11 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem name="With software-defined assets">
+<TabItem name="With Software-defined Assets">
 
-Here's an equivalent job using software-defined assets.
+Here's an equivalent job using Software-defined Assets.
 
-**Note:** Because some ops don't correspond to assets, this job uses <PyObject object="op" decorator /> and <PyObject object="graph" decorator /> APIs and <PyObject object="AssetsDefinition" method="from_graph" /> to wrap a graph in a software-defined asset:
+**Note:** Because some ops don't correspond to assets, this job uses <PyObject object="op" decorator /> and <PyObject object="graph" decorator /> APIs and <PyObject object="AssetsDefinition" method="from_graph" /> to wrap a graph in a Software-defined Asset:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
@@ -406,7 +408,7 @@ def get_categories(products: DataFrame) -> DataFrame:
 
 @op
 def write_products_table(products: DataFrame) -> None:
-    products.to_sql(name="categories", con=create_db_connection())
+    products.to_sql(name="products", con=create_db_connection())
 
 
 @op
@@ -438,23 +440,23 @@ defs = Definitions(
 
 ---
 
-## How do software-defined assets work with other Dagster concepts?
+## How do Software-defined Assets work with other Dagster concepts?
 
-Still not sure how software-defined assets fit into your current Dagster usage? In this section, we'll touch on how software-defined assets work with some of Dagster's core concepts.
+Still not sure how Software-defined Assets fit into your current Dagster usage? In this section, we'll touch on how Software-defined Assets work with some of Dagster's core concepts.
 
 <TabGroup>
 <TabItem name="Ops and graphs">
 
 ### Ops and graphs
 
-| Without software-defined assets                                                                           | With software-defined assets                                                                                                |
+| Without Software-defined Assets                                                                           | With Software-defined Assets                                                                                                |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every software-defined asset includes a graph or an op                                                                      |
-| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                                                      |
+| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every Software-defined Asset includes a graph or an op                                                                      |
+| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every Software-defined Asset includes a graph or an op                                                                      |
 | Ops can have multiple outputs                                                                             | Multiple assets can be produced by a single op when defined using the <PyObject object="multi_asset" decorator /> decorator |
 | Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                      | Assets can use [config](/concepts/assets/software-defined-assets)                                                           |
 | Ops can access <PyObject object="OpExecutionContext" />                                                   | Assets can access <PyObject object="OpExecutionContext" />                                                                  |
-| Ops can require [resources](/concepts/resources)                                                          | Software-defined assets can require [resources](/concepts/resources)                                                        |
+| Ops can require [resources](/concepts/resources)                                                          | Software-defined Assets can require [resources](/concepts/resources)                                                        |
 | Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                                              |
 
 </TabItem>
@@ -462,9 +464,9 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Jobs
 
-| Without software-defined assets                                                                                                               | With software-defined assets                                                                                                                        |
+| Without Software-defined Assets                                                                                                               | With Software-defined Assets                                                                                                                        |
 | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A job targets a graph of ops                                                                                                                  | An asset job targets a selection of software-defined assets                                                                                         |
+| A job targets a graph of ops                                                                                                                  | An asset job targets a selection of Software-defined Assets                                                                                         |
 | Jobs can be [partitioned](/concepts/partitions-schedules-sensors/partitions)                                                                  | Assets can be [partitioned](/concepts/partitions-schedules-sensors/partitions)                                                                      |
 | Jobs can be put on [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors) | Asset jobs can be put on [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors) |
 
@@ -473,17 +475,17 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Dagster types
 
-| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Op outputs and inputs can have [Dagster types](/concepts/types)                                                                           | Software-defined assets can have [Dagster types](/concepts/types)                                                                                                                                                                                  |
-| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The [`non_argument_deps`](/concepts/assets/software-defined-assets#non-argument-dependencies) argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
+| Without Software-defined Assets                                                                                                           | With Software-defined Assets                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op outputs and inputs can have [Dagster types](/concepts/types)                                                                           | Software-defined assets can have [Dagster types](/concepts/types)                                                                                                                                                                       |
+| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
 
 </TabItem>
 <TabItem name="Code locations">
 
 ### Code locations
 
-| Without software-defined assets                                                             | With software-defined assets                                          |
+| Without Software-defined Assets                                                             | With Software-defined Assets                                          |
 | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Code locations (<PyObject object="Definitions" />) can contain jobs, schedules, and sensors | Code locations (<PyObject object="Definitions" />) can contain assets |
 
@@ -492,7 +494,7 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### I/O managers
 
-| Without software-defined assets                                                                                 | With software-defined assets                                                                     |
+| Without Software-defined Assets                                                                                 | With Software-defined Assets                                                                     |
 | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [I/O managers](/concepts/io-management/io-managers) can control how op inputs and outputs are loaded and stored | [I/O managers](/concepts/io-management/io-managers) can control how assets are loaded and stored |
 

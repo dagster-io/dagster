@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import (
+    ConfigurableIOManager,
     InputContext,
-    IOManager,
     MetadataValue,
     OutputContext,
     TableColumn,
@@ -16,7 +16,7 @@ from pandas import (
 )
 from pyspark.sql import DataFrame as SparkDataFrame
 from snowflake.connector.pandas_tools import pd_writer
-from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+from snowflake.sqlalchemy import URL
 from sqlalchemy import create_engine
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -43,17 +43,23 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-class SnowflakeIOManager(IOManager):
-    """
-    This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
+class SnowflakeIOManager(ConfigurableIOManager):
+    """This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
-    def __init__(self, config):
-        self._config = config
+    account: str
+    user: str
+    password: str
+    database: str
+    warehouse: str
+
+    @property
+    def _config(self):
+        return self.dict()
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
+        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -94,7 +100,7 @@ class SnowflakeIOManager(IOManager):
     def _handle_pandas_output(
         self, obj: PandasDataFrame, schema: str, table: str
     ) -> Mapping[str, Any]:
-        from snowflake import connector  # pylint: disable=no-name-in-module
+        from snowflake import connector
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -112,8 +118,8 @@ class SnowflakeIOManager(IOManager):
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
-                        TableColumn(name=name, type=str(dtype))
-                        for name, dtype in obj.dtypes.iteritems()
+                        TableColumn(name=name, type=str(dtype))  # type: ignore  # (bad stubs)
+                        for name, dtype in obj.dtypes.items()
                     ]
                 )
             ),
@@ -148,8 +154,7 @@ class SnowflakeIOManager(IOManager):
     def _get_cleanup_statement(
         self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
     ) -> str:
-        """
-        Returns a SQL statement that deletes data in the given table to make way for the output data
+        """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
         """
         if time_window:

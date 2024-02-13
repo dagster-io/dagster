@@ -1,6 +1,6 @@
 from dagster._utils.yaml_utils import load_yaml_from_path
 
-# isort: split
+# ruff: isort: split
 
 # start
 import os
@@ -35,7 +35,7 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
         op_deps_entry = {}
         for input_name, input_data in op_yaml_data.get("deps", {}).items():
             op_deps_entry[input_name] = DependencyDefinition(
-                solid=input_data["op"], output=input_data.get("output", "result")
+                node=input_data["op"], output=input_data.get("output", "result")
             )
         deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
 

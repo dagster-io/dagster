@@ -23,12 +23,10 @@ class GrapheneMode(graphene.ObjectType):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
-        self._pipeline_snapshot_id = pipeline_snapshot_id
+        self._job_snapshot_id = pipeline_snapshot_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return "{pipeline}-{mode}".format(
-            pipeline=self._pipeline_snapshot_id, mode=self._mode_def_snap.name
-        )
+        return f"{self._job_snapshot_id}-{self._mode_def_snap.name}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
         return self._mode_def_snap.name

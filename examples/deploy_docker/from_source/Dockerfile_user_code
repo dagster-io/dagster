@@ -1,14 +1,15 @@
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 COPY ./python_modules/ /tmp/python_modules/
 
 # Checkout and install dagster libraries needed to run the gRPC server
-# exposing your repository to dagit and dagster-daemon, and to load the DagsterInstance
+# exposing your repository to dagster-webserver and dagster-daemon, and to load the DagsterInstance
 
 WORKDIR /tmp
 
 RUN pip install \
     -e python_modules/dagster \
+    -e python_modules/dagster-pipes \
     -e python_modules/libraries/dagster-postgres \
     -e python_modules/libraries/dagster-docker
 

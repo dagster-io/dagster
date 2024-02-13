@@ -44,10 +44,10 @@ Dagster CLI
 .. click:: dagster_graphql.cli:cli
    :prog: dagster-graphql
 
-.. currentmodule:: dagit
+.. currentmodule:: dagster_webserver
 
-.. click:: dagit.cli:cli
-   :prog: dagit
+.. click:: dagster_webserver.cli:cli
+   :prog: dagster-webserver
 
 .. currentmodule:: dagster
 

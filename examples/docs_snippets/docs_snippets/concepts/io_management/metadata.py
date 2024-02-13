@@ -1,4 +1,13 @@
-from dagster import IOManager, Out, io_manager, job, op
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    IOManager,
+    Out,
+    OutputContext,
+    io_manager,
+    job,
+    op,
+)
 
 
 def connect():
@@ -16,38 +25,41 @@ def read_dataframe_from_table(**_kwargs):
 # ops_start_marker
 @op(out=Out(metadata={"schema": "some_schema", "table": "some_table"}))
 def op_1():
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 @op(out=Out(metadata={"schema": "other_schema", "table": "other_table"}))
 def op_2(_input_dataframe):
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 # ops_end_marker
 
 
 # io_manager_start_marker
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        table_name = context.metadata["table"]
-        schema = context.metadata["schema"]
-        write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+class MyIOManager(ConfigurableIOManager):
+    def handle_output(self, context: OutputContext, obj):
+        if context.metadata:
+            table_name = context.metadata["table"]
+            schema = context.metadata["schema"]
+            write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+        else:
+            raise Exception(
+                f"op {context.op_def.name} doesn't have schema and metadata set"
+            )
 
-    def load_input(self, context):
-        table_name = context.upstream_output.metadata["table"]
-        schema = context.upstream_output.metadata["schema"]
-        return read_dataframe_from_table(name=table_name, schema=schema)
-
-
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
+    def load_input(self, context: InputContext):
+        if context.upstream_output and context.upstream_output.metadata:
+            table_name = context.upstream_output.metadata["table"]
+            schema = context.upstream_output.metadata["schema"]
+            return read_dataframe_from_table(name=table_name, schema=schema)
+        else:
+            raise Exception("Upstream output doesn't have schema and metadata set")
 
 
 # io_manager_end_marker
 
 
-@job(resource_defs={"io_manager": my_io_manager})
+@job(resource_defs={"io_manager": MyIOManager()})
 def my_job():
     op_2(op_1())

@@ -1,8 +1,18 @@
 import os
 
+import numpy as np
 import pandas as pd
 
-from dagster import AssetIn, Definitions, IOManager, asset, io_manager
+from dagster import (
+    AssetIn,
+    ConfigurableIOManager,
+    Definitions,
+    InputContext,
+    IOManager,
+    OutputContext,
+    asset,
+    io_manager,
+)
 
 from .asset_input_managers import (
     load_numpy_array,
@@ -13,8 +23,8 @@ from .asset_input_managers import (
 # start_numpy_example
 
 
-class PandasAssetIOManager(IOManager):
-    def handle_output(self, context, obj):
+class PandasAssetIOManager(ConfigurableIOManager):
+    def handle_output(self, context: OutputContext, obj):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
@@ -24,44 +34,34 @@ class PandasAssetIOManager(IOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
-@io_manager
-def pandas_asset_io_manager():
-    return PandasAssetIOManager()
-
-
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
-@io_manager
-def numpy_asset_io_manager():
-    return NumpyAssetIOManager()
-
-
 @asset(io_manager_key="pandas_manager")
-def upstream_asset():
+def upstream_asset() -> pd.DataFrame:
     return pd.DataFrame([1, 2, 3])
 
 
 @asset(
     ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
 )
-def downstream_asset(upstream):
+def downstream_asset(upstream: np.ndarray) -> tuple:
     return upstream.shape
 
 
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "pandas_manager": pandas_asset_io_manager,
-        "numpy_manager": numpy_asset_io_manager,
+        "pandas_manager": PandasAssetIOManager(),
+        "numpy_manager": NumpyAssetIOManager(),
     },
 )
 

@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=unused-argument,reimported
+# ruff: isort: skip_file
+
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
@@ -41,11 +41,11 @@ def flaky_operation():
 
 
 # start_op_output_3
-from dagster import MetadataValue, Output, op
+from dagster import MetadataValue, Output, op, OpExecutionContext
 
 
 @op
-def my_metadata_output(context) -> Output:
+def my_metadata_output(context: OpExecutionContext) -> Output:
     df = get_some_data()
     return Output(
         df,
@@ -68,29 +68,32 @@ from typing import Tuple
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:
-    return Output("some_value")
+    return Output("some_value", metadata={"some_metadata": "a_value"})
 
 
 # A single output with a parameterized type annotation
 @op
 def my_output_generic_op() -> Output[int]:
-    return Output(5)
+    return Output(5, metadata={"some_metadata": "a_value"})
 
 
 # Multiple outputs using parameterized type annotation
 @op(out={"int_out": Out(), "str_out": Out()})
 def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
-    return (Output(5), Output("foo"))
+    return (
+        Output(5, metadata={"some_metadata": "a_value"}),
+        Output("foo", metadata={"some_metadata": "another_value"}),
+    )
 
 
 # end_op_output_4
 
 # start_metadata_expectation_op
-from dagster import ExpectationResult, MetadataValue, op
+from dagster import ExpectationResult, MetadataValue, op, OpExecutionContext
 
 
 @op
-def my_metadata_expectation_op(context, df):
+def my_metadata_expectation_op(context: OpExecutionContext, df):
     df = do_some_transform(df)
     context.log_event(
         ExpectationResult(
@@ -112,7 +115,7 @@ def my_metadata_expectation_op(context, df):
 # end_metadata_expectation_op
 
 # start_failure_op
-from dagster import Failure, op
+from dagster import Failure, op, MetadataValue
 
 
 @op
@@ -132,27 +135,6 @@ def my_failure_op():
 
 # end_failure_op
 
-# start_failure_metadata_op
-from dagster import Failure, op
-
-
-@op
-def my_failure_metadata_op():
-    path = "/path/to/files"
-    my_files = get_files(path)
-    if len(my_files) == 0:
-        raise Failure(
-            description="No files to process",
-            metadata={
-                "filepath": MetadataValue.path(path),
-                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
-            },
-        )
-    return some_calculation(my_files)
-
-
-# end_failure_metadata_op
-
 # start_retry_op
 from dagster import RetryRequested, op
 
@@ -169,11 +151,11 @@ def my_retry_op():
 # end_retry_op
 
 # start_asset_op
-from dagster import AssetMaterialization, op
+from dagster import AssetMaterialization, op, OpExecutionContext
 
 
 @op
-def my_asset_op(context):
+def my_asset_op(context: OpExecutionContext):
     df = get_some_data()
     store_to_s3(df)
     context.log_event(
@@ -209,11 +191,11 @@ def my_asset_op_yields():
 # end_asset_op_yield
 
 # start_expectation_op
-from dagster import ExpectationResult, op
+from dagster import ExpectationResult, op, OpExecutionContext
 
 
 @op
-def my_expectation_op(context, df):
+def my_expectation_op(context: OpExecutionContext, df):
     do_some_transform(df)
     context.log_event(
         ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")

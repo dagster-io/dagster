@@ -3,8 +3,8 @@
     "description": "@generated",
     "type": "object",
     "properties": {
-        "dagit": {
-            "$ref": "#/definitions/Dagit"
+        "dagsterWebserver": {
+            "$ref": "#/definitions/Webserver"
         },
         "dagster-user-deployments": {
             "$ref": "#/definitions/UserDeployments"
@@ -71,10 +71,14 @@
         },
         "retention": {
             "$ref": "#/definitions/Retention"
+        },
+        "additionalInstanceConfig": {
+            "title": "Additionalinstanceconfig",
+            "type": "object"
         }
     },
     "required": [
-        "dagit",
+        "dagsterWebserver",
         "dagster-user-deployments",
         "postgresql",
         "generatePostgresqlPasswordSecret",
@@ -190,6 +194,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "ssl": {
+                    "title": "Ssl",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -228,6 +243,12 @@
                 "enabled",
                 "servers"
             ]
+        },
+        "EnvVar": {
+            "title": "EnvVar",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
         },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
@@ -313,8 +334,8 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
-        "Dagit": {
-            "title": "Dagit",
+        "Webserver": {
+            "title": "Webserver",
             "type": "object",
             "properties": {
                 "replicaCount": {
@@ -328,6 +349,17 @@
                     "title": "Nameoverride",
                     "type": "string"
                 },
+                "pathPrefix": {
+                    "title": "Pathprefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -336,10 +368,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -474,6 +516,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -520,6 +573,18 @@
                 "enabled"
             ]
         },
+        "ReadinessProbeWithEnabled": {
+            "title": "ReadinessProbeWithEnabled",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
+        "Container": {
+            "title": "Container",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -538,6 +603,13 @@
                         "type": "string"
                     }
                 },
+                "codeServerArgs": {
+                    "title": "Codeserverargs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
@@ -547,10 +619,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -591,7 +673,7 @@
                     "$ref": "#/definitions/LivenessProbe"
                 },
                 "readinessProbe": {
-                    "$ref": "#/definitions/ReadinessProbe"
+                    "$ref": "#/definitions/ReadinessProbeWithEnabled"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
@@ -620,12 +702,25 @@
                 "schedulerName": {
                     "title": "Schedulername",
                     "type": "string"
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
+                },
+                "sidecarContainers": {
+                    "title": "Sidecarcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
                 }
             },
             "required": [
                 "name",
                 "image",
-                "dagsterApiGrpcArgs",
                 "port"
             ]
         },
@@ -1008,8 +1103,8 @@
                 "servicePort"
             ]
         },
-        "DagitIngressConfiguration": {
-            "title": "DagitIngressConfiguration",
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1050,8 +1145,8 @@
                 "succeedingPaths"
             ]
         },
-        "FlowerIngressConfiguration": {
-            "title": "FlowerIngressConfiguration",
+        "WebserverIngressConfiguration": {
+            "title": "WebserverIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1110,23 +1205,23 @@
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
-                "dagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
-                "readOnlyDagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
+                },
+                "dagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
+                },
+                "readOnlyDagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
                 }
             },
             "required": [
                 "enabled",
                 "labels",
                 "annotations",
-                "dagit",
-                "readOnlyDagit",
-                "flower"
+                "flower",
+                "dagsterWebserver",
+                "readOnlyDagsterWebserver"
             ]
         },
         "ComputeLogManagerType": {
@@ -1318,6 +1413,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1444,6 +1550,31 @@
                     "anyOf": [
                         {
                             "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "region": {
+                    "title": "Region",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1630,10 +1761,49 @@
             ],
             "type": "string"
         },
+        "DaemonSchedulerConfig": {
+            "title": "DaemonSchedulerConfig",
+            "type": "object",
+            "properties": {
+                "maxCatchupRuns": {
+                    "title": "Maxcatchupruns",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxTickRetries": {
+                    "title": "Maxtickretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
             "properties": {
+                "daemonScheduler": {
+                    "title": "DaemonSchedulerConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/DaemonSchedulerConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "customScheduler": {
                     "title": "ConfigurableClass",
                     "anyOf": [
@@ -1881,6 +2051,17 @@
                 },
                 "schedulerName": {
                     "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobNamespace": {
+                    "title": "Jobnamespace",
                     "anyOf": [
                         {
                             "type": "string"
@@ -2524,6 +2705,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2540,6 +2732,17 @@
                 },
                 "numWorkers": {
                     "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
                     "anyOf": [
                         {
                             "type": "integer"
@@ -2574,10 +2777,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -2684,6 +2897,17 @@
                     "anyOf": [
                         {
                             "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
                         },
                         {
                             "type": "null"
@@ -2868,6 +3092,9 @@
                     "$ref": "#/definitions/TickRetention"
                 },
                 "schedule": {
+                    "$ref": "#/definitions/TickRetention"
+                },
+                "autoMaterialize": {
                     "$ref": "#/definitions/TickRetention"
                 }
             },

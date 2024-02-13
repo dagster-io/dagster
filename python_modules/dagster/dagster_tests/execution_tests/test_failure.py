@@ -1,22 +1,23 @@
-from dagster import Failure, MetadataEntry
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster import Failure, job
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.metadata import MetadataValue
 
 
 def test_failure():
-    @lambda_solid
+    @op
     def throw():
         raise Failure(
             description="it Failure",
-            metadata_entries=[MetadataEntry("label", value="text")],
+            metadata={"label": "text"},
         )
 
-    @pipeline
+    @job
     def failure():
         throw()
 
-    result = execute_pipeline(failure, raise_on_error=False)
+    result = failure.execute_in_process(raise_on_error=False)
     assert not result.success
-    failure_data = result.result_for_node("throw").failure_data
+    failure_data = result.failure_data_for_node("throw")
     assert failure_data
     assert failure_data.error.cls_name == "Failure"
 
@@ -24,5 +25,4 @@ def test_failure():
     assert failure_data.user_failure_data.label == "intentional-failure"
     # from Failure
     assert failure_data.user_failure_data.description == "it Failure"
-    assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-    assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
+    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")

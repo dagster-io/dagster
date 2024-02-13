@@ -1,15 +1,25 @@
-from dagster import Definitions, SourceAsset, TableSchema, asset, load_assets_from_current_module
+from dagster import (
+    Definitions,
+    EnvVar,
+    SourceAsset,
+    TableSchema,
+    asset,
+    load_assets_from_current_module,
+)
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_dbt import DbtCliResource, dbt_assets
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 from pandas import DataFrame
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")
+dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)
+dbt_parse_invocation = dbt_resource.cli(["parse"]).wait()
+dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
 
 
 raw_country_populations = SourceAsset(
-    "raw_country_populations",
+    ["public", "raw_country_populations"],
     metadata={
         "column_schema": TableSchema.from_name_type_dict(
             {
@@ -32,23 +42,21 @@ def country_stats(country_populations: DataFrame, continent_stats: DataFrame) ->
     return result
 
 
-dbt_assets = load_assets_from_dbt_project(DBT_PROJECT_DIR, DBT_PROFILES_DIR)
+@dbt_assets(manifest=dbt_manifest_path)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 defs = Definitions(
     assets=load_assets_from_current_module(),
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": {"env": "SNOWFLAKE_ACCOUNT"},
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "DEV_SANDY",
-                "warehouse": "ELEMENTL",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account=EnvVar("SNOWFLAKE_ACCOUNT"),
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database=EnvVar("SNOWFLAKE_DATABASE"),
+            warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
         ),
-        "dbt": dbt_cli_resource.configured(
-            {"project_dir": DBT_PROJECT_DIR, "profiles_dir": DBT_PROFILES_DIR}
-        ),
+        "dbt": dbt_resource,
     },
 )

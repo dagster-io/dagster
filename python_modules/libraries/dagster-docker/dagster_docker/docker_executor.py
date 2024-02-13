@@ -6,7 +6,7 @@ import docker.errors
 from dagster import Field, IntSource, executor
 from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
+from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
@@ -17,7 +17,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
@@ -49,8 +49,7 @@ from .container_context import DockerContainerContext
 )
 @experimental
 def docker_executor(init_context: InitExecutorContext) -> Executor:
-    """
-    Executor which launches steps as Docker containers.
+    """Executor which launches steps as Docker containers.
 
     To use the `docker_executor`, set it as the `executor_def` when defining a job:
 
@@ -121,7 +120,7 @@ class DockerStepHandler(StepHandler):
         from . import DockerRunLauncher
 
         image = cast(
-            PipelinePythonOrigin, step_handler_context.pipeline_run.pipeline_code_origin
+            JobPythonOrigin, step_handler_context.dagster_run.job_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image
@@ -138,13 +137,13 @@ class DockerStepHandler(StepHandler):
 
     def _get_docker_container_context(self, step_handler_context: StepHandlerContext):
         # This doesn't vary per step: would be good to have a hook where it can be set once
-        # for the whole StepHandler but we need access to the PipelineRun for that
+        # for the whole StepHandler but we need access to the DagsterRun for that
 
         from .docker_run_launcher import DockerRunLauncher
 
         run_launcher = step_handler_context.instance.run_launcher
         run_target = DockerContainerContext.create_for_run(
-            step_handler_context.pipeline_run,
+            step_handler_context.dagster_run,
             run_launcher if isinstance(run_launcher, DockerRunLauncher) else None,
         )
 
@@ -173,7 +172,7 @@ class DockerStepHandler(StepHandler):
         return client
 
     def _get_container_name(self, execute_step_args: ExecuteStepArgs):
-        run_id = execute_step_args.pipeline_run_id
+        run_id = execute_step_args.run_id
         step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
@@ -201,7 +200,7 @@ class DockerStepHandler(StepHandler):
         step_key = step_keys_to_execute[0]
 
         env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
-        env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.pipeline_run.job_name
+        env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.dagster_run.job_name
         env_vars["DAGSTER_RUN_STEP_KEY"] = step_key
         return client.containers.create(
             step_image,
@@ -245,9 +244,9 @@ class DockerStepHandler(StepHandler):
         yield DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
             message="Launching step in Docker container.",
-            metadata_entries=[
-                MetadataEntry("Docker container id", value=step_container.id),
-            ],
+            metadata={
+                "Docker container id": step_container.id,
+            },
         )
         step_container.start()
 
@@ -276,7 +275,7 @@ class DockerStepHandler(StepHandler):
             return CheckStepHealthResult.healthy()
 
         return CheckStepHealthResult.unhealthy(
-            reason=f"Container status is {container.status}. Return code is {str(ret_code)}."
+            reason=f"Container status is {container.status}. Return code is {ret_code}."
         )
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:

@@ -12,7 +12,7 @@ from dagster_postgres.utils import get_conn, get_conn_string
 
 
 def full_pg_config(hostname):
-    return """
+    return f"""
       run_storage:
         module: dagster_postgres.run_storage
         class: PostgresRunStorage
@@ -42,9 +42,7 @@ def full_pg_config(hostname):
               password: test
               hostname: {hostname}
               db_name: test
-    """.format(
-        hostname=hostname
-    )
+    """
 
 
 def unified_pg_config(hostname):
@@ -61,7 +59,7 @@ def unified_pg_config(hostname):
 
 
 def skip_autocreate_pg_config(hostname):
-    return """
+    return f"""
       run_storage:
         module: dagster_postgres.run_storage
         class: PostgresRunStorage
@@ -94,13 +92,11 @@ def skip_autocreate_pg_config(hostname):
               password: test
               hostname: {hostname}
               db_name: test
-    """.format(
-        hostname=hostname
-    )
+    """
 
 
 def params_specified_pg_config(hostname):
-    return """
+    return f"""
       run_storage:
         module: dagster_postgres.run_storage
         class: PostgresRunStorage
@@ -145,9 +141,7 @@ def params_specified_pg_config(hostname):
                 connect_timeout: 10
                 application_name: myapp
                 options: -c synchronous_commit=off
-    """.format(
-        hostname=hostname
-    )
+    """
 
 
 def schema_specified_pg_config(hostname):
@@ -203,22 +197,22 @@ def test_connection_leak(hostname, conn_string):
 
 def test_statement_timeouts(hostname):
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
-        instance.optimize_for_dagit(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # pylint: disable=protected-access
-                conn.execute("select pg_sleep(1)").fetchone()
+            with instance._run_storage.connect() as conn:  # noqa: SLF001
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage._connect() as conn:  # pylint: disable=protected-access
-                conn.execute("select pg_sleep(1)").fetchone()
+            with instance._event_storage._connect() as conn:  # noqa: SLF001
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # pylint: disable=protected-access
-                conn.execute("select pg_sleep(1)").fetchone()
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
 def test_skip_autocreate(hostname, conn_string):
@@ -253,11 +247,10 @@ def test_specify_pg_params(hostname):
         overrides=yaml.safe_load(params_specified_pg_config(hostname))
     ) as instance:
         postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
-        # pylint: disable=protected-access
-        assert instance._event_storage.postgres_url == postgres_url
-        assert instance._run_storage.postgres_url == postgres_url
-        assert instance._schedule_storage.postgres_url == postgres_url
-        # pylint: enable=protected-access
+
+        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001
 
 
 def test_conn_str():
@@ -307,7 +300,8 @@ def test_configured_other_schema(hostname):
             hostname=hostname,
         )
     ).connect() as conn:
-        conn.execute("create schema other_schema;")
+        with conn.begin():
+            conn.execute(db.text("create schema other_schema;"))
 
     with instance_for_test(
         overrides=yaml.safe_load(schema_specified_pg_config(hostname))
@@ -315,7 +309,7 @@ def test_configured_other_schema(hostname):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-        instance.optimize_for_dagit(statement_timeout=100, pool_recycle=100)
+        instance.optimize_for_webserver(statement_timeout=100, pool_recycle=100)
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()

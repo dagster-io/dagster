@@ -10,6 +10,7 @@ from dagster_graphql.test.utils import (
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = """
@@ -61,6 +62,10 @@ GET_PARTITION_SET_QUERY = """
                                 }
                             }
                         }
+                    }
+                    ... on PythonError {
+                        message
+                        stack
                     }
                 }
             }
@@ -116,33 +121,56 @@ GET_PARTITION_SET_STATUS_QUERY = """
 """
 
 
+ADD_DYNAMIC_PARTITION_MUTATION = """
+mutation($partitionsDefName: String!, $partitionKey: String!, $repositorySelector: RepositorySelector!) {
+    addDynamicPartition(partitionsDefName: $partitionsDefName, partitionKey: $partitionKey, repositorySelector: $repositorySelector) {
+        __typename
+        ... on AddDynamicPartitionSuccess {
+            partitionsDefName
+            partitionKey
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on UnauthorizedError {
+            message
+        }
+    }
+}
+"""
+
+
 class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
     def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={"repositorySelector": selector, "pipelineName": "no_config_pipeline"},
+            variables={"repositorySelector": selector, "pipelineName": "integers"},
         )
 
         assert result.data
         snapshot.assert_match(result.data)
 
-        invalid_pipeline_result = execute_dagster_graphql(
+        invalid_job_result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={"repositorySelector": selector, "pipelineName": "invalid_pipeline"},
+            variables={"repositorySelector": selector, "pipelineName": "invalid_job"},
         )
 
-        assert invalid_pipeline_result.data
-        snapshot.assert_match(invalid_pipeline_result.data)
+        assert invalid_job_result.data
+        snapshot.assert_match(invalid_job_result.data)
 
     def test_get_partition_set(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_QUERY,
-            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": selector,
+            },
         )
 
         assert result.data
@@ -162,12 +190,27 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
 
         snapshot.assert_match(invalid_partition_set_result.data)
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SET_QUERY,
+            variables={
+                "partitionSetName": "dynamic_partitioned_assets_job_partition_set",
+                "repositorySelector": selector,
+            },
+        )
+
+        assert result.data
+        snapshot.assert_match(result.data)
+
     def test_get_partition_tags(self, graphql_context):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_TAGS_QUERY,
-            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": selector,
+            },
         )
 
         assert not result.errors
@@ -179,7 +222,7 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         assert tags == {
             "foo": "0",
             "dagster/partition": "0",
-            "dagster/partition_set": "integer_partition",
+            "dagster/partition_set": "integers_partition_set",
         }
 
 
@@ -193,7 +236,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                     "forceSynchronousSubmission": True,
@@ -208,7 +251,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             query=GET_PARTITION_SET_STATUS_QUERY,
             variables={
-                "partitionSetName": "integer_partition",
+                "partitionSetName": "integers_partition_set",
                 "repositorySelector": repository_selector,
             },
         )
@@ -231,7 +274,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": [str(num) for num in range(10)],
                     "forceSynchronousSubmission": True,
@@ -246,7 +289,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             query=GET_PARTITION_SET_STATUS_QUERY,
             variables={
-                "partitionSetName": "integer_partition",
+                "partitionSetName": "integers_partition_set",
                 "repositorySelector": repository_selector,
             },
         )
@@ -258,6 +301,57 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         assert len(partitionStatuses) == 10
         for partitionStatus in partitionStatuses:
             assert partitionStatus["runStatus"] == "SUCCESS"
+
+    def test_get_status_failure_cancelation_states(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3", "4"],
+                    "forceSynchronousSubmission": True,
+                }
+            },
+        )
+
+        assert not result.errors
+
+        runs = graphql_context.instance.get_runs()
+        graphql_context.instance.report_run_failed(runs[1])
+        graphql_context.instance.report_run_canceled(runs[2])
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            query=GET_PARTITION_SET_STATUS_QUERY,
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        failure = 0
+        canceled = 0
+        success = 0
+        for partitionStatus in partitionStatuses:
+            if partitionStatus["runStatus"] == "FAILURE":
+                failure += 1
+            if partitionStatus["runStatus"] == "CANCELED":
+                canceled += 1
+            if partitionStatus["runStatus"] == "SUCCESS":
+                success += 1
+
+        # Note: Canceled run is not reflected in partition status
+        assert failure == 1
+        assert success == 1
+        assert canceled == 0
 
     def test_get_status_time_window_partitioned_job(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
@@ -340,3 +434,71 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 assert partitionStatus["runStatus"] == "SUCCESS"
             else:
                 assert partitionStatus["runStatus"] is None
+
+    def test_add_dynamic_partitions(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data["addDynamicPartition"]["__typename"] == "AddDynamicPartitionSuccess"
+        assert result.data["addDynamicPartition"]["partitionsDefName"] == "foo"
+        assert result.data["addDynamicPartition"]["partitionKey"] == "bar"
+
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar"}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data["addDynamicPartition"]["__typename"] == "DuplicateDynamicPartitionError"
+
+    def test_nonexistent_dynamic_partitions_def_throws_error(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={
+                "partitionsDefName": "nonexistent",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["addDynamicPartition"]["__typename"] == "UnauthorizedError"
+        # If the selected repository does not contain a matching dynamic partitions definition
+        # we should throw an unauthorized error
+        assert (
+            "does not contain a dynamic partitions definition"
+            in result.data["addDynamicPartition"]["message"]
+        )
+
+
+class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
+    def test_unauthorized_error_on_add_dynamic_partitions(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["addDynamicPartition"]["__typename"] == "UnauthorizedError"

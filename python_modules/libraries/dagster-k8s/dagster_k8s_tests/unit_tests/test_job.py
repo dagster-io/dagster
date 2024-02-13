@@ -4,13 +4,17 @@ import pytest
 from dagster import (
     __version__ as dagster_version,
     graph,
+    job,
+    op,
 )
 from dagster._core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
+from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
     DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     USER_DEFINED_K8S_CONFIG_KEY,
+    K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
@@ -42,7 +46,7 @@ def test_user_defined_k8s_config_serialization():
         },
         pod_template_spec_metadata={"namespace": "value"},
         pod_spec_config={"dns_policy": "value"},
-        job_config={"status": {"completed_indexes": "value"}},
+        job_config={"status": {"active": 1}},
         job_metadata={"namespace": "value"},
         job_spec_config={"backoff_limit": 120},
     )
@@ -66,6 +70,7 @@ def test_construct_dagster_k8s_job():
     assert job["kind"] == "Job"
     assert job["metadata"]["name"] == "job123"
     assert job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    assert job["spec"]["template"]["spec"]["automount_service_account_token"]
     assert DAGSTER_PG_PASSWORD_ENV_VAR in [
         env["name"] for env in job["spec"]["template"]["spec"]["containers"][0]["env"]
     ]
@@ -551,6 +556,50 @@ def test_construct_dagster_k8s_job_with_user_defined_service_account_name():
     assert service_account_name == "this-should-take-precedence"
 
 
+def test_construct_dagster_k8s_job_with_deep_merge():
+    @job(
+        tags={
+            USER_DEFINED_K8S_CONFIG_KEY: {
+                "pod_template_spec_metadata": {
+                    "labels": {"foo_label": "bar_value"},
+                },
+            }
+        }
+    )
+    def user_defined_deep_merge_job():
+        pass
+
+    job_user_defined_k8s_config = get_user_defined_k8s_config(user_defined_deep_merge_job.tags)
+    assert job_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.SHALLOW
+
+    @op(
+        tags={
+            USER_DEFINED_K8S_CONFIG_KEY: {
+                "pod_template_spec_metadata": {
+                    "labels": {"baz_label": "quux_value"},
+                },
+                "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+            }
+        }
+    )
+    def user_defined_deep_merge_op():
+        pass
+
+    op_user_defined_k8s_config = get_user_defined_k8s_config(user_defined_deep_merge_op.tags)
+    assert op_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.DEEP
+
+    merged_k8s_config = (
+        K8sContainerContext(run_k8s_config=job_user_defined_k8s_config)
+        .merge(K8sContainerContext(run_k8s_config=op_user_defined_k8s_config))
+        .run_k8s_config
+    )
+
+    assert merged_k8s_config.pod_template_spec_metadata["labels"] == {
+        "foo_label": "bar_value",
+        "baz_label": "quux_value",
+    }
+
+
 def test_construct_dagster_k8s_job_with_ttl_snake_case():
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
@@ -641,22 +690,31 @@ def test_construct_dagster_k8s_job_with_labels():
         "foo_label_key": "bar_label_value",
     }
 
+    user_defined_labels = {
+        "user_label_key": "user_label_value",
+    }
+
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
         dagster_home="/opt/dagster/dagster_home",
         instance_config_map="test",
         labels=job_config_labels,
     )
+
     job1 = construct_dagster_k8s_job(
         cfg,
         [],
         "job123",
+        user_defined_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_template_spec_metadata={"labels": user_defined_labels},
+        ),
         labels={
             "dagster/job": "some_job",
             "dagster/op": "some_op",
             "dagster/run-id": "some_run_id",
         },
     ).to_dict()
+
     expected_labels1 = dict(
         **common_labels,
         **job_config_labels,
@@ -667,8 +725,13 @@ def test_construct_dagster_k8s_job_with_labels():
         },
     )
 
+    expected_template_labels1 = {
+        **expected_labels1,
+        **user_defined_labels,
+    }
+
     assert job1["metadata"]["labels"] == expected_labels1
-    assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
+    assert job1["spec"]["template"]["metadata"]["labels"] == expected_template_labels1
 
     job2 = construct_dagster_k8s_job(
         cfg,
@@ -694,6 +757,39 @@ def test_construct_dagster_k8s_job_with_labels():
     assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2
 
 
+def test_construct_dagster_k8s_job_with_label_precedence():
+    job_labels = {
+        "a": "job a",
+        "b": "job b",
+    }
+
+    user_labels = {
+        "a": "user a",
+    }
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="test",
+        labels=job_labels,
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg,
+        [],
+        "job123",
+        user_defined_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_template_spec_metadata={"labels": user_labels},
+        ),
+    ).to_dict()
+
+    assert job["metadata"]["labels"]["a"] == "job a"
+    assert job["metadata"]["labels"]["b"] == "job b"
+
+    assert job["spec"]["template"]["metadata"]["labels"]["a"] == "user a"
+    assert job["spec"]["template"]["metadata"]["labels"]["b"] == "job b"
+
+
 def test_sanitize_labels():
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
@@ -706,13 +802,44 @@ def test_sanitize_labels():
         [],
         "job456",
         labels={
-            "dagster/op": "-get_f\o.o[bar-0]-",  # pylint: disable=anomalous-backslash-in-string
+            "dagster/op": r"-get_f\o.o[bar-0]-",
             "my_label": "_WhatsUP",
         },
     ).to_dict()
 
     assert job["metadata"]["labels"]["dagster/op"] == "get_f-o.o-bar-0"
     assert job["metadata"]["labels"]["my_label"] == "WhatsUP"
+
+
+def test_construct_dagster_k8s_job_with_raw_env():
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+    with environ({"ENV_VAR_1": "one"}):
+        job = construct_dagster_k8s_job(
+            cfg,
+            ["foo", "bar"],
+            "job",
+            env_vars=[
+                {"name": "FOO", "value": "BAR"},
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+            ],
+        ).to_dict()
+
+        env = job["spec"]["template"]["spec"]["containers"][0]["env"]
+        env_mapping = {env_var["name"]: env_var for env_var in env}
+
+        # Has DAGSTER_HOME and two additional env vars
+        assert len(env_mapping) == 3
+        assert env_mapping["FOO"]["value"] == "BAR"
+        assert (
+            env_mapping["DD_AGENT_HOST"]["value_from"]["field_ref"]["field_path"] == "status.hostIP"
+        )
 
 
 # Taken from the k8s error message when a label is invalid

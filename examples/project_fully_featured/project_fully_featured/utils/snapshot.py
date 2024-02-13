@@ -19,8 +19,8 @@ if __name__ == "__main__":
         results = list(tqdm(executor.map(client.fetch_item_by_id, ids), total=len(ids)))
 
     items = {}
-    for x in filter(None, results):  # type: ignore  # (mypy doesn't understand filter)
-        items[int(x["id"])] = x
+    for x in results:
+        items[int(x["id"])] = x  # type: ignore
 
     with gzip.open(file_relative_path(__file__, "../utils/snapshot.gzip"), "w") as f:
         f.write(json.dumps(items).encode())

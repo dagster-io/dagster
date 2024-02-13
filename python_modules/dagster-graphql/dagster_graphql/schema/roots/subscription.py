@@ -8,11 +8,11 @@ from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 from ..util import ResolveInfo, non_null_list
 
 
-class GrapheneDagitSubscription(graphene.ObjectType):
+class GrapheneSubscription(graphene.ObjectType):
     """The root for all subscriptions to retrieve real-time data from the Dagster instance."""
 
     class Meta:
-        name = "DagitSubscription"
+        name = "Subscription"
 
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),

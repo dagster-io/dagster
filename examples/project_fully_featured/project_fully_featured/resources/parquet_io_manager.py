@@ -2,22 +2,20 @@ import os
 from typing import Union
 
 import pandas
-import pyspark
-import pyspark.sql
 from dagster import (
-    Field,
+    ConfigurableIOManager,
     InputContext,
-    IOManager,
     OutputContext,
+    ResourceDependency,
     _check as check,
-    io_manager,
 )
 from dagster._seven.temp_dir import get_system_temp_directory
+from dagster_pyspark.resources import PySparkResource
+from pyspark.sql import DataFrame as PySparkDataFrame
 
 
-class PartitionedParquetIOManager(IOManager):
-    """
-    This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
+class PartitionedParquetIOManager(ConfigurableIOManager):
+    """This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
 
     It stores outputs for different partitions in different filepaths.
@@ -26,12 +24,13 @@ class PartitionedParquetIOManager(IOManager):
     to where the data is stored.
     """
 
-    def __init__(self, base_path):
-        self._base_path = base_path
+    pyspark: ResourceDependency[PySparkResource]
 
-    def handle_output(
-        self, context: OutputContext, obj: Union[pandas.DataFrame, pyspark.sql.DataFrame]
-    ):
+    @property
+    def _base_path(self):
+        raise NotImplementedError()
+
+    def handle_output(self, context: OutputContext, obj: Union[pandas.DataFrame, PySparkDataFrame]):
         path = self._get_path(context)
         if "://" not in self._base_path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -40,7 +39,7 @@ class PartitionedParquetIOManager(IOManager):
             row_count = len(obj)
             context.log.info(f"Row count: {row_count}")
             obj.to_parquet(path=path, index=False)
-        elif isinstance(obj, pyspark.sql.DataFrame):
+        elif isinstance(obj, PySparkDataFrame):
             row_count = obj.count()
             obj.write.parquet(path=path, mode="overwrite")
         else:
@@ -48,11 +47,11 @@ class PartitionedParquetIOManager(IOManager):
 
         context.add_output_metadata({"row_count": row_count, "path": path})
 
-    def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
+    def load_input(self, context) -> Union[PySparkDataFrame, str]:
         path = self._get_path(context)
-        if context.dagster_type.typing_type == pyspark.sql.DataFrame:
+        if context.dagster_type.typing_type == PySparkDataFrame:
             # return pyspark dataframe
-            return context.resources.pyspark.spark_session.read.parquet(path)
+            return self.pyspark.spark_session.read.parquet(path)
 
         return check.failed(
             f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
@@ -60,7 +59,7 @@ class PartitionedParquetIOManager(IOManager):
         )
 
     def _get_path(self, context: Union[InputContext, OutputContext]):
-        key = context.asset_key.path[-1]  # type: ignore
+        key = context.asset_key.path[-1]
 
         if context.has_asset_partitions:
             start, end = context.asset_partitions_time_window
@@ -71,16 +70,17 @@ class PartitionedParquetIOManager(IOManager):
             return os.path.join(self._base_path, f"{key}.pq")
 
 
-@io_manager(
-    config_schema={"base_path": Field(str, is_required=False)},
-    required_resource_keys={"pyspark"},
-)
-def local_partitioned_parquet_io_manager(init_context):
-    return PartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
-    )
+class LocalPartitionedParquetIOManager(PartitionedParquetIOManager):
+    base_path: str = get_system_temp_directory()
+
+    @property
+    def _base_path(self):
+        return self.base_path
 
 
-@io_manager(required_resource_keys={"pyspark", "s3_bucket"})
-def s3_partitioned_parquet_io_manager(init_context):
-    return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)
+class S3PartitionedParquetIOManager(PartitionedParquetIOManager):
+    s3_bucket: str
+
+    @property
+    def _base_path(self):
+        return "s3://" + self.s3_bucket

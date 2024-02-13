@@ -1,6 +1,6 @@
 ---
-title: "Migrating Airflow to Dagster"
-description: guide for doing a lift and shift migration of airflow to dagster
+title: "Migrating Airflow to Dagster | Dagster Docs"
+description: "Learn how do a lift-and-shift migration of airflow to Dagster."
 ---
 
 # Migrating Airflow to Dagster
@@ -13,80 +13,216 @@ description: guide for doing a lift and shift migration of airflow to dagster
   !
 </Note>
 
-Dagster can convert your Airflow DAGs into Dagster jobs, enabling a lift-and-shift migration from Airflow to Dagster without any rewriting.
+Dagster can convert your Airflow DAGs into Dagster jobs, enabling a lift-and-shift migration from Airflow without any rewriting.
 
-This guide will walk you through the steps of doing this migration.
+This guide will walk you through the steps of performing this migration.
 
 ---
 
 ## Prerequisites
 
-To get started, you will need to install the `dagster` and `dagster-airflow` Python packages:
+To complete the migration, you'll need:
 
-```bash
-pip install dagster dagster-airflow
-```
+- **To perform some upfront analysis**. Refer to the [next section](#before-you-begin) for more detail.
+
+- **To know the following about your Airflow setup**:
+
+  - What operator types are used in the DAGs you're migrating
+  - What Airflow connections your DAGs depend on
+  - What Airflow variables you've set
+  - What Airflow secrets backend you use
+  - Where the permissions that your DAGs depend on are defined
+
+- **If using Dagster Cloud**, an existing [Dagster Cloud](/dagster-cloud) account. While your migrated Airflow DAGs will work with Dagster Open Source, this guide includes setup specific to Dagster Cloud.
+
+  **If you just signed up for a Cloud account**, follow the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started) before proceeding.
+
+### Before you begin
+
+You may be coming to this document/library in a skeptical frame of mind, having previously been burned by projects that claim to have 100% foolproof, automated migration tools. We want to assure you that we are _not_ making that claim.
+
+The `dagster-airflow` migration library should be viewed as a powerful _accelerant_ of migration, rather than guaranteeing completely _automated_ migration. The amount of work required is proportional to the complexity of your installation. Smaller implementations of less complexity can be trivial to migrate, making it appear virtually automatic; larger, more complicated, or customized implementations require more investment.
+
+For larger installations, teams that already adopt devops practices and/or have standardized usage of Airflow will have a smoother transition.
+
+Some concrete examples:
+
+- If you rely on the usage of the Airflow UI to set production connections or variables, this will require a change of workflow as you will no longer have the Airflow UI at the end of this migration. If instead you rely on code-as-infrastructure patterns to set connections or variables, migration is more straightforward.
+- If you have standardized on a small set or even a single operator type (e.g. the `K8sPodOperator`), migration will be easier. If you use a large number of operator types with a wide range of infrastructure requirements, migration will be more work.
+- If you dynamically generate your Airflow DAGs from a higher-level API or DSL (e.g. yaml), the migration will be more straightforward than all your stakeholders directly creating Airflow DAGs.
+
+Even in the case that requires some infrastructure investment, `dagster-airflow` dramatically eases migration, typically by orders of magnitude. The cost can be borne by a single or small set of infrastructure-oriented engineers, which dramatically reduces coordination costs. You do not have to move all of your stakeholders over to new APIs simultaneously. In our experience, practitioners welcome the change, because of the immediate improvement in tooling, stability, and development speed.
 
 ---
 
-## Step 1: Create a new repository using make_dagster_repo_from_airflow_dags_path
+## Step 1: Prepare your project for a new Dagster Python module
 
-The first step to migrating is to define a Dagster repository. To do this, we'll use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" /> and pass it the file path of our Airflow Dag Bag. Dagster will then load the DagBag and convert all DAGs into Dagster jobs.
+While there are many ways to structure an Airflow git repository, this guide assumes you're using a repository structure that contains a single `./dags` DagBag directory that contains all your DAGs.
+
+In the root of your repository, create a `dagster_migration.py` file.
+
+---
+
+## Step 2: Install Dagster Python packages alongside Airflow
+
+<Note>
+  This step may require working through a number of version pins. Specifically,
+  installing Airflow 1.x.x versions may be challenging due to (usually) outdated
+  constraint files.
+  <br />
+  <br />
+  Don't get discouraged if you run into problems! Reach out to the Dagster Slack
+  for help.
+</Note>
+
+In this step, you'll install the `dagster`, `dagster-airflow`, and `dagster-webserver` Python packages alongside Airflow. **We strongly recommend using a virtualenv.**
+
+To install everything, run:
+
+```bash
+pip install dagster dagster-airflow dagster-webserver
+```
+
+We also suggest verifying that you're installing the correct versions of your Airflow dependencies. Verifying the dependency versions will likely save you from debugging tricky errors later.
+
+To check dependency versions, open your Airflow provider's UI and locate the version numbers. When finished, continue to the next step.
+
+---
+
+## Step 3: Convert DAGS into Dagster definitions
+
+In this step, you'll start writing Python!
+
+In the `dagster_migration.py` file you created in [Step 1](#step-1-prepare-your-project-for-a-new-dagster-python-module), use <PyObject module="dagster_airflow" object="make_dagster_definitions_from_airflow_dags_path" /> and pass in the file path of your Airflow DagBag. Dagster will load the DagBag and convert all DAGs into Dagster jobs and schedules.
 
 ```python file=/integrations/airflow/migrate_repo.py
 import os
 
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow import (
+    make_dagster_definitions_from_airflow_dags_path,
+)
 
-migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
-    os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
-    "migrated_airflow_repo",
+migrated_airflow_definitions = make_dagster_definitions_from_airflow_dags_path(
+    os.path.abspath("./dags/"),
 )
 ```
 
-Under the hood, Dagster is running the exact operator code as you were in Airflow. You will be able to view your normal Airflow `stdout`/`stderr` logs as compute logs in Dagit.
+---
+
+## Step 4: Verify the DAGs are loading
+
+In this step, you'll spin up Dagster's web-based UI, and verify that your migrated DAGs are loading. **Note**: Unless the migrated DAGs depend on no Airflow configuration state or permissions, it's unlikely they'll execute correctly at this point. That's okay - we'll fix it in a bit. Starting the Dagster UI is the first step in our development loop, allowing you to make a local change, view it in the UI, and debug any errors.
+
+1. Run the following to start the UI:
+
+   ```bash
+   dagster dev -f ./migrate_repo.py
+   ```
+
+2. In your browser, navigate to <http://localhost:3001>. You should see a list of Dagster jobs that correspond to the DAGs in your Airflow DagBag.
+
+3. Run one of the simpler jobs, ideally one where you're familiar with the business logic. Note that it's likely to fail due to a configuration or permissions issue.
+
+4. Using logs to identify and making configuration changes to fix the cause of the failure.
+
+Repeat these steps as needed until the jobs run successfully.
+
+### Containerized operator considerations
+
+There are a variety of Airflow Operator types that are used to launch compute in various external execution environments, for example Kubernetes or Amazon ECS. When getting things working locally we'd recommend trying to execute those containers locally unless it's either unrealistic or impossible to emulate the cloud environment. For example if you use the K8sPodOperator, it likely means that you will need to have a local Kubernetes cluster running, and in that case we recommend docker's built-in Kubernetes environment. You also need to be able to pull down the container images that will be needed for execution to your local machine.
+
+If local execution is impossible, we recommend using Branch Deployments in Dagster Cloud, which is a well-supported workflow for cloud-native development.
 
 ---
 
-## Step 2: Define your Airflow connections
+## Step 5: Transfer your Airflow configuration
 
-By default, each job run of your migrated DAGs creates an ephemeral airflow metadatabase scoped to each job run. This means any [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) that your DAG depends on will need to be created. To do this, you can provide a `connections` parameter to <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />:
+To port your Airflow configuration, we recommend using [environment variables](/guides/dagster/using-environment-variables-and-secrets) as much as possible. Specifically, we recommend using a `.env` file containing Airflow variables and/or a secrets backend configuration in the root of your project.
+
+You'll also need to configure the [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) that your DAGs depend on. To accomplish this, use the `connections` parameter instead of URI-encoded environment variables.
 
 ```python file=/integrations/airflow/migrate_repo_connections.py
 import os
 
 from airflow.models import Connection
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
 
-migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
-    os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
-    "migrated_airflow_repo",
+migrated_airflow_definitions = make_dagster_definitions_from_airflow_dags_path(
+    os.path.abspath("./dags/"),
     connections=[
         Connection(conn_id="http_default", conn_type="uri", host="https://google.com")
     ],
 )
 ```
 
-If you're running on Dagster Cloud and any of your connection fields are sensitive, you can securely pass them in using [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets).
+Iterate as needed until all configuration is correctly ported to your local environment.
 
 ---
 
-## Step 3: Run your migrated DAGs locally
+## Step 6: Deciding on persistent vs ephemeral Airflow database
 
-Once you've defined the repository, you can launch Dagit, Dagster's web UI. This allows you to view your newly migrated jobs and launch runs.
+The Dagster Airflow migration tooling supports two methods for persisting Airflow metadatabase state. By default, it will use an ephemeral database that is scoped to every job run and thrown away as soon as a job run terminates. You can also configure a persistent database that will be shared by all job runs. This tutorial uses the ephemeral database, but the persistent database option is recommended if you need the following features:
 
-```bash
-dagster dev -f <your migrated dags>.py
+- retry-from-failure support in Dagster
+- Passing Airflow state between DAG runs (i.e., xcoms)
+- `SubDAGOperators`
+- Airflow Pools
+
+If you have complex Airflow DAGs (cross-DAG state sharing, pools) or the ability to retry-from-failure you will need to have a persistent database when making your migration.
+
+You can configure your persistent Airflow database by providing an `airflow_db` to the `resource_defs` parameter of the `dagster-airflow` APIs:
+
+```python
+from dagster_airflow import (
+    make_dagster_definitions_from_airflow_dags_path,
+    make_persistent_airflow_db_resource,
+)
+postgres_airflow_db = "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"
+airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
+definitions = make_dagster_definitions_from_airflow_example_dags(
+    '/path/to/dags/',
+    resource_defs={"airflow_db": airflow_db}
+)
 ```
 
-If your local shell has the correct permissions, you can also test out running the migrated DAGs end-to-end.
+---
+
+## Step 7: Move to production
+
+<Note>
+  This step is applicable to Dagster Cloud. If deploying to your infrastructure,
+  refer to the <a href="/deployment">Deployment guides</a> for more info.
+  <br />
+  <br />
+  Additionally, until your Airflow DAGs execute successfully in your local environment,
+  we recommend waiting to move to production.
+</Note>
+
+In this step, you'll set up your project for use with Dagster Cloud.
+
+<!-- Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made as part of the Dagster Cloud onboarding. -->
+
+1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
+
+2. In the root of your project, create or modify the [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) with the following code:
+
+   ```yaml
+   locations:
+     - location_name: dagster_migration
+       code_source:
+         python_file: dagster_migration.py
+   ```
+
+3. Push your code and let Dagster Cloud's CI/CD run out a deployment of your migrated DAGs to cloud.
 
 ---
 
-## Step 4: Setup your permissions
+## Step 8: Migrate permissions to Dagster
 
-Your Airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your Airflow DAGs. In order to run the migrated Dagster jobs, you'll need to duplicate these permissions for Dagster.
+Your Airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your Airflow DAGs. To run the migrated Dagster jobs, you'll need to duplicate these permissions for Dagster.
 
-- **Using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets)** are the easiest methods for defining permissions.
+- **We recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets)** to define permissions whenever possible.
 
-- **If your Airflow DAGs used [`KubernetesPodOperators`](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html)**, it's possible that you used the `in_cluster` config or loading a `kube_config` file. When migrating, we recommend switching to [using connections with a `kube_config` JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) to make things easier.
+- **If you're unable to use Airflow connections or environment variables,** you can attach permissions directly to the infrastructure where you're deploying Dagster.
+
+- **If your Airflow DAGs used [`KubernetesPodOperators`](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html)**, it's possible that you loaded a `kube_config` file or used the `in_cluster` config. When migrating, we recommend switching to [using connections with a `kube_config` JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) to make things easier.

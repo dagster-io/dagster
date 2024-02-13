@@ -1,4 +1,5 @@
-# pylint: disable=print-call, redefined-outer-name, unused-argument
+# ruff: noqa: T201
+
 import base64
 import os
 import subprocess
@@ -260,7 +261,7 @@ def helm_namespace_for_user_deployments_subchart_disabled(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     namespace = helm_namespace_for_user_deployments_subchart
 
     with helm_chart_for_user_deployments_subchart_disabled(
@@ -279,7 +280,7 @@ def helm_namespace_for_user_deployments_subchart(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -293,7 +294,7 @@ def helm_namespace_for_daemon(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -319,7 +320,7 @@ def helm_namespace(
     aws_configmap,
     secrets,
     celery_backend,
-):  # pylint: disable=unused-argument
+):
     with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
         yield namespace
 
@@ -330,7 +331,7 @@ def create_cluster_admin_role_binding(namespace, service_account_name, should_cl
 
     kube_api = kubernetes.client.RbacAuthorizationV1Api()
 
-    subject = kubernetes.client.V1Subject(
+    subject = kubernetes.client.RbacV1Subject(
         namespace=namespace, name=service_account_name, kind="ServiceAccount"
     )
 
@@ -391,7 +392,7 @@ def helm_namespaces_for_k8s_run_launcher(
     aws_configmap,
     secrets,
     request,
-):  # pylint: disable=unused-argument
+):
     subchart_enabled = request.param
     with ExitStack() as stack:
         if subchart_enabled:
@@ -466,7 +467,7 @@ def _helm_chart_helper(
     check.bool_param(should_cleanup, "should_cleanup")
     check.str_param(helm_install_name, "helm_install_name")
 
-    print("--- \033[32m:helm: Installing Helm chart {}\033[0m".format(helm_install_name))
+    print(f"--- \033[32m:helm: Installing Helm chart {helm_install_name}\033[0m")
 
     try:
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
@@ -493,21 +494,21 @@ def _helm_chart_helper(
         print("Helm install completed with stderr: ", stderr.decode("utf-8"))
         assert p.returncode == 0
 
-        # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
+        # Wait for webserver pod to be ready (won't actually stay up w/out js rebuild)
         api_client = DagsterKubernetesClient.production_client()
 
         if chart_name == "helm/dagster":
-            print("Waiting for Dagit pod to be ready...")
+            print("Waiting for webserver pod to be ready...")
             start_time = time.time()
             while True:
                 if time.time() - start_time > 120:
-                    raise Exception("No dagit pod after 2 minutes")
+                    raise Exception("No webserver pod after 2 minutes")
 
                 pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
-                pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
+                pod_names = [p.metadata.name for p in pods.items if "webserver" in p.metadata.name]
                 if pod_names:
-                    dagit_pod = pod_names[0]
-                    api_client.wait_for_pod(dagit_pod, namespace=namespace)
+                    webserver_pod = pod_names[0]
+                    api_client.wait_for_pod(webserver_pod, namespace=namespace)
                     break
                 time.sleep(1)
 
@@ -615,9 +616,7 @@ def _helm_chart_helper(
             else:
                 assert (
                     len(pod_names) == 0
-                ), "celery-worker pods {pod_names} exists when celery is not enabled.".format(
-                    pod_names=pod_names
-                )
+                ), f"celery-worker pods {pod_names} exists when celery is not enabled."
 
         dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
         if (
@@ -715,7 +714,7 @@ def helm_chart_for_k8s_run_launcher(
                         "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
                         + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
-                        "envVars": (["BUILDKITE=1"] if os.getenv("BUILDKITE") else []),
+                        "envVars": ["BUILDKITE=1"] if os.getenv("BUILDKITE") else [],
                         "imagePullPolicy": image_pull_policy(),
                         "volumeMounts": [
                             {
@@ -743,17 +742,27 @@ def helm_chart_for_k8s_run_launcher(
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
                 "heartbeatTolerance": 180,
                 "runCoordinator": {"enabled": False},  # No run queue
-                "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+                "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
-                if run_monitoring
-                else {},
+                "runMonitoring": (
+                    {
+                        "enabled": True,
+                        "pollIntervalSeconds": 5,
+                        "startTimeoutSeconds": 60,
+                        "maxResumeRunAttempts": 3,
+                        "freeSlotsAfterRunEndSeconds": 300,
+                    }
+                    if run_monitoring
+                    else {}
+                ),
             },
-            "dagit": {
+            "dagsterWebserver": {
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-                "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-                "annotations": {"dagster-integration-tests": "dagit-pod-annotation"},
-                "service": {"annotations": {"dagster-integration-tests": "dagit-svc-annotation"}},
+                "env": {"TEST_SET_ENV_VAR": "test_webserver_env_var"},
+                "annotations": {"dagster-integration-tests": "webserver-pod-annotation"},
+                "service": {
+                    "annotations": {"dagster-integration-tests": "webserver-svc-annotation"}
+                },
                 "workspace": {
                     "enabled": not enable_subchart,
                     "servers": [
@@ -834,7 +843,7 @@ def _deployment_config(docker_image):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "dagsterApiGrpcArgs": [
                 "-m",
-                "dagster_test.test_project.test_pipelines.repo",
+                "dagster_test.test_project.test_jobs.repo",
                 "-a",
                 "define_demo_execution_repo",
             ],
@@ -842,8 +851,13 @@ def _deployment_config(docker_image):
             "includeConfigInLaunchedRuns": {
                 "enabled": True,
             },
-            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
-            "envConfigMaps": ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+            "env": (
+                [{"name": "BUILDKITE", "value": os.getenv("BUILDKITE")}]
+                if os.getenv("BUILDKITE")
+                else []
+            )
+            + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
+            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else [],
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}},
@@ -868,11 +882,11 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
             "enableSubchart": enable_subchart,
             "deployments": _deployment_config(docker_image),
         },
-        "dagit": {
+        "dagsterWebserver": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "annotations": {"dagster-integration-tests": "dagit-pod-annotation"},
-            "service": {"annotations": {"dagster-integration-tests": "dagit-svc-annotation"}},
+            "env": {"TEST_SET_ENV_VAR": "test_webserver_env_var"},
+            "annotations": {"dagster-integration-tests": "webserver-pod-annotation"},
+            "service": {"annotations": {"dagster-integration-tests": "webserver-svc-annotation"}},
         },
         "flower": {
             "enabled": True,
@@ -934,13 +948,14 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                     "labels": {
                         "run_launcher_label_key": "run_launcher_label_value",
                     },
+                    "jobNamespace": system_namespace,
                 },
             },
         },
         "rabbitmq": {"enabled": True},
         "ingress": {
             "enabled": True,
-            "dagit": {"host": "dagit.example.com"},
+            "dagsterWebserver": {"host": "dagster.example.com"},
             "flower": {"flower": "flower.example.com"},
         },
         "postgresql": {
@@ -952,11 +967,13 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "heartbeatTolerance": 180,
             "runCoordinator": {"enabled": False},  # No run queue
-            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+            "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
             "runMonitoring": {
                 "enabled": True,
                 "pollIntervalSeconds": 5,
+                "startTimeoutSeconds": 180,
+                "maxResumeRunAttempts": 0,
             },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
@@ -982,7 +999,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
                 "heartbeatTolerance": 180,
                 "runCoordinator": {"enabled": True},
-                "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+                "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
             },
         },
@@ -994,37 +1011,39 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
 
 
 @pytest.fixture(scope="session")
-def dagit_url(helm_namespace):
-    with _port_forward_dagit(namespace=helm_namespace) as forwarded_dagit_url:
-        yield forwarded_dagit_url
+def webserver_url(helm_namespace):
+    with _port_forward_dagster_webserver(namespace=helm_namespace) as forwarded_webserver_url:
+        yield forwarded_webserver_url
 
 
 @pytest.fixture(scope="session")
-def dagit_url_for_daemon(helm_namespace_for_daemon):
-    with _port_forward_dagit(namespace=helm_namespace_for_daemon) as forwarded_dagit_url:
-        yield forwarded_dagit_url
+def webserver_url_for_daemon(helm_namespace_for_daemon):
+    with _port_forward_dagster_webserver(
+        namespace=helm_namespace_for_daemon
+    ) as forwarded_webserver_url:
+        yield forwarded_webserver_url
 
 
 @pytest.fixture(scope="session")
-def dagit_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher):
-    with _port_forward_dagit(
+def webserver_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher):
+    with _port_forward_dagster_webserver(
         namespace=system_namespace_for_k8s_run_launcher
-    ) as forwarded_dagit_url:
-        yield forwarded_dagit_url
+    ) as forwarded_webserver_url:
+        yield forwarded_webserver_url
 
 
 @contextmanager
-def _port_forward_dagit(namespace):
-    print("Port-forwarding dagit")
+def _port_forward_dagster_webserver(namespace):
+    print("Port-forwarding dagster-webserver")
     kube_api = kubernetes.client.CoreV1Api()
 
     pods = kube_api.list_namespaced_pod(namespace=namespace)
-    pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
+    pod_names = [p.metadata.name for p in pods.items if "webserver" in p.metadata.name]
 
     if not pod_names:
-        raise Exception("No pods with dagit in name")
+        raise Exception("No pods with webserver in name")
 
-    dagit_pod_name = pod_names[0]
+    webserver_pod_name = pod_names[0]
 
     forward_port = find_free_port()
 
@@ -1036,51 +1055,51 @@ def _port_forward_dagit(namespace):
                 "port-forward",
                 "--namespace",
                 namespace,
-                dagit_pod_name,
-                "{forward_port}:80".format(forward_port=forward_port),
+                webserver_pod_name,
+                f"{forward_port}:80",
             ],
             # Squelch the verbose "Handling connection for..." messages
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
 
-        dagit_url = f"localhost:{forward_port}"
+        webserver_url_url = f"localhost:{forward_port}"
 
         # Validate port forwarding works
         start = time.time()
 
         while True:
             if time.time() - start > 60:
-                raise Exception("Timed out while waiting for dagit port forwarding")
+                raise Exception("Timed out while waiting for dagster-webserver port forwarding")
 
             print(
                 "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."
-                % (dagit_pod_name, forward_port)
+                % (webserver_pod_name, forward_port)
             )
             try:
-                check_output(["curl", f"http://{dagit_url}"])
+                check_output(["curl", f"http://{webserver_url_url}"])
                 break
             except Exception:
                 time.sleep(1)
 
-        print("Port forwarding in the backgound. Trying to connect to Dagit...")
+        print("Port forwarding in the backgound. Trying to connect to dagster-webserver...")
 
         start_time = time.time()
 
         while True:
             if time.time() - start_time > 30:
-                raise Exception("Timed out waiting for dagit server to be available")
+                raise Exception("Timed out waiting for webserver to be available")
 
             try:
-                sanity_check = requests.get(f"http://{dagit_url}/dagit_info")
+                sanity_check = requests.get(f"http://{webserver_url_url}/server_info")
                 assert "dagster" in sanity_check.text
-                print("Connected to dagit, beginning tests for versions")
+                print("Connected to dagster-webserver, beginning tests for versions")
                 break
             except requests.exceptions.ConnectionError:
                 pass
 
             time.sleep(1)
-        yield f"http://{dagit_url}"
+        yield f"http://{webserver_url_url}"
 
     finally:
         print("Terminating port-forwarding")

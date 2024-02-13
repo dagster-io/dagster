@@ -1,13 +1,16 @@
 import os
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
-from ..defines import GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
-from ..package_spec import PackageSpec
+import packaging.version
+
+from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
+from ..package_spec import PackageSpec, UnsupportedVersionsFunction
 from ..python_version import AvailablePythonVersion
 from ..utils import (
     BuildkiteStep,
-    GroupStep,
+    BuildkiteTopLevelStep,
     connect_sibling_docker_container,
+    has_helm_changes,
     library_version_from_core_version,
     network_buildkite_container,
 )
@@ -40,10 +43,10 @@ def build_integration_steps() -> List[BuildkiteStep]:
 # ########################
 
 
-def build_backcompat_suite_steps() -> List[GroupStep]:
+def build_backcompat_suite_steps() -> List[BuildkiteTopLevelStep]:
     tox_factors = [
-        "dagit-latest-release",
-        "dagit-earliest-release",
+        "webserver-latest-release",
+        "webserver-earliest-release",
         "user-code-latest-release",
         "user-code-earliest-release",
     ]
@@ -57,53 +60,77 @@ def build_backcompat_suite_steps() -> List[GroupStep]:
 
 def backcompat_extra_cmds(_, factor: str) -> List[str]:
     tox_factor_map = {
-        "dagit-latest-release": {
-            "dagit": LATEST_DAGSTER_RELEASE,
+        "webserver-latest-release": {
+            "webserver": LATEST_DAGSTER_RELEASE,
             "user_code": DAGSTER_CURRENT_BRANCH,
         },
-        "dagit-earliest-release": {
-            "dagit": EARLIEST_TESTED_RELEASE,
+        "webserver-earliest-release": {
+            "webserver": EARLIEST_TESTED_RELEASE,
             "user_code": DAGSTER_CURRENT_BRANCH,
         },
         "user-code-latest-release": {
-            "dagit": DAGSTER_CURRENT_BRANCH,
+            "webserver": DAGSTER_CURRENT_BRANCH,
             "user_code": LATEST_DAGSTER_RELEASE,
         },
         "user-code-earliest-release": {
-            "dagit": DAGSTER_CURRENT_BRANCH,
+            "webserver": DAGSTER_CURRENT_BRANCH,
             "user_code": EARLIEST_TESTED_RELEASE,
         },
     }
 
     release_mapping = tox_factor_map[factor]
-    dagit_version = release_mapping["dagit"]
-    dagit_library_version = _get_library_version(dagit_version)
+    webserver_version = release_mapping["webserver"]
+    webserver_library_version = _get_library_version(webserver_version)
+    webserver_package = _infer_webserver_package(webserver_version)
     user_code_version = release_mapping["user_code"]
     user_code_library_version = _get_library_version(user_code_version)
+    user_code_definitions_file = _infer_user_code_definitions_files(user_code_version)
 
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
-        "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
-        (
-            "./build.sh"
-            f" {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}"
+        f"export WEBSERVER_PACKAGE={webserver_package}",
+        f"export USER_CODE_DEFINITIONS_FILE={user_code_definitions_file}",
+        "pushd integration_tests/test_suites/backcompat-test-suite/webserver_service",
+        " ".join(
+            [
+                "./build.sh",
+                webserver_version,
+                webserver_library_version,
+                webserver_package,
+                user_code_version,
+                user_code_library_version,
+                user_code_definitions_file,
+            ]
         ),
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-        *network_buildkite_container("dagit_service_network"),
+        *network_buildkite_container("webserver_service_network"),
         *connect_sibling_docker_container(
-            "dagit_service_network",
-            "dagit",
-            "BACKCOMPAT_TESTS_DAGIT_HOST",
+            "webserver_service_network",
+            "dagster_webserver",
+            "BACKCOMPAT_TESTS_WEBSERVER_HOST",
         ),
         "popd",
     ]
 
 
-def _extract_major_version(release):
-    """Returns major version if 0.x.x release, returns 'current_branch' if master."""
+def _infer_webserver_package(release: str) -> str:
+    """Returns `dagster-webserver` if on source or version >=1.3.14 (first dagster-webserver
+    release), `dagit` otherwise.
+    """
     if release == "current_branch":
-        return release
-    return release.split(".")[0]
+        return "dagster-webserver"
+    else:
+        version = packaging.version.parse(release)
+        return "dagit" if version < packaging.version.Version("1.3.14") else "dagster-webserver"
+
+
+def _infer_user_code_definitions_files(release: str) -> str:
+    """Returns `repo.py` if on source or version >=1.0, `legacy_repo.py` otherwise."""
+    if release == "current_branch":
+        return "repo.py"
+    else:
+        version = packaging.version.parse(release)
+        return "legacy_repo.py" if version < packaging.version.Version("1.0") else "repo.py"
 
 
 def _get_library_version(version: str) -> str:
@@ -118,7 +145,7 @@ def _get_library_version(version: str) -> str:
 # ########################
 
 
-def build_celery_k8s_suite_steps() -> List[GroupStep]:
+def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = [
         "-default",
         "-markusercodedeploymentsubchart",
@@ -127,7 +154,14 @@ def build_celery_k8s_suite_steps() -> List[GroupStep]:
         "-markmonitoring",
     ]
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
-    return build_integration_suite_steps(directory, pytest_tox_factors)
+    return build_integration_suite_steps(
+        directory,
+        pytest_tox_factors,
+        always_run_if=has_helm_changes,
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_11,  # mysteriously causes buildkite agents to crash
+        ],
+    )
 
 
 # ########################
@@ -169,7 +203,9 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 def build_k8s_suite_steps():
     pytest_tox_factors = ["-default", "-subchart"]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
-    return build_integration_suite_steps(directory, pytest_tox_factors)
+    return build_integration_suite_steps(
+        directory, pytest_tox_factors, always_run_if=has_helm_changes
+    )
 
 
 # ########################
@@ -182,7 +218,11 @@ def build_integration_suite_steps(
     pytest_tox_factors: Optional[List[str]],
     pytest_extra_cmds: Optional[Callable] = None,
     queue=None,
-) -> List[GroupStep]:
+    always_run_if: Optional[Callable[[], bool]] = None,
+    unsupported_python_versions: Optional[
+        Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
+    ] = None,
+) -> List[BuildkiteTopLevelStep]:
     pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
     return PackageSpec(
         directory,
@@ -200,19 +240,29 @@ def build_integration_suite_steps(
         retries=2,
         timeout_in_minutes=30,
         queue=queue,
+        always_run_if=always_run_if,
+        unsupported_python_versions=unsupported_python_versions,
     ).build_steps()
 
 
 def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
-    return [
+    cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-        + GCP_CREDS_LOCAL_FILE,
-        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+    ]
+
+    # If integration tests are disabled, we won't have any gcp credentials to download.
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        cmds += [
+            rf"aws s3 cp s3://\${{BUILDKITE_SECRETS_BUCKET}}/{GCP_CREDS_FILENAME} "
+            + GCP_CREDS_LOCAL_FILE,
+            "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+        ]
+
+    cmds += [
         "pushd python_modules/libraries/dagster-celery",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
@@ -225,3 +275,5 @@ def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
         ),
         "popd",
     ]
+
+    return cmds

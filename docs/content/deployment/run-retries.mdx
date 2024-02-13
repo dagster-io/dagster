@@ -17,7 +17,7 @@ run_retries:
   max_retries: 3 # Sets a default for all jobs. 0 if not set
 ```
 
-You can also configure retries using tags either on Job definitions or in the Dagit [Launchpad](/concepts/dagit/dagit#launchpad-tab).
+You can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/concepts/webserver/ui#launchpad-tab).
 
 ```python file=/deploying/job_retries.py
 from dagster import job
@@ -39,4 +39,4 @@ The `dagster/retry_strategy` tag controls which Ops the retry will run.
 
 By default, retries will re-execute from failure (tag value `FROM_FAILURE`). This means that any successful Ops will be skipped, but their output will be used for downstream Ops. If the `dagster/retry_strategy` tag is set to `ALL_STEPS`, all the Ops will run again.
 
-NOTE: `FROM_FAILURE` requires an IOManager that can access outputs from other runs. For example, on Kubernetes the [s3\_pickle_io_manager](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager) would work but the [fs_io_manager](https://docs.dagster.io/\_apidocs/io-managers#dagster.fs_io_manager) would not, since the new run is in a new Kubernetes Job with a separate filesystem.
+NOTE: `FROM_FAILURE` requires an IOManager that can access outputs from other runs. For example, on Kubernetes the [s3\_pickle_io_manager](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager) would work but the [`FilesytemIOManager`](https://docs.dagster.io/\_apidocs/io-managers#dagster.FilesytemIOManager) would not, since the new run is in a new Kubernetes Job with a separate filesystem.

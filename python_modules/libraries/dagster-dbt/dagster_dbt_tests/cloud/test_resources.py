@@ -1,10 +1,11 @@
 import re
+from typing import Any
 
 import pytest
 import responses
 from dagster import Failure, build_init_resource_context
 from dagster._check import CheckError
-from dagster_dbt import dbt_cloud_resource
+from dagster_dbt import DbtCloudClientResource, dbt_cloud_resource
 
 from .utils import (
     SAMPLE_ACCOUNT_ID,
@@ -24,23 +25,34 @@ from .utils import (
 )
 
 
-def get_dbt_cloud_resource(**kwargs):
-    return dbt_cloud_resource(
-        build_init_resource_context(
-            config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
+@pytest.fixture(name="get_dbt_cloud_resource", params=["pythonic", "legacy"])
+def get_dbt_cloud_resource_fixture(request) -> Any:
+    if request.param == "pythonic":
+        return (
+            lambda **kwargs: DbtCloudClientResource(
+                auth_token="some_auth_token", account_id=SAMPLE_ACCOUNT_ID, **kwargs
+            )
+            .with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
         )
-    )
+
+    else:
+        return lambda **kwargs: dbt_cloud_resource(
+            build_init_resource_context(
+                config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
+            )
+        )
 
 
 @responses.activate
-def test_list_jobs():
+def test_list_jobs(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
 
     responses.add(responses.GET, f"{SAMPLE_API_PREFIX}/jobs", json=sample_list_job_details())
     assert dc_resource.list_jobs(SAMPLE_PROJECT_ID) == sample_list_job_details()["data"]
 
 
-def test_get_job():
+def test_get_job(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
 
     with responses.RequestsMock() as rsps:
@@ -68,7 +80,7 @@ def test_get_job():
         (None, None, "?include_related=%5B%5D&order_by=-id&offset=0&limit=100"),
     ],
 )
-def test_get_runs(job_id, include_related, query_string):
+def test_get_runs(get_dbt_cloud_resource, job_id, include_related, query_string):
     dc_resource = get_dbt_cloud_resource()
 
     with responses.RequestsMock() as rsps:
@@ -83,7 +95,7 @@ def test_get_runs(job_id, include_related, query_string):
         )
 
 
-def test_get_run():
+def test_get_run(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
 
     with responses.RequestsMock() as rsps:
@@ -95,7 +107,7 @@ def test_get_run():
         assert dc_resource.get_run(SAMPLE_RUN_ID) == sample_run_details()["data"]
 
 
-def test_list_run_artifacts():
+def test_list_run_artifacts(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
 
     with responses.RequestsMock() as rsps:
@@ -107,7 +119,7 @@ def test_list_run_artifacts():
         assert dc_resource.list_run_artifacts(SAMPLE_RUN_ID) == sample_list_artifacts()["data"]
 
 
-def test_get_run_results():
+def test_get_run_results(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource(request_max_retries=10, request_retry_delay=0)
 
     with responses.RequestsMock() as rsps:
@@ -126,7 +138,7 @@ def test_get_run_results():
 
 
 @pytest.mark.parametrize("max_retries,n_flakes", [(0, 0), (1, 2), (5, 7), (7, 5), (4, 4)])
-def test_request_flake(max_retries, n_flakes):
+def test_request_flake(get_dbt_cloud_resource, max_retries, n_flakes):
     dc_resource = get_dbt_cloud_resource(request_max_retries=max_retries)
 
     def _mock_interaction():
@@ -151,7 +163,7 @@ def test_request_flake(max_retries, n_flakes):
         assert _mock_interaction() == sample_run_details()["data"]
 
 
-def test_no_disable_schedule():
+def test_no_disable_schedule(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource(disable_schedule_on_trigger=False)
     with responses.RequestsMock() as rsps:
         # endpoint for launching run
@@ -202,7 +214,7 @@ def test_no_disable_schedule():
     "final_status,expected_behavior",
     [("Success", 0), ("Error", 1), ("Cancelled", 1), ("Running", 2), ("FooBarBaz", 3)],
 )
-def test_run_job_and_poll(final_status, expected_behavior):
+def test_run_job_and_poll(get_dbt_cloud_resource, final_status, expected_behavior):
     dc_resource = get_dbt_cloud_resource()
     with responses.RequestsMock() as rsps:
         # endpoint for job details info
@@ -261,7 +273,7 @@ def test_run_job_and_poll(final_status, expected_behavior):
                 _do_thing()
 
 
-def test_no_run_results_job():
+def test_no_run_results_job(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
     with responses.RequestsMock() as rsps:
         # endpoint for job details info
@@ -304,7 +316,7 @@ def test_no_run_results_job():
 
 
 @responses.activate
-def test_get_environment_variables():
+def test_get_environment_variables(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
 
     responses.add(
@@ -323,7 +335,7 @@ def test_get_environment_variables():
 
 
 @responses.activate
-def test_set_environment_variable():
+def test_set_environment_variable(get_dbt_cloud_resource):
     dc_resource = get_dbt_cloud_resource()
     environment_variable_id = 1
     name = "DBT_DAGSTER_ENV_VAR"

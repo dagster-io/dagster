@@ -1,0 +1,137 @@
+---
+title: Custom loggers
+description: Add or supplement Dagster's built-in loggers to integrate Dagster logs with the rest of your infrastructure.
+---
+
+# Custom loggers
+
+You may find yourself wanting to add or supplement the [built-in loggers](/concepts/logging/loggers) so that Dagster logs are integrated with the rest of your log aggregation and monitoring infrastructure.
+
+For example, you may be operating in a containerized environment where container `stdout` is aggregated by a tool such as Logstash. In this kind of environment, where logs will be aggregated and parsed by machine, the multi-line output from the default colored console logger is unhelpful. Instead, we'd much prefer to see single-line, structured log messages like:
+
+```json
+{"orig_message": "Hello, world!", "log_message_id": "49854579-e4d1-4289-8453-b3e177b20056", ...}
+```
+
+Dagster includes a logger that prints JSON-formatted single-line messages like this to the console (<PyObject object="json_console_logger"/>).
+
+---
+
+## Defining custom loggers
+
+Loggers are defined internally using the <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" /> class, but, following a common pattern in the Dagster codebase, the <PyObject module="dagster" object="logger" displayText="@logger" /> decorator exposes a simpler API for the common use case and is typically what you'll use to define your own loggers.
+
+The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`:
+
+```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_marker_0 endbefore=end_custom_logger_marker_0
+@logger(
+    {
+        "log_level": Field(str, is_required=False, default_value="INFO"),
+        "name": Field(str, is_required=False, default_value="dagster"),
+    },
+    description="A JSON-formatted console logger",
+)
+def json_console_logger(init_context):
+    level = init_context.logger_config["log_level"]
+    name = init_context.logger_config["name"]
+
+    klass = logging.getLoggerClass()
+    logger_ = klass(name, level=level)
+
+    handler = logging.StreamHandler()
+
+    class JsonFormatter(logging.Formatter):
+        def format(self, record):
+            return json.dumps(record.__dict__)
+
+    handler.setFormatter(JsonFormatter())
+    logger_.addHandler(handler)
+
+    return logger_
+
+
+@op
+def hello_logs(context: OpExecutionContext):
+    context.log.info("Hello, world!")
+
+
+@job(logger_defs={"my_json_logger": json_console_logger})
+def demo_job():
+    hello_logs()
+```
+
+You can specify the logger name in the run config. It also takes a `config` argument, representing the config that users can pass to the logger. For example:
+
+```yaml file=/concepts/logging/config_custom_logger.yaml
+loggers:
+  my_json_logger:
+    config:
+      log_level: INFO
+```
+
+And when the job is executed:
+
+```shell
+dagster job execute -f custom_logger.py -c config_custom_logger.yaml
+```
+
+The custom JSON logger, now visible in the Dagster UI, is now being used:
+
+<!-- ![Custom logger Terminal output](/images/concepts/logging/job-custom-logger.png) -->
+
+<Image
+alt="Custom logger Terminal output"
+src="/images/concepts/logging/job-custom-logger.png"
+width={2408}
+height={428}
+/>
+
+---
+
+## Testing custom loggers
+
+You can unit test the initialization method of a logger by invoking it:
+
+```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing endbefore=end_custom_logger_testing
+def test_init_json_console_logger():
+    logger_ = json_console_logger(None)
+    assert logger_.level == 20
+    assert logger_.name == "dagster"
+```
+
+If you need to provide config to the initialization of the logger, use the <PyObject object="build_init_logger_context" /> function:
+
+```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing_context endbefore=end_custom_logger_testing_context
+from dagster import build_init_logger_context
+
+
+def test_init_json_console_logger_with_context():
+    logger_ = json_console_logger(
+        build_init_logger_context(logger_config={"name": "my_logger"})
+    )
+    assert logger_.level == 20
+    assert logger_.name == "my_logger"
+```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/logging/python-logging"
+    title="Python logging"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/logging/loggers"
+    title="Loggers"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/webserver/ui"
+    title="Dagster UI"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/code-locations"
+    title="Code locations"
+  ></ArticleListItem>
+</ArticleList>

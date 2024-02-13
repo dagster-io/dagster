@@ -56,9 +56,7 @@ class ConfigTypeKind(PythonEnum):
 
 
 class ConfigType:
-    """
-    The class backing DagsterTypes as they are used processing configuration data.
-    """
+    """The class backing DagsterTypes as they are used processing configuration data."""
 
     def __init__(
         self,
@@ -91,8 +89,7 @@ class ConfigType:
         return _CONFIG_MAP[builtin_enum]
 
     def post_process(self, value):
-        """
-        Implement this in order to take a value provided by the user
+        """Implement this in order to take a value provided by the user
         and perform computation on it. This can be done to coerce data types,
         fetch things from the environment (e.g. environment variables), or
         to do custom validation. If the value is not valid, throw a
@@ -130,11 +127,15 @@ class ConfigScalarKind(PythonEnum):
 
 class ConfigScalar(ConfigType):
     def __init__(
-        self, key: str, given_name: Optional[str], scalar_kind: ConfigScalarKind, **kwargs: object
+        self,
+        key: str,
+        given_name: Optional[str],
+        scalar_kind: ConfigScalarKind,
+        **kwargs: typing.Any,
     ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
         super(ConfigScalar, self).__init__(
-            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs  # type: ignore
+            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs
         )
 
 
@@ -203,7 +204,7 @@ class Noneable(ConfigType):
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Noneable, self).__init__(
-            key="Noneable.{inner_type}".format(inner_type=self.inner_type.key),
+            key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
             type_params=[self.inner_type],
         )
@@ -226,15 +227,16 @@ class Array(ConfigType):
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Array, self).__init__(
-            key="Array.{inner_type}".format(inner_type=self.inner_type.key),
+            key=f"Array.{self.inner_type.key}",
             type_params=[self.inner_type],
             kind=ConfigTypeKind.ARRAY,
         )
 
-    @public  # type: ignore
+    @public
     @property
-    def description(self):
-        return "List of {inner_type}".format(inner_type=self.key)
+    def description(self) -> str:
+        """A human-readable description of this Array type."""
+        return f"List of {self.key}"
 
     def type_iterator(self) -> Iterator["ConfigType"]:
         yield from self.inner_type.type_iterator()
@@ -318,16 +320,11 @@ class Enum(ConfigType):
             if ev.config_value == value:
                 return ev.python_value
 
-        check.failed(
-            (
-                "Should never reach this. config_value should be pre-validated. Got {config_value}"
-            ).format(config_value=value)
-        )
+        check.failed(f"Should never reach this. config_value should be pre-validated. Got {value}")
 
     @classmethod
     def from_python_enum(cls, enum, name=None):
-        """
-        Create a Dagster enum corresponding to an existing Python enum.
+        """Create a Dagster enum corresponding to an existing Python enum.
 
         Args:
             enum (enum.EnumMeta):
@@ -347,11 +344,41 @@ class Enum(ConfigType):
                 config_schema={"color": Field(Enum.from_python_enum(Color))}
             )
             def select_color(context):
-                # ...
+                assert context.op_config["color"] == Color.RED
         """
         if name is None:
             name = enum.__name__
         return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+
+    @classmethod
+    def from_python_enum_direct_values(cls, enum, name=None):
+        """Create a Dagster enum corresponding to an existing Python enum, where the direct values are passed instead of symbolic values (IE, enum.symbol.value as opposed to enum.symbol).
+
+        This is necessary for internal usage, as the symbolic values are not serializable.
+
+        Args:
+            enum (enum.EnumMeta):
+                The class representing the enum.
+            name (Optional[str]):
+                The name for the enum. If not present, `enum.__name__` will be used.
+
+        Example:
+        .. code-block:: python
+
+            class Color(enum.Enum):
+                RED = enum.auto()
+                GREEN = enum.auto()
+                BLUE = enum.auto()
+
+            @op(
+                config_schema={"color": Field(Enum.from_python_enum(Color))}
+            )
+            def select_color(context):
+                assert context.op_config["color"] == Color.RED.value
+        """
+        if name is None:
+            name = enum.__name__
+        return cls(name, [EnumValue(v.name, python_value=v.value) for v in enum])
 
 
 class ScalarUnion(ConfigType):
@@ -418,7 +445,7 @@ class ScalarUnion(ConfigType):
 
         # https://github.com/dagster-io/dagster/issues/2133
         key = check.opt_str_param(
-            _key, "_key", "ScalarUnion.{}-{}".format(self.scalar_type.key, self.non_scalar_type.key)
+            _key, "_key", f"ScalarUnion.{self.scalar_type.key}-{self.non_scalar_type.key}"
         )
 
         super(ScalarUnion, self).__init__(
@@ -428,7 +455,7 @@ class ScalarUnion(ConfigType):
         )
 
     def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.scalar_type.type_iterator()  # type: ignore
+        yield from self.scalar_type.type_iterator()
         yield from self.non_scalar_type.type_iterator()
         yield from super().type_iterator()
 
@@ -439,7 +466,7 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
+_CONFIG_MAP: Dict[typing.Any, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
@@ -461,5 +488,5 @@ ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())
 
 def get_builtin_scalar_by_name(type_name: str):
     if type_name not in _CONFIG_MAP_BY_NAME:
-        check.failed("Scalar {} is not supported".format(type_name))
+        check.failed(f"Scalar {type_name} is not supported")
     return _CONFIG_MAP_BY_NAME[type_name]

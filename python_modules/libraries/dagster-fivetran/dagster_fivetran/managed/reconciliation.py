@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import dagster._check as check
 from dagster import ResourceDefinition
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
 from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
@@ -13,6 +13,7 @@ from dagster_managed_elements.utils import diff_dicts
 from dagster_fivetran import FivetranResource
 
 from .types import (
+    MANAGED_ELEMENTS_DEPRECATION_MSG,
     FivetranConnector,
     FivetranDestination,
     InitializedFivetranConnector,
@@ -43,9 +44,7 @@ def diff_destinations(
     curr_dst: Optional[FivetranDestination],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two FivetranDestination objects.
-    """
+    """Utility to diff two FivetranDestination objects."""
     diff = _diff_configs(
         config_dst.destination_configuration if config_dst else {},
         curr_dst.destination_configuration if curr_dst else {},
@@ -63,9 +62,7 @@ def diff_connectors(
     curr_conn: Optional[FivetranConnector],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two FivetranDestination objects.
-    """
+    """Utility to diff two FivetranDestination objects."""
     diff = _diff_configs(
         config_conn.source_configuration if config_conn else {},
         curr_conn.source_configuration if curr_conn else {},
@@ -168,8 +165,7 @@ def reconcile_destinations(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedFivetranDestination], ManagedElementCheckResult]:
-    """
-    Generates a diff of the configured and existing destinations and reconciles them to match the
+    """Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
@@ -285,8 +281,7 @@ def reconcile_config(
     should_delete: bool = False,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Main entry point for the reconciliation process. Takes a list of FivetranConnection objects
+    """Main entry point for the reconciliation process. Takes a list of FivetranConnection objects
     and a pointer to an Fivetran instance and returns a diff, along with applying the diff
     if dry_run is False.
     """
@@ -338,6 +333,7 @@ def reconcile_config(
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class FivetranManagedElementReconciler(ManagedElementReconciler):
     def __init__(
         self,
@@ -345,8 +341,7 @@ class FivetranManagedElementReconciler(ManagedElementReconciler):
         connectors: Iterable[FivetranConnector],
         delete_unmentioned_resources: bool = False,
     ):
-        """
-        Reconciles Python-specified Fivetran resources with an Fivetran instance.
+        """Reconciles Python-specified Fivetran resources with an Fivetran instance.
 
         Args:
             fivetran (ResourceDefinition): The Fivetran resource definition to reconcile against.

@@ -35,7 +35,7 @@ In this code block, we use `define_dagstermill_asset` to create a Dagster asset.
 Dagstermill also supports running Jupyter notebooks as [ops](/concepts/ops-jobs-graphs/ops). We can use <PyObject module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op:
 
 ```python file=/integrations/dagstermill/iris_notebook_op.py startafter=start
-from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
 from dagster import file_relative_path, job
 
@@ -48,14 +48,14 @@ k_means_iris = define_dagstermill_op(
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
     }
 )
 def iris_classify():
     k_means_iris()
 ```
 
-In this code block, we use `define_dagstermill_op` to create an op that will execute the Jupyter notebook. We give the op the name `k_means_iris`, and provide the path to the notebook file. We also specify `output_notebook_name=iris_kmeans_output`. This means that the executed notebook will be returned in a buffered file object as one of the [outputs](/concepts/ops-jobs-graphs/ops#outputs) of the op, and that output will have the name `iris_kmeans_output`. We then include the `k_means_iris` op in the `iris_classify` [job](/concepts/ops-jobs-graphs/jobs) and specify the `local_output_notebook_io_manager` as the `output_notebook_io_manager` to store the executed notebook file.
+In this code block, we use `define_dagstermill_op` to create an op that will execute the Jupyter notebook. We give the op the name `k_means_iris`, and provide the path to the notebook file. We also specify `output_notebook_name=iris_kmeans_output`. This means that the executed notebook will be returned in a buffered file object as one of the [outputs](/concepts/ops-jobs-graphs/ops#outputs) of the op, and that output will have the name `iris_kmeans_output`. We then include the `k_means_iris` op in the `iris_classify` [job](/concepts/ops-jobs-graphs/jobs) and specify the `ConfigurableLocalOutputNotebookIOManager` as the `output_notebook_io_manager` to store the executed notebook file.
 
 ---
 
@@ -132,7 +132,7 @@ dagstermill.yield_result(3, output_name="my_output")
 And then:
 
 ```python file=/integrations/dagstermill/notebook_outputs.py startafter=start_py_file endbefore=end_py_file
-from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
 from dagster import Out, file_relative_path, job, op
 
@@ -151,7 +151,7 @@ def add_two(x):
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
     }
 )
 def my_job():
@@ -165,7 +165,7 @@ def my_job():
 
 You can also yield Dagster events from your notebook using <PyObject module="dagstermill" object="yield_event" />.
 
-For example, if you'd like to yield a custom <PyObject module="dagster" object="AssetMaterialization" /> object (for instance, to tell Dagit where you've saved a plot), you can do the following:
+For example, if you'd like to yield a custom <PyObject module="dagster" object="AssetMaterialization" /> object (for instance, to tell the Dagster UI where you've saved a plot), you can do the following:
 
 ```python
 import dagstermill

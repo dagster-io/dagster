@@ -1,9 +1,18 @@
 ---
-title: Configured API | Dagster
+title: Configured API (Legacy) | Dagster
 description: The Configured API offers a way to configure a Dagster entity at definition time.
 ---
 
-# Configured API
+# Configured API <Legacy />
+
+<Note>
+  This guide covers using legacy APIs for the Dagster config system. For docs on
+  the new Pythonic config system introduced in Dagster 1.3, see the{" "}
+  <a href="/concepts/configuration/config-schema">
+    updated configuration guide
+  </a>
+  .
+</Note>
 
 The `configured` API offers a way to configure a Dagster entity at definition time.
 
@@ -92,7 +101,7 @@ from dagster import configured, resource
 
 @resource(config_schema={"region": str, "use_unsigned_session": bool})
 def s3_session(_init_context):
-    """Connect to S3"""
+    """Connect to S3."""
 
 
 @configured(s3_session, config_schema={"region": str})
@@ -105,7 +114,7 @@ def unsigned_s3_session(config):
 You can use the `configured` API with any definition type in the same way. For example, to configure an op, you can simply invoke `configured` on the op definition:
 
 ```python file=/concepts/configuration/configured_op_example.py
-from dagster import Field, configured, op
+from dagster import Field, OpExecutionContext, configured, op
 
 
 @op(
@@ -114,7 +123,7 @@ from dagster import Field, configured, op
         "word": Field(str, is_required=False, default_value="hello"),
     }
 )
-def example(context):
+def example(context: OpExecutionContext):
     for _ in range(context.op_config["iterations"]):
         context.log.info(context.op_config["word"])
 
@@ -145,7 +154,7 @@ def another_configured_example(config):
 
 A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development and to a production database in your cloud environment. You can use the `configured` API to select between different configurations at runtime:
 
-```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start endbefore=end
+```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start_old endbefore=end_old
 # __init__.py
 
 resources = {
@@ -197,7 +206,7 @@ When using the decorator syntax (`@configured`), the resulting op definition wil
     },
     ins={"xs": In(List[Int])},
 )
-def get_dataset(context, xs):
+def get_dataset(context: OpExecutionContext, xs):
     if context.op_config["is_sample"]:
         return xs[:5]
     else:

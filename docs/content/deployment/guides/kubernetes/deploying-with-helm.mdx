@@ -37,9 +37,9 @@ In the following tutorial, we install the most recent version of the Dagster Hel
 <center>
   <Image
     alt="Default Dagster-Kubernetes deployment architecture"
-    src="/images/deploying/dagster-kubernetes-defalut-architecture.png"
-    width={833}
-    height={713}
+    src="/images/deploying/dagster-kubernetes-default-architecture.png"
+    width={1200}
+    height={1025}
   />
 </center>
 
@@ -75,7 +75,7 @@ In the following tutorial, we install the most recent version of the Dagster Hel
       </td>
     </tr>
     <tr>
-      <td>Dagit</td>
+      <td>Dagster webserver</td>
       <td>
         <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
           Deployment
@@ -135,7 +135,7 @@ In the following tutorial, we install the most recent version of the Dagster Hel
 </TabItem>
 <TabItem name="Code location server">
 
-A [code location server](/concepts/code-locations) runs a gRPC server and responds to Dagit's requests for information, such as:
+A [code location server](/concepts/code-locations) runs a gRPC server and responds to the Dagster webserver's requests for information, such as:
 
 - List all of the jobs in each code location, or
 - What is the dependency structure of job X?
@@ -144,16 +144,16 @@ The user-provided image for the server must contain a [code location definition]
 
 Users can have multiple code location servers. A common pattern is for each code location server to correspond to a different code location.
 
-Code location servers can be updated independently from other Dagster components, including Dagit. As a result, updates to code locations can occur without causing downtime to any other code location or Dagit. After updating, if there is an error with any code location, an error is surfaced for that code location within Dagit. All other code locations and Dagit will still operate normally.
+Code location servers can be updated independently from other Dagster components, including the webserver. As a result, updates to code locations can occur without causing downtime to any other code location or the webserver. After updating, if there is an error with any code location, an error is surfaced for that code location within the Dagster UI. All other code locations and the UI will still operate normally.
 
 </TabItem>
-<TabItem name="Dagit">
+<TabItem name="Dagster webserver">
 
-The Dagit webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit doesn't load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated and if so, fetches the new information.
+The Dagster webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagster UI. The webserver doesn't load or execute user-written code, which allows the UI to remain available even when user code contains errors. The webserver frequently checks whether the user code deployment has been updated and if so, fetches the new information.
 
-Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
+The webserver can be horizontally scaled by setting the `dagsterWebserver.replicaCount` field in `values.yaml`.
 
-By default, Dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
+By default, the webserver launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
 
 </TabItem>
 <TabItem name="Daemon">
@@ -165,7 +165,7 @@ The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLa
 </TabItem>
 <TabItem name="Run worker">
 
-The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in Dagit.
+The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in the UI.
 
 Run worker jobs and pods are not automatically deleted so that users are able to inspect results. It's up to the user to periodically delete old jobs and pods.
 
@@ -186,7 +186,7 @@ Generally, increasing isolation incurs some additional overhead per step (e.g. s
 </TabItem>
 <TabItem name="Database">
 
-An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in Dagit. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
+An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in the UI. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
 
 </TabItem>
 </TabGroup>
@@ -225,14 +225,15 @@ kubectl config use-context dagster
   ).
 </Note>
 
-In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
+In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/user-code-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
 
 Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to setup the gRPC server as a deployment.
 
 The example user code repository includes:
 
-- A `step_isolated_job` job that uses the `k8s_job_executor` to run each op in its own pod, and
-- A `single_pod_job` job that runs all ops in a single pod
+- An `example_job` job that runs all ops in a single pod
+- A `pod_per_op_job` job that uses the [`k8s_job_executor`](/\_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor) to run each op in its own pod. **NOTE:** this job uses the [`s3_pickle_io_manager`](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager), which requires [setting AWS credentials](/deployment/guides/aws#using-s3-for-io-management).
+- A `pod_per_op_celery_job` that is only useful for [Celery deployments](/deployment/guides/kubernetes/deploying-with-helm-advanced).
 
 For projects with many dependencies, we recommend publishing your Python project as a package and installing it in your Dockerfile.
 
@@ -312,13 +313,13 @@ helm repo add dagster https://dagster-io.github.io/helm
 ### Step 6: Configure your user deployment
 
 - [Step 6.1: Configure the deployment](#step-61-configure-the-deployment)
-- [Step 6.2: Run step_isolated_job (optional)](#step-62-run-step_isolated_job)
+- [Step 6.2: Run pod_per_op_job (optional)](#step-62-run-pod_per_op_job)
 
 #### Step 6.1: Configure the deployment
 
 In this step, you'll update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
 
-Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for the webserver and daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
 
 To get access to the Dagster `values.yaml`, run:
 
@@ -328,7 +329,7 @@ helm show values dagster/dagster > values.yaml
 
 The following snippet works for Dagster's example user code image. Since our Dockerfile contains the code location definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`.
 
-**Note**: If you haven't set up an S3 endpoint, you can only run the job called `single_pod_job`.
+**Note**: If you haven't set up an S3 endpoint, you can only run the job called `example_job`.
 
 ```yaml
 dagster-user-deployments:
@@ -388,9 +389,9 @@ dagster-user-deployments:
 
 By default, this configuration will also be included in the pods for any runs that are launched for the code location server. You can disable this behavior for a code location server by setting `includeConfigInLaunchedRuns.enabled` to `false` for that server.
 
-#### Step 6.2 Run step_isolated_job
+#### Step 6.2 Run pod_per_op_job
 
-You'll need a slightly different configuration to run the `step_isolated_job`. This is because `step_isolated_job` uses an `s3_pickle_io_manager`, so you'll need to provide the user code k8s pods with AWS S3 credentials.
+You'll need a slightly different configuration to run the `pod_per_op_job`. This is because `pod_per_op_job` uses an `s3_pickle_io_manager`, so you'll need to provide the user code k8s pods with AWS S3 credentials.
 
 Refer to [Step 4](/deployment/guides/kubernetes/deploying-with-helm#step-4-set-up-amazon-s3) for setup instructions. The below snippet works for both AWS S3 and a local S3 endpoint via `minio`:
 
@@ -435,23 +436,23 @@ If everything worked correctly, you should see output like the following:
 ```shell
 $ kubectl get pods
 NAME                                              READY   STATUS    RESTARTS   AGE
-dagster-dagit-645b7d59f8-6lwxh                    1/1     Running   0          11m
+dagster-webserver-645b7d59f8-6lwxh                    1/1     Running   0          11m
 dagster-k8s-example-user-code-1-88764b4f4-ds7tn   1/1     Running   0          9m24s
 dagster-postgresql-0                              1/1     Running   0          17m
 ```
 
 ### Step 8: Run a job in your deployment
 
-After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the Dagit pod via:
+After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the webserver pod via:
 
 ```shell
-export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
+  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
   -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+kubectl --namespace default port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:80
 ```
 
-Next, try running a job. Navigate to <http://127.0.0.1:8080>, then the [**Launchpad** tab](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/single_pod_job/launchpad), and click **Launch Run**.
+Next, try running a job. Navigate to <http://127.0.0.1:8080>, then the [**Launchpad** tab](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/example_job/launchpad) for `example_job`, and click **Launch Run**.
 
 You can introspect the jobs that were launched with `kubectl`:
 
@@ -461,7 +462,7 @@ NAME                                               COMPLETIONS   DURATION   AGE
 dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
 ```
 
-Now, you can try a run with step isolation. Switch to the `step_isolated_job` job, changing the default config to point to your S3 bucket if needed, and launch the run.
+Now, you can try a run with step isolation. Switch to the `pod_per_op_job` job, changing the default config to point to your S3 bucket if needed, and launch the run.
 
 If you're using Minio, change your config to look like this:
 
@@ -500,44 +501,44 @@ That's it! You deployed Dagster, configured with the default <PyObject module="d
 
 Running into issues deploying on Helm? Use these commands to help with debugging.
 
-### Get the name of the Dagit pod
+### Get the name of the webserver pod
 
 ```shell
-export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
+      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
       -o jsonpath="{.items[0].metadata.name}")
 ```
 
-### Start a shell in the Dagit pod
+### Start a shell in the webserver pod
 
 ```shell
-kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+kubectl exec --stdin --tty $DAGSTER_WEBSERVER_POD_NAME -- /bin/bash
 ```
 
 ### Get debug data from $RUN_ID
 
 ```shell
-kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
 ```
 
 ### Get a list of recently failed runs
 
 ```shell
-kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD -- dagster debug export fakename fakename.gzip
 ```
 
 ### Get debug output of a failed run
 
-**Note**: This information is also available in Dagit
+**Note**: This information is also available in the UI
 
 ```shell
-kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
 ```
 
 ### Extract the debug.gzip from the pod
 
 ```shell
-kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+kubectl cp $DAGSTER_WEBSERVER_POD:debug.gzip debug.gzip
 ```
 
 ### List config maps

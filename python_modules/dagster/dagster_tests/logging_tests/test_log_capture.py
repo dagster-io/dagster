@@ -14,7 +14,7 @@ from dagster._utils.test import get_temp_file_name
 def test_capture():
     with get_temp_file_name() as capture_filepath:
         with mirror_stream_to_file(sys.stdout, capture_filepath):
-            print("HELLO")  # pylint: disable=print-call
+            print("HELLO")  # noqa: T201
 
         with open(capture_filepath, "r", encoding="utf8") as capture_stream:
             assert "HELLO" in capture_stream.read()

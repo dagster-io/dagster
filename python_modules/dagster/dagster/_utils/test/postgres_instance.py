@@ -72,7 +72,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.utils import get_conn_string  # pylint: disable=import-error
+        from dagster_postgres.utils import get_conn_string
 
         return get_conn_string(
             **dict(
@@ -92,7 +92,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.run_storage import PostgresRunStorage  # pylint: disable=import-error
+        from dagster_postgres.run_storage import PostgresRunStorage
 
         storage = PostgresRunStorage.create_clean_storage(
             conn_string, should_autocreate_tables=should_autocreate_tables
@@ -106,7 +106,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.event_log import (  # pylint: disable=import-error
+        from dagster_postgres.event_log import (
             PostgresEventLogStorage,
         )
 
@@ -122,7 +122,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.schedule_storage.schedule_storage import (  # pylint: disable=import-error
+        from dagster_postgres.schedule_storage.schedule_storage import (
             PostgresScheduleStorage,
         )
 
@@ -148,7 +148,7 @@ class TestPostgresInstance:
         )
         conn_args = check.opt_dict_param(conn_args, "conn_args") if conn_args else {}
 
-        from dagster_postgres.utils import wait_for_connection  # pylint: disable=import-error
+        from dagster_postgres.utils import wait_for_connection
 
         if BUILDKITE:
             yield TestPostgresInstance.conn_string(
@@ -157,15 +157,10 @@ class TestPostgresInstance:
             )  # buildkite docker is handled in pipeline setup
             return
 
-        try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
-            )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
+        subprocess.run(
+            ["docker-compose", "-f", docker_compose_file, "down", service_name],
+            check=False,
+        )
 
         try:
             subprocess.check_output(
@@ -175,23 +170,19 @@ class TestPostgresInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode("utf-8")
             raise PostgresDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
+                f"Failed to launch docker container(s) via docker-compose: {err_text}",
                 ex,
             ) from ex
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)
         wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
-        yield conn_str
-
         try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+            yield conn_str
+        finally:
+            subprocess.run(
+                ["docker-compose", "-f", docker_compose_file, "down", service_name],
+                check=False,
             )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
 
     @staticmethod
     @contextmanager
@@ -205,9 +196,9 @@ class TestPostgresInstance:
                 yield conn_str
         except PostgresDockerError as ex:
             warnings.warn(
-                "Error launching Dockerized Postgres: {}".format(ex), RuntimeWarning, stacklevel=3
+                f"Error launching Dockerized Postgres: {ex}", RuntimeWarning, stacklevel=3
             )
-            pytest.skip("Skipping due to error launching Dockerized Postgres: {}".format(ex))
+            pytest.skip(f"Skipping due to error launching Dockerized Postgres: {ex}")
 
 
 def is_postgres_running(service_name):
@@ -219,7 +210,7 @@ def is_postgres_running(service_name):
                 "container",
                 "ps",
                 "-f",
-                "name={}".format(service_name),
+                f"name={service_name}",
                 "-f",
                 "status=running",
             ],

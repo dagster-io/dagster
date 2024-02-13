@@ -2,7 +2,7 @@ from abc import abstractmethod
 from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -14,19 +14,27 @@ from dagster._core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.storage.input_manager import InputManager
+from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
-from dagster._core.storage.root_input_manager import IInputManagerDefinition
+
+from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.init import InitResourceContext
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.output import OutputContext
 
+IOManagerFunctionWithContext = Callable[["InitResourceContext"], "IOManager"]
 IOManagerFunction: TypeAlias = Union[
-    Callable[["InitResourceContext"], "IOManager"],
+    IOManagerFunctionWithContext,
     Callable[[], "IOManager"],
 ]
+
+
+def is_io_manager_context_provided(
+    fn: IOManagerFunction,
+) -> TypeGuard[IOManagerFunctionWithContext]:
+    return len(get_function_params(fn)) >= 1
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
@@ -54,11 +62,9 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        # Unlike other configurable objects, whose config schemas default to Any, output_config_schema
-        # defaults to None. This the because IOManager input / output config shares config
-        # namespace with dagster type loaders and materializers. The absence of provided
-        # output_config_schema means that we should fall back to using the materializer that
-        # corresponds to the output dagster type.
+        # Unlike other configurable objects, whose config schemas default to Any,
+        # output_config_schema defaults to None. This the because IOManager input / output config
+        # shares config namespace with dagster type loaders.
         self._output_config_schema = (
             convert_user_facing_definition_config_schema(output_config_schema)
             if output_config_schema is not None
@@ -85,7 +91,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "IOManagerDefinition":
-        return IOManagerDefinition(
+        io_def = IOManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
@@ -94,7 +100,11 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-    @public  # type: ignore
+        io_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+
+        return io_def
+
+    @public
     @staticmethod
     def hardcoded_io_manager(
         value: "IOManager", description: Optional[str] = None
@@ -113,8 +123,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
 
 
 class IOManager(InputManager, OutputManager):
-    """
-    Base class for user-provided IO managers.
+    """Base class for user-provided IO managers.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
@@ -122,7 +131,7 @@ class IOManager(InputManager, OutputManager):
     ``handle_output`` to store an object and ``load_input`` to retrieve an object.
     """
 
-    @public  # type: ignore
+    @public
     @abstractmethod
     def load_input(self, context: "InputContext") -> Any:
         """User-defined method that loads an input to an op.
@@ -135,7 +144,7 @@ class IOManager(InputManager, OutputManager):
             Any: The data object.
         """
 
-    @public  # type: ignore
+    @public
     @abstractmethod
     def handle_output(self, context: "OutputContext", obj: Any) -> None:
         """User-defined method that stores an output of an op.
@@ -170,9 +179,11 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
-    """
-    Define an IO manager.
+) -> Union[
+    IOManagerDefinition,
+    Callable[[IOManagerFunction], IOManagerDefinition],
+]:
+    """Define an IO manager.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
@@ -235,6 +246,11 @@ def io_manager(
     return _wrap
 
 
+def dagster_maintained_io_manager(io_manager_def: IOManagerDefinition) -> IOManagerDefinition:
+    io_manager_def._dagster_maintained = True  # noqa: SLF001
+    return io_manager_def
+
+
 class _IOManagerDecoratorCallable:
     def __init__(
         self,
@@ -266,6 +282,7 @@ class _IOManagerDecoratorCallable:
             input_config_schema=self.input_config_schema,
         )
 
-        update_wrapper(io_manager_def, wrapped=fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(io_manager_def, wrapped=fn)  # type: ignore
 
         return io_manager_def

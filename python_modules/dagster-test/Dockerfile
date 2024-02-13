@@ -21,7 +21,7 @@ RUN pip install \
     -e modules/dagster-graphql \
     -e modules/dagster-celery \
     -e modules/dagster-celery[flower,redis,kubernetes] \
-    -e modules/dagit \
+    -e modules/dagster-webserver \
     -e modules/dagster-postgres \
     -e modules/dagster-pandas \
     -e modules/dagster-aws \
@@ -32,10 +32,11 @@ RUN pip install \
     -e modules/dagster-docker \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
+    -e modules/dagster-pipes \
     -e . \
     pyparsing\<3.0.0
 
-RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
+RUN ! (pip list --exclude-editable | grep -e dagster)
 
 WORKDIR /dagster_test/test_project/
 

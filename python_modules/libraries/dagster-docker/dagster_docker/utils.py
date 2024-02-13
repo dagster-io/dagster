@@ -55,8 +55,4 @@ def validate_docker_image(docker_image):
         # validate that the docker image name is valid
         reference.Reference.parse(docker_image)
     except Exception as e:
-        raise Exception(
-            "Docker image name {docker_image} is not correctly formatted".format(
-                docker_image=docker_image
-            )
-        ) from e
+        raise Exception(f"Docker image name {docker_image} is not correctly formatted") from e

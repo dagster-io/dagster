@@ -4,12 +4,13 @@ import tempfile
 import pytest
 import yaml
 from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.config import dagster_instance_config, retention_config_schema
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import QueuedRunCoordinator
 from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
+from dagster_celery_k8s import CeleryK8sRunLauncher
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
 from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
@@ -62,6 +63,7 @@ def helm_template() -> HelmTemplate:
         subchart_paths=["charts/dagster-user-deployments"],
         output="templates/configmap-instance.yaml",
         model=models.V1ConfigMap,
+        namespace="test-namespace",
     )
 
 
@@ -234,7 +236,27 @@ def test_k8s_run_launcher_resources(template: HelmTemplate):
     assert run_launcher_config["config"]["resources"] == resources
 
 
-def _check_valid_run_launcher_yaml(dagster_config):
+def _check_valid_run_launcher_yaml(dagster_config, instance_class=K8sRunLauncher):
+    with environ(
+        {
+            "DAGSTER_PG_PASSWORD": "hunter12",
+            "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "fake-configmap",
+            "DAGSTER_CELERY_BROKER_URL": "https://fake-celery-broker",
+            "DAGSTER_CELERY_BACKEND_URL": "https://fake-celery-backend",
+        }
+    ):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
+                yaml.dump(dagster_config, fd, default_flow_style=False)
+                run_launcher_data = InstanceRef.from_dir(temp_dir).run_launcher_data
+                process_result = process_config(
+                    resolve_to_config_type(instance_class.config_type()),
+                    run_launcher_data.config_dict,
+                )
+                assert process_result.success, str(process_result.errors)
+
+
+def _check_valid_run_coordinator_yaml(dagster_config):
     with environ(
         {
             "DAGSTER_PG_PASSWORD": "hunter12",
@@ -243,10 +265,10 @@ def _check_valid_run_launcher_yaml(dagster_config):
         with tempfile.TemporaryDirectory() as temp_dir:
             with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
                 yaml.dump(dagster_config, fd, default_flow_style=False)
-                run_launcher_data = InstanceRef.from_dir(temp_dir).run_launcher_data
+                run_coordinator_data = InstanceRef.from_dir(temp_dir).run_coordinator_data
                 process_result = process_config(
-                    resolve_to_config_type(K8sRunLauncher.config_type()),
-                    run_launcher_data.config_dict,
+                    resolve_to_config_type(QueuedRunCoordinator.config_type()),
+                    run_coordinator_data.config_dict,
                 )
                 assert process_result.success, str(process_result.errors)
 
@@ -481,6 +503,61 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
+def test_celery_k8s_run_launcher_default_namespace(template: HelmTemplate):
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]["config"]
+    assert run_launcher_config["job_namespace"] == template.namespace
+
+
+def test_celery_k8s_run_launcher_set_namespace(template: HelmTemplate):
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    jobNamespace="my-namespace"
+                )
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]["config"]
+    assert run_launcher_config["job_namespace"] == "my-namespace"
+
+
+def test_queued_run_coordinator_config_default(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runCoordinator=RunCoordinator.construct())
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+
+    yaml.full_load(configmaps[0].data["dagster.yaml"])
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_coordinator_yaml(instance)
+
+    assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+    assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
+
+    assert instance["run_coordinator"]["config"]["max_concurrent_runs"] == -1
+    assert instance["run_coordinator"]["config"]["dequeue_use_threads"]
+    assert instance["run_coordinator"]["config"]["dequeue_num_workers"] == 4
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 @pytest.mark.parametrize("max_concurrent_runs", [0, 50])
 def test_queued_run_coordinator_config(
@@ -510,6 +587,8 @@ def test_queued_run_coordinator_config(
     assert len(configmaps) == 1
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_coordinator_yaml(instance)
 
     assert ("run_coordinator" in instance) == enabled
     if enabled:
@@ -626,6 +705,8 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
     prefix = "prefix"
     json_credentials_envvar = "ENV_VAR"
     upload_interval = 30
+    show_url_only = True
+
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.GCS,
@@ -636,6 +717,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
                     prefix=prefix,
                     jsonCredentialsEnvvar=json_credentials_envvar,
                     uploadInterval=upload_interval,
+                    showUrlOnly=show_url_only,
                 )
             ),
         )
@@ -653,6 +735,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
         "prefix": prefix,
         "json_credentials_envvar": json_credentials_envvar,
         "upload_interval": upload_interval,
+        "show_url_only": True,
     }
 
     # Test all config fields in configurable class
@@ -670,6 +753,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     skip_empty_files = True
     upload_interval = 30
     upload_extra_args = {"ACL": "public-read"}
+    show_url_only = True
+    region = "us-west-1"
 
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
@@ -686,6 +771,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
                     skipEmptyFiles=skip_empty_files,
                     uploadInterval=upload_interval,
                     uploadExtraArgs=upload_extra_args,
+                    showUrlOnly=show_url_only,
+                    region=region,
                 )
             ),
         )
@@ -708,10 +795,52 @@ def test_s3_compute_log_manager(template: HelmTemplate):
         "skip_empty_files": skip_empty_files,
         "upload_interval": upload_interval,
         "upload_extra_args": upload_extra_args,
+        "show_url_only": show_url_only,
+        "region": region,
     }
 
     # Test all config fields in configurable class
     assert compute_logs_config["config"].keys() == S3ComputeLogManager.config_type().keys()
+
+
+def test_s3_compute_log_manager_no_verify(template: HelmTemplate):
+    bucket = "bucket"
+    local_dir = "/dir"
+
+    # extra test just to check for verify: false
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.S3,
+            config=ComputeLogManagerConfig.construct(
+                s3ComputeLogManager=S3ComputeLogManagerModel(
+                    bucket=bucket,
+                    localDir=local_dir,
+                    prefix=None,
+                    useSsl=None,
+                    verify=False,
+                    verifyCertPath=None,
+                    endpointUrl=None,
+                    skipEmptyFiles=None,
+                    uploadInterval=None,
+                    uploadExtraArgs=None,
+                    showUrlOnly=None,
+                    region=None,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster_aws.s3.compute_log_manager"
+    assert compute_logs_config["class"] == "S3ComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "bucket": bucket,
+        "local_dir": local_dir,
+        "verify": False,
+    }
 
 
 def test_custom_compute_log_manager_config(template: HelmTemplate):
@@ -847,6 +976,14 @@ def test_retention(template: HelmTemplate):
                     started=30,
                 ),
             ),
+            autoMaterialize=TickRetention.construct(
+                purgeAfterDays=TickRetentionByType(
+                    skipped=1,
+                    success=2,
+                    failure=3,
+                    started=4,
+                ),
+            ),
         )
     )
 
@@ -859,6 +996,38 @@ def test_retention(template: HelmTemplate):
     assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
     assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
     assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+    assert instance["retention"]["auto_materialize"]["purge_after_days"] == {
+        "skipped": 1,
+        "success": 2,
+        "failure": 3,
+        "started": 4,
+    }
+
+
+def _check_valid_instance_yaml(dagster_config, instance_class=K8sRunLauncher):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
+            yaml.dump(dagster_config, fd, default_flow_style=False)
+            # Raises if the config is invalid
+            dagster_instance_config(temp_dir)
+
+
+def test_additional_config(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        additionalInstanceConfig={
+            "code_servers": {
+                "reload_timeout": 500,
+            }
+        }
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    code_server_config = instance["code_servers"]
+    assert code_server_config["reload_timeout"] == 500
 
 
 def test_retention_backcompat(template: HelmTemplate):

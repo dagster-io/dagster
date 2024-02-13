@@ -125,8 +125,7 @@ def _generate_files_from_template(
 
 
 def _should_skip_file(path):
-    """
-    Given a file path `path` in a source template, returns whether or not the file should be skipped
+    """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
     Technically, `path` could also be a directory path that should be skipped.

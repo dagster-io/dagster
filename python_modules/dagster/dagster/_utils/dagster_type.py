@@ -1,11 +1,11 @@
 from typing import Any
 
 from dagster._core.definitions.events import Failure, TypeCheck
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import scoped_pipeline_context
+from dagster._core.execution.context_creation_job import scoped_job_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
 
@@ -33,21 +33,19 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
-            (
-                "Must pass in a type from dagster module. You passed {dagster_type} "
-                "which is part of python's typing module."
-            ).format(dagster_type=dagster_type)
+            f"Must pass in a type from dagster module. You passed {dagster_type} "
+            "which is part of python's typing module."
         )
 
     dagster_type = resolve_dagster_type(dagster_type)
 
-    pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
-    pipeline_def = pipeline.get_definition()
+    job = InMemoryJob(GraphDefinition(node_defs=[], name="empty").to_job())
+    job_def = job.get_definition()
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline)
-    pipeline_run = instance.create_run_for_pipeline(pipeline_def)
-    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
+    execution_plan = create_execution_plan(job)
+    dagster_run = instance.create_run_for_job(job_def)
+    with scoped_job_context(execution_plan, job, {}, dagster_run, instance) as context:
         type_check_context = context.for_type(dagster_type)
         try:
             type_check = dagster_type.type_check(type_check_context, value)

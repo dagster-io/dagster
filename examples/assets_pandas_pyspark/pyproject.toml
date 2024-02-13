@@ -3,4 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-python_package = "assets_pandas_pyspark"
+module_name = "assets_pandas_pyspark"

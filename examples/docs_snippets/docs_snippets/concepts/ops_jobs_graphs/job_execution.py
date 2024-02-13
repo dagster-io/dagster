@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 # start_pipeline_marker
 
@@ -35,9 +35,9 @@ if __name__ == "__main__":
 
 
 def execute_subset():
-    # start_solid_selection_marker
+    # start_op_selection_marker
     my_job.execute_in_process(op_selection=["*add_two"])
-    # end_solid_selection_marker
+    # end_op_selection_marker
 
 
 @op

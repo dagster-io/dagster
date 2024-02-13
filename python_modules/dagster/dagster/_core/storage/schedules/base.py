@@ -1,21 +1,29 @@
 import abc
-from typing import Callable, Iterable, Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Set
 
+from dagster import AssetKey
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
+    AutoMaterializeAssetEvaluationRecord,
     InstigatorState,
+    InstigatorStatus,
     InstigatorTick,
     TickData,
     TickStatus,
 )
+from dagster._core.storage.sql import AlembicVersion
+from dagster._utils import PrintFn
 
 
-class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
+class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract class for managing persistance of scheduler artifacts."""
 
     @abc.abstractmethod
-    def wipe(self):
+    def wipe(self) -> None:
         """Delete all schedules from storage."""
 
     @abc.abstractmethod
@@ -24,13 +32,15 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-    ) -> Iterable[InstigatorState]:
+        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+    ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
             repository_selector_id (Optional[str]): The repository selector id to scope results to
             instigator_type (Optional[InstigatorType]): The InstigatorType to scope results to
+            instigator_statuses (Optional[Set[InstigatorStatus]]): The InstigatorStatuses to scope results to
         """
 
     @abc.abstractmethod
@@ -59,7 +69,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def delete_instigator_state(self, origin_id: str, selector_id: str):
+    def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
         """Delete a state in storage.
 
         Args:
@@ -68,7 +78,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @property
-    def supports_batch_queries(self):
+    def supports_batch_queries(self) -> bool:
         return False
 
     def get_batch_ticks(
@@ -76,8 +86,19 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Mapping[str, Iterable[InstigatorTick]]:
+    ) -> Mapping[str, Sequence[InstigatorTick]]:
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_tick(self, tick_id: int) -> InstigatorTick:
+        """Get the tick for a given evaluation tick id.
+
+        Args:
+            tick_id (str): The id of the tick to query.
+
+        Returns:
+            InstigatorTick: The tick for the given id.
+        """
 
     @abc.abstractmethod
     def get_ticks(
@@ -88,7 +109,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         after: Optional[float] = None,
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Iterable[InstigatorTick]:
+    ) -> Sequence[InstigatorTick]:
         """Get the ticks for a given instigator.
 
         Args:
@@ -97,7 +118,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def create_tick(self, tick_data: TickData):
+    def create_tick(self, tick_data: TickData) -> InstigatorTick:
         """Add a tick to storage.
 
         Args:
@@ -105,7 +126,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def update_tick(self, tick: InstigatorTick):
+    def update_tick(self, tick: InstigatorTick) -> InstigatorTick:
         """Update a tick already in storage.
 
         Args:
@@ -119,7 +140,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         selector_id: str,
         before: float,
         tick_statuses: Optional[Sequence[TickStatus]] = None,
-    ):
+    ) -> None:
         """Wipe ticks for an instigator for a certain status and timestamp.
 
         Args:
@@ -129,22 +150,61 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
             tick_statuses (Optional[List[TickStatus]]): The tick statuses to wipe
         """
 
+    @property
+    def supports_auto_materialize_asset_evaluations(self) -> bool:
+        return True
+
     @abc.abstractmethod
-    def upgrade(self):
-        """Perform any needed migrations."""
+    def add_auto_materialize_asset_evaluations(
+        self, evaluation_id: int, asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds]
+    ) -> None:
+        """Add asset policy evaluations to storage."""
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any required data migrations."""
+    @abc.abstractmethod
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get the policy evaluations for a given asset.
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any optional data migrations for optimized reads."""
-
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process.
+        Args:
+            asset_key (AssetKey): The asset key to query
+            limit (Optional[int]): The maximum number of evaluations to return
+            cursor (Optional[int]): The cursor to paginate from
         """
 
-    def alembic_version(self):
+    @abc.abstractmethod
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get all policy evaluations for a given evaluation ID.
+
+        Args:
+            evaluation_id (int): The evaluation ID to query.
+        """
+
+    @abc.abstractmethod
+    def purge_asset_evaluations(self, before: float) -> None:
+        """Wipe evaluations before a certain timestamp.
+
+        Args:
+            before (datetime): All evaluations before this datetime will get purged
+        """
+
+    @abc.abstractmethod
+    def upgrade(self) -> None:
+        """Perform any needed migrations."""
+
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+        """Call this method to run any required data migrations."""
+
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+        """Call this method to run any optional data migrations for optimized reads."""
+
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
+
+    def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
-    def dispose(self):
+    def dispose(self) -> None:
         """Explicit lifecycle management."""

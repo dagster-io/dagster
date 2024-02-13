@@ -1,5 +1,5 @@
 # Regenerate the dbt manifest.json
 dbt_manifest:
-	dbt ls \
+	dbt parse \
 		--project-dir dbt_project \
-		--profiles-dir dbt_project/config
+		--profiles-dir dbt_project

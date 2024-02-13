@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -19,7 +18,7 @@ def test_describe_task_definition(ecs):
     )
     dagster2 = ecs.register_task_definition(
         family="dagster",
-        containerDefinitions=[{"image": "hello_world:latest"}],
+        containerDefinitions=[{"image": "hello_world:latest"}, {"image": "busybox"}],
         memory="512",
         cpu="256",
     )
@@ -76,14 +75,14 @@ def test_list_account_settings(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "enabled"
 
 
 def test_list_tags_for_resource(ecs):
-    invalid_arn = ecs._task_arn("invalid")
+    invalid_arn = ecs._task_arn("invalid")  # noqa: SLF001
     with pytest.raises(ClientError):
         # The task doesn't exist
         ecs.list_tags_for_resource(resourceArn=invalid_arn)
@@ -182,12 +181,13 @@ def test_put_account_setting(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "disabled"
 
 
+@pytest.mark.flaky(reruns=1)
 def test_register_task_definition(ecs):
     # Without memory
     with pytest.raises(ClientError):
@@ -275,6 +275,13 @@ def test_register_task_definition(ecs):
                 cpu="256",
             )
 
+        # Infrequently, our concurrent futures don't fire fast enough to hit
+        # our stubbed ECS's lock. We can force this flaky behavior by firing
+        # thousands of futures; by the time the later futures launch, the
+        # earlier futures have already completed and released their lock.
+        #
+        # We've marked this test as flaky and retry it once on failure to
+        # try to mitigate this.
         futures = [executor.submit(task) for i in range(2)]
 
     # We successfully registered only 1 task definition revision
@@ -311,11 +318,14 @@ def test_run_task(ecs, ec2, subnet):
     assert response["tasks"][0]["lastStatus"] == "RUNNING"
 
     # It uses the default cluster
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("default")
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("default")  # noqa: SLF001
     response = ecs.run_task(taskDefinition="bridge", cluster="dagster")
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
-    response = ecs.run_task(taskDefinition="bridge", cluster=ecs._cluster_arn("dagster"))
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
+    response = ecs.run_task(
+        taskDefinition="bridge",
+        cluster=ecs._cluster_arn("dagster"),  # noqa: SLF001
+    )
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
 
     # It includes memory and cpu
     assert response["tasks"][0]["cpu"] == "256"
@@ -414,7 +424,7 @@ def test_run_task(ecs, ec2, subnet):
 def test_stop_task(ecs):
     with pytest.raises(ClientError):
         # The task doesn't exist
-        ecs.stop_task(task=ecs._task_arn("invalid"))
+        ecs.stop_task(task=ecs._task_arn("invalid"))  # noqa: SLF001
 
     ecs.register_task_definition(
         family="bridge", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
@@ -433,7 +443,7 @@ def test_stop_task(ecs):
 def test_tag_resource(ecs):
     tags = [{"key": "foo", "value": "bar"}]
 
-    invalid_arn = ecs._task_arn("invalid")
+    invalid_arn = ecs._task_arn("invalid")  # noqa: SLF001
     with pytest.raises(ClientError):
         # The task doesn't exist
         ecs.tag_resource(resourceArn=invalid_arn, tags=tags)

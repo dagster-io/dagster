@@ -8,34 +8,32 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .databricks import DatabricksError, DatabricksJobRunner
-from .databricks_pyspark_step_launcher import (
-    DatabricksConfig,
-    DatabricksPySparkStepLauncher,
-    databricks_pyspark_step_launcher,
+from .databricks import (
+    DatabricksClient as DatabricksClient,
+    DatabricksError as DatabricksError,
+    DatabricksJobRunner as DatabricksJobRunner,
 )
-from .resources import databricks_client
-from .solids import create_databricks_job_op
-from .types import (
-    DATABRICKS_RUN_TERMINATED_STATES,
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
+from .databricks_pyspark_step_launcher import (
+    DatabricksConfig as DatabricksConfig,
+    DatabricksPySparkStepLauncher as DatabricksPySparkStepLauncher,
+    databricks_pyspark_step_launcher as databricks_pyspark_step_launcher,
+)
+from .ops import (
+    create_databricks_run_now_op as create_databricks_run_now_op,
+    create_databricks_submit_run_op as create_databricks_submit_run_op,
+)
+from .pipes import (
+    PipesDatabricksClient as PipesDatabricksClient,
+    PipesDbfsContextInjector as PipesDbfsContextInjector,
+    PipesDbfsLogReader as PipesDbfsLogReader,
+    PipesDbfsMessageReader as PipesDbfsMessageReader,
+)
+from .resources import (
+    DatabricksClientResource as DatabricksClientResource,
+    databricks_client as databricks_client,
 )
 from .version import __version__
 
-check_dagster_package_version("dagster-databricks", __version__)
-
-__all__ = [
-    "create_databricks_job_op",
-    "databricks_client",
-    "DatabricksConfig",
-    "DatabricksError",
-    "DatabricksJobRunner",
-    "DatabricksPySparkStepLauncher",
-    "databricks_pyspark_step_launcher",
-    "DATABRICKS_RUN_TERMINATED_STATES",
-    "DatabricksRunLifeCycleState",
-    "DatabricksRunResultState",
-]
+DagsterLibraryRegistry.register("dagster-databricks", __version__)

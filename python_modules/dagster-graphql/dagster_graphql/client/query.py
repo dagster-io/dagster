@@ -16,9 +16,7 @@ fragment errorFragment on PythonError {
 }
 """
 
-STEP_EVENT_FRAGMENTS = (
-    ERROR_FRAGMENT
-    + """
+METADATA_ENTRY_FRAGMENT = """
 fragment metadataEntryFragment on MetadataEntry {
   __typename
   label
@@ -62,6 +60,11 @@ fragment metadataEntryFragment on MetadataEntry {
       path
     }
   }
+  ... on JobMetadataEntry {
+    jobName
+    repositoryName
+    locationName
+  }
   ... on TableMetadataEntry  {
     table {
       records
@@ -86,7 +89,12 @@ fragment metadataEntryFragment on MetadataEntry {
     }
   }
 }
+"""
 
+STEP_EVENT_FRAGMENTS = (
+    ERROR_FRAGMENT
+    + METADATA_ENTRY_FRAGMENT
+    + """
 fragment stepEventFragment on StepEvent {
   stepKey
   solidHandleID

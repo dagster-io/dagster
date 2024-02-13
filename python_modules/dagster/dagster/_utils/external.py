@@ -1,36 +1,34 @@
 from typing import Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
-from dagster._core.host_representation import RepositoryLocation
-from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.host_representation import CodeLocation
+from dagster._core.host_representation.external import ExternalJob
+from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
-def external_pipeline_from_location(
-    repo_location: RepositoryLocation,
-    external_pipeline_origin: ExternalPipelineOrigin,
-    solid_selection: Optional[Sequence[str]],
-) -> ExternalPipeline:
-    check.inst_param(repo_location, "repository_location", RepositoryLocation)
-    check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
+def external_job_from_location(
+    code_location: CodeLocation,
+    external_job_origin: ExternalJobOrigin,
+    op_selection: Optional[Sequence[str]],
+) -> ExternalJob:
+    check.inst_param(code_location, "code_location", CodeLocation)
+    check.inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
 
-    repo_name = external_pipeline_origin.external_repository_origin.repository_name
-    pipeline_name = external_pipeline_origin.pipeline_name
+    repo_name = external_job_origin.external_repository_origin.repository_name
+    job_name = external_job_origin.job_name
 
     check.invariant(
-        repo_location.has_repository(repo_name),
-        "Could not find repository {repo_name} in location {repo_location_name}".format(
-            repo_name=repo_name, repo_location_name=repo_location.name
-        ),
+        code_location.has_repository(repo_name),
+        f"Could not find repository {repo_name} in location {code_location.name}",
     )
-    external_repo = repo_location.get_repository(repo_name)
+    external_repo = code_location.get_repository(repo_name)
 
-    pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
+    pipeline_selector = JobSubsetSelector(
+        location_name=code_location.name,
         repository_name=external_repo.name,
-        pipeline_name=pipeline_name,
-        solid_selection=solid_selection,
+        job_name=job_name,
+        op_selection=op_selection,
     )
 
-    return repo_location.get_external_pipeline(pipeline_selector)
+    return code_location.get_external_job(pipeline_selector)

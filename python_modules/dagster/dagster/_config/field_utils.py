@@ -1,6 +1,20 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
+import os
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
+
+from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -63,7 +77,7 @@ def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
         return FIELD_HASH_CACHE[key]
 
     defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
-    defined_cls_inst._initialized = False  # pylint: disable=protected-access
+    defined_cls_inst._initialized = False  # noqa: SLF001
     FIELD_HASH_CACHE[key] = defined_cls_inst
     return defined_cls_inst
 
@@ -113,7 +127,7 @@ class Shape(_ConfigHasFields):
             The specification of the config dict.
         field_aliases (Dict[str, str]):
             Maps a string key to an alias that can be used instead of the original key. For example,
-            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            an entry {"foo": "bar"} means that someone could use "bar" instead of "foo" as a
             top level string key.
     """
 
@@ -136,7 +150,7 @@ class Shape(_ConfigHasFields):
         field_aliases=None,
     ):
         # if we hit in the field cache - skip double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)
@@ -204,9 +218,10 @@ class Map(ConfigType):
             kind=ConfigTypeKind.MAP,
         )
 
-    @public  # type: ignore
+    @public
     @property
-    def key_label_name(self):
+    def key_label_name(self) -> Optional[str]:
+        """Name which describes the role of keys in the map, if provided."""
         return self.given_name
 
     def type_iterator(self) -> Iterator["ConfigType"]:
@@ -253,7 +268,7 @@ class Permissive(_ConfigHasFields):
 
     def __init__(self, fields=None, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields) if fields else None
@@ -320,7 +335,7 @@ class Selector(_ConfigHasFields):
 
     def __init__(self, fields, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)
@@ -394,14 +409,14 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root, the_dict, stack, "Map dict must be of length 1"
         )
 
-    key = list(the_dict.keys())[0]
+    key = next(iter(the_dict.keys()))
     key_type = _convert_potential_type(original_root, key, stack)
-    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
+    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
         raise DagsterInvalidConfigDefinitionError(
             original_root,
             the_dict,
             stack,
-            "Map dict must have a scalar type as its only key. Got key {}".format(repr(key)),
+            f"Map dict must have a scalar type as its only key. Got key {key!r}",
         )
 
     inner_type = _convert_potential_type(original_root, the_dict[key], stack)
@@ -410,8 +425,9 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}"
-            .format(repr(the_dict[key])),
+            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
+                repr(the_dict[key])
+            ),
         )
 
     return Map(key_type, inner_type)
@@ -427,7 +443,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     if isinstance(potential_type, Mapping):
         # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
         if len(potential_type) == 1:
-            key = list(potential_type.keys())[0]
+            key = next(iter(potential_type.keys()))
             if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
                 return expand_map(original_root, potential_type, stack)
 
@@ -462,18 +478,105 @@ def _convert_potential_field(
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
+    """Converts a set of config values into a dictionary representation,
+    in particular converting EnvVar objects into Dagster config inputs
+    and processing data structures such as dicts, lists, and structured Config classes.
+    """
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
-    new_values = {}
-    for key, value in values.items():
-        if value is None:
-            continue
 
-        if isinstance(value, EnvVar):
-            new_values[key] = {"env": str(value)}
-        else:
-            new_values[key] = value
-    return new_values
+    from dagster._config.pythonic_config import _config_value_to_dict_representation
+
+    return check.is_dict(_config_value_to_dict_representation(None, values))
+
+
+def _create_direct_access_exception(cls: Type, env_var_name: str) -> Exception:
+    return RuntimeError(
+        f'Attempted to directly retrieve environment variable {cls.__name__}("{env_var_name}").'
+        f" {cls.__name__} defers resolution of the environment variable value until run time, and"
+        " should only be used as input to Dagster config or resources.\n\nTo access the"
+        f" environment variable value, call `get_value` on the {cls.__name__}, or use os.getenv"
+        " directly."
+    )
+
+
+class IntEnvVar(int):
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to an int value when the config is
+    loaded.
+    """
+
+    name: str
+
+    @classmethod
+    def create(cls, name: str) -> "IntEnvVar":
+        var = IntEnvVar(0)
+        var.name = name
+        return var
+
+    def __int__(self) -> int:
+        """Raises an exception of the EnvVar value is directly accessed. Users should instead use
+        the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
+        """
+        raise _create_direct_access_exception(self.__class__, self.env_var_name)
+
+    def __str__(self) -> str:
+        return str(int(self))
+
+    def get_value(self, default: Optional[int] = None) -> Optional[int]:
+        """Returns the value of the environment variable, or the default value if the
+        environment variable is not set. If no default is provided, None will be returned.
+        """
+        value = os.getenv(self.name, default=default)
+        return int(value) if value else None
+
+    @property
+    def env_var_name(self) -> str:
+        """Returns the name of the environment variable."""
+        return self.name
 
 
 class EnvVar(str):
-    pass
+    """Class used to represent an environment variable in the Dagster config system.
+
+    This class is intended to be used to populate config fields or resources.
+    The environment variable will be resolved to a string value when the config is
+    loaded.
+
+    To access the value of the environment variable, use the `get_value` method.
+    """
+
+    @classmethod
+    def int(cls, name: str) -> "IntEnvVar":
+        return IntEnvVar.create(name=name)
+
+    def __str__(self) -> str:
+        """Raises an exception of the EnvVar value is directly accessed. Users should instead use
+        the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
+        """
+        raise _create_direct_access_exception(self.__class__, self.env_var_name)
+
+    @property
+    def env_var_name(self) -> str:
+        """Returns the name of the environment variable."""
+        return super().__str__()
+
+    def get_value(self, default: Optional[str] = None) -> Optional[str]:
+        """Returns the value of the environment variable, or the default value if the
+        environment variable is not set. If no default is provided, None will be returned.
+        """
+        return os.getenv(self.env_var_name, default=default)
+
+
+DagsterEnvVar = Union[EnvVar, IntEnvVar]
+
+
+def is_dagster_env_var(value: Any) -> TypeGuard[DagsterEnvVar]:
+    return isinstance(value, (EnvVar, IntEnvVar))
+
+
+def env_var_to_config_dict(value: DagsterEnvVar) -> Dict[str, Any]:
+    if isinstance(value, EnvVar):
+        return {"env": value.env_var_name}
+    else:
+        return {"env": value.name}

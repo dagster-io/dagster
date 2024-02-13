@@ -5,8 +5,14 @@ SAMPLE_PROJECT_ID = 35000
 SAMPLE_JOB_ID = 40000
 SAMPLE_RUN_ID = 5000000
 
-SAMPLE_API_PREFIX = f"https://cloud.getdbt.com/api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
-SAMPLE_API_V3_PREFIX = f"https://cloud.getdbt.com/api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+DBT_CLOUD_US_HOST = "https://cloud.getdbt.com/"
+DBT_CLOUD_EMEA_HOST = "https://emea.dbt.com/"
+
+SAMPLE_API_PREFIX = f"{DBT_CLOUD_US_HOST}api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+SAMPLE_API_V3_PREFIX = f"{DBT_CLOUD_US_HOST}api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+
+SAMPLE_EMEA_API_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+SAMPLE_EMEA_API_V3_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
 
 
 def job_details_data(job_id: int):
@@ -74,7 +80,7 @@ def sample_job_details():
 def sample_runs_details(include_related=None, **kwargs):
     runs = [sample_run_details(include_related, **kwargs) for i in range(100)]
     if include_related and "environment" in include_related:
-        for run in runs:
+        for i, run in enumerate(runs):
             run["environment"] = {
                 "dbt_project_subdirectory": None,
                 "project_id": 50000,
@@ -91,7 +97,7 @@ def sample_runs_details(include_related=None, **kwargs):
                 "supports_docs": False,
                 "state": 10,
             }
-            run = deep_merge_dicts(run, kwargs)
+            runs[i] = deep_merge_dicts(run, kwargs)
     return {
         "status": {
             "code": 200,

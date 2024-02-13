@@ -10,7 +10,7 @@ from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
 )
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs
 
@@ -54,46 +54,47 @@ def test_make_definitions(
 test_airflow_example_dags_inputs = [
     (
         [
-            "airflow_example_bash_operator",
-            "airflow_example_branch_dop_operator_v3",
-            "airflow_example_branch_operator",
-            "airflow_example_complex",
-            "airflow_example_external_task_marker_child",
-            "airflow_example_external_task_marker_parent",
-            "airflow_example_http_operator",
-            "airflow_example_kubernetes_executor_config",
-            "airflow_example_nested_branch_dag",  # only exists in airflow v1.10.10
-            "airflow_example_passing_params_via_test_command",
-            "airflow_example_pig_operator",
-            "airflow_example_python_operator",
-            "airflow_example_short_circuit_operator",
-            "airflow_example_skip_dag",
-            "airflow_example_subdag_operator",
-            "airflow_example_subdag_operator_section_1",
-            "airflow_example_subdag_operator_section_2",
-            "airflow_example_trigger_controller_dag",
-            "airflow_example_trigger_target_dag",
-            "airflow_example_xcom",
-            "airflow_latest_only",
-            "airflow_latest_only_with_trigger",
-            "airflow_test_utils",
-            "airflow_tutorial",
+            "example_bash_operator",
+            "example_branch_dop_operator_v3",
+            "example_branch_operator",
+            "example_complex",
+            "example_external_task_marker_child",
+            "example_external_task_marker_parent",
+            "example_http_operator",
+            "example_kubernetes_executor_config",
+            "example_nested_branch_dag",  # only exists in airflow v1.10.10
+            "example_passing_params_via_test_command",
+            "example_pig_operator",
+            "example_python_operator",
+            "example_short_circuit_operator",
+            "example_skip_dag",
+            "example_subdag_operator",
+            "example_subdag_operator_section_1",
+            "example_subdag_operator_section_2",
+            "example_trigger_controller_dag",
+            "example_trigger_target_dag",
+            "example_xcom",
+            "latest_only",
+            "latest_only_with_trigger",
+            "test_utils",
+            "tutorial",
         ],
         [
             #  No such file or directory: '/foo/volume_mount_test.txt'
-            "airflow_example_kubernetes_executor_config",
+            "example_kubernetes_executor_config",
             # [Errno 2] No such file or directory: 'pig'
-            "airflow_example_pig_operator",
+            "example_pig_operator",
             # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-            "airflow_example_trigger_controller_dag",
+            "example_trigger_controller_dag",
             # 'NoneType' object is not subscriptable, target dag does not exist
-            "airflow_example_trigger_target_dag",
+            "example_trigger_target_dag",
             # sleeps forever, not an example
-            "airflow_test_utils",
+            "test_utils",
             # patching airflow.models.DAG causes this to fail
-            "airflow_example_complex",
+            "example_complex",
             # can flake due to 502 Server Error: Bad Gateway for url: https://www.httpbin.org/
-            "airflow_example_http_operator",
+            "example_http_operator",
+            "example_dynamic_task_mapping_with_no_taskflow_operators",
         ],
     ),
 ]
@@ -104,7 +105,7 @@ test_airflow_example_dags_inputs = [
     "expected_job_names, exclude_from_execution_tests",
     test_airflow_example_dags_inputs,
 )
-@requires_airflow_db
+@requires_local_db
 def test_airflow_example_dags(
     expected_job_names,
     exclude_from_execution_tests,
@@ -147,7 +148,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_airflow_db
+@requires_local_db
 def test_retry_conversion():
     with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -156,10 +157,7 @@ def test_retry_conversion():
         dag_bag = DagBag(dag_folder=tmpdir_path)
         retry_dag = dag_bag.get_dag(dag_id="retry_dag")
 
-        job = make_dagster_job_from_airflow_dag(
-            dag=retry_dag,
-            use_ephemeral_airflow_db=True,
-        )
+        job = make_dagster_job_from_airflow_dag(dag=retry_dag)
         result = job.execute_in_process()
         assert result.success
         for event in result.all_events:

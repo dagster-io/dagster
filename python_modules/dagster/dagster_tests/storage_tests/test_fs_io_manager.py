@@ -1,39 +1,50 @@
 import os
 import pickle
+import shutil
 import tempfile
+from datetime import datetime
 from typing import Optional, Tuple
 
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
+    DagsterInstance,
     DailyPartitionsDefinition,
     In,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Nothing,
-    Out,
     Output,
     PartitionMapping,
     PartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    define_asset_job,
     graph,
     job,
     materialize,
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import file_relative_path
 
 
-def define_pipeline(io_manager):
+def define_job(io_manager: IOManagerDefinition):
     @op
     def op_a(_context):
         return [1, 2, 3]
@@ -52,33 +63,30 @@ def define_pipeline(io_manager):
 def test_fs_io_manager():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(io_manager)
+        job_def = define_job(io_manager)
 
-        result = pipeline_def.execute_in_process()
+        result = job_def.execute_in_process()
         assert result.success
 
         handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_events))
         assert len(handled_output_events) == 2
 
         filepath_a = os.path.join(tmpdir_path, result.run_id, "op_a", "result")
-        result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
-        assert result_metadata_entry_a.label == "path"
-        assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        metadata = handled_output_events[0].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_events))
-        input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
-        assert input_metadata_entry_a.label == "path"
-        assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        metadata = loaded_input_events[0].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
         assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
-        result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
-        assert result_metadata_entry_b.label == "path"
-        assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
+        metadata = handled_output_events[1].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
@@ -88,9 +96,9 @@ def test_fs_io_manager_base_dir():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.ephemeral(tempdir=tmpdir_path)
         io_manager = fs_io_manager
-        pipeline_def = define_pipeline(io_manager)
+        job_def = define_job(io_manager)
 
-        result = pipeline_def.execute_in_process(instance=instance)
+        result = job_def.execute_in_process(instance=instance)
         assert result.success
         assert result.output_for_node("op_a") == [1, 2, 3]
 
@@ -284,32 +292,28 @@ def test_fs_io_manager_partitioned_no_partitions():
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
 
         class NoPartitionsPartitionMapping(PartitionMapping):
-            def get_upstream_partitions_for_partitions(
+            def get_upstream_mapped_partitions_result_for_partitions(
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
+                downstream_partitions_def: Optional[PartitionsDefinition],
                 upstream_partitions_def: PartitionsDefinition,
-            ) -> PartitionsSubset:
-                return upstream_partitions_def.empty_subset()
+                current_time: Optional[datetime] = None,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+            ) -> UpstreamPartitionsResult:
+                return UpstreamPartitionsResult(upstream_partitions_def.empty_subset(), [])
 
             def get_downstream_partitions_for_partitions(
-                self, upstream_partitions_subset, downstream_partitions_def
+                self,
+                upstream_partitions_subset,
+                upstream_partitions_def,
+                downstream_partitions_def,
+                current_time: Optional[datetime] = None,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
                 raise NotImplementedError()
 
-            def get_upstream_partitions_for_partition_range(
-                self,
-                downstream_partition_key_range,
-                downstream_partitions_def,
-                upstream_partitions_def,
-            ):
-                raise NotImplementedError()
-
-            def get_downstream_partitions_for_partition_range(
-                self,
-                upstream_partition_key_range,
-                downstream_partitions_def,
-                upstream_partitions_def,
-            ):
+            @property
+            def description(self) -> str:
                 raise NotImplementedError()
 
         partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")
@@ -341,8 +345,8 @@ def test_fs_io_manager_partitioned_multi_asset():
         @multi_asset(
             partitions_def=partitions,
             outs={
-                "out_1": Out(asset_key=AssetKey("upstream_asset_1")),
-                "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
+                "out_1": AssetOut(key=AssetKey("upstream_asset_1")),
+                "out_2": AssetOut(key=AssetKey("upstream_asset_2")),
             },
         )
         def upstream_asset() -> Tuple[Output[int], Output[int]]:
@@ -355,14 +359,13 @@ def test_fs_io_manager_partitioned_multi_asset():
             del upstream_asset_1
             return 2
 
-        group = AssetGroup(
-            [upstream_asset, downstream_asset],
-            resource_defs={"io_manager": io_manager_def},
-        )
+        foo_job = Definitions(
+            assets=[upstream_asset, downstream_asset],
+            resources={"io_manager": io_manager_def},
+            jobs=[define_asset_job("TheJob")],
+        ).get_job_def("TheJob")
 
-        job = group.build_job(name="TheJob")
-
-        result = job.execute_in_process(partition_key="A")
+        result = foo_job.execute_in_process(partition_key="A")
         assert result.success
 
         handled_output_events = list(
@@ -459,7 +462,7 @@ def test_fs_io_manager_none():
         def asset1() -> None:
             pass
 
-        @asset(non_argument_deps={"asset1"})
+        @asset(deps=[asset1])
         def asset2() -> None:
             pass
 
@@ -472,10 +475,10 @@ def test_fs_io_manager_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata) == 0
 
 
 def test_fs_io_manager_ops_none():
@@ -499,7 +502,112 @@ def test_fs_io_manager_ops_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata) == 0
+
+
+def test_multipartitions_fs_io_manager():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+        multipartitions_def = MultiPartitionsDefinition(
+            {
+                "a": StaticPartitionsDefinition(["a", "b"]),
+                "1": StaticPartitionsDefinition(["1", "2"]),
+            }
+        )
+
+        @asset(
+            partitions_def=multipartitions_def,
+            io_manager_def=io_manager_def,
+        )
+        def asset1():
+            return 1
+
+        @asset(io_manager_def=io_manager_def, partitions_def=multipartitions_def)
+        def asset2(asset1):
+            return asset1
+
+        my_job = define_asset_job("my_job", [asset1, asset2]).resolve(
+            asset_graph=AssetGraph.from_assets([asset1, asset2])
+        )
+
+        result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 2
+
+
+def test_backcompat_multipartitions_fs_io_manager():
+    src_dir = file_relative_path(
+        __file__, "backcompat_multipartitions_fs_io_manager/backcompat_materialization"
+    )
+    with tempfile.TemporaryDirectory() as test_dir:
+        os.mkdir(os.path.join(test_dir, "multipartitioned"))
+
+        io_manager_def = fs_io_manager.configured({"base_dir": test_dir})
+        dest_file_path = os.path.join(test_dir, "multipartitioned", "c|2020-04-22")
+        shutil.copyfile(src_dir, dest_file_path)
+
+        composite = MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]),
+                "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            }
+        )
+
+        @asset(
+            partitions_def=composite,
+            io_manager_def=io_manager_def,
+        )
+        def multipartitioned(context):
+            return 1
+
+        @asset(
+            partitions_def=composite,
+            io_manager_def=io_manager_def,
+        )
+        def downstream_of_multipartitioned(multipartitioned):
+            return 1
+
+        # Upstream partition was never materialized, so this run should error
+        with pytest.raises(FileNotFoundError, match="c/2020-04-21"):
+            my_job = define_asset_job(
+                "my_job", [multipartitioned, downstream_of_multipartitioned]
+            ).resolve(
+                asset_graph=AssetGraph.from_assets(
+                    [multipartitioned, downstream_of_multipartitioned]
+                )
+            )
+            result = my_job.execute_in_process(
+                partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-21"}),
+                asset_selection=[AssetKey("downstream_of_multipartitioned")],
+            )
+
+        my_job = define_asset_job(
+            "my_job", [multipartitioned, downstream_of_multipartitioned]
+        ).resolve(
+            asset_graph=AssetGraph.from_assets([multipartitioned, downstream_of_multipartitioned])
+        )
+        result = my_job.execute_in_process(
+            partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
+            asset_selection=[AssetKey("downstream_of_multipartitioned")],
+        )
+        assert result.success
+
+        result = my_job.execute_in_process(
+            partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
+        )
+        assert result.success
+        materializations = result.asset_materializations_for_node("multipartitioned")
+        assert len(materializations) == 1
+
+        get_path_metadata_entry = lambda materialization: materialization.metadata["path"]
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).path
+
+        materializations = result.asset_materializations_for_node("downstream_of_multipartitioned")
+        assert len(materializations) == 1
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).path

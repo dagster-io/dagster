@@ -9,7 +9,7 @@ import pytest
 from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
@@ -25,11 +25,9 @@ MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
 
 
 def get_path(materialization_event):
-    for (
-        metadata_entry
-    ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, (PathMetadataValue, NotebookMetadataValue)):
-            return metadata_entry.entry_data.path
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
+        if isinstance(value, (PathMetadataValue, NotebookMetadataValue)):
+            return value.path
 
 
 def cleanup_result_notebook(result):
@@ -47,12 +45,12 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", fn_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
 
     with instance_for_test() as instance:
         try:
             with execute_job(
-                job=recon_pipeline,
+                job=recon_job,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
@@ -71,6 +69,12 @@ def test_hello_world():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_struct_resource() -> None:
+    with exec_for_test("hello_world_job_struct_resource") as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
 def test_hello_world_job():
     with exec_for_test("hello_world_job") as result:
         assert result.success
@@ -81,6 +85,13 @@ def test_hello_world_with_config():
     with exec_for_test("hello_world_config_job") as result:
         assert result.success
         assert result.output_for_node("hello_world_config") == "hello"
+
+
+@pytest.mark.notebook_test
+def test_hello_world_with_struct_config() -> None:
+    with exec_for_test("hello_world_config_job_struct") as result:
+        assert result.success
+        assert result.output_for_node("hello_world_config_struct") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -278,15 +289,13 @@ def test_error_notebook():
         assert len(result.get_failed_step_keys()) > 0
 
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(
-        "dagstermill.examples.repository", "error_job"
-    )
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", "error_job")
 
     # test that the notebook is saved on failure
     with instance_for_test() as instance:
         try:
             result = execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
                 raise_on_error=False,
@@ -324,26 +333,23 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
-                (
-                    "from dagster import job\n"
-                    "from dagstermill.factory import define_dagstermill_op\n\n\n"
-                    "reexecution_op = define_dagstermill_op(\n"
-                    "    'hello_world_reexecution', '{output_notebook_path}'\n"
-                    ")\n\n"
-                    "@job\n"
-                    "def reexecution_job():\n"
-                    "    reexecution_op()\n"
-                ).format(output_notebook_path=output_notebook_path)
+                "from dagster import job\n"
+                "from dagstermill.factory import define_dagstermill_op\n\n\n"
+                "reexecution_op = define_dagstermill_op(\n"
+                f"    'hello_world_reexecution', '{output_notebook_path}'\n"
+                ")\n\n"
+                "@job\n"
+                "def reexecution_job():\n"
+                "    reexecution_op()\n"
             )
             reexecution_notebook_file.flush()
 
-            result = None
-            reexecution_job = ReconstructablePipeline.for_file(
+            reexecution_job = ReconstructableJob.for_file(
                 reexecution_notebook_file.name, "reexecution_job"
             )
 

@@ -1,8 +1,9 @@
-from __future__ import annotations
-
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+import threading
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+
+from typing_extensions import Protocol
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
@@ -11,9 +12,27 @@ from dagster._utils.log import get_dagster_logger
 if TYPE_CHECKING:
     from dagster import DagsterInstance
     from dagster._core.events import DagsterEvent
-    from dagster._legacy import DagsterRun
+    from dagster._core.storage.dagster_run import DagsterRun
 
 DAGSTER_META_KEY = "dagster_meta"
+
+
+class IDagsterMeta(Protocol):
+    @property
+    def dagster_meta(self) -> "DagsterLoggingMetadata":
+        ...
+
+
+# The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`
+# property of `IDagsterMeta`. We ignore this error because we don't need to implement this method--
+# `DagsterLogRecord` is a stub class that is never instantiated. We only ever cast
+# `logging.LogRecord` objects to `DagsterLogRecord`, because it gives us typed access to the
+# `dagster_meta` property. `dagster_meta` itself is set on these `logging.LogRecord` objects via the
+# `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
+# `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
+# defined via `extra`.
+class DagsterLogRecord(logging.LogRecord, IDagsterMeta):
+    pass
 
 
 class DagsterMessageProps(
@@ -45,7 +64,9 @@ class DagsterMessageProps(
             log_timestamp=check.opt_str_param(
                 log_timestamp,
                 "log_timestamp",
-                default=datetime.datetime.utcnow().isoformat(),
+                default=(
+                    datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
+                ),
             ),
             dagster_event=dagster_event,
         )
@@ -88,10 +109,10 @@ class DagsterLoggingMetadata(
         "_DagsterLoggingMetadata",
         [
             ("run_id", Optional[str]),
-            ("pipeline_name", Optional[str]),
-            ("pipeline_tags", Mapping[str, str]),
+            ("job_name", Optional[str]),
+            ("job_tags", Mapping[str, str]),
             ("step_key", Optional[str]),
-            ("solid_name", Optional[str]),
+            ("op_name", Optional[str]),
             ("resource_name", Optional[str]),
             ("resource_fn_name", Optional[str]),
         ],
@@ -104,33 +125,37 @@ class DagsterLoggingMetadata(
     def __new__(
         cls,
         run_id: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
-        pipeline_tags: Optional[Mapping[str, str]] = None,
+        job_name: Optional[str] = None,
+        job_tags: Optional[Mapping[str, str]] = None,
         step_key: Optional[str] = None,
-        solid_name: Optional[str] = None,
+        op_name: Optional[str] = None,
         resource_name: Optional[str] = None,
         resource_fn_name: Optional[str] = None,
     ):
         return super().__new__(
             cls,
             run_id=run_id,
-            pipeline_name=pipeline_name,
-            pipeline_tags=pipeline_tags or {},
+            job_name=job_name,
+            job_tags=job_tags or {},
             step_key=step_key,
-            solid_name=solid_name,
+            op_name=op_name,
             resource_name=resource_name,
             resource_fn_name=resource_fn_name,
         )
 
     @property
-    def log_source(self):
+    def log_source(self) -> str:
         if self.resource_name is None:
-            return self.pipeline_name or "system"
+            return self.job_name or "system"
         return f"resource:{self.resource_name}"
 
-    def to_tags(self) -> Mapping[str, str]:
+    def all_tags(self) -> Mapping[str, str]:
         # converts all values into strings
         return {k: str(v) for k, v in self._asdict().items()}
+
+    def event_tags(self) -> Mapping[str, str]:
+        # Exclude pipeline_tags since it can be quite large and can be found on the run
+        return {k: str(v) for k, v in self._asdict().items() if k != "job_tags"}
 
 
 def construct_log_string(
@@ -160,7 +185,7 @@ def construct_log_string(
 
 def get_dagster_meta_dict(
     logging_metadata: DagsterLoggingMetadata, dagster_message_props: DagsterMessageProps
-) -> Mapping[str, Any]:
+) -> Mapping[str, object]:
     # combine all dagster meta information into a single dictionary
     meta_dict = {
         **logging_metadata._asdict(),
@@ -193,14 +218,18 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
-        self._should_capture = True
+        # Setting up a local thread context here to allow the DagsterLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         super().__init__()
 
     @property
-    def logging_metadata(self):
+    def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._logging_metadata
 
-    def with_tags(self, **new_tags: str) -> DagsterLogHandler:
+    def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
@@ -219,7 +248,7 @@ class DagsterLogHandler(logging.Handler):
         ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
-    def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
+    def _convert_record(self, record: logging.LogRecord) -> DagsterLogRecord:
         # we store the originating DagsterEvent in the DAGSTER_META_KEY field, if applicable
         dagster_meta = getattr(record, DAGSTER_META_KEY, None)
 
@@ -239,7 +268,8 @@ class DagsterLogHandler(logging.Handler):
         record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
         record.args = ()
 
-        return record
+        # DagsterLogRecord is a LogRecord with a `dagster_meta` field
+        return cast(DagsterLogRecord, record)
 
     def filter(self, record: logging.LogRecord) -> bool:
         """If you list multiple levels of a python logging hierarchy as managed loggers, and do not
@@ -247,17 +277,23 @@ class DagsterLogHandler(logging.Handler):
         multiple times, as the DagsterLogHandler will be invoked at each level of the hierarchy as
         the message is propagated. This filter prevents this from happening.
         """
-        return self._should_capture and not isinstance(
+        if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable through the __init__()
+            # we need to set a default value for all other threads here.
+            self._local_thread_context.should_capture = True
+
+        return self._local_thread_context.should_capture and not isinstance(
             getattr(record, DAGSTER_META_KEY, None), dict
         )
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         """For any received record, add Dagster metadata, and have handlers handle it."""
         try:
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
             # any log messages while one is currently being emitted
-            self._should_capture = False
+            self._local_thread_context.should_capture = False
             dagster_record = self._convert_record(record)
             # built-in handlers
             for handler in self._handlers:
@@ -272,7 +308,7 @@ class DagsterLogHandler(logging.Handler):
                     extra=self._extract_extra(record),
                 )
         finally:
-            self._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class DagsterLogManager(logging.Logger):
@@ -317,7 +353,7 @@ class DagsterLogManager(logging.Logger):
         loggers: Sequence[logging.Logger],
         handlers: Optional[Sequence[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
-        pipeline_run: Optional["DagsterRun"] = None,
+        dagster_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
         handlers = check.opt_sequence_param(handlers, "handlers", of_type=logging.Handler)
@@ -338,11 +374,11 @@ class DagsterLogManager(logging.Logger):
                 for logger in managed_loggers:
                     logger.setLevel(python_log_level)
 
-        if pipeline_run:
+        if dagster_run:
             logging_metadata = DagsterLoggingMetadata(
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                pipeline_tags=pipeline_run.tags,
+                run_id=dagster_run.run_id,
+                job_name=dagster_run.job_name,
+                job_tags=dagster_run.tags,
             )
         else:
             logging_metadata = DagsterLoggingMetadata()
@@ -398,7 +434,7 @@ class DagsterLogManager(logging.Logger):
         if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
             self._log(level, msg, args, **kwargs)
 
-    def with_tags(self, **new_tags: str) -> DagsterLogManager:
+    def with_tags(self, **new_tags: str) -> "DagsterLogManager":
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 

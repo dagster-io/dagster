@@ -19,9 +19,13 @@ from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
 )
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterConfigMappingFunctionError,
+    DagsterInvalidConfigError,
+    user_code_error_boundary,
+)
 from dagster._utils import ensure_single_item
 
 
@@ -55,8 +59,7 @@ class OpConfig(
 
 
 class OutputsConfig(NamedTuple):
-    """
-    Outputs are configured as a dict if any of the outputs have an output manager with an
+    """Outputs are configured as a dict if any of the outputs have an output manager with an
     output_config_schema, and a list otherwise.
     """
 
@@ -70,13 +73,6 @@ class OutputsConfig(NamedTuple):
             return self.config.keys()
         else:
             return set()
-
-    @property
-    def type_materializer_specs(self) -> Sequence[object]:
-        if isinstance(self.config, list):
-            return self.config
-        else:
-            return []
 
     def get_output_manager_config(self, output_name) -> object:
         if isinstance(self.config, dict):
@@ -99,30 +95,27 @@ class ResolvedRunConfig(
     NamedTuple(
         "_ResolvedRunConfig",
         [
-            ("solids", Mapping[str, OpConfig]),
+            ("ops", Mapping[str, OpConfig]),
             ("execution", "ExecutionConfig"),
             ("resources", Mapping[str, ResourceConfig]),
             ("loggers", Mapping[str, Mapping[str, object]]),
             ("original_config_dict", Any),
-            ("mode", Optional[str]),
             ("inputs", Mapping[str, Any]),
         ],
     )
 ):
     def __new__(
         cls,
-        solids: Optional[Mapping[str, OpConfig]] = None,
+        ops: Optional[Mapping[str, OpConfig]] = None,
         execution: Optional["ExecutionConfig"] = None,
         resources: Optional[Mapping[str, ResourceConfig]] = None,
         loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
         original_config_dict: Optional[Mapping[str, object]] = None,
-        mode: Optional[str] = None,
         inputs: Optional[Mapping[str, object]] = None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_mapping_param(original_config_dict, "original_config_dict")
         resources = check.opt_mapping_param(resources, "resources", key_type=str)
-        check.opt_str_param(mode, "mode")
         inputs = check.opt_mapping_param(inputs, "inputs", key_type=str)
 
         if execution is None:
@@ -130,20 +123,18 @@ class ResolvedRunConfig(
 
         return super(ResolvedRunConfig, cls).__new__(
             cls,
-            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=OpConfig),
+            ops=check.opt_mapping_param(ops, "ops", key_type=str, value_type=OpConfig),
             execution=execution,
             resources=resources,
             loggers=check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=Mapping),
             original_config_dict=original_config_dict,
-            mode=mode,
             inputs=inputs,
         )
 
     @staticmethod
     def build(
-        pipeline_def: PipelineDefinition,
+        job_def: JobDefinition,
         run_config: Optional[Mapping[str, object]] = None,
-        mode: Optional[str] = None,
     ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
         successful, we instantiate an ResolvedRunConfig object.
@@ -154,89 +145,75 @@ class ResolvedRunConfig(
 
         from .composite_descent import composite_descent
 
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        check.inst_param(job_def, "job_def", JobDefinition)
         run_config = check.opt_mapping_param(run_config, "run_config")
-        check.opt_str_param(mode, "mode")
 
-        mode = mode or pipeline_def.get_default_mode_name()
-        run_config_schema = pipeline_def.get_run_config_schema(mode)
-
+        run_config_schema = job_def.run_config_schema
         if run_config_schema.config_mapping:
             # add user code boundary
-            run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
-                run_config
-            )
+            with user_code_error_boundary(
+                DagsterConfigMappingFunctionError,
+                lambda: (
+                    f"The config mapping function on job {job_def.name} has"
+                    " thrown an unexpected error during its execution."
+                ),
+            ):
+                run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
+                    run_config
+                )
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type, check.not_none(run_config)
         )
         if not config_evr.success:
             raise DagsterInvalidConfigError(
-                f"Error in config for {pipeline_def.target_type}".format(pipeline_def.name),
+                f"Error in config for job {job_def.name}",
                 config_evr.errors,
                 run_config,
             )
 
         config_value = cast(Dict[str, Any], config_evr.value)
 
-        mode_def = pipeline_def.get_mode_definition(mode)
-
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
-        if (
-            len(mode_def.executor_defs) == 1
-            and mode_def.executor_defs[0]  # pylint: disable=comparison-with-callable
-            == execute_in_process_executor
-        ):
+        if job_def.executor_def == execute_in_process_executor:
             config_mapped_execution_configs: Optional[Mapping[str, Any]] = {}
         else:
-            if pipeline_def.is_job:
-                executor_config = config_value.get("execution", {})
-                config_mapped_execution_configs = config_map_executor(
-                    executor_config, mode_def.executor_defs[0]
-                )
-            else:
-                config_mapped_execution_configs = config_map_objects(
-                    config_value,
-                    mode_def.executor_defs,
-                    "execution",
-                    ExecutorDefinition,
-                    "executor",
-                )
+            executor_config = config_value.get("execution", {})
+            config_mapped_execution_configs = config_map_executor(
+                executor_config, job_def.executor_def
+            )
 
-        resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
+        resource_defs = job_def.get_required_resource_defs()
         resource_configs = config_value.get("resources", {})
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
-        config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
+        config_mapped_logger_configs = config_map_loggers(job_def, config_value)
 
-        node_key = "ops" if pipeline_def.is_job else "solids"
-        solid_config_dict = composite_descent(
-            pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
+        op_config_dict = composite_descent(
+            job_def, config_value.get("ops", {}), job_def.resource_defs
         )
         input_configs = config_value.get("inputs", {})
-
         return ResolvedRunConfig(
-            solids=solid_config_dict,
+            ops=op_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
             resources=config_mapped_resource_configs,
-            mode=mode,
             inputs=input_configs,
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
         env_dict: Dict[str, Mapping[str, object]] = {}
 
-        solid_configs: Dict[str, object] = {}
-        for solid_name, solid_config in self.solids.items():
-            solid_configs[solid_name] = {
-                "config": solid_config.config,
-                "inputs": solid_config.inputs,
-                "outputs": solid_config.outputs.config,
+        op_configs: Dict[str, object] = {}
+        for op_name, op_config in self.ops.items():
+            op_configs[op_name] = {
+                "config": op_config.config,
+                "inputs": op_config.inputs,
+                "outputs": op_config.outputs.config,
             }
 
-        env_dict["solids"] = solid_configs
+        env_dict["ops"] = op_configs
 
         env_dict["execution"] = (
             {self.execution.execution_engine_name: self.execution.execution_engine_config}
@@ -283,7 +260,7 @@ def config_map_resources(
         resource_config_evr = resource_def.apply_config_mapping(resource_config)
         if not resource_config_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config for resource {}".format(resource_key),
+                f"Error in config for resource {resource_key}",
                 resource_config_evr.errors,
                 resource_config,
             )
@@ -296,9 +273,8 @@ def config_map_resources(
 
 
 def config_map_loggers(
-    pipeline_def: PipelineDefinition,
+    job_def: JobDefinition,
     config_value: Mapping[str, Any],
-    mode: str,
 ) -> Mapping[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
     It uses the `loggers` key on the run_config to determine which loggers will be initialized (and
@@ -319,20 +295,19 @@ def config_map_loggers(
     in that function is tightly coupled to this one and changes in either path should be confirmed
     in the other.
     """
-    mode_def = pipeline_def.get_mode_definition(mode)
     logger_configs = config_value.get("loggers", {})
 
     config_mapped_logger_configs = {}
 
     for logger_key, logger_config in logger_configs.items():
-        logger_def = mode_def.loggers.get(logger_key)
+        logger_def = job_def.loggers.get(logger_key)
         if logger_def is None:
             check.failed(f"No logger found for key {logger_key}")
 
         logger_config_evr = logger_def.apply_config_mapping(logger_config)
         if not logger_config_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config for logger {}".format(logger_key),
+                f"Error in config for logger {logger_key}",
                 logger_config_evr.errors,
                 logger_config,
             )
@@ -368,17 +343,15 @@ def config_map_objects(
     check.inst(
         obj_def,
         def_type,
-        (
-            "Could not find a {def_type} definition on the selected mode that matches the "
-            '{def_type} "{obj_name}" given in run config'
-        ).format(def_type=def_type, obj_name=obj_name),
+        f"Could not find a {def_type} definition on the selected mode that matches the "
+        f'{def_type} "{obj_name}" given in run config',
     )
     obj_def = cast(ConfigurableDefinition, obj_def)
 
     obj_config_evr = obj_def.apply_config_mapping(obj_config)
     if not obj_config_evr.success:
         raise DagsterInvalidConfigError(
-            'Invalid configuration provided for {} "{}"'.format(name_of_def_type, obj_name),
+            f'Invalid configuration provided for {name_of_def_type} "{obj_name}"',
             obj_config_evr.errors,
             obj_config,
         )

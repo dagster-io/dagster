@@ -1,19 +1,30 @@
 from datetime import datetime
 
+import pendulum
 import pytest
 from dagster import (
+    AssetExecutionContext,
+    AssetIn,
     AssetKey,
     DagsterEventType,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
+    DynamicPartitionsDefinition,
     EventRecordsFilter,
+    IdentityPartitionMapping,
+    IOManager,
     MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
+    materialize,
     repository,
 )
+from dagster._check import CheckError
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
 
@@ -63,9 +74,10 @@ def test_multi_dimensional_time_window_static_partitions():
     composite = MultiPartitionsDefinition(
         {"date": time_window_partitions, "abc": static_partitions}
     )
-    assert set(
-        composite.get_partition_keys(current_time=datetime.strptime("2021-05-07", DATE_FORMAT))
-    ) == {
+    partition_keys = composite.get_partition_keys(
+        current_time=datetime.strptime("2021-05-07", DATE_FORMAT)
+    )
+    assert set(partition_keys) == {
         "a|2021-05-05",
         "b|2021-05-05",
         "c|2021-05-05",
@@ -74,10 +86,8 @@ def test_multi_dimensional_time_window_static_partitions():
         "c|2021-05-06",
     }
 
-    partitions = composite.get_partitions(current_time=datetime.strptime("2021-05-07", DATE_FORMAT))
-    assert len(partitions) == 6
-    assert partitions[0].value.get("date").name == "2021-05-05"
-    assert partitions[0].value.get("abc").name == "a"
+    assert partition_keys[0].keys_by_dimension["date"] == "2021-05-05"
+    assert partition_keys[0].keys_by_dimension["abc"] == "a"
 
 
 def test_tags_multi_dimensional_partitions():
@@ -92,7 +102,7 @@ def test_tags_multi_dimensional_partitions():
         return 1
 
     @asset(partitions_def=composite)
-    def asset2(asset1):  # pylint: disable=unused-argument
+    def asset2(asset1):
         return 2
 
     @repository
@@ -274,13 +284,11 @@ def test_multipartitions_subset_addition(initial, added):
             "static": StaticPartitionsDefinition(static_keys),
         }
     )
-    full_date_set_keys = daily_partitions_def.get_partition_keys(
-        current_time=datetime(year=2015, month=1, day=30)
-    )[: max(len(keys) for keys in initial)]
+    full_date_set_keys = daily_partitions_def.get_partition_keys()[
+        : max(len(keys) for keys in initial)
+    ]
     current_day = datetime.strptime(
-        daily_partitions_def.get_partition_keys(current_time=datetime(year=2015, month=1, day=30))[
-            : max(len(keys) for keys in initial) + 1
-        ][-1],
+        daily_partitions_def.get_partition_keys()[: max(len(keys) for keys in initial) + 1][-1],
         daily_partitions_def.fmt,
     )
 
@@ -307,10 +315,342 @@ def test_multipartitions_subset_addition(initial, added):
     initial_subset = multipartitions_def.empty_subset().with_partition_keys(initial_subset_keys)
     added_subset = initial_subset.with_partition_keys(added_subset_keys)
 
-    assert initial_subset.get_partition_keys(current_time=current_day) == set(initial_subset_keys)
-    assert added_subset.get_partition_keys(current_time=current_day) == set(
-        added_subset_keys + initial_subset_keys
+    assert initial_subset.get_partition_keys() == set(initial_subset_keys)
+    assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
+    assert added_subset.get_partition_keys_not_in_subset(
+        multipartitions_def, current_time=current_day
+    ) == set(expected_keys_not_in_updated_subset)
+
+
+def test_asset_partition_key_is_multipartition_key():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+
+        def load_input(self, context):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+            return 1
+
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a"]), "b": StaticPartitionsDefinition(["b"])}
     )
-    assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
-        expected_keys_not_in_updated_subset
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
     )
+    def my_asset(context):
+        return 1
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
+    )
+    def asset2(context, my_asset):
+        return 2
+
+    materialize(
+        [my_asset, asset2],
+        resources={"my_io_manager": MyIOManager()},
+        partition_key="a|b",
+    )
+
+
+def test_keys_with_dimension_value():
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+
+    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+        "static", "a", current_time=datetime(year=2015, month=1, day=5)
+    ) == [
+        MultiPartitionKey({"static": val[0], "date": val[1]})
+        for val in [
+            ("a", "2015-01-01"),
+            ("a", "2015-01-02"),
+            ("a", "2015-01-03"),
+            ("a", "2015-01-04"),
+        ]
+    ]
+    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+        "date", "2015-01-01", current_time=datetime(year=2015, month=1, day=5)
+    ) == [
+        MultiPartitionKey({"static": val[0], "date": val[1]})
+        for val in [
+            ("a", "2015-01-01"),
+            ("b", "2015-01-01"),
+            ("c", "2015-01-01"),
+            ("d", "2015-01-01"),
+        ]
+    ]
+
+
+def test_keys_with_dimension_value_with_dynamic():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dummy")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "dynamic": dynamic_partitions_def,
+        }
+    )
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])
+
+        assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+            dimension_name="dynamic",
+            dimension_partition_key="a",
+            dynamic_partitions_store=instance,
+            current_time=datetime(year=2015, month=1, day=5),
+        ) == [
+            MultiPartitionKey({"dynamic": val[0], "date": val[1]})
+            for val in [
+                ("a", "2015-01-01"),
+                ("a", "2015-01-02"),
+                ("a", "2015-01-03"),
+                ("a", "2015-01-04"),
+            ]
+        ]
+
+        assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+            dimension_name="date",
+            dimension_partition_key="2015-01-01",
+            dynamic_partitions_store=instance,
+            current_time=datetime(year=2015, month=1, day=5),
+        ) == [
+            MultiPartitionKey({"dynamic": val[0], "date": val[1]})
+            for val in [
+                ("a", "2015-01-01"),
+                ("b", "2015-01-01"),
+                ("c", "2015-01-01"),
+                ("d", "2015-01-01"),
+            ]
+        ]
+
+
+def test_keys_with_dimension_value_with_dynamic_without_instance():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dummy")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "dynamic": dynamic_partitions_def,
+        }
+    )
+
+    with pytest.raises(CheckError):
+        multipartitions_def.get_multipartition_keys_with_dimension_value(
+            dimension_name="date",
+            dimension_partition_key="2015-01-01",
+            current_time=datetime(year=2015, month=1, day=5),
+        )
+
+
+def test_get_num_partitions():
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    assert multipartitions_def.get_num_partitions() == len(
+        set(multipartitions_def.get_partition_keys())
+    )
+
+
+def test_dynamic_dimension_in_multipartitioned_asset():
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+            "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset(context):
+        assert context.partition_key == MultiPartitionKey({"static": "a", "dynamic": "1"})
+        return 1
+
+    @asset(partitions_def=multipartitions_def)
+    def asset2(context, my_asset):
+        return 2
+
+    dynamic_multipartitioned_job = define_asset_job(
+        "dynamic_multipartitioned_job", [my_asset, asset2], partitions_def=multipartitions_def
+    ).resolve(asset_graph=AssetGraph.from_assets([my_asset, asset2]))
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("dynamic", ["1"])
+        assert materialize([my_asset, asset2], partition_key="1|a", instance=instance).success
+
+        assert dynamic_multipartitioned_job.execute_in_process(
+            instance=instance, partition_key="1|a"
+        ).success
+
+
+def test_invalid_dynamic_partitions_def_in_multipartitioned():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="must have a name",
+    ):
+        MultiPartitionsDefinition(
+            {
+                "static": StaticPartitionsDefinition(["a", "b", "c"]),
+                "dynamic": DynamicPartitionsDefinition(lambda x: ["1", "2", "3"]),
+            }
+        )
+
+
+def test_context_partition_time_window():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context: AssetExecutionContext):
+        time_partition = get_time_partitions_def(partitions_def)
+        if time_partition is None:
+            assert False, "expected a time component in the partitions definition"
+
+        time_window = TimeWindow(
+            start=pendulum.instance(
+                datetime(year=2020, month=1, day=1),
+                tz=time_partition.timezone,
+            ),
+            end=pendulum.instance(
+                datetime(year=2020, month=1, day=2),
+                tz=time_partition.timezone,
+            ),
+        )
+        assert context.partition_time_window == time_window
+        return 1
+
+    multipartitioned_job = define_asset_job(
+        "my_job", [my_asset], partitions_def=partitions_def
+    ).resolve(asset_graph=AssetGraph.from_assets([my_asset]))
+    multipartitioned_job.execute_in_process(
+        partition_key=MultiPartitionKey({"date": "2020-01-01", "static": "a"})
+    )
+
+
+def test_context_invalid_partition_time_window():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "static2": StaticPartitionsDefinition(["a", "b"]),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context):
+        context.partition_time_window  # noqa: B018
+
+    multipartitioned_job = define_asset_job(
+        "my_job", [my_asset], partitions_def=partitions_def
+    ).resolve(asset_graph=AssetGraph.from_assets([my_asset]))
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "Expected a TimeWindowPartitionsDefinition or MultiPartitionsDefinition with a single"
+            " time dimension"
+        ),
+    ):
+        multipartitioned_job.execute_in_process(
+            partition_key=MultiPartitionKey({"static2": "b", "static": "a"})
+        )
+
+
+def test_multipartitions_self_dependency():
+    from dagster import MultiPartitionMapping, PartitionKeyRange, TimeWindowPartitionMapping
+
+    @asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+            }
+        ),
+        ins={
+            "a": AssetIn(
+                partition_mapping=MultiPartitionMapping(
+                    {
+                        "time": DimensionPartitionMapping(
+                            "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        ),
+                        "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                    }
+                )
+            )
+        },
+    )
+    def a(a):
+        return 1
+
+    first_partition_key = MultiPartitionKey({"time": "2020-01-01", "abc": "a"})
+    second_partition_key = MultiPartitionKey({"time": "2020-01-02", "abc": "a"})
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            assert context.asset_key.path[-1] == "a"
+            if context.partition_key == first_partition_key:
+                assert context.asset_partition_keys == []
+                assert context.has_asset_partitions
+            else:
+                assert context.partition_key == second_partition_key
+                assert context.asset_partition_keys == [first_partition_key]
+                assert context.asset_partition_key == first_partition_key
+                assert context.asset_partition_key_range == PartitionKeyRange(
+                    first_partition_key, first_partition_key
+                )
+                assert context.has_asset_partitions
+
+    resources = {"io_manager": MyIOManager()}
+
+    materialize(
+        [a],
+        partition_key=first_partition_key,
+        resources=resources,
+    )
+    materialize(
+        [a],
+        partition_key=second_partition_key,
+        resources=resources,
+    )
+
+
+def test_context_returns_multipartition_keys():
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a", "b"]), "1": StaticPartitionsDefinition(["1", "2"])}
+    )
+
+    @asset(partitions_def=partitions_def)
+    def upstream(context):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+    @asset(partitions_def=partitions_def)
+    def downstream(context: AssetExecutionContext, upstream):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+        input_range = context.asset_partition_key_range_for_input("upstream")
+        assert isinstance(input_range.start, MultiPartitionKey)
+        assert isinstance(input_range.end, MultiPartitionKey)
+
+        output = context.partition_key_range
+        assert isinstance(output.start, MultiPartitionKey)
+        assert isinstance(output.end, MultiPartitionKey)
+
+    materialize([upstream, downstream], partition_key="1|a")

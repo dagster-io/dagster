@@ -2,14 +2,17 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.events import DagsterEventType
+from dagster._core.events import AssetLineageInfo, DagsterEventType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+
+from dagster_graphql.schema.tags import GrapheneEventTag
 
 from ...implementation.events import construct_basic_params
 from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ...implementation.loader import BatchRunLoader
+from ..asset_checks import GrapheneAssetCheckEvaluation
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError, GrapheneRunNotFoundError
 from ..metadata import GrapheneMetadataEntry
@@ -198,7 +201,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneExpectationResult(graphene.ObjectType):
@@ -211,7 +214,7 @@ class GrapheneExpectationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneTypeCheck(graphene.ObjectType):
@@ -224,7 +227,7 @@ class GrapheneTypeCheck(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneFailureMetadata(graphene.ObjectType):
@@ -235,7 +238,7 @@ class GrapheneFailureMetadata(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneExecutionStepInputEvent(graphene.ObjectType):
@@ -295,12 +298,14 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
         name = "LogsCapturedEvent"
 
     fileKey = graphene.NonNull(graphene.String)
-    # legacy name for compute log file key... required for back-compat reasons, but has been
-    # renamed to fileKey for newer versions of dagit
-    logKey = graphene.NonNull(graphene.String)
     stepKeys = graphene.List(graphene.NonNull(graphene.String))
     externalUrl = graphene.String()
+    externalStdoutUrl = graphene.String()
+    externalStderrUrl = graphene.String()
     pid = graphene.Int()
+    # legacy name for compute log file key... required for back-compat reasons, but has been
+    # renamed to fileKey for newer versions of the Dagster UI
+    logKey = graphene.NonNull(graphene.String)
 
 
 def _construct_asset_event_metadata_params(event, metadata):
@@ -314,6 +319,7 @@ class AssetEventMixin:
     runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     partition = graphene.Field(graphene.String)
+    tags = non_null_list(GrapheneEventTag)
 
     def __init__(self, event, metadata):
         self._event = event
@@ -342,10 +348,18 @@ class AssetEventMixin:
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self._metadata.metadata_entries)
+        return _to_metadata_entries(self._metadata.metadata)
 
     def resolve_partition(self, _graphene_info: ResolveInfo):
         return self._metadata.partition
+
+    def resolve_tags(self, _graphene_info):
+        if self._metadata.tags is None:
+            return []
+        else:
+            return [
+                GrapheneEventTag(key=key, value=value) for key, value in self._metadata.tags.items()
+            ]
 
 
 class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
@@ -355,11 +369,12 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
 
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
-    def __init__(self, event, assetLineage=None, loader=None):
+    def __init__(self, event: EventLogEntry, assetLineage=None, loader=None):
         self._asset_lineage = check.opt_list_param(assetLineage, "assetLineage", AssetLineageInfo)
         self._batch_run_loader = check.opt_inst_param(loader, "loader", BatchRunLoader)
 
-        materialization = event.dagster_event.step_materialization_data.materialization
+        dagster_event = check.not_none(event.dagster_event)
+        materialization = dagster_event.step_materialization_data.materialization
         super().__init__(**_construct_asset_event_metadata_params(event, materialization))
         AssetEventMixin.__init__(
             self,
@@ -527,6 +542,23 @@ class GrapheneStepExpectationResultEvent(graphene.ObjectType):
     expectation_result = graphene.NonNull(GrapheneExpectationResult)
 
 
+class GrapheneAssetCheckEvaluationPlannedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AssetCheckEvaluationPlannedEvent"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    checkName = graphene.NonNull(graphene.String)
+
+
+class GrapheneAssetCheckEvaluationEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AssetCheckEvaluationEvent"
+
+    evaluation = graphene.NonNull(GrapheneAssetCheckEvaluation)
+
+
 # Should be a union of all possible events
 class GrapheneDagsterRunEvent(graphene.Union):
     class Meta:
@@ -568,6 +600,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneAlertSuccessEvent,
             GrapheneAlertFailureEvent,
             GrapheneAssetMaterializationPlannedEvent,
+            GrapheneAssetCheckEvaluationPlannedEvent,
+            GrapheneAssetCheckEvaluationEvent,
         )
         name = "DagsterRunEvent"
 

@@ -1,4 +1,4 @@
-from dagster import job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -16,9 +16,13 @@ def continent_config(partition_key: str):
     return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
 
 
-@op(config_schema={"continent_name": str})
-def continent_op(context):
-    context.log.info(context.op_config["continent_name"])
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
 
 
 @job(config=continent_config)

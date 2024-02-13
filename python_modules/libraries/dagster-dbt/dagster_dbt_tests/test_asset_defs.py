@@ -1,36 +1,53 @@
 import json
 import os
+from pathlib import Path
 from unittest.mock import MagicMock
 
-import psycopg2
 import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AutoMaterializePolicy,
     DailyPartitionsDefinition,
     FreshnessPolicy,
-    IOManager,
-    MetadataEntry,
     ResourceDefinition,
     asset,
-    io_manager,
     materialize_to_memory,
     repository,
 )
 from dagster._core.definitions import build_assets_job
-from dagster._legacy import AssetGroup
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.execution.with_resources import with_resources
 from dagster._utils import file_relative_path
-from dagster_dbt import dbt_cli_resource
+from dagster_dbt import (
+    DagsterDbtError,
+    DagsterDbtTranslator,
+    DbtCliClientResource,
+    DbtCliResource,
+    dbt_cli_resource,
+    get_asset_key_for_model,
+    group_from_dbt_resource_props_fallback_to_directory,
+)
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.core.resources import DbtCliClient
+from dagster_dbt.core.utils import parse_run_results
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from pandas import read_csv
 
 from .utils import assert_assets_match_project
 
+manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
+manifest_json = json.loads(manifest_path.read_bytes())
+
 
 def test_custom_resource_key_asset_load(
-    dbt_seed, test_project_dir, dbt_config_dir, conn_string
-):  # pylint: disable=unused-argument
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
     )
@@ -40,8 +57,8 @@ def test_custom_resource_key_asset_load(
         "test_job",
         dbt_assets,
         resource_defs={
-            "my_custom_dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "my_custom_dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -58,22 +75,19 @@ def test_custom_resource_key_asset_load(
     ],
 )
 def test_load_from_manifest_json(prefix):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
     with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
-    assert_assets_match_project(dbt_assets, prefix)
+    assert_assets_match_project(dbt_assets, prefix=prefix)
 
-    dbt = MagicMock()
+    dbt = MagicMock(spec=DbtCliClient)
     dbt.get_run_results_json.return_value = run_results_json
     dbt.run.return_value = DbtOutput(run_results_json)
     dbt.build.return_value = DbtOutput(run_results_json)
     dbt.get_manifest_json.return_value = manifest_json
+    dbt._json_log_format = True  # noqa: SLF001
     assets_job = build_assets_job(
         "assets_job",
         dbt_assets,
@@ -82,15 +96,29 @@ def test_load_from_manifest_json(prefix):
     assert assets_job.execute_in_process().success
 
 
-def test_runtime_metadata_fn():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
+@pytest.mark.parametrize("manifest", [json.loads(manifest_path.read_bytes()), manifest_path])
+def test_manifest_argument(manifest):
+    my_dbt_assets = load_assets_from_dbt_manifest(manifest)
 
-    run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r", encoding="utf8") as f:
-        run_results_json = json.load(f)
+    assert my_dbt_assets[0].keys == {
+        AssetKey.from_user_string(key)
+        for key in [
+            "sort_by_calories",
+            "cold_schema/sort_cold_cereals_by_calories",
+            "subdir_schema/least_caloric",
+            "sort_hot_cereals_by_calories",
+            "orders_snapshot",
+            "cereals",
+        ]
+    }
 
+
+def test_runtime_metadata_fn(
+    dbt_seed,
+    dbt_cli_resource_factory,
+    test_project_dir,
+    dbt_config_dir,
+):
     def runtime_metadata_fn(context, node_info):
         return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
 
@@ -99,42 +127,42 @@ def test_runtime_metadata_fn():
     )
     assert_assets_match_project(dbt_assets)
 
-    dbt = MagicMock()
-    dbt.run.return_value = DbtOutput(run_results_json)
-    dbt.build.return_value = DbtOutput(run_results_json)
-    dbt.get_manifest_json.return_value = manifest_json
-    assets_job = build_assets_job(
-        "assets_job",
-        dbt_assets,
-        resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
+    dbt_resource = dbt_cli_resource_factory(
+        project_dir=test_project_dir, profiles_dir=dbt_config_dir
     )
-    result = assets_job.execute_in_process()
-    assert result.success
+    assets_job = build_assets_job("assets_job", dbt_assets, resource_defs={"dbt": dbt_resource})
 
-    materializations = [
-        event.event_specific_data.materialization
-        for event in result.events_for_node(dbt_assets[0].op.name)
-        if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
-    assert len(materializations) == 4
-    for entry in [
-        MetadataEntry("op_name", value=dbt_assets[0].op.name),
-        MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
-    ]:
-        assert entry in materializations[0].metadata_entries
+    if isinstance(dbt_resource, DbtCliResource):
+        with pytest.raises(
+            DagsterDbtError,
+            match="The runtime_metadata_fn argument on the load_assets_from_dbt_manifest",
+        ):
+            assets_job.execute_in_process()
+    else:
+        result = assets_job.execute_in_process()
+        assert result.success
+
+        materializations = [
+            event.event_specific_data.materialization
+            for event in result.events_for_node(dbt_assets[0].op.name)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(materializations) == 6
+        assert materializations[0].metadata["op_name"] == MetadataValue.text(dbt_assets[0].op.name)
+        assert materializations[0].metadata["dbt_model"] == MetadataValue.text(
+            materializations[0].asset_key.path[-1]
+        )
 
 
 def test_fail_immediately(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+) -> None:
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
-    good_dbt = dbt_cli_resource.configured(
-        {
-            "project_dir": test_project_dir,
-            "profiles_dir": dbt_config_dir,
-        }
+    good_dbt = dbt_cli_resource_factory(
+        project_dir=test_project_dir,
+        profiles_dir=dbt_config_dir,
     )
 
     # ensure that there will be a run results json
@@ -144,55 +172,81 @@ def test_fail_immediately(
         resource_defs={"dbt": good_dbt},
     ).execute_in_process()
 
-    assert good_dbt(build_init_resource_context()).get_run_results_json()
+    if isinstance(good_dbt, DbtCliClientResource):
+        assert (
+            good_dbt.with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
+            .get_run_results_json()
+        )
+    elif isinstance(good_dbt, DbtCliResource):
+        assert parse_run_results(test_project_dir)
+    else:
+        assert good_dbt(build_init_resource_context()).get_run_results_json()
 
     result = build_assets_job(
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_project_dir,
-                    "profiles_dir": "BAD PROFILES DIR",
-                }
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir,
+                profiles_dir="BAD PROFILES DIR",
+                profile="BAD PROFILE",
             )
         },
     ).execute_in_process(raise_on_error=False)
 
     assert not result.success
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # type: ignore
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 0
 
 
-@pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
+@pytest.mark.parametrize(
+    "use_build, fail_test, json_log_format",
+    [(True, False, True), (True, True, True), (False, False, True), (True, True, False)],
+)
 def test_basic(
-    capsys, dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
-):  # pylint: disable=unused-argument
+    capsys,
+    dbt_seed,
+    dbt_cli_resource_factory,
+    test_project_dir,
+    dbt_config_dir,
+    use_build,
+    fail_test,
+    json_log_format,
+):
+    dbt_resource = dbt_cli_resource_factory(
+        project_dir=test_project_dir,
+        profiles_dir=dbt_config_dir,
+        json_log_format=json_log_format,
+    )
+    if not json_log_format and isinstance(dbt_resource, DbtCliResource):
+        pytest.skip("DbtCliResource does not support json_log_format")
+
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
-            test_project_dir, dbt_config_dir, use_build_command=use_build
+            test_project_dir,
+            dbt_config_dir,
+            use_build_command=use_build,
         )
 
+    assert len(dbt_assets[0].group_names_by_key) == len(dbt_assets[0].keys)
+    assert set(dbt_assets[0].group_names_by_key.values()) == {"default"}
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
+    assert get_asset_key_for_model(dbt_assets, "sort_by_calories") == AssetKey(["sort_by_calories"])
 
     result = build_assets_job(
         "test_job",
         dbt_assets,
-        resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_project_dir,
-                    "profiles_dir": dbt_config_dir,
-                    "vars": {"fail_test": fail_test},
-                }
-            )
-        },
-    ).execute_in_process(raise_on_error=False)
+        resource_defs={"dbt": dbt_resource},
+    ).execute_in_process(
+        raise_on_error=False,
+        run_config={"ops": {dbt_assets[0].op.name: {"config": {"vars": {"fail_test": fail_test}}}}},
+    )
 
     assert result.success == (not fail_test)
     materializations = [
@@ -217,26 +271,43 @@ def test_basic(
         if event.event_type_value == "ASSET_OBSERVATION"
     ]
     if use_build:
-        assert len(observations) == 17
+        # when fail_test is set to true, one of the downstream tests will be skipped
+        assert len(observations) == (16 if fail_test else 17)
     else:
         assert len(observations) == 0
 
     captured = capsys.readouterr()
 
     # make sure we're not logging the raw json to the console
-    for output in [captured.out, captured.err]:
-        for line in output.split("\n"):
-            # we expect a line like --vars {"fail_test": True}
-            if "vars" in line:
-                continue
-            assert "{" not in line
+    if not isinstance(dbt_resource, DbtCliResource):
+        for output in [captured.out, captured.err]:
+            for line in output.split("\n"):
+                # we expect a line like --vars {"fail_test": True}
+                if "vars" in line:
+                    continue
+                assert "{" not in line
 
 
-def test_custom_groups(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_groups_from_directories(dbt_seed, test_project_dir, dbt_config_dir):
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir,
+        dbt_config_dir,
+        node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+    )
+
+    assert dbt_assets[0].group_names_by_key == {
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): "default",
+        AssetKey(["sort_by_calories"]): "default",
+        AssetKey(["sort_hot_cereals_by_calories"]): "default",
+        AssetKey(["subdir_schema", "least_caloric"]): "subdir",
+        AssetKey(["cereals"]): "default",
+        AssetKey(["orders_snapshot"]): "sort_snapshot",
+    }
+
+
+def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
     def _node_info_to_group(node_info):
-        return node_info["tags"][0]
+        return node_info["tags"][0] if node_info["tags"] else "default"
 
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, node_info_to_group_fn=_node_info_to_group
@@ -247,14 +318,12 @@ def test_custom_groups(
         AssetKey(["sort_by_calories"]): "foo",
         AssetKey(["sort_hot_cereals_by_calories"]): "bar",
         AssetKey(["subdir_schema", "least_caloric"]): "bar",
+        AssetKey(["cereals"]): "default",
+        AssetKey(["orders_snapshot"]): "default",
     }
 
 
 def test_custom_freshness_policy():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
@@ -267,9 +336,33 @@ def test_custom_freshness_policy():
     }
 
 
-def test_partitions(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_custom_auto_materialize_policy():
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        node_info_to_auto_materialize_policy_fn=lambda _: AutoMaterializePolicy.lazy(),
+    )
+
+    assert dbt_assets[0].auto_materialize_policies_by_key == {
+        key: AutoMaterializePolicy.lazy() for key in dbt_assets[0].keys
+    }
+
+
+def test_custom_definition_metadata():
+    dbt_assets_custom = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        node_info_to_definition_metadata_fn=lambda node_info: {
+            "foo_key": node_info["name"],
+            "bar_key": 1.0,
+        },
+    )
+
+    for asset_key, custom_metadata in dbt_assets_custom[0].metadata_by_key.items():
+        assert custom_metadata.get("table_schema") is None
+        assert custom_metadata["foo_key"] == asset_key.path[-1]
+        assert custom_metadata["bar_key"] == 1.0
+
+
+def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -290,20 +383,20 @@ def test_partitions(
         dbt_assets,
         partition_key="2022-01-01",
         resources={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     )
     assert result.success
 
-    with pytest.raises(DagsterDbtCliHandledRuntimeError):
+    with pytest.raises(DagsterDbtCliRuntimeError):
         result = materialize_to_memory(
             dbt_assets,
             partition_key="2022-01-02",
             resources={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
         )
@@ -319,8 +412,8 @@ def test_partitions(
 )
 @pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, prefix
-):  # pylint: disable=unused-argument
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build, prefix
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -344,8 +437,8 @@ def test_select_from_project(
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -368,9 +461,7 @@ def test_select_from_project(
         assert len(observations) == 0
 
 
-def test_multiple_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_assets_a = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
@@ -382,25 +473,27 @@ def test_multiple_select_from_project(
     @repository
     def foo():
         return [
-            AssetGroup(dbt_assets_a, resource_defs={"dbt": dbt_cli_resource}).build_job("a"),
-            AssetGroup(dbt_assets_b, resource_defs={"dbt": dbt_cli_resource}).build_job("b"),
+            *with_resources(
+                # dbt_assets_b is a subset of dbt_assets_a
+                [*dbt_assets_a],
+                resource_defs={"dbt": dbt_cli_resource},
+            ),
+            define_asset_job("a", dbt_assets_a),
+            define_asset_job("b", dbt_assets_b),
         ]
 
-    assert len(foo.get_all_jobs()) == 2
+    assert len(foo.get_all_jobs()) == 3
 
 
 def test_dbt_ls_fail_fast():
-    with pytest.raises(DagsterDbtCliFatalRuntimeError, match="Invalid --project-dir flag."):
+    with pytest.raises(DagsterDbtCliFatalRuntimeError, match=r"Invalid.*--project-dir"):
         load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 
 @pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_manifest(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
-):  # pylint: disable=unused-argument
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
+):
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,
         selected_unique_ids={
@@ -414,8 +507,8 @@ def test_select_from_manifest(
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -440,21 +533,24 @@ def test_select_from_manifest(
 
 @pytest.mark.parametrize("use_build", [True, False])
 def test_node_info_to_asset_key(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
-):  # pylint: disable=unused-argument
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
         use_build_command=use_build,
     )
+    assert get_asset_key_for_model(dbt_assets, "sort_hot_cereals_by_calories") == AssetKey(
+        ["foo", "sort_hot_cereals_by_calories"]
+    )
 
     result = build_assets_job(
         "test_job",
         dbt_assets,
         resource_defs={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     ).execute_in_process()
@@ -482,6 +578,72 @@ def test_node_info_to_asset_key(
         assert len(observations) == 0
 
 
+def test_dagster_dbt_translator(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+):
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props):
+            return AssetKey(["foo", dbt_resource_props["name"]])
+
+        @classmethod
+        def get_metadata(cls, dbt_resource_props):
+            return {"name_metadata": dbt_resource_props["name"] + "_metadata"}
+
+        @classmethod
+        def get_group_name(cls, dbt_resource_props):
+            return "foo_group" if dbt_resource_props["name"] == "cereals" else None
+
+        @classmethod
+        def get_freshness_policy(cls, dbt_resource_props):
+            return FreshnessPolicy(maximum_lag_minutes=1)
+
+        @classmethod
+        def get_auto_materialize_policy(cls, dbt_resource_props):
+            return AutoMaterializePolicy.lazy()
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+
+    assert dbt_assets[0].keys == {
+        AssetKey(["foo", "cereals"]),
+        AssetKey(["foo", "least_caloric"]),
+        AssetKey(["foo", "orders_snapshot"]),
+        AssetKey(["foo", "sort_by_calories"]),
+        AssetKey(["foo", "sort_cold_cereals_by_calories"]),
+        AssetKey(["foo", "sort_hot_cereals_by_calories"]),
+    }
+    assert (
+        dbt_assets[0].metadata_by_key[AssetKey(["foo", "cereals"])]["name_metadata"]
+        == "cereals_metadata"
+    )
+    assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "cereals"])] == "foo_group"
+    assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "least_caloric"])] == "default"
+
+    for freshness_policy in dbt_assets[0].freshness_policies_by_key.values():
+        assert freshness_policy == FreshnessPolicy(maximum_lag_minutes=1)
+
+    for auto_materialize_policy in dbt_assets[0].auto_materialize_policies_by_key.values():
+        assert auto_materialize_policy == AutoMaterializePolicy.lazy()
+
+    result = materialize_to_memory(
+        dbt_assets,
+        resources={
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
+            )
+        },
+    )
+
+    assert result.success
+    materializations = result.asset_materializations_for_node(dbt_assets[0].op.name)
+    assert len(materializations) == 6
+    assert materializations[0].asset_key == AssetKey(["foo", "cereals"])
+    observations = result.asset_observations_for_node(dbt_assets[0].op.name)
+    assert len(observations) == 17
+
+
 @pytest.mark.parametrize(
     "job_selection,expected_asset_names",
     [
@@ -489,17 +651,18 @@ def test_node_info_to_asset_key(
             "*",
             (
                 "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
-                "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2"
+                "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2,cereals,"
+                "orders_snapshot"
             ),
         ),
         (
             "sort_by_calories+",
             (
                 "sort_by_calories,subdir_schema/least_caloric,cold_schema/sort_cold_cereals_by_calories,"
-                "sort_hot_cereals_by_calories,hanger1"
+                "sort_hot_cereals_by_calories,hanger1,orders_snapshot"
             ),
         ),
-        ("*hanger2", "hanger2,subdir_schema/least_caloric,sort_by_calories"),
+        ("*hanger2", "cereals,hanger2,subdir_schema/least_caloric,sort_by_calories"),
         (
             [
                 "cold_schema/sort_cold_cereals_by_calories",
@@ -511,32 +674,33 @@ def test_node_info_to_asset_key(
 )
 def test_subsetting(
     dbt_build,
-    conn_string,
+    dbt_cli_resource_factory,
     test_project_dir,
     dbt_config_dir,
     job_selection,
     expected_asset_names,
-):  # pylint: disable=unused-argument
+):
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
-    @asset(non_argument_deps={AssetKey("sort_by_calories")})
+    @asset(deps=[AssetKey("sort_by_calories")])
     def hanger1():
         return None
 
-    @asset(non_argument_deps={AssetKey(["subdir_schema", "least_caloric"])})
+    @asset(deps=[AssetKey(["subdir_schema", "least_caloric"])])
     def hanger2():
         return None
 
     result = (
-        AssetGroup(
-            dbt_assets + [hanger1, hanger2],
-            resource_defs={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+        Definitions(
+            assets=[*dbt_assets, hanger1, hanger2],
+            resources={
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
+            jobs=[define_asset_job("dbt_job", job_selection)],
         )
-        .build_job(name="dbt_job", selection=job_selection)
+        .get_job_def("dbt_job")
         .execute_in_process()
     )
 
@@ -558,29 +722,31 @@ def test_subsetting(
             {"select": "sort_by_calories"},
             "sort_by_calories",
         ),
-        ({"full_refresh": True}, "ALL"),
+        ({"full-refresh": True}, "ALL"),
         ({"vars": {"my_var": "my_value", "another_var": 3, "a_third_var": True}}, "ALL"),
     ],
 )
 def test_op_config(
-    config, expected_asset_names, dbt_seed, conn_string, test_project_dir, dbt_config_dir
+    config,
+    expected_asset_names,
+    dbt_seed,
+    dbt_cli_resource_factory,
+    test_project_dir,
+    dbt_config_dir,
 ):
     if expected_asset_names == "ALL":
         expected_asset_names = (
             "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
-            "sort_hot_cereals_by_calories,subdir_schema/least_caloric"
+            "sort_hot_cereals_by_calories,subdir_schema/least_caloric,cereals,orders_snapshot"
         )
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json)
     result = materialize_to_memory(
         assets=dbt_assets,
         run_config={"ops": {"run_dbt_5ad73": {"config": config}}},
         resources={
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
     )
@@ -594,14 +760,37 @@ def test_op_config(
     assert all_keys == expected_keys
 
 
+def test_op_custom_name():
+    instances = [{"target": "target_a"}, {"target": "target_b"}]
+    dbt_assets = []
+    for instance in instances:
+        dbt_assets.extend(
+            load_assets_from_dbt_manifest(
+                manifest_json=manifest_json,
+                key_prefix=[instance["target"], "duckdb", "test-schema"],
+                op_name=f"{instance['target']}_dbt_op",
+                select="fqn:* fqn:*",  # just a non-default selection
+            )
+        )
+    op_names = [asset_group.op.name for asset_group in dbt_assets]
+    assert len(op_names) == len(set(op_names)), (
+        "Multiple instances of a dbt project cannot have the same op name.\n"
+        f"dbt targets were: {instances}\n"
+        f"op names generated were: {op_names}"
+    )
+    assert set(op_names) == {"target_a_dbt_op", "target_b_dbt_op"}
+
+
 @pytest.mark.parametrize("load_from_manifest", [True, False])
 @pytest.mark.parametrize(
     "select,exclude,expected_asset_names",
     [
         (
-            "*",
+            "fqn:*",
             None,
             {
+                "cereals",
+                "orders_snapshot",
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
@@ -611,7 +800,7 @@ def test_op_config(
         (
             "+least_caloric",
             None,
-            {"sort_by_calories", "subdir_schema/least_caloric"},
+            {"sort_by_calories", "subdir_schema/least_caloric", "cereals"},
         ),
         (
             "sort_by_calories least_caloric",
@@ -626,6 +815,7 @@ def test_op_config(
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
                 "sort_hot_cereals_by_calories",
+                "orders_snapshot",
             },
         ),
         (
@@ -645,36 +835,52 @@ def test_op_config(
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
+                "cereals",
+                "orders_snapshot",
             },
         ),
         (
             None,
             "+least_caloric",
-            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+            {
+                "cold_schema/sort_cold_cereals_by_calories",
+                "orders_snapshot",
+                "sort_hot_cereals_by_calories",
+            },
         ),
         (
             None,
             "sort_by_calories least_caloric",
-            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+            {
+                "cold_schema/sort_cold_cereals_by_calories",
+                "sort_hot_cereals_by_calories",
+                "cereals",
+                "orders_snapshot",
+            },
         ),
-        (None, "tag:foo", {"subdir_schema/least_caloric", "sort_hot_cereals_by_calories"}),
+        (
+            None,
+            "tag:foo",
+            {
+                "subdir_schema/least_caloric",
+                "sort_hot_cereals_by_calories",
+                "cereals",
+                "orders_snapshot",
+            },
+        ),
     ],
 )
 def test_dbt_selections(
     dbt_build,
-    conn_string,
     test_project_dir,
+    dbt_cli_resource_factory,
     dbt_config_dir,
     load_from_manifest,
     select,
     exclude,
     expected_asset_names,
-):  # pylint: disable=unused-argument
+):
     if load_from_manifest:
-        manifest_path = file_relative_path(__file__, "sample_manifest.json")
-        with open(manifest_path, "r", encoding="utf8") as f:
-            manifest_json = json.load(f)
-
         dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select, exclude=exclude)
     else:
         dbt_assets = load_assets_from_dbt_project(
@@ -688,15 +894,16 @@ def test_dbt_selections(
     assert dbt_assets[0].keys == expected_asset_keys
 
     result = (
-        AssetGroup(
-            dbt_assets,
-            resource_defs={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+        Definitions(
+            assets=dbt_assets,
+            resources={
+                "dbt": dbt_cli_resource_factory(
+                    project_dir=test_project_dir, profiles_dir=dbt_config_dir
                 )
             },
+            jobs=[define_asset_job("dbt_job")],
         )
-        .build_job(name="dbt_job")
+        .get_job_def("dbt_job")
         .execute_in_process()
     )
 
@@ -712,22 +919,16 @@ def test_dbt_selections(
 @pytest.mark.parametrize(
     "select,error_match",
     [
-        ("tag:nonexist", "No dbt models match"),
+        ("tag:nonexist", r"(No dbt models match|does not match any nodes)"),
         ("asjdlhalskujh:z", "not a valid method name"),
     ],
 )
 def test_static_select_invalid_selection(select, error_match):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
     with pytest.raises(Exception, match=error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
 
 
-def test_source_key_prefix(
-    conn_string, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+def test_source_key_prefix(test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir,
         dbt_python_config_dir,
@@ -749,95 +950,62 @@ def test_source_key_prefix(
     assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
 
 
-def test_source_tag_selection(
-    conn_string, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, select="tag:events"
     )
 
     assert len(dbt_assets[0].keys) == 2
 
-    manifest_path = os.path.join(test_python_project_dir, "target", "manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
+    test_python_manifest_path = os.path.join(test_python_project_dir, "target", "manifest.json")
+    with open(test_python_manifest_path, "r", encoding="utf8") as f:
+        test_python_manifest_json = json.load(f)
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json, select="tag:events")
+    dbt_assets = load_assets_from_dbt_manifest(test_python_manifest_json, select="tag:events")
 
     assert len(dbt_assets[0].keys) == 2
 
 
 def test_python_interleaving(
-    conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+    dbt_cli_resource_factory, test_python_project_dir, dbt_python_config_dir
+):
     dbt_assets = load_assets_from_dbt_project(
-        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt"
+        test_python_project_dir, dbt_python_config_dir, key_prefix="test_python_schema"
     )
 
-    @io_manager
-    def test_io_manager(_context):
-        class TestIOManager(IOManager):
-            def handle_output(self, context, obj):
-                # handling dbt output
-                if obj is None:
-                    return
-                table = context.asset_key.path[-1]
-                try:
-                    conn = psycopg2.connect(conn_string)
-                    cur = conn.cursor()
-                    cur.execute(
-                        f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id'
-                        " integer, is_bot bool)"
-                    )
-                    cur.executemany(
-                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)",
-                        obj,
-                    )
-                    conn.commit()
-                    cur.close()
-                except (Exception, psycopg2.DatabaseError) as error:
-                    raise (error)
-                finally:
-                    if conn is not None:
-                        conn.close()
+    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            def load_input(self, context):
-                table = context.asset_key.path[-1]
-                result = None
-                conn = None
-                try:
-                    conn = psycopg2.connect(conn_string)
-                    cur = conn.cursor()
-                    cur.execute(f'SELECT * FROM "test-python-schema"."{table}"')
-                    result = cur.fetchall()
-                except (Exception, psycopg2.DatabaseError) as error:
-                    raise error
-                finally:
-                    if conn is not None:
-                        conn.close()
-                return result
+    @asset(key_prefix="raw_data")
+    def events():
+        return read_csv(os.path.join(test_python_project_dir, "events.csv"))
 
-        return TestIOManager()
+    @asset(key_prefix="raw_data")
+    def users():
+        return read_csv(os.path.join(test_python_project_dir, "users.csv"))
 
-    @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="dbt")})
+    @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="test_python_schema")})
     def bot_labeled_users(cleaned_users):
         # super advanced bot labeling algorithm
-        return [(uid, uid % 5 == 0) for _, uid in cleaned_users]
+        bot_labeled_users_df = cleaned_users.copy()
+        bot_labeled_users_df["is_bot"] = bot_labeled_users_df["user_id"].apply(lambda x: x % 5 == 0)
+        bot_labeled_users_df = bot_labeled_users_df.drop(columns=["day"])
 
-    job = AssetGroup(
-        [*dbt_assets, bot_labeled_users],
-        resource_defs={
-            "io_manager": test_io_manager,
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": test_python_project_dir,
-                    "profiles_dir": dbt_python_config_dir,
-                }
+        return bot_labeled_users_df
+
+    job_def = Definitions(
+        assets=[*dbt_assets, users, events, bot_labeled_users],
+        resources={
+            "io_manager": duckdb_io_manager.configured(
+                {"database": os.path.join(test_python_project_dir, "test.duckdb")}
+            ),
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_python_project_dir, profiles_dir=dbt_python_config_dir
             ),
         },
-    ).build_job("interleave_job")
+        jobs=[define_asset_job("interleave_job")],
+    ).get_job_def("interleave_job")
 
-    result = job.execute_in_process()
+    result = job_def.execute_in_process()
     assert result.success
     all_keys = {
         event.event_specific_data.materialization.asset_key
@@ -845,12 +1013,14 @@ def test_python_interleaving(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
     expected_asset_names = [
-        "dbt.cleaned_events",
-        "dbt.cleaned_users",
-        "dbt.daily_aggregated_events",
-        "dbt.daily_aggregated_users",
+        "test_python_schema.cleaned_events",
+        "test_python_schema.cleaned_users",
+        "test_python_schema.daily_aggregated_events",
+        "test_python_schema.daily_aggregated_users",
         "dagster.bot_labeled_users",
-        "dbt.bot_labeled_events",
+        "test_python_schema.bot_labeled_events",
+        "raw_data.events",
+        "raw_data.users",
     ]
     expected_keys = {AssetKey(name.split(".")) for name in expected_asset_names}
     assert all_keys == expected_keys

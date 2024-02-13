@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import timezone
+from datetime import datetime, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
@@ -33,8 +33,7 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(module_name, path_to_file)
     if spec is None:
         raise Exception(
-            "Can not import module {module_name} from path {path_to_file}, unable to load spec."
-            .format(module_name=module_name, path_to_file=path_to_file)
+            f"Can not import module {module_name} from path {path_to_file}, unable to load spec."
         )
 
     if sys.modules.get(spec.name) and spec.origin:
@@ -128,7 +127,7 @@ def get_current_datetime_in_utc() -> Any:
     return pendulum.now("UTC")
 
 
-def get_timestamp_from_utc_datetime(utc_datetime):
+def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
     if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
 

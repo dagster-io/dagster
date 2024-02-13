@@ -4,7 +4,6 @@ from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -24,6 +23,7 @@ from typing import (
 
 from typing_extensions import Literal, TypeAlias
 
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -31,12 +31,13 @@ from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.pipeline_definition import PipelineDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize
 
+T = TypeVar("T")
 T_Hashable = TypeVar("T_Hashable", bound=Hashable)
 Direction: TypeAlias = Literal["downstream", "upstream"]
 DependencyGraph: TypeAlias = Mapping[Direction, Mapping[T_Hashable, AbstractSet[T_Hashable]]]
@@ -84,6 +85,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -96,19 +98,27 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, asset_selection: AbstractSet[AssetKey], parent_job_def: "JobDefinition"):
+    def __new__(
+        cls,
+        asset_selection: AbstractSet[AssetKey],
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+        parent_job_def: "JobDefinition",
+    ):
         from dagster._core.definitions.job_definition import JobDefinition
+
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         return super(AssetSelectionData, cls).__new__(
             cls,
             asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
+            asset_check_selection=asset_check_selection,
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
 
 def generate_asset_dep_graph(
     assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
-) -> DependencyGraph:
+) -> DependencyGraph[AssetKey]:
     from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 
     resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
@@ -129,11 +139,11 @@ def generate_asset_dep_graph(
     return {"upstream": upstream, "downstream": downstream}
 
 
-def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[str]:
+def generate_dep_graph(job_def: "GraphDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
-        pipeline (PipelineDefinition): The pipeline to execute.
+        pipeline (JobDefinition): The pipeline to execute.
 
     Returns:
         graph (Dict[str, Dict[str, Set[str]]]): the input and output dependency graph. e.g.
@@ -155,9 +165,9 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[st
             ```
     """
     dependency_structure = check.inst_param(
-        pipeline_def.dependency_structure, "dependency_structure", DependencyStructure
+        job_def.dependency_structure, "dependency_structure", DependencyStructure
     )
-    item_names = [i.name for i in pipeline_def.solids]
+    item_names = [i.name for i in job_def.nodes]
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
     graph: Dict[Direction, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
@@ -172,7 +182,7 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[st
         downstream_dep = dependency_structure.output_to_downstream_inputs_for_node(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
-                graph["downstream"][item_name].add(down.solid_name)
+                graph["downstream"][item_name].add(down.node_name)
 
     return graph
 
@@ -216,7 +226,7 @@ class Traverser(Generic[T_Hashable]):
 
 def fetch_connected(
     item: T_Hashable,
-    graph: DependencyGraph,
+    graph: DependencyGraph[T_Hashable],
     *,
     direction: Direction,
     depth: Optional[int] = None,
@@ -230,10 +240,9 @@ def fetch_connected(
 
 
 def fetch_sinks(
-    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+    graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A sink is an asset that has no downstream dependencies within the provided selection.
+    """A sink is an asset that has no downstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
@@ -246,15 +255,14 @@ def fetch_sinks(
 
 
 def fetch_sources(
-    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+    graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A source is a node that has no upstream dependencies within the provided selection.
+    """A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
-    dp = {}
+    dp: Dict[T_Hashable, bool] = {}
 
-    def has_upstream_within_selection(node):
+    def has_upstream_within_selection(node: T_Hashable) -> bool:
         if node not in dp:
             dp[node] = any(
                 parent_node in within_selection or has_upstream_within_selection(parent_node)
@@ -267,7 +275,7 @@ def fetch_sources(
 
 def fetch_connected_assets_definitions(
     asset: "AssetsDefinition",
-    graph: DependencyGraph,
+    graph: DependencyGraph[str],
     name_to_definition_map: Mapping[str, "AssetsDefinition"],
     *,
     direction: Direction,
@@ -317,7 +325,9 @@ def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
 
 
 def clause_to_subset(
-    graph: DependencyGraph, clause: str, item_name_to_item_fn: Callable[[str], T_Hashable]
+    graph: DependencyGraph[T_Hashable],
+    clause: str,
+    item_name_to_item_fn: Callable[[str], T_Hashable],
 ) -> Sequence[T_Hashable]:
     """Take a selection query and return a list of the selected and qualified items.
 
@@ -332,9 +342,6 @@ def clause_to_subset(
         subset_list (List[T]): a list of selected and qualified items, empty if input is
             invalid.
     """
-    # parse clause
-    if not isinstance(clause, str):
-        return []
     parts = parse_clause(clause)
     if parts is None:
         return []
@@ -354,54 +361,10 @@ def clause_to_subset(
     return subset_list
 
 
-class LeafNodeSelection:
-    """Marker for no further nesting selection needed."""
-
-
-def convert_dot_seperated_string_to_dict(
-    tree: Dict[str, Any], splits: Sequence[str]
-) -> Dict[str, Any]:
-    # For example:
-    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
-    key = splits[0]
-    if len(splits) == 1:
-        tree[key] = LeafNodeSelection
-    else:
-        tree[key] = convert_dot_seperated_string_to_dict(
-            tree[key] if key in tree else {}, splits[1:]
-        )
-    return tree
-
-
-def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) -> Mapping[str, Any]:
-    """Parse  an op selection into a nested dictionary.
-
-    Examples:
-        ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
-        => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
-
-        ["subgraph.subsubgraph.return_one"]
-        => {"subgraph": {"subsubgraph": {"return_one": LeafNodeSelection}}}
-
-        ["top_level_op_1+"]
-        => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
-    """
-    if any(["." in item for item in op_selection]):
-        resolved_op_selection_dict: Dict[str, Any] = {}
-        for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
-        return resolved_op_selection_dict
-
-    return {
-        top_level_op: LeafNodeSelection
-        for top_level_op in parse_solid_selection(job_def, op_selection)
-    }
-
-
-def parse_solid_selection(
-    pipeline_def: "PipelineDefinition",
-    solid_selection: Sequence[str],
-) -> FrozenSet[str]:
+def parse_op_queries(
+    graph_def: "GraphDefinition",
+    op_queries: Sequence[str],
+) -> AbstractSet[str]:
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.
 
@@ -420,37 +383,33 @@ def parse_solid_selection(
         ones.
 
     Args:
-        pipeline_def (PipelineDefinition): the pipeline to execute.
-        solid_selection (List[str]): a list of the solid selection queries (including single solid
+        pipeline_def (JobDefinition): the pipeline to execute.
+        op_queries (List[str]): a list of the solid selection queries (including single solid
             names) to execute.
 
     Returns:
         FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
             subset selected.
     """
-    check.sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.sequence_param(op_queries, "op_queries", of_type=str)
 
     # special case: select all
-    if len(solid_selection) == 1 and solid_selection[0] == "*":
-        return frozenset(pipeline_def.graph.node_names())
+    if len(op_queries) == 1 and op_queries[0] == "*":
+        return frozenset(graph_def.node_names())
 
-    graph = generate_dep_graph(pipeline_def)
-    solids_set: Set[str] = set()
+    graph = generate_dep_graph(graph_def)
+    node_names: Set[str] = set()
 
     # loop over clauses
-    for clause in solid_selection:
+    for clause in op_queries:
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
-                    requested=solid_selection,
-                    node_type="ops" if pipeline_def.is_job else "solids",
-                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
-                )
+                f"No qualified ops to execute found for op_selection={op_queries}"
             )
-        solids_set.update(subset)
+        node_names.update(subset)
 
-    return frozenset(solids_set)
+    return node_names
 
 
 def parse_step_selection(
@@ -487,10 +446,8 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            (
-                f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
-                f" {', '.join(invalid_keys)}"
-            ),
+            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+            f" {', '.join(invalid_keys)}",
             step_keys=invalid_keys,
         )
 
@@ -499,9 +456,7 @@ def parse_step_selection(
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified steps to execute found for step_selection={requested}".format(
-                    requested=step_selection
-                ),
+                f"No qualified steps to execute found for step_selection={step_selection}",
             )
         steps_set.update(subset)
 
@@ -512,6 +467,7 @@ def parse_asset_selection(
     assets_defs: Sequence["AssetsDefinition"],
     source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
+    raise_on_clause_has_no_matches: bool = True,
 ) -> AbstractSet[AssetKey]:
     """Find assets that match the given selection query.
 
@@ -528,7 +484,7 @@ def parse_asset_selection(
 
     # special case: select *
     if len(asset_selection) == 1 and asset_selection[0] == "*":
-        return set().union(*(ad.keys for ad in assets_defs))
+        return {key for ad in assets_defs for key in ad.keys}
 
     graph = generate_asset_dep_graph(assets_defs, source_assets)
     assets_set: Set[AssetKey] = set()
@@ -536,7 +492,7 @@ def parse_asset_selection(
     # loop over clauses
     for clause in asset_selection:
         subset = clause_to_subset(graph, clause, AssetKey.from_user_string)
-        if len(subset) == 0:
+        if len(subset) == 0 and raise_on_clause_has_no_matches:
             raise DagsterInvalidSubsetError(
                 f"No qualified assets to execute found for clause='{clause}'"
             )

@@ -3,57 +3,92 @@ title: Running multiple agents | Dagster Docs
 platform_type: "cloud"
 ---
 
-# Running multiple agents <Experimental />
+# Running multiple agents
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes such as during an upgrade, a single agent is adequate for most use cases.
+Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
-If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc.
-
-It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
+It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents).
 
 ---
 
-## Prerequisites
+## Running multiple agents in the same environment
 
-To complete the steps in this guide, you'll need:
+To run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
 
-- **dagster-cloud version 0.13.0 or later for both agents and job code.**
-- **To use a Kubernetes, Docker, or local agent.** These agent types can support running multiple agents. Additionally, note that:
+<TabGroup>
+<TabItem name="Docker">
 
-  - **Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
-  - **Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
+### In Docker
+
+In Docker, you can set the number of replicas for a service in the `docker-compose.yaml` file if the deployment mode is set to `replicated` (which is the default):
+
+```yaml
+services:
+  dagster-cloud-agent:
+    ...
+    deploy:
+      mode: replicated
+      replicas: 2
+```
+
+</TabItem>
+<TabItem name="Kubernetes">
+
+### In Kubernetes
+
+In Kubernetes, the number of replicas is set in the Helm chart. You can set the number of replicas in the Helm command:
+
+```shell
+helm upgrade \
+    ...
+    --set replicas=2
+```
+
+or if using a `values.yaml` file:
+
+```yaml
+dagsterCloudAgent:
+  ...
+  replicas: 2
+```
+
+</TabItem>
+<TabItem name="Amazon ECS">
+
+### In Amazon ECS
+
+In Amazon ECS, the number of replicas can be set via the CloudFormation template:
+
+```yaml
+DagsterCloudAgent:
+  Type: AWS::ECS::Service
+  Properties:
+    ...
+    DesiredCount: 2
+```
+
+If using the CloudFormation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the Amazon Web Services (AWS) UI.
+
+</TabItem>
+</TabGroup>
 
 ---
 
-## Step 1: Set up the agent
+## Running multiple agents in different environments
 
-Follow the setup guide for your agent:
+To run multiple agents in an environment where each agent can not access the others' resources (for example, multiple Kubernetes namespaces or different clusters), enable the `isolated_agents` option. This is supported for all agent types.
 
-- [Docker](/dagster-cloud/deployment/agents/docker)
-- [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
-- [Local](/dagster-cloud/deployment/agents/local)
+<TabGroup>
+<TabItem name="Docker">
 
-After the agent is up and running, move on to the next step.
-
----
-
-## Step 2: Enable the agent_replicas setting
-
-In this step, you'll enable the `agent_replicas` option to turn on running multiple agents. You can also choose to label the agent, making it easily identifiable on Dagster Cloud's **Status** page.
-
-Follow the instructions for your agent:
-
-<details>
-  <summary><strong>DOCKER AGENTS</strong></summary>
-
-**Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
+### In Docker
 
 Add the following to the `dagster.yaml` file:
 
 ```yaml
-agent_replicas:
+isolated_agents:
   enabled: true
 
 dagster_cloud_api:
@@ -61,46 +96,109 @@ dagster_cloud_api:
   agent_label: "My agent" # optional
 ```
 
-</details>
+</TabItem>
+<TabItem name="Kubernetes">
 
-<details>
-  <summary><strong>KUBERNETES AGENTS</strong></summary>
-
-**Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
+### In Kubernetes
 
 Add the following options to your Helm command:
 
 ```shell
 helm upgrade \
     ...
-    --set agentReplicas.enabled=true \
+    --set isolatedAgents.enabled=true \
     --set dagsterCloud.agentLabel="My agent" # optional, only supported on 0.13.14 and later
 ```
 
 Or if you're using a `values.yaml` file:
 
 ```yaml
-agentReplicas:
+isolatedAgents:
   enabled: true
 
 dagsterCloud:
   agentLabel: "My agent" # optional, only supported on 0.13.14 and later
 ```
 
-</details>
+</TabItem>
+<TabItem name="Amazon ECS">
 
-<details>
-  <summary><strong>LOCAL AGENTS</strong></summary>
+### In Amazon ECS
 
-Add the following to the `dagster.yaml` file:
+The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Routing requests to specific agents
+
+<Note>Agent queues are a Dagster Cloud Pro feature.</Note>
+
+Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
+
+In some cases, you might want to route requests for certain code locations to specific agents. For example, routing requests for one code location to an agent running in an on-premise data center, but then routing requests for all other code locations to an agent running in AWS.
+
+To route requests for a code location to a specific agent, annotate the code locations with the name of a custom queue and configure an agent to serve only requests for that queue.
+
+### Step 1: Define an agent queue for the code location
+
+First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/dagster-cloud/managing-deployments/dagster-cloud-yaml):
 
 ```yaml
-agent_replicas:
-  enabled: true
+# dagster_cloud.yaml
 
-dagster_cloud_api:
-  # <your other config>
-  agent_label: "My agent" # optional
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
+    agent_queue: special-queue
 ```
 
-</details>
+### Step 2: Configure an agent to handle the agent queue
+
+Next, configure an agent to handle your agent queue.
+
+<TabGroup>
+<TabItem name="Docker">
+
+#### In Docker
+
+Add the following to your project's [`dagster.yaml`](/deployment/dagster-instance) file:
+
+```yaml
+agent_queues:
+  include_default_queue: True # Continue to handle requests for code locations that aren't annotated with a specific queue
+  additional_queues:
+    - special-queue
+```
+
+</TabItem>
+<TabItem name="Kubernetes">
+
+#### In Kubernetes
+
+Add the following options to your Helm command:
+
+```shell
+helm upgrade \
+    ...
+    --set dagsterCloud.agentQueues.additionalQueues={"special-queue"}
+```
+
+Or if you're using a `values.yaml` file:
+
+```yaml
+dagsterCloued
+  agentQueues:
+    # Continue to handle requests for code locations that aren't
+    # assigned to a specific agent queue
+    includeDefaultQueue: true
+    additionalQueues:
+      - special-queue
+```
+
+</TabItem>
+</TabGroup>

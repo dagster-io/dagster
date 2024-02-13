@@ -1,0 +1,49 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "ts": "tsc -p .",
+    "prettier": "prettier . --write",
+    "md-format": "remark --rc-path ./.remarkrc.js \"./pages/**/*.md\" --output --silent",
+    "md-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/md-transform.ts && yarn md-format"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@mapbox/rehype-prism": "^0.5.0",
+    "@markdoc/markdoc": "latest",
+    "@markdoc/next.js": "latest",
+    "fast-glob": "^3.2.5",
+    "next": "^13.5.4",
+    "prismjs": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "remark": "^13.0.0",
+    "remark-extract-frontmatter": "^3.1.0",
+    "remark-frontmatter": "^3.0.0",
+    "to-vfile": "^6.1.0",
+    "ts-node": "^9.1.1",
+    "yaml": "^2.2.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.9",
+    "@types/node": "latest",
+    "@types/prismjs": "^1.26.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "^10.4.15",
+    "babel-plugin-prismjs": "^2.1.0",
+    "eslint": "8.48.0",
+    "eslint-config-next": "13.4.19",
+    "eslint-config-prettier": "^9.0.0",
+    "postcss": "^8.4.29",
+    "prettier": "^3.0.3",
+    "remark-cli": "^9.0.0",
+    "remark-gfm": "^1.0.0",
+    "tailwindcss": "^3.3.3",
+    "typescript": "latest"
+  },
+  "packageManager": "yarn@3.6.4"
+}

@@ -10,7 +10,7 @@ from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
 )
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db, requires_no_db
 
 from ..airflow_utils import (
     test_make_from_dagbag_inputs_airflow_2,
@@ -22,6 +22,7 @@ from ..airflow_utils import (
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_from_dagbag_inputs_airflow_2,
 )
+@requires_no_db
 def test_make_definition(
     path_and_content_tuples,
     fn_arg_path,
@@ -66,20 +67,22 @@ def get_examples_airflow_repo_params():
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
-        "airflow_example_kubernetes_executor",
+        "example_kubernetes_executor",
         # requires params to be passed in to work
-        "airflow_example_passing_params_via_test_command",
+        "example_passing_params_via_test_command",
         # requires template files to exist
-        "airflow_example_python_operator",
+        "example_python_operator",
         # requires email server to work
-        "airflow_example_dag_decorator",
+        "example_dag_decorator",
         # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-        "airflow_example_trigger_target_dag",
-        "airflow_example_trigger_controller_dag",
+        "example_trigger_target_dag",
+        "example_trigger_controller_dag",
         # runs slow
-        "airflow_example_subdag_operator",
+        "example_subdag_operator",
         # runs slow
-        "airflow_example_sensors",
+        "example_sensors",
+        "example_dynamic_task_mapping",
+        "example_dynamic_task_mapping_with_no_taskflow_operators",
     ]
     for job_name in repo.job_names:
         params.append(
@@ -94,7 +97,7 @@ def get_examples_airflow_repo_params():
     "job_name, exclude_from_execution_tests",
     get_examples_airflow_repo_params(),
 )
-@requires_airflow_db
+@requires_local_db
 def test_airflow_example_dags(
     airflow_examples_repo,
     job_name,
@@ -132,7 +135,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
-@requires_airflow_db
+@requires_local_db
 def test_retry_conversion():
     with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
@@ -143,7 +146,6 @@ def test_retry_conversion():
 
         job = make_dagster_job_from_airflow_dag(
             dag=retry_dag,
-            use_ephemeral_airflow_db=True,
         )
         result = job.execute_in_process()
         assert result.success

@@ -22,7 +22,7 @@ def extract() -> pd.DataFrame:
     return hackernews_topstories
 
 
-def transform(hackernews_topstories: pd.DataFrame) -> bytes:
+def transform(hackernews_topstories: pd.DataFrame) -> str:
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN"])
     titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
@@ -51,6 +51,6 @@ def load(md_content: str):
 
 
 if __name__ == "__main__":
-    input = extract()
-    output = transform(input)
+    inp = extract()
+    output = transform(inp)
     load(output)

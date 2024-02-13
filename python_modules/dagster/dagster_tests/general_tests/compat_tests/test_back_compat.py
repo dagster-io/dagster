@@ -1,4 +1,6 @@
-# pylint: disable=protected-access
+# ruff: noqa: SLF001
+import datetime
+import json
 import os
 import re
 import sqlite3
@@ -22,25 +24,29 @@ from dagster import (
 )
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import execute_pipeline, pipeline, solid
-from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
-    _deserialize_json,
     _whitelist_for_serdes,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+    deserialize_value,
+    pack_value,
     serialize_value,
 )
 from dagster._utils.error import SerializableErrorInfo
@@ -51,11 +57,11 @@ def _migration_regex(warning, current_revision, expected_revision=None):
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            f"Database is at revision {current_revision}, head is {expected_revision}."
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
-    return "{} {} {}".format(warning, revision, instruction)
+        revision = f"Database is at revision {current_revision}, head is [a-z0-9]+."
+    return f"{warning} {revision} {instruction}"
 
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
@@ -136,18 +142,18 @@ def get_current_alembic_version(db_path):
 def get_sqlite3_columns(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
-    cursor.execute('PRAGMA table_info("{}");'.format(table_name))
+    cursor.execute(f'PRAGMA table_info("{table_name}");')
     return [r[1] for r in cursor.fetchall()]
 
 
 def get_sqlite3_indexes(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
-    cursor.execute('PRAGMA index_list("{}");'.format(table_name))
+    cursor.execute(f'PRAGMA index_list("{table_name}");')
     return [r[1] for r in cursor.fetchall()]
 
 
-def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
+def test_snapshot_0_7_6_pre_add_job_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
@@ -161,18 +167,18 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
-        @solid
-        def noop_solid(_):
+        @op
+        def noop_op(_):
             pass
 
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
+        @job
+        def noop_job():
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(noop_pipeline, instance=instance)
+            noop_job.execute_in_process(instance=instance)
 
         assert len(instance.get_runs()) == 1
 
@@ -189,9 +195,9 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
+        assert run.job_snapshot_id is None
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -202,7 +208,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_downgrade_and_upgrade():
@@ -271,9 +277,7 @@ def instance_from_debug_payloads(payload_files):
     for input_file in payload_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
-
-            check.invariant(isinstance(debug_payload, DebugRunPayload))
+            debug_payload = deserialize_value(blob, DebugRunPayload)
 
             debug_payloads.append(debug_payload)
 
@@ -307,7 +311,7 @@ def test_mode_column_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
     with copy_directory(src_dir) as test_dir:
 
-        @pipeline
+        @job
         def _test():
             pass
 
@@ -319,14 +323,14 @@ def test_mode_column_migration():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="72686963a802")
 
@@ -453,8 +457,7 @@ def test_0_11_0_add_asset_columns():
 
 def test_rename_event_log_entry():
     old_event_record = """{"__class__":"EventRecord","dagster_event":{"__class__":"DagsterEvent","event_specific_data":null,"event_type_value":"PIPELINE_SUCCESS","logging_tags":{},"message":"Finished execution of pipeline.","pid":71356,"pipeline_name":"error_monster","solid_handle":null,"step_handle":null,"step_key":null,"step_kind_value":null},"error_info":null,"level":10,"message":"error_monster - 4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7 - 71356 - PIPELINE_SUCCESS - Finished execution of pipeline.","pipeline_name":"error_monster","run_id":"4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7","step_key":null,"timestamp":1622659924.037028,"user_message":"Finished execution of pipeline."}"""
-    event_log_entry = deserialize_json_to_dagster_namedtuple(old_event_record)
-    assert isinstance(event_log_entry, EventLogEntry)
+    event_log_entry = deserialize_value(old_event_record, EventLogEntry)
     dagster_event = event_log_entry.dagster_event
     assert isinstance(dagster_event, DagsterEvent)
     assert dagster_event.event_type_value == "PIPELINE_SUCCESS"
@@ -463,15 +466,15 @@ def test_rename_event_log_entry():
 def test_0_12_0_extract_asset_index_cols():
     src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
-    @solid
-    def asset_solid(_):
+    @op
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
-    @pipeline
-    def asset_pipeline():
-        asset_solid()
+    @job
+    def asset_job():
+        asset_op()
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -484,8 +487,8 @@ def test_0_12_0_extract_asset_index_cols():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            # make sure that executing the job works
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -494,7 +497,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -518,17 +521,17 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
 
 
-def test_solid_handle_node_handle():
+def test_op_handle_node_handle():
     # serialize in current code
     test_handle = NodeHandle("test", None)
-    test_str = serialize_dagster_namedtuple(test_handle)
+    test_str = serialize_value(test_handle)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -537,15 +540,15 @@ def test_solid_handle_node_handle():
     class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         pass
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
 
 
-def test_pipeline_run_dagster_run():
+def test_job_run_dagster_run():
     # serialize in current code
-    test_run = DagsterRun(pipeline_name="test")
-    test_str = serialize_dagster_namedtuple(test_run)
+    test_run = DagsterRun(job_name="test")
+    test_str = serialize_value(test_run)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -554,27 +557,25 @@ def test_pipeline_run_dagster_run():
     class PipelineRun(
         namedtuple(
             "_PipelineRun",
-            (
-                "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-                "step_keys_to_execute status tags root_run_id parent_run_id "
-                "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-                "pipeline_code_origin"
-            ),
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
         )
     ):
         pass
 
     @_whitelist_for_serdes(legacy_env)
-    class PipelineRunStatus(Enum):  # pylint: disable=unused-variable
+    class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRun)
-    assert result.pipeline_name == test_run.pipeline_name
+    assert result.pipeline_name == test_run.job_name
 
 
-def test_pipeline_run_status_dagster_run_status():
+def test_job_run_status_dagster_run_status():
     # serialize in current code
     test_status = DagsterRunStatus("QUEUED")
     test_str = serialize_value(test_status)
@@ -586,7 +587,7 @@ def test_pipeline_run_status_dagster_run_status():
     class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRunStatus)
     assert result.value == test_status.value
 
@@ -609,14 +610,14 @@ def test_start_time_end_time():
         assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
@@ -633,7 +634,7 @@ def test_external_job_origin_instigator_origin():
             namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
         ):
             def get_id(self):
-                return create_snapshot_id(self)
+                return create_snapshot_id(self, legacy_env)
 
         @_whitelist_for_serdes(legacy_env)
         class ExternalRepositoryOrigin(
@@ -645,12 +646,7 @@ def test_external_job_origin_instigator_origin():
             def get_id(self):
                 return create_snapshot_id(self)
 
-        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
-            @classmethod
-            def skip_when_empty(cls):
-                return {"use_ssl"}
-
-        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        @_whitelist_for_serdes(whitelist_map=legacy_env, skip_when_empty_fields={"use_ssl"})
         class GrpcServerRepositoryLocationOrigin(
             namedtuple(
                 "_GrpcServerRepositoryLocationOrigin",
@@ -674,21 +670,21 @@ def test_external_job_origin_instigator_origin():
     from dagster._core.host_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
 
     # serialize from current code, compare against old code
     instigator_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+            code_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
             repository_name="the_repo",
         ),
         instigator_name="simple_schedule",
     )
-    instigator_origin_str = serialize_dagster_namedtuple(instigator_origin)
-    instigator_to_job = _deserialize_json(instigator_origin_str, legacy_env)
+    instigator_origin_str = serialize_value(instigator_origin)
+    instigator_to_job = deserialize_value(instigator_origin_str, whitelist_map=legacy_env)
     assert isinstance(instigator_to_job, klass)
     # ensure that the origin id is stable
     assert instigator_to_job.get_id() == instigator_origin.get_id()
@@ -705,8 +701,7 @@ def test_external_job_origin_instigator_origin():
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
 
-    job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
-    assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
+    job_to_instigator = deserialize_value(job_origin_str, ExternalInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
 
@@ -739,7 +734,7 @@ def test_legacy_event_log_load():
         whitelist_map=legacy_env,
         storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
     )
-    class OldEventLogEntry(  # pylint: disable=unused-variable
+    class OldEventLogEntry(
         NamedTuple(
             "_OldEventLogEntry",
             [
@@ -791,9 +786,9 @@ def test_legacy_event_log_load():
         timestamp=time.time(),
     )
 
-    storage_str = serialize_dagster_namedtuple(new_event)
+    storage_str = serialize_value(new_event)
 
-    result = _deserialize_json(storage_str, legacy_env)
+    result = deserialize_value(storage_str, OldEventLogEntry, whitelist_map=legacy_env)
     assert result.message is not None
 
 
@@ -848,25 +843,25 @@ def test_jobs_selector_id_migration():
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -876,7 +871,7 @@ def test_jobs_selector_id_migration():
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -920,7 +915,7 @@ def test_add_bulk_actions_columns():
     from dagster._core.host_representation.origin import (
         ExternalPartitionSetOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
@@ -952,19 +947,17 @@ def test_add_bulk_actions_columns():
             # check data migration
             backfill_count = len(instance.get_backfills())
             migrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
-            )[0]
+            )["count"]
             assert migrated_row_count > 0
             assert backfill_count == migrated_row_count
 
             # check that we are writing to selector id, action types
             external_origin = ExternalPartitionSetOrigin(
                 external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location_origin=GrpcServerRepositoryLocationOrigin(
-                        port=1234, host="localhost"
-                    ),
+                    code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
                 ),
                 partition_set_name="fake",
@@ -982,10 +975,10 @@ def test_add_bulk_actions_columns():
                 )
             )
             unmigrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
-            )[0]
+            )["count"]
             assert unmigrated_row_count == 0
 
             # test downgrade
@@ -1017,7 +1010,6 @@ def test_add_kvs_table():
 
             assert "kvs" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
-
             instance._run_storage._alembic_downgrade(rev="6860f830e40c")
 
             assert "kvs" not in get_sqlite3_tables(db_path)
@@ -1081,3 +1073,190 @@ def test_1_0_17_add_cached_status_data_column():
             assert instance.can_cache_asset_status_data() is False
             instance.upgrade()
             assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+
+def test_add_dynamic_partitions_table():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "958a9495162d"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "dynamic_partitions" not in get_sqlite3_tables(db_path)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_sqlite3_tables(db_path)
+            assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    query = db_select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys():
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    src_dir = file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "e62c379ac8f4"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "id" not in set(get_sqlite3_columns(db_path, "kvs"))
+            # trigger insert, and update
+            instance.run_storage.set_cursor_values({"a": "A"})
+            instance.run_storage.set_cursor_values({"a": "A"})
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in set(get_sqlite3_columns(db_path, "instance_info"))
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in set(get_sqlite3_columns(db_path, "kvs"))
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in set(get_sqlite3_columns(db_path, "instance_info"))
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+
+
+# Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
+# `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
+# can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
+# In the future, we will need to enable the runtime null check on `AssetMaterialization` and
+# introduce a dummy asset key when deserializing old `Materialization` events.
+@pytest.mark.parametrize(
+    "asset_key", [AssetKey(["foo", "bar"]), None, "__missing__"], ids=("defined", "none", "missing")
+)
+def test_load_old_materialization(asset_key: Optional[AssetKey]):
+    packed_asset_key = pack_value(asset_key) if isinstance(asset_key, AssetKey) else None
+    delete_asset_key = asset_key == "__missing__"
+    packed_old_materialization = {
+        "__class__": "StepMaterializationData",
+        "materialization": {
+            "__class__": "Materialization",
+            "label": "foo",
+            "description": "bar",
+            "metadata_entries": [
+                {
+                    "__class__": "EventMetadataEntry",
+                    "label": "baz",
+                    "description": "qux",
+                    "entry_data": {
+                        "__class__": "TextMetadataEntryData",
+                        "text": "quux",
+                    },
+                }
+            ],
+            "partition": "alpha",
+            "asset_key": packed_asset_key,  # this key will be deleted for `__missing__`
+        },
+        "asset_lineage": [
+            {
+                "__class__": "AssetLineageInfo",
+                "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
+                "partitions": {"__set__": ["alpha"]},
+            }
+        ],
+    }
+    if delete_asset_key:
+        del packed_old_materialization["materialization"]["asset_key"]
+    old_materialization = serialize_value(packed_old_materialization)
+
+    deserialized_asset_key = (
+        AssetKey(UNDEFINED_ASSET_KEY_PATH) if asset_key in (None, "__missing__") else asset_key
+    )
+    assert deserialize_value(
+        old_materialization, StepMaterializationData
+    ) == StepMaterializationData(
+        materialization=AssetMaterialization(
+            description="bar",
+            metadata={"baz": MetadataValue.text("quux")},
+            partition="alpha",
+            asset_key=deserialized_asset_key,
+        ),
+        asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
+    )
+
+
+# Prior to 1.2.5, metadata was stored on all classes as a `List[MetadataEntry]`. With 1.2.5 it
+# changed to `Dict[str, MetadataValue]`, with serdes-whitelisted classes using
+# `MetadataFieldSerializer` to serialize the dictionary as a list of `MetadataEntry` for backcompat.
+def test_metadata_serialization():
+    # We use `AssetMaterialization` as a stand-in for all classes using `MetadataFieldSerializer`.
+    mat = AssetMaterialization(
+        AssetKey(["foo"]),
+        metadata={"alpha": MetadataValue.text("beta"), "delta": MetadataValue.int(1)},
+    )
+    serialized_mat = serialize_value(mat)
+    assert json.loads(serialized_mat)["metadata_entries"] == [
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "alpha",
+            "description": None,
+            "entry_data": {"__class__": "TextMetadataEntryData", "text": "beta"},
+        },
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "delta",
+            "description": None,
+            "entry_data": {"__class__": "IntMetadataEntryData", "value": 1},
+        },
+    ]
+    assert deserialize_value(serialized_mat, AssetMaterialization) == mat
+
+
+# When receiving pre-1.4 static partitions definitions from user code, it is possible they contain
+# duplicates. We need to de-dup them at the serdes/"External" layer before reconstructing the
+# partitions definition in the host process to avoid an error.
+def test_static_partitions_definition_dup_keys_backcompat():
+    received_from_user = ExternalStaticPartitionsDefinitionData(partition_keys=["a", "b", "a"])
+    assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
+        partition_keys=["a", "b"]
+    )

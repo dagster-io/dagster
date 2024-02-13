@@ -184,7 +184,7 @@ def test_multi_out_map():
     assert result.output_for_node("echo_a") == [1]
     assert result.output_for_node("echo_b") == [2, 3]
 
-    # all fanned in inputs skipped -> solid skips
+    # all fanned in inputs skipped -> op skips
     assert DagsterEventType.STEP_SKIPPED in [
         event.event_type for event in result.all_events if event.step_key == "echo_c"
     ]

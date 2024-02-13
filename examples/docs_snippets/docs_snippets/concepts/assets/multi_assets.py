@@ -1,8 +1,8 @@
-# isort: skip_file
-# pylint: disable=unused-argument,reimported
+# ruff: isort: skip_file
+
 
 # start_basic_multi_asset
-from dagster import AssetOut, multi_asset
+from dagster import AssetOut, multi_asset, AssetExecutionContext
 
 
 @multi_asset(
@@ -44,10 +44,10 @@ from dagster import AssetOut, Output, multi_asset
     },
     can_subset=True,
 )
-def split_actions(context):
-    if "a" in context.selected_output_names:
+def split_actions(context: AssetExecutionContext):
+    if "a" in context.op_execution_context.selected_output_names:
         yield Output(value=123, output_name="a")
-    if "b" in context.selected_output_names:
+    if "b" in context.op_execution_context.selected_output_names:
         yield Output(value=456, output_name="b")
 
 

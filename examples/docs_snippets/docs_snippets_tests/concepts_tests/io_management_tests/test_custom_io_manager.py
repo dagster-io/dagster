@@ -1,4 +1,4 @@
-from docs_snippets.concepts.io_management.custom_io_manager import (  # pylint: disable=E0401
+from docs_snippets.concepts.io_management.custom_io_manager import (
     my_job,
     my_job_with_metadata,
 )

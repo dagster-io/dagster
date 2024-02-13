@@ -1,5 +1,5 @@
 execution:
-  celery:
+  config:
     broker:
     backend:
     config_source:

@@ -16,27 +16,66 @@ def my_job():
     pass
 
 
+from typing import List
+
+from dagster import Config
+
+
+class ReadMaterializationConfig(Config):
+    asset_key: List[str]
+
+
 # start_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
+from dagster import (
+    AssetKey,
+    EventLogEntry,
+    RunConfig,
+    SensorEvaluationContext,
+    asset_sensor,
+)
 
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+    assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,  # type: ignore
-                    }
-                }
+        run_config=RunConfig(
+            ops={
+                "read_materialization": ReadMaterializationConfig(
+                    asset_key=list(asset_event.dagster_event.asset_key.path)
+                )
             }
-        },
+        ),
     )
 
 
 # end_asset_sensor_marker
+
+# start_asset_sensor_test_marker
+from dagster import DagsterInstance, build_sensor_context, materialize
+
+
+def test_my_asset_sensor():
+    @asset
+    def my_table():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    ctx = build_sensor_context(instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], SkipReason)
+
+    materialize([my_table], instance=instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], RunRequest)
+
+
+# end_asset_sensor_test_marker
 
 
 def send_alert(_msg: str) -> None:
@@ -50,14 +89,14 @@ from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
 def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.minutes_late is None or context.previous_minutes_late is None:
+    if context.minutes_overdue is None or context.previous_minutes_overdue is None:
         return
 
-    if context.minutes_late >= 10 and context.previous_minutes_late < 10:
+    if context.minutes_overdue >= 10 and context.previous_minutes_overdue < 10:
         send_alert(
-            f"Asset with key {context.asset_key} is now more than 10 minutes late."
+            f"Asset with key {context.asset_key} is now more than 10 minutes overdue."
         )
-    elif context.minutes_late == 0 and context.previous_minutes_late >= 10:
+    elif context.minutes_overdue == 0 and context.previous_minutes_overdue >= 10:
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 
 
@@ -176,9 +215,9 @@ def trigger_weekly_asset_from_daily_asset(context):
             if context.all_partitions_materialized(
                 AssetKey("upstream_daily_1"), daily_partitions_in_week
             ):
-                run_requests_by_partition[
-                    weekly_partitions[0]
-                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
+                run_requests_by_partition[weekly_partitions[0]] = RunRequest(
+                    partition_key=weekly_partitions[0]
+                )
                 # Advance the cursor so we only check event log records past the cursor
                 context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
     return list(run_requests_by_partition.values())
@@ -203,9 +242,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
         materializations_by_asset,
     ) in context.latest_materialization_records_by_partition_and_asset().items():
         if set(materializations_by_asset.keys()) == set(context.asset_keys):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 context.advance_cursor({asset_key: materialization})
     return run_requests
@@ -234,9 +271,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
                 for asset_key in context.asset_keys
             ]
         ):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(RunRequest(partition_key=partition))
             for asset_key, materialization in materializations_by_asset.items():
                 if asset_key in context.asset_keys:
                     context.advance_cursor({asset_key: materialization})

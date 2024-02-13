@@ -3,23 +3,26 @@ from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
-from dagster._core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
+from dagster._core.definitions import LoggerDefinition, ResourceDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._serdes import whitelist_for_serdes
 
 
-def build_mode_def_snap(mode_def, root_config_key):
-    check.inst_param(mode_def, "mode_def", ModeDefinition)
-    check.str_param(root_config_key, "root_config_key")
+def build_mode_def_snap(job_def: JobDefinition) -> "ModeDefSnap":
+    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 
+    check.inst_param(job_def, "job_def", JobDefinition)
+
+    root_config_key = job_def.run_config_schema.config_type.key
     return ModeDefSnap(
-        name=mode_def.name,
-        description=mode_def.description,
+        name=DEFAULT_MODE_NAME,
+        description=None,
         resource_def_snaps=sorted(
-            [build_resource_def_snap(name, rd) for name, rd in mode_def.resource_defs.items()],
+            [build_resource_def_snap(name, rd) for name, rd in job_def.resource_defs.items()],
             key=lambda item: item.name,
         ),
         logger_def_snaps=sorted(
-            [build_logger_def_snap(name, ld) for name, ld in mode_def.loggers.items()],
+            [build_logger_def_snap(name, ld) for name, ld in job_def.loggers.items()],
             key=lambda item: item.name,
         ),
         root_config_key=root_config_key,
@@ -67,9 +70,11 @@ def build_resource_def_snap(name, resource_def):
     return ResourceDefSnap(
         name=name,
         description=resource_def.description,
-        config_field_snap=snap_from_field("config", resource_def.config_field)
-        if resource_def.has_config_field
-        else None,
+        config_field_snap=(
+            snap_from_field("config", resource_def.config_field)
+            if resource_def.has_config_field
+            else None
+        ),
     )
 
 
@@ -103,9 +108,11 @@ def build_logger_def_snap(name, logger_def):
     return LoggerDefSnap(
         name=name,
         description=logger_def.description,
-        config_field_snap=snap_from_field("config", logger_def.config_field)
-        if logger_def.has_config_field
-        else None,
+        config_field_snap=(
+            snap_from_field("config", logger_def.config_field)
+            if logger_def.has_config_field
+            else None
+        ),
     )
 
 

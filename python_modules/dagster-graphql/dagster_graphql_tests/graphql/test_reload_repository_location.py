@@ -5,7 +5,7 @@ from unittest import mock
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
 from dagster._core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     external_repository_data_from_def,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -91,6 +91,11 @@ ManagedTestSuite: Any = make_graphql_context_test_suite(
         GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
     ]
 )
+CodeServerCliTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[
+        GraphQLContextVariant.sqlite_with_default_run_launcher_code_server_cli_env(),
+    ]
+)
 
 
 class TestReloadWorkspaceReadOnly(ReadonlyGraphQLContextTestMatrix):
@@ -153,7 +158,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             # Simulate adding an origin with an error, reload
 
             original_origins.append(
-                ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
                         python_file="made_up_file.py", executable_path=sys.executable
@@ -284,13 +289,13 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            "dagster._core.host_representation.repository_location.sync_list_repositories_grpc"
+            "dagster._core.host_representation.code_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._core.host_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
 
                 @repository
@@ -351,7 +356,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            "dagster._core.host_representation.repository_location.sync_list_repositories_grpc"
+            "dagster._core.host_representation.code_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
             cli_command_mock.side_effect = Exception("Mocked repository load failure")
 
@@ -456,3 +461,30 @@ class TestReloadRepositoriesManagedGrpc(ManagedTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["isReloadSupported"]
             is True
         )
+
+
+class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
+    def test_code_server_cli_reload_location(self, graphql_context):
+        # server_id before
+
+        old_server_id = graphql_context.get_code_location("test").server_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": "test"},
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert (
+            result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
+            == "RepositoryLocation"
+        )
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
+
+        new_location = graphql_context.process_context.create_snapshot()["test"].code_location
+
+        assert new_location.server_id != old_server_id  # Reload actually happened

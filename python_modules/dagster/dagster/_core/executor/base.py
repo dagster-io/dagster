@@ -6,14 +6,17 @@ from dagster._core.execution.retries import RetryMode
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
+    from dagster._core.execution.context.system import PlanOrchestrationContext
+    from dagster._core.execution.plan.plan import ExecutionPlan
 
 
 class Executor(ABC):
     @public
     @abstractmethod
-    def execute(self, plan_context, execution_plan) -> Iterator["DagsterEvent"]:
-        """
-        For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
+    def execute(
+        self, plan_context: "PlanOrchestrationContext", execution_plan: "ExecutionPlan"
+    ) -> Iterator["DagsterEvent"]:
+        """For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 
         Args:
             plan_context (PlanOrchestrationContext): The plan's orchestration context.
@@ -23,12 +26,11 @@ class Executor(ABC):
             A stream of dagster events.
         """
 
-    @public  # type: ignore
+    @public
     @property
     @abstractmethod
     def retries(self) -> RetryMode:
-        """
-        Whether retries are enabled or disabled for this instance of the executor.
+        """Whether retries are enabled or disabled for this instance of the executor.
 
         Executors should allow this to be controlled via configuration if possible.
 

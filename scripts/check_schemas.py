@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import importlib
 import pkgutil
 
@@ -53,28 +53,28 @@ def validate_column(column: Column):
         and str(column.server_default.arg) == "CURRENT_TIMESTAMP"
     ):
         raise Exception(
-            f"Column {column} has a server default of CURRENT_TIMESTAMP without precision specified. "
-            "To allow schema compatibility between MySQL, Postgres, and SQLite, "
-            "use dagster._core.storage.sql.py::get_current_timestamp() instead."
+            f"Column {column} has a server default of CURRENT_TIMESTAMP without precision"
+            " specified. To allow schema compatibility between MySQL, Postgres, and SQLite, use"
+            " dagster._core.storage.sql.py::get_current_timestamp() instead."
         )
 
 
 if __name__ == "__main__":
     schema_modules = set()
 
-    def list_submodules(package_name):
+    def list_submodules(package):
         for _, module_name, is_pkg in pkgutil.walk_packages(
-            package_name.__path__, package_name.__name__ + "."
+            package.__path__, package.__name__ + "."
         ):
             # Collect all of the dagster._core.storage.*.schema modules
             if module_name.endswith("schema"):
                 schema_modules.add(module_name)
 
-            module_name = __import__(module_name, fromlist="dummylist")
+            module = __import__(module_name, fromlist="dummylist")
             if is_pkg:
-                list_submodules(module_name)
+                list_submodules(module)
 
-    list_submodules(dagster._core.storage)  # pylint: disable=protected-access
+    list_submodules(dagster._core.storage)  # noqa: SLF001
 
     for schema_module in schema_modules:
         check_schema_compat(importlib.import_module(schema_module))

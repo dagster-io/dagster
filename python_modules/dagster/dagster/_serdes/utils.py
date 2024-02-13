@@ -1,10 +1,12 @@
 import hashlib
+from typing import NamedTuple, Optional
 
-from .serdes import serialize_dagster_namedtuple
+from .serdes import WhitelistMap, serialize_value
 
 
-def create_snapshot_id(snapshot: tuple) -> str:
-    json_rep = serialize_dagster_namedtuple(snapshot)
+def create_snapshot_id(snapshot: NamedTuple, whitelist_map: Optional[WhitelistMap] = None) -> str:
+    kwargs = dict(whitelist_map=whitelist_map) if whitelist_map else {}
+    json_rep = serialize_value(snapshot, **kwargs)
     return hash_str(json_rep)
 
 
@@ -14,6 +16,6 @@ def hash_str(in_str: str) -> str:
     return m.hexdigest()
 
 
-def serialize_pp(value: tuple) -> str:
+def serialize_pp(value: NamedTuple) -> str:
     """Serialize and pretty print."""
-    return serialize_dagster_namedtuple(value, indent=2, separators=(",", ": "))
+    return serialize_value(value, indent=2, separators=(",", ": "))

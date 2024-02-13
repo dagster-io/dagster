@@ -1,11 +1,12 @@
-import hashlib
 import os
 import shutil
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence, Tuple, Union
+from pathlib import Path
+from typing import IO, TYPE_CHECKING, Generator, Iterator, Mapping, Optional, Sequence, Tuple
 
+from typing_extensions import Final
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
@@ -15,11 +16,13 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .captured_log_manager import (
     CapturedLogContext,
@@ -36,17 +39,28 @@ from .compute_log_manager import (
     ComputeLogSubscription,
 )
 
-DEFAULT_WATCHDOG_POLLING_TIMEOUT = 2.5
+if TYPE_CHECKING:
+    from dagster._core.storage.cloud_storage_compute_log_manager import LogSubscription
 
-IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: "out", ComputeIOType.STDERR: "err"}
+DEFAULT_WATCHDOG_POLLING_TIMEOUT: Final = 2.5
 
-MAX_FILENAME_LENGTH = 255
+IO_TYPE_EXTENSION: Final[Mapping[ComputeIOType, str]] = {
+    ComputeIOType.STDOUT: "out",
+    ComputeIOType.STDERR: "err",
+}
+
+MAX_FILENAME_LENGTH: Final = 255
 
 
 class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
-    def __init__(self, base_dir, polling_timeout=None, inst_data=None):
+    def __init__(
+        self,
+        base_dir: str,
+        polling_timeout: Optional[float] = None,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
         self._base_dir = base_dir
         self._polling_timeout = check.opt_float_param(
             polling_timeout, "polling_timeout", DEFAULT_WATCHDOG_POLLING_TIMEOUT
@@ -55,22 +69,24 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @property
-    def polling_timeout(self):
+    def polling_timeout(self) -> float:
         return self._polling_timeout
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {
             "base_dir": StringSource,
             "polling_timeout": Field(Float, is_required=False),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value
+    ) -> "LocalComputeLogManager":
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
     @contextmanager
@@ -86,13 +102,13 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Generator[Optional[IO], None, None]:
+    ) -> Iterator[Optional[IO]]:
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         ensure_file(path)
         with open(path, "+a", encoding="utf-8") as f:
             yield f
 
-    def is_capture_complete(self, log_key: Sequence[str]):
+    def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         return os.path.exists(self.complete_artifact_path(log_key))
 
     def get_log_data(
@@ -210,8 +226,12 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         if partial:
             filename = f"{filename}.partial"
         if len(filename) > MAX_FILENAME_LENGTH:
-            filename = "{}.{}".format(hashlib.md5(filebase.encode("utf-8")).hexdigest(), extension)
-        return os.path.join(self._base_dir, *namespace, filename)
+            filename = "{}.{}".format(non_secure_md5_hash_str(filebase.encode("utf-8")), extension)
+        base_dir_path = Path(self._base_dir).resolve()
+        log_path = base_dir_path.joinpath(*namespace, filename).resolve()
+        if base_dir_path not in log_path.parents:
+            raise ValueError("Invalid path")
+        return str(log_path)
 
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None
@@ -229,23 +249,30 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     #
     ###############################################
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def _watch_logs(
+        self, dagster_run: DagsterRun, step_key: Optional[str] = None
+    ) -> Iterator[None]:
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(dagster_run.run_id, step_key or dagster_run.job_name)
         with self.capture_logs(log_key):
             yield
 
-    def get_local_path(self, run_id, key, io_type):
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
         """Legacy adapter from compute log manager to more generic captured log manager API."""
         check.inst_param(io_type, "io_type", ComputeIOType)
         log_key = self.build_log_key_for_run(run_id, key)
         return self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
 
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
+    def read_logs_file(
+        self,
+        run_id: str,
+        key: str,
+        io_type: ComputeIOType,
+        cursor: int = 0,
+        max_bytes: int = MAX_BYTES_FILE_READ,
+    ) -> ComputeLogFileData:
         path = self.get_local_path(run_id, key, io_type)
 
         if not os.path.exists(path) or not os.path.isfile(path):
@@ -268,38 +295,36 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             download_url=download_url,
         )
 
-    def get_key(self, pipeline_run, step_key):
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def get_key(self, dagster_run: DagsterRun, step_key: Optional[str]):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        return step_key or pipeline_run.pipeline_name
+        return step_key or dagster_run.job_name
 
-    def is_watch_completed(self, run_id, key):
+    def is_watch_completed(self, run_id: str, key: str) -> bool:
         log_key = self.build_log_key_for_run(run_id, key)
         return self.is_capture_complete(log_key)
 
-    def on_watch_start(self, pipeline_run, step_key):
+    def on_watch_start(self, dagster_run: DagsterRun, step_key: Optional[str]):
         pass
 
-    def on_watch_finish(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def on_watch_finish(self, dagster_run: DagsterRun, step_key: Optional[str] = None):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(dagster_run.run_id, step_key or dagster_run.job_name)
         touchpath = self.complete_artifact_path(log_key)
         touch_file(touchpath)
 
-    def download_url(self, run_id, key, io_type):
+    def download_url(self, run_id: str, key: str, io_type: ComputeIOType):
         check.inst_param(io_type, "io_type", ComputeIOType)
-        return "/download/{}/{}/{}".format(run_id, key, io_type.value)
+        return f"/download/{run_id}/{key}/{io_type.value}"
 
-    def on_subscribe(self, subscription):
+    def on_subscribe(self, subscription: "LogSubscription") -> None:
         self._subscription_manager.add_subscription(subscription)
 
-    def on_unsubscribe(self, subscription):
+    def on_unsubscribe(self, subscription: "LogSubscription") -> None:
         self._subscription_manager.remove_subscription(subscription)
 
-    def dispose(self):
+    def dispose(self) -> None:
         self._subscription_manager.dispose()
 
 
@@ -310,9 +335,7 @@ class LocalComputeLogSubscriptionManager:
         self._watchers = {}
         self._observer = None
 
-    def add_subscription(
-        self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]
-    ):
+    def add_subscription(self, subscription: "LogSubscription") -> None:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -326,7 +349,7 @@ class LocalComputeLogSubscriptionManager:
             self._subscriptions[watch_key].append(subscription)
             self.watch(subscription)
 
-    def is_complete(self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]):
+    def is_complete(self, subscription: "LogSubscription") -> bool:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -335,7 +358,7 @@ class LocalComputeLogSubscriptionManager:
             return self._manager.is_watch_completed(subscription.run_id, subscription.key)
         return self._manager.is_capture_complete(subscription.log_key)
 
-    def remove_subscription(self, subscription):
+    def remove_subscription(self, subscription: "LogSubscription") -> None:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -345,7 +368,7 @@ class LocalComputeLogSubscriptionManager:
             self._subscriptions[watch_key].remove(subscription)
             subscription.complete()
 
-    def _log_key(self, subscription):
+    def _log_key(self, subscription: "LogSubscription") -> Sequence[str]:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
@@ -357,12 +380,12 @@ class LocalComputeLogSubscriptionManager:
     def _watch_key(self, log_key: Sequence[str]) -> str:
         return json.dumps(log_key)
 
-    def remove_all_subscriptions(self, log_key):
+    def remove_all_subscriptions(self, log_key: Sequence[str]) -> None:
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
 
-    def watch(self, subscription):
+    def watch(self, subscription: "LogSubscription") -> None:
         log_key = self._log_key(subscription)
         watch_key = self._watch_key(log_key)
         if watch_key in self._watchers:
@@ -394,18 +417,18 @@ class LocalComputeLogSubscriptionManager:
             str(directory),
         )
 
-    def notify_subscriptions(self, log_key):
+    def notify_subscriptions(self, log_key: Sequence[str]) -> None:
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def unwatch(self, log_key, handler):
+    def unwatch(self, log_key: Sequence[str], handler) -> None:
         watch_key = self._watch_key(log_key)
         if watch_key in self._watchers:
-            self._observer.remove_handler_for_watch(handler, self._watchers[watch_key])
+            self._observer.remove_handler_for_watch(handler, self._watchers[watch_key])  # type: ignore
         del self._watchers[watch_key]
 
-    def dispose(self):
+    def dispose(self) -> None:
         if self._observer:
             self._observer.stop()
             self._observer.join(15)

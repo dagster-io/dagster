@@ -24,9 +24,7 @@ InputLoadFn: TypeAlias = Union[
 
 
 class InputManager(ABC):
-    """
-    Base interface for classes that are responsible for loading solid inputs.
-    """
+    """Base interface for classes that are responsible for loading solid inputs."""
 
     @abstractmethod
     def load_input(self, context: "InputContext") -> object:
@@ -148,13 +146,13 @@ def input_manager(
 
     .. code-block:: python
 
-        from dagster import root_input_manager, op, job, In
+        from dagster import input_manager, op, job, In
 
         @input_manager
         def csv_loader(_):
             return read_csv("some/path")
 
-        @op(ins={"input1": In(root_manager_key="csv_loader_key")})
+        @op(ins={"input1": In(input_manager_key="csv_loader_key")})
         def my_op(_, input1):
             do_stuff(input1)
 
@@ -173,11 +171,9 @@ def input_manager(
     if _is_input_load_fn(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 
-    config_schema = cast(Optional[CoercableToConfigSchema], config_schema)
-
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=config_schema,  # type: ignore  # fmt: skip
+            config_schema=cast(CoercableToConfigSchema, config_schema),
             description=description,
             version=version,
             input_config_schema=input_config_schema,
@@ -201,9 +197,7 @@ class InputManagerWrapper(InputManager):
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)  # type: ignore  # fmt: skip
-            if has_at_least_one_parameter(self._load_fn)  # type: ignore  # fmt: skip
-            else self._load_fn()  # type: ignore  # (strict type guard)
+            self._load_fn(context) if has_at_least_one_parameter(self._load_fn) else self._load_fn()  # type: ignore  # (strict type guard)
         )
 
         if isinstance(intermediate, InputManager):
@@ -232,7 +226,7 @@ class _InputManagerDecoratorCallable:
         def _resource_fn(_):
             return InputManagerWrapper(load_fn)
 
-        root_input_manager_def = InputManagerDefinition(
+        input_manager_def = InputManagerDefinition(
             resource_fn=_resource_fn,
             config_schema=self.config_schema,
             description=self.description,
@@ -241,6 +235,7 @@ class _InputManagerDecoratorCallable:
             required_resource_keys=self.required_resource_keys,
         )
 
-        update_wrapper(root_input_manager_def, wrapped=load_fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(input_manager_def, wrapped=load_fn)  # type: ignore
 
-        return root_input_manager_def
+        return input_manager_def

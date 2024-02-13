@@ -1,8 +1,22 @@
+import mock
 import pytest
-from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster._core.definitions.assets_job import get_base_asset_jobs
+from dagster import (
+    DagsterEvent,
+    DagsterInstance,
+    DagsterResourceFunctionError,
+    DagsterRun,
+    DagsterTypeCheckDidNotPass,
+    RunStatusSensorDefinition,
+    build_run_status_sensor_context,
+    build_sensor_context,
+    multiprocess_executor,
+)
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.temp_file import get_temp_dir
 from dagster_test.toys.branches import branch
@@ -17,17 +31,43 @@ from dagster_test.toys.hammer import hammer
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.toys.many_events import many_events
-from dagster_test.toys.partitioned_assets import partitioned_asset_group
 from dagster_test.toys.pyspark_assets.pyspark_assets_job import dir_resources, pyspark_assets
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import lots_of_resources, resource_ops
 from dagster_test.toys.retries import retry
 from dagster_test.toys.schedules import longitudinal_schedule
+from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
+from slack_sdk.web.client import WebClient
+
+
+@pytest.fixture(name="instance")
+def instance():
+    with instance_for_test() as instance:
+        yield instance
+
+
+@pytest.mark.parametrize(
+    "sensor",
+    [sensor_def for sensor_def in get_toys_sensors()],
+    ids=[sensor_def.name for sensor_def in get_toys_sensors()],
+)
+@mock.patch.object(WebClient, "chat_postMessage", return_value=None)
+def test_sensor(_mock_method, instance: DagsterInstance, sensor: SensorDefinition) -> None:
+    sensor(
+        build_run_status_sensor_context(
+            sensor_name=sensor.name,
+            dagster_event=mock.MagicMock(spec=DagsterEvent),
+            dagster_instance=instance,
+            dagster_run=mock.MagicMock(spec=DagsterRun),
+        )
+        if isinstance(sensor, RunStatusSensorDefinition)
+        else build_sensor_context()
+    )
 
 
 @pytest.fixture(name="executor_def", params=[multiprocess_executor, test_step_delegating_executor])
@@ -76,7 +116,7 @@ def test_many_events_subset_job(executor_def):
 
 def test_sleepy_job(executor_def):
     assert (
-        lambda: sleepy.to_job(  # type: ignore
+        lambda: sleepy.to_job(
             config={
                 "ops": {"giver": {"config": [2, 2, 2, 2]}},
             },
@@ -115,7 +155,7 @@ def test_branch_job_failed(executor_def):
         )
 
 
-def test_spew_pipeline(executor_def):
+def test_spew_job(executor_def):
     assert log_spew.to_job(executor_def=executor_def).execute_in_process().success
 
 
@@ -142,7 +182,7 @@ def test_resource_job_with_config(executor_def):
 def test_pyspark_assets_job(executor_def):
     with get_temp_dir() as temp_dir:
         run_config = {
-            "solids": {
+            "ops": {
                 "get_max_temp_per_station": {
                     "config": {
                         "temperature_file": "temperature.csv",
@@ -247,7 +287,7 @@ def test_error_monster_type_error(executor_def):
 
 def test_composition_job():
     result = composition_job.execute_in_process(
-        run_config={"solids": {"add_four": {"inputs": {"num": {"value": 3}}}}},
+        run_config={"ops": {"add_four": {"inputs": {"num": {"value": 3}}}}},
     )
 
     assert result.success
@@ -276,17 +316,12 @@ def test_retry_job(executor_def):
 
 
 def test_software_defined_assets_job():
-    assert software_defined_assets.build_job("all_assets").execute_in_process().success
-
-
-def test_partitioned_assets():
-    for job_def in get_base_asset_jobs(
-        assets=partitioned_asset_group.assets,
-        source_assets=[],
-        executor_def=None,
-        resource_defs=None,
-    ):
-        partition_key = job_def.mode_definitions[
-            0
-        ].partitioned_config.partitions_def.get_partition_keys()[0]
-        assert job_def.execute_in_process(partition_key=partition_key).success
+    assert (
+        Definitions(
+            assets=software_defined_assets,
+            jobs=[define_asset_job("all_assets")],
+        )
+        .get_job_def("all_assets")
+        .execute_in_process()
+        .success
+    )

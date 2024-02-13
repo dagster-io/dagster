@@ -17,23 +17,25 @@ def hook_invocation_result(
 ):
     if not hook_context:
         hook_context = UnboundHookContext(
-            resources={}, op=None, run_id=None, job_name=None, op_exception=None
+            resources={}, op=None, run_id=None, job_name=None, op_exception=None, instance=None
         )
 
     # Validate that all required resources are provided in the context
-    # pylint: disable=protected-access
+
     ensure_requirements_satisfied(
-        hook_context._resource_defs, list(hook_def.get_resource_requirements())
+        hook_context._resource_defs,  # noqa: SLF001
+        list(hook_def.get_resource_requirements()),
     )
 
     bound_context = BoundHookContext(
         hook_def=hook_def,
         resources=hook_context.resources,
         log_manager=hook_context.log,
-        op=hook_context._op,
-        run_id=hook_context._run_id,
-        job_name=hook_context._job_name,
-        op_exception=hook_context._op_exception,
+        op=hook_context._op,  # noqa: SLF001
+        run_id=hook_context._run_id,  # noqa: SLF001
+        job_name=hook_context._job_name,  # noqa: SLF001
+        op_exception=hook_context._op_exception,  # noqa: SLF001
+        instance=hook_context._instance,  # noqa: SLF001
     )
 
     decorated_fn = check.not_none(hook_def.decorated_fn)

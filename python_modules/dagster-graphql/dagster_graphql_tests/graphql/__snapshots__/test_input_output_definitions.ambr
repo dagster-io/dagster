@@ -1,0 +1,29 @@
+# name: test_query_inputs_outputs[0]
+  dict({
+    'repositoryOrError': dict({
+      'usedSolid': dict({
+        '__typename': 'UsedSolid',
+        'definition': dict({
+          'inputDefinitions': list([
+            dict({
+              'metadataEntries': list([
+                dict({
+                  'label': 'a',
+                }),
+              ]),
+            }),
+          ]),
+          'outputDefinitions': list([
+            dict({
+              'metadataEntries': list([
+                dict({
+                  'label': 'c',
+                }),
+              ]),
+            }),
+          ]),
+        }),
+      }),
+    }),
+  })
+# ---

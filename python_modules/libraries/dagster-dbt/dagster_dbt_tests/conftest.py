@@ -1,20 +1,27 @@
 import os
 import subprocess
-from distutils import spawn  # pylint: disable=deprecated-module
+from pathlib import Path
+from typing import Any, Dict
 
-import psycopg2
 import pytest
 from dagster._utils import file_relative_path, pushd
-from dagster._utils.test.postgres_instance import TestPostgresInstance
+from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
+
+from .dbt_projects import (
+    test_asset_checks_path,
+    test_asset_key_exceptions_path,
+    test_dbt_python_interleaving_path,
+    test_meta_config_path,
+)
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
 TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")
-DBT_CONFIG_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
+DBT_CONFIG_DIR = TEST_PROJECT_DIR
 TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
 
 TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_project")
-DBT_PYTHON_CONFIG_DIR = os.path.join(TEST_PYTHON_PROJECT_DIR, "dbt_config")
+DBT_PYTHON_CONFIG_DIR = TEST_PYTHON_PROJECT_DIR
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -49,74 +56,64 @@ def dbt_python_config_dir():
     return DBT_PYTHON_CONFIG_DIR
 
 
+@pytest.fixture(
+    scope="session",
+    params=[
+        pytest.param("legacy", marks=pytest.mark.legacy),
+        pytest.param("DbtCliClientResource", marks=pytest.mark.legacy),
+        pytest.param("DbtCliResource"),
+    ],
+)
+def dbt_cli_resource_factory(request):
+    if request.param == "DbtCliClientResource":
+        return lambda **kwargs: DbtCliClientResource(
+            project_dir=kwargs["project_dir"],
+            profiles_dir=kwargs.get("profiles_dir"),
+            json_log_format=kwargs.get("json_log_format", True),
+        )
+    elif request.param == "DbtCliResource":
+        return lambda **kwargs: DbtCliResource(
+            project_dir=kwargs["project_dir"], profile=kwargs.get("profile")
+        )
+    else:
+        return lambda **kwargs: dbt_cli_resource.configured(kwargs)
+
+
 @pytest.fixture(scope="session")
-def conn_string():
-    postgres_host = os.environ.get("POSTGRES_TEST_DB_DBT_HOST")
-    if postgres_host is None and IS_BUILDKITE:
-        pytest.fail("Env variable POSTGRES_TEST_DB_DBT_HOST is unset")
-
-    try:
-        if not IS_BUILDKITE:
-            os.environ["POSTGRES_TEST_DB_DBT_HOST"] = "localhost"
-
-        os.environ["DBT_TARGET_PATH"] = "target"
-
-        with TestPostgresInstance.docker_service_up_or_skip(
-            file_relative_path(__file__, "docker-compose.yml"),
-            "test-postgres-db-dbt",
-            {"hostname": postgres_host} if IS_BUILDKITE else {},
-        ) as conn_str:
-            yield conn_str
-    finally:
-        if postgres_host is not None:
-            os.environ["POSTGRES_TEST_DB_DBT_HOST"] = postgres_host
-
-
-@pytest.fixture(scope="session")
-def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-outer-name
-    if not spawn.find_executable(DBT_EXECUTABLE):
-        raise Exception("executable not found in path for `dbt`")
-
+def dbt_seed(dbt_executable, dbt_config_dir):
     with pushd(TEST_PROJECT_DIR):
-        yield
+        subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
 
 
 @pytest.fixture(scope="session")
-def dbt_seed(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
-    subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
+def dbt_build(dbt_executable, dbt_config_dir):
+    with pushd(TEST_PROJECT_DIR):
+        subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
+        subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)
 
 
-@pytest.fixture(scope="session")
-def dbt_build(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
-    subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
-    subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)
+def _create_dbt_manifest(project_dir: Path) -> Dict[str, Any]:
+    dbt = DbtCliResource(project_dir=os.fspath(project_dir))
+    dbt_invocation = dbt.cli(["--quiet", "compile"]).wait()
+
+    return dbt_invocation.get_artifact("manifest.json")
 
 
-@pytest.fixture(scope="session")
-def dbt_python_sources(conn_string):
-    """Create sample users/events table sources."""
-    conn = None
-    try:
-        conn = psycopg2.connect(conn_string)
-        cur = conn.cursor()
-        cur.execute("CREATE SCHEMA raw_data")
-        cur.execute("CREATE TABLE raw_data.events (day integer, user_id integer, event_id integer)")
-        cur.execute("CREATE TABLE raw_data.users (day integer, user_id integer)")
-        cur.executemany(
-            "INSERT INTO raw_data.users VALUES(%s, %s)", [(n / 10, n) for n in range(100)]
-        )
-        cur.executemany(
-            "INSERT INTO raw_data.events VALUES(%s, %s, %s)",
-            [(n / 10, n, n * 10) for n in range(100)],
-        )
-        conn.commit()
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        raise error
-    finally:
-        if conn is not None:
-            conn.close()
+@pytest.fixture(name="test_asset_checks_manifest", scope="session")
+def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_asset_checks_path)
+
+
+@pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
+def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_asset_key_exceptions_path)
+
+
+@pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
+def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_dbt_python_interleaving_path)
+
+
+@pytest.fixture(name="test_meta_config_manifest", scope="session")
+def test_meta_config_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_meta_config_path)

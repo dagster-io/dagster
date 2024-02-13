@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from contextlib import contextmanager
-from typing import Callable, Optional, Union, cast
+from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union, cast
 from urllib.parse import (
     quote_plus as urlquote,
     urlparse,
@@ -14,12 +14,18 @@ import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from alembic.config import Config
 from dagster import _check as check
+from dagster._core.storage.config import MySqlStorageConfig
 from dagster._core.storage.sql import get_alembic_config
 from mysql.connector.pooling import PooledMySQLConnection
+from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
 
+T = TypeVar("T")
+
 # Represents the output of mysql connection function
-MySQLConnectionUnion: TypeAlias = Union[mysql.MySQLConnection, PooledMySQLConnection]
+MySQLConnectionUnion: TypeAlias = Union[
+    db.engine.Connection, mysql.MySQLConnection, PooledMySQLConnection
+]
 
 
 class DagsterMySQLException(Exception):
@@ -42,7 +48,7 @@ def get_conn(conn_string: str) -> MySQLConnectionUnion:
     return conn
 
 
-def mysql_url_from_config(config_value):
+def mysql_url_from_config(config_value: MySqlStorageConfig) -> str:
     if config_value.get("mysql_url"):
         return config_value["mysql_url"]
 
@@ -50,18 +56,12 @@ def mysql_url_from_config(config_value):
 
 
 def get_conn_string(
-    username: str, password: str, hostname: str, db_name: str, port: str = "3306"
+    username: str, password: str, hostname: str, db_name: str, port: Union[int, str] = "3306"
 ) -> str:
-    return "mysql+mysqlconnector://{username}:{password}@{hostname}:{port}/{db_name}".format(
-        username=username,
-        password=urlquote(password),
-        hostname=hostname,
-        db_name=db_name,
-        port=port,
-    )
+    return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
 
-def parse_mysql_version(version: str) -> tuple:
+def parse_mysql_version(version: str) -> Tuple[int, ...]:
     """Parse MySQL version into a tuple of ints.
 
     Args:
@@ -81,7 +81,9 @@ def parse_mysql_version(version: str) -> tuple:
     return tuple(parsed)
 
 
-def retry_mysql_creation_fn(fn, retry_limit: int = 5, retry_wait: float = 0.2):
+def retry_mysql_creation_fn(
+    fn: Callable[[], T], retry_limit: int = 5, retry_wait: float = 0.2
+) -> T:
     # Retry logic to recover from the case where two processes are creating
     # tables at the same time using sqlalchemy
 
@@ -104,7 +106,7 @@ def retry_mysql_creation_fn(fn, retry_limit: int = 5, retry_wait: float = 0.2):
                 and exc.orig.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ) or (
                 isinstance(exc, mysql.ProgrammingError)
-                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR  # type: ignore
+                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ):
                 raise
             logging.warning("Retrying failed database creation")
@@ -116,10 +118,10 @@ def retry_mysql_creation_fn(fn, retry_limit: int = 5, retry_wait: float = 0.2):
 
 
 def retry_mysql_connection_fn(
-    fn: Callable[[], MySQLConnectionUnion],
+    fn: Callable[[], T],
     retry_limit: int = 5,
     retry_wait: float = 0.2,
-) -> MySQLConnectionUnion:
+) -> T:
     """Reusable retry logic for any MySQL connection functions that may fail.
     Intended to be used anywhere we connect to MySQL, to gracefully handle transient connection
     issues.
@@ -170,10 +172,14 @@ def mysql_alembic_config(dunder_file: str) -> Config:
     return get_alembic_config(dunder_file, config_path="../alembic/alembic.ini")
 
 
+def mysql_isolation_level():
+    return "REPEATABLE READ"
+
+
 @contextmanager
 def create_mysql_connection(
     engine: db.engine.Engine, dunder_file: str, storage_type_desc: Optional[str] = None
-):
+) -> Iterator[Connection]:
     check.inst_param(engine, "engine", db.engine.Engine)
     check.str_param(dunder_file, "dunder_file")
     check.opt_str_param(storage_type_desc, "storage_type_desc", "")
@@ -183,11 +189,7 @@ def create_mysql_connection(
     else:
         storage_type_desc = ""
 
-    conn = None
-    try:
-        # Retry connection to gracefully handle transient connection issues
-        conn = retry_mysql_connection_fn(engine.connect)
-        yield conn
-    finally:
-        if conn:
-            conn.close()
+    conn_cm = retry_mysql_connection_fn(engine.connect)
+    with conn_cm as conn:
+        with conn.begin():
+            yield conn

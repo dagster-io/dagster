@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_databricks/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-databricks",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="Package for Databricks-specific Dagster framework solid and resource components.",
+    description="Package for Databricks-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -35,8 +34,11 @@ setup(
     include_package_data=True,
     install_requires=[
         f"dagster{pin}",
+        f"dagster-pipes{pin}",
         f"dagster-pyspark{pin}",
-        "databricks_api",
+        "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
+        "databricks_api",  # TODO: Remove this dependency in the next minor release.
+        "databricks-sdk<0.9",  # Breaking changes occur in minor versions.
     ],
     zip_safe=False,
 )

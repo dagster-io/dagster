@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=reimported
+# ruff: isort: skip_file
+
 
 from dagster import DynamicOut, DynamicOutput, job, op
 

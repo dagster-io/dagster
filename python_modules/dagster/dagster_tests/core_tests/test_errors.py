@@ -7,7 +7,7 @@ def test_syntax_error_serialized_message():
     serialized_error = None
 
     try:
-        eval(  # pylint: disable=eval-used
+        eval(
             """
 foo = bar
             """

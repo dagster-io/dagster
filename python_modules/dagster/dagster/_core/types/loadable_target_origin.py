@@ -1,5 +1,3 @@
-# pyright: strict
-
 from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check

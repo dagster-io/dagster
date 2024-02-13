@@ -2,19 +2,16 @@ import copy
 import logging
 import sys
 import traceback
-from contextlib import contextmanager
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
-import pendulum
+import structlog
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._config import Enum, EnumValue
+from dagster._annotations import deprecated
 from dagster._core.definitions.logger_definition import logger
-from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
-
-LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))  # type: ignore
+from dagster._core.utils import coerce_valid_log_level
 
 
 class JsonFileHandler(logging.Handler):
@@ -45,7 +42,7 @@ class JsonFileHandler(logging.Handler):
                 text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -94,7 +91,7 @@ class JsonEventLoggerHandler(logging.Handler):
                 ff.write(text_line + "\n")
 
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -116,7 +113,7 @@ class StructuredLoggerHandler(logging.Handler):
                 )
             )
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -143,8 +140,7 @@ BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
 def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
-    """
-    Creates a python logger whose output messages will be captured and converted into Dagster log
+    """Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.
     embedded into them, and will show up in the Dagster event log.
 
@@ -160,7 +156,6 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
         :class:`logging.Logger`: A logger whose output will be captured by Dagster.
 
     Example:
-
         .. code-block:: python
 
             from dagster import get_dagster_logger, op
@@ -208,13 +203,6 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
-    """Uses pendulum.now to determine the logging time, causing pendulum
-    mocking to affect the logger timestamp in tests.
-    """
-    return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
-
-
 def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -227,18 +215,44 @@ def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
-@contextmanager
-def quieten(quiet=True, level=logging.WARNING):
-    if quiet:
-        logging.disable(level)
-    try:
-        yield
-    finally:
-        if quiet:
-            logging.disable(logging.NOTSET)
+def get_structlog_shared_processors():
+    timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
+
+    shared_processors = [
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        timestamper,
+        structlog.processors.StackInfoRenderer(),
+    ]
+
+    return shared_processors
 
 
-def configure_loggers(handler="default", log_level="INFO"):
+def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
+    return structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=get_structlog_shared_processors(),
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            structlog.processors.JSONRenderer(),
+        ],
+    )
+
+
+@deprecated(
+    breaking_version="2.0",
+    subject="loggers.dagit",
+    emit_runtime_warning=False,
+)
+def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
+    structlog.configure(
+        processors=[
+            *get_structlog_shared_processors(),
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+    )
+    json_formatter = get_structlog_json_formatter()
+
     LOGGING_CONFIG = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -250,10 +264,23 @@ def configure_loggers(handler="default", log_level="INFO"):
                 "field_styles": {"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
                 "level_styles": {"debug": {}, "error": {"color": "red"}},
             },
+            "json": {
+                "()": json_formatter.__class__,
+                "foreign_pre_chain": json_formatter.foreign_pre_chain,
+                "processors": json_formatter.processors,
+            },
+            "rich": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "foreign_pre_chain": get_structlog_shared_processors(),
+                "processors": [
+                    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                    structlog.dev.ConsoleRenderer(),
+                ],
+            },
         },
         "handlers": {
             "default": {
-                "formatter": "colored",
+                "formatter": formatter,
                 "class": "logging.StreamHandler",
                 "stream": sys.stdout,
                 "level": log_level,
@@ -265,20 +292,22 @@ def configure_loggers(handler="default", log_level="INFO"):
         "loggers": {
             "dagster": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
+            # Only one of dagster or dagster-webserver will be used at a time. We configure them
+            # both here to avoid a dependency on the dagster-webserver package.
             "dagit": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
+            },
+            "dagster-webserver": {
+                "handlers": [handler],
+                "level": log_level,
             },
         },
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
-
-    if handler == "default":
-        for name in ["dagster", "dagit"]:
-            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
 
 
 def create_console_logger(name, level):

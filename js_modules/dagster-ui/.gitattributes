@@ -1,0 +1,8 @@
+/.yarn/releases/** binary
+/.yarn/plugins/** binary
+
+# old path was packages/core instead of packages/ui-core, leaving for backcompat
+packages/core/src/graphql/* linguist-generated=true
+packages/core/src/**/types/* linguist-generated=true
+packages/ui-core/src/graphql/* linguist-generated=true
+packages/ui-core/src/**/types/* linguist-generated=true

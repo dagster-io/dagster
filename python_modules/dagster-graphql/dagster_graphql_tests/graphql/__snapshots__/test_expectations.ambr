@@ -1,0 +1,113 @@
+# name: TestExpectations.test_basic_expectations_within_compute_step_events[0]
+  list([
+    dict({
+      '__typename': 'StepExpectationResultEvent',
+      'eventType': 'STEP_EXPECTATION_RESULT',
+      'expectationResult': dict({
+        'description': 'Failure',
+        'label': 'always_false',
+        'metadataEntries': list([
+          dict({
+            '__typename': 'JsonMetadataEntry',
+            'description': None,
+            'jsonString': '{"reason": "Relentless pessimism."}',
+            'label': 'data',
+          }),
+        ]),
+        'success': False,
+      }),
+      'level': 'DEBUG',
+      'message': 'Failure',
+      'runId': '<runId dummy value>',
+      'solidHandleID': 'emit_failed_expectation',
+      'stepKey': 'emit_failed_expectation',
+      'timestamp': '<timestamp dummy value>',
+    }),
+  ])
+# ---
+# name: TestExpectations.test_basic_expectations_within_compute_step_events[1]
+  list([
+    dict({
+      '__typename': 'StepExpectationResultEvent',
+      'eventType': 'STEP_EXPECTATION_RESULT',
+      'expectationResult': dict({
+        'description': 'Successful',
+        'label': 'always_true',
+        'metadataEntries': list([
+          dict({
+            '__typename': 'JsonMetadataEntry',
+            'description': None,
+            'jsonString': '{"reason": "Just because."}',
+            'label': 'data',
+          }),
+        ]),
+        'success': True,
+      }),
+      'level': 'DEBUG',
+      'message': 'Successful',
+      'runId': '<runId dummy value>',
+      'solidHandleID': 'emit_successful_expectation',
+      'stepKey': 'emit_successful_expectation',
+      'timestamp': '<timestamp dummy value>',
+    }),
+  ])
+# ---
+# name: TestExpectations.test_basic_expectations_within_compute_step_events[2]
+  list([
+    dict({
+      '__typename': 'StepExpectationResultEvent',
+      'eventType': 'STEP_EXPECTATION_RESULT',
+      'expectationResult': dict({
+        'description': 'Successful',
+        'label': 'no_metadata',
+        'metadataEntries': list([
+        ]),
+        'success': True,
+      }),
+      'level': 'DEBUG',
+      'message': 'Successful',
+      'runId': '<runId dummy value>',
+      'solidHandleID': 'emit_successful_expectation_no_metadata',
+      'stepKey': 'emit_successful_expectation_no_metadata',
+      'timestamp': '<timestamp dummy value>',
+    }),
+  ])
+# ---
+# name: TestExpectations.test_basic_input_output_expectations[0]
+  list([
+    dict({
+      '__typename': 'StepExpectationResultEvent',
+      'eventType': 'STEP_EXPECTATION_RESULT',
+      'expectationResult': dict({
+        'description': None,
+        'label': 'some_expectation',
+        'metadataEntries': list([
+        ]),
+        'success': True,
+      }),
+      'level': 'DEBUG',
+      'message': 'Expectation some_expectation passed',
+      'runId': '<runId dummy value>',
+      'solidHandleID': 'df_expectations_op',
+      'stepKey': 'df_expectations_op',
+      'timestamp': '<timestamp dummy value>',
+    }),
+    dict({
+      '__typename': 'StepExpectationResultEvent',
+      'eventType': 'STEP_EXPECTATION_RESULT',
+      'expectationResult': dict({
+        'description': None,
+        'label': 'other_expectation',
+        'metadataEntries': list([
+        ]),
+        'success': True,
+      }),
+      'level': 'DEBUG',
+      'message': 'Expectation other_expectation passed',
+      'runId': '<runId dummy value>',
+      'solidHandleID': 'df_expectations_op',
+      'stepKey': 'df_expectations_op',
+      'timestamp': '<timestamp dummy value>',
+    }),
+  ])
+# ---

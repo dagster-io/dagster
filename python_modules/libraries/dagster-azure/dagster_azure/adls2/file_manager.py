@@ -42,11 +42,7 @@ class ADLS2FileHandle(FileHandle):
     @property
     def adls2_path(self):
         """str: The file's ADLS2 URL."""
-        return "adfss://{file_system}@{account}.dfs.core.windows.net/{key}".format(
-            file_system=self.file_system,
-            account=self.account,
-            key=self.key,
-        )
+        return f"adfss://{self.file_system}@{self.account}.dfs.core.windows.net/{self.key}"
 
 
 class ADLS2FileManager(FileManager):
@@ -103,7 +99,7 @@ class ADLS2FileManager(FileManager):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(self, file_obj, mode="wb", ext=None):  # pylint: disable=unused-argument
+    def write(self, file_obj, mode="wb", ext=None):
         check_file_like_obj(file_obj)
         adls2_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         adls2_file = self._client.get_file_client(
@@ -113,7 +109,7 @@ class ADLS2FileManager(FileManager):
         return ADLS2FileHandle(self._client.account_name, self._file_system, adls2_key)
 
     def get_full_key(self, file_key):
-        return "{base_key}/{file_key}".format(base_key=self._prefix, file_key=file_key)
+        return f"{self._prefix}/{file_key}"
 
     def delete_local_temp(self):
         self._temp_file_manager.close()

@@ -1,2 +1,1 @@
 from .event_log import PostgresEventLogStorage as PostgresEventLogStorage
-from .event_watcher import PostgresEventWatcher as PostgresEventWatcher

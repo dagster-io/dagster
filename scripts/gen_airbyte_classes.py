@@ -30,7 +30,7 @@ def _capitalize(s: str) -> str:
 
 
 def _to_class_name(name: str) -> str:
-    class_name = "".join([_capitalize(_remove_invalid_chars(x)) for x in re.split("\W+", name)])
+    class_name = "".join([_capitalize(_remove_invalid_chars(x)) for x in re.split(r"\W+", name)])
     if class_name in KEYWORDS:
         class_name += "_"
     return class_name
@@ -53,41 +53,33 @@ CHECK_MAPPING = {
 
 
 class SchemaType(ABC):
-    """
-    Corresponds to the Python type of a field in a schema, has methods to generate
+    """Corresponds to the Python type of a field in a schema, has methods to generate
     the Python code to annotate that type or check it at runtime.
     """
 
     description: Optional[str] = None
 
     @abstractmethod
-    def get_check(self, name: str, scope: Optional[str] = None):
-        """
-        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name').
-        """
+    def get_check(self, name: str, scope: Optional[str] = None) -> str:
+        """Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')."""
 
     @abstractmethod
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
-        """
-        Returns the Python type annotation for this type, e.g. str or Union[str, int].
-        """
+    ) -> str:
+        """Returns the Python type annotation for this type, e.g. str or Union[str, int]."""
 
     @property
-    def const_value(self):
-        """
-        If this is a constant field, returns the constant value, otherwise returns None.
-        """
+    def const_value(self) -> object:
+        """If this is a constant field, returns the constant value, otherwise returns None."""
         return None
 
-    def add_description(self, description: str):
+    def add_description(self, description: str) -> None:
         if not description:
             return
         self.description = description.replace("\n", " ")
 
     def get_doc_desc(self, name: str, scope: Optional[str] = None) -> Optional[str]:
-
         if not self.description:
             return None
         formatted_desc = (
@@ -133,7 +125,7 @@ class RawType(SchemaType):
         if self.type_str in CHECK_MAPPING:
             return CHECK_MAPPING[self.type_str].format(name, name)
         scope = f"{scope}." if scope else ""
-        return "check.inst_param({}, '{}', {}{})".format(name, name, scope, self.type_str)
+        return f"check.inst_param({name}, '{name}', {scope}{self.type_str})"
 
 
 class ListType(SchemaType):
@@ -149,7 +141,7 @@ class ListType(SchemaType):
         return f"List[{self.inner.annotation(scope, quote, hide_default)}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
-        return "check.list_param({}, '{}', {})".format(name, name, self.inner.annotation(scope))
+        return f"check.list_param({name}, '{name}', {self.inner.annotation(scope)})"
 
 
 class OptType(SchemaType):
@@ -201,8 +193,7 @@ def _union_or_singular(inner: List[SchemaType]) -> SchemaType:
 
 
 def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, SchemaType]]:
-    """
-    Parses an Airbyte source or destination schema, turning it into a representation of the
+    """Parses an Airbyte source or destination schema, turning it into a representation of the
     corresponding Python class structure - a dictionary mapping class names with the fields
     that the new classes should have.
 
@@ -213,11 +204,11 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
     fields = {}
 
     required_fields = set(schema.get("required", []))
-    for field_name, field in schema["properties"].items():
-        if field_name == "option_title":
+    for raw_field_name, field in schema["properties"].items():
+        if raw_field_name == "option_title":
             continue
 
-        field_name = _remove_invalid_chars(field_name)
+        field_name = _remove_invalid_chars(raw_field_name)
 
         if "oneOf" in field:
             # Union type, parse all subfields
@@ -419,9 +410,7 @@ def load_from_spec_file(
     is_source: bool,
     injected_props: Dict[str, Any],
 ):
-    """
-    Loads a connector spec file and generates a python class definition for it.
-    """
+    """Loads a connector spec file and generates a python class definition for it."""
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):
             schema = json.loads(f.read())
@@ -480,7 +469,7 @@ def airbyte_repo_path(airbyte_repo_root: Optional[str], tag: str):
         subprocess.call(["git", "clone", "--depth", "1", "--branch", "master", AIRBYTE_REPO_URL])
         os.chdir("./airbyte")
         subprocess.call(["git", "fetch", "--all", "--tags"])
-        subprocess.call(["git", "checkout", "-b" f"tags/{tag}", f"tags/{tag}"])
+        subprocess.call(["git", "checkout", f"-btags/{tag}", f"tags/{tag}"])
 
         yield os.path.join(str(build_dir), "airbyte")
 
@@ -508,7 +497,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
     with airbyte_repo_path(airbyte_repo_root, airbyte_tag) as airbyte_dir:
         connectors_root = os.path.join(airbyte_dir, "airbyte-integrations/connectors")
 
-        for (title, prefix, out_file, imp, is_source) in [
+        for title, prefix, out_file, imp, is_source in [
             ("Source", "source-", SOURCE_OUT_FILE, "GeneratedAirbyteSource", True),
             ("Destination", "destination-", DEST_OUT_FILE, "GeneratedAirbyteDestination", False),
         ]:
@@ -517,7 +506,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
 
             click.secho(f"\n\nGenerating Airbyte {title} Classes...\n\n\n", fg="green")
 
-            out = f"""# pylint: disable=unused-import,redefined-builtin
+            out = f"""# ruff: noqa: F401, A002
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import {imp}
@@ -555,7 +544,6 @@ from dagster._annotations import public
                     )
                     for root, file in files:
                         if file == "spec.json" or file == "spec.yml" or file == "spec.yaml":
-
                             # First, attempt to load the spec file and generate
                             # the class definition
                             new_out = out
@@ -591,7 +579,7 @@ from dagster._annotations import public
                                 failures.append((connector_name_human_readable, e))
                                 continue
 
-                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")
+                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")  # noqa: T201
                 click.secho(f"{successes} successes", fg="green")
                 click.secho(f"{len(failures)} failures", fg="red")
 
@@ -601,7 +589,7 @@ from dagster._annotations import public
                 if failure[0] not in EXPECTED_FAILURES:
                     raise failure[1]
 
-            subprocess.call(["black", out_file])
+            subprocess.call(["ruff", "format", out_file])
 
 
 if __name__ == "__main__":

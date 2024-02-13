@@ -13,12 +13,17 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors i
     asset_a_and_b_sensor_with_skip_reason,
     downstream_daily_asset,
     downstream_weekly_asset,
+    test_my_asset_sensor,
     trigger_daily_asset_if_both_upstream_partitions_materialized,
     trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
     trigger_weekly_asset_from_daily_asset,
     upstream_daily_1,
     upstream_daily_2,
 )
+
+
+def test_single_asset_sensor():
+    test_my_asset_sensor()
 
 
 def test_asset_sensors():
@@ -89,7 +94,7 @@ def test_multi_asset_sensor_AND():
             trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx)
         )
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert run_requests[0].partition_key == "2022-08-01"
 
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-02")
         assert (
@@ -108,7 +113,7 @@ def test_multi_asset_sensor_AND():
             trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx)
         )
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-02"
+        assert run_requests[0].partition_key == "2022-08-02"
 
 
 def test_multi_asset_sensor_OR():
@@ -132,7 +137,7 @@ def test_multi_asset_sensor_OR():
             )
         )
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert run_requests[0].partition_key == "2022-08-01"
 
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-01")
         run_requests = list(
@@ -141,7 +146,7 @@ def test_multi_asset_sensor_OR():
             )
         )
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert run_requests[0].partition_key == "2022-08-01"
 
 
 def test_multi_asset_sensor_weekly_from_daily():
@@ -163,7 +168,7 @@ def test_multi_asset_sensor_weekly_from_daily():
         )
         run_requests = list(trigger_weekly_asset_from_daily_asset(ctx))
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-14"
+        assert run_requests[0].partition_key == "2022-08-14"
 
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-21")
         run_requests = list(trigger_weekly_asset_from_daily_asset(ctx))
@@ -172,4 +177,4 @@ def test_multi_asset_sensor_weekly_from_daily():
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-20")
         run_requests = list(trigger_weekly_asset_from_daily_asset(ctx))
         assert len(run_requests) == 1
-        assert run_requests[0].tags["dagster/partition"] == "2022-08-14"
+        assert run_requests[0].partition_key == "2022-08-14"

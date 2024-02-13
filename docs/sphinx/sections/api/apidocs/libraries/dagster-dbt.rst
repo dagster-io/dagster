@@ -7,10 +7,18 @@ etc. in a single workflow. Dagster's software-defined asset abstractions make it
 data assets that depend on specific dbt models, or to define the computation required to compute
 the sources that your dbt models depend on.
 
-Related guides: `Visualize and orchestrate assets in dbt Core </integrations/dbt>`_ and
-`dbt Cloud <integrations/dbt-cloud>`_.
+Related documentation pages: `dbt </integrations/dbt>`_ and
+`dbt Cloud </integrations/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
+
+***********
+dagster-dbt
+***********
+
+.. click:: dagster_dbt.cli.app:project_app_typer_click_object
+    :prog: dagster-dbt project scaffold
+    :nested:
 
 ********
 dbt Core
@@ -26,15 +34,51 @@ Assets (dbt Core)
 
 .. autofunction:: load_assets_from_dbt_manifest
 
+.. autodecorator:: dbt_assets
+
+.. autoclass:: DagsterDbtTranslator
+
+.. autoclass:: DagsterDbtTranslatorSettings
+
 .. autoclass:: DbtManifestAssetSelection
+
+.. autofunction:: build_dbt_asset_selection
+
+.. autofunction:: build_schedule_from_dbt_selection
+
+.. autofunction:: get_asset_key_for_model
+
+.. autofunction:: get_asset_key_for_source
+
+.. autofunction:: get_asset_keys_by_output_name_for_source
+
+Resources (dbt Core)
+====================
+
+CLI Resource
+------------
+
+.. autoclass:: DbtCliResource
+
+.. autoclass:: DbtCliInvocation
+
+.. autoclass:: DbtCliEventMessage
+
+Deprecated (dbt Core)
+-----------------------
+
+.. autoclass:: DbtCliOutput
+
+.. autoconfigurable:: dbt_cli_resource
+    :annotation: ResourceDefinition
 
 Ops (dbt Core)
 ==============
 
 If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
 
-``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
-more advanced use cases, we suggest building your own ops which directly interact with these resources.
+``dagster_dbt`` provides a set of pre-built ops that work with the CLI. For more advanced use cases,
+we suggest building your own ops which directly interact with these resources.
 
 .. autoconfigurable:: dbt_run_op
 
@@ -49,42 +93,6 @@ more advanced use cases, we suggest building your own ops which directly interac
 .. autofunction:: dbt_seed_op
 
 .. autofunction:: dbt_docs_generate_op
-
-Resources (dbt Core)
-====================
-
-CLI Resources
--------------
-
-.. autoclass:: DbtCliResource
-    :members:
-
-.. autoclass:: DbtCliOutput
-    :members:
-
-.. autoconfigurable:: dbt_cli_resource
-    :annotation: ResourceDefinition
-
-RPC Resources
--------------
-
-.. autoclass:: DbtRpcResource
-    :members:
-
-.. autoclass:: DbtRpcSyncResource
-    :members:
-
-.. autoclass:: DbtRpcOutput
-    :members:
-
-.. autodata:: local_dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_sync_resource
-    :annotation: ResourceDefinition
 
 *********
 dbt Cloud
@@ -105,8 +113,10 @@ Ops (dbt Cloud)
 Resources (dbt Cloud)
 =====================
 
-.. autoclass:: DbtCloudResourceV2
-    :members:
+.. autoclass:: DbtCloudClientResource
+
+Deprecated (dbt Cloud)
+----------------------
 
 .. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
@@ -116,10 +126,8 @@ Types
 *****
 
 .. autoclass:: DbtOutput
-    :members:
 
 .. autoclass:: DbtResource
-    :members:
 
 ******
 Errors
@@ -137,11 +145,15 @@ Errors
 
 .. autoexception:: DagsterDbtCliUnexpectedOutputError
 
-.. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
-
 *****
 Utils
 *****
+
+.. autofunction:: default_group_from_dbt_resource_props
+
+.. autofunction:: group_from_dbt_resource_props_fallback_to_directory
+
+.. autofunction:: default_metadata_from_dbt_resource_props
 
 .. currentmodule:: dagster_dbt.utils
 

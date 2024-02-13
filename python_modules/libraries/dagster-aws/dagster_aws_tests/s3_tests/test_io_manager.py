@@ -1,6 +1,12 @@
+import pickle
+from typing import Any, Callable, Tuple
+
+import pytest
 from dagster import (
+    ConfigurableResource,
     GraphIn,
     GraphOut,
+    IAttachDifferentObjectToOpContext,
     In,
     Int,
     Out,
@@ -10,16 +16,23 @@ from dagster import (
     asset,
     graph,
     job,
-    materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
+
+
+class S3TestResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    def get_client(self) -> Any:
+        return construct_s3_client(max_attempts=5)
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_client()
 
 
 @resource
@@ -27,7 +40,20 @@ def s3_test_resource(_):
     return construct_s3_client(max_attempts=5)
 
 
-def define_inty_job():
+@pytest.fixture(name="s3_and_io_manager", params=[True, False])
+def s3_and_io_manager_fixture(
+    request,
+) -> Tuple[Any, Callable[[Any], Any]]:
+    if request.param:
+        return s3_test_resource, lambda _: s3_pickle_io_manager
+    else:
+        return (
+            S3TestResource(),
+            lambda s3: S3PickleIOManager.configure_at_launch(s3_resource=s3),
+        )
+
+
+def define_inty_job(s3_resource, s3_io_manager_builder):
     @op(out=Out(Int))
     def return_one():
         return 1
@@ -41,8 +67,8 @@ def define_inty_job():
 
     @job(
         resource_defs={
-            "io_manager": s3_pickle_io_manager,
-            "s3": s3_test_resource,
+            "io_manager": s3_io_manager_builder(s3_resource),
+            "s3": s3_resource,
         }
     )
     def basic_external_plan_execution():
@@ -51,9 +77,11 @@ def define_inty_job():
     return basic_external_plan_execution
 
 
-def test_s3_pickle_io_manager_execution(mock_s3_bucket):
+def test_s3_pickle_io_manager_execution(mock_s3_bucket, s3_and_io_manager):
     assert not len(list(mock_s3_bucket.objects.all()))
-    inty_job = define_inty_job()
+
+    s3_resource, s3_io_manager_builder = s3_and_io_manager
+    inty_job = define_inty_job(s3_resource, s3_io_manager_builder)
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
 
@@ -128,21 +156,23 @@ def test_memoization_s3_io_manager(mock_s3_bucket):
 def define_assets_job(bucket):
     @op
     def first_op(first_input):
-        assert first_input == 2
+        assert first_input == 4
         return first_input * 2
 
     @op
     def second_op(second_input):
-        assert second_input == 4
+        assert second_input == 8
         return second_input + 3
 
+    source1 = SourceAsset("source1", partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+
     @asset
-    def asset1():
-        return 1
+    def asset1(source1):
+        return source1["foo"] + source1["bar"]
 
     @asset
     def asset2(asset1):
-        assert asset1 == 1
+        assert asset1 == 3
         return asset1 + 1
 
     @graph(ins={"asset2": GraphIn()}, out={"asset3": GraphOut()})
@@ -156,6 +186,7 @@ def define_assets_job(bucket):
     return build_assets_job(
         name="assets",
         assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
+        source_assets=[source1],
         resource_defs={
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
@@ -166,17 +197,23 @@ def define_assets_job(bucket):
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
     assert not len(list(mock_s3_bucket.objects.all()))
     inty_job = define_assets_job(mock_s3_bucket.name)
+    # pickled_source1_foo = pickle.dumps(1)
+    mock_s3_bucket.put_object(Key="dagster/source1/foo", Body=pickle.dumps(1))
+    # pickled_source1_bar = pickle.dumps(2)
+    mock_s3_bucket.put_object(Key="dagster/source1/bar", Body=pickle.dumps(2))
 
     result = inty_job.execute_in_process(partition_key="apple")
 
-    assert result.output_for_node("asset1") == 1
-    assert result.output_for_node("asset2") == 2
-    assert result.output_for_node("graph_asset.first_op") == 4
-    assert result.output_for_node("graph_asset.second_op") == 7
+    assert result.output_for_node("asset1") == 3
+    assert result.output_for_node("asset2") == 4
+    assert result.output_for_node("graph_asset.first_op") == 8
+    assert result.output_for_node("graph_asset.second_op") == 11
 
     objects = list(mock_s3_bucket.objects.all())
-    assert len(objects) == 5
+    assert len(objects) == 7
     assert {(o.bucket_name, o.key) for o in objects} == {
+        ("test-bucket", "dagster/source1/bar"),
+        ("test-bucket", "dagster/source1/foo"),
         ("test-bucket", "dagster/asset1"),
         ("test-bucket", "dagster/asset2"),
         ("test-bucket", "dagster/asset3"),
@@ -186,29 +223,3 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
             "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
         ),
     }
-
-
-def test_nothing(mock_s3_bucket):
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(non_argument_deps={"asset1"})
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": s3_pickle_io_manager.configured({"s3_bucket": mock_s3_bucket.name}),
-                "s3": s3_test_resource,
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata_entries) == 0

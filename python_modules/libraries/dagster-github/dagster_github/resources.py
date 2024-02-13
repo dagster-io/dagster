@@ -1,17 +1,22 @@
 import time
 from datetime import datetime
+from typing import Optional
 
 import jwt
 import requests
-from dagster import Field, IntSource, StringSource, resource
+from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from pydantic import Field
 
 
 def to_seconds(dt):
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
-class GithubResource:
-    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None):
+class GithubClient:
+    def __init__(
+        self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None
+    ) -> None:
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
@@ -56,9 +61,11 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get(
-            "https://api.github.com/app/installations"
-            if self.hostname is None
-            else "https://{}/api/v3/app/installations".format(self.hostname),
+            (
+                "https://api.github.com/app/installations"
+                if self.hostname is None
+                else f"https://{self.hostname}/api/v3/app/installations"
+            ),
             headers=headers,
         )
         request.raise_for_status()
@@ -71,10 +78,12 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
-            "https://api.github.com/app/installations/{}/access_tokens".format(installation_id)
-            if self.hostname is None
-            else "https://{}/api/v3/app/installations/{}/access_tokens".format(
-                self.hostname, installation_id
+            (
+                f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+                if self.hostname is None
+                else "https://{}/api/v3/app/installations/{}/access_tokens".format(
+                    self.hostname, installation_id
+                )
             ),
             headers=headers,
         )
@@ -101,9 +110,11 @@ class GithubResource:
             self.installation_tokens[installation_id]["value"]
         )
         request = requests.post(
-            "https://api.github.com/graphql"
-            if self.hostname is None
-            else "https://{}/api/graphql".format(self.hostname),
+            (
+                "https://api.github.com/graphql"
+                if self.hostname is None
+                else f"https://{self.hostname}/api/graphql"
+            ),
             json={"query": query, "variables": variables},
             headers=headers,
         )
@@ -151,45 +162,49 @@ class GithubResource:
         )
 
 
+class GithubResource(ConfigurableResource):
+    github_app_id: int = Field(
+        description="Github Application ID, for more info see https://developer.github.com/apps/",
+    )
+    github_app_private_rsa_key: str = Field(
+        description=(
+            "Github Application Private RSA key text, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+    github_installation_id: Optional[int] = Field(
+        default=None,
+        description=(
+            "Github Application Installation ID, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+    github_hostname: Optional[str] = Field(
+        default=None,
+        description=(
+            "Github hostname. Defaults to `api.github.com`, for more info see"
+            " https://developer.github.com/apps/"
+        ),
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def get_client(self) -> GithubClient:
+        return GithubClient(
+            client=requests.Session(),
+            app_id=self.github_app_id,
+            app_private_rsa_key=self.github_app_private_rsa_key,
+            default_installation_id=self.github_installation_id,
+            hostname=self.github_hostname,
+        )
+
+
+@dagster_maintained_resource
 @resource(
-    config_schema={
-        "github_app_id": Field(
-            IntSource,
-            description=(
-                "Github Application ID, for more info see https://developer.github.com/apps/"
-            ),
-        ),
-        "github_app_private_rsa_key": Field(
-            StringSource,
-            description=(
-                "Github Application Private RSA key text, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-        "github_installation_id": Field(
-            IntSource,
-            is_required=False,
-            description=(
-                "Github Application Installation ID, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-        "github_hostname": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "Github hostname. Defaults to `api.github.com`, for more info see"
-                " https://developer.github.com/apps/"
-            ),
-        ),
-    },
+    config_schema=GithubResource.to_config_schema(),
     description="This resource is for connecting to Github",
 )
-def github_resource(context):
-    return GithubResource(
-        client=requests.Session(),
-        app_id=context.resource_config["github_app_id"],
-        app_private_rsa_key=context.resource_config["github_app_private_rsa_key"],
-        default_installation_id=context.resource_config["github_installation_id"],
-        hostname=context.resource_config.get("github_hostname", None),
-    )
+def github_resource(context) -> GithubClient:
+    return GithubResource(**context.resource_config).get_client()

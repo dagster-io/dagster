@@ -1,0 +1,31 @@
+# name: test_get_used_env_vars[0]
+  dict({
+    'utilizedEnvVarsOrError': dict({
+      '__typename': 'EnvVarWithConsumersList',
+      'results': list([
+        dict({
+          'envVarConsumers': list([
+            dict({
+              'name': 'my_resource_two_env_vars',
+              'type': 'RESOURCE',
+            }),
+          ]),
+          'envVarName': 'MY_OTHER_STRING',
+        }),
+        dict({
+          'envVarConsumers': list([
+            dict({
+              'name': 'my_resource_env_vars',
+              'type': 'RESOURCE',
+            }),
+            dict({
+              'name': 'my_resource_two_env_vars',
+              'type': 'RESOURCE',
+            }),
+          ]),
+          'envVarName': 'MY_STRING',
+        }),
+      ]),
+    }),
+  })
+# ---

@@ -4,12 +4,18 @@ from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+from typing_extensions import Self
+
+MANAGED_ELEMENTS_DEPRECATION_MSG = (
+    "Dagster is deprecating support for ingestion-as-code."
+    " We suggest using the Airbyte terraform provider:"
+    " https://reference.airbyte.com/reference/using-the-terraform-provider."
+)
 
 
 class AirbyteSyncMode(ABC):
-    """
-    Represents the sync mode for a given Airbyte stream, which governs how Airbyte reads
+    """Represents the sync mode for a given Airbyte stream, which governs how Airbyte reads
     from a source and writes to a destination.
 
     For more information, see https://docs.airbyte.com/understanding-airbyte/connections/.
@@ -37,8 +43,7 @@ class AirbyteSyncMode(ABC):
     @public
     @classmethod
     def full_refresh_append(cls) -> "AirbyteSyncMode":
-        """
-        Syncs the entire data stream from the source, appending rows to the destination.
+        """Syncs the entire data stream from the source, appending rows to the destination.
 
         https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-append/
         """
@@ -47,8 +52,7 @@ class AirbyteSyncMode(ABC):
     @public
     @classmethod
     def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
-        """
-        Syncs the entire data stream from the source, replaces data in the destination by
+        """Syncs the entire data stream from the source, replaces data in the destination by
         overwriting it.
 
         https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-overwrite
@@ -61,8 +65,7 @@ class AirbyteSyncMode(ABC):
         cls,
         cursor_field: Optional[str] = None,
     ) -> "AirbyteSyncMode":
-        """
-        Syncs only new records from the source, appending rows to the destination.
+        """Syncs only new records from the source, appending rows to the destination.
         May optionally specify the cursor field used to determine which records
         are new.
 
@@ -85,8 +88,7 @@ class AirbyteSyncMode(ABC):
         cursor_field: Optional[str] = None,
         primary_key: Optional[Union[str, List[str]]] = None,
     ) -> "AirbyteSyncMode":
-        """
-        Syncs new records from the source, appending to an append-only history
+        """Syncs new records from the source, appending to an append-only history
         table in the destination. Also generates a deduplicated view mirroring the
         source table. May optionally specify the cursor field used to determine
         which records are new, and the primary key used to determine which records
@@ -110,20 +112,18 @@ class AirbyteSyncMode(ABC):
 
 
 class AirbyteSource:
-    """
-    Represents a user-defined Airbyte source.
+    """Represents a user-defined Airbyte source.
+
+    Args:
+        name (str): The display name of the source.
+        source_type (str): The type of the source, from Airbyte's list
+            of sources https://airbytehq.github.io/category/sources/.
+        source_configuration (Mapping[str, Any]): The configuration for the
+            source, as defined by Airbyte's API.
     """
 
     @public
     def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
-        """
-        Args:
-            name (str): The display name of the source.
-            source_type (str): The type of the source, from Airbyte's list
-                of sources https://airbytehq.github.io/category/sources/.
-            source_configuration (Mapping[str, Any]): The configuration for the
-                source, as defined by Airbyte's API.
-        """
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
         self.source_configuration = check.mapping_param(
@@ -135,9 +135,7 @@ class AirbyteSource:
 
 
 class InitializedAirbyteSource:
-    """
-    User-defined Airbyte source bound to actual created Airbyte source.
-    """
+    """User-defined Airbyte source bound to actual created Airbyte source."""
 
     def __init__(self, source: AirbyteSource, source_id: str, source_definition_id: Optional[str]):
         self.source = source
@@ -158,22 +156,20 @@ class InitializedAirbyteSource:
 
 
 class AirbyteDestination:
-    """
-    Represents a user-defined Airbyte destination.
+    """Represents a user-defined Airbyte destination.
+
+    Args:
+        name (str): The display name of the destination.
+        destination_type (str): The type of the destination, from Airbyte's list
+            of destinations https://airbytehq.github.io/category/destinations/.
+        destination_configuration (Mapping[str, Any]): The configuration for the
+            destination, as defined by Airbyte's API.
     """
 
     @public
     def __init__(
         self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
     ):
-        """
-        Args:
-            name (str): The display name of the destination.
-            destination_type (str): The type of the destination, from Airbyte's list
-                of destinations https://airbytehq.github.io/category/destinations/.
-            destination_configuration (Mapping[str, Any]): The configuration for the
-                destination, as defined by Airbyte's API.
-        """
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
         self.destination_configuration = check.mapping_param(
@@ -185,9 +181,7 @@ class AirbyteDestination:
 
 
 class InitializedAirbyteDestination:
-    """
-    User-defined Airbyte destination bound to actual created Airbyte destination.
-    """
+    """User-defined Airbyte destination bound to actual created Airbyte destination."""
 
     def __init__(
         self,
@@ -213,18 +207,51 @@ class InitializedAirbyteDestination:
 
 
 class AirbyteDestinationNamespace(Enum):
-    """
-    Represents the sync mode for a given Airbyte stream.
-    """
+    """Represents the sync mode for a given Airbyte stream."""
 
     SAME_AS_SOURCE = "source"
     DESTINATION_DEFAULT = "destination"
 
 
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteConnection:
-    """
-    A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
+    """A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
     which streams to sync.
+
+    Args:
+        name (str): The display name of the connection.
+        source (AirbyteSource): The source to sync from.
+        destination (AirbyteDestination): The destination to sync to.
+        stream_config (Mapping[str, AirbyteSyncMode]): A mapping from stream name to
+            the sync mode for that stream, including any additional configuration
+            of primary key or cursor field.
+        normalize_data (Optional[bool]): Whether to normalize the data in the
+            destination.
+        destination_namespace (Optional[Union[AirbyteDestinationNamespace, str]]):
+            The namespace to sync to in the destination. If set to
+            AirbyteDestinationNamespace.SAME_AS_SOURCE, the namespace will be the
+            same as the source namespace. If set to
+            AirbyteDestinationNamespace.DESTINATION_DEFAULT, the namespace will be
+            the default namespace for the destination. If set to a string, the
+            namespace will be that string.
+        prefix (Optional[str]): A prefix to add to the table names in the destination.
+
+    Example:
+        .. code-block:: python
+
+            from dagster_airbyte.managed.generated.sources import FileSource
+            from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
+            from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
+
+            cereals_csv_source = FileSource(...)
+            local_json_destination = LocalJsonDestination(...)
+
+            cereals_connection = AirbyteConnection(
+                name="download-cereals",
+                source=cereals_csv_source,
+                destination=local_json_destination,
+                stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
+            )
     """
 
     @public
@@ -240,42 +267,6 @@ class AirbyteConnection:
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
         prefix: Optional[str] = None,
     ):
-        """
-        Args:
-            name (str): The display name of the connection.
-            source (AirbyteSource): The source to sync from.
-            destination (AirbyteDestination): The destination to sync to.
-            stream_config (Mapping[str, AirbyteSyncMode]): A mapping from stream name to
-                the sync mode for that stream, including any additional configuration
-                of primary key or cursor field.
-            normalize_data (Optional[bool]): Whether to normalize the data in the
-                destination.
-            destination_namespace (Optional[Union[AirbyteDestinationNamespace, str]]):
-                The namespace to sync to in the destination. If set to
-                AirbyteDestinationNamespace.SAME_AS_SOURCE, the namespace will be the
-                same as the source namespace. If set to
-                AirbyteDestinationNamespace.DESTINATION_DEFAULT, the namespace will be
-                the default namespace for the destination. If set to a string, the
-                namespace will be that string.
-            prefix (Optional[str]): A prefix to add to the table names in the destination.
-
-        Example:
-            .. code-block:: python
-
-                from dagster_airbyte.managed.generated.sources import FileSource
-                from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
-                from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
-
-                cereals_csv_source = FileSource(...)
-                local_json_destination = LocalJsonDestination(...)
-
-                cereals_connection = AirbyteConnection(
-                    name="download-cereals",
-                    source=cereals_csv_source,
-                    destination=local_json_destination,
-                    stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
-                )
-        """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
         self.destination = check.inst_param(destination, "destination", AirbyteDestination)
@@ -297,9 +288,7 @@ class AirbyteConnection:
 
 
 class InitializedAirbyteConnection:
-    """
-    User-defined Airbyte connection bound to actual created Airbyte connection.
-    """
+    """User-defined Airbyte connection bound to actual created Airbyte connection."""
 
     def __init__(
         self,
@@ -315,7 +304,7 @@ class InitializedAirbyteConnection:
         api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
-    ):
+    ) -> Self:
         source = next(
             (
                 source.source
@@ -349,9 +338,11 @@ class InitializedAirbyteConnection:
                 destination=dest,
                 stream_config=streams,
                 normalize_data=len(api_dict["operationIds"]) > 0,
-                destination_namespace=api_dict["namespaceFormat"]
-                if api_dict["namespaceDefinition"] == "customformat"
-                else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
+                destination_namespace=(
+                    api_dict["namespaceFormat"]
+                    if api_dict["namespaceDefinition"] == "customformat"
+                    else AirbyteDestinationNamespace(api_dict["namespaceDefinition"])
+                ),
                 prefix=api_dict["prefix"] if api_dict.get("prefix") else None,
             ),
             api_dict["connectionId"],
@@ -367,8 +358,7 @@ def _dump_class(obj: Any) -> Dict[str, Any]:
 
 
 class GeneratedAirbyteSource(AirbyteSource):
-    """
-    Base class used by the codegen Airbyte sources. This class is not intended to be used directly.
+    """Base class used by the codegen Airbyte sources. This class is not intended to be used directly.
 
     Converts all of its attributes into a source configuration dict which is passed down to the base
     AirbyteSource class.
@@ -382,8 +372,7 @@ class GeneratedAirbyteSource(AirbyteSource):
 
 
 class GeneratedAirbyteDestination(AirbyteDestination):
-    """
-    Base class used by the codegen Airbyte destinations. This class is not intended to be used directly.
+    """Base class used by the codegen Airbyte destinations. This class is not intended to be used directly.
 
     Converts all of its attributes into a destination configuration dict which is passed down to the
     base AirbyteDestination class.

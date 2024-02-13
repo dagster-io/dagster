@@ -1,7 +1,7 @@
-# isort: split
+# ruff: isort: split
 # start
 
-from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
 from dagster import file_relative_path, job
 
@@ -14,7 +14,7 @@ k_means_iris = define_dagstermill_op(
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
     }
 )
 def iris_classify():

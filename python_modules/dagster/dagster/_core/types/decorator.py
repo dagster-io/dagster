@@ -5,7 +5,7 @@ import dagster._check as check
 from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 
 if TYPE_CHECKING:
-    from dagster._core.types.config_schema import DagsterTypeLoader, DagsterTypeMaterializer
+    from dagster._core.types.config_schema import DagsterTypeLoader
 
 T_Type = TypeVar("T_Type", bound=Type[object])
 
@@ -15,7 +15,6 @@ def usable_as_dagster_type(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     loader: Optional["DagsterTypeLoader"] = ...,
-    materializer: Optional["DagsterTypeMaterializer"] = ...,
 ) -> Callable[[T_Type], T_Type]:
     ...
 
@@ -27,11 +26,10 @@ def usable_as_dagster_type(
     ...
 
 
-def usable_as_dagster_type(  # type: ignore  # bug
+def usable_as_dagster_type(
     name: Optional[Union[str, T_Type]] = None,
     description: Optional[str] = None,
     loader: Optional["DagsterTypeLoader"] = None,
-    materializer: Optional["DagsterTypeMaterializer"] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorate a Python class to make it usable as a Dagster Type.
 
@@ -49,11 +47,6 @@ def usable_as_dagster_type(  # type: ignore  # bug
             config machinery. As a rule, you should use the
             :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
-            that inherits from :py:class:`DagsterTypeMaterializer` and can persist values of
-            this type. As a rule, you should use the
-            :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
-            decorator to construct these arguments.
 
     Examples:
         .. code-block:: python
@@ -101,7 +94,6 @@ def usable_as_dagster_type(  # type: ignore  # bug
                 description=description,
                 python_type=bare_cls,
                 loader=loader,
-                materializer=materializer,
             ),
         )
         return bare_cls

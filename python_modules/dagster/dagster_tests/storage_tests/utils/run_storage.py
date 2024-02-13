@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import time
+import unittest
 from datetime import datetime, timedelta
 
 import pendulum
@@ -16,22 +17,21 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.snap import create_pipeline_snapshot_id
-from dagster._core.storage.event_log import InMemoryEventLogStorage
-from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.storage.pipeline_run import (
+from dagster._core.snap import create_job_snapshot_id
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
-    JobBucket,
     RunsFilter,
-    TagBucket,
 )
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
@@ -46,7 +46,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -59,8 +59,7 @@ def _get_run_by_id(storage, run_id):
 
 
 class TestRunStorage:
-    """
-    You can extend this class to easily run these set of tests on any run storage. When extending,
+    """You can extend this class to easily run these set of tests on any run storage. When extending,
     you simply need to override the `run_storage` fixture and return your implementation of
     `RunStorage`.
 
@@ -71,7 +70,7 @@ class TestRunStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def run_storage(self):  # pylint: disable=arguments-differ
+        def run_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -91,7 +90,7 @@ class TestRunStorage:
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),
@@ -101,7 +100,7 @@ class TestRunStorage:
 
     @classmethod
     def fake_job_origin(cls, job_name, repo_name=None):
-        return cls.fake_repo_target(repo_name).get_pipeline_origin(job_name)
+        return cls.fake_repo_target(repo_name).get_job_origin(job_name)
 
     @classmethod
     def fake_partition_set_origin(cls, partition_set_name):
@@ -110,48 +109,44 @@ class TestRunStorage:
     @staticmethod
     def build_run(
         run_id,
-        pipeline_name,
-        mode="default",
+        job_name,
         tags=None,
         status=DagsterRunStatus.NOT_STARTED,
         parent_run_id=None,
         root_run_id=None,
-        pipeline_snapshot_id=None,
-        external_pipeline_origin=None,
+        job_snapshot_id=None,
+        external_job_origin=None,
     ):
         return DagsterRun(
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             run_id=run_id,
             run_config=None,
-            mode=mode,
             tags=tags,
             status=status,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot_id=pipeline_snapshot_id,
-            external_pipeline_origin=external_pipeline_origin,
+            job_snapshot_id=job_snapshot_id,
+            external_job_origin=external_job_origin,
         )
 
     def test_basic_storage(self, storage):
         assert storage
         run_id = make_new_run_id()
         added = storage.add_run(
-            TestRunStorage.build_run(
-                run_id=run_id, pipeline_name="some_pipeline", tags={"foo": "bar"}
-            )
+            TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline", tags={"foo": "bar"})
         )
         assert added
         runs = storage.get_runs()
         assert len(runs) == 1
         run = runs[0]
         assert run.run_id == run_id
-        assert run.pipeline_name == "some_pipeline"
+        assert run.job_name == "some_pipeline"
         assert run.tags
         assert run.tags.get("foo") == "bar"
         assert storage.has_run(run_id)
         fetched_run = _get_run_by_id(storage, run_id)
         assert fetched_run.run_id == run_id
-        assert fetched_run.pipeline_name == "some_pipeline"
+        assert fetched_run.job_name == "some_pipeline"
 
     def test_clear(self, storage):
         if not self.can_delete_runs():
@@ -159,7 +154,7 @@ class TestRunStorage:
 
         assert storage
         run_id = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name="some_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 1
         storage.wipe()
         assert list(storage.get_runs()) == []
@@ -171,14 +166,14 @@ class TestRunStorage:
         storage_id_again = storage.get_run_storage_id()
         assert storage_id == storage_id_again
 
-    def test_fetch_by_pipeline(self, storage):
+    def test_fetch_by_job(self, storage):
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name="some_pipeline"))
-        storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="some_other_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="some_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="some_other_pipeline"))
         assert len(storage.get_runs()) == 2
-        some_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
+        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -193,14 +188,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=one, pipeline_name=job_name, external_pipeline_origin=origin_one
-            )
+            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=two, pipeline_name=job_name, external_pipeline_origin=origin_two
-            )
+            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_two)
         )
         one_runs = storage.get_runs(
             RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_one@fake:fake"})
@@ -213,38 +204,38 @@ class TestRunStorage:
 
     def test_fetch_by_snapshot_id(self, storage):
         assert storage
-        pipeline_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot_a = pipeline_def_a.get_pipeline_snapshot()
-        pipeline_snapshot_b = pipeline_def_b.get_pipeline_snapshot()
-        pipeline_snapshot_a_id = create_pipeline_snapshot_id(pipeline_snapshot_a)
-        pipeline_snapshot_b_id = create_pipeline_snapshot_id(pipeline_snapshot_b)
+        job_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
+        job_snapshot_a = job_def_a.get_job_snapshot()
+        job_snapshot_b = job_def_b.get_job_snapshot()
+        job_snapshot_a_id = create_job_snapshot_id(job_snapshot_a)
+        job_snapshot_b_id = create_job_snapshot_id(job_snapshot_b)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
-        assert storage.add_pipeline_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
+        assert storage.add_job_snapshot(job_snapshot_a) == job_snapshot_a_id
+        assert storage.add_job_snapshot(job_snapshot_b) == job_snapshot_b_id
 
         one = make_new_run_id()
         two = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
-                pipeline_name="some_pipeline",
-                pipeline_snapshot_id=pipeline_snapshot_a_id,
+                job_name="some_pipeline",
+                job_snapshot_id=job_snapshot_a_id,
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
-                pipeline_name="some_other_pipeline",
-                pipeline_snapshot_id=pipeline_snapshot_b_id,
+                job_name="some_other_pipeline",
+                job_snapshot_id=job_snapshot_b_id,
             )
         )
         assert len(storage.get_runs()) == 2
-        runs_a = storage.get_runs(RunsFilter(snapshot_id=pipeline_snapshot_a_id))
+        runs_a = storage.get_runs(RunsFilter(snapshot_id=job_snapshot_a_id))
         assert len(runs_a) == 1
         assert runs_a[0].run_id == one
 
-        runs_b = storage.get_runs(RunsFilter(snapshot_id=pipeline_snapshot_b_id))
+        runs_b = storage.get_runs(RunsFilter(snapshot_id=job_snapshot_b_id))
         assert len(runs_b) == 1
         assert runs_b[0].run_id == two
 
@@ -253,8 +244,8 @@ class TestRunStorage:
         one = make_new_run_id()
         two = make_new_run_id()
 
-        storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name="foo"))
-        storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="bar"))
+        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
+        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="bar"))
 
         assert storage.get_run_tags() == []
 
@@ -338,6 +329,48 @@ class TestRunStorage:
             "tag4": "val4",
         }
 
+    def test_get_run_tags(self, storage):
+        one = make_new_run_id()
+        two = make_new_run_id()
+        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
+        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="foo"))
+        storage.add_run_tags(
+            one,
+            {
+                "tag1": "val1",
+                "tag2": "val2",
+                "tag3": "val3",
+                "tag4": "val4",
+                "x_1": "x_1",
+                "x_2": "x_2",
+            },
+        )
+        storage.add_run_tags(two, {"tag1": "val3"})
+
+        # test getting run tag keys
+        assert storage.get_run_tag_keys() == ["tag1", "tag2", "tag3", "tag4", "x_1", "x_2"]
+
+        # test getting run tags with key filter
+        assert storage.get_run_tags(tag_keys=["tag1"]) == [
+            ("tag1", {"val1", "val3"}),
+        ]
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2"]) == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+        ]
+
+        # test getting run tags with prefix
+        assert storage.get_run_tags(value_prefix="x_") == [
+            ("x_1", {"x_1"}),
+            ("x_2", {"x_2"}),
+        ]
+
+        # test getting run tags with limit
+        assert storage.get_run_tags(limit=3) == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+        ]
+
     def test_fetch_by_filter(self, storage):
         assert storage
         one = make_new_run_id()
@@ -348,7 +381,7 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello", "tag2": "world"},
                 status=DagsterRunStatus.SUCCESS,
             )
@@ -356,7 +389,7 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello"},
                 status=DagsterRunStatus.FAILURE,
             ),
@@ -364,14 +397,14 @@ class TestRunStorage:
 
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=three, pipeline_name="other_pipeline", status=DagsterRunStatus.SUCCESS
+                run_id=three, job_name="other_pipeline", status=DagsterRunStatus.SUCCESS
             )
         )
 
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=four,
-                pipeline_name="some_other_pipeline",
+                job_name="some_other_pipeline",
                 tags={"tag": "goodbye"},
                 status=DagsterRunStatus.FAILURE,
             ),
@@ -379,106 +412,118 @@ class TestRunStorage:
 
         assert len(storage.get_runs()) == 4
 
-        some_runs = storage.get_runs(RunsFilter(run_ids=[one]))
-        count = storage.get_runs_count(RunsFilter(run_ids=[one]))
+        run_ids_filter = RunsFilter(run_ids=[one])
+        some_runs = storage.get_runs(run_ids_filter)
+        count = storage.get_runs_count(run_ids_filter)
+        ids = storage.get_run_ids(run_ids_filter)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert ids == [one]
 
-        some_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
-        count = storage.get_runs_count(RunsFilter(pipeline_name="some_pipeline"))
+        job_name_filter = RunsFilter(job_name="some_pipeline")
+        some_runs = storage.get_runs(job_name_filter)
+        count = storage.get_runs_count(job_name_filter)
+        ids = storage.get_run_ids(job_name_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert ids == [two, one]
 
-        some_runs = storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
-        count = storage.get_runs_count(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
+        run_status_filter = RunsFilter(statuses=[DagsterRunStatus.SUCCESS])
+        some_runs = storage.get_runs(run_status_filter)
+        count = storage.get_runs_count(run_status_filter)
+        run_ids = storage.get_run_ids(run_status_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == three
         assert some_runs[1].run_id == one
+        assert run_ids == [three, one]
 
-        some_runs = storage.get_runs(RunsFilter(tags={"tag": "hello"}))
-        count = storage.get_runs_count(RunsFilter(tags={"tag": "hello"}))
+        run_tags_filter = RunsFilter(tags={"tag": "hello"})
+        some_runs = storage.get_runs(run_tags_filter)
+        count = storage.get_runs_count(run_tags_filter)
+        run_ids = storage.get_run_ids(run_tags_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert run_ids == [two, one]
 
-        some_runs = storage.get_runs(RunsFilter(tags={"tag": "hello", "tag2": "world"}))
-        count = storage.get_runs_count(RunsFilter(tags={"tag": "hello", "tag2": "world"}))
+        two_run_tags_filter = RunsFilter(tags={"tag": "hello", "tag2": "world"})
+        some_runs = storage.get_runs(two_run_tags_filter)
+        count = storage.get_runs_count(two_run_tags_filter)
+        run_ids = storage.get_run_ids(two_run_tags_filter)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
-        some_runs = storage.get_runs(
-            RunsFilter(pipeline_name="some_pipeline", tags={"tag": "hello"})
-        )
-        count = storage.get_runs_count(
-            RunsFilter(pipeline_name="some_pipeline", tags={"tag": "hello"})
-        )
+        job_and_tags_filter = RunsFilter(job_name="some_pipeline", tags={"tag": "hello"})
+        some_runs = storage.get_runs(job_and_tags_filter)
+        count = storage.get_runs_count(job_and_tags_filter)
+        run_ids = storage.get_run_ids(job_and_tags_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert run_ids == [two, one]
 
-        runs_with_multiple_tag_values = storage.get_runs(
-            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
-        )
+        multiple_tag_values_filter = RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
+        runs_with_multiple_tag_values = storage.get_runs(multiple_tag_values_filter)
         assert len(runs_with_multiple_tag_values) == 3
         assert runs_with_multiple_tag_values[0].run_id == four
         assert runs_with_multiple_tag_values[1].run_id == two
         assert runs_with_multiple_tag_values[2].run_id == one
 
-        count_with_multiple_tag_values = storage.get_runs_count(
-            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
+        multiple_tags_values_filter = RunsFilter(
+            tags={"tag": ["hello", "goodbye", "farewell"], "tag2": "world"},
         )
+        runs_with_multiple_tags_values = storage.get_runs(multiple_tags_values_filter)
+        assert len(runs_with_multiple_tags_values) == 1
+        assert runs_with_multiple_tags_values[0].run_id == one
+
+        count_with_multiple_tag_values = storage.get_runs_count(multiple_tag_values_filter)
         assert count_with_multiple_tag_values == 3
 
-        some_runs = storage.get_runs(
-            RunsFilter(
-                pipeline_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
+        assert storage.get_run_ids(multiple_tag_values_filter) == [four, two, one]
+
+        multiple_filters = RunsFilter(
+            job_name="some_pipeline",
+            tags={"tag": "hello"},
+            statuses=[DagsterRunStatus.SUCCESS],
         )
-        count = storage.get_runs_count(
-            RunsFilter(
-                pipeline_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
-        )
+        some_runs = storage.get_runs(multiple_filters)
+        count = storage.get_runs_count(multiple_filters)
+        run_ids = storage.get_run_ids(multiple_filters)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
         # All filters
-        some_runs = storage.get_runs(
-            RunsFilter(
-                run_ids=[one],
-                pipeline_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
+        all_filters = RunsFilter(
+            run_ids=[one],
+            job_name="some_pipeline",
+            tags={"tag": "hello"},
+            statuses=[DagsterRunStatus.SUCCESS],
         )
-        count = storage.get_runs_count(
-            RunsFilter(
-                run_ids=[one],
-                pipeline_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
-        )
+        some_runs = storage.get_runs(all_filters)
+        count = storage.get_runs_count(all_filters)
+        run_ids = storage.get_run_ids(all_filters)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
-        some_runs = storage.get_runs(RunsFilter())
-        count = storage.get_runs_count(RunsFilter())
+        empty_filter = RunsFilter()
+        some_runs = storage.get_runs(empty_filter)
+        count = storage.get_runs_count(empty_filter)
+        run_ids = storage.get_run_ids(empty_filter)
         assert len(some_runs) == 4
         assert count == 4
+        assert run_ids == [four, three, two, one]
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
@@ -488,18 +533,18 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"mytag": "hello", "mytag2": "world"},
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"mytag": "goodbye", "mytag2": "world"},
             )
         )
-        storage.add_run(TestRunStorage.build_run(run_id=three, pipeline_name="some_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=three, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 3
 
         run_count = storage.get_runs_count(
@@ -523,18 +568,18 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"mytag": "hello", "mytag2": "world"},
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"mytag": "goodbye", "mytag2": "world"},
             )
         )
-        storage.add_run(TestRunStorage.build_run(run_id=three, pipeline_name="some_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=three, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 3
 
         some_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello", "mytag2": "world"}))
@@ -554,40 +599,63 @@ class TestRunStorage:
         assert storage
         one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", tags={"mytag": "hello"}
-            )
+            TestRunStorage.build_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
+        )
+        storage.add_run(
+            TestRunStorage.build_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", tags={"mytag": "hello"}
-            )
-        )
-        storage.add_run(
-            TestRunStorage.build_run(
-                run_id=three, pipeline_name="some_pipeline", tags={"mytag": "hello"}
+                run_id=three, job_name="some_pipeline", tags={"mytag": "hello"}
             )
         )
 
         all_runs = storage.get_runs()
         assert len(all_runs) == 3
+        assert storage.get_run_ids() == [three, two, one]
         sliced_runs = storage.get_runs(cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(cursor=three, limit=1) == [two]
 
-        all_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
+        all_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(all_runs) == 3
-        sliced_runs = storage.get_runs(
-            RunsFilter(pipeline_name="some_pipeline"), cursor=three, limit=1
-        )
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
+        sliced_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"), cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), cursor=three, limit=1) == [
+            two
+        ]
 
         all_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello"}))
         assert len(all_runs) == 3
+        assert storage.get_run_ids(RunsFilter(tags={"mytag": "hello"})) == [three, two, one]
         sliced_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello"}), cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(RunsFilter(tags={"mytag": "hello"}), cursor=three, limit=1) == [
+            two
+        ]
+
+    def test_get_run_ids(self, storage):
+        assert storage
+
+        one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
+        storage.add_run(
+            TestRunStorage.build_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
+        )
+        storage.add_run(
+            TestRunStorage.build_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, job_name="some_pipeline", tags={"mytag": "hello"}
+            )
+        )
+
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), limit=1) == [three]
 
     def test_fetch_by_status(self, storage):
         assert storage
@@ -597,22 +665,22 @@ class TestRunStorage:
         four = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=four, pipeline_name="some_pipeline", status=DagsterRunStatus.FAILURE
+                run_id=four, job_name="some_pipeline", status=DagsterRunStatus.FAILURE
             )
         )
 
@@ -645,17 +713,17 @@ class TestRunStorage:
         three = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.FAILURE
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.FAILURE
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.handle_run_event(
@@ -663,7 +731,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
             ),
         )
         storage.handle_run_event(
@@ -671,7 +739,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
             ),
         )
 
@@ -682,7 +750,7 @@ class TestRunStorage:
         record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(updated_after=run_two_update_timestamp),
                 order_by="update_timestamp",
@@ -691,7 +759,7 @@ class TestRunStorage:
         ] == [three, one]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(
                     statuses=[DagsterRunStatus.FAILURE], updated_after=run_two_update_timestamp
@@ -700,7 +768,7 @@ class TestRunStorage:
         ] == [one]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(updated_before=record_three.update_timestamp)
             )
@@ -715,19 +783,19 @@ class TestRunStorage:
         three = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         time.sleep(2)
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         time.sleep(2)
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         records = storage.get_run_records()
@@ -735,13 +803,13 @@ class TestRunStorage:
         run_two_create_timestamp = records[1].create_timestamp
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(created_after=run_two_create_timestamp + timedelta(seconds=1)),
             )
         ] == [three]
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(created_before=run_two_create_timestamp - timedelta(seconds=1)),
             )
@@ -755,22 +823,22 @@ class TestRunStorage:
         four = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=four, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+                run_id=four, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
 
@@ -803,7 +871,7 @@ class TestRunStorage:
 
         assert storage
         run_id = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name="some_pipeline"))
+        storage.add_run(TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 1
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
@@ -817,7 +885,7 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=run_id,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={run_id: run_id},
             )
         )
@@ -827,12 +895,12 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
 
-    def test_wipe_tags(self, storage):
+    def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")
 
         run_id = "some_run_id"
-        run = DagsterRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
+        run = DagsterRun(run_id=run_id, job_name="a_pipeline", tags={"foo": "bar"})
 
         storage.add_run(run)
 
@@ -843,54 +911,52 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert dict(storage.get_run_tags()) == {}
 
-    def test_write_conflicting_run_id(self, storage):
+    def test_write_conflicting_run_id(self, storage: RunStorage):
         double_run_id = "double_run_id"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        run = DagsterRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
+        run = DagsterRun(run_id=double_run_id, job_name=job_def.name)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
             storage.add_run(run)
 
     def test_add_get_snapshot(self, storage):
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_snapshot = job_def.get_job_snapshot()
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
-        fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
-        assert fetched_pipeline_snapshot
-        assert serialize_pp(fetched_pipeline_snapshot) == serialize_pp(pipeline_snapshot)
-        assert storage.has_pipeline_snapshot(pipeline_snapshot_id)
-        assert not storage.has_pipeline_snapshot("nope")
+        assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
+        fetch_job_snapshot = storage.get_job_snapshot(job_snapshot_id)
+        assert fetch_job_snapshot
+        assert serialize_pp(fetch_job_snapshot) == serialize_pp(job_snapshot)
+        assert storage.has_job_snapshot(job_snapshot_id)
+        assert not storage.has_job_snapshot("nope")
 
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(job_snapshot_id)
 
-    def test_single_write_read_with_snapshot(self, storage):
+    def test_single_write_read_with_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        job_snapshot = job_def.get_job_snapshot()
 
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
-            pipeline_snapshot_id=pipeline_snapshot_id,
+            job_name=job_def.name,
+            job_snapshot_id=job_snapshot_id,
         )
 
-        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+        assert not storage.has_job_snapshot(job_snapshot_id)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+        assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
 
-        assert serialize_pp(storage.get_pipeline_snapshot(pipeline_snapshot_id)) == serialize_pp(
-            pipeline_snapshot
-        )
+        assert serialize_pp(storage.get_job_snapshot(job_snapshot_id)) == serialize_pp(job_snapshot)
 
         storage.add_run(run_with_snapshot)
 
@@ -899,34 +965,36 @@ class TestRunStorage:
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(job_snapshot_id)
             assert not storage.has_run(run_with_snapshot_id)
 
-    def test_single_write_with_missing_snapshot(self, storage):
+    def test_single_write_with_missing_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run_with_missing_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
-            pipeline_snapshot_id="nope",
+            job_name=job_def.name,
+            job_snapshot_id="nope",
         )
 
         with pytest.raises(DagsterSnapshotDoesNotExist):
             storage.add_run(run_with_missing_snapshot)
 
-    def test_add_get_execution_snapshot(self, storage):
+    def test_add_get_execution_snapshot(self, storage: RunStorage):
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import snapshot_from_execution_plan
 
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        execution_plan = create_execution_plan(pipeline_def)
-        ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
-        )
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        execution_plan = create_execution_plan(job_def)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, job_def.get_job_snapshot_id())
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
         fetched_ep_snapshot = storage.get_execution_plan_snapshot(snapshot_id)
+
+        # idempotent
+        assert storage.add_execution_plan_snapshot(ep_snapshot) == snapshot_id
+
         assert fetched_ep_snapshot
         assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
         assert storage.has_execution_plan_snapshot(snapshot_id)
@@ -945,14 +1013,14 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
             ),
         )
@@ -964,9 +1032,9 @@ class TestRunStorage:
         assert len(some_runs) == 2
         assert count == 2
 
-    def test_fetch_run_group(self, storage):
+    def test_fetch_run_group(self, storage: RunStorage):
         assert storage
-        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
+        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
         runs = [root_run]
 
         # Create 3 children and 3 descendants of the rightmost child:
@@ -984,7 +1052,7 @@ class TestRunStorage:
             runs.append(
                 TestRunStorage.build_run(
                     run_id=make_new_run_id(),
-                    pipeline_name="foo_pipeline",
+                    job_name="foo_job",
                     root_run_id=root_run.run_id,
                     parent_run_id=root_run.run_id,
                     tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
@@ -997,7 +1065,7 @@ class TestRunStorage:
             runs.append(
                 TestRunStorage.build_run(
                     run_id=make_new_run_id(),
-                    pipeline_name="foo_pipeline",
+                    job_name="foo_job",
                     root_run_id=root_run_id,
                     parent_run_id=parent_run_id,
                     tags={PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id},
@@ -1007,142 +1075,31 @@ class TestRunStorage:
             storage.add_run(run)
 
         run_group_one = storage.get_run_group(root_run.run_id)
+        assert run_group_one
 
         assert len(run_group_one[1]) == 7
 
         run_group_two = storage.get_run_group(runs[-1].run_id)
+        assert run_group_two
 
         assert len(run_group_two[1]) == 7
 
-        assert run_group_one[0] == run_group_two[0]
-        assert run_group_one[1] == run_group_two[1]
+        # The order of runs in each run run group is not deterministic
+        unittest.TestCase().assertCountEqual(run_group_one[0], run_group_two[0])
+        unittest.TestCase().assertCountEqual(run_group_one[1], run_group_two[1])
 
-    def test_fetch_run_group_not_found(self, storage):
+    def test_fetch_run_group_not_found(self, storage: RunStorage):
         assert storage
-        run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
+        run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
         storage.add_run(run)
 
         with pytest.raises(DagsterRunNotFoundError):
             storage.get_run_group(make_new_run_id())
 
-    def test_fetch_run_groups(self, storage):
-        assert storage
-        root_runs = [
-            TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
-            for i in range(3)
-        ]
-        runs = [run for run in root_runs]
-        for _ in range(5):
-            for root_run in root_runs:
-                runs.append(
-                    TestRunStorage.build_run(
-                        run_id=make_new_run_id(),
-                        pipeline_name="foo_pipeline",
-                        tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
-                    )
-                )
-        for run in runs:
-            storage.add_run(run)
-
-        run_groups = storage.get_run_groups(limit=5)
-
-        assert len(run_groups) == 3
-
-        expected_group_lens = {
-            root_runs[i].run_id: expected_len for i, expected_len in enumerate([2, 3, 3])
-        }
-
-        for root_run_id in run_groups:
-            assert len(run_groups[root_run_id]["runs"]) == expected_group_lens[root_run_id]
-            assert run_groups[root_run_id]["count"] == 6
-
-    def test_fetch_run_groups_filter(self, storage):
-        assert storage
-
-        root_runs = [
-            TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
-            for i in range(3)
-        ]
-
-        runs = [run for run in root_runs]
-        for root_run in root_runs:
-            failed_run_id = make_new_run_id()
-            runs.append(
-                TestRunStorage.build_run(
-                    run_id=failed_run_id,
-                    pipeline_name="foo_pipeline",
-                    tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
-                    status=DagsterRunStatus.FAILURE,
-                )
-            )
-            for _ in range(3):
-                runs.append(
-                    TestRunStorage.build_run(
-                        run_id=make_new_run_id(),
-                        pipeline_name="foo_pipeline",
-                        tags={PARENT_RUN_ID_TAG: failed_run_id, ROOT_RUN_ID_TAG: root_run.run_id},
-                    )
-                )
-
-        for run in runs:
-            storage.add_run(run)
-
-        run_groups = storage.get_run_groups(
-            limit=5, filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])
-        )
-
-        assert len(run_groups) == 3
-
-        for root_run_id in run_groups:
-            assert len(run_groups[root_run_id]["runs"]) == 2
-            assert run_groups[root_run_id]["count"] == 5
-
-    def test_fetch_run_groups_ordering(self, storage):
-        assert storage
-
-        first_root_run = TestRunStorage.build_run(
-            run_id=make_new_run_id(), pipeline_name="foo_pipeline"
-        )
-
-        storage.add_run(first_root_run)
-
-        second_root_run = TestRunStorage.build_run(
-            run_id=make_new_run_id(), pipeline_name="foo_pipeline"
-        )
-
-        storage.add_run(second_root_run)
-
-        second_root_run_child = TestRunStorage.build_run(
-            run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
-            tags={
-                PARENT_RUN_ID_TAG: second_root_run.run_id,
-                ROOT_RUN_ID_TAG: second_root_run.run_id,
-            },
-        )
-
-        storage.add_run(second_root_run_child)
-
-        first_root_run_child = TestRunStorage.build_run(
-            run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
-            tags={
-                PARENT_RUN_ID_TAG: first_root_run.run_id,
-                ROOT_RUN_ID_TAG: first_root_run.run_id,
-            },
-        )
-
-        storage.add_run(first_root_run_child)
-
-        run_groups = storage.get_run_groups(limit=1)
-
-        assert first_root_run.run_id in run_groups
-        assert second_root_run.run_id not in run_groups
-
-    def test_partition_status(self, storage):
+    def test_partition_status(self, storage: RunStorage):
         one = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
             tags={
                 PARTITION_NAME_TAG: "one",
@@ -1152,7 +1109,7 @@ class TestRunStorage:
         storage.add_run(one)
         two = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
             tags={
                 PARTITION_NAME_TAG: "two",
@@ -1162,7 +1119,7 @@ class TestRunStorage:
         storage.add_run(two)
         two_retried = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
             tags={
                 PARTITION_NAME_TAG: "two",
@@ -1172,7 +1129,7 @@ class TestRunStorage:
         storage.add_run(two_retried)
         three = TestRunStorage.build_run(
             run_id=make_new_run_id(),
-            pipeline_name="foo_pipeline",
+            job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
             tags={
                 PARTITION_NAME_TAG: "three",
@@ -1180,9 +1137,19 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
+        wrong_job = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="bar_job",
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                PARTITION_NAME_TAG: "ignorable",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(wrong_job)
         partition_data = storage.get_run_partition_data(
             runs_filter=RunsFilter(
-                pipeline_name="foo_pipeline",
+                job_name="foo_job",
                 tags={PARTITION_SET_TAG: "foo_set"},
             )
         )
@@ -1228,7 +1195,7 @@ class TestRunStorage:
         stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == second_added_heartbeat
 
-    def test_wipe_heartbeats(self, storage):
+    def test_wipe_heartbeats(self, storage: RunStorage):
         self._skip_in_memory(storage)
 
         if not self.can_delete_runs():
@@ -1243,7 +1210,7 @@ class TestRunStorage:
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
 
-    def test_backfill(self, storage):
+    def test_backfill(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0
@@ -1274,22 +1241,22 @@ class TestRunStorage:
         for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
-    def test_handle_run_event_pipeline_success_test(self, storage):
+    def test_handle_run_event_job_success_test(self, storage):
         run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
-        dagster_pipeline_start_event = DagsterEvent(
+        dagster_job_start_event = DagsterEvent(
             message="a message",
             event_type_value=DagsterEventType.PIPELINE_START.value,
-            pipeline_name="pipeline_name",
+            job_name="pipeline_name",
             step_key=None,
-            solid_handle=None,
+            node_handle=None,
             step_kind_value=None,
             logging_tags=None,
         )
 
-        storage.handle_run_event(run_id, dagster_pipeline_start_event)
+        storage.handle_run_event(run_id, dagster_job_start_event)
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
@@ -1298,9 +1265,9 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
                 step_key=None,
-                solid_handle=None,
+                node_handle=None,
                 step_kind_value=None,
                 logging_tags=None,
             ),
@@ -1313,9 +1280,9 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
                 step_key=None,
-                solid_handle=None,
+                node_handle=None,
                 step_kind_value=None,
                 logging_tags=None,
             ),
@@ -1331,21 +1298,21 @@ class TestRunStorage:
         )
 
         run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-        new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
+        job_snapshot = job_def.get_job_snapshot()
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        new_job_snapshot_id = f"{job_snapshot_id}-new-snapshot"
 
-        storage.add_snapshot(pipeline_snapshot, snapshot_id=new_pipeline_snapshot_id)
-        assert not storage.has_snapshot(pipeline_snapshot_id)
-        assert storage.has_snapshot(new_pipeline_snapshot_id)
+        storage.add_snapshot(job_snapshot, snapshot_id=new_job_snapshot_id)
+        assert not storage.has_snapshot(job_snapshot_id)
+        assert storage.has_snapshot(new_job_snapshot_id)
 
-        execution_plan = create_execution_plan(pipeline_def)
-        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_pipeline_snapshot_id)
+        execution_plan = create_execution_plan(job_def)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_job_snapshot_id)
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
         new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"
 
@@ -1359,7 +1326,7 @@ class TestRunStorage:
         self._skip_in_memory(storage)
 
         run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
 
         storage.add_run(run_to_add)
 
@@ -1373,7 +1340,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_START.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
             ),
         )
 
@@ -1387,7 +1354,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
             ),
         )
 
@@ -1396,109 +1363,6 @@ class TestRunStorage:
         assert run_record.start_time is not None
         assert run_record.end_time is not None
         assert run_record.end_time >= run_record.start_time
-
-    def test_by_job(self, storage):
-        if not storage.supports_bucket_queries:
-            pytest.skip("storage cannot bucket")
-
-        def _add_run(job_name, tags=None):
-            return storage.add_run(
-                TestRunStorage.build_run(
-                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
-                )
-            )
-
-        _a_one = _add_run("a_pipeline", tags={"a": "A"})
-        a_two = _add_run("a_pipeline", tags={"a": "A"})
-        _b_one = _add_run("b_pipeline", tags={"a": "A"})
-        b_two = _add_run("b_pipeline", tags={"a": "A"})
-        c_one = _add_run("c_pipeline", tags={"a": "A"})
-        c_two = _add_run("c_pipeline", tags={"a": "B"})
-
-        runs_by_job = {
-            run.pipeline_name: run
-            for run in storage.get_runs(
-                bucket_by=JobBucket(
-                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
-                )
-            )
-        }
-        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
-        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
-        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
-        assert runs_by_job.get("c_pipeline").run_id == c_two.run_id
-
-        # fetch with a runs filter applied
-        runs_by_job = {
-            run.pipeline_name: run
-            for run in storage.get_runs(
-                filters=RunsFilter(tags={"a": "A"}),
-                bucket_by=JobBucket(
-                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
-                ),
-            )
-        }
-        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
-        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
-        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
-        assert runs_by_job.get("c_pipeline").run_id == c_one.run_id
-
-    def test_by_tag(self, storage):
-        if not storage.supports_bucket_queries:
-            pytest.skip("storage cannot bucket")
-
-        def _add_run(job_name, tags=None):
-            return storage.add_run(
-                TestRunStorage.build_run(
-                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
-                )
-            )
-
-        _one = _add_run("a", tags={"a": "1", "b": "1"})
-        _two = _add_run("a", tags={"a": "2", "b": "1"})
-        three = _add_run("a", tags={"a": "3", "b": "1"})
-        _none = _add_run("a", tags={"b": "1"})
-        b = _add_run("b", tags={"a": "4", "b": "2"})
-        one = _add_run("a", tags={"a": "1", "b": "1"})
-        two = _add_run("a", tags={"a": "2", "b": "1"})
-
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1)
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3", "4"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
-        assert runs_by_tag.get("4").run_id == b.run_id
-
-        # fetch with a pipeline_name filter applied
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                filters=RunsFilter(pipeline_name="a"),
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
-
-        # fetch with a tags filter applied
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                filters=RunsFilter(tags={"b": "1"}),
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
 
     def test_run_record_timestamps(self, storage):
         assert storage
@@ -1514,8 +1378,8 @@ class TestRunStorage:
             a()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            if storage._instance:  # pylint: disable=protected-access
-                instance = storage._instance  # pylint: disable=protected-access
+            if storage.has_instance:
+                instance = storage._instance  # noqa: SLF001
             else:
                 instance = DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,
@@ -1531,33 +1395,13 @@ class TestRunStorage:
                 create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
             )
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_freeze_time(freeze_datetime):
                 result = my_job.execute_in_process(instance=instance)
                 records = instance.get_run_records(filters=RunsFilter(run_ids=[result.run_id]))
                 assert len(records) == 1
                 record = records[0]
                 assert record.start_time == freeze_datetime.timestamp()
                 assert record.end_time == freeze_datetime.timestamp()
-
-    def test_kvs(self, storage):
-        if not storage.supports_kvs():
-            pytest.skip("storage cannot kvs")
-
-        storage.kvs_set({"key": "value"})
-        assert storage.kvs_get({"key"}) == {"key": "value"}
-
-        storage.kvs_set({"key": "new-value"})
-        assert storage.kvs_get({"key"}) == {"key": "new-value"}
-
-        storage.kvs_set({"foo": "foo", "bar": "bar"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {
-            "key": "new-value",
-            "foo": "foo",
-            "bar": "bar",
-        }
-
-        storage.kvs_set({"foo": "1", "bar": "2", "key": "3"})
-        assert storage.kvs_get({"foo", "bar", "key"}) == {"foo": "1", "bar": "2", "key": "3"}
 
     def test_migrate_repo(self, storage):
         assert storage
@@ -1570,14 +1414,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=one, pipeline_name=job_name, external_pipeline_origin=origin_one
-            )
+            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=two, pipeline_name=job_name, external_pipeline_origin=origin_one
-            )
+            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_one)
         )
 
         one_runs = storage.get_runs(

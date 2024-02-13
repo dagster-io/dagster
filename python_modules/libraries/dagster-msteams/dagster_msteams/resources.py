@@ -1,25 +1,87 @@
-from dagster import Bool, Field, Float, StringSource, resource
+from typing import Optional
+
+from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from pydantic import Field
 
 from dagster_msteams.client import TeamsClient
 
 
-@resource(
-    {
-        "hook_url": Field(
-            StringSource,
-            description="""To send messages to MS Teams channel, an incoming webhook has to
-                    be created. The incoming webhook url must be given as a part of the
-                    resource config to the msteams_resource in dagster.
-                    """,
+class MSTeamsResource(ConfigurableResource):
+    """This resource is for connecting to Microsoft Teams.
+
+    Provides a `dagster_msteams.TeamsClient` which can be used to
+    interface with the MS Teams API.
+
+    By configuring this resource, you can post messages to MS Teams from any Dagster op,
+    asset, schedule, or sensor:
+
+    Examples:
+        .. code-block:: python
+
+            import os
+
+            from dagster import op, job, Definitions, EnvVar
+            from dagster_msteams import Card, MSTeamsResource
+
+
+            @op
+            def teams_op(msteams: MSTeamsResource):
+                card = Card()
+                card.add_attachment(text_message="Hello There !!")
+                msteams.get_client().post_message(payload=card.payload)
+
+
+            @job
+            def teams_job():
+                teams_op()
+
+            defs = Definitions(
+                jobs=[teams_job],
+                resources={
+                    "msteams": MSTeamsResource(
+                        hook_url=EnvVar("TEAMS_WEBHOOK_URL")
+                    )
+                }
+            )
+    """
+
+    hook_url: str = Field(
+        description=(
+            "To send messages to MS Teams channel, an incoming webhook has to be created. The"
+            " incoming webhook url must be given as a part of the resource config to the"
+            " MSTeamsResource in Dagster. For more information on how to create an incoming"
+            " webhook, see"
+            " https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
         ),
-        "http_proxy": Field(StringSource, is_required=False),
-        "https_proxy": Field(StringSource, is_required=False),
-        "timeout": Field(Float, default_value=60, is_required=False),
-        "Verify": Field(Bool, is_required=False),
-    },
+    )
+    http_proxy: Optional[str] = Field(default=None, description="HTTP proxy URL")
+    https_proxy: Optional[str] = Field(default=None, description="HTTPS proxy URL")
+    timeout: float = Field(default=60, description="Timeout for requests to MS Teams")
+    verify: bool = Field(
+        default=True, description="Whether to verify SSL certificates, defaults to True"
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def get_client(self) -> TeamsClient:
+        return TeamsClient(
+            hook_url=self.hook_url,
+            http_proxy=self.http_proxy,
+            https_proxy=self.https_proxy,
+            timeout=self.timeout,
+            verify=self.verify,
+        )
+
+
+@dagster_maintained_resource
+@resource(
+    config_schema=MSTeamsResource.to_config_schema(),
     description="This resource is for connecting to MS Teams",
 )
-def msteams_resource(context):
+def msteams_resource(context) -> TeamsClient:
     """This resource is for connecting to Microsoft Teams.
 
     The resource object is a `dagster_msteams.TeamsClient`.
@@ -51,10 +113,4 @@ def msteams_resource(context):
                 {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
             )
     """
-    return TeamsClient(
-        hook_url=context.resource_config.get("hook_url"),
-        http_proxy=context.resource_config.get("http_proxy"),
-        https_proxy=context.resource_config.get("https_proxy"),
-        timeout=context.resource_config.get("timeout"),
-        verify=context.resource_config.get("verify"),
-    )
+    return MSTeamsResource.from_resource_context(context).get_client()

@@ -43,7 +43,7 @@ class ChildProcessSystemErrorEvent(
     pass
 
 
-class ChildProcessCommand(ABC):  # pylint: disable=no-init
+class ChildProcessCommand(ABC):
     """Inherit from this class in order to use this library.
 
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.
@@ -114,7 +114,7 @@ def _poll_for_event(
             except queue.Empty:
                 # If the queue empty we know that there are no more events
                 # and that the process has died.
-                return PROCESS_DEAD_AND_QUEUE_EMPTY  # type: ignore  # fmt: skip
+                return PROCESS_DEAD_AND_QUEUE_EMPTY
     return None
 
 
@@ -164,7 +164,7 @@ def execute_child_process_command(
             if event == PROCESS_DEAD_AND_QUEUE_EMPTY:
                 break
 
-            yield event  # type: ignore  # fmt: skip
+            yield event
 
             if isinstance(event, (ChildProcessDoneEvent, ChildProcessSystemErrorEvent)):
                 completed_properly = True

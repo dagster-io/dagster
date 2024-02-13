@@ -9,8 +9,6 @@ import sqlalchemy as sa
 from alembic import op
 from dagster._core.storage.migration.utils import has_table
 
-# pylint: disable=no-member
-
 # revision identifiers, used by Alembic.
 revision = "4ea2b1f6f67b"
 down_revision = "8ccbed5060b8"

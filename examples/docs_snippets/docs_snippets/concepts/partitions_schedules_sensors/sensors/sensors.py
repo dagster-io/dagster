@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=unnecessary-ellipsis
+# ruff: isort: skip_file
+
 
 from dagster import (
     Definitions,
@@ -12,17 +12,21 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
+    OpExecutionContext,
 )
 
 
 # start_sensor_job_marker
-from dagster import op, job
+from dagster import op, job, Config
 
 
-@op(config_schema={"filename": str})
-def process_file(context):
-    filename = context.op_config["filename"]
-    context.log.info(filename)
+class FileConfig(Config):
+    filename: str
+
+
+@op
+def process_file(context: OpExecutionContext, config: FileConfig):
+    context.log.info(config.filename)
 
 
 @job
@@ -36,7 +40,7 @@ MY_DIRECTORY = "./"
 
 # start_directory_sensor_marker
 import os
-from dagster import sensor, RunRequest
+from dagster import sensor, RunRequest, RunConfig
 
 
 @sensor(job=log_file_job)
@@ -46,9 +50,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config=RunConfig(
+                    ops={"process_file": FileConfig(filename=filename)}
+                ),
             )
 
 
@@ -137,7 +141,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
@@ -208,32 +212,6 @@ def get_the_db_connection(_):
     ...
 
 
-# pylint: disable=unused-variable,reimported
-# start_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)  # type: ignore  # (didactic)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-
-
-# end_build_resources_example
-
 defs = Definitions(
     jobs=[my_job, log_file_job],
     sensors=[my_directory_sensor, sensor_A, sensor_B],
@@ -275,10 +253,10 @@ def code_location_a_data_update_failure_sensor():
 
 # start_instance_sensor
 @run_status_sensor(
-    monitor_all_repositories=True,
+    monitor_all_code_locations=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor():
+def sensor_monitor_all_code_locations():
     # when any job in the Dagster instance succeeds, this sensor will trigger
     send_slack_alert()
 

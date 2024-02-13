@@ -133,6 +133,12 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                             "healthy": False,
                             "lastHeartbeatTime": None,
                         },
+                        {
+                            "daemonType": "ASSET",
+                            "required": True,
+                            "healthy": False,
+                            "lastHeartbeatTime": None,
+                        },
                     ]
                     + (
                         [
