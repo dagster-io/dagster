@@ -638,6 +638,10 @@
                     "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
+              },
+              {
+                "title": "Compute logs & error messages",
+                "path": "/dagster-cloud/managing-deployments/controlling-logs"
               }
             ]
           },
