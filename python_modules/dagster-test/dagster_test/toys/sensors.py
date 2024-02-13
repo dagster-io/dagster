@@ -2,7 +2,6 @@ import os
 
 from dagster import (
     AssetKey,
-    AssetSelection,
     DefaultSensorStatus,
     RunFailureSensorContext,
     RunRequest,
@@ -11,9 +10,6 @@ from dagster import (
     asset_sensor,
     run_failure_sensor,
     sensor,
-)
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
 )
 from dagster_slack import make_slack_on_run_failure_sensor
 from slack_sdk.web.client import WebClient
