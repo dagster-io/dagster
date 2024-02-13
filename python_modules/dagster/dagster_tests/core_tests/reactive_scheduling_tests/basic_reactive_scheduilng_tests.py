@@ -2,9 +2,12 @@ from datetime import datetime
 from typing import Optional, Set
 
 from dagster import asset
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.reactive_policy import (
     AssetPartition,
@@ -189,3 +192,46 @@ def test_reactive_request_builder_three_assets_only_downstream_requests_accepted
     assert build_plan(builder, "down").asset_partitions == asset_partition_set(
         asset_partition("root"), asset_partition("up"), asset_partition("down")
     )
+
+
+def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
+    class AlwaysDefer(SchedulingPolicy):
+        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+            return RequestReaction(execute=True)
+
+        def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+            return RequestReaction(execute=True)
+
+    partitions_def_numbers = StaticPartitionsDefinition(["1", "2"])
+    partitions_def_letters = StaticPartitionsDefinition(["A", "B"])
+
+    mapping = StaticPartitionMapping({"1": "A", "2": "B"})
+
+    @asset(scheduling_policy=AlwaysDefer(), partitions_def=partitions_def_letters)
+    def up() -> None:
+        ...
+
+    @asset(
+        deps=[AssetDep("up", partition_mapping=mapping)],
+        partitions_def=partitions_def_numbers,
+        scheduling_policy=AlwaysDefer(),
+    )
+    def down() -> None:
+        ...
+
+    defs = Definitions([up, down])
+
+    assert defs
+
+    # instance = DagsterInstance.ephemeral()
+    # builder = create_test_builder(defs, instance)
+
+    # down_plan = build_plan(builder, "down")
+    # assert down_plan.asset_partitions == asset_partition_set(
+    #     asset_partition("up"), asset_partition("down")
+    # )
+
+    # up_plan = build_plan(builder, "up")
+    # assert up_plan.asset_partitions == asset_partition_set(
+    #     asset_partition("up"), asset_partition("down")
+    # )
