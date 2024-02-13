@@ -183,6 +183,7 @@ class ReactiveRequestBuilder:
                     _descend(self.make_valid_subset(child_asset_key, asset_partitions_to_descend))
 
         _ascend(start_asset_subset)
+        _descend(start_asset_subset)
 
         return ReactivePlan(asset_partitions_to_execute)
 

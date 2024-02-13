@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 
@@ -36,10 +35,10 @@ class SchedulingPolicy:
     def observe(self) -> ObserveResult:
         ...
 
-    @abstractmethod
+    # default to do nothing
     def react_to_downstream_request(self, asset_partition: AssetPartition) -> RequestReaction:
-        ...
+        return RequestReaction(execute=False)
 
-    @abstractmethod
+    # default to do nothing
     def react_to_upstream_request(self, asset_partition: AssetPartition) -> RequestReaction:
-        ...
+        return RequestReaction(execute=False)
