@@ -9,6 +9,18 @@ import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 
+export const insitigatorsByType = (assetNode: AssetNodeInstigatorsFragment) => {
+  const instigators = assetNode.targetingInstigators;
+  const schedules = instigators.filter(
+    (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
+  );
+  const sensors = instigators.filter(
+    (instigator): instigator is SensorSwitchFragment => instigator.__typename === 'Sensor',
+  );
+
+  return {schedules, sensors};
+};
+
 export const AssetNodeInstigatorTag = ({
   assetNode,
   repoAddress,
@@ -16,17 +28,7 @@ export const AssetNodeInstigatorTag = ({
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
 }) => {
-  const {schedules, sensors} = useMemo(() => {
-    const instigators = assetNode.targetingInstigators;
-    const schedules = instigators.filter(
-      (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
-    );
-    const sensors = instigators.filter(
-      (instigator): instigator is SensorSwitchFragment => instigator.__typename === 'Sensor',
-    );
-
-    return {schedules, sensors};
-  }, [assetNode]);
+  const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
 
   return (
     <ScheduleOrSensorTag
