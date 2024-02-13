@@ -9,6 +9,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -42,6 +43,8 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.utils import is_valid_email
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -69,6 +72,19 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
+@whitelist_for_serdes
+class UserAssetOwner(NamedTuple):
+    email: str
+
+
+@whitelist_for_serdes
+class TeamAssetOwner(NamedTuple):
+    team: str
+
+
+AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
+
+
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
@@ -94,7 +110,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
-    _owners_by_key: Mapping[AssetKey, Sequence[str]]
+    _owners_by_key: Mapping[AssetKey, Sequence[AssetOwner]]
 
     def __init__(
         self,
@@ -317,9 +333,28 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
-        self._owners_by_key = check.opt_mapping_param(
-            owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
-        )
+
+        check.opt_mapping_param(owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list)
+        for key, owners in (owners_by_key or {}).items():
+            for owner in owners:
+                if is_valid_email(owner):
+                    continue
+                elif owner.startswith("team:") and len(owner) > 5:
+                    continue
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team"
+                        " name prefixed with 'team:'."
+                    )
+        self._owners_by_key = {
+            key: [
+                UserAssetOwner(email=owner)
+                if is_valid_email(owner)
+                else TeamAssetOwner(team=owner[5:])
+                for owner in owners
+            ]
+            for key, owners in (owners_by_key or {}).items()
+        }
 
     @staticmethod
     def dagster_internal_init(
@@ -890,7 +925,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._partition_mappings
 
     @property
-    def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
+    def owners_by_key(self) -> Mapping[AssetKey, Sequence[AssetOwner]]:
         return self._owners_by_key
 
     @public

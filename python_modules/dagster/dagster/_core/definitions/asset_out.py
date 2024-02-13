@@ -67,7 +67,8 @@ class AssetOut(
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
-            string can be a user's email address, team name, or other arbitrary identifier.
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def __new__(

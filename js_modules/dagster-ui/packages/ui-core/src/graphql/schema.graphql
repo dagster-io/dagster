@@ -661,7 +661,7 @@ type AssetNode {
   autoMaterializePolicy: AutoMaterializePolicy
   graphName: String
   groupName: String
-  owners: [String!]!
+  owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!
   isObservable: Boolean!
@@ -757,6 +757,16 @@ enum AutoMaterializeDecisionType {
   MATERIALIZE
   SKIP
   DISCARD
+}
+
+union AssetOwner = UserAssetOwner | TeamAssetOwner
+
+type UserAssetOwner {
+  email: String!
+}
+
+type TeamAssetOwner {
+  team: String!
 }
 
 union AssetPartitionStatuses =

@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._core.definitions.assets import UserAssetOwner
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
@@ -106,6 +107,29 @@ GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatu
 GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
     StaleCauseCategory, name="StaleCauseCategory"
 )
+
+
+class GrapheneUserAssetOwner(graphene.ObjectType):
+    class Meta:
+        name = "UserAssetOwner"
+
+    email = graphene.NonNull(graphene.String)
+
+
+class GrapheneTeamAssetOwner(graphene.ObjectType):
+    class Meta:
+        name = "TeamAssetOwner"
+
+    team = graphene.NonNull(graphene.String)
+
+
+class GrapheneAssetOwner(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneUserAssetOwner,
+            GrapheneTeamAssetOwner,
+        )
+        name = "AssetOwner"
 
 
 class GrapheneAssetStaleCause(graphene.ObjectType):
@@ -257,7 +281,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     graphName = graphene.String()
     groupName = graphene.String()
-    owners = non_null_list(graphene.String)
+    owners = non_null_list(GrapheneAssetOwner)
     id = graphene.NonNull(graphene.ID)
     isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
@@ -367,7 +391,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
-            owners=external_asset_node.owners,
+            owners=[
+                GrapheneUserAssetOwner(email=owner.email)
+                if isinstance(owner, UserAssetOwner)
+                else GrapheneTeamAssetOwner(team=owner.team)
+                for owner in external_asset_node.owners
+            ],
         )
 
     @property

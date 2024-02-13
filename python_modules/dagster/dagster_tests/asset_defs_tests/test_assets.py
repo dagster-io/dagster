@@ -39,6 +39,7 @@ from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -2057,11 +2058,13 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
 
 
 def test_asset_owners():
-    @asset(owners=["owner1", "owner2"])
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
     def my_asset():
         pass
 
-    assert my_asset.owners_by_key == {my_asset.key: ["owner1", "owner2"]}
+    assert my_asset.owners_by_key == {
+        my_asset.key: [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    }
 
     @asset(owners=[])
     def asset_2():
@@ -2076,14 +2079,37 @@ def test_asset_owners():
     assert asset_3.owners_by_key == {}
 
 
+def test_invalid_asset_owners():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["arbitrary string"])
+        def my_asset():
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["notanemail@com"])
+        def my_asset_2():
+            pass
+
+
 def test_multi_asset_owners():
     @multi_asset(
-        outs={"out1": AssetOut(owners=["owner1", "owner2"]), "out2": AssetOut(owners=["owner3"])}
+        outs={
+            "out1": AssetOut(owners=["team:team1", "user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user2@dagsterlabs.com"]),
+        }
     )
     def my_multi_asset():
         pass
 
     assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): ["owner1", "owner2"],
-        AssetKey("out2"): ["owner3"],
+        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
     }

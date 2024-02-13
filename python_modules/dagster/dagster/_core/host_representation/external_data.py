@@ -53,7 +53,7 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets import AssetOwner, AssetsDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
@@ -1197,7 +1197,7 @@ class ExternalAssetNode(
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
             ("backfill_policy", Optional[BackfillPolicy]),
             ("auto_observe_interval_minutes", Optional[float]),
-            ("owners", Optional[Sequence[str]]),
+            ("owners", Optional[Sequence[AssetOwner]]),
         ],
     )
 ):
@@ -1232,7 +1232,7 @@ class ExternalAssetNode(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[float] = None,
-        owners: Optional[Sequence[str]] = None,
+        owners: Optional[Sequence[AssetOwner]] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1294,7 +1294,7 @@ class ExternalAssetNode(
             auto_observe_interval_minutes=check.opt_numeric_param(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
-            owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            owners=check.opt_sequence_param(owners, "owners", of_type=AssetOwner),
         )
 
     @property
@@ -1549,7 +1549,7 @@ def external_asset_nodes_from_defs(
     group_name_by_asset_key: Dict[AssetKey, str] = {}
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
-    owners_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
+    owners_by_asset_key: Dict[AssetKey, Sequence[AssetOwner]] = {}
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer

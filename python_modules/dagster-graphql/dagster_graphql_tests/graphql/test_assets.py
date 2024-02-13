@@ -572,7 +572,14 @@ GET_ASSET_OWNERS = """
             assetKey {
                 path
             }
-            owners
+            owners {
+                ... on TeamAssetOwner {
+                    team
+                }
+                ... on UserAssetOwner {
+                    email
+                }
+            }
         }
     }
 """
@@ -1884,7 +1891,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
         assert len(result.data["assetNodes"]) == 1
         assert result.data["assetNodes"][0]["assetKey"] == {"path": ["asset_1"]}
-        assert result.data["assetNodes"][0]["owners"] == ["owner_1", "owner_2"]
+        owners = result.data["assetNodes"][0]["owners"]
+        assert len(owners) == 2
+        assert owners[0]["email"] == "user@dagsterlabs.com"
+        assert owners[1]["team"] == "team1"
 
     def test_typed_assets(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "typed_assets")
