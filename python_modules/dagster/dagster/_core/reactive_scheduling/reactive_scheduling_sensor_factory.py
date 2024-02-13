@@ -79,6 +79,11 @@ class ReactiveAssetInfo:
 
 
 @dataclass(frozen=True)
+class ReactivePlan:
+    asset_partitions: Set[AssetPartition]
+
+
+@dataclass(frozen=True)
 class ReactiveRequestBuilder:
     repository_def: RepositoryDefinition
     asset_graph: AssetGraph
@@ -114,7 +119,7 @@ class ReactiveRequestBuilder:
     def build_plan(
         self,
         asset_key: AssetKey,
-    ) -> Set[AssetPartition]:
+    ) -> ReactivePlan:
         start_asset_subset = self.get_latest_asset_subset_for_key(asset_key)
         visited: Set[AssetPartition] = set()
         asset_partitions_to_execute: Set[AssetPartition] = set()
@@ -142,11 +147,12 @@ class ReactiveRequestBuilder:
 
         _ascend(start_asset_subset)
 
-        return asset_partitions_to_execute
+        return ReactivePlan(asset_partitions_to_execute)
 
     def reactive_info_for_key(self, asset_key: AssetKey) -> Optional[ReactiveAssetInfo]:
         assets_def = self.repository_def.assets_defs_by_key[asset_key]
         scheduling_policy = assets_def.scheduling_policy_by_key.get(asset_key)
+
         return (
             ReactiveAssetInfo(
                 asset_key=asset_key, assets_def=assets_def, scheduling_policy=scheduling_policy
@@ -206,10 +212,10 @@ def build_reactive_scheduling_sensor(
             repository_def=context.repository_def,
         )
 
-        asset_partitions_to_execute = builder.build_plan(asset_key)
+        reactive_plan = builder.build_plan(asset_key)
 
         run_requests = build_run_requests(
-            asset_partitions=asset_partitions_to_execute,
+            asset_partitions=reactive_plan.asset_partitions,
             asset_graph=builder.asset_graph,
             run_tags={},
         )

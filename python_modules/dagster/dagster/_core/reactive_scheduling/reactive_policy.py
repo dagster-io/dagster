@@ -43,11 +43,3 @@ class SchedulingPolicy:
     @abstractmethod
     def react_to_upstream_request(self, asset_partition: AssetPartition) -> RequestReaction:
         ...
-
-
-# class DefersSchedulingPolicy(SchedulingPolicy):
-#     def react_to_downstream_request(self, asset_partition: AssetPartition) -> RequestReaction:
-#         return RequestReaction(execute=True)
-
-#     def react_to_upstream_request(self, asset_partition: AssetPartition) -> RequestReaction:
-#         return RequestReaction(execute=True)
