@@ -30,8 +30,8 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
    from ..partitions import monthly_partition
 
    @asset(
-     partitions_def=monthly_partition,
-     group_name="raw_files",
+       partitions_def=monthly_partition,
+       group_name="raw_files",
    )
    def taxi_trips_file(context):
        """

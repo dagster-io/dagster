@@ -426,7 +426,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
 
 @whitelist_for_serdes
 class AllSelection(AssetSelection, frozen=True):
-    include_sources: Optional[bool]
+    include_sources: Optional[bool] = None
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return (

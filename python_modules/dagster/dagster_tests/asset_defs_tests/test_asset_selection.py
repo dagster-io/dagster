@@ -23,6 +23,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
     AllAssetCheckSelection,
+    AllSelection,
     AndAssetSelection,
     AssetCheckKeysSelection,
     AssetChecksForAssetKeysSelection,
@@ -40,6 +41,7 @@ from dagster._core.definitions.asset_selection import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
 from typing_extensions import TypeAlias
@@ -699,3 +701,9 @@ def test_to_string_binary_operators():
 def test_empty_namedtuple_truthy():
     # namedtuples with no fields are still truthy
     assert bool(AllAssetCheckSelection.all())
+
+
+def test_deserialize_old_all_asset_selection():
+    old_serialized_value = '{"__class__": "AllSelection"}'
+    new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
+    assert not new_unserialized_value.include_sources

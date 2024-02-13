@@ -9,6 +9,7 @@ from dagster import (
     DagsterInstance,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    PartitionKeyRange,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     asset,
@@ -889,3 +890,49 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
     assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"
+
+
+def test_run_request_partition_order():
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+        backfill_policy=BackfillPolicy.multi_run(2),
+    )
+    def foo():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+        backfill_policy=BackfillPolicy.multi_run(2),
+        deps={foo},
+    )
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo1": [foo], "repo2": [foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=[
+            "2023-10-05",
+            "2023-10-06",
+            "2023-10-02",
+            "2023-10-01",
+            "2023-10-03",
+            "2023-10-04",
+        ],
+        asset_selection=[foo.key, foo_child.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 10, 7, 0, 0, 0),
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
+    )
+
+    assert [run_request.partition_key_range for run_request in result.run_requests] == [
+        PartitionKeyRange("2023-10-01", "2023-10-02"),
+        PartitionKeyRange("2023-10-03", "2023-10-04"),
+        PartitionKeyRange("2023-10-05", "2023-10-06"),
+    ]

@@ -52,15 +52,24 @@ def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigat
         return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
     records = get_instigation_log_records(graphene_info.context.instance, tick.log_key)
+
+    events = []
+    for record_dict in records:
+        exc_info = record_dict.get("exc_info")
+        message = record_dict[DAGSTER_META_KEY]["orig_message"]
+        if exc_info:
+            message = f"{message}\n\n{exc_info}"
+
+        event = GrapheneInstigationEvent(
+            message=message,
+            level=GrapheneLogLevel.from_level(record_dict["levelno"]),
+            timestamp=int(record_dict["created"] * 1000),
+        )
+
+        events.append(event)
+
     return GrapheneInstigationEventConnection(
-        events=[
-            GrapheneInstigationEvent(
-                message=record_dict[DAGSTER_META_KEY]["orig_message"],
-                level=GrapheneLogLevel.from_level(record_dict["levelno"]),
-                timestamp=int(record_dict["created"] * 1000),
-            )
-            for record_dict in records
-        ],
+        events=events,
         cursor=None,
         hasMore=False,
     )
