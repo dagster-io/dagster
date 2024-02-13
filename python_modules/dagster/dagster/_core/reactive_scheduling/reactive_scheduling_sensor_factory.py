@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -19,56 +20,11 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.reactive_scheduling.reactive_policy import AssetPartition, SchedulingPolicy
-
-
-class PartitionSubsetFetcher:
-    def __init__(
-        self,
-        asset_graph: AssetGraph,
-        assets_def: AssetsDefinition,
-        asset_key: AssetKey,
-        dynamic_partitions_store,
-        current_time,
-    ):
-        self.asset_graph = asset_graph
-        self.assets_def = assets_def
-        self.asset_key = asset_key
-        self.dynamic_partitions_store = dynamic_partitions_store
-        self.current_time = current_time
-
-    @property
-    def is_partitioned(self) -> bool:
-        return bool(self.assets_def.partitions_def)
-
-    def get_latest_asset_subset(self) -> ValidAssetSubset:
-        if not self.is_partitioned:
-            return AssetSubset(self.asset_key, True).as_valid(self.assets_def.partitions_def)
-        else:
-            assert self.assets_def.partitions_def  # for pyright
-            last_partition_key = self.assets_def.partitions_def.get_last_partition_key(
-                current_time=self.current_time,
-                dynamic_partitions_store=self.dynamic_partitions_store,
-            )
-            partitions_subset = self.assets_def.partitions_def.empty_subset()
-            if last_partition_key:
-                partitions_subset = partitions_subset.with_partition_keys([last_partition_key])
-            return AssetSubset(self.asset_key, partitions_subset).as_valid(
-                self.assets_def.partitions_def
-            )
-
-    def get_parent_asset_subset(
-        self, asset_subset: ValidAssetSubset, parent_asset_key: AssetKey
-    ) -> ValidAssetSubset:
-        return self.asset_graph.get_parent_asset_subset(
-            child_asset_subset=asset_subset,
-            parent_asset_key=parent_asset_key,
-            dynamic_partitions_store=self.dynamic_partitions_store,
-            current_time=self.current_time,
-        ).as_valid(self.assets_def.partitions_def)
-
-
-TRACE_THE_ALGO = True
+from dagster._core.reactive_scheduling.reactive_policy import (
+    AssetPartition,
+    SchedulingPolicy,
+    SchedulingResult,
+)
 
 
 @dataclass(frozen=True)
@@ -226,6 +182,17 @@ def reactive_asset_info_for_key(
     )
 
 
+def make_valid_subset_from_result(
+    scheduling_result: SchedulingResult, asset_key: AssetKey, assets_def: AssetsDefinition
+) -> ValidAssetSubset:
+    if scheduling_result.partition_keys is None:
+        return AssetSubset(asset_key=asset_key, value=True).as_valid(assets_def.partitions_def)
+    else:
+        return AssetSubset(
+            asset_key=asset_key, value=DefaultPartitionsSubset(scheduling_result.partition_keys)
+        ).as_valid(assets_def.partitions_def)
+
+
 def build_reactive_scheduling_sensor(
     assets_def: AssetsDefinition, asset_key: AssetKey
 ) -> SensorDefinition:
@@ -260,7 +227,9 @@ def build_reactive_scheduling_sensor(
             repository_def=context.repository_def,
         )
 
-        reactive_plan = builder.build_plan(asset_key)
+        root_subset = make_valid_subset_from_result(scheduling_result, asset_key, assets_def)
+
+        reactive_plan = builder.build_for_asset_subset(root_subset)
 
         run_requests = build_run_requests(
             asset_partitions=reactive_plan.asset_partitions,

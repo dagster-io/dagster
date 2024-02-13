@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Set
+from typing import Optional, Sequence, Set
 
 from dagster import asset
 from dagster._core.definitions.asset_dep import AssetDep
@@ -8,6 +8,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.reactive_policy import (
@@ -298,22 +299,48 @@ def test_reactive_request_builder_two_assets_with_partition_mapping_defer_to_up(
     )
 
 
+def targeted_asset_keys(run_request: RunRequest) -> Set[AssetKey]:
+    return set(run_request.asset_selection) if run_request.asset_selection else set()
+
+
+def run_request_for_asset_partition(
+    run_requests: Sequence[RunRequest], asset_partition: AssetPartition
+) -> Optional[RunRequest]:
+    for run_request in run_requests:
+        if (
+            asset_partition.asset_key in targeted_asset_keys(run_request)
+            and run_request.partition_key == asset_partition.partition_key
+        ):
+            return run_request
+
+    return None
+
+
 def test_basic_tick() -> None:
     class SchedulingPolicyWithTick(SchedulingPolicy):
         tick_cron = "*/1 * * * *"
 
         def schedule(self) -> SchedulingResult:
-            return SchedulingResult(execute=True)
+            return SchedulingResult(execute=True, partition_keys={"down1"})
 
-    @asset(scheduling_policy=DeferToDownstream())
+    partitions_def_up = StaticPartitionsDefinition(["up1", "up2"])
+    partitions_def_down = StaticPartitionsDefinition(["down1", "down2"])
+
+    up_to_down_mapping = StaticPartitionMapping({"up1": "down1", "up2": "down2"})
+
+    @asset(scheduling_policy=AlwaysDefer(), partitions_def=partitions_def_up)
     def up() -> None:
         ...
 
-    @asset(deps=[up], scheduling_policy=SchedulingPolicyWithTick(sensor_name="the_sensor"))
-    def ticking_asset() -> None:
-        pass
+    @asset(
+        deps=[AssetDep("up", partition_mapping=up_to_down_mapping)],
+        partitions_def=partitions_def_down,
+        scheduling_policy=SchedulingPolicyWithTick(sensor_name="the_sensor"),
+    )
+    def down_ticking_asset() -> None:
+        ...
 
-    defs = Definitions([up, ticking_asset])
+    defs = Definitions([up, down_ticking_asset])
 
     sensor_def = defs.get_sensor_def("the_sensor")
     assert sensor_def
@@ -323,3 +350,16 @@ def test_basic_tick() -> None:
         instance=instance, repository_def=defs.get_repository_def()
     ) as context:
         eval_data = sensor_def.evaluate_tick(context=context)
+        assert eval_data
+        assert eval_data.run_requests
+        assert len(eval_data.run_requests) == 2
+
+        run_requests = eval_data.run_requests
+
+        assert run_request_for_asset_partition(
+            run_requests, asset_partition("down_ticking_asset", "down1")
+        )
+
+        assert not run_request_for_asset_partition(
+            run_requests, asset_partition("down_ticking_asset", "down2")
+        )

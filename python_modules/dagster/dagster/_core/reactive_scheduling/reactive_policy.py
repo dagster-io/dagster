@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Set
 
 from typing_extensions import TypeAlias
 
@@ -15,6 +15,7 @@ AssetPartition: TypeAlias = AssetKeyPartitionKey
 @dataclass(frozen=True)
 class SchedulingResult:
     execute: bool
+    partition_keys: Optional[Set[str]] = None
     tags: Optional[dict] = None
 
 
