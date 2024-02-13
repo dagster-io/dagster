@@ -33,7 +33,7 @@ setup(
     packages=find_packages(exclude=["dagster_duckdb_tests*"]),
     include_package_data=True,
     install_requires=[
-        "duckdb",
+        "duckdb<0.10.0",
         f"dagster{pin}",
     ],
     extras_require={
