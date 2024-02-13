@@ -21,6 +21,14 @@ from dagster._core.reactive_scheduling.reactive_scheduling_sensor_factory import
 )
 
 
+class AlwaysDefer(SchedulingPolicy):
+    def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+        return RequestReaction(execute=True)
+
+    def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+        return RequestReaction(execute=True)
+
+
 def scheduling_policy_of_asset(
     assets_def: AssetsDefinition, asset_key: Optional[CoercibleToAssetKey] = None
 ) -> SchedulingPolicy:
@@ -103,13 +111,6 @@ def asset_partition(
 
 
 def test_reactive_request_builder_two_assets() -> None:
-    class AlwaysDefer(SchedulingPolicy):
-        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
-
-        def react_to_upstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
-
     @asset(scheduling_policy=AlwaysDefer())
     def up() -> None:
         ...
@@ -135,13 +136,6 @@ def test_reactive_request_builder_two_assets() -> None:
 
 def test_reactive_request_builder_three_assets_always_defer() -> None:
     # test recursion
-
-    class AlwaysDefer(SchedulingPolicy):
-        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
-
-        def react_to_upstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
 
     @asset(scheduling_policy=AlwaysDefer())
     def root() -> None:
@@ -209,13 +203,6 @@ def test_reactive_request_builder_three_assets_only_downstream_requests_accepted
 
 
 def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
-    class AlwaysDefer(SchedulingPolicy):
-        def react_to_downstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
-
-        def react_to_upstream_request(self, asset_partition) -> RequestReaction:
-            return RequestReaction(execute=True)
-
     partitions_def_numbers = StaticPartitionsDefinition(["1", "2"])
     partitions_def_letters = StaticPartitionsDefinition(["A", "B"])
 
