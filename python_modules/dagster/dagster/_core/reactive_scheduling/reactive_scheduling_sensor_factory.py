@@ -146,29 +146,20 @@ class ReactiveRequestBuilder:
             asset_partitions_to_execute.update(current_asset_subset.asset_partitions)
             visited.update(current_asset_subset.asset_partitions)
             for parent_asset_key in self.asset_graph.get_parents(current_asset_subset.asset_key):
-                parent_asset_subset = self.get_parent_asset_subset(
-                    current_asset_subset, parent_asset_key
-                )
                 parent_asset_info = self.reactive_info_for_key(parent_asset_key)
                 if not parent_asset_info:
                     continue
 
-                asset_partitions_to_ascend: Set[AssetPartition] = set()
+                parent_asset_subset = self.get_parent_asset_subset(
+                    current_asset_subset, parent_asset_key
+                )
 
-                for parent_asset_partition in parent_asset_subset.asset_partitions:
-                    if parent_asset_partition in visited:
-                        continue
-
-                    # TODO: write variant that operates against subset directly
-                    parent_result = parent_asset_info.scheduling_policy.react_to_downstream_request(
-                        parent_asset_partition
-                    )
-                    if parent_result.execute:
-                        asset_partitions_to_execute.add(parent_asset_partition)
-                        asset_partitions_to_ascend.add(parent_asset_partition)
-
-                if asset_partitions_to_ascend:
-                    _ascend(self.make_valid_subset(parent_asset_key, asset_partitions_to_ascend))
+                parent_result = parent_asset_info.scheduling_policy.react_to_downstream_request(
+                    parent_asset_subset
+                )
+                if parent_result.execute:
+                    asset_partitions_to_execute.update(parent_asset_subset.asset_partitions)
+                    _ascend(parent_asset_subset)
 
         def _descend(current_asset_subset: ValidAssetSubset):
             asset_partitions_to_execute.update(current_asset_subset.asset_partitions)
@@ -182,20 +173,14 @@ class ReactiveRequestBuilder:
                 child_asset_subset = self.get_child_asset_subset(
                     current_asset_subset, child_asset_key
                 )
-                asset_partitions_to_descend: Set[AssetPartition] = set()
-                for child_asset_partition in child_asset_subset.asset_partitions:
-                    if child_asset_partition in visited:
-                        continue
 
-                    child_result = child_asset_info.scheduling_policy.react_to_upstream_request(
-                        child_asset_partition
-                    )
-                    if child_result.execute:
-                        asset_partitions_to_execute.add(child_asset_partition)
-                        asset_partitions_to_descend.add(child_asset_partition)
+                child_result = child_asset_info.scheduling_policy.react_to_upstream_request(
+                    child_asset_subset
+                )
 
-                if asset_partitions_to_descend:
-                    _descend(self.make_valid_subset(child_asset_key, asset_partitions_to_descend))
+                if child_result.execute:
+                    asset_partitions_to_execute.update(child_asset_subset.asset_partitions)
+                    _descend(child_asset_subset)
 
         _ascend(start_asset_subset)
         _descend(start_asset_subset)

@@ -22,20 +22,20 @@ from dagster._core.reactive_scheduling.reactive_scheduling_sensor_factory import
 
 
 class AlwaysDefer(SchedulingPolicy):
-    def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+    def react_to_downstream_request(self, downstream_asset_partition) -> RequestReaction:
         return RequestReaction(execute=True)
 
-    def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+    def react_to_upstream_request(self, upstream_asset_partition) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
 class DeferToDownstream(SchedulingPolicy):
-    def react_to_downstream_request(self, asset_partition) -> RequestReaction:
+    def react_to_downstream_request(self, downstream_asset_partition) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
 class DeferToUpstream(SchedulingPolicy):
-    def react_to_upstream_request(self, asset_partition) -> RequestReaction:
+    def react_to_upstream_request(self, upstream_asset_partition) -> RequestReaction:
         return RequestReaction(execute=True)
 
 
@@ -208,7 +208,7 @@ def test_reactive_request_builder_three_assets_only_downstream_requests_accepted
     )
 
 
-def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
+def test_reactive_request_builder_two_assets_with_partition_mapping_all_defer() -> None:
     partitions_def_numbers = StaticPartitionsDefinition(["1", "2"])
     partitions_def_letters = StaticPartitionsDefinition(["A", "B"])
 
@@ -245,4 +245,53 @@ def test_reactive_request_builder_two_assets_with_partition_mapping() -> None:
 
     assert build_plan(builder, "up", "B").asset_partitions == asset_partition_set(
         asset_partition("up", "B"), asset_partition("down", "2")
+    )
+
+
+def test_reactive_request_builder_two_assets_with_partition_mapping_defer_to_up() -> None:
+    root_partitions = StaticPartitionsDefinition(["root1", "root2"])
+    up_partitions = StaticPartitionsDefinition(["up1", "up2"])
+    down_partitions = StaticPartitionsDefinition(["down1", "down2"])
+
+    root_to_up_mapping = StaticPartitionMapping({"root1": "up1", "root2": "up2"})
+    up_to_down_mapping = StaticPartitionMapping({"up1": "down1", "up2": "down2"})
+
+    @asset(scheduling_policy=DeferToUpstream(), partitions_def=root_partitions)
+    def root() -> None:
+        ...
+
+    @asset(
+        deps=[AssetDep("root", partition_mapping=root_to_up_mapping)],
+        partitions_def=up_partitions,
+        scheduling_policy=DeferToUpstream(),
+    )
+    def up() -> None:
+        ...
+
+    @asset(
+        deps=[AssetDep("up", partition_mapping=up_to_down_mapping)],
+        partitions_def=down_partitions,
+        scheduling_policy=DeferToUpstream(),
+    )
+    def down() -> None:
+        ...
+
+    defs = Definitions([root, up, down])
+
+    instance = DagsterInstance.ephemeral()
+    builder = create_test_builder(defs, instance)
+
+    assert build_plan(builder, "root", "root1").asset_partitions == asset_partition_set(
+        asset_partition("root", "root1"),
+        asset_partition("up", "up1"),
+        asset_partition("down", "down1"),
+    )
+
+    assert build_plan(builder, "up", "up1").asset_partitions == asset_partition_set(
+        asset_partition("up", "up1"),
+        asset_partition("down", "down1"),
+    )
+
+    assert build_plan(builder, "down", "down1").asset_partitions == asset_partition_set(
+        asset_partition("down", "down1")
     )
