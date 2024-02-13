@@ -3,6 +3,7 @@ import qs from 'qs';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {TabLink} from '../ui/TabLink';
 
 interface Props {
@@ -28,6 +29,7 @@ export const AssetTabs = (props: Props) => {
 };
 
 export const DEFAULT_ASSET_TAB_ORDER = [
+  'overview',
   'partitions',
   'events',
   'checks',
@@ -54,7 +56,15 @@ export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringif
 
 export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, AssetTabConfig> => {
   const {definition, params} = input;
+  const experimental = featureEnabled(FeatureFlag.flagUseNewAutomationPage);
+
   return {
+    overview: {
+      id: 'overview',
+      title: 'Overview',
+      to: buildAssetViewParams({...params, view: 'overview'}),
+      hidden: !experimental,
+    },
     partitions: {
       id: 'partitions',
       title: 'Partitions',
@@ -82,12 +92,14 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       title: 'Definition',
       to: buildAssetViewParams({...params, view: 'definition'}),
       disabled: !definition,
+      hidden: experimental,
     },
     lineage: {
       id: 'lineage',
       title: 'Lineage',
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
+      hidden: experimental,
     },
     automation: {
       id: 'automation',

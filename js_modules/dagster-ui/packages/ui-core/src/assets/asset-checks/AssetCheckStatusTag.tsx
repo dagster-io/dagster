@@ -35,7 +35,6 @@ export const AssetCheckStatusTag = ({
   if (!status) {
     return null;
   }
-  console.log(status, evaluation);
 
   const renderTag = () => {
     const isWarn = evaluation?.severity === AssetCheckSeverity.WARN;
