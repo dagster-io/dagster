@@ -55,7 +55,11 @@ from .updated_scenarios.asset_daemon_scenario_states import (
     two_partitions_def,
 )
 from .updated_scenarios.basic_scenarios import basic_scenarios
-from .updated_scenarios.cron_scenarios import basic_hourly_cron_rule, get_cron_policy
+from .updated_scenarios.cron_scenarios import (
+    basic_hourly_cron_rule,
+    basic_hourly_cron_schedule,
+    get_cron_policy,
+)
 from .updated_scenarios.partition_scenarios import partition_scenarios
 
 
@@ -95,7 +99,7 @@ automation_policy_sensor_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_state=one_asset.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
