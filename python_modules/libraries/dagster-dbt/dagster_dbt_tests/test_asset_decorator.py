@@ -30,7 +30,11 @@ from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
-from .dbt_projects import test_dbt_python_interleaving_path, test_meta_config_path
+from .dbt_projects import (
+    test_dbt_alias_path,
+    test_dbt_python_interleaving_path,
+    test_meta_config_path,
+)
 
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
@@ -364,8 +368,10 @@ def test_with_asset_key_replacements() -> None:
         ...
 
     assert my_dbt_assets.keys_by_input_name == {
-        "__subset_input__cereals": AssetKey(["prefix", "cereals"]),
-        "__subset_input__sort_by_calories": AssetKey(["prefix", "sort_by_calories"]),
+        "__subset_input__seed_dagster_dbt_test_project_cereals": AssetKey(["prefix", "cereals"]),
+        "__subset_input__model_dagster_dbt_test_project_sort_by_calories": AssetKey(
+            ["prefix", "sort_by_calories"]
+        ),
     }
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
         AssetKey(["prefix", "cereals"]),
@@ -628,6 +634,18 @@ def test_dbt_with_custom_resource_key(test_meta_config_manifest: Dict[str, Any])
     assert result.success
 
 
+def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_alias_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
+    )
+    assert result.success
+
+
 def test_dbt_with_python_interleaving(
     test_dbt_python_interleaving_manifest: Dict[str, Any],
 ) -> None:
@@ -661,15 +679,17 @@ def test_dbt_with_python_interleaving(
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the python augmented customers asset depends on the second invocation of my_dbt_assets
         NodeInvocation(name="dagster__python_augmented_customers"): {
-            "raw_customers": DependencyDefinition(node="my_dbt_assets_2", output="raw_customers")
+            "raw_customers": DependencyDefinition(
+                node="my_dbt_assets_2", output="seed_jaffle_shop_raw_customers"
+            )
         },
         # the second invocation of my_dbt_assets depends on the first, and the python step
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
             ),
-            "__subset_input__stg_payments": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_payments"
+            "__subset_input__model_jaffle_shop_stg_payments": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_payments"
             ),
             "dagster_python_augmented_customers": DependencyDefinition(
                 node="dagster__python_augmented_customers", output="result"
@@ -693,8 +713,8 @@ def test_dbt_with_python_interleaving(
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the second invocation of my_dbt_assets depends on the first
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
             )
         },
     }

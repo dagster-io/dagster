@@ -68,7 +68,7 @@ from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
-    output_name_fn,
+    dagster_name_fn,
     result_to_events,
     select_unique_ids_from_manifest,
 )
@@ -205,7 +205,7 @@ def _events_for_structured_json_line(
         )
         yield Output(
             value=None,
-            output_name=output_name_fn(compiled_node_info),
+            output_name=dagster_name_fn(compiled_node_info),
             metadata=metadata,
         )
     elif node_resource_type == "test" and runtime_node_info.get("node_finished_at"):

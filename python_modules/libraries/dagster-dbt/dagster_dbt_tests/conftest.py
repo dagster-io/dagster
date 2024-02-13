@@ -10,6 +10,7 @@ from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
 from .dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,
+    test_dbt_alias_path,
     test_dbt_python_interleaving_path,
     test_meta_config_path,
 )
@@ -107,6 +108,11 @@ def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
 def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_manifest(test_asset_key_exceptions_path)
+
+
+@pytest.fixture(name="test_dbt_alias_manifest", scope="session")
+def test_dbt_alias_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_dbt_alias_path)
 
 
 @pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
