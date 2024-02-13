@@ -42,12 +42,7 @@ export const HelpMenu = () => {
         img={DagsterUniversityImage.src}
         actions={{
           custom: (
-            <ExternalAnchorButton
-              href="https://courses.dagster.io/courses/dagster-essentials"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
+            <ExternalAnchorButton href="https://courses.dagster.io/courses/dagster-essentials">
               Learn more
             </ExternalAnchorButton>
           ),
