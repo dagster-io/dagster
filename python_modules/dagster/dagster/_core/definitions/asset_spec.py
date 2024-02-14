@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 
+@whitelist_for_serdes
 class AssetExecutionType(Enum):
     OBSERVATION = "OBSERVATION"
     UNEXECUTABLE = "UNEXECUTABLE"
