@@ -4,6 +4,7 @@ import {errorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
 import {AppProvider} from '@dagster-io/ui-core/app/AppProvider';
 import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
+import {HelpMenu} from '@dagster-io/ui-core/app/HelpMenu';
 import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
@@ -40,6 +41,7 @@ export default function AppPage() {
     <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
       <AppProvider appCache={appCache} config={config}>
         <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
+          <HelpMenu showContactSales={false} />
           <UserSettingsButton />
         </AppTopNav>
         <App>
