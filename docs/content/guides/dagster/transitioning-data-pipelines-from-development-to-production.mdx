@@ -58,11 +58,12 @@ Let’s start by writing the assets. We'll use Pandas DataFrames to interact wit
 
 ```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
+import pandas as pd
 import requests
-
-from dagster import Config, asset
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
+from dagster import Config, asset
 
 
 class ItemsConfig(Config):
