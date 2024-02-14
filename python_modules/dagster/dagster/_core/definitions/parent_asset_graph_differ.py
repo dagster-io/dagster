@@ -33,6 +33,7 @@ class ParentAssetGraphDiffer:
         self,
         instance: "DagsterInstance",
         branch_asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
+        parent_asset_graph: Optional[Union["AssetGraph", Callable[[], "AssetGraph"]]] = None,
     ):
         from dagster._core.definitions.asset_graph import AssetGraph
 
@@ -45,7 +46,15 @@ class ParentAssetGraphDiffer:
             self._branch_asset_graph_load_fn = branch_asset_graph
 
         if self._is_branch_deployment():
-            self._parent_asset_graph = self._get_parent_deployment_asset_graph()
+            if parent_asset_graph is None:
+                # TODO - None parent asset graph may indicate that all assets are new. Need to determine this behavior and update here
+                self._changed_status_by_asset_key = {}
+            elif isinstance(parent_asset_graph, AssetGraph):
+                self._parent_asset_graph = parent_asset_graph
+                self._parent_asset_graph_load_fn = None
+            else:
+                self._parent_asset_graph = None
+                self._parent_asset_graph_fn = parent_asset_graph
         else:
             self._changed_status_by_asset_key = {}
 
@@ -54,10 +63,6 @@ class ParentAssetGraphDiffer:
         # TODO - implement.
         return False
 
-    def _get_parent_deployment_asset_graph(self):
-        # TODO - implement. For now we can override in the test suite
-        return None
-
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
         corresponding parent deployment asset.
@@ -65,21 +70,21 @@ class ParentAssetGraphDiffer:
         if not self._is_branch_deployment():
             return []
 
-        if self._parent_asset_graph is None:
+        if self.parent_asset_graph is None:
             # TODO - this might indicate that the entire asset graph is new, and thus should
             # return ChangeReason.NEW. This will depend on how the parent asset graph is fetched.
             return []
 
-        if asset_key not in self._parent_asset_graph.all_asset_keys:
+        if asset_key not in self.parent_asset_graph.all_asset_keys:
             return [ChangeReason.NEW]
 
         changes = []
         if self.branch_asset_graph.get_code_version(
             asset_key
-        ) != self._parent_asset_graph.get_code_version(asset_key):
+        ) != self.parent_asset_graph.get_code_version(asset_key):
             changes.append(ChangeReason.CODE_VERSION)
 
-        if self.branch_asset_graph.get_parents(asset_key) != self._parent_asset_graph.get_parents(
+        if self.branch_asset_graph.get_parents(asset_key) != self.parent_asset_graph.get_parents(
             asset_key
         ):
             changes.append(ChangeReason.INPUTS)
@@ -100,3 +105,9 @@ class ParentAssetGraphDiffer:
         if self._branch_asset_graph is None:
             self._branch_asset_graph = check.not_none(self._branch_asset_graph_load_fn)()
         return self._branch_asset_graph
+
+    @property
+    def parent_asset_graph(self) -> Optional["AssetGraph"]:
+        if self._parent_asset_graph is None and self._parent_asset_graph_load_fn is not None:
+            self._parent_asset_graph = self._parent_asset_graph_load_fn()
+        return self._parent_asset_graph
