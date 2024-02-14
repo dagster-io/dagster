@@ -58,7 +58,7 @@ export function useAssetsLiveData(
   thread: LiveDataThreadID = 'default',
 ) {
   return factory.useLiveData(
-    assetKeys.map((key) => tokenForAssetKey(key)),
+    React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]),
     thread,
   );
 }
