@@ -389,6 +389,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._branch_changes_loader = check.opt_inst_param(
             branch_changes_loader, "branch_changes_loader", BranchChangeResolver
         )
+        if self._branch_changes_loader:
+            changed = self._branch_changes_loader.get_changes_for_asset(
+                external_asset_node.asset_key
+            )
         self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
 
