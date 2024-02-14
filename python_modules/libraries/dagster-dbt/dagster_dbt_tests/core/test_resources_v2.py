@@ -487,8 +487,9 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
                 "invocation_id": "1-2-3",
             },
             "data": data,
-        }
-    ).to_default_asset_events(manifest={})
+        },
+        event_history_metadata={},
+    ).to_default_asset_events(manifest={"nodes": {"a.b.c": {}}})
 
     assert list(asset_events) == []
 
@@ -531,7 +532,9 @@ def test_to_default_asset_output_events() -> None:
     }
 
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event, event_history_metadata={}).to_default_asset_events(
+            manifest=manifest
+        )
     )
 
     assert len(asset_events) == 1

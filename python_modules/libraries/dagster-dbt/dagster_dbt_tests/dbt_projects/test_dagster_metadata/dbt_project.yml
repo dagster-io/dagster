@@ -20,7 +20,13 @@ clean-targets:
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
 models:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
   test_dagster_metadata:
     materialized: table
     staging:
       materialized: view
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
