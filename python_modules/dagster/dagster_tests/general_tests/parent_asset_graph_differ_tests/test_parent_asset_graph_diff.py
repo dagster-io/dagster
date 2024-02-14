@@ -7,9 +7,9 @@ from unittest import mock
 import pytest
 from dagster import DagsterInstance, asset, instance_for_test
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.branch_changes import BranchChangeResolver, ChangeReason
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.parent_asset_graph_differ import ChangeReason, ParentAssetGraphDiffer
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -96,13 +96,13 @@ def _get_branch_deployment_graph_with_code_changes(
     )
 
 
-def get_branch_change_resolver_for_parent_graph(
+def get_parent_asset_graph_differ(
     instance,
     parent_graph_name: str,
     new_assets: Optional[List] = None,
     updated_assets: Optional[List] = None,
 ):
-    """Returns a subclass of BranchChangeResolver with some deployment-specific methods overwritten so that we can
+    """Returns a subclass of ParentAssetGraphDiffer with some deployment-specific methods overwritten so that we can
     effectively run unit tests. In our tests we want to always be considered in a branch deployment, and
     the method for getting the parent asset graph is different than in a real branch deployment.
     """
@@ -110,7 +110,7 @@ def get_branch_change_resolver_for_parent_graph(
         parent_graph_name=parent_graph_name, new_assets=new_assets, updated_assets=updated_assets
     )
 
-    class TestingBranchChangeResolver(BranchChangeResolver):
+    class TestingParentAssetGraphDiffer(ParentAssetGraphDiffer):
         def _get_parent_deployment_asset_graph(self):
             return ExternalAssetGraph.from_workspace(
                 _make_workspace_context(instance, [parent_graph_name])
@@ -120,7 +120,7 @@ def get_branch_change_resolver_for_parent_graph(
             # for testing, we want to always be in a branch deployment
             return True
 
-    return TestingBranchChangeResolver(instance=instance, branch_asset_graph=branch_graph)
+    return TestingParentAssetGraphDiffer(instance=instance, branch_asset_graph=branch_graph)
 
 
 def test_new_asset(instance):
@@ -128,7 +128,7 @@ def test_new_asset(instance):
     def new_asset():
         return 1
 
-    resolver = get_branch_change_resolver_for_parent_graph(
+    resolver = get_parent_asset_graph_differ(
         instance=instance, parent_graph_name="basic_asset_graph", new_assets=[new_asset]
     )
 
