@@ -114,7 +114,62 @@ defs = Definitions(
 
 ---
 
-## Selecting specific columns in a downstream asset
+## Using the Snowflake resource
+
+### Executing custom SQL commands
+
+Using a [Snowflake resource](/concepts/resources), you can execute custom SQL queries on a Snowflake database:
+
+```python file=/integrations/snowflake/resource.py startafter=start endbefore=end
+import pandas as pd
+from dagster_snowflake import SnowflakeResource
+
+from dagster import Definitions, EnvVar, asset
+
+# this example executes a query against the IRIS_DATASET table created in Step 2 of the
+# Using Dagster with Snowflake tutorial
+
+
+@asset
+def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
+    with snowflake.get_connection() as conn:
+        return (
+            conn.cursor()
+            .execute(
+                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                " 'petal_width_cm' < 1"
+            )
+            .fetch_pandas_all()
+        )
+
+
+defs = Definitions(
+    assets=[small_petals],
+    resources={
+        "snowflake": SnowflakeResource(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            schema="IRIS",
+        )
+    },
+)
+```
+
+Let's review what's happening in this example:
+
+- Attached the `SnowflakeResource` to the `small_petals` asset
+- Used the `get_connection` context manager method of the Snowflake resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection) object
+- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake resource tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+
+For more information on the Snowflake resource, including additional configuration settings, see the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> API docs.
+
+---
+
+## Using the Snowflake I/O manager
+
+### Selecting specific columns in a downstream asset
 
 Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the Snowflake I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
 
@@ -145,51 +200,19 @@ In this example, we only use the columns containing sepal data from the `IRIS_DA
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
----
-
-## Storing partitioned assets
+### Storing partitioned assets
 
 The Snowflake I/O manager supports storing and loading partitioned data. In order to correctly store and load data from the Snowflake table, the Snowflake I/O manager needs to know which column contains the data defining the partition bounds. The Snowflake I/O manager uses this information to construct the correct queries to select or replace the data. In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
 
 <TabGroup>
 <TabItem name="Static partitioned assets">
 
-### Storing static partitioned assets
+#### Static partitioned assets
 
 In order to store static partitioned assets in Snowflake, you must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
-```python file=/integrations/snowflake/static_partition.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
-
-
-@asset(
-    partitions_def=StaticPartitionsDefinition(
-        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
-    ),
-    metadata={"partition_expr": "SPECIES"},
-)
-def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
-    species = context.partition_key
-
-    full_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    return full_df[full_df["Species"] == species]
-
-
-@asset
-def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
-    return iris_dataset_partitioned.dropna().drop_duplicates()
+```python file=/integrations/snowflake/static_partition_io.py startafter=start_example endbefore=end_example
+No match for startAfter value "start_example"
 ```
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition (or multiple static partitions), the following statement is used:
@@ -211,7 +234,7 @@ SELECT *
 </TabItem>
 <TabItem name="Time partitioned assets">
 
-### Storing time partitioned assets
+#### Time partitioned assets
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
@@ -262,7 +285,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 </TabItem>
 <TabItem name="Multi-partitioned assets">
 
-### Storing multi-partitioned assets
+### Multi-partitioned assets
 
 The Snowflake I/O manager can also store data partitioned on multiple dimensions. To do this, you must specify the column for each partition as a dictionary of `partition_expr` metadata:
 
@@ -324,9 +347,7 @@ SELECT *
 </TabItem>
 </TabGroup>
 
----
-
-## Storing tables in multiple schemas
+### Storing tables in multiple schemas
 
 You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways.
 
@@ -391,9 +412,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
   </ol>
 </Note>
 
----
-
-## Storing timestamp data in Pandas DataFrames
+### Storing timestamp data in Pandas DataFrames
 
 Due to a longstanding [issue](https://github.com/snowflakedb/snowflake-connector-python/issues/319) with the Snowflake Pandas connector, loading timestamp data from a Pandas DataFrame to Snowflake sometimes causes the data to be corrupted. In order to store timestamp data properly, it must have a timezone attached.
 
@@ -409,9 +428,7 @@ When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager 
   about migrating database tables.
 </Note>
 
----
-
-## Using the Snowflake I/O manager with other I/O managers
+### Using the Snowflake I/O manager with other I/O managers
 
 You may have assets that you don't want to store in Snowflake. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the `asset` decorator:
 
@@ -461,9 +478,7 @@ defs = Definitions(
 
 In this example, the `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the <PyObject object="Definitions" /> object, we supply the I/O managers for those keys. When the assets are materialized, the `iris_dataset` will be stored in Snowflake, and `iris_plots` will be saved in Amazon S3.
 
----
-
-## Storing and loading PySpark DataFrames in Snowflake
+### Storing and loading PySpark DataFrames in Snowflake
 
 The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
@@ -624,9 +639,7 @@ defs = Definitions(
 </TabItem>
 </TabGroup>
 
----
-
-## Using Pandas and PySpark DataFrames with Snowflake
+### Using Pandas and PySpark DataFrames with Snowflake
 
 If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
 
@@ -674,50 +687,3 @@ defs = Definitions(
     },
 )
 ```
-
----
-
-## Executing custom SQL commands with the Snowflake resource
-
-In addition to the Snowflake I/O manager, Dagster also provides a Snowflake [resource](/concepts/resources) for executing custom SQL queries.
-
-```python file=/integrations/snowflake/resource.py startafter=start endbefore=end
-import pandas as pd
-from dagster_snowflake import SnowflakeResource
-
-from dagster import Definitions, EnvVar, asset
-
-# this example executes a query against the IRIS_DATASET table created in Step 2 of the
-# Using Dagster with Snowflake tutorial
-
-
-@asset
-def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
-    with snowflake.get_connection() as conn:
-        return (
-            conn.cursor()
-            .execute(
-                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
-                " 'petal_width_cm' < 1"
-            )
-            .fetch_pandas_all()
-        )
-
-
-defs = Definitions(
-    assets=[small_petals],
-    resources={
-        "snowflake": SnowflakeResource(
-            account="abc1234.us-east-1",
-            user=EnvVar("SNOWFLAKE_USER"),
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database="FLOWERS",
-            schema="IRIS",
-        )
-    },
-)
-```
-
-In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager method of the resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection). We use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/snowflake/using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
-
-For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource).
