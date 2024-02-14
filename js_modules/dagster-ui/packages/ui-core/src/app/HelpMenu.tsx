@@ -18,7 +18,7 @@ import {ShortcutHandler} from './ShortcutHandler';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-export const HelpMenu = () => {
+export const HelpMenu = ({showContactSales = true}: {showContactSales?: boolean}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
@@ -92,11 +92,13 @@ export const HelpMenu = () => {
                   text="Dagster University"
                 />
               </div>
-              <MenuExternalLink
-                href="https://dagster.io/contact"
-                icon="open_in_new"
-                text="Contact sales"
-              />
+              {showContactSales ? (
+                <MenuExternalLink
+                  href="https://dagster.io/contact"
+                  icon="open_in_new"
+                  text="Contact sales"
+                />
+              ) : null}
             </Menu>
           }
         >
