@@ -748,7 +748,9 @@ class TestEventLogStorage:
         assert len(c_stats.attempts_list) == 1
 
     def test_secondary_index(self, storage: EventLogStorage):
-        if not isinstance(storage, SqlEventLogStorage):
+        if not isinstance(storage, SqlEventLogStorage) or isinstance(
+            storage, InMemoryEventLogStorage
+        ):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
         # test that newly initialized DBs will have the secondary indexes built
