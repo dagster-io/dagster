@@ -39,13 +39,13 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
             stamp_alembic_rev(alembic_config, self._held_conn)
 
-        self.reindex_events()
-        self.reindex_assets()
-
         if preload:
             for payload in preload:
                 for event in payload.event_list:
                     self.store_event(event)
+
+    def has_secondary_index(self, name: str) -> bool:
+        return True
 
     @contextmanager
     def _connect(self):
