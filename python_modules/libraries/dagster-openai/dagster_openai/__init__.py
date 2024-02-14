@@ -1,7 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from .resources import (
-    ApiResourceEnum as ApiResourceEnum,
     OpenAIResource as OpenAIResource,
     with_usage_metadata as with_usage_metadata,
 )
