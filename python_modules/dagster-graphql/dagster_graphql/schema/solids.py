@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
+from dagster._core.definitions.branch_changes import BranchChangeResolver
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import RepresentedJob
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.historical import HistoricalJob
@@ -435,8 +437,18 @@ class ISolidDefinitionMixin:
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
             )
+            branch_changes_loader = BranchChangeResolver(
+                instance=graphene_info.context.instance,
+                branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(ext_repo),
+            )
             return [
-                GrapheneAssetNode(location, ext_repo, node, asset_checks_loader=asset_checks_loader)
+                GrapheneAssetNode(
+                    location,
+                    ext_repo,
+                    node,
+                    asset_checks_loader=asset_checks_loader,
+                    branch_changes_loader=branch_changes_loader,
+                )
                 for node in nodes
             ]
 

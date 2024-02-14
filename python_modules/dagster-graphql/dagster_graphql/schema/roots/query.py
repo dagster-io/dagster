@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
+from dagster._core.definitions.branch_changes import BranchChangeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
@@ -951,6 +952,9 @@ class GrapheneQuery(graphene.ObjectType):
             instance=graphene_info.context.instance,
             asset_graph=load_asset_graph,
         )
+        branch_changes_loader = BranchChangeResolver(
+            instance=graphene_info.context.instance, branch_asset_graph=load_asset_graph
+        )
 
         nodes = [
             GrapheneAssetNode(
@@ -962,6 +966,7 @@ class GrapheneQuery(graphene.ObjectType):
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
+                branch_changes_loader=branch_changes_loader,
             )
             for node in results
         ]

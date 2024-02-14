@@ -23,6 +23,7 @@ from dagster import (
     MultiPartitionsDefinition,
     _check as check,
 )
+from dagster._core.definitions.branch_changes import BranchChangeResolver
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import (
@@ -191,6 +192,11 @@ def get_asset_nodes_by_asset_key(
         asset_graph=lambda: ExternalAssetGraph.from_workspace(graphene_info.context),
     )
 
+    branch_changes_loader = BranchChangeResolver(
+        instance=graphene_info.context.instance,
+        branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(graphene_info.context),
+    )
+
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
 
     asset_nodes_by_asset_key: Dict[
@@ -221,6 +227,7 @@ def get_asset_nodes_by_asset_key(
             depended_by_loader=depended_by_loader,
             stale_status_loader=stale_status_loader,
             dynamic_partitions_loader=dynamic_partitions_loader,
+            branch_changes_loader=branch_changes_loader,
         )
         for repo_loc, repo, external_asset_node in asset_nodes_by_asset_key.values()
     }
