@@ -17,7 +17,13 @@ class ChangeReason(Enum):
     INPUTS = "INPUTS"
 
 
-class BranchChangeResolver:
+class ParentAssetGraphDiffer:
+    """Class to compute how an asset has changed with respect to a parent asset graph.
+    Given two asset graphs, parent_asset_graph and branch_asset_graph, we can compute how the
+    assets in branch_asset_graph have changed with respect to parent_asset_graph. The ChangeReason
+    enum contains the list of potential changes an asset can undergo.
+    """
+
     _instance: "DagsterInstance"
     _branch_asset_graph: Optional["AssetGraph"]
     _branch_asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
