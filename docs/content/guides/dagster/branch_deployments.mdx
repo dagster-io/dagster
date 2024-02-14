@@ -70,20 +70,54 @@ In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, 
 
 ```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
-import pandas as pd
 import requests
 
 from dagster import Config, asset
+from dagster_snowflake import SnowflakeResource
+from snowflake.connector.pandas_tools import write_pandas
 
 
 class ItemsConfig(Config):
     base_item_id: int
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def items(config: ItemsConfig) -> pd.DataFrame:
+CREATE_UPDATE_TABLE_QUERY = """
+create table if not exists {table_name} (
+    id varchar,
+    parent varchar,
+    time datetime,
+    type varchar,
+    user_id varchar,
+    text varchar,
+    kids varchar,
+    score double,
+    title varchar,
+    descendants varchar,
+    url varchar
+);
+
+delete from {table_name} where id = id;
+
+insert into {table_name}
+select
+    id,
+    parent,
+    time,
+    type,
+    user_id,
+    text,
+    kids,
+    score,
+    title,
+    descendants,
+    url
+from items
+where type = '{item_type}'
+"""
+
+
+@asset
+def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
     max_id = requests.get(
@@ -97,23 +131,48 @@ def items(config: ItemsConfig) -> pd.DataFrame:
     # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
     result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
-    return result
+
+    # Upload data to Snowflake as a dataframe
+    with snowflake_resource.get_connection() as conn:
+        write_pandas(
+            conn=conn,
+            df=result,
+            table_name="items",
+            schema=snowflake_resource.schema,
+            database=snowflake_resource.database,
+            auto_create_table=True,
+            use_logical_type=True,
+        )
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def comments(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def comments(snowflake_resource: SnowflakeResource):
     """Comments from the Hacker News API."""
-    return items[items["type"] == "comment"]
+    table_name = "comments"
+    item_type = "comment"
+
+    create_table = CREATE_UPDATE_TABLE_QUERY(
+        table_name=table_name,
+        item_type=item_type,
+    )
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor.execute(create_table)
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def stories(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def stories(snowflake_resource: SnowflakeResource):
     """Stories from the Hacker News API."""
-    return items[items["type"] == "story"]
+    table_name = "stories"
+    item_type = "story"
+
+    create_table = CREATE_UPDATE_TABLE_QUERY(
+        table_name=table_name,
+        item_type=item_type,
+    )
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor.execute(create_table)
 ```
 
 As you can see, our assets use an [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
@@ -131,43 +190,7 @@ Dagster automatically sets certain [environment variables](/dagster-cloud/managi
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v1.py startafter=start_repository endbefore=end_repository
-# __init__.py
-from dagster import Definitions
-
-from ..assets import comments, items, stories
-
-snowflake_config = {
-    "account": "abc1234.us-east-1",
-    "user": "system@company.com",
-    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-    "schema": "HACKER_NEWS",
-}
-
-resources = {
-    "branch": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            **snowflake_config,
-            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
-        ),
-    },
-    "prod": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            **snowflake_config,
-            database="PRODUCTION",
-        ),
-    },
-}
-
-
-def get_current_env():
-    is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-    assert is_branch_depl is not None  # env var must be set
-    return "branch" if is_branch_depl else "prod"
-
-
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[get_current_env()]
-)
+No match for startAfter value "start_repository"
 ```
 
 Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
@@ -231,7 +254,7 @@ We now need to define resources that configure our jobs to the current environme
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_resources endbefore=end_resources
 resources = {
     "branch": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             **snowflake_config,
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
@@ -241,7 +264,7 @@ resources = {
         ),
     },
     "prod": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             **snowflake_config,
             database="PRODUCTION",
         ),
