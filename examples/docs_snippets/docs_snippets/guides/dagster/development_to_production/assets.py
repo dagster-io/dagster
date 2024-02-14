@@ -14,11 +14,12 @@ ITEM_FIELD_NAMES = [
 
 # start_assets
 # assets.py
+import pandas as pd
 import requests
-
-from dagster import Config, asset
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
+from dagster import Config, asset
 
 
 class ItemsConfig(Config):

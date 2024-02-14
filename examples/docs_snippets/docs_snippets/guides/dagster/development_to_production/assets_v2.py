@@ -1,8 +1,8 @@
 import pandas as pd
-
-from dagster import Config, asset
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
+from dagster import Config, asset
 
 from .resources.resources_v1 import HNAPIClient
 
