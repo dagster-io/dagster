@@ -364,7 +364,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Customizing metadata
 
-For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's table schema.
+For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's declared column schema.
 
 To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
 
@@ -528,6 +528,39 @@ dagster_dbt_translator = DagsterDbtTranslator(
 )
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+```
+
+---
+
+## Emit column schema as materialization metadata <Experimental />
+
+Dagster allows you to emit column schema [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata), which includes the column names and data types of your materialized dbt models, seeds, and snapshots.
+
+With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
+
+To collect this metadata for your dbt project, specify the `dagster` dbt package in your `packages.yml` or `dependencies.yml`, and then run `dbt deps`.
+
+```yaml
+packages:
+  - git: "https://github.com/dagster-io/dagster.git"
+    subdirectory: "/python_modules/libraries/dagster-dbt/dbt_packages/dagster"
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
+
+Then, enable the `dagster.log_columns_in_relation()` macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) for the dbt resources that should emit column schema metadata. For example, adding the following snippet in `dbt_project.yml` enables this macro for all dbt models, seeds, and snapshots:
+
+```yaml
+models:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
 ```
 
 ---
