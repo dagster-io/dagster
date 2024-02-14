@@ -109,19 +109,10 @@ def get_parent_asset_graph_differ(
     branch_graph = _get_branch_deployment_graph_with_code_changes(
         parent_graph_name=parent_graph_name, new_assets=new_assets, updated_assets=updated_assets
     )
-
     parent_graph = ExternalAssetGraph.from_workspace(
         _make_workspace_context(instance, [parent_graph_name])
     )
-
-    class TestingParentAssetGraphDiffer(ParentAssetGraphDiffer):
-        def _is_branch_deployment(self) -> bool:
-            # for testing, we want to always be in a branch deployment
-            return True
-
-    return TestingParentAssetGraphDiffer(
-        instance=instance, branch_asset_graph=branch_graph, parent_asset_graph=parent_graph
-    )
+    return ParentAssetGraphDiffer(branch_asset_graph=branch_graph, parent_asset_graph=parent_graph)
 
 
 def test_new_asset(instance):
@@ -129,13 +120,13 @@ def test_new_asset(instance):
     def new_asset():
         return 1
 
-    resolver = get_parent_asset_graph_differ(
+    differ = get_parent_asset_graph_differ(
         instance=instance, parent_graph_name="basic_asset_graph", new_assets=[new_asset]
     )
 
-    assert resolver.is_changed_in_branch(new_asset.key)
-    assert resolver.get_changes_for_asset(new_asset.key) == [ChangeReason.NEW]
-    assert not resolver.is_changed_in_branch(AssetKey("upstream"))
+    assert differ.is_changed_in_branch(new_asset.key)
+    assert differ.get_changes_for_asset(new_asset.key) == [ChangeReason.NEW]
+    assert not differ.is_changed_in_branch(AssetKey("upstream"))
 
 
 """
