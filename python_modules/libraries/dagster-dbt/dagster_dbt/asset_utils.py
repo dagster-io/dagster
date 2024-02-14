@@ -346,6 +346,8 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 
     if dbt_resource_props["resource_type"] == "source":
         components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]
+    elif dbt_resource_props.get("version"):
+        components = [dbt_resource_props["alias"]]
     else:
         configured_schema = dbt_resource_props["config"].get("schema")
         if configured_schema is not None:
