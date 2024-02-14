@@ -2,6 +2,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
@@ -57,6 +59,19 @@ class ParentAssetGraphDiffer:
                 self._parent_asset_graph_fn = parent_asset_graph
         else:
             self._changed_status_by_asset_key = {}
+
+    @classmethod
+    def from_workspaces(
+        cls,
+        branch_workspace: BaseWorkspaceRequestContext,
+        parent_workspace: Optional[BaseWorkspaceRequestContext],
+    ) -> Optional["ParentAssetGraphDiffer"]:
+        if parent_workspace is not None:
+            return ParentAssetGraphDiffer(
+                instance=branch_workspace.instance,
+                branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(branch_workspace),
+                parent_asset_graph=lambda: ExternalAssetGraph.from_workspace(parent_workspace),
+            )
 
     def _is_branch_deployment(self) -> bool:
         """Determines if the current deployment is a branch deployment."""
