@@ -28,8 +28,12 @@ def test_asset_downstream_of_dbt_asset(my_dbt_assets: AssetsDefinition) -> None:
 
 def test_get_asset_keys_by_output_name_for_source(my_dbt_assets: AssetsDefinition) -> None:
     assert get_asset_keys_by_output_name_for_source([my_dbt_assets], "jaffle_shop") == {
-        "raw_customers": AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]),
-        "raw_events": AssetKey(["jaffle_shop", "raw_events"]),
+        "source_test_dagster_meta_config_jaffle_shop_raw_customers": AssetKey(
+            ["customized", "source", "jaffle_shop", "main", "raw_customers"]
+        ),
+        "source_test_dagster_meta_config_jaffle_shop_raw_events": AssetKey(
+            ["jaffle_shop", "raw_events"]
+        ),
     }
 
     with pytest.raises(KeyError, match="Could not find a dbt source with name"):

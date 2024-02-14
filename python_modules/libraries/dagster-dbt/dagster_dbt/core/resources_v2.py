@@ -43,8 +43,8 @@ from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
+    dagster_name_fn,
     get_manifest_and_translator_from_dbt_assets,
-    output_name_fn,
 )
 from ..dagster_dbt_translator import (
     DagsterDbtTranslator,
@@ -170,7 +170,7 @@ class DbtCliEventMessage:
             if has_asset_def:
                 yield Output(
                     value=None,
-                    output_name=output_name_fn(event_node_info),
+                    output_name=dagster_name_fn(event_node_info),
                     metadata={
                         "unique_id": unique_id,
                         "invocation_id": invocation_id,
@@ -1132,7 +1132,7 @@ def get_dbt_resource_props_by_output_name(
     node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
 
     return {
-        output_name_fn(node): node
+        dagster_name_fn(node): node
         for node in node_info_by_dbt_unique_id.values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }
