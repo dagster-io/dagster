@@ -61,14 +61,14 @@ interface Props {
 export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
-  const {flagUseNewAutomationPage} = useFeatureFlags();
+  const {flagUseNewOverviewPage, flagUseNewAutomationPage} = useFeatureFlags();
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
   const tabList = useMemo(() => tabBuilder({definition, params}), [definition, params, tabBuilder]);
 
-  const defaultTab = flagUseNewAutomationPage
+  const defaultTab = flagUseNewOverviewPage
     ? 'overview'
     : tabList.some((t) => t.id === 'partitions')
     ? 'partitions'
@@ -514,14 +514,14 @@ const AssetViewPageHeaderTags = ({
   onShowUpstream: () => void;
 }) => {
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  const {flagUseNewAutomationPage} = useFeatureFlags();
+  const {flagUseNewOverviewPage} = useFeatureFlags();
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
   // In the new UI, all other tags are shown in the right sidebar of the overview tab.
   // When the old code below is removed, some of these components may no longer be used.
-  if (flagUseNewAutomationPage) {
+  if (flagUseNewOverviewPage) {
     return (
       <>
         {definition ? (
