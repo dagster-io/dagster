@@ -232,8 +232,6 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     result_two = job_def_with_shim.execute_in_process(
         instance=instance,
-        # currently we have to explicitly select the asset to exclude the source from execution
-        asset_selection=[AssetKey("an_asset")],
         partition_key="2021-01-03",
     )
 
@@ -284,9 +282,9 @@ def test_external_assets_with_dependencies_manual_construction() -> None:
     defs = Definitions(assets=[_upstream_def, _downstream_asset])
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
-        AssetKey("downstream_asset")
-    ] == {AssetKey("upstream_asset")}
+    assert defs.get_asset_graph().asset_dep_graph["upstream"][AssetKey("downstream_asset")] == {
+        AssetKey("upstream_asset")
+    }
 
 
 def test_external_asset_multi_asset() -> None:

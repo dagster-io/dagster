@@ -913,11 +913,6 @@ def _log_materialization_or_observation_events_for_asset(
             execution_type = AssetExecutionType.MATERIALIZATION
 
         check.invariant(
-            execution_type != AssetExecutionType.UNEXECUTABLE,
-            "There should never be unexecutable assets here",
-        )
-
-        check.invariant(
             execution_type in {AssetExecutionType.MATERIALIZATION, AssetExecutionType.OBSERVATION},
             f"Unexpected asset execution type {execution_type}",
         )
