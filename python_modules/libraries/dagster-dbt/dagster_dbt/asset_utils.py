@@ -362,7 +362,7 @@ def default_metadata_from_dbt_resource_props(
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        metadata["table_schema"] = MetadataValue.table_schema(
+        metadata["columns"] = MetadataValue.table_schema(
             TableSchema(
                 columns=[
                     TableColumn(
