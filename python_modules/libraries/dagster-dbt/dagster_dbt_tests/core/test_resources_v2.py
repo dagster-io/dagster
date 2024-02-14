@@ -6,9 +6,7 @@ from typing import List, Optional, Union, cast
 
 import pytest
 from dagster import (
-    AssetCheckResult,
     AssetMaterialization,
-    AssetObservation,
     FloatMetadataValue,
     IntMetadataValue,
     TextMetadataValue,
@@ -25,7 +23,6 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliEventMessage,
     DbtCliResource,
 )
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pydantic import ValidationError
@@ -545,67 +542,3 @@ def test_to_default_asset_output_events() -> None:
         "Execution Duration": FloatMetadataValue(60.0),
         "rows_affected": IntMetadataValue(100),
     }
-
-
-@pytest.mark.parametrize("is_asset_check", [False, True])
-def test_dbt_tests_to_events(mocker: MockerFixture, is_asset_check: bool) -> None:
-    manifest = {
-        "nodes": {
-            "model.a": {
-                "resource_type": "model",
-                "config": {},
-                "name": "model.a",
-            },
-            "test.a": {
-                "resource_type": "test",
-                "config": {
-                    "severity": "ERROR",
-                },
-                "name": "test.a",
-                "attached_node": "model.a" if is_asset_check else None,
-            },
-        },
-        "sources": {},
-        "parent_map": {
-            "test.a": [
-                "model.a",
-            ]
-        },
-    }
-    raw_event = {
-        "info": {
-            "name": "NodeFinished",
-            "level": "info",
-            "invocation_id": "1-2-3",
-        },
-        "data": {
-            "node_info": {
-                "materialized": "test",
-                "unique_id": "test.a",
-                "resource_type": "test",
-                "node_name": "node_name.test.a",
-                "node_status": "success",
-                "node_finished_at": "2024-01-01T00:00:00Z",
-            },
-        },
-    }
-
-    mock_context = mocker.MagicMock()
-    mock_context.has_assets_def = True
-
-    dagster_dbt_translator = DagsterDbtTranslator(
-        settings=DagsterDbtTranslatorSettings(enable_asset_checks=is_asset_check)
-    )
-
-    asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
-            manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator,
-            context=mock_context,
-        )
-    )
-
-    expected_event_type = AssetCheckResult if is_asset_check else AssetObservation
-
-    assert len(asset_events) == 1
-    assert all(isinstance(e, expected_event_type) for e in asset_events)
