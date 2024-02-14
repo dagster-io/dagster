@@ -10,8 +10,8 @@ from dagster import (
     observable_source_asset,
     sensor,
 )
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.sensor_definition import (
@@ -76,21 +76,19 @@ defs = Definitions(
 
 
 @pytest.fixture
-def instance_with_automation_policy_sensors():
-    with instance_for_test(
-        {"auto_materialize": {"use_automation_policy_sensors": True}}
-    ) as the_instance:
+def instance_with_auto_materialize_sensors():
+    with instance_for_test({"auto_materialize": {"use_sensors": True}}) as the_instance:
         yield the_instance
 
 
 @pytest.fixture
-def instance_without_automation_policy_sensors():
+def instance_without_auto_materialize_sensors():
     with instance_for_test() as the_instance:
         yield the_instance
 
 
-def test_default_automation_policy_sensors(instance_with_automation_policy_sensors):
-    instance = instance_with_automation_policy_sensors
+def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors):
+    instance = instance_with_auto_materialize_sensors
 
     repo_handle = MagicMock(spec=RepositoryHandle)
     repo_handle.get_external_origin.return_value = ExternalRepositoryOrigin(
@@ -112,19 +110,19 @@ def test_default_automation_policy_sensors(instance_with_automation_policy_senso
 
     assert external_repo.has_external_sensor("normal_sensor")
 
-    automation_policy_sensors = [
-        sensor for sensor in sensors if sensor.sensor_type == SensorType.AUTOMATION_POLICY
+    auto_materialize_sensors = [
+        sensor for sensor in sensors if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
     ]
-    assert len(automation_policy_sensors) == 1
+    assert len(auto_materialize_sensors) == 1
 
-    automation_policy_sensor = automation_policy_sensors[0]
+    auto_materialize_sensor = auto_materialize_sensors[0]
 
-    assert automation_policy_sensor.name == "default_automation_policy_sensor"
-    assert external_repo.has_external_sensor(automation_policy_sensor.name)
+    assert auto_materialize_sensor.name == "default_auto_materialize_sensor"
+    assert external_repo.has_external_sensor(auto_materialize_sensor.name)
 
     asset_graph = ExternalAssetGraph.from_external_repository(external_repo)
 
-    assert automation_policy_sensor.asset_selection.resolve(asset_graph) == {
+    assert auto_materialize_sensor.asset_selection.resolve(asset_graph) == {
         AssetKey(["auto_materialize_asset"]),
         AssetKey(["auto_observe_asset"]),
         AssetKey(["other_auto_materialize_asset"]),
@@ -132,7 +130,7 @@ def test_default_automation_policy_sensors(instance_with_automation_policy_senso
     }
 
 
-def test_no_default_automation_policy_sensors(instance_without_automation_policy_sensors):
+def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
     repo_handle = MagicMock(spec=RepositoryHandle)
     repo_handle.get_external_origin.return_value = ExternalRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
@@ -145,20 +143,20 @@ def test_no_default_automation_policy_sensors(instance_without_automation_policy
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_without_automation_policy_sensors,
+        instance=instance_without_auto_materialize_sensors,
     )
     sensors = external_repo.get_external_sensors()
     assert len(sensors) == 1
     assert sensors[0].name == "normal_sensor"
 
 
-def test_combine_default_sensors_with_non_default_sensors(instance_with_automation_policy_sensors):
-    automation_policy_sensor = AutomationPolicySensorDefinition(
+def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
+    auto_materialize_sensor = AutoMaterializeSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[auto_materialize_asset, auto_observe_asset],
     )
 
-    defs_with_automation_policy_sensor = Definitions(
+    defs_with_auto_materialize_sensor = Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -167,7 +165,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_automati
             boring_asset,
             boring_observable_asset,
         ],
-        sensors=[normal_sensor, automation_policy_sensor],
+        sensors=[normal_sensor, auto_materialize_sensor],
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
@@ -178,10 +176,10 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_automati
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
-            defs_with_automation_policy_sensor.get_repository_def(),
+            defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_automation_policy_sensors,
+        instance=instance_with_auto_materialize_sensors,
     )
 
     sensors = external_repo.get_external_sensors()
@@ -189,14 +187,14 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_automati
     assert len(sensors) == 3
 
     assert external_repo.has_external_sensor("normal_sensor")
-    assert external_repo.has_external_sensor("default_automation_policy_sensor")
+    assert external_repo.has_external_sensor("default_auto_materialize_sensor")
     assert external_repo.has_external_sensor("my_custom_policy_sensor")
 
     asset_graph = ExternalAssetGraph.from_external_repository(external_repo)
 
     # default sensor includes the assets that weren't covered by the custom one
 
-    default_sensor = external_repo.get_external_sensor("default_automation_policy_sensor")
+    default_sensor = external_repo.get_external_sensor("default_auto_materialize_sensor")
 
     assert default_sensor.asset_selection.resolve(asset_graph) == {
         AssetKey(["other_auto_materialize_asset"]),
@@ -211,8 +209,8 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_automati
     }
 
 
-def test_custom_sensors_cover_all(instance_with_automation_policy_sensors):
-    automation_policy_sensor = AutomationPolicySensorDefinition(
+def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
+    auto_materialize_sensor = AutoMaterializeSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[
             auto_materialize_asset,
@@ -222,7 +220,7 @@ def test_custom_sensors_cover_all(instance_with_automation_policy_sensors):
         ],
     )
 
-    defs_with_automation_policy_sensor = Definitions(
+    defs_with_auto_materialize_sensor = Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -231,7 +229,7 @@ def test_custom_sensors_cover_all(instance_with_automation_policy_sensors):
             boring_asset,
             boring_observable_asset,
         ],
-        sensors=[normal_sensor, automation_policy_sensor],
+        sensors=[normal_sensor, auto_materialize_sensor],
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
@@ -242,10 +240,10 @@ def test_custom_sensors_cover_all(instance_with_automation_policy_sensors):
 
     external_repo = ExternalRepository(
         external_repository_data_from_def(
-            defs_with_automation_policy_sensor.get_repository_def(),
+            defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_automation_policy_sensors,
+        instance=instance_with_auto_materialize_sensors,
     )
 
     sensors = external_repo.get_external_sensors()

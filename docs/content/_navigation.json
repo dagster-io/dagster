@@ -638,6 +638,20 @@
                     "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
+              },
+              {
+                "title": "Compute logs & error messages",
+                "path": "/dagster-cloud/managing-deployments/controlling-logs"
+              }
+            ]
+          },
+          {
+            "title":  "Best practices",
+            "path": "/dagster-cloud/best-practices",
+            "children": [
+              {
+                "title": "Managing multiple projects & teams",
+                "path": "/dagster-cloud/best-practices/managing-multiple-projects-and-teams"
               }
             ]
           },

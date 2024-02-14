@@ -1,7 +1,7 @@
 import pytest
 from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 
 
@@ -10,7 +10,7 @@ from dagster._core.definitions.automation_policy_sensor_definition import (
 )
 def test_constructor(selection):
     tags = {"apple": "banana", "orange": "kiwi"}
-    automation_sensor = AutomationPolicySensorDefinition(
+    automation_sensor = AutoMaterializeSensorDefinition(
         "foo",
         asset_selection=selection,
         run_tags=tags,

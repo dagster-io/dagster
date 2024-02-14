@@ -148,6 +148,9 @@ function optionsForButton(scope: AssetsInScope): LaunchOption[] {
 export function executionDisabledMessageForAssets(
   assets: {isSource: boolean; isExecutable: boolean; hasMaterializePermission: boolean}[],
 ) {
+  if (!assets.length) {
+    return null;
+  }
   return assets.some((a) => !a.hasMaterializePermission)
     ? 'You do not have permission to materialize assets'
     : assets.every((a) => a.isSource)

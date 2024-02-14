@@ -54,8 +54,10 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, normalize_to_repository
+from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import (
@@ -94,7 +96,7 @@ class SensorType(Enum):
     ASSET = "ASSET"
     MULTI_ASSET = "MULTI_ASSET"
     FRESHNESS_POLICY = "FRESHNESS_POLICY"
-    AUTOMATION_POLICY = "AUTOMATION_POLICY"
+    AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
     UNKNOWN = "UNKNOWN"
 
 
@@ -855,9 +857,14 @@ class SensorDefinition(IHasInternalInit):
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
         _check_dynamic_partitions_requests(dynamic_partitions_requests)
-        resolved_run_requests = self.resolve_run_requests(
-            run_requests, context, self._asset_selection, dynamic_partitions_requests
-        )
+        resolved_run_requests = [
+            run_request.with_replaced_attrs(
+                tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),
+            )
+            for run_request in self.resolve_run_requests(
+                run_requests, context, self._asset_selection, dynamic_partitions_requests
+            )
+        ]
 
         return SensorExecutionData(
             resolved_run_requests,

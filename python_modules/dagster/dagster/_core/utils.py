@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import string
 import uuid
 import warnings
@@ -191,3 +192,8 @@ class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
     def submit(self, fn, *args, **kwargs):
         ctx = copy_context()
         return super().submit(ctx.run, fn, *args, **kwargs)
+
+
+def is_valid_email(email: str) -> bool:
+    regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+    return bool(re.fullmatch(regex, email))

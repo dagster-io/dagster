@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -45,6 +45,7 @@ class AssetExecutionType(Enum):
         )
 
 
+@experimental_param(param="owners")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -58,6 +59,7 @@ class AssetSpec(
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("owners", PublicAttr[Optional[Sequence[str]]]),
         ],
     )
 ):
@@ -83,6 +85,9 @@ class AssetSpec(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def __new__(
@@ -97,6 +102,7 @@ class AssetSpec(
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -122,4 +128,5 @@ class AssetSpec(
                 "auto_materialize_policy",
                 AutoMaterializePolicy,
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
         )

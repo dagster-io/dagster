@@ -18,6 +18,7 @@ from typing import (
 
 import pendulum
 
+from dagster._core.definitions.asset_condition import HistoricalAllPartitionsSubsetSentinel
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -161,6 +162,18 @@ class AssetConditionEvaluationContext:
         if self.previous_evaluation is None:
             return self.empty_subset()
         return self.previous_evaluation.true_subset
+
+    @property
+    def previous_candidate_subset(self) -> AssetSubset:
+        if self.previous_evaluation is None:
+            return self.empty_subset()
+        candidate_subset = self.previous_evaluation.candidate_subset
+        if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
+            return AssetSubset.all(
+                self.asset_key, self.partitions_def, self.instance_queryer, self.evaluation_time
+            )
+        else:
+            return candidate_subset
 
     @property
     def previous_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
