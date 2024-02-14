@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import AbstractSet, Any, Mapping, Optional
+from typing import AbstractSet, Any, Dict, Mapping, Optional
 
 import pytest
 from dagster import (
@@ -24,36 +24,20 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
+from .dbt_projects import (
+    test_dbt_alias_path,
+    test_dbt_python_interleaving_path,
+    test_meta_config_path,
+)
+
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
-
-test_dagster_metadata_manifest_path = (
-    Path(__file__)
-    .joinpath("..", "dbt_projects", "test_dagster_metadata", "manifest.json")
-    .resolve()
-)
-test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
-
-test_dagster_asset_key_exceptions_path = (
-    Path(__file__)
-    .joinpath("..", "dbt_projects", "test_dagster_asset_key_exceptions", "manifest.json")
-    .resolve()
-)
-test_dagster_asset_key_exceptions_manifest = json.loads(
-    test_dagster_asset_key_exceptions_path.read_bytes()
-)
-
-test_python_interleaving_manifest_path = (
-    Path(__file__)
-    .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving", "manifest.json")
-    .resolve()
-)
-test_python_interleaving_manifest = json.loads(test_python_interleaving_manifest_path.read_bytes())
 
 
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
@@ -384,8 +368,10 @@ def test_with_asset_key_replacements() -> None:
         ...
 
     assert my_dbt_assets.keys_by_input_name == {
-        "__subset_input__cereals": AssetKey(["prefix", "cereals"]),
-        "__subset_input__sort_by_calories": AssetKey(["prefix", "sort_by_calories"]),
+        "__subset_input__seed_dagster_dbt_test_project_cereals": AssetKey(["prefix", "cereals"]),
+        "__subset_input__model_dagster_dbt_test_project_sort_by_calories": AssetKey(
+            ["prefix", "sort_by_calories"]
+        ),
     }
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
         AssetKey(["prefix", "cereals"]),
@@ -405,7 +391,9 @@ def test_with_asset_key_replacements() -> None:
         TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
     ],
 )
-def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) -> None:
+def test_with_partition_mappings(
+    test_meta_config_manifest: Dict[str, Any], partition_mapping: Optional[PartitionMapping]
+) -> None:
     expected_self_dependency_partition_mapping = TimeWindowPartitionMapping(
         start_offset=-8, end_offset=-9
     )
@@ -424,7 +412,7 @@ def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) 
             return partition_mapping
 
     @dbt_assets(
-        manifest=test_dagster_metadata_manifest,
+        manifest=test_meta_config_manifest,
         dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
         partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
     )
@@ -534,8 +522,8 @@ def test_with_auto_materialize_policy_replacements() -> None:
         assert auto_materialize_policy == expected_auto_materialize_policy
 
 
-def test_dbt_meta_auto_materialize_policy() -> None:
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -546,8 +534,8 @@ def test_dbt_meta_auto_materialize_policy() -> None:
         assert auto_materialize_policy == AutoMaterializePolicy.eager()
 
 
-def test_dbt_meta_freshness_policy() -> None:
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_meta_freshness_policy(test_meta_config_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -560,8 +548,8 @@ def test_dbt_meta_freshness_policy() -> None:
         )
 
 
-def test_dbt_meta_asset_key() -> None:
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_meta_asset_key(test_meta_config_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -578,8 +566,8 @@ def test_dbt_meta_asset_key() -> None:
     }.issubset(my_dbt_assets.keys)
 
 
-def test_dbt_config_group() -> None:
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_config_group(test_meta_config_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -598,8 +586,8 @@ def test_dbt_config_group() -> None:
     }
 
 
-def test_dbt_with_downstream_asset_via_definition():
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_with_downstream_asset_via_definition(test_meta_config_manifest: Dict[str, Any]):
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -607,13 +595,15 @@ def test_dbt_with_downstream_asset_via_definition():
     def downstream_of_dbt():
         return None
 
-    assert len(downstream_of_dbt.input_names) == 8
+    assert len(list(downstream_of_dbt.input_names)) == 8
     for input_name in downstream_of_dbt.input_names:
-        assert downstream_of_dbt.op.ins[input_name].dagster_type.is_nothing
+        input_dagster_type = downstream_of_dbt.op.ins[input_name].dagster_type
+
+        assert isinstance(input_dagster_type, DagsterType) and input_dagster_type.is_nothing
 
 
-def test_dbt_with_downstream_asset():
-    @dbt_assets(manifest=test_dagster_metadata_manifest)
+def test_dbt_with_downstream_asset(test_meta_config_manifest: Dict[str, Any]):
+    @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets():
         ...
 
@@ -621,15 +611,17 @@ def test_dbt_with_downstream_asset():
     def downstream_of_dbt():
         return None
 
-    assert len(downstream_of_dbt.input_names) == 2
-    assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
-    assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
+    assert len(list(downstream_of_dbt.input_names)) == 2
+    for input_name in downstream_of_dbt.input_names:
+        input_dagster_type = downstream_of_dbt.op.ins[input_name].dagster_type
+
+        assert isinstance(input_dagster_type, DagsterType) and input_dagster_type.is_nothing
 
 
-def test_dbt_with_custom_resource_key() -> None:
+def test_dbt_with_custom_resource_key(test_meta_config_manifest: Dict[str, Any]) -> None:
     dbt_resource_key = "my_custom_dbt_resource_key"
 
-    @dbt_assets(manifest=test_dagster_metadata_manifest, required_resource_keys={dbt_resource_key})
+    @dbt_assets(manifest=test_meta_config_manifest, required_resource_keys={dbt_resource_key})
     def my_dbt_assets(context: AssetExecutionContext):
         dbt = getattr(context.resources, dbt_resource_key)
 
@@ -637,17 +629,27 @@ def test_dbt_with_custom_resource_key() -> None:
 
     result = materialize(
         [my_dbt_assets],
-        resources={
-            dbt_resource_key: DbtCliResource(
-                project_dir=os.fspath(test_dagster_metadata_manifest_path.joinpath("..").resolve())
-            )
-        },
+        resources={dbt_resource_key: DbtCliResource(project_dir=os.fspath(test_meta_config_path))},
     )
     assert result.success
 
 
-def test_dbt_with_python_interleaving() -> None:
-    @dbt_assets(manifest=test_python_interleaving_manifest)
+def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_alias_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
+    )
+    assert result.success
+
+
+def test_dbt_with_python_interleaving(
+    test_dbt_python_interleaving_manifest: Dict[str, Any],
+) -> None:
+    @dbt_assets(manifest=test_dbt_python_interleaving_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
@@ -668,11 +670,7 @@ def test_dbt_with_python_interleaving() -> None:
 
     defs = Definitions(
         assets=[my_dbt_assets, python_augmented_customers],
-        resources={
-            "dbt": DbtCliResource(
-                project_dir=test_python_interleaving_manifest_path.parent.absolute().as_posix()
-            )
-        },
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_python_interleaving_path))},
     )
     global_job = defs.get_implicit_global_asset_job_def()
     # my_dbt_assets gets split up
@@ -681,15 +679,17 @@ def test_dbt_with_python_interleaving() -> None:
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the python augmented customers asset depends on the second invocation of my_dbt_assets
         NodeInvocation(name="dagster__python_augmented_customers"): {
-            "raw_customers": DependencyDefinition(node="my_dbt_assets_2", output="raw_customers")
+            "raw_customers": DependencyDefinition(
+                node="my_dbt_assets_2", output="seed_jaffle_shop_raw_customers"
+            )
         },
         # the second invocation of my_dbt_assets depends on the first, and the python step
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
             ),
-            "__subset_input__stg_payments": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_payments"
+            "__subset_input__model_jaffle_shop_stg_payments": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_payments"
             ),
             "dagster_python_augmented_customers": DependencyDefinition(
                 node="dagster__python_augmented_customers", output="result"
@@ -713,8 +713,8 @@ def test_dbt_with_python_interleaving() -> None:
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the second invocation of my_dbt_assets depends on the first
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
             )
         },
     }
@@ -722,7 +722,9 @@ def test_dbt_with_python_interleaving() -> None:
     assert result.success
 
 
-def test_dbt_with_invalid_self_dependencies() -> None:
+def test_dbt_with_invalid_self_dependencies(
+    test_asset_key_exceptions_manifest: Dict[str, Any],
+) -> None:
     expected_error_message = "\n".join(
         [
             "The following dbt resources have the asset key `['jaffle_shop', 'stg_customers']`:",
@@ -736,14 +738,14 @@ def test_dbt_with_invalid_self_dependencies() -> None:
         match=DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
     ) as exc_info:
 
-        @dbt_assets(manifest=test_dagster_asset_key_exceptions_manifest)
+        @dbt_assets(manifest=test_asset_key_exceptions_manifest)
         def my_dbt_assets():
             ...
 
     assert expected_error_message in str(exc_info.value)
 
 
-def test_dbt_with_duplicate_asset_keys() -> None:
+def test_dbt_with_duplicate_asset_keys(test_meta_config_manifest: Dict[str, Any]) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
         def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -756,8 +758,8 @@ def test_dbt_with_duplicate_asset_keys() -> None:
     expected_error_message = "\n".join(
         [
             "The following dbt resources have the asset key `['duplicate']`:",
-            "  - `model.test_dagster_metadata.customers` (models/customers.sql)",
-            "  - `model.test_dagster_metadata.orders` (models/orders.sql)",
+            "  - `model.test_dagster_meta_config.customers` (models/customers.sql)",
+            "  - `model.test_dagster_meta_config.orders` (models/orders.sql)",
         ]
     )
 
@@ -767,7 +769,7 @@ def test_dbt_with_duplicate_asset_keys() -> None:
     ) as exc_info:
 
         @dbt_assets(
-            manifest=test_dagster_metadata_manifest,
+            manifest=test_meta_config_manifest,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
         )
         def my_dbt_assets():

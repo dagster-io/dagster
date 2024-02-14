@@ -14,8 +14,8 @@ Currently, `trip_update_job` in `jobs/__init__.py` should look like this:
 
 ```python
 trip_update_job = define_asset_job(
-  name="trip_update_job",
-  selection=AssetSelection.all() - AssetSelection.keys(["trips_by_week"]),
+    name="trip_update_job",
+    selection=AssetSelection.all() - AssetSelection.keys(["trips_by_week"]),
 )
 ```
 
@@ -40,8 +40,8 @@ from dagster import define_asset_job, AssetSelection, AssetKey
 from ..partitions import monthly_partition
 
 trip_update_job = define_asset_job(
-  name="trip_update_job",
-  partitions_def=monthly_partition, # partitions added here
-  selection=AssetSelection.all() - AssetSelection.keys(["trips_by_week"])
+    name="trip_update_job",
+    partitions_def=monthly_partition, # partitions added here
+    selection=AssetSelection.all() - AssetSelection.keys(["trips_by_week"])
 )
 ```

@@ -38,8 +38,8 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
@@ -564,6 +564,14 @@ def instance_sensor():
     pass
 
 
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def all_code_locations_run_status_sensor():
+    pass
+
+
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):
@@ -577,6 +585,12 @@ def logging_sensor(context):
     context.log.addHandler(handler)
     context.log.info("hello %s", "hello")
     context.log.info(handler.message)
+
+    try:
+        raise Exception("hi hi")
+    except Exception:
+        context.log.exception("goodbye goodbye")
+
     context.log.removeHandler(handler)
 
     return SkipReason()
@@ -718,8 +732,8 @@ def auto_materialize_asset():
     pass
 
 
-automation_policy_sensor = AutomationPolicySensorDefinition(
-    "my_automation_policy_sensor",
+auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    "my_auto_materialize_sensor",
     asset_selection=[auto_materialize_asset],
 )
 
@@ -787,7 +801,7 @@ def the_repo():
         success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
         multipartitions_with_static_time_dimensions_run_requests_sensor,
-        automation_policy_sensor,
+        auto_materialize_sensor,
     ]
 
 
@@ -1015,14 +1029,14 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-def test_ignore_automation_policy_sensor(instance, workspace_context, external_repo, executor):
+def test_ignore_auto_materialize_sensor(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
 
     with pendulum_freeze_time(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("my_automation_policy_sensor")
+        external_sensor = external_repo.get_external_sensor("my_auto_materialize_sensor")
         assert external_sensor
         instance.add_instigator_state(
             InstigatorState(
@@ -1030,7 +1044,7 @@ def test_ignore_automation_policy_sensor(instance, workspace_context, external_r
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
-                    sensor_type=SensorType.AUTOMATION_POLICY,
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
                 ),
             )
         )
@@ -2972,9 +2986,12 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     ]
     assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
-    assert len(records) == 2
+    assert len(records) == 3
     assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
     assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
+    assert records[2][DAGSTER_META_KEY]["orig_message"] == ("goodbye goodbye")
+    assert records[2]["exc_info"].startswith("Traceback")
+    assert "Exception: hi hi" in records[2]["exc_info"]
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

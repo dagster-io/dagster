@@ -9,14 +9,14 @@ from .utils import check_valid_name, validate_tags
 
 
 @experimental
-class AutomationPolicySensorDefinition(SensorDefinition):
-    """Targets a set of assets and repeatedly evaluates all the AssetAutomationPolicys on all of
+class AutoMaterializeSensorDefinition(SensorDefinition):
+    """Targets a set of assets and repeatedly evaluates all the AutoMaterializePolicys on all of
     those assets to determine which to request runs for.
 
     Args:
         name: The name of the sensor.
         asset_selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
-            The assets to evaluate AssetAutomationPolicys of and request runs for.
+            The assets to evaluate AutoMaterializePolicys of and request runs for.
         run_tags: Optional[Mapping[str, Any]] = None,
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
@@ -43,7 +43,7 @@ class AutomationPolicySensorDefinition(SensorDefinition):
                 "Automation policy sensors cannot be evaluated like regular user-space sensors."
             )
 
-        super(AutomationPolicySensorDefinition, self).__init__(
+        super(AutoMaterializeSensorDefinition, self).__init__(
             name=check_valid_name(name),
             job_name=None,
             evaluation_fn=evaluation_fn,
@@ -66,4 +66,4 @@ class AutomationPolicySensorDefinition(SensorDefinition):
 
     @property
     def sensor_type(self) -> SensorType:
-        return SensorType.AUTOMATION_POLICY
+        return SensorType.AUTO_MATERIALIZE

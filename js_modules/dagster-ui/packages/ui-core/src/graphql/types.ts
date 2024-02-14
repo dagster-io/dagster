@@ -457,6 +457,7 @@ export type AssetNode = {
   opName: Maybe<Scalars['String']>;
   opNames: Array<Scalars['String']>;
   opVersion: Maybe<Scalars['String']>;
+  owners: Array<AssetOwner>;
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
@@ -544,6 +545,8 @@ export type AssetNotFoundError = Error & {
 
 export type AssetOrError = Asset | AssetNotFoundError;
 
+export type AssetOwner = TeamAssetOwner | UserAssetOwner;
+
 export type AssetPartitionStatuses =
   | DefaultPartitionStatuses
   | MultiPartitionStatuses
@@ -568,6 +571,7 @@ export type AssetSelection = {
   __typename: 'AssetSelection';
   assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']>;
+  assets: Array<Asset>;
 };
 
 export type AssetSubset = {
@@ -1819,7 +1823,7 @@ export type Instance = {
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
-  useAutomationPolicySensors: Scalars['Boolean'];
+  useAutoMaterializeSensors: Scalars['Boolean'];
 };
 
 export type InstanceConcurrencyLimitArgs = {
@@ -4740,7 +4744,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
-  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
+  AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',
@@ -5104,6 +5108,11 @@ export type Target = {
   solidSelection: Maybe<Array<Scalars['String']>>;
 };
 
+export type TeamAssetOwner = {
+  __typename: 'TeamAssetOwner';
+  team: Scalars['String'];
+};
+
 export type TerminatePipelineExecutionFailure = {
   message: Scalars['String'];
   run: Run;
@@ -5272,6 +5281,11 @@ export type UsedSolid = {
   __typename: 'UsedSolid';
   definition: CompositeSolidDefinition | SolidDefinition;
   invocations: Array<NodeInvocationSite>;
+};
+
+export type UserAssetOwner = {
+  __typename: 'UserAssetOwner';
+  email: Scalars['String'];
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -6213,6 +6227,7 @@ export const buildAssetNode = (
     opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionDefinition:
       overrides && overrides.hasOwnProperty('partitionDefinition')
         ? overrides.partitionDefinition!
@@ -6373,6 +6388,7 @@ export const buildAssetSelection = (
       overrides && overrides.hasOwnProperty('assetSelectionString')
         ? overrides.assetSelectionString!
         : 'dolores',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
   };
 };
 
@@ -8436,10 +8452,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
         ? overrides.supportsConcurrencyLimits!
         : false,
-    useAutomationPolicySensors:
-      overrides && overrides.hasOwnProperty('useAutomationPolicySensors')
-        ? overrides.useAutomationPolicySensors!
-        : true,
+    useAutoMaterializeSensors:
+      overrides && overrides.hasOwnProperty('useAutoMaterializeSensors')
+        ? overrides.useAutoMaterializeSensors!
+        : false,
   };
 };
 
@@ -14112,6 +14128,18 @@ export const buildTarget = (
   };
 };
 
+export const buildTeamAssetOwner = (
+  overrides?: Partial<TeamAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TeamAssetOwner'} & TeamAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TeamAssetOwner');
+  return {
+    __typename: 'TeamAssetOwner',
+    team: overrides && overrides.hasOwnProperty('team') ? overrides.team! : 'est',
+  };
+};
+
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14439,6 +14467,18 @@ export const buildUsedSolid = (
         ? ({} as SolidDefinition)
         : buildSolidDefinition({}, relationshipsToOmit),
     invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
+  };
+};
+
+export const buildUserAssetOwner = (
+  overrides?: Partial<UserAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UserAssetOwner'} & UserAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UserAssetOwner');
+  return {
+    __typename: 'UserAssetOwner',
+    email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'velit',
   };
 };
 

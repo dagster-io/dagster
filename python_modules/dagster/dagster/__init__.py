@@ -332,6 +332,7 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.result import (
     MaterializeResult as MaterializeResult,
+    ObserveResult as ObserveResult,
 )
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (

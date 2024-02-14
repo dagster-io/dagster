@@ -9,8 +9,10 @@ from dagster import (
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     InputContext,
     IOManager,
@@ -712,6 +714,39 @@ def test_multipartitioned_asset_partitions_time_window():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
         partition_key="a|2023-01-01",
     ).success
+
+
+def test_dynamic_partition_range_single_run():
+    partitions_def = DynamicPartitionsDefinition(name="yolo")
+
+    @asset(partitions_def=partitions_def)
+    def dynamicpartitioned_asset(context: AssetExecutionContext) -> None:
+        key_range = context.partition_key_range
+
+        assert key_range.start == "a"
+        assert key_range.end == "c"
+
+        assert len(context.partition_keys) == 3
+
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([dynamicpartitioned_asset])
+    )
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("yolo", ["a", "b", "c"])
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "a",
+            ASSET_PARTITION_RANGE_END_TAG: "c",
+        },
+        instance=instance,
+    )
+    assert result.success
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("dynamicpartitioned_asset")
+    } == {"a", "b", "c"}
 
 
 def test_error_on_nonexistent_upstream_partition():

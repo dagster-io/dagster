@@ -250,7 +250,7 @@ fragment evaluationFields on AssetConditionEvaluation {
 }
 """
 
-AUTOMATION_POLICY_SENSORS_QUERY = """
+AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
         ... on AssetNode {
@@ -331,10 +331,10 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 
 
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
-    def test_automation_policy_sensor(self, graphql_context: WorkspaceRequestContext):
+    def test_auto_materialize_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_origin = ExternalInstigatorOrigin(
             external_repository_origin=infer_repository(graphql_context).get_external_origin(),
-            instigator_name="my_automation_policy_sensor",
+            instigator_name="my_auto_materialize_sensor",
         )
 
         check.not_none(graphql_context.instance.schedule_storage).add_instigator_state(
@@ -343,7 +343,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 InstigatorType.SENSOR,
                 status=InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
-                    sensor_type=SensorType.AUTOMATION_POLICY,
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
                     cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
                         AssetDaemonCursor.empty(12345)
                     ),
@@ -353,7 +353,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            AUTOMATION_POLICY_SENSORS_QUERY,
+            AUTO_MATERIALIZE_POLICY_SENSORS_QUERY,
             variables={
                 "assetKey": {"path": ["fresh_diamond_bottom"]},
             },
@@ -361,21 +361,21 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
 
         with patch(
-            "dagster._core.instance.DagsterInstance.auto_materialize_use_automation_policy_sensors",
+            "dagster._core.instance.DagsterInstance.auto_materialize_use_sensors",
             new_callable=PropertyMock,
         ) as mock_my_property:
             mock_my_property.return_value = True
 
             results = execute_dagster_graphql(
                 graphql_context,
-                AUTOMATION_POLICY_SENSORS_QUERY,
+                AUTO_MATERIALIZE_POLICY_SENSORS_QUERY,
                 variables={
                     "assetKey": {"path": ["fresh_diamond_bottom"]},
                 },
             )
 
             assert any(
-                instigator["name"] == "my_automation_policy_sensor"
+                instigator["name"] == "my_auto_materialize_sensor"
                 for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
             )
             assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345

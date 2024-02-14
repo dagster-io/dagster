@@ -73,15 +73,13 @@ class MaterializeResult(AssetResult):
 
 @experimental
 class ObserveResult(AssetResult):
-    """An object representing a successful observation of an asset. These can be returned from
-    @asset and @multi_asset decorated functions to pass metadata or specify that specific assets were
-    observed. The @asset or @multi_asset must specify
-    "dagster/asset_execution_type": "OBSERVATION" in its metadata for this to
-    work.
+    """An object representing a successful observation of an asset. These can be returned from an
+    @observable_source_asset decorated function to pass metadata.
 
     Attributes:
-        asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
-        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding AssetMaterialization event.
+        asset_key (Optional[AssetKey]): The asset key. Optional to include.
+        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding
+            AssetObservation event.
         check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
             corresponding AssetObservation event.
         data_version (Optional[DataVersion]): The data version of the asset that was observed.

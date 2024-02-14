@@ -1,4 +1,4 @@
-import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
+import {QueryResult} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -78,12 +78,14 @@ const CaptionTextContainer = styled.div`
 
 const JOB_QUERY_DELAY = 100;
 
-export const useDelayedRowQuery = (lazyQueryFn: LazyQueryExecFunction<any, any>) => {
+export const useDelayedRowQuery = (lazyQueryFn: () => void) => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       lazyQueryFn();
     }, JOB_QUERY_DELAY);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [lazyQueryFn]);
 };

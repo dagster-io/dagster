@@ -252,9 +252,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         true_subset = AssetSubset.empty(asset_key, self.partitions_def)
         for _, serialized in partition_subsets_by_condition:
-            true_subset = (
-                self.deserialize_serialized_partitions_subset_or_none(asset_key, serialized)
-                | true_subset
+            true_subset |= self.deserialize_serialized_partitions_subset_or_none(
+                asset_key, serialized
             )
 
         return AssetConditionEvaluation(
@@ -320,7 +319,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             )
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
             for e in child_evaluations:
-                true_subset = e.true_subset | true_subset
+                true_subset |= e.true_subset
             evaluation = AssetConditionEvaluation(
                 condition_snapshot=decision_type_snapshot,
                 true_subset=true_subset,
@@ -439,7 +438,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         # all AssetSubsets generated here are created using the current partitions_def, so they
         # will be valid
-        true_subset = materialize_evaluation.true_subset.as_valid
+        true_subset = materialize_evaluation.true_subset.as_valid(self.partitions_def)
         if not_skip_evaluation:
             true_subset -= not_skip_evaluation.child_evaluations[0].true_subset
         if not_discard_evaluation:

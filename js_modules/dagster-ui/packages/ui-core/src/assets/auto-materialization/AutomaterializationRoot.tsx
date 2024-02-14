@@ -33,7 +33,7 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
-import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
+import {useAutoMaterializeSensorFlag} from '../AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;
@@ -44,7 +44,7 @@ const TWENTY_MINUTES = 20 * MINUTE;
 // Determine whether the user is flagged to see automaterialize policies as
 // sensors. If so, redirect to the Sensors overview.
 export const AutomaterializationRoot = () => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   switch (automaterializeSensorsFlagState) {
     case 'unknown':
       return <div />; // Waiting for result

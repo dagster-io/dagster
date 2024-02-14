@@ -115,7 +115,7 @@ export const AssetEventDetail = ({
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Metadata</Subheading>
-        <AssetEventMetadataEntriesTable event={event} />
+        <AssetEventMetadataEntriesTable event={event} showDescriptions />
       </Box>
 
       {event.__typename === 'MaterializationEvent' && (
@@ -167,7 +167,7 @@ export const AssetEventDetailEmpty = () => (
 
     <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
       <Subheading>Metadata</Subheading>
-      <AssetEventMetadataEntriesTable event={null} />
+      <AssetEventMetadataEntriesTable event={null} showDescriptions />
     </Box>
   </Box>
 );

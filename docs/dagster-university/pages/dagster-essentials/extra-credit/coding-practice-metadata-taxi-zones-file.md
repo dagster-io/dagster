@@ -22,20 +22,20 @@ from dagster import MaterializeResult
     group_name="raw_files",
 )
 def taxi_zones_file():
-  """
-    The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+    """
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
-  num_rows = MetadataValue.int(len(pd.read_csv(constants.TAXI_ZONES_FILE_PATH)))
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
+    num_rows = MetadataValue.int(len(pd.read_csv(constants.TAXI_ZONES_FILE_PATH)))
 
-  return MaterializeResult(
-      metadata={
-          'Number of records': MetadataValue.int(num_rows)
-      }
-  )
+    return MaterializeResult(
+        metadata={
+            'Number of records': MetadataValue.int(num_rows)
+        }
+    )
 ```

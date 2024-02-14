@@ -56,7 +56,7 @@ function toSetFilterValue(type: SensorType) {
 
 const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetFilterValue>>> = {
   [SensorType.ASSET]: toSetFilterValue(SensorType.ASSET),
-  [SensorType.AUTOMATION_POLICY]: toSetFilterValue(SensorType.AUTOMATION_POLICY),
+  [SensorType.AUTO_MATERIALIZE]: toSetFilterValue(SensorType.AUTO_MATERIALIZE),
   [SensorType.FRESHNESS_POLICY]: toSetFilterValue(SensorType.FRESHNESS_POLICY),
   [SensorType.MULTI_ASSET]: toSetFilterValue(SensorType.MULTI_ASSET),
   [SensorType.RUN_STATUS]: toSetFilterValue(SensorType.RUN_STATUS),

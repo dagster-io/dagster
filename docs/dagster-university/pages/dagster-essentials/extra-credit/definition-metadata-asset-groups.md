@@ -37,8 +37,8 @@ from dagster import load_assets_from_modules
 from .assets import metrics
 
 metric_assets = load_assets_from_modules(
-  modules=[metrics],
-  group_name="metrics",
+    modules=[metrics],
+    group_name="metrics",
 )
 ```
 
@@ -54,18 +54,18 @@ You can also specify groups on individual assets by using the `group_name` param
 from dagster import asset
 
 @asset(
-  group_name="raw_files",
+    group_name="raw_files",
 )
 def taxi_zones_file():
-  """
-    The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+    """
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
 ```
 
 In this example, the `taxi_zones_file` asset is grouped into the `raw_files` asset group.

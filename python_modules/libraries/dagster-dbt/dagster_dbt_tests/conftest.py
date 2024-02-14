@@ -1,9 +1,19 @@
 import os
 import subprocess
+from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 from dagster._utils import file_relative_path, pushd
 from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
+
+from .dbt_projects import (
+    test_asset_checks_path,
+    test_asset_key_exceptions_path,
+    test_dbt_alias_path,
+    test_dbt_python_interleaving_path,
+    test_meta_config_path,
+)
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
@@ -81,3 +91,35 @@ def dbt_build(dbt_executable, dbt_config_dir):
     with pushd(TEST_PROJECT_DIR):
         subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
         subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)
+
+
+def _create_dbt_manifest(project_dir: Path) -> Dict[str, Any]:
+    dbt = DbtCliResource(project_dir=os.fspath(project_dir))
+    dbt_invocation = dbt.cli(["--quiet", "compile"]).wait()
+
+    return dbt_invocation.get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_asset_checks_manifest", scope="session")
+def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_asset_checks_path)
+
+
+@pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
+def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_asset_key_exceptions_path)
+
+
+@pytest.fixture(name="test_dbt_alias_manifest", scope="session")
+def test_dbt_alias_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_dbt_alias_path)
+
+
+@pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
+def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_dbt_python_interleaving_path)
+
+
+@pytest.fixture(name="test_meta_config_manifest", scope="session")
+def test_meta_config_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_meta_config_path)

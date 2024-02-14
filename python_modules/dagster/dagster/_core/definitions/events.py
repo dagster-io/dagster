@@ -655,7 +655,6 @@ class ExpectationResult(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
-@whitelist_for_serdes
 class TypeCheck(
     NamedTuple(
         "_TypeCheck",

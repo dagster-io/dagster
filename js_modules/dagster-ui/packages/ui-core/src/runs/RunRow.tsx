@@ -35,6 +35,7 @@ import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForR
 
 export const RunRow = ({
   run,
+  hasCheckboxColumn,
   canTerminateOrDelete,
   onAddTag,
   checked,
@@ -45,6 +46,7 @@ export const RunRow = ({
   hideCreatedBy,
 }: {
   run: RunTableRunFragment;
+  hasCheckboxColumn: boolean;
   canTerminateOrDelete: boolean;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
@@ -141,8 +143,12 @@ export const RunRow = ({
         setIsHovered(false);
       }}
     >
-      {canTerminateOrDelete ? (
-        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      {hasCheckboxColumn ? (
+        <td>
+          {canTerminateOrDelete ? (
+            <>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</>
+          ) : null}
+        </td>
       ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>

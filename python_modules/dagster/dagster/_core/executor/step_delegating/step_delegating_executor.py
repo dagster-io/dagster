@@ -118,7 +118,7 @@ class StepDelegatingExecutor(Executor):
             EngineEventData(),
         )
         with InstanceConcurrencyContext(
-            plan_context.instance, plan_context.run_id
+            plan_context.instance, plan_context.dagster_run
         ) as instance_concurrency_context:
             with ActiveExecution(
                 execution_plan,

@@ -41,7 +41,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .utils import input_name_fn, output_name_fn
+from .utils import dagster_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -143,7 +143,7 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        output_name_fn(value): dagster_dbt_translator.get_asset_key(value)
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_key(value)
         for value in matching_nodes
     }
 
@@ -528,13 +528,15 @@ def is_generic_test_on_attached_node_from_dbt_resource_props(
 
 def default_asset_check_fn(
     manifest: Mapping[str, Any],
+    dbt_nodes: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
     unique_id: str,
     test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
-    test_resource_props = manifest["nodes"][test_unique_id]
-    parent_ids = manifest["parent_map"].get(test_unique_id, [])
+    test_resource_props = dbt_nodes[test_unique_id]
+    parent_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+    parent_ids.discard(unique_id)
 
     is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
         unique_id, test_resource_props
@@ -548,17 +550,13 @@ def default_asset_check_fn(
     ):
         return None
 
-    additional_deps = [
-        dagster_dbt_translator.get_asset_key(manifest["nodes"][parent_id])
-        for parent_id in parent_ids
-        if parent_id != unique_id
-    ]
-
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
-        additional_deps=additional_deps,
+        additional_deps=[
+            dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id]) for parent_id in parent_ids
+        ],
     )
 
 
@@ -676,7 +674,7 @@ def get_asset_deps(
     for unique_id, parent_unique_ids in deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         fqns_by_output_name[output_name] = dbt_resource_props["fqn"]
 
         metadata_by_output_name[output_name] = {
@@ -730,7 +728,12 @@ def get_asset_deps(
 
             for test_unique_id in test_unique_ids:
                 check_spec = default_asset_check_fn(
-                    manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
+                    manifest,
+                    dbt_nodes,
+                    dagster_dbt_translator,
+                    asset_key,
+                    unique_id,
+                    test_unique_id,
                 )
                 if check_spec:
                     check_specs.append(check_spec)
@@ -743,7 +746,7 @@ def get_asset_deps(
 
             # if this parent is not one of the selected nodes, it's an input
             if parent_unique_id not in deps:
-                input_name = input_name_fn(parent_node_info)
+                input_name = dagster_name_fn(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     check_specs_by_output_name = cast(

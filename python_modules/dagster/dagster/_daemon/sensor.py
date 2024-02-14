@@ -316,7 +316,7 @@ def execute_sensor_iteration(
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
         if (
             not sensor_state.instigator_data
-            or sensor_state.instigator_data.sensor_type != SensorType.AUTOMATION_POLICY  # type: ignore
+            or sensor_state.instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE  # type: ignore
         )
     }
 
@@ -328,7 +328,7 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
-                    if sensor.sensor_type == SensorType.AUTOMATION_POLICY:
+                    if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
                         continue
 
                     selector_id = sensor.selector_id
@@ -1040,6 +1040,8 @@ def _create_sensor_run(
     job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
+        # this gets applied in the sensor definition too, but we apply it here for backcompat
+        # with sensors before the tag was added to the sensor definition
         DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:

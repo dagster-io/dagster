@@ -99,6 +99,8 @@ def test_forward_compat_serdes_new_field_with_default():
     orig = get_orig_obj()
     serialized = serialize_value(orig, whitelist_map=test_map)
 
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(NamedTuple("_Quux", [("foo", str), ("bar", str), ("baz", Optional[str])])):
         def __new__(cls, foo, bar, baz=None):
@@ -195,6 +197,8 @@ def test_backward_compat_serdes():
     quux = get_orig_obj()
     serialized = serialize_value(quux, whitelist_map=test_map)
 
+    test_map = WhitelistMap.create()
+
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):
         def __new__(cls, foo, bar):
@@ -256,6 +260,23 @@ def test_forward_compat():
     deserialized = deserialize_value(serialized, as_type=orig_klass, whitelist_map=old_map)
     assert deserialized.bar == "bar"
     assert deserialized.baz == "baz"
+
+
+def test_error_on_multiple_deserializers() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Foo(NamedTuple):
+        x: int
+
+    with pytest.raises(
+        SerdesUsageError, match="Multiple deserializers registered for storage name `Foo`"
+    ):
+
+        @_whitelist_for_serdes(whitelist_map=test_map, storage_name="Foo")
+        class Foo2(NamedTuple):
+            x: int
+            y: str
 
 
 def serdes_test_class(klass):
@@ -564,6 +585,8 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     old_snapshot = hash_str(old_serialized)
 
     # Separate scope since we redefine SameSnapshotTuple
+    test_map = WhitelistMap.create()
+
     def get_new_obj_no_skip() -> Any:
         @_whitelist_for_serdes(whitelist_map=test_map)
         class SameSnapshotTuple(namedtuple("_SameSnapshotTuple", "foo bar")):
@@ -581,6 +604,8 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     assert new_snapshot_without_serializer != old_snapshot
 
     # By setting `skip_when_empty_fields`, the ID stays the same as long as the new field is None
+
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map, skip_when_empty_fields={"bar"})
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
