@@ -26,6 +26,7 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
@@ -827,7 +828,7 @@ class DbtCliResource(ConfigurableResource):
         unique_id = str(uuid.uuid4())[:7]
         path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
+            path = f"{context.op.name}-{context.run.run_id[:7]}-{unique_id}"
 
         current_target_path = _get_dbt_target_path()
 
@@ -967,9 +968,12 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
+        op_context = (
+            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
+        )
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
-        target_path = target_path or self._get_unique_target_path(context=context)
+        target_path = target_path or self._get_unique_target_path(context=op_context)
         env = {
             **os.environ.copy(),
             # Run dbt with unbuffered output.
@@ -1011,7 +1015,7 @@ class DbtCliResource(ConfigurableResource):
 
         selection_args: List[str] = []
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        if context and assets_def is not None:
+        if op_context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
             )
@@ -1027,10 +1031,10 @@ class DbtCliResource(ConfigurableResource):
                 env["DBT_INDIRECT_SELECTION"] = "empty"
 
             selection_args = get_subset_selection_for_context(
-                context=context,
+                context=op_context,
                 manifest=manifest,
-                select=context.op.tags.get("dagster-dbt/select"),
-                exclude=context.op.tags.get("dagster-dbt/exclude"),
+                select=op_context.op.tags.get("dagster-dbt/select"),
+                exclude=op_context.op.tags.get("dagster-dbt/exclude"),
                 dagster_dbt_translator=dagster_dbt_translator,
             )
         else:

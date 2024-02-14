@@ -536,7 +536,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(
                 job_id=job_id,
-                cause=f"Materializing software-defined assets in Dagster run {context.run_id[:8]}",
+                cause=f"Materializing software-defined assets in Dagster run {context.run.run_id[:8]}",
                 steps_override=job_commands,
             )
 
