@@ -58,19 +58,54 @@ Let’s start by writing the assets. We'll use Pandas DataFrames to interact wit
 
 ```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
-import pandas as pd
 import requests
 
-from dagster_snowflake import SnowflakeResource
 from dagster import Config, asset
+from dagster_snowflake import SnowflakeResource
+from snowflake.connector.pandas_tools import write_pandas
 
 
 class ItemsConfig(Config):
     base_item_id: int
 
 
+CREATE_UPDATE_TABLE_QUERY = """
+create table if not exists {table_name} (
+    id varchar,
+    parent varchar,
+    time datetime,
+    type varchar,
+    user_id varchar,
+    text varchar,
+    kids varchar,
+    score double,
+    title varchar,
+    descendants varchar,
+    url varchar
+);
+
+delete from {table_name} where id = id;
+
+insert into {table_name}
+select
+    id,
+    parent,
+    time,
+    type,
+    user_id,
+    text,
+    kids,
+    score,
+    title,
+    descendants,
+    url
+from items
+where type = '{item_type}'
+"""
+
+
 @asset
-def items(config: ItemsConfig, snowflake: SnowflakeResource) -> pd.DataFrame:
+def items(config: ItemsConfig, snowflake_resource: SnowflakeResource):
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
     max_id = requests.get(
@@ -84,23 +119,48 @@ def items(config: ItemsConfig, snowflake: SnowflakeResource) -> pd.DataFrame:
     # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
     result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
-    return result
+
+    # Upload data to Snowflake as a dataframe
+    with snowflake_resource.get_connection() as conn:
+        write_pandas(
+            conn=conn,
+            df=result,
+            table_name="items",
+            schema=snowflake_resource.schema,
+            database=snowflake_resource.database,
+            auto_create_table=True,
+            use_logical_type=True,
+        )
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def comments(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def comments(snowflake_resource: SnowflakeResource):
     """Comments from the Hacker News API."""
-    return items[items["type"] == "comment"]
+    table_name = "comments"
+    item_type = "comment"
+
+    create_table = CREATE_UPDATE_TABLE_QUERY(
+        table_name=table_name,
+        item_type=item_type,
+    )
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor.execute(create_table)
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def stories(items: pd.DataFrame) -> pd.DataFrame:
+@asset(deps=[items])
+def stories(snowflake_resource: SnowflakeResource):
     """Stories from the Hacker News API."""
-    return items[items["type"] == "story"]
+    table_name = "stories"
+    item_type = "story"
+
+    create_table = CREATE_UPDATE_TABLE_QUERY(
+        table_name=table_name,
+        item_type=item_type,
+    )
+
+    with snowflake_resource.get_connection() as conn:
+        conn.cursor.execute(create_table)
 ```
 
 ### Step 2: Add run configuration
@@ -109,14 +169,14 @@ Next, we'll add the assets to our project's <PyObject object="Definitions" /> ob
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
-from dagster_snowflake_pandas import SnowflakePandasIOManager
+from dagster_snowflake import SnowflakeResource
 
 from dagster import Definitions
 from development_to_production.assets import comments, items, stories
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 resources = {
-    "snowflake_io_manager": SnowflakePandasIOManager(
+    "snowflake_resource": SnowflakeResource(
         account="abc1234.us-east-1",
         user="me@company.com",
         # password in config is bad practice
@@ -180,7 +240,7 @@ Instead, let's set up the configuration for resources to depend on the current e
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
 resources = {
     "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="me@company.com",
             # password in config is bad practice
@@ -190,7 +250,7 @@ resources = {
         ),
     },
     "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="dev@company.com",
             # password in config is bad practice
@@ -228,7 +288,7 @@ Now, we can store the Snowflake configuration values as environment variables an
 
 resources = {
     "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user=EnvVar("DEV_SNOWFLAKE_USER"),
             password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
@@ -237,7 +297,7 @@ resources = {
         ),
     },
     "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
@@ -268,7 +328,7 @@ resources = {
     "local": {...},
     "production": {...},
     "staging": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
@@ -348,13 +408,14 @@ class ItemsConfig(Config):
     base_item_id: int
 
 
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
+@asset
+def items(
+    config: ItemsConfig, snowflake_resource: SnowflakeResource, hn_client: HNAPIClient
+):
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    max_id = hn_client.fetch_max_item_id()
     rows = []
+    max_id = hn_client.fetch_max_item_id()
+
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
@@ -363,16 +424,27 @@ def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
         subset=["id"]
     )
     result.rename(columns={"by": "user_id"}, inplace=True)
-    return result
+
+    # Upload data to Snowflake as a dataframe
+    with snowflake_resource.get_connection() as conn:
+        write_pandas(
+            conn=conn,
+            df=result,
+            table_name="items",
+            schema=snowflake_resource.schema,
+            database=snowflake_resource.database,
+            auto_create_table=True,
+            use_logical_type=True,
+        )
 ```
 
 Next, we'll add an instance of `HNAPIClient` to `resources` to our project's `Definitions` object:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=end_hn_resource
 resource_defs = {
-    "local": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "production": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "staging": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
+    "local": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
+    "production": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
+    "staging": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
 }
 ```
 

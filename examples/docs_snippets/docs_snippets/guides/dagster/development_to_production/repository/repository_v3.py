@@ -1,6 +1,6 @@
 import os
 
-from dagster_snowflake_pandas import SnowflakePandasIOManager
+from dagster_snowflake import SnowflakeResource
 
 from dagster import Definitions, EnvVar
 from development_to_production.assets import comments, items, stories
@@ -11,7 +11,7 @@ from development_to_production.assets import comments, items, stories
 
 resources = {
     "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user=EnvVar("DEV_SNOWFLAKE_USER"),
             password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
@@ -20,7 +20,7 @@ resources = {
         ),
     },
     "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
@@ -44,7 +44,7 @@ resources = {
     "local": {...},
     "production": {...},
     "staging": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             account="abc1234.us-east-1",
             user="system@company.com",
             password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
@@ -61,9 +61,9 @@ from ..resources.resources_v1 import HNAPIClient
 # start_hn_resource
 
 resource_defs = {
-    "local": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "production": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "staging": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
+    "local": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
+    "production": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
+    "staging": {"hn_client": HNAPIClient(), "snowflake_resource": {...}},
 }
 
 # end_hn_resource

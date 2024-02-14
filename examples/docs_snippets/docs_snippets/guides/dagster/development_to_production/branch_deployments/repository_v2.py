@@ -1,7 +1,6 @@
 import os
 
 from dagster_snowflake import SnowflakeResource
-from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
 
@@ -18,7 +17,7 @@ snowflake_config = {
 # start_resources
 resources = {
     "branch": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             **snowflake_config,
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
@@ -28,7 +27,7 @@ resources = {
         ),
     },
     "prod": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
+        "snowflake_resource": SnowflakeResource(
             **snowflake_config,
             database="PRODUCTION",
         ),
