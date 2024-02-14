@@ -157,7 +157,7 @@ def get_asset_node_definition_collisions(
                 continue
             repos[external_asset_node.asset_key].append(
                 GrapheneRepository(
-                    instance=graphene_info.context.instance,
+                    workspace_context=graphene_info.context,
                     repository=repo,
                     repository_location=repo_loc,
                 )
