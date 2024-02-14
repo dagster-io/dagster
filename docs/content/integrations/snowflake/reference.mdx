@@ -211,8 +211,38 @@ The Snowflake I/O manager supports storing and loading partitioned data. In orde
 
 In order to store static partitioned assets in Snowflake, you must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
-```python file=/integrations/snowflake/static_partition_io.py startafter=start_example endbefore=end_example
-No match for startAfter value "start_example"
+```python file=/integrations/snowflake/static_partition.py
+import pandas as pd
+
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(
+        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+    ),
+    metadata={"partition_expr": "SPECIES"},
+)
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    species = context.partition_key
+
+    full_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+    return full_df[full_df["Species"] == species]
+
+
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
 ```
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition (or multiple static partitions), the following statement is used:
