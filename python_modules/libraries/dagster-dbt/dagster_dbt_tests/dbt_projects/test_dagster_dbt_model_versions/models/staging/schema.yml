@@ -2,6 +2,9 @@ version: 2
 
 models:
   - name: stg_customers
+    versions:
+      - v: 1
+      - v: 2
     columns:
       - name: customer_id
         tests:

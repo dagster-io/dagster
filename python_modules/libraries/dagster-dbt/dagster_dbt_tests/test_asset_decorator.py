@@ -32,6 +32,7 @@ from dagster_dbt.dbt_manifest import DbtManifestParam
 
 from .dbt_projects import (
     test_dbt_alias_path,
+    test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_meta_config_path,
 )
@@ -642,6 +643,25 @@ def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
+    )
+    assert result.success
+
+
+def test_dbt_with_model_versions(test_dbt_model_versions_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_model_versions_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    assert set(
+        [
+            AssetKey(["stg_customers_v1"]),
+            AssetKey(["stg_customers_v2"]),
+        ]
+    ).issubset(my_dbt_assets.keys)
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_model_versions_path))},
     )
     assert result.success
 

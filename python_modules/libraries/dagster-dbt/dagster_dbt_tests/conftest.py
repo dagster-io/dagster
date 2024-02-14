@@ -11,6 +11,7 @@ from .dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,
     test_dbt_alias_path,
+    test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_jaffle_shop_path,
     test_meta_config_path,
@@ -122,6 +123,11 @@ def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_dbt_alias_manifest", scope="session")
 def test_dbt_alias_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_manifest(test_dbt_alias_path)
+
+
+@pytest.fixture(name="test_dbt_model_versions_manifest", scope="session")
+def test_dbt_model_versions_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_manifest(test_dbt_model_versions_path)
 
 
 @pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
