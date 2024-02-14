@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import (
         AssetKey,
     )
-    from dagster._core.instance import DagsterInstance
 
 
 class ChangeReason(Enum):
@@ -20,45 +19,46 @@ class ChangeReason(Enum):
 
 
 class ParentAssetGraphDiffer:
-    """Class to compute how an asset has changed with respect to a parent asset graph.
-    Given two asset graphs, parent_asset_graph and branch_asset_graph, we can compute how the
+    """Given two asset graphs, parent_asset_graph and branch_asset_graph, we can compute how the
     assets in branch_asset_graph have changed with respect to parent_asset_graph. The ChangeReason
     enum contains the list of potential changes an asset can undergo.
     """
 
-    _instance: "DagsterInstance"
     _branch_asset_graph: Optional["AssetGraph"]
     _branch_asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
     _parent_asset_graph: Optional["AssetGraph"]
+    _parent_asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
 
     def __init__(
         self,
-        instance: "DagsterInstance",
         branch_asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
         parent_asset_graph: Optional[Union["AssetGraph", Callable[[], "AssetGraph"]]] = None,
     ):
         from dagster._core.definitions.asset_graph import AssetGraph
 
-        self._instance = instance
+        if parent_asset_graph is None:
+            # if parent_asset_graph is None, we are not in a branch deployment.
+            # TODO - need to confirm the behavior of a new code location in a branch deployment
+            # we may need to actually fetch information to determine if we are a branch deployment, not just
+            # use the parent_asset_graph as a proxy
+            self._parent_asset_graph = None
+            self._parent_asset_graph_load_fn = None
+            self._is_branch_deployment = False
+        elif isinstance(parent_asset_graph, AssetGraph):
+            self._parent_asset_graph = parent_asset_graph
+            self._parent_asset_graph_load_fn = None
+            self._is_branch_deployment = True
+        else:
+            self._parent_asset_graph = None
+            self._parent_asset_graph_fn = parent_asset_graph
+            self._is_branch_deployment = True
+
         if isinstance(branch_asset_graph, AssetGraph):
             self._branch_asset_graph = branch_asset_graph
             self._branch_asset_graph_load_fn = None
         else:
             self._branch_asset_graph = None
             self._branch_asset_graph_load_fn = branch_asset_graph
-
-        if self._is_branch_deployment():
-            if parent_asset_graph is None:
-                # TODO - None parent asset graph may indicate that all assets are new. Need to determine this behavior and update here
-                self._changed_status_by_asset_key = {}
-            elif isinstance(parent_asset_graph, AssetGraph):
-                self._parent_asset_graph = parent_asset_graph
-                self._parent_asset_graph_load_fn = None
-            else:
-                self._parent_asset_graph = None
-                self._parent_asset_graph_fn = parent_asset_graph
-        else:
-            self._changed_status_by_asset_key = {}
 
     @classmethod
     def from_workspaces(
@@ -68,21 +68,15 @@ class ParentAssetGraphDiffer:
     ) -> Optional["ParentAssetGraphDiffer"]:
         if parent_workspace is not None:
             return ParentAssetGraphDiffer(
-                instance=branch_workspace.instance,
                 branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(branch_workspace),
                 parent_asset_graph=lambda: ExternalAssetGraph.from_workspace(parent_workspace),
             )
-
-    def _is_branch_deployment(self) -> bool:
-        """Determines if the current deployment is a branch deployment."""
-        # TODO - implement.
-        return False
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
         corresponding parent deployment asset.
         """
-        if not self._is_branch_deployment():
+        if not self._is_branch_deployment:
             return []
 
         if self.parent_asset_graph is None:
