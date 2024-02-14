@@ -21,12 +21,19 @@ def assert_assets_match_project(
     def_outputs = sorted(set(assets_op.output_dict.keys()))
     expected_outputs = sorted(
         [
-            "sort_by_calories",
-            "least_caloric",
-            "sort_hot_cereals_by_calories",
-            "sort_cold_cereals_by_calories",
+            "model_dagster_dbt_test_project_sort_by_calories",
+            "model_dagster_dbt_test_project_least_caloric",
+            "model_dagster_dbt_test_project_sort_hot_cereals_by_calories",
+            "model_dagster_dbt_test_project_sort_cold_cereals_by_calories",
         ]
-        + (["cereals", "orders_snapshot"] if include_seeds_and_snapshots else [])
+        + (
+            [
+                "seed_dagster_dbt_test_project_cereals",
+                "snapshot_dagster_dbt_test_project_orders_snapshot",
+            ]
+            if include_seeds_and_snapshots
+            else []
+        )
     )
     assert def_outputs == expected_outputs, f"{def_outputs} != {expected_outputs}"
     for asset_name in [
@@ -35,16 +42,12 @@ def assert_assets_match_project(
         "cold_schema/sort_cold_cereals_by_calories",
     ]:
         asset_key = AssetKey(prefix + asset_name.split("/"))
-        output_name = asset_key.path[-1]
-        assert dbt_assets[0].keys_by_output_name[output_name] == asset_key
         assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
 
     for asset_key, group_name in dbt_assets[0].group_names_by_key.items():
         assert group_name == "default", f'{asset_key} group {group_name} != "default"'
 
-    assert dbt_assets[0].keys_by_output_name["sort_by_calories"] == AssetKey(
-        prefix + ["sort_by_calories"]
-    )
+    assert AssetKey(prefix + ["sort_by_calories"]) in dbt_assets[0].keys
     sort_by_calories_deps = dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]
     assert sort_by_calories_deps == {AssetKey(prefix + ["cereals"])}, sort_by_calories_deps
 

@@ -947,7 +947,9 @@ def test_source_key_prefix(test_python_project_dir, dbt_python_config_dir):
         ),
     }
 
-    assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
+    assert dbt_assets[0].keys_by_output_name[
+        "model_dagster_dbt_python_test_project_cleaned_users"
+    ] == AssetKey(["dbt", "cleaned_users"])
 
 
 def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
