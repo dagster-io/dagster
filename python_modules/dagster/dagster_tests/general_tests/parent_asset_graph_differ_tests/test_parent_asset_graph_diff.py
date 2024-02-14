@@ -110,17 +110,18 @@ def get_parent_asset_graph_differ(
         parent_graph_name=parent_graph_name, new_assets=new_assets, updated_assets=updated_assets
     )
 
-    class TestingParentAssetGraphDiffer(ParentAssetGraphDiffer):
-        def _get_parent_deployment_asset_graph(self):
-            return ExternalAssetGraph.from_workspace(
-                _make_workspace_context(instance, [parent_graph_name])
-            )
+    parent_graph = ExternalAssetGraph.from_workspace(
+        _make_workspace_context(instance, [parent_graph_name])
+    )
 
+    class TestingParentAssetGraphDiffer(ParentAssetGraphDiffer):
         def _is_branch_deployment(self) -> bool:
             # for testing, we want to always be in a branch deployment
             return True
 
-    return TestingParentAssetGraphDiffer(instance=instance, branch_asset_graph=branch_graph)
+    return TestingParentAssetGraphDiffer(
+        instance=instance, branch_asset_graph=branch_graph, parent_asset_graph=parent_graph
+    )
 
 
 def test_new_asset(instance):
