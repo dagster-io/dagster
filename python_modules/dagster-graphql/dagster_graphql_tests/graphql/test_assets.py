@@ -278,6 +278,11 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
             partitionKeys
             latestMaterializationByPartition(partitions: $partitions) {
                 partition
+                runOrError {
+                    ... on Run {
+                        status
+                    }
+                }
                 stepStats {
                     startTime
                 }
@@ -1139,8 +1144,29 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_latest_materialization_per_partition(self, graphql_context: WorkspaceRequestContext):
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
+        _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="d")
+
+        traced_counter.set(Counter())
 
         selector = infer_job_selector(graphql_context, "partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_MATERIALIZATION_PER_PARTITION,
+            variables={"pipelineSelector": selector, "partitions": ["c", "d"]},
+        )
+
+        counts = traced_counter.get().counts()
+        assert counts.get("DagsterInstance.get_run_records") == 1
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 2
+        materialization = asset_node["latestMaterializationByPartition"][0]
+        run_status = materialization["runOrError"]["status"]
+        assert run_status == "SUCCESS"
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
@@ -1164,6 +1190,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         asset_node = result.data["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 1
         materialization = asset_node["latestMaterializationByPartition"][0]
+        run_status = materialization["runOrError"]["status"]
+        assert run_status == "SUCCESS"
+
         start_time = materialization["stepStats"]["startTime"]
         assert materialization["partition"] == "c"
 
