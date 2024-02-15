@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+import sys
 import time
 import warnings
 from collections import defaultdict
@@ -689,3 +690,13 @@ def ignore_warning(message_substr: str):
         return wrapper
 
     return decorator
+
+
+def raise_exception_on_warnings():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    warnings.filterwarnings("error")
+
+    if sys.version_info >= (3, 12):
+        # pendulum sometimes raises DeprecationWarning on python3.12
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pendulum")

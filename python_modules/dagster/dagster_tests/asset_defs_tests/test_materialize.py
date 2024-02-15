@@ -1,6 +1,5 @@
 import os
 import pickle
-import warnings
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -29,15 +28,12 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.test_utils import ignore_warning, instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test, raise_exception_on_warnings
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def test_basic_materialize():
