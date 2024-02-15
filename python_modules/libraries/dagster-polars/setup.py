@@ -36,15 +36,16 @@ setup(
     packages=find_packages(exclude=["dagster_polars_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        "polars>=0.17.0",
+        "polars>=0.20.0",
         "pyarrow>=8.0.0",
-        "typing-extensions>=4.4.0",
+        "typing-extensions>=4.7.0",
         "universal_pathlib>=0.1.4",
     ],
     extras_require={
-        "deltalake": ["deltalake>=0.10.0"],
+        "deltalake": ["deltalake>=0.15.0"],
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
+            "pytest>=7.3.1",
             "hypothesis>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",

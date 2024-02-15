@@ -48,23 +48,28 @@ def session_polars_parquet_io_manager(
 def session_polars_delta_io_manager(
     session_scoped_dagster_instance: DagsterInstance,
 ) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(
-        base_dir=session_scoped_dagster_instance.storage_directory()
-    )  # to use with hypothesis
+    return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
 
 
-_df_for_parquet = pl.DataFrame(
-    {
-        "1": [0, 1, None],
-        "2": [0.0, 1.0, None],
-        "3": ["a", "b", None],
-        "4": [[0, 1], [2, 3], None],
-        "6": [{"a": 0}, {"a": 1}, None],
-        "7": [datetime(2022, 1, 1), datetime(2022, 1, 2), None],
-        "8": [date(2022, 1, 1), date(2022, 1, 2), None],
-        "9": [timedelta(hours=1), timedelta(hours=2), None],
-    }
-)
+main_data = {
+    "1": [0, 1, None],
+    "2": [0.0, 1.0, None],
+    "3": ["a", "b", None],
+    "4": [[0, 1], [2, 3], None],
+    "6": [{"a": 0}, {"a": 1}, None],
+    "7": [datetime(2022, 1, 1), datetime(2022, 1, 2), None],
+    "8": [date(2022, 1, 1), date(2022, 1, 2), None],
+}
+
+_df_for_delta = pl.DataFrame(main_data)
+
+_lazy_df_for_delta = pl.LazyFrame(main_data)
+
+parquet_data = main_data
+parquet_data["9"] = [timedelta(hours=1), timedelta(hours=2), None]
+
+_df_for_parquet = pl.DataFrame(parquet_data)
+_lazy_df_for_parquet = pl.LazyFrame(parquet_data)
 
 
 @pytest_cases.fixture(scope="session")
@@ -77,29 +82,37 @@ def df_for_delta() -> pl.DataFrame:
     return _df_for_delta
 
 
-# delta doesn't support Duration
-# TODO: add timedeltas when supported
-_df_for_delta = pl.DataFrame(
-    {
-        "1": [0, 1, None],
-        "2": [0.0, 1.0, None],
-        "3": ["a", "b", None],
-        "4": [[0, 1], [2, 3], None],
-        "6": [{"a": 0}, {"a": 1}, None],
-        "7": [datetime(2022, 1, 1), datetime(2022, 1, 2), None],
-        "8": [date(2022, 1, 1), date(2022, 1, 2), None],
-    }
-)
+@pytest_cases.fixture(scope="session")
+def lazy_df_for_parquet() -> pl.LazyFrame:
+    return _lazy_df_for_parquet
+
+
+@pytest_cases.fixture(scope="session")
+def lazy_df_for_delta() -> pl.LazyFrame:
+    return _lazy_df_for_delta
 
 
 @pytest_cases.fixture
 @pytest_cases.parametrize(
-    "class_and_df",
+    "io_manager,frame",
     [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)],
 )
 def io_manager_and_df(  # to use without hypothesis
-    class_and_df: Tuple[Type[BasePolarsUPathIOManager], pl.DataFrame],
+    io_manager: Type[BasePolarsUPathIOManager],
+    frame: pl.DataFrame,
     dagster_instance: DagsterInstance,
 ) -> Tuple[BasePolarsUPathIOManager, pl.DataFrame]:
-    klass, df = class_and_df
-    return klass(base_dir=dagster_instance.storage_directory()), df
+    return io_manager(base_dir=dagster_instance.storage_directory()), frame
+
+
+@pytest_cases.fixture
+@pytest_cases.parametrize(
+    "io_manager,frame",
+    [(PolarsParquetIOManager, _lazy_df_for_parquet), (PolarsDeltaIOManager, _lazy_df_for_delta)],
+)
+def io_manager_and_lazy_df(  # to use without hypothesis
+    io_manager: Type[BasePolarsUPathIOManager],
+    frame: pl.LazyFrame,
+    dagster_instance: DagsterInstance,
+) -> Tuple[BasePolarsUPathIOManager, pl.LazyFrame]:
+    return io_manager(base_dir=dagster_instance.storage_directory()), frame
