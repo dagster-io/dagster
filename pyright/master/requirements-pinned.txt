@@ -411,7 +411,7 @@ pyarrow-hotfix==0.6
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
 pycparser==2.21
-pydantic==1.10.14
+pydantic==2.6.0
 pydata-google-auth==1.8.2
 pyflakes==3.2.0
 Pygments==2.17.2
