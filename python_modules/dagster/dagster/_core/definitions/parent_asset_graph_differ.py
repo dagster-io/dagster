@@ -50,7 +50,7 @@ class ParentAssetGraphDiffer:
             self._is_branch_deployment = True
         else:
             self._parent_asset_graph = None
-            self._parent_asset_graph_fn = parent_asset_graph
+            self._parent_asset_graph_load_fn = parent_asset_graph
             self._is_branch_deployment = True
 
         if isinstance(branch_asset_graph, AssetGraph):
