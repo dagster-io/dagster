@@ -268,6 +268,7 @@ def get_asset_materializations(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     tags: Optional[Mapping[str, str]] = None,
+    storage_ids: Optional[Sequence[int]] = None,
 ) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -275,24 +276,35 @@ def get_asset_materializations(
     check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
 
     instance = graphene_info.context.instance
-    cursor = None
-    event_records = []
-    while True:
-        event_records_result = instance.fetch_materializations(
+    if limit is None:
+        event_records = []
+        cursor = None
+        while True:
+            event_records_result = instance.fetch_materializations(
+                records_filter=AssetRecordsFilter(
+                    asset_key=asset_key,
+                    asset_partitions=partitions,
+                    before_timestamp=before_timestamp,
+                    after_timestamp=after_timestamp,
+                    storage_ids=storage_ids,
+                ),
+                cursor=cursor,
+                limit=get_max_event_records_limit(),
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_materializations(
             records_filter=AssetRecordsFilter(
                 asset_key=asset_key,
                 asset_partitions=partitions,
                 before_timestamp=before_timestamp,
                 after_timestamp=after_timestamp,
-                tags=tags,
             ),
-            cursor=cursor,
-            limit=limit or get_max_event_records_limit(),
-        )
-        cursor = event_records_result.cursor
-        event_records.extend(event_records_result.records)
-        if not event_records_result.has_more:
-            break
+            limit=limit,
+        ).records
 
     return [event_record.event_log_entry for event_record in event_records]
 
@@ -311,23 +323,34 @@ def get_asset_observations(
     check.opt_float_param(after_timestamp, "after_timestamp")
 
     instance = graphene_info.context.instance
-    cursor = None
-    event_records = []
-    while True:
-        event_records_result = instance.fetch_observations(
+    if limit is None:
+        event_records = []
+        cursor = None
+        while True:
+            event_records_result = instance.fetch_observations(
+                records_filter=AssetRecordsFilter(
+                    asset_key=asset_key,
+                    asset_partitions=partitions,
+                    before_timestamp=before_timestamp,
+                    after_timestamp=after_timestamp,
+                ),
+                cursor=cursor,
+                limit=get_max_event_records_limit(),
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_observations(
             records_filter=AssetRecordsFilter(
                 asset_key=asset_key,
                 asset_partitions=partitions,
                 before_timestamp=before_timestamp,
                 after_timestamp=after_timestamp,
             ),
-            cursor=cursor,
-            limit=limit or get_max_event_records_limit(),
-        )
-        cursor = event_records_result.cursor
-        event_records.extend(event_records_result.records)
-        if not event_records_result.has_more:
-            break
+            limit=limit,
+        ).records
 
     return [event_record.event_log_entry for event_record in event_records]
 
