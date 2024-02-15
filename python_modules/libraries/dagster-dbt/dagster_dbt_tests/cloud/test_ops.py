@@ -1,13 +1,10 @@
-from typing import Any
-
 import pytest
 import responses
 from dagster import Failure, job
 from dagster._check import CheckError
-from dagster_dbt import DbtCloudClientResource, dbt_cloud_resource, dbt_cloud_run_op
+from dagster_dbt import dbt_cloud_run_op
 
 from .utils import (
-    SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
     SAMPLE_JOB_ID,
     SAMPLE_RUN_ID,
@@ -15,16 +12,6 @@ from .utils import (
     sample_run_details,
     sample_run_results,
 )
-
-
-@pytest.fixture(name="dbt_cloud", params=["pythonic", "legacy"])
-def dbt_cloud_fixture(request) -> Any:
-    if request.param == "pythonic":
-        yield DbtCloudClientResource(auth_token="some_auth_token", account_id=SAMPLE_ACCOUNT_ID)
-    else:
-        yield dbt_cloud_resource.configured(
-            {"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID}
-        )
 
 
 @pytest.mark.parametrize(
