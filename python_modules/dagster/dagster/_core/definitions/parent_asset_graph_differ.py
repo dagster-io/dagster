@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.host_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 if TYPE_CHECKING:
@@ -15,6 +16,14 @@ class ChangeReason(Enum):
     NEW = "NEW"
     CODE_VERSION = "CODE_VERSION"
     INPUTS = "INPUTS"
+
+
+def _get_external_repo_from_context(
+    context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
+) -> ExternalRepository:
+    return context.get_code_location(location_name=code_location_name).get_repository(
+        name=repository_name
+    )
 
 
 class ParentAssetGraphDiffer:
@@ -30,7 +39,6 @@ class ParentAssetGraphDiffer:
 
     def __init__(
         self,
-        # repository_name: str,
         branch_asset_graph: Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]],
         parent_asset_graph: Optional[
             Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]]
@@ -60,7 +68,6 @@ class ParentAssetGraphDiffer:
     @classmethod
     def from_workspaces(
         cls,
-        # repository_name: str,
         branch_workspace: BaseWorkspaceRequestContext,
         parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
     ) -> Optional["ParentAssetGraphDiffer"]:
@@ -68,7 +75,28 @@ class ParentAssetGraphDiffer:
             return ParentAssetGraphDiffer(
                 branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(branch_workspace),
                 parent_asset_graph=lambda: ExternalAssetGraph.from_workspace(parent_workspace),
-                # repository_name=repository_name
+            )
+
+    @classmethod
+    def from_external_repositories(
+        cls,
+        code_location_name: str,
+        repository_name: str,
+        branch_workspace: BaseWorkspaceRequestContext,
+        parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
+    ) -> Optional["ParentAssetGraphDiffer"]:
+        if parent_workspace is not None:
+            return ParentAssetGraphDiffer(
+                branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(
+                    _get_external_repo_from_context(
+                        branch_workspace, code_location_name, repository_name
+                    )
+                ),
+                parent_asset_graph=lambda: ExternalAssetGraph.from_external_repository(
+                    _get_external_repo_from_context(
+                        parent_workspace, code_location_name, repository_name
+                    )
+                ),
             )
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
