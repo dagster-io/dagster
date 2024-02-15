@@ -19,7 +19,7 @@ def test_get_s3_keys():
                 raise Exception("Failed to create object")
 
         no_key = get_s3_keys(bucket=bucket_name, prefix=prefix)
-        assert len(no_key) == 0 # no keys in bucket
+        assert len(no_key) == 0  # no keys in bucket
 
         put_key_in_bucket(key="foo-1", body="test")
         one_key = get_s3_keys(bucket=bucket_name, prefix=prefix)
