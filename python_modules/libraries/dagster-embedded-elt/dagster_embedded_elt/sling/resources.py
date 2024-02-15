@@ -5,14 +5,16 @@ from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
-from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
+from dagster import ConfigurableResource, MaterializeResult, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from sling import Sling
 
 logger = get_dagster_logger()
+
+from dagster_embedded_elt.sling import DagsterSlingTranslator
 
 
 class SlingMode(str, Enum):
@@ -92,6 +94,38 @@ class SlingTargetConnection(PermissiveConfig):
     )
     connection_string: Optional[str] = Field(
         description="The connection string for the target database.",
+        default=None,
+    )
+
+
+class SlingConnectionResource(PermissiveConfig):
+    """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
+
+    Each resource must have a name which corresponds to the name of the resource in the sling replication.yaml file, and a type which defines
+    the type of connection used, e.g. file, postgres, snowflake.
+
+    Examples:
+        Creating a Sling Connection using a connection string:
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(name="MY_POSTGRES", type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
+            source = SlingConnectionResource(name="MY_MYSQL", type="mysql", connection_string="mysql://user:password@host:port/schema")
+
+        Create a Sling Connection for a Postgres or Snowflake database, using keyword arguments, as described here:
+        https://docs.slingdata.io/connections/database-connections/postgres
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(name="MY_POSTGRES", type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
+            source = SlingConnectionResource(name="MY_SNOWFLAKE", type="snowflake", host=EnvVar("SNOWFLAKE_HOST"), user=EnvVar("SNOWFLAKE_USER"), database=EnvVar("SNOWFLAKE_DATABASE"), password=EnvVar("SNOWFLAKE_PASSWORD"), role=EnvVar("SNOWFLAKE_ROLE"))
+    """
+
+    model_config = ConfigDict(extra="allow")
+    name: str = Field(description="The name of the connection.")
+    type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
+    connection_string: Optional[str] = Field(
+        description="The connection string for the source database.",
         default=None,
     )
 
@@ -206,6 +240,35 @@ class SlingResource(ConfigurableResource):
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
+
+    def replicate(
+        self,
+        *,
+        dagster_sling_translator: DagsterSlingTranslator,
+        source_stream: str,
+        target_object: str,
+        mode: SlingMode,
+        primary_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        target_options: Optional[Dict[str, Any]] = None,
+    ):
+        logs = ""
+        for line in self.sync(
+            source_stream,
+            target_object,
+            mode,
+            primary_key,
+            update_key,
+            source_options,
+            target_options,
+        ):
+            logger.info(line)
+            logs += line
+            # TODO: capture actual metadata here
+
+        output_name = dagster_sling_translator.get_asset_key(target_object)
+        yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
 
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
