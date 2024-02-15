@@ -53,7 +53,9 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     """
     context_metadata = context.metadata or {}
 
-    storage_options: Optional[dict[str, Any]] = path.storage_options if hasattr(path, "storage_options") else None
+    storage_options: Optional[dict[str, Any]] = (
+        path.storage_options if hasattr(path, "storage_options") else None
+    )
 
     kwargs = dict(
         n_rows=context_metadata.get("n_rows", None),
@@ -154,7 +156,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         context_metadata = context.metadata or {}
 
         if metadata is not None:
-            context.log.warning("Sink not possible with StorageMetadata, instead it's dispatched to pyarrow writer.")
+            context.log.warning(
+                "Sink not possible with StorageMetadata, instead it's dispatched to pyarrow writer."
+            )
             return self.write_df_to_path(context, df.collect(), path, metadata)
         else:
             fs = path.fs if hasattr(path, "fs") else None
@@ -197,12 +201,16 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         if metadata is not None:
             table: Table = df.to_arrow()
             context.log.warning("StorageMetadata is passed, so the PyArrow writer is used.")
-            existing_metadata = table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
+            existing_metadata = (
+                table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
+            )
             existing_metadata.update({DAGSTER_POLARS_STORAGE_METADATA_KEY: json.dumps(metadata)})
             table = table.replace_schema_metadata(existing_metadata)
 
             if pyarrow_options is not None and pyarrow_options.get("partition_cols"):
-                pyarrow_options["compression"] = None if compression == "uncompressed" else compression
+                pyarrow_options["compression"] = (
+                    None if compression == "uncompressed" else compression
+                )
                 pyarrow_options["compression_level"] = compression_level
                 pyarrow_options["write_statistics"] = statistics
                 pyarrow_options["row_group_size"] = row_group_size
@@ -284,7 +292,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 else None
             )
 
-            metadata = json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
+            metadata = (
+                json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
+            )
 
             return ldf, metadata
 
@@ -296,10 +306,14 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         :param path:
         :return:
         """
-        metadata = pq.read_metadata(str(path), filesystem=path.fs if hasattr(path, "fs") else None).metadata
+        metadata = pq.read_metadata(
+            str(path), filesystem=path.fs if hasattr(path, "fs") else None
+        ).metadata
 
         dagster_polars_metadata = (
-            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8")) if metadata is not None else None
+            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
+            if metadata is not None
+            else None
         )
 
         return json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}

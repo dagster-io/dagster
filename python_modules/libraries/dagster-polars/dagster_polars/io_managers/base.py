@@ -156,14 +156,20 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
     cloud_storage_options: Optional[Mapping[str, Any]] = Field(
-        default=None, description="Storage authentication for cloud object store", alias="storage_options"
+        default=None,
+        description="Storage authentication for cloud object store",
+        alias="storage_options",
     )
     _base_path = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         from upath import UPath
 
-        sp = _process_env_vars(self.cloud_storage_options) if self.cloud_storage_options is not None else {}
+        sp = (
+            _process_env_vars(self.cloud_storage_options)
+            if self.cloud_storage_options is not None
+            else {}
+        )
         self._base_path = (
             UPath(self.base_dir, **sp)
             if self.base_dir is not None
@@ -225,7 +231,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                 path = next(iter(paths.values()))
                 backcompat_paths = self._get_multipartition_backcompat_paths(context)
-                backcompat_path = None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                backcompat_path = (
+                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                )
 
                 return self._load_partition_from_path(
                     context=context,
@@ -277,7 +285,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                     df = obj
                     self.sink_df_to_path(context=context, df=df, path=path)
                 else:
-                    raise NotImplementedError(f"dump_df_to_path for {typing_type} is not implemented")
+                    raise NotImplementedError(
+                        f"dump_df_to_path for {typing_type} is not implemented"
+                    )
             else:
                 if not annotation_is_typing_optional(typing_type):
                     frame_type = get_args(typing_type)[0]
@@ -293,7 +303,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                     df, metadata = obj
                     self.sink_df_to_path(context=context, df=df, path=path, metadata=metadata)
                 else:
-                    raise NotImplementedError(f"dump_df_to_path for {typing_type} is not implemented")
+                    raise NotImplementedError(
+                        f"dump_df_to_path for {typing_type} is not implemented"
+                    )
 
     def load_from_path(
         self, context: InputContext, path: "UPath", partition_key: Optional[str] = None
@@ -354,7 +366,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 assert metadata is not None
                 return ldf, metadata
         else:
-            raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
+            raise NotImplementedError(
+                f"Can't load object for type annotation {context.dagster_type.typing_type}"
+            )
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
@@ -366,7 +380,11 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 df = obj[0]
             else:
                 df = obj
-            return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
+            return (
+                get_polars_metadata(context, df)
+                if df is not None
+                else {"missing": MetadataValue.bool(True)}
+            )
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
@@ -412,7 +430,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             Any: The object loaded from the partition.
         """
         allow_missing_partitions = (
-            context.metadata.get("allow_missing_partitions", False) if context.metadata is not None else False
+            context.metadata.get("allow_missing_partitions", False)
+            if context.metadata is not None
+            else False
         )
 
         try:
@@ -422,9 +442,12 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         except FileNotFoundError as e:
             if backcompat_path is not None:
                 try:
-                    obj = self.load_from_path(context=context, path=path, partition_key=partition_key)
+                    obj = self.load_from_path(
+                        context=context, path=path, partition_key=partition_key
+                    )
                     context.log.debug(
-                        f"File not found at {path}. Loaded instead from backcompat path:" f" {backcompat_path}"
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
                     )
                     return obj
                 except FileNotFoundError as e:

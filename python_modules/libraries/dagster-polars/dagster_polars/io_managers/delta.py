@@ -133,7 +133,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                 path = next(iter(paths.values()))
                 backcompat_paths = self._get_multipartition_backcompat_paths(context)
-                backcompat_path = None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                backcompat_path = (
+                    None if not backcompat_paths else next(iter(backcompat_paths.values()))
+                )
 
                 return self._load_partition_from_path(
                     context=context,
@@ -168,7 +170,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                         path=self.get_path_for_partition(
                             context=context,
                             partition=asset_partition_keys[0],  # 0 would work,
-                            path=self._get_paths_for_partitions(context)[asset_partition_keys[0]],  # 0 would work,
+                            path=self._get_paths_for_partitions(context)[
+                                asset_partition_keys[0]
+                            ],  # 0 would work,
                         ),
                         partition_key=None,
                     )
@@ -209,10 +213,14 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             )  # this could be wrong, you could have partition_by in delta_write_options and in the metadata
 
             if partition_by is not None:
-                assert context.partition_key is not None, 'can\'t set "partition_by" for an asset without partitions'
+                assert (
+                    context.partition_key is not None
+                ), 'can\'t set "partition_by" for an asset without partitions'
 
                 delta_write_options["partition_by"] = partition_by
-                delta_write_options["partition_filters"] = [(partition_by, "=", context.partition_key)]
+                delta_write_options["partition_filters"] = [
+                    (partition_by, "=", context.partition_key)
+                ]
 
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
@@ -233,7 +241,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if isinstance(dt, DeltaTable):
             current_version = dt.version()
         else:
-            current_version = DeltaTable(str(path), storage_options=storage_options, without_files=True).version()
+            current_version = DeltaTable(
+                str(path), storage_options=storage_options, without_files=True
+            ).version()
         context.add_output_metadata({"version": current_version})
 
         if metadata is not None:
@@ -334,7 +344,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 path = self._get_path(context)
                 # we need to get row_count from the full table
                 metadata["row_count"] = MetadataValue.int(
-                    DeltaTable(str(path), storage_options=self.storage_options).to_pyarrow_dataset().count_rows()
+                    DeltaTable(str(path), storage_options=self.storage_options)
+                    .to_pyarrow_dataset()
+                    .count_rows()
                 )
 
         return metadata
@@ -359,7 +371,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             version = int(version_from_metadata)
 
         if version is None:
-            return DeltaTable(str(path), storage_options=self.storage_options, without_files=True).version()
+            return DeltaTable(
+                str(path), storage_options=self.storage_options, without_files=True
+            ).version()
         else:
             return version
 

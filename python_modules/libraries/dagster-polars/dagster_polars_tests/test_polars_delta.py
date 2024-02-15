@@ -49,7 +49,9 @@ from dagster_polars_tests.utils import get_saved_path
     )
 )
 @settings(max_examples=50, deadline=None)
-def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
+def test_polars_delta_io_manager(
+    session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame
+):
     time.sleep(0.2)  # too frequent writes mess up DeltaLake concurrent
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
@@ -64,7 +66,9 @@ def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOM
         [upstream, downstream],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream"))
+    )
 
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
     assert isinstance(saved_path, str)
@@ -87,7 +91,9 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
         [append_asset],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+    )
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 3  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
@@ -96,7 +102,9 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
     result = materialize(
         [append_asset],
     )
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset")))
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+    )
     assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 6  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
 
@@ -269,7 +277,9 @@ def test_polars_delta_io_manager_overwrite_schema_lazy(
     )
 
 
-def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+def test_polars_delta_native_partitioning(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
     manager = polars_delta_io_manager
     df = df_for_delta
 
@@ -303,7 +313,9 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
             partition_key=partition_key,
         )
         saved_path = get_saved_path(result, "upstream_partitioned")
-        assert saved_path.endswith("upstream_partitioned.delta"), saved_path  # DeltaLake should handle partitioning!
+        assert saved_path.endswith(
+            "upstream_partitioned.delta"
+        ), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 
     assert saved_path is not None
@@ -320,7 +332,9 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
     )
 
     @asset(io_manager_def=manager)
-    def downstream_load_multiple_partitions_as_single_df(upstream_partitioned: pl.DataFrame) -> None:
+    def downstream_load_multiple_partitions_as_single_df(
+        upstream_partitioned: pl.DataFrame,
+    ) -> None:
         assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
 
     materialize(
@@ -348,7 +362,9 @@ def test_polars_delta_native_partitioning_loading_single_partition(
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
     @asset(io_manager_def=manager, partitions_def=partitions_def)
-    def downstream_partitioned(context: AssetExecutionContext, upstream_partitioned: pl.DataFrame) -> None:
+    def downstream_partitioned(
+        context: AssetExecutionContext, upstream_partitioned: pl.DataFrame
+    ) -> None:
         partitions = upstream_partitioned["partition"].unique().to_list()
         assert len(partitions) == 1
         assert partitions[0] == context.partition_key
@@ -360,7 +376,9 @@ def test_polars_delta_native_partitioning_loading_single_partition(
         )
 
 
-def test_polars_delta_time_travel(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+def test_polars_delta_time_travel(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
     manager = polars_delta_io_manager
     df = df_for_delta
 

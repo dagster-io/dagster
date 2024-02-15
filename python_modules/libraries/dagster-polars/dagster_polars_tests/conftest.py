@@ -48,7 +48,9 @@ def session_polars_parquet_io_manager(
 def session_polars_delta_io_manager(
     session_scoped_dagster_instance: DagsterInstance,
 ) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
+    return PolarsDeltaIOManager(
+        base_dir=session_scoped_dagster_instance.storage_directory()
+    )  # to use with hypothesis
 
 
 main_data = {

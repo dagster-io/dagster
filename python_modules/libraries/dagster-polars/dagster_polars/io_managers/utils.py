@@ -101,7 +101,10 @@ def get_table_metadata(
         table = MetadataValue.table(
             records=[
                 TableRecord(
-                    {col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col]) for col in df.columns}
+                    {
+                        col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col])
+                        for col in df.columns
+                    }
                 )
                 for i in range(len(df_sample))
             ],
@@ -134,7 +137,9 @@ def get_polars_df_stats(
     }
 
 
-def get_polars_metadata(context: OutputContext, df: Union[pl.DataFrame, pl.LazyFrame]) -> Dict[str, MetadataValue]:
+def get_polars_metadata(
+    context: OutputContext, df: Union[pl.DataFrame, pl.LazyFrame]
+) -> Dict[str, MetadataValue]:
     """Retrives some metadata on polars frames
     - DataFrame: stats, row_count, table or schema
     - LazyFrame: schema.
