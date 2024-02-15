@@ -34,7 +34,9 @@ def _get_external_repo_from_context(
 class ParentAssetGraphDiffer:
     """Given two asset graphs, parent_asset_graph and branch_asset_graph, we can compute how the
     assets in branch_asset_graph have changed with respect to parent_asset_graph. The ChangeReason
-    enum contains the list of potential changes an asset can undergo.
+    enum contains the list of potential changes an asset can undergo. If the parent_asset_graph is None,
+    this indicates that the branch_asset_graph does not yet exist in the parent deployment. In this case
+    we will consider every asset New.
     """
 
     _branch_asset_graph: Optional["ExternalAssetGraph"]
@@ -76,7 +78,7 @@ class ParentAssetGraphDiffer:
         branch_workspace: BaseWorkspaceRequestContext,
         parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
     ) -> Optional["ParentAssetGraphDiffer"]:
-        """Contructs a ParentAssetGraphDiffer for a particular repository in a code location for two
+        """Constructs a ParentAssetGraphDiffer for a particular repository in a code location for two
         deployment workspaces, the parent deployment and the branch deployment. If the
         parent_workspace is None, then we are not in a branch deployment and will not create a ParentAssetGraphDiffer.
         """
@@ -124,11 +126,6 @@ class ParentAssetGraphDiffer:
             changes.append(ChangeReason.INPUTS)
 
         return changes
-
-    def is_changed_in_branch(self, asset_key: "AssetKey") -> bool:
-        """Returns whether the given asset has been changed in the branch deployment."""
-        # TODO - unclear if this method is really necessary. Consider removing.
-        return len(self._compare_parent_and_branch_assets(asset_key)) > 0
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Returns list of ChangeReasons for asset_key as compared to the parent deployment."""

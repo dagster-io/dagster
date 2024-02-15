@@ -1,15 +1,15 @@
 import os
 import sys
 import time
-from typing import List, Optional
 from unittest import mock
 
 import pytest
-from dagster import DagsterInstance, asset, instance_for_test
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster import DagsterInstance, instance_for_test
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.parent_asset_graph_differ import ChangeReason, ParentAssetGraphDiffer
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    SINGLETON_REPOSITORY_NAME,
+)
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -18,10 +18,6 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
 )
 
-from .parent_deployment_asset_graphs.basic_asset_graph import defs as basic_asset_graph
-
-parent_deployment_defs_by_name = {"basic_asset_graph": basic_asset_graph}
-
 
 @pytest.fixture
 def instance():
@@ -29,12 +25,14 @@ def instance():
         yield the_instance
 
 
-def _make_location_entry(parent_graph_name: str, instance: DagsterInstance):
+def _make_location_entry(
+    scenario_folder_name: str, definitions_file: str, instance: DagsterInstance
+):
     origin = InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             module_name=(
-                f"dagster_tests.general_tests.asset_graph_diff_tests.parent_deployment_asset_graphs.{parent_graph_name}"
+                f"dagster_tests.general_tests.parent_asset_graph_differ_tests.asset_graph_scenarios.{scenario_folder_name}.{definitions_file}"
             ),
             working_directory=os.getcwd(),
             attribute="defs",
@@ -57,11 +55,15 @@ def _make_location_entry(parent_graph_name: str, instance: DagsterInstance):
     )
 
 
-def _make_workspace_context(instance: DagsterInstance, parent_graph_names):
+def _make_workspace_context(
+    instance: DagsterInstance, scenario_folder_name: str, definitions_file: str
+) -> WorkspaceRequestContext:
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
         workspace_snapshot={
-            name: _make_location_entry(name, instance) for name in parent_graph_names
+            scenario_folder_name: _make_location_entry(
+                scenario_folder_name, definitions_file, instance
+            )
         },
         process_context=mock.MagicMock(),
         version=None,
@@ -70,63 +72,38 @@ def _make_workspace_context(instance: DagsterInstance, parent_graph_names):
     )
 
 
-def _get_branch_deployment_graph_with_code_changes(
-    parent_graph_name, new_assets: Optional[List] = None, updated_assets: Optional[List] = None
-):
-    """Applies the provided changes to a parent asset graph. We do this by getting the list of
-    assets from the parent Definitions object and adding in the new_assets and replacing an
-    updated_assets. Then we can make a new Definitions object and make an AssetGraph.
-    """
-    parent_asset_graph = parent_deployment_defs_by_name[parent_graph_name].get_asset_graph()
-    parent_assets_by_key = {
-        asset.key: asset
-        for asset in list(parent_asset_graph.assets) + list(parent_asset_graph.source_assets)
-    }
-    new_assets = new_assets or []
-    if updated_assets:
-        for asset in updated_assets:
-            if parent_assets_by_key.get(asset.key) is not None:
-                del parent_assets_by_key[asset.key]
-            else:
-                assert False, "Asset included in updated_assets must exist as either an asset or a source asset in parent deployment"
-    else:
-        updated_assets = []
-    return AssetGraph.from_assets(
-        all_assets=new_assets + updated_assets + list(parent_assets_by_key.values())
-    )
-
-
 def get_parent_asset_graph_differ(
     instance,
-    parent_graph_name: str,
-    new_assets: Optional[List] = None,
-    updated_assets: Optional[List] = None,
+    scenario_name: str,
+    parent_graph_file_name: str,
+    branch_graph_file_name: str,
 ):
     """Returns a subclass of ParentAssetGraphDiffer with some deployment-specific methods overwritten so that we can
     effectively run unit tests. In our tests we want to always be considered in a branch deployment, and
     the method for getting the parent asset graph is different than in a real branch deployment.
     """
-    branch_graph = _get_branch_deployment_graph_with_code_changes(
-        parent_graph_name=parent_graph_name, new_assets=new_assets, updated_assets=updated_assets
+    branch_worksapce_ctx = _make_workspace_context(instance, scenario_name, branch_graph_file_name)
+
+    parent_worksapce_ctx = _make_workspace_context(instance, scenario_name, parent_graph_file_name)
+
+    return ParentAssetGraphDiffer.from_external_repositories(
+        code_location_name=scenario_name,
+        repository_name=SINGLETON_REPOSITORY_NAME,
+        branch_workspace=branch_worksapce_ctx,
+        parent_workspace=parent_worksapce_ctx,
     )
-    parent_graph = ExternalAssetGraph.from_workspace(
-        _make_workspace_context(instance, [parent_graph_name])
-    )
-    return ParentAssetGraphDiffer(branch_asset_graph=branch_graph, parent_asset_graph=parent_graph)
 
 
 def test_new_asset(instance):
-    @asset
-    def new_asset():
-        return 1
-
     differ = get_parent_asset_graph_differ(
-        instance=instance, parent_graph_name="basic_asset_graph", new_assets=[new_asset]
+        instance=instance,
+        scenario_name="basic_asset_graph",
+        parent_graph_file_name="parent_asset_graph",
+        branch_graph_file_name="branch_deployment_new_asset",
     )
 
-    assert differ.is_changed_in_branch(new_asset.key)
-    assert differ.get_changes_for_asset(new_asset.key) == [ChangeReason.NEW]
-    assert not differ.is_changed_in_branch(AssetKey("upstream"))
+    assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
 """
