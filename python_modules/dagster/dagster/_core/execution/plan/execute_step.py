@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -305,7 +306,16 @@ def _step_output_error_checked_user_event_sequence(
     for step_output in step.step_outputs:
         step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
-            if step_output_def.dagster_type.is_nothing:
+            asset_layer = step_context.job_def.asset_layer
+            asset_key = asset_layer.asset_key_for_output(
+                step_context.node_handle, step_output_def.name
+            )
+            # We require explicitly returned/yielded for asset observations
+            is_observable_asset = asset_key is not None and asset_layer.is_observable_for_asset(
+                asset_key
+            )
+
+            if step_output_def.dagster_type.is_nothing and not is_observable_asset:
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
@@ -578,20 +588,15 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _materializing_asset_key_and_partitions_for_output(
+def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
     output_asset_info = output_context.asset_info
 
-    if (
-        output_asset_info
-        and not output_context.step_context.job_def.asset_layer.is_observable_for_asset(
-            output_asset_info.key
-        )
-    ):
+    if output_asset_info:
         if not output_asset_info.is_required:
             output_context.log.warning(
-                f"Materializing unexpected asset key: {output_asset_info.key}."
+                f"Materializing or observing unexpected asset key: {output_asset_info.key}."
             )
         return (
             output_asset_info.key,
@@ -773,7 +778,7 @@ def _store_output(
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
         or output_context.dagster_type.is_nothing
     ):
-        yield from _log_asset_materialization_events_for_asset(
+        yield from _log_materialization_or_observation_events_for_asset(
             step_context=step_context,
             output_context=output_context,
             output=output,
@@ -857,7 +862,7 @@ def _store_output(
 
             yield DagsterEvent.asset_materialization(step_context, materialization)
 
-        yield from _log_asset_materialization_events_for_asset(
+        yield from _log_materialization_or_observation_events_for_asset(
             step_context=step_context,
             output_context=output_context,
             output=output,
@@ -873,17 +878,29 @@ def _store_output(
         )
 
 
-def _log_asset_materialization_events_for_asset(
+def _log_materialization_or_observation_events_for_asset(
     step_context, output_context, output, output_def, manager_metadata
 ):
-    asset_key, partitions = _materializing_asset_key_and_partitions_for_output(output_context)
+    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
-        execution_type = (
-            asset_layer.assets_def_for_asset(asset_key).execution_type
-            if asset_layer.has_assets_def_for_asset(asset_key)
-            else AssetExecutionType.MATERIALIZATION
-        )
+        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
+        if assets_def is not None:
+            execution_type = assets_def.execution_type
+        elif asset_key in asset_layer.source_assets_by_key:
+            execution_type = asset_layer.source_assets_by_key[asset_key].execution_type
+        else:
+            # This is a situation that shouldn't really ever occur, but appears to be able to happen
+            # when multiple output names point to the same asset key, which also shouldn't occur,
+            # but we don't validate against. If we start validating that each output should
+            # correspond to only one asset, then we can start raising an error here instead of a
+            # warning.
+            warnings.warn(
+                f"Asset key '{asset_key.to_user_string()}' does not correspond to either an "
+                "AssetsDefinition or a SourceAsset in the asset layer. Defaulting to treating it "
+                "as a materializable asset for the purposes or logging events."
+            )
+            execution_type = AssetExecutionType.MATERIALIZATION
 
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,

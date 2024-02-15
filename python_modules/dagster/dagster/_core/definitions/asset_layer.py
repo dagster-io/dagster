@@ -718,13 +718,10 @@ class AssetLayer(NamedTuple):
             check.failed(f"Couldn't find key {asset_key}")
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
-        return (
-            asset_key in self.source_assets_by_key
-            and self.source_assets_by_key[asset_key].is_observable
-        )
+        return self.execution_type_for_asset(asset_key) == AssetExecutionType.OBSERVATION
 
     def is_materializable_for_asset(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.assets_defs_by_key
+        return self.execution_type_for_asset(asset_key) == AssetExecutionType.MATERIALIZATION
 
     def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
         assets_def = self.assets_defs_by_key.get(asset_key)
