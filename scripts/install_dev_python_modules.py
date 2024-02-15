@@ -104,7 +104,6 @@ def main(
 
     if sys.version_info > (3, 7):
         install_targets += [
-            "-e python_modules/libraries/dagster-dbt",
             "-e python_modules/libraries/dagster-pandera",
             "-e python_modules/libraries/dagster-snowflake",
             "-e python_modules/libraries/dagster-snowflake-pandas",
@@ -130,10 +129,13 @@ def main(
     # if sys.version_info >= (3, 7) and os.name != "nt":
     #     install_targets += ["-e python_modules/libraries/dagster-ge"]
 
+    # Ensure uv is installed which we use for faster package resolution
+    subprocess.run(["pip", "install", "-U", "uv"], check=True)
+
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
-    cmd = ["pip", "install"] + install_targets
+    cmd = ["uv", "pip", "install"] + install_targets
 
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
