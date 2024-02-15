@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.6.5 (core) / 0.22.5 (libraries)
+
+### New
+
+- Within a backfill or within auto-materialize, when submitting runs for partitions of the same assets, runs are now submitted in lexicographical order of partition key, instead of in an unpredictable order.
+- [dagster-k8s] Include k8s pod debug info in run worker failure messages.
+- [dagster-dbt] Events emitted by `DbtCliResource` now include metadata from the dbt adapter response. This includes fields like `rows_affected`, `query_id` from the Snowflake adapter, or `bytes_processed` from the BigQuery adapter.
+
+### Bugfixes
+
+- A previous change prevented asset backfills from grouping multiple assets into the same run when using BackfillPolicies under certain conditions. While the backfills would still execute in the proper order, this could lead to more individual runs than necessary. This has been fixed.
+- [dagster-k8s] Fixed an issue introduced in the 1.6.4 release where upgrading the Helm chart without upgrading the Dagster version used by user code caused failures in jobs using the `k8s_job_executor`.
+- [instigator-tick-logs] Fixed an issue where invoking `context.log.exception` in a sensor or schedule did not properly capture exception information.
+- [asset-checks] Fixed an issue where additional dependencies for dbt tests modeled as Dagster asset checks were not properly being deduplicated.
+- [dagster-dbt] Fixed an issue where dbt model, seed, or snapshot names with periods were not supported.
+
+### Experimental
+
+- `@observable_source_asset`-decorated functions can now return an `ObserveResult`. This allows including metadata on the observation, in addition to a data version. This is currently only supported for non-partitioned assets.
+- [auto-materialize] A new `AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron` class allows you to construct `AutoMaterializePolicys` which wait for all parents to be updated after the latest tick of a given cron schedule.
+- [Global op/asset concurrency] Ops and assets now take run priority into account when claiming global op/asset concurrency slots.
+
+### Documentation
+
+- Fixed an error in our asset checks docs. Thanks [@vaharoni](https://github.com/vaharoni)!
+- Fixed an error in our Dagster Pipes Kubernetes docs. Thanks [@cameronmartin](https://github.com/cameronmartin)!
+- Fixed an issue on the Hello Dagster! guide that prevented it from loading.
+- Add specific capabilities of the Airflow integration to the Airflow integration page.
+- Re-arranged sections in the I/O manager concept page to make info about using I/O versus resources more prominent.
+
 # 1.6.4 (core) / 0.22.4 (libraries)
 
 ### New
