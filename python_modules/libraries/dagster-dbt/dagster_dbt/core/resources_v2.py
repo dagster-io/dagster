@@ -842,7 +842,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
@@ -857,7 +857,8 @@ class DbtCliResource(ConfigurableResource):
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
-            context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context from within `@dbt_assets`.
+                If an AssetExecutionContext is passed, its underlying OpExecutionContext will be used.
             target_path (Optional[Path]): An explicit path to a target folder to use to store and
                 retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
                 target path will be generated.
@@ -968,12 +969,17 @@ class DbtCliResource(ConfigurableResource):
                     dbt_macro_args = {"key": "value"}
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
-        op_context = (
-            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
-        )
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
-        target_path = target_path or self._get_unique_target_path(context=op_context)
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else None
+
+        context = (
+            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
+        )
+
+        target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
             # Run dbt with unbuffered output.
@@ -1009,13 +1015,9 @@ class DbtCliResource(ConfigurableResource):
             else "info"
         )
 
-        assets_def: Optional[AssetsDefinition] = None
-        with suppress(DagsterInvalidPropertyError):
-            assets_def = context.assets_def if context else None
-
         selection_args: List[str] = []
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        if op_context and assets_def is not None:
+        if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
             )
@@ -1031,10 +1033,10 @@ class DbtCliResource(ConfigurableResource):
                 env["DBT_INDIRECT_SELECTION"] = "empty"
 
             selection_args = get_subset_selection_for_context(
-                context=op_context,
+                context=context,
                 manifest=manifest,
-                select=op_context.op.tags.get("dagster-dbt/select"),
-                exclude=op_context.op.tags.get("dagster-dbt/exclude"),
+                select=context.op.tags.get("dagster-dbt/select"),
+                exclude=context.op.tags.get("dagster-dbt/exclude"),
                 dagster_dbt_translator=dagster_dbt_translator,
             )
         else:
