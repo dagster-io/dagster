@@ -103,20 +103,18 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
                 )
 
             if isinstance(observe_fn_return_value, ObserveResult):
-                data_version = check.not_none(
-                    observe_fn_return_value.data_version,
-                    "ObserveResult returned from an observable_source_asset must have a data version",
-                )
-                data_version_str = data_version.value
+                data_version = observe_fn_return_value.data_version
                 metadata = observe_fn_return_value.metadata
             else:  # DataVersion
-                data_version_str = observe_fn_return_value.value
+                data_version = observe_fn_return_value
                 metadata = {}
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: data_version_str},
+                    tags={DATA_VERSION_TAG: data_version.value}
+                    if data_version is not None
+                    else None,
                     metadata=metadata,
                 )
             )
