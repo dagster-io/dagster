@@ -34,7 +34,17 @@ RUN pip install \
     -e modules/dagstermill \
     -e modules/dagster-pipes \
     -e . \
-    pyparsing\<3.0.0
+    pyparsing\<3.0.0 \
+    celery==5.2.7 \
+    amqp==5.1.1 \
+    flower==1.2.0 \
+    grpcio==1.47.5 \
+    kombu==5.2.4 \
+    kubernetes==26.1.0 \
+    protobuf==4.22.1 \
+    redis==4.5.1 \
+    SQLAlchemy==1.4.46 \
+    urllib3==1.26.15
 
 RUN ! (pip list --exclude-editable | grep -e dagster)
 
