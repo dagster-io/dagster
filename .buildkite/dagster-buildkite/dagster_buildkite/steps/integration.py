@@ -159,7 +159,7 @@ def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
         pytest_tox_factors,
         always_run_if=has_helm_changes,
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,  # mysteriously causes buildkite agents to crash
+            #            AvailablePythonVersion.V3_11,  # mysteriously causes buildkite agents to crash
         ],
     )
 
