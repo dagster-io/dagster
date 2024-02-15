@@ -55,7 +55,7 @@ def send_email_via_ssl(
     message: str,
     smtp_host: str,
     smtp_port: int,
-    email_user: Optional[str]=None,
+    email_user: Optional[str] = None,
 ):
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
@@ -70,7 +70,7 @@ def send_email_via_starttls(
     message: str,
     smtp_host: str,
     smtp_port: int,
-    email_user: Optional[str]=None,
+    email_user: Optional[str] = None,
 ):
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
@@ -202,8 +202,7 @@ def make_email_on_run_failure_sensor(
         email_body = email_body_fn(context)
         if webserver_base_url:
             email_body += (
-                f'<p><a href="{webserver_base_url}/runs/{context.dagster_run.run_id}">View in'
-                " the Dagster UI</a></p>"
+                f'<p><a href="{webserver_base_url}/runs/{context.dagster_run.run_id}">View in' " the Dagster UI</a></p>"
             )
 
         message = EMAIL_MESSAGE.format(
