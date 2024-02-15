@@ -14,20 +14,12 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from dagster._utils.env import environ
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from sling import Sling
 
 logger = get_dagster_logger()
 
-
-def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
-    out = {}
-    for key, value in config.items():
-        if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
-            out[key] = EnvVar(next(iter(value.values()))).get_value()
-        else:
-            out[key] = value
-    return out
+from dagster_embedded_elt.sling import DagsterSlingTranslator
 
 
 class SlingMode(str, Enum):
@@ -111,6 +103,38 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
+class SlingConnectionResource(PermissiveConfig):
+    """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
+
+    Each resource must have a name which corresponds to the name of the resource in the sling replication.yaml file, and a type which defines
+    the type of connection used, e.g. file, postgres, snowflake.
+
+    Examples:
+        Creating a Sling Connection using a connection string:
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(name="MY_POSTGRES", type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
+            source = SlingConnectionResource(name="MY_MYSQL", type="mysql", connection_string="mysql://user:password@host:port/schema")
+
+        Create a Sling Connection for a Postgres or Snowflake database, using keyword arguments, as described here:
+        https://docs.slingdata.io/connections/database-connections/postgres
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(name="MY_POSTGRES", type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
+            source = SlingConnectionResource(name="MY_SNOWFLAKE", type="snowflake", host=EnvVar("SNOWFLAKE_HOST"), user=EnvVar("SNOWFLAKE_USER"), database=EnvVar("SNOWFLAKE_DATABASE"), password=EnvVar("SNOWFLAKE_PASSWORD"), role=EnvVar("SNOWFLAKE_ROLE"))
+    """
+
+    model_config = ConfigDict(extra="allow")
+    name: str = Field(description="The name of the connection.")
+    type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
+    connection_string: Optional[str] = Field(
+        description="The connection string for the source database.",
+        default=None,
+    )
+
+
 @experimental
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package.
@@ -177,7 +201,7 @@ class SlingResource(ConfigurableResource):
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
 
-    def _sync(
+    def sync(
         self,
         source_stream: str,
         target_object: str,
@@ -222,8 +246,10 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
-    def sync(
+    def replicate(
         self,
+        *,
+        dagster_sling_translator: DagsterSlingTranslator,
         source_stream: str,
         target_object: str,
         mode: SlingMode,
@@ -231,76 +257,20 @@ class SlingResource(ConfigurableResource):
         update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
-        encoding: str = "utf8",
-    ) -> Generator[str, None, None]:
-        """Initiate a Sling Sync between a source stream and a target object.
+    ):
+        logs = ""
+        for line in self.sync(
+            source_stream,
+            target_object,
+            mode,
+            primary_key,
+            update_key,
+            source_options,
+            target_options,
+        ):
+            logger.info(line)
+            logs += line
+            # TODO: capture actual metadata here
 
-        Args:
-            source_stream (str):  The source stream to read from. For database sources, the source stream can be either
-                a table name, a SQL statement or a path to a SQL file e.g. `TABLE1` or `SCHEMA1.TABLE2` or
-                `SELECT * FROM TABLE`. For file sources, the source stream is a path or an url to a file.
-                For file targets, the target object is a path or a url to a file, e.g. file:///tmp/file.csv or
-                s3://my_bucket/my_folder/file.csv
-            target_object (str): The target object to write into. For database targets, the target object is a table
-                name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
-            mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
-                See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
-            primary_key (List[str]): For incremental syncs, a primary key is used during merge statements to update
-                existing rows.
-            update_key (str): For incremental syncs, an update key is used to stream records after max(update_key)
-            source_options (Dict[str, Any]): Other source options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#source-options-src-options-flag-source.options-key
-                for details
-            target_options (Dict[str, Any[): Other target options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#target-options-tgt-options-flag-target.options-key
-                for details
-            encoding (str): The encoding to use when reading from stdout, defautls to utf-8. By default, will replace
-                non-utf-8 characters with the unicode replacement character.
-
-        Examples:
-            Sync from a source file to a sqlite database:
-
-            .. code-block:: python
-
-                sqllite_path = "/path/to/sqlite.db"
-                csv_path = "/path/to/file.csv"
-
-                @asset
-                def run_sync(context, sling: SlingResource):
-                    res = sling.sync(
-                        source_stream=csv_path,
-                        target_object="events",
-                        mode=SlingMode.FULL_REFRESH,
-                    )
-                    for stdout in res:
-                        context.log.debug(stdout)
-                    counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
-                    assert counts[0] == 3
-
-                source = SlingSourceConnection(
-                    type="file",
-                )
-                target = SlingTargetConnection(type="sqlite", instance=sqllitepath)
-
-                materialize(
-                    [run_sync],
-                    resources={
-                        "sling": SlingResource(
-                            source_connection=source,
-                            target_connection=target,
-                            mode=SlingMode.TRUNCATE,
-                        )
-                    },
-                )
-
-        """
-        yield from self._sync(
-            source_stream=source_stream,
-            target_object=target_object,
-            mode=mode,
-            primary_key=primary_key,
-            update_key=update_key,
-            source_options=source_options,
-            target_options=target_options,
-            encoding=encoding,
-        )
+        output_name = dagster_sling_translator.get_asset_key(target_object)
+        yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
