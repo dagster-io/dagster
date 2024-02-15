@@ -43,8 +43,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
      - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
      - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table.
        To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`).
-       Automatically filters loaded partitions, unless `MultiPartitionsDefinition` are used.
-       In this case you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
+       Automatically filters loaded partitions, unless `MultiPartitionsDefinition` is used.
+       With `MultiPartitionsDefinition` you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
        When loading all available asset partitions, the whole table can be loaded in one go by using type annotations like `pl.DataFrame` and `pl.LazyFrame`.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 

@@ -143,11 +143,12 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     Doesn't define a specific storage format.
 
-    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `write_df_to_path` and `scan_df_from_path` methods.
+    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `write_df_to_path`, `sink_df_to_path` and `scan_df_from_path` methods.
 
     Features:
      - All the features of :py:class:`~dagster.UPathIOManager` - works with local and remote filesystems (like S3), supports loading multiple partitions with respect to :py:class:`~dagster.PartitionMapping`, and more
-     - returns the correct type - `polars.DataFrame`, `polars.LazyFrame`, or other types defined in :py:mod:`dagster_polars.types` - based on the input type annotation (or `dagster.DagsterType`'s `typing_type`)
+     - loads the correct type - `polars.DataFrame`, `polars.LazyFrame`, or other types defined in :py:mod:`dagster_polars.types` - based on the input type annotation (or `dagster.DagsterType`'s `typing_type`)
+     - can sink lazy `pl.LazyFrame` DataFrames
      - handles `Nones` with `Optional` types by skipping loading missing inputs or saving `None` outputs
      - logs various metadata about the DataFrame - size, schema, sample, stats, ...
      - the `"columns"` input metadata value can be used to select a subset of columns to load

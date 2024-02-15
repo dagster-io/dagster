@@ -4,8 +4,8 @@ Polars (dagster-polars)
 -----------------------------------------------------
 
 This library provides Dagster integration with `Polars <https://pola.rs>`_.
-It allows using Polars DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.
-Type annotations are used to control whether to load an eager or lazy DataFrame.
+It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.
+Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output.
 Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, ...) are supported.
 
 Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
@@ -36,17 +36,19 @@ Type annotations are not required. By default an eager `pl.DataFrame` will be lo
     def upstream():
         return DataFrame({"foo": [1, 2, 3]})
 
-    @asset
-    def downstream(upstream):
+    @asset(io_manager_key="polars_parquet_io_manager")
+    def downstream(upstream) -> pl.LazyFrame:
         assert isinstance(upstream, pl.DataFrame)
+		return upstream.lazy()  # LazyFrame will be sinked
 
-Lazy `pl.LazyFrame` can be loaded by annotating the input with `pl.LazyFrame`:
+Lazy `pl.LazyFrame` can be scanned by annotating the input with `pl.LazyFrame`, and returning a `pl.LazyFrame` will sink it:
 
 .. code-block:: python
 
     @asset(io_manager_key="polars_parquet_io_manager")
-    def downstream(upstream: pl.LazyFrame):
+    def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
         assert isinstance(upstream, pl.LazyFrame)
+		return upstream
 
 The same logic applies to partitioned assets:
 
@@ -85,6 +87,19 @@ Some IOManagers support saving/loading custom metadata along with the DataFrame.
         assert isinstance(upstream[1], dict)
 
 
+By default all the IOManagers store separate partitions as physically separated locations, such as:
+
+* `/my/asset/key/partition_0.extension`
+* `/my/asset/key/partition_1.extension`
+
+
+This mode is useful for e.g. snapshotting.
+
+Some IOManagers (like :py:class:`~dagster_polars.PolarsDeltaIOManager`) support reading and writing partitions in storage-native format in the same location.
+This mode can be typically enabled by setting `"partition_by"` metadata value. For example, :py:class:`~dagster_polars.PolarsDeltaIOManager` would store different partitions in the same `/my/asset/key.delta` directory, which will be properly partitioned. 
+
+This mode should be preferred for true partitioning.
+
 .. _Types:
 
 Type Annotations
@@ -106,7 +121,7 @@ In the table below `StorageMetadata` expands to `Dict[str, Any]`.
      - read/write a `DataFrame`
    * - `LazyFrame`
      -
-     - read a `LazyFrame`
+     - read/sink a `LazyFrame`
    * - `Optional[DataFrame]`
      -
      - read/write a `DataFrame`. Do nothing if no data is found in storage or the output is `None`
