@@ -24,8 +24,8 @@
 
 ### Documentation
 
-- Fixed an error in our asset checks docs. Thanks @vaharoni!
-- Fixed an error in our Dagster Pipes Kubernetes docs. Thanks @cameronmartin!
+- Fixed an error in our asset checks docs. Thanks [@vaharoni](https://github.com/vaharoni)!
+- Fixed an error in our Dagster Pipes Kubernetes docs. Thanks [@cameronmartin](https://github.com/cameronmartin)!
 - Fixed an issue on the Hello Dagster! guide that prevented it from loading.
 - Add specific capabilities of the Airflow integration to the Airflow integration page.
 - Re-arranged sections in the I/O manager concept page to make info about using I/O versus resources more prominent.
