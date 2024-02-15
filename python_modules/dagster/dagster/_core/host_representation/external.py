@@ -216,7 +216,7 @@ class ExternalRepository:
                 if asset_key not in covered_asset_keys:
                     default_sensor_asset_keys.add(asset_key)
 
-            for asset_key in asset_graph.source_asset_keys:
+            for asset_key in asset_graph.observable_keys:
                 if asset_graph.get_auto_observe_interval_minutes(asset_key) is None:
                     continue
 

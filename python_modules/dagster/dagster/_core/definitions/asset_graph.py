@@ -22,6 +22,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -142,6 +143,10 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @property
+    def observable_keys(self) -> AbstractSet[AssetKey]:
+        return {key for key, is_observable in self._is_observable_by_key.items() if is_observable}
+
+    @property
     def auto_materialize_policies_by_key(
         self,
     ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
@@ -196,6 +201,16 @@ class AssetGraph:
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                is_observable = asset.execution_type == AssetExecutionType.OBSERVATION
+                is_observable_by_key.update({key: is_observable for key in asset.keys})
+
+                # Set auto_observe_interval_minutes for external observable assets
+                # This can be removed when/if we have a a solution for mapping
+                # `auto_observe_interval_minutes` to an AutoMaterialzePolicy
+                auto_observe_interval_minutes_by_key.update(
+                    {key: asset.auto_observe_interval_minutes for key in asset.keys}
+                )
 
                 if not asset.can_subset:
                     all_required_keys = {*asset.check_keys, *asset.keys}

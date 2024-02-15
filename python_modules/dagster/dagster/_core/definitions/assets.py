@@ -23,6 +23,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheck
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     AssetExecutionType,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -34,6 +35,7 @@ from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
+    ExternalAssetIOManagerRequirement,
     RequiresResources,
     ResourceAddable,
     ResourceRequirement,
@@ -902,6 +904,23 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
         return self._auto_materialize_policies_by_key
 
+    # Applies only to external observable assets. Can be removed when we fold
+    # `auto_observe_interval_minutes` into auto-materialize policies.
+    @property
+    def auto_observe_interval_minutes(self) -> Optional[float]:
+        value = self._get_external_asset_metadata_value(
+            SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES
+        )
+        if not (value is None or isinstance(value, (int, float))):
+            check.failed(
+                f"Expected auto_observe_interval_minutes to be a number or None, not {value}"
+            )
+        return value
+
+    def _get_external_asset_metadata_value(self, metadata_key: str) -> object:
+        first_key = next(iter(self.keys), None)
+        return self.metadata_by_key.get(first_key, {}).get(metadata_key) if first_key else None
+
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._backfill_policy
@@ -958,18 +977,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def execution_type(self) -> AssetExecutionType:
-        first_key = next(iter(self.keys), None)
-        # Currently all assets in an AssetsDefinition have the same execution type
-        if first_key:
-            return AssetExecutionType.str_to_enum(
-                self.metadata_by_key.get(first_key, {}).get(
-                    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE
-                )
+        value = self._get_external_asset_metadata_value(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        if value is None:
+            return (
+                AssetExecutionType.UNEXECUTABLE
+                if len(self.keys) == 0
+                else AssetExecutionType.MATERIALIZATION
             )
+        elif isinstance(value, str):
+            return AssetExecutionType[value]
         else:
-            return AssetExecutionType.UNEXECUTABLE
-
-        return self._execution_type
+            check.failed(f"Expected execution type metadata to be a string or None, not {value}")
 
     @property
     def is_external(self) -> bool:
@@ -1379,7 +1397,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        if self.is_executable:
+            yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        else:
+            for key in self.keys:
+                # This matches how SourceAsset emit requirements except we emit
+                # ExternalAssetIOManagerRequirement instead of SourceAssetIOManagerRequirement
+                yield ExternalAssetIOManagerRequirement(
+                    key=self.get_io_manager_key_for_asset_key(key),
+                    asset_key=key.to_string(),
+                )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 

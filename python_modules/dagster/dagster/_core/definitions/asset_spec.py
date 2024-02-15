@@ -24,27 +24,20 @@ if TYPE_CHECKING:
 # for externally materialized assets.
 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
+# SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES lives on the metadata of
+# external assets resulting from a source asset conversion. It contains the
+# `auto_observe_interval_minutes` value from the source asset and is consulted
+# in the auto-materialize daemon. It should eventually be eliminated in favor
+# of an implementation of `auto_observe_interval_minutes` in terms of
+# `AutoMaterializeRule`.
+SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interval_minutes"
+
 
 @whitelist_for_serdes
 class AssetExecutionType(Enum):
     OBSERVATION = "OBSERVATION"
     UNEXECUTABLE = "UNEXECUTABLE"
     MATERIALIZATION = "MATERIALIZATION"
-
-    @staticmethod
-    def is_executable(varietal_str: Optional[str]) -> bool:
-        return AssetExecutionType.str_to_enum(varietal_str) in {
-            AssetExecutionType.MATERIALIZATION,
-            AssetExecutionType.OBSERVATION,
-        }
-
-    @staticmethod
-    def str_to_enum(varietal_str: Optional[str]) -> "AssetExecutionType":
-        return (
-            AssetExecutionType.MATERIALIZATION
-            if varietal_str is None
-            else AssetExecutionType(varietal_str)
-        )
 
 
 @experimental_param(param="owners")
