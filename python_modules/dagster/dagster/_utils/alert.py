@@ -50,32 +50,32 @@ Subject: {email_subject}
 
 def send_email_via_ssl(
     email_from: str,
-    email_user: str,
     email_password: str,
     email_to: Sequence[str],
     message: str,
     smtp_host: str,
     smtp_port: int,
+    email_user: Optional[str]=None,
 ):
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
-        server.login(email_user, email_password)
+        server.login(email_user or email_from, email_password)
         server.sendmail(email_from, email_to, message)
 
 
 def send_email_via_starttls(
     email_from: str,
-    email_user: str,
     email_password: str,
     email_to: Sequence[str],
     message: str,
     smtp_host: str,
     smtp_port: int,
+    email_user: Optional[str]=None,
 ):
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
-        server.login(email_user, email_password)
+        server.login(email_user or email_from, email_password)
         server.sendmail(email_from, email_to, message)
 
 
@@ -217,22 +217,22 @@ def make_email_on_run_failure_sensor(
         if smtp_type == "SSL":
             send_email_via_ssl(
                 email_from,
-                email_user or email_from,
                 email_password,
                 email_to,
                 message,
                 smtp_host,
                 smtp_port=smtp_port or 465,
+                email_user=email_user or email_from,
             )
         elif smtp_type == "STARTTLS":
             send_email_via_starttls(
                 email_from,
-                email_user or email_from,
                 email_password,
                 email_to,
                 message,
                 smtp_host,
                 smtp_port=smtp_port or 587,
+                email_user=email_user or email_from,
             )
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
