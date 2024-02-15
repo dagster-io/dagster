@@ -6,7 +6,6 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
     )
@@ -24,27 +23,25 @@ class ParentAssetGraphDiffer:
     enum contains the list of potential changes an asset can undergo.
     """
 
-    _branch_asset_graph: Optional["AssetGraph"]
-    _branch_asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
-    _parent_asset_graph: Optional["AssetGraph"]
-    _parent_asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
+    _branch_asset_graph: Optional["ExternalAssetGraph"]
+    _branch_asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
+    _parent_asset_graph: Optional["ExternalAssetGraph"]
+    _parent_asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
 
     def __init__(
         self,
-        branch_asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
-        parent_asset_graph: Optional[Union["AssetGraph", Callable[[], "AssetGraph"]]] = None,
+        # repository_name: str,
+        branch_asset_graph: Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]],
+        parent_asset_graph: Optional[
+            Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]]
+        ] = None,
     ):
-        from dagster._core.definitions.asset_graph import AssetGraph
-
         if parent_asset_graph is None:
             # if parent_asset_graph is None, we are not in a branch deployment.
-            # TODO - need to confirm the behavior of a new code location in a branch deployment
-            # we may need to actually fetch information to determine if we are a branch deployment, not just
-            # use the parent_asset_graph as a proxy
             self._parent_asset_graph = None
             self._parent_asset_graph_load_fn = None
             self._is_branch_deployment = False
-        elif isinstance(parent_asset_graph, AssetGraph):
+        elif isinstance(parent_asset_graph, ExternalAssetGraph):
             self._parent_asset_graph = parent_asset_graph
             self._parent_asset_graph_load_fn = None
             self._is_branch_deployment = True
@@ -53,7 +50,7 @@ class ParentAssetGraphDiffer:
             self._parent_asset_graph_load_fn = parent_asset_graph
             self._is_branch_deployment = True
 
-        if isinstance(branch_asset_graph, AssetGraph):
+        if isinstance(branch_asset_graph, ExternalAssetGraph):
             self._branch_asset_graph = branch_asset_graph
             self._branch_asset_graph_load_fn = None
         else:
@@ -63,13 +60,15 @@ class ParentAssetGraphDiffer:
     @classmethod
     def from_workspaces(
         cls,
+        # repository_name: str,
         branch_workspace: BaseWorkspaceRequestContext,
-        parent_workspace: Optional[BaseWorkspaceRequestContext],
+        parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
     ) -> Optional["ParentAssetGraphDiffer"]:
         if parent_workspace is not None:
             return ParentAssetGraphDiffer(
                 branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(branch_workspace),
                 parent_asset_graph=lambda: ExternalAssetGraph.from_workspace(parent_workspace),
+                # repository_name=repository_name
             )
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
@@ -110,13 +109,13 @@ class ParentAssetGraphDiffer:
         return self._compare_parent_and_branch_assets(asset_key)
 
     @property
-    def branch_asset_graph(self) -> "AssetGraph":
+    def branch_asset_graph(self) -> "ExternalAssetGraph":
         if self._branch_asset_graph is None:
             self._branch_asset_graph = check.not_none(self._branch_asset_graph_load_fn)()
         return self._branch_asset_graph
 
     @property
-    def parent_asset_graph(self) -> Optional["AssetGraph"]:
+    def parent_asset_graph(self) -> Optional["ExternalAssetGraph"]:
         if self._parent_asset_graph is None and self._parent_asset_graph_load_fn is not None:
             self._parent_asset_graph = self._parent_asset_graph_load_fn()
         return self._parent_asset_graph
