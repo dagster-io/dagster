@@ -43,6 +43,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
 )
+from dagster_graphql.implementation.loader import BatchRunLoader
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.instigators import GrapheneInstigator
@@ -1029,8 +1030,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             latest_materialization_by_partition.get(partition) for partition in partitions
         ]
 
+        run_ids = [event.run_id for event in ordered_materializations if event]
+        loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
+
         return [
-            GrapheneMaterializationEvent(event=event) if event else None
+            GrapheneMaterializationEvent(event=event, loader=loader) if event else None
             for event in ordered_materializations
         ]
 
