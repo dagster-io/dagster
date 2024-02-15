@@ -149,10 +149,7 @@ def _get_library_version(version: str) -> str:
 def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = [
         "-default",
-        "-markusercodedeploymentsubchart",
-        "-markdaemon",
         "-markredis",
-        "-markmonitoring",
     ]
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
     return build_integration_suite_steps(
