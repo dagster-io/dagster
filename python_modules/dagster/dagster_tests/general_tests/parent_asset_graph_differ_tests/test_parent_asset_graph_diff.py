@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Mapping
+from typing import List, Mapping
 from unittest import mock
 
 import pytest
@@ -72,20 +72,35 @@ def _make_workspace_context(
 
 def get_parent_asset_graph_differ(
     instance,
-    parent_scenario_to_definitions: Mapping[str, str],
-    branch_scenario_to_definitions: Mapping[str, str],
-    scenario_to_diff: str,
+    parent_code_locations: List[str],
+    branch_code_location_to_definitions: Mapping[str, str],
+    code_location_to_diff: str,
 ):
-    """Returns a subclass of ParentAssetGraphDiffer with some deployment-specific methods overwritten so that we can
-    effectively run unit tests. In our tests we want to always be considered in a branch deployment, and
-    the method for getting the parent asset graph is different than in a real branch deployment.
-    """
-    branch_worksapce_ctx = _make_workspace_context(instance, branch_scenario_to_definitions)
+    """Returns a ParentAssetClassDiffer to compare a particular repository in a branch deployment to
+    the corresponding repository in the parent deployment.
 
-    parent_worksapce_ctx = _make_workspace_context(instance, parent_scenario_to_definitions)
+    For each deployment (parent and branch) we need to create a workspace context with a set of code locations in it.
+    The folders in asset_graph_scenarios define various code locations. Each folder contains a parent_asset_graph.py file, which
+    contains the Definitions object for the parent deployment. The remaining files in the folder (prefixed branch_deployment_*)
+    are various modifications to the parent_asset_graph.py file, to represent branch deployments that may be opened against
+    the parent deployment. To make the workspace for each deployment, we need a list of code locations to load in the parent deployment
+    and a mapping of code location names to definitions file names to load the correct changes in the branch deployment. Finally, we
+    need the name of the code location to compare between the branch deployment and parent deployment.
+
+    Args:
+        instance: A DagsterInstance
+        parent_code_locations: List of code locations to load in the parent deployment
+        branch_code_location_to_definitions: Mapping of code location to definitions file to load in the branch deployment
+        code_location_to_diff: Name of the code location to compute differences between parent and branch deployments
+    """
+    branch_worksapce_ctx = _make_workspace_context(instance, branch_code_location_to_definitions)
+
+    parent_worksapce_ctx = _make_workspace_context(
+        instance, {code_location: "parent_asset_graph" for code_location in parent_code_locations}
+    )
 
     return ParentAssetGraphDiffer.from_external_repositories(
-        code_location_name=scenario_to_diff,
+        code_location_name=code_location_to_diff,
         repository_name=SINGLETON_REPOSITORY_NAME,
         branch_workspace=branch_worksapce_ctx,
         parent_workspace=parent_worksapce_ctx,
@@ -95,9 +110,9 @@ def get_parent_asset_graph_differ(
 def test_new_asset(instance):
     differ = get_parent_asset_graph_differ(
         instance=instance,
-        scenario_to_diff="basic_asset_graph",
-        parent_scenario_to_definitions={"basic_asset_graph": "parent_asset_graph"},
-        branch_scenario_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
+        code_location_to_diff="basic_asset_graph",
+        parent_code_locations=["basic_asset_graph"],
+        branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
 
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
