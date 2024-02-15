@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
@@ -20,10 +21,14 @@ class ChangeReason(Enum):
 
 def _get_external_repo_from_context(
     context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
-) -> ExternalRepository:
-    return context.get_code_location(location_name=code_location_name).get_repository(
-        name=repository_name
-    )
+) -> Optional[ExternalRepository]:
+    """Returns the ExternalRepository specified by the code location name and repository name
+    for the provided workspace context. If the repository doesn't exist, return None.
+    """
+    if context.has_code_location(code_location_name):
+        cl = context.get_code_location(code_location_name)
+        if cl.has_repository(repository_name):
+            return cl.get_repository(repository_name)
 
 
 class ParentAssetGraphDiffer:
@@ -45,18 +50,16 @@ class ParentAssetGraphDiffer:
         ] = None,
     ):
         if parent_asset_graph is None:
-            # if parent_asset_graph is None, we are not in a branch deployment.
+            # if parent_asset_graph is None, then the asset graph in the branch deployment does not exist
+            # in the parent deployment
             self._parent_asset_graph = None
             self._parent_asset_graph_load_fn = None
-            self._is_branch_deployment = False
         elif isinstance(parent_asset_graph, ExternalAssetGraph):
             self._parent_asset_graph = parent_asset_graph
             self._parent_asset_graph_load_fn = None
-            self._is_branch_deployment = True
         else:
             self._parent_asset_graph = None
             self._parent_asset_graph_load_fn = parent_asset_graph
-            self._is_branch_deployment = True
 
         if isinstance(branch_asset_graph, ExternalAssetGraph):
             self._branch_asset_graph = branch_asset_graph
@@ -66,18 +69,6 @@ class ParentAssetGraphDiffer:
             self._branch_asset_graph_load_fn = branch_asset_graph
 
     @classmethod
-    def from_workspaces(
-        cls,
-        branch_workspace: BaseWorkspaceRequestContext,
-        parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
-    ) -> Optional["ParentAssetGraphDiffer"]:
-        if parent_workspace is not None:
-            return ParentAssetGraphDiffer(
-                branch_asset_graph=lambda: ExternalAssetGraph.from_workspace(branch_workspace),
-                parent_asset_graph=lambda: ExternalAssetGraph.from_workspace(parent_workspace),
-            )
-
-    @classmethod
     def from_external_repositories(
         cls,
         code_location_name: str,
@@ -85,31 +76,38 @@ class ParentAssetGraphDiffer:
         branch_workspace: BaseWorkspaceRequestContext,
         parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
     ) -> Optional["ParentAssetGraphDiffer"]:
+        """Contructs a ParentAssetGraphDiffer for a particular repository in a code location for two
+        deployment workspaces, the parent deployment and the branch deployment. If the
+        parent_workspace is None, then we are not in a branch deployment and will not create a ParentAssetGraphDiffer.
+        """
         if parent_workspace is not None:
+            branch_repo = _get_external_repo_from_context(
+                branch_workspace, code_location_name, repository_name
+            )
+            if branch_repo is None:
+                raise DagsterInvariantViolationError(
+                    f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
+                )
+            parent_repo = _get_external_repo_from_context(
+                parent_workspace, code_location_name, repository_name
+            )
             return ParentAssetGraphDiffer(
-                branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(
-                    _get_external_repo_from_context(
-                        branch_workspace, code_location_name, repository_name
-                    )
-                ),
-                parent_asset_graph=lambda: ExternalAssetGraph.from_external_repository(
-                    _get_external_repo_from_context(
-                        parent_workspace, code_location_name, repository_name
-                    )
-                ),
+                branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(branch_repo),
+                parent_asset_graph=(
+                    lambda: ExternalAssetGraph.from_external_repository(parent_repo)
+                )
+                if parent_repo is not None
+                else None,
             )
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
         corresponding parent deployment asset.
         """
-        if not self._is_branch_deployment:
-            return []
-
         if self.parent_asset_graph is None:
-            # TODO - this might indicate that the entire asset graph is new, and thus should
-            # return ChangeReason.NEW. This will depend on how the parent asset graph is fetched.
-            return []
+            # if the parent asset graph is None, it is because the the asset graph in the branch deployment
+            # is new and doesn't exist in the parent deployment. Thus all assets are new.
+            return [ChangeReason.NEW]
 
         if asset_key not in self.parent_asset_graph.all_asset_keys:
             return [ChangeReason.NEW]
