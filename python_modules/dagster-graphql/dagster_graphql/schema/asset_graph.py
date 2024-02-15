@@ -389,6 +389,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._asset_graph_differ = check.opt_inst_param(
             asset_graph_differ, "asset_graph_differ", AssetGraphDiffer
         )
+
+        if self._parent_asset_graph_differ is not None:
+            print(
+                f"THE CHANGES FOR {self._external_asset_node.asset_key} ARE {self._parent_asset_graph_differ.get_changes_for_asset(self._external_asset_node.asset_key)}"
+            )
+
         self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
 
