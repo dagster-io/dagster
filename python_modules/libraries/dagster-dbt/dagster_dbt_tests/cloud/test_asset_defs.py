@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import pytest
 import responses
@@ -12,7 +12,6 @@ from dagster import (
     FreshnessPolicy,
     MetadataValue,
     asset,
-    build_init_resource_context,
     define_asset_job,
     file_relative_path,
 )
@@ -22,17 +21,14 @@ from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
     DbtCloudClientResource,
-    dbt_cloud_resource,
     load_assets_from_dbt_cloud_job,
 )
 from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
 from dagster_dbt.cloud.resources import DbtCloudClient
 
 from ..utils import assert_assets_match_project
-from .utils import sample_get_environment_variables
+from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN, sample_get_environment_variables
 
-DBT_CLOUD_API_TOKEN = "abc"
-DBT_CLOUD_ACCOUNT_ID = 1
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
@@ -42,45 +38,6 @@ with open(file_relative_path(__file__, "../sample_manifest.json"), "r", encoding
 
 with open(file_relative_path(__file__, "../sample_run_results.json"), "r", encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
-
-
-@pytest.fixture(params=["pythonic", "legacy"])
-def resource_type(request):
-    return request.param
-
-
-@pytest.fixture(name="dbt_cloud")
-def dbt_cloud_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
-        yield DbtCloudClientResource(
-            auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
-        )
-    else:
-        yield dbt_cloud_resource.configured(
-            {
-                "auth_token": DBT_CLOUD_API_TOKEN,
-                "account_id": DBT_CLOUD_ACCOUNT_ID,
-            }
-        )
-
-
-@pytest.fixture(name="dbt_cloud_service")
-def dbt_cloud_service_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
-        yield (
-            DbtCloudClientResource(auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID)
-            .with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()
-        )
-    else:
-        yield dbt_cloud_resource(
-            build_init_resource_context(
-                config={
-                    "auth_token": DBT_CLOUD_API_TOKEN,
-                    "account_id": DBT_CLOUD_ACCOUNT_ID,
-                }
-            )
-        )
 
 
 def _add_dbt_cloud_job_responses(
