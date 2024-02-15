@@ -1,6 +1,6 @@
 import pickle
 
-from dagster_dbt.types import DbtOutput
+from dagster_dbt.core.types import DbtCliOutput
 
 DBT_RESULT_DICT = {
     "logs": [],
@@ -38,8 +38,23 @@ DBT_RESULT_DICT = {
 }
 
 
-def test_pickle_roundtrip():
-    rr = DbtOutput(result=DBT_RESULT_DICT)
-    rr_new = pickle.loads(pickle.dumps(rr))
+def test_init():
+    dco = DbtCliOutput(
+        command="dbt run",
+        return_code=0,
+        raw_output="The raw output (stdout).",
+        result=DBT_RESULT_DICT,
+        logs=[],
+    )
+    assert len(dco.result["results"]) == len(DBT_RESULT_DICT["results"])
 
-    assert vars(rr) == vars(rr_new)
+
+def test_pickle_roundtrip():
+    dco = DbtCliOutput(
+        command="dbt run",
+        return_code=0,
+        raw_output="The raw output (stdout).",
+        result=DBT_RESULT_DICT,
+        logs=[{"some": {"nested": {"logs"}}}, {"other": "log"}],
+    )
+    assert vars(pickle.loads(pickle.dumps(dco))) == vars(dco)

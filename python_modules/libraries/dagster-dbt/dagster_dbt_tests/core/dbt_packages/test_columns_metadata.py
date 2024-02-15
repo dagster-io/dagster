@@ -11,7 +11,7 @@ from dagster import (
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 
-from ..dbt_projects import test_jaffle_shop_path, test_metadata_path
+from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
 
 def test_no_columns_metadata(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
