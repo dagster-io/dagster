@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from typing import Mapping
 from unittest import mock
 
 import pytest
@@ -25,14 +26,12 @@ def instance():
         yield the_instance
 
 
-def _make_location_entry(
-    scenario_folder_name: str, definitions_file: str, instance: DagsterInstance
-):
+def _make_location_entry(scenario_name: str, definitions_file: str, instance: DagsterInstance):
     origin = InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             module_name=(
-                f"dagster_tests.general_tests.parent_asset_graph_differ_tests.asset_graph_scenarios.{scenario_folder_name}.{definitions_file}"
+                f"dagster_tests.general_tests.parent_asset_graph_differ_tests.asset_graph_scenarios.{scenario_name}.{definitions_file}"
             ),
             working_directory=os.getcwd(),
             attribute="defs",
@@ -56,14 +55,13 @@ def _make_location_entry(
 
 
 def _make_workspace_context(
-    instance: DagsterInstance, scenario_folder_name: str, definitions_file: str
+    instance: DagsterInstance, scenario_to_definitions: Mapping[str, str]
 ) -> WorkspaceRequestContext:
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
         workspace_snapshot={
-            scenario_folder_name: _make_location_entry(
-                scenario_folder_name, definitions_file, instance
-            )
+            scenario_name: _make_location_entry(scenario_name, definitions_file, instance)
+            for scenario_name, definitions_file in scenario_to_definitions.items()
         },
         process_context=mock.MagicMock(),
         version=None,
@@ -74,20 +72,20 @@ def _make_workspace_context(
 
 def get_parent_asset_graph_differ(
     instance,
-    scenario_name: str,
-    parent_graph_file_name: str,
-    branch_graph_file_name: str,
+    parent_scenario_to_definitions: Mapping[str, str],
+    branch_scenario_to_definitions: Mapping[str, str],
+    scenario_to_diff: str,
 ):
     """Returns a subclass of ParentAssetGraphDiffer with some deployment-specific methods overwritten so that we can
     effectively run unit tests. In our tests we want to always be considered in a branch deployment, and
     the method for getting the parent asset graph is different than in a real branch deployment.
     """
-    branch_worksapce_ctx = _make_workspace_context(instance, scenario_name, branch_graph_file_name)
+    branch_worksapce_ctx = _make_workspace_context(instance, branch_scenario_to_definitions)
 
-    parent_worksapce_ctx = _make_workspace_context(instance, scenario_name, parent_graph_file_name)
+    parent_worksapce_ctx = _make_workspace_context(instance, parent_scenario_to_definitions)
 
     return ParentAssetGraphDiffer.from_external_repositories(
-        code_location_name=scenario_name,
+        code_location_name=scenario_to_diff,
         repository_name=SINGLETON_REPOSITORY_NAME,
         branch_workspace=branch_worksapce_ctx,
         parent_workspace=parent_worksapce_ctx,
@@ -97,9 +95,9 @@ def get_parent_asset_graph_differ(
 def test_new_asset(instance):
     differ = get_parent_asset_graph_differ(
         instance=instance,
-        scenario_name="basic_asset_graph",
-        parent_graph_file_name="parent_asset_graph",
-        branch_graph_file_name="branch_deployment_new_asset",
+        scenario_to_diff="basic_asset_graph",
+        parent_scenario_to_definitions={"basic_asset_graph": "parent_asset_graph"},
+        branch_scenario_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
 
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
