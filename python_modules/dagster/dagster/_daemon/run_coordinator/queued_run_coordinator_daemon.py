@@ -17,6 +17,7 @@ from dagster._core.errors import (
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
+from dagster._core.op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
 from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator,
     RunQueueConfig,
@@ -34,8 +35,6 @@ from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
-
-from .op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
 
 PAGE_SIZE = 100
 CONCURRENCY_BLOCKED_MESSAGE_INTERVAL = 300

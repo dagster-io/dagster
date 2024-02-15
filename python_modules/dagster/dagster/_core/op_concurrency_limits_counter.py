@@ -2,12 +2,39 @@ import json
 from collections import defaultdict
 from typing import Mapping, Optional, Sequence
 
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import (
+from .instance import DagsterInstance
+from .snap import JobSnapshot
+from .storage.dagster_run import DagsterRun
+from .storage.tags import (
+    GLOBAL_CONCURRENCY_TAG,
     RUN_OP_CONCURRENCY_KEYS,
     RUN_OP_ROOT_CONCURRENCY_KEYS,
 )
+
+
+def compute_concurrency_tags_for_snapshot(job_snapshot: JobSnapshot) -> Mapping[str, str]:
+    """Utility function called at run creation time to tag each run with the concurrency info needed
+    to keep track of concurrency limits for each in-flight run.
+    """
+    concurrency_keys_by_node_name = {
+        node.node_name: node.tags.get(GLOBAL_CONCURRENCY_TAG)
+        for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps
+        if node.tags.get(GLOBAL_CONCURRENCY_TAG)
+    }
+    if not concurrency_keys_by_node_name:
+        return {}
+    root_nodes = [
+        node.node_name
+        for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps
+        if not node.input_dep_snaps
+    ]
+    root_concurrency_keys = [
+        concurrency_keys_by_node_name.get(node_name) for node_name in root_nodes
+    ]
+    return {
+        RUN_OP_ROOT_CONCURRENCY_KEYS: json.dumps(root_concurrency_keys),
+        RUN_OP_CONCURRENCY_KEYS: json.dumps(concurrency_keys_by_node_name),
+    }
 
 
 class GlobalOpConcurrencyLimitsCounter:
