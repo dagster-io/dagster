@@ -6,6 +6,7 @@ import packaging.version
 from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
 from ..package_spec import PackageSpec, UnsupportedVersionsFunction
 from ..python_version import AvailablePythonVersion
+from ..step_builder import BuildkiteQueue
 from ..utils import (
     BuildkiteStep,
     BuildkiteTopLevelStep,
@@ -157,11 +158,8 @@ def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
+        queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
         always_run_if=has_helm_changes,
-        unsupported_python_versions=[  # mysteriously causes buildkite agents to crash
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-        ],
     )
 
 
