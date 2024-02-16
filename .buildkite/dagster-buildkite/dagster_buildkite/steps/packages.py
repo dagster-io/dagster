@@ -460,14 +460,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            "dbt_15X_legacy",
-            "dbt_16X_legacy",
-            "dbt_17X_legacy",
-            "dbt_15X",
-            "dbt_16X",
-            "dbt_17X",
-            "dbt_pydantic1",
-            "dbt_legacy_pydantic1",
+            f"{deps_factor}-{command_factor}"
+            for deps_factor in ["dbt15", "dbt16", "dbt17", "pydantic1"]
+            for command_factor in ["legacy", "core"]
         ],
         unsupported_python_versions=[
             # duckdb
