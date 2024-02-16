@@ -399,6 +399,9 @@ class ConfigurableResourceFactory(
         return (
             cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
             or cls.teardown_after_execution != ConfigurableResourceFactory.teardown_after_execution
+            # We assume that any resource which has nested resources needs to be treated as a
+            # context manager resource, since its nested resources may be context managers
+            # and need setup and teardown logic
             or len(_get_resource_param_fields(cls)) > 0
         )
 
