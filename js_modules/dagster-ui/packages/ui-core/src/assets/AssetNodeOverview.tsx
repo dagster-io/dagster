@@ -14,6 +14,7 @@ import {
   IconName,
   MiddleTruncate,
   NonIdealState,
+  Spinner,
   Subtitle1,
   Subtitle2,
   Tag,
@@ -34,6 +35,7 @@ import {asAssetKeyInput} from './asInput';
 import {AssetChecksStatusSummary} from './asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
+import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {
   AssetOverviewMetadataEventsQuery,
@@ -102,280 +104,305 @@ export const AssetNodeOverview = ({
     liveData,
   );
 
-  let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
-  let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
-  if (!tableSchema) {
-    tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
-    tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
-  }
-
-  return (
-    <Box
-      flex={{direction: 'row', gap: 8}}
-      style={{width: '100%', height: '100%', overflowY: 'auto'}}
-    >
-      <Box padding={{horizontal: 24, vertical: 12}} flex={{direction: 'column'}} style={{flex: 1}}>
-        <LargeCollapsibleSection header="Status" icon="status">
-          <Box flex={{direction: 'row'}}>
-            <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-              <Subtitle2>
-                Latest {assetNode?.isSource ? 'observation' : 'materialization'}
-              </Subtitle2>
-              <Box flex={{gap: 8, alignItems: 'center'}}>
-                <SimpleAssetStatus liveData={liveData} assetNode={assetNode} />
-                {assetNode && assetNode.freshnessPolicy && (
-                  <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
-                )}
-              </Box>
-            </Box>
-            {liveData?.assetChecks.length ? (
-              <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-                <Subtitle2>Check results</Subtitle2>
-                <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
-              </Box>
-            ) : undefined}
-          </Box>
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Description" icon="sticky_note">
-          {assetNode.description ? (
-            <Description description={assetNode.description} maxHeight={260} />
-          ) : (
-            <Caption color={Colors.textLight()}>No description provided</Caption>
+  const renderStatusSection = () => (
+    <Box flex={{direction: 'row'}}>
+      <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+        <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+        <Box flex={{gap: 8, alignItems: 'center'}}>
+          <SimpleAssetStatus liveData={liveData} assetNode={assetNode} />
+          {assetNode && assetNode.freshnessPolicy && (
+            <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
           )}
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Columns" icon="view_column">
-          {tableSchema ? (
-            <TableSchema
-              schema={tableSchema.schema}
-              schemaLoadTimestamp={tableSchemaLoadTimestamp}
-            />
-          ) : (
-            <Caption color={Colors.textLight()}>No table schema</Caption>
-          )}
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Metadata" icon="view_list">
-          <AssetEventMetadataEntriesTable
-            showHeader
-            showTimestamps
-            showFilter
-            hideTableSchema
-            observations={observation && materialization ? [observation] : []}
-            definitionMetadata={assetMetadata}
-            definitionLoadTimestamp={assetNodeLoadTimestamp}
-            event={materialization || observation || null}
-          />
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection
-          header="Lineage"
-          icon="account_tree"
-          right={
-            <Link
-              to={globalAssetGraphPathForAssetsAndDescendants([assetNode.assetKey])}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Box flex={{gap: 4, alignItems: 'center'}}>View in graph</Box>
-            </Link>
-          }
-        >
-          {dependsOnSelf && (
-            <Box padding={{bottom: 12}}>
-              <DependsOnSelfBanner />
-            </Box>
-          )}
-
-          <Box flex={{direction: 'row'}}>
-            <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-              <Subtitle2>Upstream assets</Subtitle2>
-              {upstream?.length ? (
-                <AssetLinksWithStatus assets={upstream} />
-              ) : (
-                <Box>
-                  <NoValue />
-                </Box>
-              )}
-            </Box>
-            <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-              <Subtitle2>Downstream assets</Subtitle2>
-              {downstream?.length ? (
-                <AssetLinksWithStatus assets={downstream} />
-              ) : (
-                <Box>
-                  <NoValue />
-                </Box>
-              )}
-            </Box>
-          </Box>
-        </LargeCollapsibleSection>
+        </Box>
       </Box>
-      <Box
-        style={{width: '30%'}}
-        border={{side: 'left'}}
-        flex={{direction: 'column'}}
-        padding={{left: 24, vertical: 12, right: 12}}
-      >
-        <LargeCollapsibleSection header="Definition" icon="info">
-          <Box flex={{direction: 'column', gap: 12}}>
-            <AttributeAndValue label="Key">
-              {displayNameForAssetKey(assetNode.assetKey)}
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Group">
-              <Tag icon="asset_group">
-                <Link
-                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}
-                >
-                  {assetNode.groupName}
-                </Link>
-              </Tag>
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Code location">
-              <Box flex={{direction: 'column'}}>
-                <AssetDefinedInMultipleReposNotice
-                  assetKey={assetNode.assetKey}
-                  loadedFromRepo={repoAddress}
-                />
-                <RepositoryLink repoAddress={repoAddress} />
-                {location && (
-                  <Caption color={Colors.textLighter()}>
-                    Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
-                  </Caption>
-                )}
-              </Box>
-            </AttributeAndValue>
-            <AttributeAndValue label="Compute kind">
-              {assetNode.computeKind && (
-                <AssetComputeKindTag
-                  style={{position: 'relative'}}
-                  definition={assetNode}
-                  reduceColor
-                />
-              )}
-            </AttributeAndValue>
-          </Box>
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
-          <Box flex={{direction: 'column', gap: 12}}>
-            <AttributeAndValue label="Jobs">
-              {visibleJobNames.map((jobName) => (
-                <Tag key={jobName}>
-                  <PipelineReference
-                    isJob
-                    showIcon
-                    pipelineName={jobName}
-                    pipelineHrefContext={repoAddress}
-                  />
-                </Tag>
-              ))}
-            </AttributeAndValue>
-            <AttributeAndValue label="Sensors">
-              {sensors.length > 0 && (
-                <ScheduleOrSensorTag
-                  repoAddress={repoAddress}
-                  sensors={sensors}
-                  showSwitch={false}
-                />
-              )}
-            </AttributeAndValue>
-            <AttributeAndValue label="Schedules">
-              {schedules.length > 0 && (
-                <ScheduleOrSensorTag
-                  repoAddress={repoAddress}
-                  schedules={schedules}
-                  showSwitch={false}
-                />
-              )}
-            </AttributeAndValue>
-          </Box>
-        </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
-          <Box flex={{direction: 'column', gap: 12}}>
-            <AttributeAndValue label="Computed by">
-              <Tag>
-                <UnderlyingOpsOrGraph
-                  assetNode={assetNode}
-                  repoAddress={repoAddress}
-                  hideIfRedundant={false}
-                />
-              </Tag>
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
-
-            <AttributeAndValue label="Resources">
-              {[...assetNode.requiredResources]
-                .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
-                .map((resource) => (
-                  <Tag key={resource.resourceKey}>
-                    <Box flex={{gap: 4, alignItems: 'center'}}>
-                      <Icon name="resource" color={Colors.accentGray()} />
-                      {repoAddress ? (
-                        <Link
-                          to={workspacePathFromAddress(
-                            repoAddress,
-                            `/resources/${resource.resourceKey}`,
-                          )}
-                        >
-                          {resource.resourceKey}
-                        </Link>
-                      ) : (
-                        resource.resourceKey
-                      )}
-                    </Box>
-                  </Tag>
-                ))}
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Config schema">
-              {assetConfigSchema && (
-                <ButtonLink
-                  onClick={() => {
-                    showCustomAlert({
-                      title: 'Config schema',
-                      body: (
-                        <ConfigTypeSchema
-                          type={assetConfigSchema}
-                          typesInScope={assetConfigSchema.recursiveConfigTypes}
-                        />
-                      ),
-                    });
-                  }}
-                >
-                  View config details
-                </ButtonLink>
-              )}
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Type">
-              {assetType && assetType.displayName !== 'Any' && (
-                <ButtonLink
-                  onClick={() => {
-                    showCustomAlert({
-                      title: 'Type summary',
-                      body: <DagsterTypeSummary type={assetType} />,
-                    });
-                  }}
-                >
-                  View type details
-                </ButtonLink>
-              )}
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Freshness policy">
-              {assetNode.autoMaterializePolicy && (
-                <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
-              )}
-            </AttributeAndValue>
-
-            <AttributeAndValue label="Backfill policy">
-              {assetNode.backfillPolicy?.description}
-            </AttributeAndValue>
-          </Box>
-        </LargeCollapsibleSection>
-      </Box>
+      {liveData?.assetChecks.length ? (
+        <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+          <Subtitle2>Check results</Subtitle2>
+          <AssetChecksStatusSummary liveData={liveData} rendering="tags" />
+        </Box>
+      ) : undefined}
     </Box>
   );
+
+  const renderDescriptionSection = () =>
+    assetNode.description ? (
+      <Description description={assetNode.description} maxHeight={260} />
+    ) : (
+      <Caption color={Colors.textLight()}>No description provided</Caption>
+    );
+
+  const renderColumnsSection = () => {
+    let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
+    let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
+    if (!tableSchema) {
+      tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
+      tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
+    }
+
+    return tableSchema ? (
+      <TableSchema schema={tableSchema.schema} schemaLoadTimestamp={tableSchemaLoadTimestamp} />
+    ) : (
+      <Caption color={Colors.textLight()}>No table schema</Caption>
+    );
+  };
+
+  const renderLineageSection = () => (
+    <>
+      {dependsOnSelf && (
+        <Box padding={{bottom: 12}}>
+          <DependsOnSelfBanner />
+        </Box>
+      )}
+
+      <Box flex={{direction: 'row'}}>
+        <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+          <Subtitle2>Upstream assets</Subtitle2>
+          {upstream?.length ? (
+            <AssetLinksWithStatus assets={upstream} />
+          ) : (
+            <Box>
+              <NoValue />
+            </Box>
+          )}
+        </Box>
+        <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+          <Subtitle2>Downstream assets</Subtitle2>
+          {downstream?.length ? (
+            <AssetLinksWithStatus assets={downstream} />
+          ) : (
+            <Box>
+              <NoValue />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    </>
+  );
+
+  const renderDefinitionSection = () => (
+    <Box flex={{direction: 'column', gap: 12}}>
+      <AttributeAndValue label="Key">
+        {displayNameForAssetKey(assetNode.assetKey)}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Group">
+        <Tag icon="asset_group">
+          <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}>
+            {assetNode.groupName}
+          </Link>
+        </Tag>
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Code location">
+        <Box flex={{direction: 'column'}}>
+          <AssetDefinedInMultipleReposNotice
+            assetKey={assetNode.assetKey}
+            loadedFromRepo={repoAddress}
+          />
+          <RepositoryLink repoAddress={repoAddress} />
+          {location && (
+            <Caption color={Colors.textLighter()}>
+              Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
+            </Caption>
+          )}
+        </Box>
+      </AttributeAndValue>
+      <AttributeAndValue label="Compute kind">
+        {assetNode.computeKind && (
+          <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
+        )}
+      </AttributeAndValue>
+    </Box>
+  );
+
+  const renderAutomationDetailsSection = () => (
+    <Box flex={{direction: 'column', gap: 12}}>
+      <AttributeAndValue label="Jobs">
+        {visibleJobNames.map((jobName) => (
+          <Tag key={jobName}>
+            <PipelineReference
+              isJob
+              showIcon
+              pipelineName={jobName}
+              pipelineHrefContext={repoAddress}
+            />
+          </Tag>
+        ))}
+      </AttributeAndValue>
+      <AttributeAndValue label="Sensors">
+        {sensors.length > 0 && (
+          <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
+        )}
+      </AttributeAndValue>
+      <AttributeAndValue label="Schedules">
+        {schedules.length > 0 && (
+          <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
+        )}
+      </AttributeAndValue>
+    </Box>
+  );
+
+  const renderComputeDetailsSection = () => (
+    <Box flex={{direction: 'column', gap: 12}}>
+      <AttributeAndValue label="Computed by">
+        <Tag>
+          <UnderlyingOpsOrGraph
+            assetNode={assetNode}
+            repoAddress={repoAddress}
+            hideIfRedundant={false}
+          />
+        </Tag>
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
+
+      <AttributeAndValue label="Resources">
+        {[...assetNode.requiredResources]
+          .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+          .map((resource) => (
+            <Tag key={resource.resourceKey}>
+              <Box flex={{gap: 4, alignItems: 'center'}}>
+                <Icon name="resource" color={Colors.accentGray()} />
+                {repoAddress ? (
+                  <Link
+                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
+                  >
+                    {resource.resourceKey}
+                  </Link>
+                ) : (
+                  resource.resourceKey
+                )}
+              </Box>
+            </Tag>
+          ))}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Config schema">
+        {assetConfigSchema && (
+          <ButtonLink
+            onClick={() => {
+              showCustomAlert({
+                title: 'Config schema',
+                body: (
+                  <ConfigTypeSchema
+                    type={assetConfigSchema}
+                    typesInScope={assetConfigSchema.recursiveConfigTypes}
+                  />
+                ),
+              });
+            }}
+          >
+            View config details
+          </ButtonLink>
+        )}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Type">
+        {assetType && assetType.displayName !== 'Any' && (
+          <ButtonLink
+            onClick={() => {
+              showCustomAlert({
+                title: 'Type summary',
+                body: <DagsterTypeSummary type={assetType} />,
+              });
+            }}
+          >
+            View type details
+          </ButtonLink>
+        )}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Freshness policy">
+        {assetNode.autoMaterializePolicy && (
+          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+        )}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Backfill policy">
+        {assetNode.backfillPolicy?.description}
+      </AttributeAndValue>
+    </Box>
+  );
+
+  return (
+    <AssetNodeOverviewContainer
+      left={
+        <>
+          <LargeCollapsibleSection header="Status" icon="status">
+            {renderStatusSection()}
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection header="Description" icon="sticky_note">
+            {renderDescriptionSection()}
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection header="Columns" icon="view_column">
+            {renderColumnsSection()}
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection header="Metadata" icon="view_list">
+            <AssetEventMetadataEntriesTable
+              showHeader
+              showTimestamps
+              showFilter
+              hideTableSchema
+              observations={observation && materialization ? [observation] : []}
+              definitionMetadata={assetMetadata}
+              definitionLoadTimestamp={assetNodeLoadTimestamp}
+              event={materialization || observation || null}
+            />
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection
+            header="Lineage"
+            icon="account_tree"
+            right={
+              <Link
+                to={globalAssetGraphPathForAssetsAndDescendants([assetNode.assetKey])}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Box flex={{gap: 4, alignItems: 'center'}}>View in graph</Box>
+              </Link>
+            }
+          >
+            {renderLineageSection()}
+          </LargeCollapsibleSection>
+        </>
+      }
+      right={
+        <>
+          <LargeCollapsibleSection header="Definition" icon="info">
+            {renderDefinitionSection()}
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
+            {renderAutomationDetailsSection()}
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
+            {renderComputeDetailsSection()}
+          </LargeCollapsibleSection>
+        </>
+      }
+    />
+  );
 };
+
+const AssetNodeOverviewContainer = ({
+  left,
+  right,
+}: {
+  left: React.ReactNode;
+  right: React.ReactNode;
+}) => (
+  <Box flex={{direction: 'row', gap: 8}} style={{width: '100%', height: '100%', overflowY: 'auto'}}>
+    <Box padding={{horizontal: 24, vertical: 12}} flex={{direction: 'column'}} style={{flex: 1}}>
+      {left}
+    </Box>
+    <Box
+      style={{width: '30%'}}
+      border={{side: 'left'}}
+      flex={{direction: 'column'}}
+      padding={{left: 24, vertical: 12, right: 12}}
+    >
+      {right}
+    </Box>
+  </Box>
+);
 
 const AttributeAndValue = ({label, children}: {label: string; children: React.ReactNode}) => (
   <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
@@ -390,24 +417,79 @@ const AttributeAndValue = ({label, children}: {label: string; children: React.Re
 
 const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
 
-export const AssetNodeOverviewEmpty = () => (
-  <Box padding={{vertical: 32}}>
-    <NonIdealState
-      title="No definition"
-      description="This asset doesn't have a software definition in any of your code locations."
-      icon="materialization"
-    />
-  </Box>
+const MaterializationTag = ({
+  assetKey,
+  event,
+  stepKey,
+}: {
+  assetKey: AssetKey;
+  event: {timestamp: string; runId: string};
+  stepKey: string | null;
+}) => (
+  <Tag intent="success">
+    <Box flex={{gap: 4, alignItems: 'center'}}>
+      <StatusCaseDot statusCase={StatusCase.MATERIALIZED} />
+      <AssetRunLink
+        assetKey={assetKey}
+        runId={event.runId}
+        event={{timestamp: event.timestamp, stepKey}}
+      >
+        <Box style={{color: Colors.textGreen()}} flex={{gap: 4}}>
+          <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+        </Box>
+      </AssetRunLink>
+    </Box>
+  </Tag>
+);
+
+export const AssetNodeOverviewEmpty = ({
+  assetKey,
+  lastMaterialization,
+}: {
+  assetKey: AssetKey;
+  lastMaterialization: {timestamp: string; runId: string} | null | undefined;
+}) => (
+  <AssetNodeOverviewContainer
+    left={
+      <LargeCollapsibleSection header="Status" icon="status">
+        {lastMaterialization ? (
+          <MaterializationTag assetKey={assetKey} event={lastMaterialization} stepKey={null} />
+        ) : (
+          <Caption color={Colors.textLighter()}>Never materialized</Caption>
+        )}
+      </LargeCollapsibleSection>
+    }
+    right={
+      <LargeCollapsibleSection header="Definition" icon="info">
+        <Box flex={{direction: 'column', gap: 12}}>
+          <NonIdealState
+            description="This asset doesn't have a software definition in any of your code locations."
+            icon="materialization"
+            title=""
+          />
+        </Box>
+      </LargeCollapsibleSection>
+    }
+  />
 );
 
 export const AssetNodeOverviewLoading = () => (
-  <Box padding={{vertical: 32}}>
-    <NonIdealState
-      title="No definition"
-      description="This asset doesn't have a software definition in any of your code locations."
-      icon="materialization"
-    />
-  </Box>
+  <AssetNodeOverviewContainer
+    left={
+      <LargeCollapsibleSection header="Status" icon="status">
+        <Box padding={24}>
+          <Spinner purpose="section" />
+        </Box>
+      </LargeCollapsibleSection>
+    }
+    right={
+      <LargeCollapsibleSection header="Definition" icon="info">
+        <Box padding={24}>
+          <Spinner purpose="section" />
+        </Box>
+      </LargeCollapsibleSection>
+    }
+  />
 );
 
 const LargeCollapsibleSection = ({
@@ -500,23 +582,11 @@ const SimpleAssetStatus = ({
   }
   if (liveData.lastMaterialization) {
     return (
-      <Tag intent="success">
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          <StatusCaseDot statusCase={StatusCase.MATERIALIZED} />
-          <AssetRunLink
-            assetKey={assetNode.assetKey}
-            runId={liveData.lastMaterialization.runId}
-            event={{
-              timestamp: liveData.lastMaterialization.timestamp,
-              stepKey: liveData.stepKey,
-            }}
-          >
-            <Box style={{color: Colors.textGreen()}} flex={{gap: 4}}>
-              <Timestamp timestamp={{ms: Number(liveData.lastMaterialization.timestamp)}} />
-            </Box>
-          </AssetRunLink>
-        </Box>
-      </Tag>
+      <MaterializationTag
+        assetKey={assetNode.assetKey}
+        event={liveData.lastMaterialization}
+        stepKey={liveData.stepKey}
+      />
     );
   }
   if (liveData.lastObservation && assetNode.isSource) {

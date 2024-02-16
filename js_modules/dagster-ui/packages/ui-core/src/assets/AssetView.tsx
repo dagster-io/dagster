@@ -110,7 +110,9 @@ export const AssetView = ({assetKey, trace}: Props) => {
       return <AssetNodeOverviewLoading />;
     }
     if (!definition) {
-      return <AssetNodeOverviewEmpty />;
+      return (
+        <AssetNodeOverviewEmpty assetKey={assetKey} lastMaterialization={lastMaterialization} />
+      );
     }
     return (
       <AssetNodeOverview
