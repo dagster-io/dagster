@@ -12,6 +12,7 @@ from .dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
+    test_dbt_semantic_models_path,
     test_jaffle_shop_path,
     test_meta_config_path,
     test_metadata_path,
@@ -78,6 +79,11 @@ def test_dbt_model_versions_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
 def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_dbt_python_interleaving_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_semantic_models_manifest", scope="session")
+def test_dbt_semantic_models_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_semantic_models_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_meta_config_manifest", scope="session")

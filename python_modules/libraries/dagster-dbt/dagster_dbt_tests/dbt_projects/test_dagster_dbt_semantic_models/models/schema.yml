@@ -81,3 +81,19 @@ models:
         description: Amount of the order (AUD) paid for by gift card
         tests:
           - not_null
+
+semantic_models:
+  - name: customers
+    description: Customer grain mart.
+    model: ref('customers')
+    entities:
+      - name: customer
+        expr: customer_id
+        type: primary
+    measures:
+      - name: total_order_amount
+        description: Total count of orders per customer.
+        agg: sum
+      - name: total_order_amount
+        agg: sum
+        description: Gross customer lifetime spend inclusive of taxes.
