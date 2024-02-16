@@ -9,15 +9,25 @@ from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
 import sling
-from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
+from dagster import (
+    ConfigurableResource,
+    MaterializeResult,
+    PermissiveConfig,
+    get_dagster_logger,
+)
 from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Field
 
-logger = get_dagster_logger()
+from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
+from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_replication import (
+    SlingReplicationParam,
+    validate_replication,
+)
 
-from dagster_embedded_elt.sling import DagsterSlingTranslator
+logger = get_dagster_logger()
 
 
 class SlingMode(str, Enum):
@@ -138,42 +148,59 @@ class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package.
 
     Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster_etl.sling import SlingResource
-            sling_resource = SlingResource(
-                source_connection=SlingSourceConnection(
-                    type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING")
-                ),
-                target_connection=SlingTargetConnection(
-                    type="snowflake",
-                    host="host",
-                    user="user",
-                    database="database",
-                    password="password",
-                    role="role",
-                ),
-            )
+                from dagster_etl.sling import SlingResource
+                sling_resource = SlingResource(
+                    source_connection=SlingSourceConnection(
+                        type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING")
+                    ),
+                    target_connection=SlingTargetConnection(
+                        type="snowflake",
+                        host="host",
+                        user="user",
+                        database="database",
+                        password="password",
+                        role="role",
+                    ),
+                )
 
     """
 
-    source_connection: SlingSourceConnection
-    target_connection: SlingTargetConnection
+    source_connection: Optional[SlingSourceConnection] = None
+    target_connection: Optional[SlingTargetConnection] = None
+    connections: List[SlingConnectionResource] = []
 
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        sling_source = _process_env_vars(dict(self.source_connection))
-        sling_target = _process_env_vars(dict(self.target_connection))
+        sling_source = None
+        sling_target = None
+        if self.source_connection:
+            sling_source = _process_env_vars(dict(self.source_connection))
+            if self.source_connection.connection_string:
+                sling_source["url"] = self.source_connection.connection_string
+        if self.target_connection:
+            sling_target = _process_env_vars(dict(self.target_connection))
+            if self.target_connection.connection_string:
+                sling_target["url"] = self.target_connection.connection_string
 
-        if self.source_connection.connection_string:
-            sling_source["url"] = self.source_connection.connection_string
-        if self.target_connection.connection_string:
-            sling_target["url"] = self.target_connection.connection_string
+        sling_connections: dict[str, Dict[str, Any]] = {
+            conn.name: {
+                "url" if k == "connection_string" else k: v
+                for k, v in _process_env_vars(dict(conn)).items()
+            }
+            for conn in self.connections
+        }
+
         with environ(
             {
                 "SLING_SOURCE": json.dumps(sling_source),
                 "SLING_TARGET": json.dumps(sling_target),
+                **{
+                    f"{conn.name}": json.dumps(sling_connections[conn.name])
+                    for conn in self.connections
+                },
             }
         ):
             yield
@@ -213,10 +240,18 @@ class SlingResource(ConfigurableResource):
         """Runs a Sling sync from the given source table to the given destination table. Generates
         output lines from the Sling CLI.
         """
-        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
+        if (
+            self.source_connection
+            and self.source_connection.type == "file"
+            and not source_stream.startswith("file://")
+        ):
             source_stream = "file://" + source_stream
 
-        if self.target_connection.type == "file" and not target_object.startswith("file://"):
+        if (
+            self.target_connection
+            and self.target_connection.type == "file"
+            and not target_object.startswith("file://")
+        ):
             target_object = "file://" + target_object
 
         with self._setup_config():
@@ -259,6 +294,29 @@ class SlingResource(ConfigurableResource):
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
             env = os.environ.copy()
+
+            with open(temp_file, "w") as file:
+                json.dump(replication_config, file, cls=sling.JsonEncoder)
+
+            logger.debug(f"Replication config: {replication_config}")
+
+            debug_str = "-d" if debug else ""
+
+            cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+
+            logger.debug(f"Running Sling replication with command: {cmd}")
+
+            results = sling._run(  # noqa
+                cmd=cmd,
+                temp_file=temp_file,
+                return_output=True,
+                env=env,
+            )
+
+        logger.info(results)
+        for stream in stream_definition:
+            output_name = dagster_sling_translator.get_asset_key(stream)
+            yield MaterializeResult(asset_key=output_name)
 
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
