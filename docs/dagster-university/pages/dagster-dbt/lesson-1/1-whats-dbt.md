@@ -11,7 +11,7 @@ In the world of ETL/ELT, dbt - that’s right, all lowercase - is the ‘T’ in
 Before we go any further, let’s take a look at how the folks at dbt describe their product:
 
 > dbt is a transformation workflow that helps you get more work done while producing higher quality results. You can use dbt to modularize and centralize your analytics code, while also providing your data team with guardrails typically found in software engineering workflows. Collaborate on data models, version them, and test and document your queries before safely deploying them to production, with monitoring and visibility.
-> 
+>
 > dbt compiles and runs your analytics code against your data platform, enabling you and your team to collaborate on a single source of truth for metrics, insights, and business definitions. This single source of truth, combined with the ability to define tests for your data, reduces errors when logic changes, and alerts you when issues arise. ([source](https://docs.getdbt.com/docs/introduction))
 
 ---
