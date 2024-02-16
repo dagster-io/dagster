@@ -318,6 +318,29 @@ class SlingResource(ConfigurableResource):
             output_name = dagster_sling_translator.get_asset_key(stream)
             yield MaterializeResult(asset_key=output_name)
 
+            with open(temp_file, "w") as file:
+                json.dump(replication_config, file, cls=sling.JsonEncoder)
+
+            logger.debug(f"Replication config: {replication_config}")
+
+            debug_str = "-d" if debug else ""
+
+            cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+
+            logger.debug(f"Running Sling replication with command: {cmd}")
+
+            results = sling._run(  # noqa
+                cmd=cmd,
+                temp_file=temp_file,
+                return_output=True,
+                env=env,
+            )
+
+        logger.info(results)
+        for stream in stream_definition:
+            output_name = dagster_sling_translator.get_asset_key(stream)
+            yield MaterializeResult(asset_key=output_name)
+
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
     out = {}
