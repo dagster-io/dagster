@@ -45,7 +45,7 @@ def test_run_op(dbt_seed, test_project_dir, dbt_config_dir):
     assert len(dbt_results[-1].value.result["results"]) == 4
 
 
-def test_run_op_with_select(dbt_build, test_project_dir, dbt_config_dir):
+def test_run_op_with_select(dbt_seed, test_project_dir, dbt_config_dir):
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir, "select": "least_caloric"}
     )
