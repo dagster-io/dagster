@@ -3,6 +3,7 @@ from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterial
 
 from dagster_tests.definitions_tests.auto_materialize_tests.updated_scenarios.cron_scenarios import (
     basic_hourly_cron_rule,
+    basic_hourly_cron_schedule,
     get_cron_policy,
 )
 
@@ -114,7 +115,7 @@ cursor_migration_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_migrate",
         initial_state=one_asset.with_asset_properties(
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
@@ -144,7 +145,7 @@ cursor_migration_scenarios = [
         id="basic_hourly_cron_partitioned_migrate",
         initial_state=one_asset.with_asset_properties(
             partitions_def=hourly_partitions_def,
-            auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule),
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule),
         )
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, minutes=5),

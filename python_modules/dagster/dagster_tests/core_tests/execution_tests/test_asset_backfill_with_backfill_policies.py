@@ -706,11 +706,14 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
     assert len(result.run_requests) == 2
 
     for run_request in result.run_requests:
+        # b should not be materialized in the same run as a
         if run_request.partition_key == "2023-03-02":
-            assert set(run_request.asset_selection) == {upstream_a.key, downstream_b.key}
-        elif run_request.partition_key == "2023-03-03":
-            # downstream_b's 03-03 partition should be skipped because upstream_a's 03-02 partition is not materialized
             assert set(run_request.asset_selection) == {upstream_a.key}
+        elif run_request.partition_key == "2023-03-03":
+            assert set(run_request.asset_selection) == {upstream_a.key}
+        else:
+            # should only have the above 2 partitions
+            assert False
 
 
 def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():

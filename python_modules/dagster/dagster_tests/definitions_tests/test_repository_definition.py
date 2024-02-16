@@ -31,8 +31,8 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
@@ -1418,7 +1418,7 @@ def test_base_jobs():
     assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None
 
 
-def test_automation_policy_sensors_do_not_conflict():
+def test_auto_materialize_sensors_do_not_conflict():
     @asset
     def asset1():
         ...
@@ -1432,12 +1432,12 @@ def test_automation_policy_sensors_do_not_conflict():
         return [
             asset1,
             asset2,
-            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
-            AutomationPolicySensorDefinition("b", asset_selection=[asset2]),
+            AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
+            AutoMaterializeSensorDefinition("b", asset_selection=[asset2]),
         ]
 
 
-def test_automation_policy_sensors_incomplete_cover():
+def test_auto_materialize_sensors_incomplete_cover():
     @asset
     def asset1():
         ...
@@ -1451,11 +1451,11 @@ def test_automation_policy_sensors_incomplete_cover():
         return [
             asset1,
             asset2,
-            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+            AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
         ]
 
 
-def test_automation_policy_sensors_conflict():
+def test_auto_materialize_sensors_conflict():
     @asset
     def asset1():
         ...
@@ -1475,8 +1475,8 @@ def test_automation_policy_sensors_conflict():
             return [
                 asset1,
                 asset2,
-                AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
-                AutomationPolicySensorDefinition("b", asset_selection=[asset1, asset2]),
+                AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
+                AutoMaterializeSensorDefinition("b", asset_selection=[asset1, asset2]),
             ]
 
 

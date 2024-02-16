@@ -30,6 +30,7 @@ import {
   AssetPartitionStaleQuery,
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
+import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
@@ -216,10 +217,10 @@ export const AssetPartitionDetail = ({
 
   const observationsAboutLatest =
     latest?.__typename === 'MaterializationEvent'
-      ? group.all.filter(
+      ? (group.all.filter(
           (e) =>
             e.__typename === 'ObservationEvent' && Number(e.timestamp) > Number(latest.timestamp),
-        )
+        ) as AssetObservationFragment[])
       : [];
 
   return (
@@ -358,7 +359,11 @@ export const AssetPartitionDetail = ({
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Metadata</Subheading>
-        <AssetEventMetadataEntriesTable event={latest} observations={observationsAboutLatest} />
+        <AssetEventMetadataEntriesTable
+          event={latest}
+          observations={observationsAboutLatest}
+          showDescriptions
+        />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Source data</Subheading>

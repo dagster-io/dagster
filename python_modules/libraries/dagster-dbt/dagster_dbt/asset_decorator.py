@@ -40,8 +40,8 @@ from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, va
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
+    dagster_name_fn,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    output_name_fn,
     select_unique_ids_from_manifest,
 )
 
@@ -388,7 +388,7 @@ def get_dbt_multi_asset_args(
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
         dbt_unique_ids_by_asset_key.setdefault(asset_key, set()).add(unique_id)

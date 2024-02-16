@@ -14,10 +14,9 @@ import pytest
 from dagster._cli.debug import export_run
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
-from dagster._core.scheduler import DagsterDaemonScheduler
+from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.storage.root import LocalArtifactStorage, TemporaryLocalArtifactStorage
+from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.test_utils import ExplodingRunLauncher, environ
 from dagster._utils import find_free_port
 from dagster_k8s.client import DagsterKubernetesClient
@@ -174,66 +173,6 @@ def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher
         postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
         print("Local Postgres forwarding URL: ", postgres_url)
         yield postgres_url
-
-
-@pytest.fixture(scope="session")
-def helm_postgres_url_for_user_deployments_subchart_disabled(
-    helm_namespace_for_user_deployments_subchart_disabled,
-):
-    with local_port_forward_postgres(
-        namespace=helm_namespace_for_user_deployments_subchart_disabled
-    ) as local_forward_port:
-        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
-        print("Local Postgres forwarding URL: ", postgres_url)
-        yield postgres_url
-
-
-@pytest.fixture(scope="function")
-def dagster_instance_for_user_deployments_subchart_disabled(
-    helm_postgres_url_for_user_deployments_subchart_disabled,
-):
-    with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=TemporaryLocalArtifactStorage(),
-        run_storage=PostgresRunStorage(helm_postgres_url_for_user_deployments_subchart_disabled),
-        event_storage=PostgresEventLogStorage(
-            helm_postgres_url_for_user_deployments_subchart_disabled
-        ),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
-    ) as instance:
-        yield instance
-
-        check_export_runs(instance)
-
-
-@pytest.fixture(scope="session")
-def helm_postgres_url_for_daemon(helm_namespace_for_daemon):
-    with local_port_forward_postgres(namespace=helm_namespace_for_daemon) as local_forward_port:
-        postgres_url = f"postgresql://test:test@localhost:{local_forward_port}/test"
-        print("Local Postgres forwarding URL: ", postgres_url)
-        yield postgres_url
-
-
-@pytest.fixture(scope="function")
-def dagster_instance_for_daemon(
-    helm_postgres_url_for_daemon,
-):
-    with DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=TemporaryLocalArtifactStorage(),
-        run_storage=PostgresRunStorage(helm_postgres_url_for_daemon),
-        event_storage=PostgresEventLogStorage(helm_postgres_url_for_daemon),
-        schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_daemon),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=QueuedRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
-        scheduler=DagsterDaemonScheduler(),
-    ) as instance:
-        yield instance
-
-        check_export_runs(instance)
 
 
 @pytest.fixture(scope="function")

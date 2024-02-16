@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.6.5 (core) / 0.22.5 (libraries)
+
+### New
+
+- Within a backfill or within auto-materialize, when submitting runs for partitions of the same assets, runs are now submitted in lexicographical order of partition key, instead of in an unpredictable order.
+- [dagster-k8s] Include k8s pod debug info in run worker failure messages.
+- [dagster-dbt] Events emitted by `DbtCliResource` now include metadata from the dbt adapter response. This includes fields like `rows_affected`, `query_id` from the Snowflake adapter, or `bytes_processed` from the BigQuery adapter.
+
+### Bugfixes
+
+- A previous change prevented asset backfills from grouping multiple assets into the same run when using BackfillPolicies under certain conditions. While the backfills would still execute in the proper order, this could lead to more individual runs than necessary. This has been fixed.
+- [dagster-k8s] Fixed an issue introduced in the 1.6.4 release where upgrading the Helm chart without upgrading the Dagster version used by user code caused failures in jobs using the `k8s_job_executor`.
+- [instigator-tick-logs] Fixed an issue where invoking `context.log.exception` in a sensor or schedule did not properly capture exception information.
+- [asset-checks] Fixed an issue where additional dependencies for dbt tests modeled as Dagster asset checks were not properly being deduplicated.
+- [dagster-dbt] Fixed an issue where dbt model, seed, or snapshot names with periods were not supported.
+
+### Experimental
+
+- `@observable_source_asset`-decorated functions can now return an `ObserveResult`. This allows including metadata on the observation, in addition to a data version. This is currently only supported for non-partitioned assets.
+- [auto-materialize] A new `AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron` class allows you to construct `AutoMaterializePolicys` which wait for all parents to be updated after the latest tick of a given cron schedule.
+- [Global op/asset concurrency] Ops and assets now take run priority into account when claiming global op/asset concurrency slots.
+
+### Documentation
+
+- Fixed an error in our asset checks docs. Thanks [@vaharoni](https://github.com/vaharoni)!
+- Fixed an error in our Dagster Pipes Kubernetes docs. Thanks [@cameronmartin](https://github.com/cameronmartin)!
+- Fixed an issue on the Hello Dagster! guide that prevented it from loading.
+- Add specific capabilities of the Airflow integration to the Airflow integration page.
+- Re-arranged sections in the I/O manager concept page to make info about using I/O versus resources more prominent.
+
 # 1.6.4 (core) / 0.22.4 (libraries)
 
 ### New
@@ -24,6 +54,7 @@
 - [dagster-pipes] `PipesK8sClient` has improved handling for init containers and additional containers. (Thanks `@aignas`!)
 - Fixed the `last_sensor_start_time` property of the `SensorEvaluationContext`, which would get cleared on ticks after the first tick after the sensor starts.
 - [dagster-mysql] Fixed the optional `dagster instance migrate --bigint-migration`, which caused some operational errors on mysql storages.
+- [dagster-dbt] Fixed a bug introduced in 1.6.3 that caused errors when ingesting asset checks with multiple dependencies.
 
 ### Deprecations
 
@@ -1344,7 +1375,7 @@ def my_op(context: OpExecutionContext):
   - `dagit` → `dagsterWebserver`
   - `ingress.dagit` → `ingress.dagsterWebserver`
   - `ingress.readOnlyDagit` → `ingress.readOnlyDagsterWebserver`
-- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:GetResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
 - `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`.
 - A number of arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. See the migration for details.
 
