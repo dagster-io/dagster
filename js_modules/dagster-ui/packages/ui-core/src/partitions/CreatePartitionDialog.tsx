@@ -57,7 +57,6 @@ const INVALID_PARTITION_SUBSTRINGS_READABLE = [
   '\\t',
   '\\v',
   '\\0',
-  '|',
   '","',
   '[',
   ']',
