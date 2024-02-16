@@ -61,7 +61,7 @@ from dagster._core.errors import (
     DagsterTypeCheckError,
     user_code_error_boundary,
 )
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
@@ -666,6 +666,7 @@ def _get_output_asset_events(
 
     if execution_type == AssetExecutionType.MATERIALIZATION:
         event_class = AssetMaterialization
+        event_class = AssetMaterialization
     elif execution_type == AssetExecutionType.OBSERVATION:
         event_class = AssetObservation
     else:
@@ -922,26 +923,33 @@ def _log_materialization_or_observation_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        yield from (
-            (
-                _dagster_event_for_asset_event(step_context, event)
-                for event in _get_output_asset_events(
-                    asset_key,
-                    partitions,
-                    output,
-                    output_def,
-                    manager_metadata,
-                    step_context,
-                    execution_type,
-                )
+        asset_events = list(
+            _get_output_asset_events(
+                asset_key,
+                partitions,
+                output,
+                output_def,
+                manager_metadata,
+                step_context,
+                execution_type,
             )
         )
 
+        batch_id = generate_event_batch_id()
+        last_index = len(asset_events) - 1
+        for i, asset_event in enumerate(asset_events):
+            batch_metadata = (
+                DagsterEventBatchMetadata(batch_id, i == last_index) if partitions else None
+            )
+            yield _dagster_event_for_asset_event(step_context, asset_event, batch_metadata)
+
 
 def _dagster_event_for_asset_event(
-    step_context: StepExecutionContext, asset_event: Union[AssetMaterialization, AssetObservation]
+    step_context: StepExecutionContext,
+    asset_event: Union[AssetMaterialization, AssetObservation],
+    batch_metadata: Optional[DagsterEventBatchMetadata],
 ):
     if isinstance(asset_event, AssetMaterialization):
-        return DagsterEvent.asset_materialization(step_context, asset_event)
+        return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)
     else:  # observation
-        return DagsterEvent.asset_observation(step_context, asset_event)
+        return DagsterEvent.asset_observation(step_context, asset_event, batch_metadata)

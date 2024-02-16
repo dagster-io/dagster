@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     Generic,
     Iterable,
     List,
@@ -103,6 +104,13 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
 
+# Sets the number of events that will be buffered before being written to the event log. Only
+# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
+# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
+# opt-in.
+EVENT_BATCH_SIZE: Final = int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
+
+
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -122,6 +130,7 @@ if TYPE_CHECKING:
     from dagster._core.events import (
         AssetMaterialization,
         DagsterEvent,
+        DagsterEventBatchMetadata,
         DagsterEventType,
         EngineEventData,
     )
@@ -182,6 +191,10 @@ if TYPE_CHECKING:
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
+def _is_batch_writing_enabled() -> bool:
+    return EVENT_BATCH_SIZE > 0
+
+
 def _check_run_equality(
     pipeline_run: DagsterRun, candidate_run: DagsterRun
 ) -> Mapping[str, Tuple[Any, Any]]:
@@ -224,18 +237,21 @@ class _EventListenerLogHandler(logging.Handler):
         from dagster._core.events import EngineEventData
         from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
 
+        record_metadata = get_log_record_metadata(record)
         event = construct_event_record(
             StructuredLoggerMessage(
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=get_log_record_metadata(record),
+                meta=record_metadata,
                 record=record,
             )
         )
 
         try:
-            self._instance.handle_new_event(event)
+            self._instance.handle_new_event(
+                event, batch_metadata=record_metadata["dagster_event_batch_metadata"]
+            )
         except Exception as e:
             sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
             if event.dagster_event:
@@ -478,6 +494,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 "Run retries are enabled, but the configured event log storage does not support"
                 " them. Consider switching to Postgres or Mysql.",
             )
+
+        # Used for batched event handling
+        self._event_buffer: Dict[str, List[EventLogEntry]] = defaultdict(list)
 
     # ctors
 
@@ -2355,16 +2374,62 @@ class DagsterInstance(DynamicPartitionsStore):
     def store_event(self, event: "EventLogEntry") -> None:
         self._event_storage.store_event(event)
 
-    def handle_new_event(self, event: "EventLogEntry") -> None:
-        run_id = event.run_id
+    def handle_new_event(
+        self,
+        event: "EventLogEntry",
+        *,
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
+    ) -> None:
+        """Handle a new event by storing it and notifying subscribers.
 
-        self._event_storage.store_event(event)
+        Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
+        events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
+        kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
+        reaches the EVENT_BATCH_SIZE or the end of the batch is reached (signaled by
+        `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
+        to the storage layer in a single batch. If an error occurrs during batch writing, then we
+        fall back to iterative individual event writes.
 
-        if event.is_dagster_event and event.get_dagster_event().is_job_event:
-            self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+        Args:
+            event (EventLogEntry): The event to handle.
+            batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
+        """
+        if batch_metadata is None or not _is_batch_writing_enabled():
+            events = [event]
+        else:
+            batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
+            self._event_buffer[batch_id].append(event)
+            if is_batch_end or len(self._event_buffer[batch_id]) == EVENT_BATCH_SIZE:
+                events = self._event_buffer[batch_id]
+                del self._event_buffer[batch_id]
+            else:
+                return
 
-        for sub in self._subscribers[run_id]:
-            sub(event)
+        if len(events) == 1:
+            self._event_storage.store_event(events[0])
+        else:
+            try:
+                self._event_storage.store_event_batch(events)
+
+            # Fall back to storing events one by one if writing a batch fails. We catch a generic
+            # Exception because that is the parent class of the actually received error,
+            # dagster_cloud_cli.core.errors.GraphQLStorageError, which we cannot import here due to
+            # it living in a cloud package.
+            except Exception as e:
+                sys.stderr.write(f"Exception while storing event batch: {e}\n")
+                sys.stderr.write(
+                    "Falling back to storing multiple single-event storage requests...\n"
+                )
+                for event in events:
+                    self._event_storage.store_event(event)
+
+        for event in events:
+            run_id = event.run_id
+            if event.is_dagster_event and event.get_dagster_event().is_job_event:
+                self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+
+            for sub in self._subscribers[run_id]:
+                sub(event)
 
     def add_event_listener(self, run_id: str, cb) -> None:
         self._subscribers[run_id].append(cb)
