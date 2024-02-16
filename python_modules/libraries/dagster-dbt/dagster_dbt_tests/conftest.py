@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 from dagster_dbt import DbtCliResource
@@ -16,6 +16,17 @@ from .dbt_projects import (
     test_meta_config_path,
     test_metadata_path,
 )
+
+
+def pytest_collection_modifyitems(items: List[pytest.Item]):
+    """Mark tests in the `cloud` and `legacy` directories. Mark other tests as `core`."""
+    for item in items:
+        if "cloud" in item.path.parts:
+            item.add_marker(pytest.mark.cloud)
+        elif "legacy" in item.path.parts:
+            item.add_marker(pytest.mark.legacy)
+        else:
+            item.add_marker(pytest.mark.core)
 
 
 def _create_dbt_invocation(project_dir: Path) -> DbtCliInvocation:
