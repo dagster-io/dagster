@@ -1008,9 +1008,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = partitions or self.get_partition_keys()
+        query_all_partitions = partitions is None
+        partitions = self.get_partition_keys() if query_all_partitions else partitions
 
-        if partitions is None or len(partitions) > 1000:
+        if query_all_partitions or len(partitions) > 1000:
             # when there are many partitions, it's much more efficient to grab the latest storage
             # id for all partitions and then query for the materialization events based on those
             # storage ids
