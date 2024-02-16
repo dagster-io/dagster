@@ -40,7 +40,6 @@ const INVALID_PARITION_SUBSTRINGS = [
   '\t',
   '\v',
   '\0',
-  '|',
   ',',
   '[',
   ']',
