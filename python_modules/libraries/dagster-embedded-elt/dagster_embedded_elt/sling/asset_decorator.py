@@ -38,7 +38,7 @@ def sling_assets(
     spec and descriptions, see `Sling's Documentation <https://docs.slingdata.io/sling-cli/run/configuration>`_.
 
     Args:
-        replication_config: SlingReplicationParam: A path to a Sling replication config, or a dictionary of a replication config.
+        replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary of a replication config.
         dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster AssetKey.
         partitions_def: Optional[PartitionsDefinition]: The partitions definition for this asset.
         backfill_policy: Optional[BackfillPolicy]: The backfill policy for this asset.
