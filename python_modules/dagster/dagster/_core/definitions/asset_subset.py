@@ -3,6 +3,7 @@ import operator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     NamedTuple,
     Optional,
@@ -160,6 +161,14 @@ class AssetSubset(NamedTuple):
                 ),
             )
 
+    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
+        if not self.is_partitioned:
+            return (
+                item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
+            )
+        else:
+            return item.asset_key == self.asset_key and item.partition_key in self.subset_value
+
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class ValidAssetSubset(AssetSubset):
@@ -193,7 +202,7 @@ class ValidAssetSubset(AssetSubset):
             )
             return self._replace(value=value)
 
-    def _oper(self, other: "ValidAssetSubset", oper: Callable) -> "ValidAssetSubset":
+    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
         return self._replace(value=value)
 
@@ -211,14 +220,6 @@ class ValidAssetSubset(AssetSubset):
     def __or__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions | other.asset_partitions."""
         return self._oper(self.get_valid(other), operator.or_)
-
-    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
-        if not self.is_partitioned:
-            return (
-                item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
-            )
-        else:
-            return item.asset_key == self.asset_key and item.partition_key in self.subset_value
 
     def get_valid(self, other: AssetSubset) -> "ValidAssetSubset":
         """Creates a ValidAssetSubset from the given AssetSubset by returning a copy of the given

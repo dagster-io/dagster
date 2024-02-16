@@ -1,4 +1,3 @@
-import warnings
 from typing import Optional
 
 import dagster._check as check
@@ -41,16 +40,13 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._core.test_utils import assert_namedtuple_lists_equal, raise_exception_on_warnings
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def get_upstream_partitions_for_partition_range(

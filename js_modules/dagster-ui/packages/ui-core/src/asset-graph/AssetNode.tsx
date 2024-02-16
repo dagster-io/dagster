@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
+import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -17,9 +16,9 @@ import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
+import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -127,42 +126,6 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   );
 };
 
-type AssetCheckIconType =
-  | Exclude<
-      AssetCheckExecutionResolvedStatus,
-      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    >
-  | 'NOT_EVALUATED'
-  | 'WARN'
-  | 'ERROR';
-
-const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNode}[] = [
-  {
-    type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-    content: <Spinner purpose="caption-text" />,
-  },
-  {
-    type: 'NOT_EVALUATED',
-    content: <Icon name="dot" color={Colors.accentGray()} />,
-  },
-  {
-    type: 'ERROR',
-    content: <Icon name="cancel" color={Colors.accentRed()} />,
-  },
-  {
-    type: 'WARN',
-    content: <Icon name="warning_outline" color={Colors.accentYellow()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={Colors.accentGray()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={Colors.accentGreen()} />,
-  },
-];
-
 export const AssetNodeContextMenuWrapper = React.memo(
   ({
     children,
@@ -208,21 +171,6 @@ const AssetNodeChecksRow = ({
     return <span />;
   }
 
-  const byIconType = countBy(liveData.assetChecks, (c) => {
-    const status = c.executionForLatestMaterialization?.status;
-    const value: AssetCheckIconType =
-      status === undefined
-        ? 'NOT_EVALUATED'
-        : status === AssetCheckExecutionResolvedStatus.FAILED
-        ? c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-          ? 'WARN'
-          : 'ERROR'
-        : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-        ? 'ERROR'
-        : status;
-    return value;
-  });
-
   return (
     <AssetNodeRowBox
       padding={{horizontal: 8}}
@@ -235,14 +183,7 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <Box flex={{gap: 6, alignItems: 'center'}}>
-          {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map((icon) => (
-            <Box flex={{gap: 2, alignItems: 'center'}} key={icon.type}>
-              {icon.content}
-              {byIconType[icon.type]}
-            </Box>
-          ))}
-        </Box>
+        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
       </Link>
     </AssetNodeRowBox>
   );

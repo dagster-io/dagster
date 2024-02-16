@@ -1,7 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import (
@@ -17,6 +17,7 @@ from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 
 
+@experimental_param(param="owners")
 class AssetOut(
     NamedTuple(
         "_AssetOut",
@@ -33,6 +34,7 @@ class AssetOut(
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
+            ("owners", PublicAttr[Optional[Sequence[str]]]),
         ],
     )
 ):
@@ -64,6 +66,9 @@ class AssetOut(
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def __new__(
@@ -80,6 +85,7 @@ class AssetOut(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -110,6 +116,7 @@ class AssetOut(
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
         )
 
     def to_out(self) -> Out:

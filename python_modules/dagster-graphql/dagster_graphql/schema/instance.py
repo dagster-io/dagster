@@ -216,7 +216,7 @@ class GrapheneInstance(graphene.ObjectType):
         graphene.NonNull(GrapheneConcurrencyKeyInfo),
         concurrencyKey=graphene.Argument(graphene.String),
     )
-    useAutomationPolicySensors = graphene.Field(
+    useAutoMaterializeSensors = graphene.Field(
         graphene.NonNull(graphene.Boolean),
         description="Whether or not the deployment is using automation policy sensors to materialize assets",
     )
@@ -234,8 +234,8 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_hasInfo(self, graphene_info: ResolveInfo) -> bool:
         return graphene_info.context.show_instance_config
 
-    def resolve_useAutomationPolicySensors(self, _graphene_info: ResolveInfo):
-        return self._instance.auto_materialize_use_automation_policy_sensors
+    def resolve_useAutoMaterializeSensors(self, _graphene_info: ResolveInfo):
+        return self._instance.auto_materialize_use_sensors
 
     def resolve_info(self, graphene_info: ResolveInfo):
         return self._instance.info_str() if graphene_info.context.show_instance_config else None

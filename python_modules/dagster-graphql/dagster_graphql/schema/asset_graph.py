@@ -32,6 +32,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -42,6 +43,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
 )
+from dagster_graphql.implementation.loader import BatchRunLoader
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.instigators import GrapheneInstigator
@@ -106,6 +108,29 @@ GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatu
 GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
     StaleCauseCategory, name="StaleCauseCategory"
 )
+
+
+class GrapheneUserAssetOwner(graphene.ObjectType):
+    class Meta:
+        name = "UserAssetOwner"
+
+    email = graphene.NonNull(graphene.String)
+
+
+class GrapheneTeamAssetOwner(graphene.ObjectType):
+    class Meta:
+        name = "TeamAssetOwner"
+
+    team = graphene.NonNull(graphene.String)
+
+
+class GrapheneAssetOwner(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneUserAssetOwner,
+            GrapheneTeamAssetOwner,
+        )
+        name = "AssetOwner"
 
 
 class GrapheneAssetStaleCause(graphene.ObjectType):
@@ -257,6 +282,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     graphName = graphene.String()
     groupName = graphene.String()
+    owners = non_null_list(GrapheneAssetOwner)
     id = graphene.NonNull(graphene.ID)
     isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
@@ -366,6 +392,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
+            owners=[
+                GrapheneUserAssetOwner(email=owner)
+                if is_valid_email(owner)
+                else GrapheneTeamAssetOwner(team=owner)
+                for owner in (external_asset_node.owners or [])
+            ],
         )
 
     @property
@@ -903,14 +935,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return results
 
-    def _get_automation_policy_external_sensor(self) -> Optional[ExternalSensor]:
+    def _get_auto_materialize_external_sensor(self) -> Optional[ExternalSensor]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
 
         asset_key = self._external_asset_node.asset_key
         matching_sensors = [
             sensor
             for sensor in self._external_repository.get_external_sensors()
-            if sensor.sensor_type == SensorType.AUTOMATION_POLICY
+            if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
             and asset_key in check.not_none(sensor.asset_selection).resolve(asset_graph)
         ]
         check.invariant(
@@ -926,8 +958,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         from dagster._daemon.asset_daemon import get_current_evaluation_id
 
         instance = graphene_info.context.instance
-        if instance.auto_materialize_use_automation_policy_sensors:
-            external_sensor = self._get_automation_policy_external_sensor()
+        if instance.auto_materialize_use_sensors:
+            external_sensor = self._get_auto_materialize_external_sensor()
             if not external_sensor:
                 return None
 
@@ -998,8 +1030,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             latest_materialization_by_partition.get(partition) for partition in partitions
         ]
 
+        run_ids = [event.run_id for event in ordered_materializations if event]
+        loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
+
         return [
-            GrapheneMaterializationEvent(event=event) if event else None
+            GrapheneMaterializationEvent(event=event, loader=loader) if event else None
             for event in ordered_materializations
         ]
 

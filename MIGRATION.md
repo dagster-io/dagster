@@ -188,7 +188,7 @@ def a_downstream_asset():
    ...
 ```
 
-- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:GetResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
 - [dagster-dbt] `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`. `dagster-dbt` Asset APIs like `load_assets_from_dbt_manifest` and `load_assets_from_dbt_project` will continue to work if given either a `DbtCliClientResource` or `DbtCliResource`.
 
 ```python

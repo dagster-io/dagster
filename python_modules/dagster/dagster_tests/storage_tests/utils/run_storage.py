@@ -1235,6 +1235,8 @@ class TestRunStorage:
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
 
     def test_secondary_index(self, storage):
+        self._skip_in_memory(storage)
+
         if not isinstance(storage, SqlRunStorage):
             return
 

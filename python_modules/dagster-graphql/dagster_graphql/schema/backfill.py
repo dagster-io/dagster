@@ -168,12 +168,72 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     class Meta:
         name = "AssetBackfillData"
 
+    def __init__(self, backfill_job: PartitionBackfill):
+        self._backfill_job = backfill_job
+        check.invariant(self._backfill_job.is_asset_backfill, "Must be an asset backfill")
+
     assetBackfillStatuses = non_null_list(
         "dagster_graphql.schema.partition_sets.GrapheneAssetBackfillStatus"
     )
     rootTargetedPartitions = graphene.Field(
         "dagster_graphql.schema.backfill.GrapheneAssetBackfillTargetPartitions",
     )
+
+    def resolve_rootTargetedPartitions(self, graphene_info: ResolveInfo):
+        root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
+            graphene_info.context
+        )
+
+        return (
+            GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
+            if root_partitions_subset
+            else None
+        )
+
+    def resolve_assetBackfillStatuses(self, graphene_info: ResolveInfo):
+        from dagster_graphql.schema.partition_sets import (
+            GrapheneAssetPartitionsStatusCounts,
+            GrapheneUnpartitionedAssetStatus,
+        )
+
+        status_per_asset = self._backfill_job.get_backfill_status_per_asset_key(
+            graphene_info.context
+        )
+
+        asset_partition_status_counts = []
+
+        for asset_status in status_per_asset:
+            if isinstance(asset_status, PartitionedAssetBackfillStatus):
+                asset_partition_status_counts.append(
+                    GrapheneAssetPartitionsStatusCounts(
+                        assetKey=asset_status.asset_key,
+                        numPartitionsTargeted=asset_status.num_targeted_partitions,
+                        numPartitionsInProgress=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.IN_PROGRESS
+                        ],
+                        numPartitionsMaterialized=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.MATERIALIZED
+                        ],
+                        numPartitionsFailed=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.FAILED
+                        ],
+                    )
+                )
+            else:
+                if not isinstance(asset_status, UnpartitionedAssetBackfillStatus):
+                    check.failed(f"Unexpected asset status type {type(asset_status)}")
+
+                asset_partition_status_counts.append(
+                    GrapheneUnpartitionedAssetStatus(
+                        assetKey=asset_status.asset_key,
+                        inProgress=asset_status.backfill_status is AssetBackfillStatus.IN_PROGRESS,
+                        materialized=asset_status.backfill_status
+                        is AssetBackfillStatus.MATERIALIZED,
+                        failed=asset_status.backfill_status is AssetBackfillStatus.FAILED,
+                    )
+                )
+
+        return asset_partition_status_counts
 
 
 class GraphenePartitionBackfill(graphene.ObjectType):
@@ -391,64 +451,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_assetBackfillData(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetBackfillData]:
-        from dagster_graphql.schema.partition_sets import (
-            GrapheneAssetPartitionsStatusCounts,
-            GrapheneUnpartitionedAssetStatus,
-        )
-
         if not self._backfill_job.is_asset_backfill:
             return None
 
-        status_per_asset = self._backfill_job.get_backfill_status_per_asset_key(
-            graphene_info.context
-        )
-
-        asset_partition_status_counts = []
-
-        for asset_status in status_per_asset:
-            if isinstance(asset_status, PartitionedAssetBackfillStatus):
-                asset_partition_status_counts.append(
-                    GrapheneAssetPartitionsStatusCounts(
-                        assetKey=asset_status.asset_key,
-                        numPartitionsTargeted=asset_status.num_targeted_partitions,
-                        numPartitionsInProgress=asset_status.partitions_counts_by_status[
-                            AssetBackfillStatus.IN_PROGRESS
-                        ],
-                        numPartitionsMaterialized=asset_status.partitions_counts_by_status[
-                            AssetBackfillStatus.MATERIALIZED
-                        ],
-                        numPartitionsFailed=asset_status.partitions_counts_by_status[
-                            AssetBackfillStatus.FAILED
-                        ],
-                    )
-                )
-            else:
-                if not isinstance(asset_status, UnpartitionedAssetBackfillStatus):
-                    check.failed(f"Unexpected asset status type {type(asset_status)}")
-
-                asset_partition_status_counts.append(
-                    GrapheneUnpartitionedAssetStatus(
-                        assetKey=asset_status.asset_key,
-                        inProgress=asset_status.backfill_status is AssetBackfillStatus.IN_PROGRESS,
-                        materialized=asset_status.backfill_status
-                        is AssetBackfillStatus.MATERIALIZED,
-                        failed=asset_status.backfill_status is AssetBackfillStatus.FAILED,
-                    )
-                )
-
-        root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
-            graphene_info.context
-        )
-
-        if root_partitions_subset:
-            root_targeted = GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
-        else:
-            root_targeted = None
-
-        return GrapheneAssetBackfillData(
-            assetBackfillStatuses=asset_partition_status_counts,
-            rootTargetedPartitions=root_targeted,
-        )
+        return GrapheneAssetBackfillData(self._backfill_job)
 
     def resolve_error(self, _graphene_info: ResolveInfo) -> Optional[GraphenePythonError]:
         if self._backfill_job.error:

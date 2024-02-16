@@ -1,3 +1,5 @@
+recursive-exclude dbt_packages *
+
 include LICENSE
 include dagster_dbt/py.typed
 recursive-include dagster_dbt/include *

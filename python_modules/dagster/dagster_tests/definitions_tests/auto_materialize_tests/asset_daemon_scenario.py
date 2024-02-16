@@ -39,7 +39,7 @@ from dagster import (
     asset,
     materialize,
 )
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
@@ -56,8 +56,8 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
@@ -109,7 +109,7 @@ def get_code_location_origin(
         globals()[attribute_name] = Definitions(
             assets=scenario_state.assets,
             executor=in_process_executor,
-            sensors=scenario_state.automation_policy_sensors,
+            sensors=scenario_state.auto_materialize_sensors,
         )
 
     return InProcessCodeLocationOrigin(
@@ -230,7 +230,7 @@ class AssetDaemonScenarioState(NamedTuple):
     scenario_instance: Optional[DagsterInstance] = None
     is_daemon: bool = False
     sensor_name: Optional[str] = None
-    automation_policy_sensors: Optional[Sequence[AutomationPolicySensorDefinition]] = None
+    auto_materialize_sensors: Optional[Sequence[AutoMaterializeSensorDefinition]] = None
     threadpool_executor: Optional[ThreadPoolExecutor] = None
 
     @property
@@ -277,7 +277,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @property
     def defs(self) -> Definitions:
-        return Definitions(assets=self.assets, sensors=self.automation_policy_sensors)
+        return Definitions(assets=self.assets, sensors=self.auto_materialize_sensors)
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -313,11 +313,11 @@ class AssetDaemonScenarioState(NamedTuple):
                     new_asset_specs.append(spec)
         return self._replace(asset_specs=new_asset_specs)
 
-    def with_automation_policy_sensors(
+    def with_auto_materialize_sensors(
         self,
-        sensors: Optional[Sequence[AutomationPolicySensorDefinition]],
+        sensors: Optional[Sequence[AutoMaterializeSensorDefinition]],
     ):
-        return self._replace(automation_policy_sensors=sensors)
+        return self._replace(auto_materialize_sensors=sensors)
 
     def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
         return self._replace(serialized_cursor=serialized_cursor)

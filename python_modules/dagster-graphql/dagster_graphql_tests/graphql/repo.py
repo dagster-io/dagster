@@ -86,8 +86,8 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
@@ -1221,8 +1221,8 @@ def define_sensors():
     def the_failure_sensor():
         pass
 
-    automation_policy_sensor = AutomationPolicySensorDefinition(
-        "my_automation_policy_sensor",
+    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+        "my_auto_materialize_sensor",
         asset_selection=AssetSelection.keys("fresh_diamond_bottom"),
     )
 
@@ -1242,7 +1242,7 @@ def define_sensors():
         many_asset_sensor,
         fresh_sensor,
         the_failure_sensor,
-        automation_policy_sensor,
+        auto_materialize_sensor,
         every_asset_sensor,
     ]
 
@@ -1630,7 +1630,7 @@ def req_config_job():
     the_op()
 
 
-@asset
+@asset(owners=["user@dagsterlabs.com", "team:team1"])
 def asset_1():
     yield Output(3)
 

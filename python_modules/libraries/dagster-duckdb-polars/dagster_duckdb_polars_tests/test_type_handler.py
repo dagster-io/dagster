@@ -340,7 +340,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
         }
     ),
     key_prefix=["my_schema"],
-    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+    metadata={"partition_expr": {"time": "CAST(time as DATE)", "color": "color"}},
     config_schema={"value": str},
 )
 def multi_partitioned(context) -> pl.DataFrame:

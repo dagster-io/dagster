@@ -73,6 +73,7 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
@@ -132,6 +133,7 @@ import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
+import sticky_note from '../icon-svgs/sticky_note.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -146,6 +148,7 @@ import unfold_more from '../icon-svgs/unfold_more.svg';
 import vertical_align_bottom from '../icon-svgs/vertical_align_bottom.svg';
 import vertical_align_center from '../icon-svgs/vertical_align_center.svg';
 import vertical_align_top from '../icon-svgs/vertical_align_top.svg';
+import view_column from '../icon-svgs/view_column.svg';
 import view_list from '../icon-svgs/view_list.svg';
 import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
@@ -221,6 +224,7 @@ export const Icons = {
   github_pr_closed,
   github_pr_merged,
   gitlab,
+  graduation_cap,
   youtube,
   arrow_indent,
   editor_role,
@@ -310,6 +314,7 @@ export const Icons = {
   star,
   star_outline,
   status,
+  sticky_note,
   sync_problem,
   table_view,
   timer,
@@ -319,6 +324,7 @@ export const Icons = {
   unfold_less,
   unfold_more,
   view_list,
+  view_column,
   visibility,
   visibility_off,
   warning,

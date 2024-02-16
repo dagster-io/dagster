@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Tuple
 
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
     RuleCondition,
@@ -115,26 +115,26 @@ def create_graphene_auto_materialize_rule_evaluation(
     if "text" in metadata.keys() and isinstance(metadata["text"], str):
         rule_evaluation_data = GrapheneTextRuleEvaluationData(text=metadata["text"])
     elif any(key.startswith("updated_parent") for key in metadata.keys()):
-        updatedAssetKeys = {
+        updatedAssetKeys = [
             value.asset_key
-            for key, value in metadata.items()
+            for key, value in sorted(metadata.items())
             if key.startswith("updated_parent") and isinstance(value, DagsterAssetMetadataValue)
-        }
-        willUpdateAssetKeys = {
+        ]
+        willUpdateAssetKeys = [
             value.asset_key
-            for key, value in metadata.items()
+            for key, value in sorted(metadata.items())
             if key.startswith("will_update_parent") and isinstance(value, DagsterAssetMetadataValue)
-        }
+        ]
         rule_evaluation_data = GrapheneParentMaterializedRuleEvaluationData(
             updatedAssetKeys=updatedAssetKeys, willUpdateAssetKeys=willUpdateAssetKeys
         )
     elif any(key.startswith("waiting_on_ancestor") for key in metadata.keys()):
-        waitingOnAssetKeys = {
+        waitingOnAssetKeys = [
             value.asset_key
-            for key, value in metadata.items()
+            for key, value in sorted(metadata.items())
             if key.startswith("waiting_on_ancestor")
             and isinstance(value, DagsterAssetMetadataValue)
-        }
+        ]
         rule_evaluation_data = GrapheneWaitingOnKeysRuleEvaluationData(
             waitingOnAssetKeys=waitingOnAssetKeys
         )

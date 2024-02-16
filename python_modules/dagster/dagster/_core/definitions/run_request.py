@@ -140,8 +140,12 @@ class RunRequest(
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
-        asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
-            launched with this run.
+        asset_selection (Optional[Sequence[AssetKey]]): A subselection of assets that should be
+            launched with this run. If the sensor or schedule targets a job, then by default a
+            RunRequest returned from it will launch all of the assets in the job. If the sensor
+            targets an asset selection, then by default a RunRequest returned from it will launch
+            all the assets in the selection. This argument is used to specify that only a subset of
+            these assets should be launched, instead of all of them.
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.

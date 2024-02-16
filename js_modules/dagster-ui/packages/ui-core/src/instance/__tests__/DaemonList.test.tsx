@@ -17,8 +17,8 @@ jest.mock('../../app/Permissions', () => ({
   },
 }));
 
-jest.mock('../../assets/AutomationPolicySensorFlag', () => ({
-  useAutomationPolicySensorFlag: jest.fn().mockReturnValue('has-global-amp'),
+jest.mock('../../assets/AutoMaterializeSensorFlag', () => ({
+  useAutoMaterializeSensorFlag: jest.fn().mockReturnValue('has-global-amp'),
 }));
 
 const mockDaemons = [

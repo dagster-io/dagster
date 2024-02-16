@@ -140,6 +140,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        security_context=exc_cfg.get("security_context"),  # type: ignore
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
         run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),

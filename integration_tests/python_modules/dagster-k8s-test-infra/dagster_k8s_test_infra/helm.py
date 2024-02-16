@@ -252,53 +252,6 @@ def secrets(namespace, should_cleanup):
         )
 
 
-@pytest.fixture(scope="session")
-def helm_namespace_for_user_deployments_subchart_disabled(
-    dagster_docker_image,
-    cluster_provider,
-    helm_namespace_for_user_deployments_subchart,
-    should_cleanup,
-    configmaps,
-    aws_configmap,
-    secrets,
-):
-    namespace = helm_namespace_for_user_deployments_subchart
-
-    with helm_chart_for_user_deployments_subchart_disabled(
-        namespace, dagster_docker_image, should_cleanup
-    ):
-        print("Helm chart successfully installed in namespace %s" % namespace)
-        yield namespace
-
-
-@pytest.fixture(scope="session")
-def helm_namespace_for_user_deployments_subchart(
-    dagster_docker_image,
-    cluster_provider,
-    namespace,
-    should_cleanup,
-    configmaps,
-    aws_configmap,
-    secrets,
-):
-    with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
-        yield namespace
-
-
-@pytest.fixture(scope="session")
-def helm_namespace_for_daemon(
-    dagster_docker_image,
-    cluster_provider,
-    namespace,
-    should_cleanup,
-    configmaps,
-    aws_configmap,
-    secrets,
-):
-    with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
-        yield namespace
-
-
 @pytest.fixture(
     scope="session",
     params=[
@@ -789,34 +742,6 @@ def helm_chart_for_k8s_run_launcher(
 
 
 @contextmanager
-def helm_chart_for_user_deployments_subchart_disabled(
-    system_namespace, docker_image, should_cleanup=True
-):
-    check.str_param(system_namespace, "system_namespace")
-    check.str_param(docker_image, "docker_image")
-    check.bool_param(should_cleanup, "should_cleanup")
-
-    helm_config = merge_dicts(
-        _base_helm_config(system_namespace, docker_image),
-        {
-            "dagster-user-deployments": {
-                "enabled": True,
-                "enableSubchart": False,
-                "deployments": _deployment_config(docker_image),
-            },
-        },
-    )
-
-    with _helm_chart_helper(
-        system_namespace,
-        should_cleanup,
-        helm_config,
-        helm_install_name="helm_chart_for_user_deployments_subchart_disabled",
-    ):
-        yield
-
-
-@contextmanager
 def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cleanup=True):
     check.str_param(namespace, "namespace")
     check.str_param(docker_image, "docker_image")
@@ -982,45 +907,9 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
     }
 
 
-@contextmanager
-def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
-    check.str_param(namespace, "namespace")
-    check.str_param(docker_image, "docker_image")
-    check.bool_param(should_cleanup, "should_cleanup")
-
-    repository, tag = docker_image.split(":")
-    pull_policy = image_pull_policy()
-
-    helm_config = merge_dicts(
-        _base_helm_config(namespace, docker_image),
-        {
-            "dagsterDaemon": {
-                "enabled": True,
-                "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-                "heartbeatTolerance": 180,
-                "runCoordinator": {"enabled": True},
-                "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
-                "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-            },
-        },
-    )
-    with _helm_chart_helper(
-        namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_daemon"
-    ):
-        yield
-
-
 @pytest.fixture(scope="session")
 def webserver_url(helm_namespace):
     with _port_forward_dagster_webserver(namespace=helm_namespace) as forwarded_webserver_url:
-        yield forwarded_webserver_url
-
-
-@pytest.fixture(scope="session")
-def webserver_url_for_daemon(helm_namespace_for_daemon):
-    with _port_forward_dagster_webserver(
-        namespace=helm_namespace_for_daemon
-    ) as forwarded_webserver_url:
         yield forwarded_webserver_url
 
 
