@@ -18,7 +18,9 @@ from typing import (
 
 import pendulum
 
-from dagster._core.definitions.asset_condition import HistoricalAllPartitionsSubsetSentinel
+from dagster._core.definitions.asset_condition.asset_condition import (
+    HistoricalAllPartitionsSubsetSentinel,
+)
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -27,17 +29,17 @@ from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .asset_graph import AssetGraph
-from .asset_subset import AssetSubset, ValidAssetSubset
+from ..asset_graph import AssetGraph
+from ..asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
+    from ..asset_daemon_context import AssetDaemonContext
     from .asset_condition import (
         AssetCondition,
         AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetSubsetWithMetadata,
     )
-    from .asset_daemon_context import AssetDaemonContext
 
 T = TypeVar("T")
 

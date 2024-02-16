@@ -23,16 +23,13 @@ import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._serdes.serdes import (
-    PackableValue,
-    whitelist_for_serdes,
-)
+from dagster._serdes.serdes import PackableValue, whitelist_for_serdes
 
-from .asset_subset import AssetSubset, ValidAssetSubset
+from ..asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
+    from ..auto_materialize_rule import AutoMaterializeRule
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
-    from .auto_materialize_rule import AutoMaterializeRule
 
 
 T = TypeVar("T")

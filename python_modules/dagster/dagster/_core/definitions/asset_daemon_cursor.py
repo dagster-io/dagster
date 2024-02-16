@@ -28,7 +28,7 @@ from dagster._serdes.serdes import (
 from .asset_graph import AssetGraph
 
 if TYPE_CHECKING:
-    from .asset_condition import (
+    from .asset_condition.asset_condition import (
         AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
@@ -148,7 +148,7 @@ def get_backcompat_asset_condition_evaluation_state(
     handled_root_subset: Optional[AssetSubset],
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition import (
+    from dagster._core.definitions.asset_condition.asset_condition import (
         AssetConditionEvaluationState,
         RuleCondition,
     )
@@ -173,7 +173,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
+    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
     )

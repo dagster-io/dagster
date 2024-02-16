@@ -6,7 +6,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
