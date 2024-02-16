@@ -175,3 +175,17 @@ def test_observe_with_observe_result():
     assert len(observations) == 1
     assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
     assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def test_observe_with_observe_result_no_data_version():
+    @observable_source_asset
+    def foo() -> ObserveResult:
+        return ObserveResult(metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = observe([foo], instance=instance)
+    assert result.success
+    observations = result.asset_observations_for_node("foo")
+    assert len(observations) == 1
+    assert _get_current_data_version(AssetKey("foo"), instance) is None
+    assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
