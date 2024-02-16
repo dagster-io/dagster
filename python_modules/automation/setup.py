@@ -16,9 +16,26 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["automation_tests*"]),
+    install_requires=[
+        "autoflake",
+        "boto3",
+        "packaging>=20.9",
+        "pandas",
+        "pytablereader",
+        "requests",
+        "twine==1.15.0",
+        "virtualenv==20.25.0",
+        "urllib3",
+    ],
     extras_require={
         "buildkite": [
             "dagster",  # Support buildkite conditional running of tests
+        ]
+    },
+    entry_points={
+        "console_scripts": [
+            "dagster-image = automation.docker.cli:main",
+            "dagster-graphql-client = automation.graphql.python_client.cli:main",
         ]
     },
 )
