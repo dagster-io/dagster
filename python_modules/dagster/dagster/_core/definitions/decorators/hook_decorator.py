@@ -70,7 +70,7 @@ class _Hook:
 
 @overload
 def event_list_hook(
-    hook_fn: Callable,
+    hook_fn: Callable[..., Any],
 ) -> HookDefinition:
     pass
 

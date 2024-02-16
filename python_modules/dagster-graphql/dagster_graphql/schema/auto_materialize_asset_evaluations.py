@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Tuple
 
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
     RuleCondition,

@@ -103,7 +103,7 @@ async def _coerce_async_op_to_async_gen(
 
 
 def invoke_compute_fn(
-    fn: Callable,
+    fn: Callable[..., Any],
     context: OpExecutionContext,
     kwargs: Mapping[str, Any],
     context_arg_provided: bool,

@@ -19,8 +19,8 @@ from dagster._seven.compat.pendulum import (
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetSubsetWithMetadata
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
 
@@ -162,7 +162,7 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time

@@ -26,17 +26,21 @@ from dagster_dbt import (
 from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
 from dagster_dbt.cloud.resources import DbtCloudClient
 
-from ..utils import assert_assets_match_project
+from ..legacy.utils import assert_assets_match_project
 from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN, sample_get_environment_variables
 
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(file_relative_path(__file__, "../sample_manifest.json"), "r", encoding="utf8") as f:
+with open(
+    file_relative_path(__file__, "../legacy/sample_manifest.json"), "r", encoding="utf8"
+) as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "../sample_run_results.json"), "r", encoding="utf8") as f:
+with open(
+    file_relative_path(__file__, "../legacy/sample_run_results.json"), "r", encoding="utf8"
+) as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
