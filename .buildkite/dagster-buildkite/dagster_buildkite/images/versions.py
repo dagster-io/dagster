@@ -6,15 +6,6 @@ import yaml
 def get_image_version(image_name: str) -> str:
     root_images_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        "..",
-        "..",
-        "..",
-        "..",
-        "python_modules",
-        "automation",
-        "automation",
-        "docker",
-        "images",
     )
     with open(
         os.path.join(root_images_path, image_name, "last_updated.yaml"), encoding="utf8"
