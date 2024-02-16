@@ -56,7 +56,7 @@ from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
 
 @overload
 def asset(
-    compute_fn: Callable,
+    compute_fn: Callable[..., Any],
 ) -> AssetsDefinition:
     ...
 
@@ -350,7 +350,7 @@ class _Asset:
         self.key = key
         self.owners = owners
 
-    def __call__(self, fn: Callable) -> AssetsDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
             validate_resource_annotated_function,
         )
@@ -903,7 +903,9 @@ def multi_asset(
     return inner
 
 
-def get_function_params_without_context_or_config_or_resources(fn: Callable) -> List[Parameter]:
+def get_function_params_without_context_or_config_or_resources(
+    fn: Callable[..., Any],
+) -> List[Parameter]:
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
@@ -925,7 +927,7 @@ def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
 
 
 def build_asset_ins(
-    fn: Callable,
+    fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
     deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
@@ -1013,7 +1015,7 @@ def build_subsettable_asset_ins(
 
 @overload
 def graph_asset(
-    compose_fn: Callable,
+    compose_fn: Callable[..., Any],
 ) -> AssetsDefinition:
     ...
 
@@ -1156,7 +1158,7 @@ def graph_asset(
 
 def graph_asset_no_defaults(
     *,
-    compose_fn: Callable,
+    compose_fn: Callable[..., Any],
     name: Optional[str],
     description: Optional[str],
     ins: Optional[Mapping[str, AssetIn]],
@@ -1276,7 +1278,7 @@ def graph_multi_asset(
                 from the underlying nodes).
     """
 
-    def inner(fn: Callable) -> AssetsDefinition:
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         partition_mappings = {
             input_name: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()

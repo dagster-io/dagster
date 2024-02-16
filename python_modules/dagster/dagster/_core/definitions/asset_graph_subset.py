@@ -165,7 +165,7 @@ class AssetGraphSubset(NamedTuple):
             ],
         }
 
-    def _oper(self, other: "AssetGraphSubset", oper: Callable) -> "AssetGraphSubset":
+    def _oper(self, other: "AssetGraphSubset", oper: Callable[..., Any]) -> "AssetGraphSubset":
         """Returns the AssetGraphSubset that results from applying the given operator to the set of
         asset partitions in self and other.
 

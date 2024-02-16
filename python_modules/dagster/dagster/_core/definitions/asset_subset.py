@@ -3,6 +3,7 @@ import operator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     NamedTuple,
     Optional,
@@ -201,7 +202,7 @@ class ValidAssetSubset(AssetSubset):
             )
             return self._replace(value=value)
 
-    def _oper(self, other: "ValidAssetSubset", oper: Callable) -> "ValidAssetSubset":
+    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
         return self._replace(value=value)
 

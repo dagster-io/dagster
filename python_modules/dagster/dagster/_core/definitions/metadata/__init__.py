@@ -309,7 +309,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
+    def python_artifact(python_artifact: Callable[..., Any]) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
         :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
         `metadata` parameter for supported events.

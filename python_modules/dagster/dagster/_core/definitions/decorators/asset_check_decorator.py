@@ -37,7 +37,7 @@ AssetCheckFunction: TypeAlias = Callable[..., AssetCheckFunctionReturn]
 def _build_asset_check_input(
     name: str,
     asset_key: AssetKey,
-    fn: Callable,
+    fn: Callable[..., Any],
     additional_ins: Mapping[str, AssetIn],
     additional_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
