@@ -2606,6 +2606,28 @@
                             "type": "null"
                         }
                     ]
+                },
+                "opConcurrencySlotOffset": {
+                    "title": "Opconcurrencyslotoffset",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "opConcurrencyRunsStartedBufferSeconds": {
+                    "title": "Opconcurrencyrunsstartedbufferseconds",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "additionalProperties": false

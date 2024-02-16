@@ -88,6 +88,8 @@ class TestQueuedRunCoordinator:
                                 "env": "DEQUEUE_INTERVAL",
                             },
                             "block_op_concurrency_limited_runs": True,
+                            "op_concurrency_slot_offset": 1,
+                            "op_concurrency_runs_started_buffer_seconds": 60,
                         },
                     }
                 }

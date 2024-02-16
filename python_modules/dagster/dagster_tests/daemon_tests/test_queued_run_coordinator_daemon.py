@@ -110,12 +110,30 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         return instance.get_run_by_id(run.run_id)
 
     def submit_run(self, instance, external_job, workspace, **kwargs):
+        location = workspace.get_code_location(external_job.handle.location_name)
+        external_job_origin = external_job.get_external_origin()
+        subset_result = location.get_subset_external_job_result(
+            JobSubsetSelector(
+                location_name=external_job_origin.location_name,
+                repository_name=external_job_origin.external_repository_origin.repository_name,
+                job_name=external_job_origin.job_name,
+                op_selection=None,
+                asset_selection=kwargs.get("asset_selection"),
+            )
+        )
+        if subset_result.external_job_data.job_snapshot:
+            job_snapshot = subset_result.external_job_data.job_snapshot
+            parent_job_snapshot = external_job.job_snapshot
+        else:
+            job_snapshot = external_job.job_snapshot
+            parent_job_snapshot = None
         run = create_run_for_test(
             instance,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
             job_name=external_job.name,
-            job_snapshot=external_job.job_snapshot,
+            job_snapshot=job_snapshot,
+            parent_job_snapshot=parent_job_snapshot,
             status=DagsterRunStatus.NOT_STARTED,
             **kwargs,
         )
@@ -1074,6 +1092,109 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         # is not blocked because there's an unconstrained node at the root
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1"}
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(block_op_concurrency_limited_runs=True),
+        ],
+    )
+    def test_in_progress_root_key_accounting(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        external_job = workspace.get_full_external_job(
+            JobSubsetSelector(
+                location_name="test",
+                repository_name="__repository__",
+                job_name="concurrency_limited_asset_job",
+                op_selection=None,
+            )
+        )
+
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-1",
+            asset_selection=set([AssetKey(["prefix", "foo_limited_asset"])]),
+        )
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-2",
+            asset_selection=set([AssetKey(["prefix", "foo_limited_asset"])]),
+        )
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1"])
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1"])
+        assert instance.get_run_by_id("run-1").status == DagsterRunStatus.STARTING
+        instance.handle_run_event(
+            "run-1",
+            DagsterEvent(
+                event_type_value=DagsterEventType.RUN_START,
+                job_name="concurrency_limited_asset_job",
+                message="start that run",
+            ),
+        )
+        assert instance.get_run_by_id("run-1").status == DagsterRunStatus.STARTED
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1", "run-2"])
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(block_op_concurrency_limited_runs=True, op_concurrency_slot_offset=1),
+        ],
+    )
+    def test_op_concurrency_aware_offset(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        external_job = workspace.get_full_external_job(
+            JobSubsetSelector(
+                location_name="test",
+                repository_name="__repository__",
+                job_name="concurrency_limited_asset_job",
+                op_selection=None,
+            )
+        )
+
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-1",
+            asset_selection=set([AssetKey(["prefix", "foo_limited_asset"])]),
+        )
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-2",
+            asset_selection=set([AssetKey(["prefix", "foo_limited_asset"])]),
+        )
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-3",
+            asset_selection=set([AssetKey(["prefix", "foo_limited_asset"])]),
+        )
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1", "run-2"])
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1", "run-2"])
 
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):

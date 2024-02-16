@@ -36,6 +36,8 @@ class QueuedRunCoordinatorConfig(BaseModel):
     dequeueNumWorkers: Optional[IntSource]
     dequeueUseThreads: Optional[bool]
     blockOpConcurrencyLimitedRuns: Optional[bool]
+    opConcurrencySlotOffset: Optional[int]
+    opConcurrencyRunsStartedBufferSeconds: Optional[int]
 
     class Config:
         extra = Extra.forbid
