@@ -140,6 +140,7 @@ cycler==0.12.1
 -e python_modules/libraries/dagster-papertrail
 -e python_modules/dagster-pipes
 -e python_modules/libraries/dagster-postgres
+-e python_modules/libraries/dagster-polars[deltalake,gcp,test]
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
 -e python_modules/libraries/dagster-shell
