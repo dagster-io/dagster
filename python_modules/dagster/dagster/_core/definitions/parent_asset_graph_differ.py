@@ -76,31 +76,37 @@ class ParentAssetGraphDiffer:
         code_location_name: str,
         repository_name: str,
         branch_workspace: BaseWorkspaceRequestContext,
-        parent_workspace: Optional[BaseWorkspaceRequestContext] = None,
-    ) -> Optional["ParentAssetGraphDiffer"]:
+        parent_workspace: BaseWorkspaceRequestContext,
+    ) -> "ParentAssetGraphDiffer":
         """Constructs a ParentAssetGraphDiffer for a particular repository in a code location for two
-        deployment workspaces, the parent deployment and the branch deployment. If the
-        parent_workspace is None, then we are not in a branch deployment and will not create a ParentAssetGraphDiffer.
+        deployment workspaces, the parent deployment and the branch deployment.
+
+        We cannot make ExternalAssetGraphs directly from the workspaces because if multiple code locations
+        use the same asset key, those asset keys will override each other in the dictionaries the ExternalAssetGraph
+        creates (see from_repository_handles_and_external_asset_nodes in ExternalAssetGraph). We need to ensure
+        that we are comparing assets in the same code location and repository, so we need to make the
+        ExternalAssetGraph from an ExternalRepository to ensure that there are no duplicate asset keys
+        that could override each other.
         """
-        if parent_workspace is not None:
-            branch_repo = _get_external_repo_from_context(
-                branch_workspace, code_location_name, repository_name
+        check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
+        check.inst_param(parent_workspace, "parent_workspace", BaseWorkspaceRequestContext)
+
+        branch_repo = _get_external_repo_from_context(
+            branch_workspace, code_location_name, repository_name
+        )
+        if branch_repo is None:
+            raise DagsterInvariantViolationError(
+                f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
             )
-            if branch_repo is None:
-                raise DagsterInvariantViolationError(
-                    f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
-                )
-            parent_repo = _get_external_repo_from_context(
-                parent_workspace, code_location_name, repository_name
-            )
-            return ParentAssetGraphDiffer(
-                branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(branch_repo),
-                parent_asset_graph=(
-                    lambda: ExternalAssetGraph.from_external_repository(parent_repo)
-                )
-                if parent_repo is not None
-                else None,
-            )
+        parent_repo = _get_external_repo_from_context(
+            parent_workspace, code_location_name, repository_name
+        )
+        return ParentAssetGraphDiffer(
+            branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(branch_repo),
+            parent_asset_graph=(lambda: ExternalAssetGraph.from_external_repository(parent_repo))
+            if parent_repo is not None
+            else None,
+        )
 
     def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
