@@ -75,7 +75,6 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       id: 'checks',
       title: 'Checks',
       to: buildAssetViewParams({...params, view: 'checks'}),
-      hidden: !definition?.hasAssetChecks,
     },
     events: {
       id: 'events',

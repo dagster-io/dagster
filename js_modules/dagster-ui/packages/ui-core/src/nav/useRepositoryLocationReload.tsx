@@ -1,7 +1,7 @@
 import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {useCallback, useMemo, useReducer} from 'react';
+import React, {useCallback, useMemo, useReducer} from 'react';
 
 import {
   ReloadRepositoryLocationMutation,
@@ -95,6 +95,14 @@ export const useRepositoryLocationReload = ({
 
   const invalidateConfigs = useInvalidateConfigsForRepo();
 
+  console.log('rerender');
+  React.useLayoutEffect(() => {
+    console.log('first render');
+    return () => {
+      console.log('remove');
+    };
+  }, []);
+
   const {startPolling, stopPolling} = useQuery<
     RepositoryLocationStatusQuery,
     RepositoryLocationStatusQueryVariables
@@ -172,6 +180,7 @@ export const useRepositoryLocationReload = ({
         // Otherwise, we have no errors left.
         dispatch({type: 'finish-polling'});
         stopPolling();
+        console.log('show1');
 
         // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
         await showSharedToaster({
