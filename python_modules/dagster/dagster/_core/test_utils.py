@@ -682,7 +682,7 @@ class BlockingThreadPoolExecutor(ThreadPoolExecutor):
 def ignore_warning(message_substr: str):
     """Ignores warnings within the decorated function that contain the given string."""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., Any]):
         def wrapper(*args, **kwargs):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)

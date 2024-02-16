@@ -1781,8 +1781,8 @@ def _check_mapping_entries(
     obj: W,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    key_check: Callable = isinstance,
-    value_check: Callable = isinstance,
+    key_check: Callable[..., Any] = isinstance,
+    value_check: Callable[..., Any] = isinstance,
     mapping_type: Type = collections.abc.Mapping,
 ) -> W:
     """Enforces that the keys/values conform to the types specified by key_type, value_type."""

@@ -10,7 +10,7 @@ import pytest
 from dagster_dbt.cli.app import app
 from typer.testing import CliRunner
 
-from ..dbt_projects import test_meta_config_path
+from ..dbt_projects import test_jaffle_shop_path
 
 if TYPE_CHECKING:
     from dagster import Definitions
@@ -27,8 +27,8 @@ def disable_openblas_threading_affinity_fixture(monkeypatch: pytest.MonkeyPatch)
 
 @pytest.fixture(name="dbt_project_dir")
 def dbt_project_dir_fixture(tmp_path: Path, disable_openblas_threading_affinity) -> Path:
-    dbt_project_dir = tmp_path.joinpath("test_dagster_meta_config")
-    shutil.copytree(src=test_meta_config_path, dst=dbt_project_dir)
+    dbt_project_dir = tmp_path.joinpath("test_jaffle_shop")
+    shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
 
     return dbt_project_dir
 
@@ -84,7 +84,7 @@ def _update_dbt_project_path(
 ) -> Path:
     if use_dbt_project_package_data_dir:
         dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-        shutil.copytree(src=test_meta_config_path, dst=dbt_project_dir)
+        shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
 
     return dbt_project_dir
 

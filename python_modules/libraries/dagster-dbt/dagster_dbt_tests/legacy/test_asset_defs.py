@@ -48,9 +48,7 @@ manifest_json = json.loads(manifest_path.read_bytes())
 def test_custom_resource_key_asset_load(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
 ):
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
-    )
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json, dbt_resource_key="my_custom_dbt")
     assert_assets_match_project(dbt_assets)
 
     result = build_assets_job(
@@ -159,7 +157,7 @@ def test_fail_immediately(
 ) -> None:
     from dagster import build_init_resource_context
 
-    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
     good_dbt = dbt_cli_resource_factory(
         project_dir=test_project_dir,
         profiles_dir=dbt_config_dir,
@@ -228,11 +226,7 @@ def test_basic(
 
     # expected to emit json-formatted messages
     with capsys.disabled():
-        dbt_assets = load_assets_from_dbt_project(
-            test_project_dir,
-            dbt_config_dir,
-            use_build_command=use_build,
-        )
+        dbt_assets = load_assets_from_dbt_manifest(manifest_json, use_build_command=use_build)
 
     assert len(dbt_assets[0].group_names_by_key) == len(dbt_assets[0].keys)
     assert set(dbt_assets[0].group_names_by_key.values()) == {"default"}
@@ -288,10 +282,9 @@ def test_basic(
                 assert "{" not in line
 
 
-def test_groups_from_directories(dbt_seed, test_project_dir, dbt_config_dir):
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir,
-        dbt_config_dir,
+def test_groups_from_directories():
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json,
         node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
     )
 
@@ -305,12 +298,12 @@ def test_groups_from_directories(dbt_seed, test_project_dir, dbt_config_dir):
     }
 
 
-def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
+def test_custom_groups():
     def _node_info_to_group(node_info):
         return node_info["tags"][0] if node_info["tags"] else "default"
 
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, node_info_to_group_fn=_node_info_to_group
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json, node_info_to_group_fn=_node_info_to_group
     )
 
     assert dbt_assets[0].group_names_by_key == {
@@ -362,16 +355,15 @@ def test_custom_definition_metadata():
         assert custom_metadata["bar_key"] == 1.0
 
 
-def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
+def test_partitions(dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
         else:
             return {"fail_test": False}
 
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir,
-        dbt_config_dir,
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json,
         use_build_command=True,
         partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
         partition_key_to_vars_fn=_partition_key_to_vars,
@@ -404,11 +396,7 @@ def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_co
 
 @pytest.mark.parametrize(
     "prefix",
-    [
-        None,
-        "snowflake",
-        ["snowflake", "dbt_schema"],
-    ],
+    [[], ["snowflake"]],
 )
 @pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_project(
@@ -422,10 +410,6 @@ def test_select_from_project(
         key_prefix=prefix,
     )
 
-    if prefix is None:
-        prefix = []
-    elif isinstance(prefix, str):
-        prefix = [prefix]
     assert dbt_assets[0].keys == {
         AssetKey(prefix + suffix)
         for suffix in (["sort_by_calories"], ["subdir_schema", "least_caloric"])
@@ -462,13 +446,11 @@ def test_select_from_project(
 
 
 def test_multiple_select_from_project(dbt_seed, test_project_dir, dbt_config_dir):
-    dbt_assets_a = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
+    dbt_assets_a = load_assets_from_dbt_manifest(
+        manifest_json, select="sort_by_calories subdir.least_caloric"
     )
 
-    dbt_assets_b = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, select="sort_by_calories"
-    )
+    dbt_assets_b = load_assets_from_dbt_manifest(manifest_json, select="sort_by_calories")
 
     @repository
     def foo():
@@ -535,9 +517,8 @@ def test_select_from_manifest(
 def test_node_info_to_asset_key(
     dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir, use_build
 ):
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir,
-        dbt_config_dir,
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json,
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
         use_build_command=use_build,
     )
@@ -602,8 +583,8 @@ def test_dagster_dbt_translator(
         def get_auto_materialize_policy(cls, dbt_resource_props):
             return AutoMaterializePolicy.lazy()
 
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
 
     assert dbt_assets[0].keys == {
@@ -673,14 +654,14 @@ def test_dagster_dbt_translator(
     ],
 )
 def test_subsetting(
-    dbt_build,
+    dbt_seed,
     dbt_cli_resource_factory,
     test_project_dir,
     dbt_config_dir,
     job_selection,
     expected_asset_names,
 ):
-    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
 
     @asset(deps=[AssetKey("sort_by_calories")])
     def hanger1():
@@ -781,7 +762,6 @@ def test_op_custom_name():
     assert set(op_names) == {"target_a_dbt_op", "target_b_dbt_op"}
 
 
-@pytest.mark.parametrize("load_from_manifest", [True, False])
 @pytest.mark.parametrize(
     "select,exclude,expected_asset_names",
     [
@@ -871,24 +851,15 @@ def test_op_custom_name():
     ],
 )
 def test_dbt_selections(
-    dbt_build,
+    dbt_seed,
     test_project_dir,
     dbt_cli_resource_factory,
     dbt_config_dir,
-    load_from_manifest,
     select,
     exclude,
     expected_asset_names,
 ):
-    if load_from_manifest:
-        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select, exclude=exclude)
-    else:
-        dbt_assets = load_assets_from_dbt_project(
-            project_dir=test_project_dir,
-            profiles_dir=dbt_config_dir,
-            select=select,
-            exclude=exclude,
-        )
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select, exclude=exclude)
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert dbt_assets[0].keys == expected_asset_keys
