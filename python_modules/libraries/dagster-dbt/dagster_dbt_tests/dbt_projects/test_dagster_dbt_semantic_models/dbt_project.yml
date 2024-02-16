@@ -19,6 +19,9 @@ clean-targets:
 
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
+vars:
+  "dbt_date:time_zone": "America/New_York"
+
 models:
   test_dagster_dbt_semantic_models:
     materialized: table
