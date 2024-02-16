@@ -28,7 +28,7 @@ from dagster._core.definitions.executor_definition import check_cross_process_co
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.memoization import validate_reexecution_memoization
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.resources_init import (
@@ -323,10 +323,11 @@ def orchestration_context_event_generator(
         event = DagsterEvent.job_failure(
             job_context_or_name=dagster_run.job_name,
             context_msg=(
-                "Pipeline failure during initialization for pipeline"
+                "Failure during initialization for job"
                 f' "{dagster_run.job_name}". This may be due to a failure in initializing the'
                 " executor or one of the loggers."
             ),
+            failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE,
             error_info=error_info,
         )
         log_manager.log_dagster_event(
