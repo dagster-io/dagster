@@ -510,7 +510,7 @@ class MaterializeOnParentUpdatedRule(
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
         ] = defaultdict(set)
 
-        subset_to_evaluate = context.candidate_parent_has_or_will_update_subset
+        subset_to_evaluate = context.parent_has_or_will_update_subset
         for asset_partition in subset_to_evaluate.asset_partitions:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
                 dynamic_partitions_store=context.instance_queryer,
