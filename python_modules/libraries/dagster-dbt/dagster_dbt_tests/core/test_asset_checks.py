@@ -19,7 +19,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from .dbt_projects import test_asset_checks_path
+from ..dbt_projects import test_asset_checks_path
 
 dagster_dbt_translator_with_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
