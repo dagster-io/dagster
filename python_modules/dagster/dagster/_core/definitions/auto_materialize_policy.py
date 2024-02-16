@@ -286,7 +286,6 @@ class AutoMaterializePolicy(
             NotAssetCondition,
             OrAssetCondition,
         )
-
         from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
         if self.asset_condition is not None:
