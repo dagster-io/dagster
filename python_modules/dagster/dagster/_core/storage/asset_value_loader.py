@@ -109,6 +109,7 @@ class AssetValueLoader:
             io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
             io_manager_def = resource_defs[io_manager_key]
             name = assets_def.get_output_name_for_asset_key(asset_key)
+            group_name = assets_def.get_group_name_for_asset_key(asset_key)
             output_metadata = assets_def.metadata_by_key[asset_key]
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
             asset_partitions_def = assets_def.partitions_def
@@ -147,10 +148,12 @@ class AssetValueLoader:
 
         input_context = build_input_context(
             name=None,
+            group_name=group_name,
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
                 name=name,
+                group_name=group_name,
                 metadata=output_metadata,
                 asset_key=asset_key,
                 op_def=op_def,
