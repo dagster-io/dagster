@@ -1,7 +1,7 @@
 import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
-from dagster._legacy import build_assets_job
+from dagster._core.definitions.materialize import materialize
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import (
@@ -80,12 +80,6 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
 
     assert fivetran_assets[0].op.tags == {**{"kind": "fivetran"}, **(op_tags or {})}
 
-    fivetran_assets_job = build_assets_job(
-        name="fivetran_assets_job",
-        assets=fivetran_assets,
-        resource_defs={"fivetran": ft_resource},
-    )
-
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
         rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
@@ -116,9 +110,9 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
 
         if should_error:
             with pytest.raises(DagsterStepOutputNotFoundError):
-                fivetran_assets_job.execute_in_process()
+                materialize(fivetran_assets, resources={"fivetran": ft_resource})
         else:
-            result = fivetran_assets_job.execute_in_process()
+            result = materialize(fivetran_assets, resources={"fivetran": ft_resource})
             assert result.success
             # make sure we only have outputs for the explicit asset keys
             outputs = [

@@ -12,10 +12,10 @@ from dagster import (
     FreshnessPolicy,
     ResourceDefinition,
     asset,
+    materialize,
     materialize_to_memory,
     repository,
 )
-from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -51,17 +51,14 @@ def test_custom_resource_key_asset_load(
     dbt_assets = load_assets_from_dbt_manifest(manifest_json, dbt_resource_key="my_custom_dbt")
     assert_assets_match_project(dbt_assets)
 
-    result = build_assets_job(
-        "test_job",
+    assert materialize_to_memory(
         dbt_assets,
-        resource_defs={
+        resources={
             "my_custom_dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
-    ).execute_in_process()
-
-    assert result.success
+    ).success
 
 
 @pytest.mark.parametrize(
@@ -86,12 +83,10 @@ def test_load_from_manifest_json(prefix):
     dbt.build.return_value = DbtOutput(run_results_json)
     dbt.get_manifest_json.return_value = manifest_json
     dbt._json_log_format = True  # noqa: SLF001
-    assets_job = build_assets_job(
-        "assets_job",
+    assert materialize_to_memory(
         dbt_assets,
-        resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
-    )
-    assert assets_job.execute_in_process().success
+        resources={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
+    ).success
 
 
 @pytest.mark.parametrize("manifest", [json.loads(manifest_path.read_bytes()), manifest_path])
@@ -128,16 +123,15 @@ def test_runtime_metadata_fn(
     dbt_resource = dbt_cli_resource_factory(
         project_dir=test_project_dir, profiles_dir=dbt_config_dir
     )
-    assets_job = build_assets_job("assets_job", dbt_assets, resource_defs={"dbt": dbt_resource})
 
     if isinstance(dbt_resource, DbtCliResource):
         with pytest.raises(
             DagsterDbtError,
             match="The runtime_metadata_fn argument on the load_assets_from_dbt_manifest",
         ):
-            assets_job.execute_in_process()
+            materialize(dbt_assets, resources={"dbt": dbt_resource})
     else:
-        result = assets_job.execute_in_process()
+        result = materialize(dbt_assets, resources={"dbt": dbt_resource})
         assert result.success
 
         materializations = [
@@ -164,11 +158,10 @@ def test_fail_immediately(
     )
 
     # ensure that there will be a run results json
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={"dbt": good_dbt},
-    ).execute_in_process()
+        resources={"dbt": good_dbt},
+    )
 
     if isinstance(good_dbt, DbtCliClientResource):
         assert (
@@ -181,17 +174,17 @@ def test_fail_immediately(
     else:
         assert good_dbt(build_init_resource_context()).get_run_results_json()
 
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={
+        resources={
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir,
                 profiles_dir="BAD PROFILES DIR",
                 profile="BAD PROFILE",
             )
         },
-    ).execute_in_process(raise_on_error=False)
+        raise_on_error=False,
+    )
 
     assert not result.success
     materializations = [
@@ -233,11 +226,9 @@ def test_basic(
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
     assert get_asset_key_for_model(dbt_assets, "sort_by_calories") == AssetKey(["sort_by_calories"])
 
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={"dbt": dbt_resource},
-    ).execute_in_process(
+        resources={"dbt": dbt_resource},
         raise_on_error=False,
         run_config={"ops": {dbt_assets[0].op.name: {"config": {"vars": {"fail_test": fail_test}}}}},
     )
@@ -417,15 +408,14 @@ def test_select_from_project(
 
     assert dbt_assets[0].op.name == "run_dbt_5ad73_e4753"
 
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={
+        resources={
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
-    ).execute_in_process()
+    )
 
     assert result.success
     materializations = [
@@ -485,15 +475,14 @@ def test_select_from_manifest(
         use_build_command=use_build,
     )
 
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={
+        resources={
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
-    ).execute_in_process()
+    )
 
     assert result.success
     materializations = [
@@ -526,15 +515,14 @@ def test_node_info_to_asset_key(
         ["foo", "sort_hot_cereals_by_calories"]
     )
 
-    result = build_assets_job(
-        "test_job",
+    result = materialize(
         dbt_assets,
-        resource_defs={
+        resources={
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir, profiles_dir=dbt_config_dir
             )
         },
-    ).execute_in_process()
+    )
 
     assert result.success
     materializations = [

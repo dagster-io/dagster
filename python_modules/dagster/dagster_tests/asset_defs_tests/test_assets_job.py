@@ -1,5 +1,6 @@
 import hashlib
 import os
+from typing import Mapping, Optional, Sequence, Union
 
 import pytest
 from dagster import (
@@ -34,12 +35,13 @@ from dagster import (
     with_resources,
 )
 from dagster._config import StringSource
-from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions import AssetIn, SourceAsset, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
@@ -54,6 +56,23 @@ from dagster._utils import safe_tempfile_path
 from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
+
+
+def _get_job_from_assets(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    *,
+    selection: Optional[CoercibleToAssetSelection] = None,
+    name: str = "asset_job",
+    resources: Mapping[str, object] = {},
+) -> JobDefinition:
+    assets_defs = [a for a in assets if isinstance(a, AssetsDefinition)]
+    source_assets = [a for a in assets if isinstance(a, SourceAsset)]
+    selection = selection or assets_defs
+    return Definitions(
+        assets=[*assets_defs, *source_assets],
+        jobs=[define_asset_job(name, selection)],
+        resources=resources,
+    ).get_job_def(name)
 
 
 @pytest.fixture(autouse=True)
@@ -85,7 +104,7 @@ def test_single_asset_job():
         assert context.asset_key == AssetKey(["asset1"])
         return 1
 
-    job = build_assets_job("a", [asset1])
+    job = _get_job_from_assets([asset1])
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
 
@@ -99,8 +118,9 @@ def test_two_asset_job():
     def asset2(asset1):
         assert asset1 == 1
 
-    job = build_assets_job("a", [asset1, asset2])
-    assert job.graph.node_defs == [asset1.op, asset2.op]
+    job = _get_job_from_assets([asset1, asset2])
+    sorted_node_defs = sorted(job.graph.node_defs, key=lambda node_def: node_def.name)
+    assert sorted_node_defs == [asset1.op, asset2.op]
     assert job.dependencies == {
         NodeInvocation("asset1"): {},
         NodeInvocation("asset2"): {"asset1": DependencyDefinition("asset1", "result")},
@@ -113,7 +133,7 @@ def test_single_asset_job_with_config():
     def asset1(context):
         return context.op_execution_context.op_config["foo"]
 
-    job = build_assets_job("a", [asset1])
+    job = _get_job_from_assets([asset1])
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process(
         run_config={"ops": {"asset1": {"config": {"foo": "bar"}}}}
@@ -133,8 +153,9 @@ def test_fork():
     def asset3(asset1):
         assert asset1 == 1
 
-    job = build_assets_job("a", [asset1, asset2, asset3])
-    assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
+    job = _get_job_from_assets([asset1, asset2, asset3])
+    sorted_node_defs = sorted(job.graph.node_defs, key=lambda node_def: node_def.name)
+    assert sorted_node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
         NodeInvocation("asset1"): {},
         NodeInvocation("asset2"): {"asset1": DependencyDefinition("asset1", "result")},
@@ -157,8 +178,9 @@ def test_join():
         assert asset1 == 1
         assert asset2 == 2
 
-    job = build_assets_job("a", [asset1, asset2, asset3])
-    assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
+    job = _get_job_from_assets([asset1, asset2, asset3])
+    sorted_node_defs = sorted(job.graph.node_defs, key=lambda node_def: node_def.name)
+    assert sorted_node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
         NodeInvocation("asset1"): {},
         NodeInvocation("asset2"): {},
@@ -180,7 +202,7 @@ def test_asset_key_output():
     def asset2(hello):
         return hello
 
-    job = build_assets_job("boo", [asset1, asset2])
+    job = _get_job_from_assets([asset1, asset2])
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("asset2") == 1
@@ -202,7 +224,7 @@ def test_asset_key_matches_input_name():
     def last_asset(asset_bar):
         return asset_bar
 
-    job = build_assets_job("lol", [asset_foo, asset_bar, last_asset])
+    job = _get_job_from_assets([asset_foo, asset_bar, last_asset])
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("last_asset") == "foo"
@@ -222,7 +244,7 @@ def test_asset_key_and_inferred():
     def asset_baz(foo, asset_bar):
         return foo + asset_bar
 
-    job = build_assets_job("hello", [asset_foo, asset_bar, asset_baz])
+    job = _get_job_from_assets([asset_foo, asset_bar, asset_baz])
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("asset_baz") == 7
@@ -238,7 +260,7 @@ def test_asset_key_for_asset_with_key_prefix_str():
     def success_asset(foo):
         return foo
 
-    job = build_assets_job("lol", [asset_foo, success_asset])
+    job = _get_job_from_assets([asset_foo, success_asset])
 
     result = job.execute_in_process()
     assert result.success
@@ -272,15 +294,14 @@ def test_source_asset():
     def my_io_manager(_):
         return MyIOManager()
 
-    job = build_assets_job(
-        "a",
-        [asset1],
-        source_assets=[
+    job = _get_job_from_assets(
+        [
+            asset1,
             SourceAsset(
                 AssetKey("source1"), io_manager_key="special_io_manager", metadata={"a": "b"}
-            )
+            ),
         ],
-        resource_defs={
+        resources={
             "special_io_manager": my_io_manager.configured({"a": 7}),
             "subresource": ResourceDefinition.hardcoded_resource(9),
         },
@@ -303,10 +324,8 @@ def test_missing_io_manager():
             r" \[\"source1\"\] was not provided."
         ),
     ):
-        build_assets_job(
-            "a",
-            [asset1],
-            source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        _get_job_from_assets(
+            [asset1, SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
         )
 
 
@@ -331,11 +350,10 @@ def test_source_op_asset():
     def my_io_manager(_):
         return MyIOManager()
 
-    job = build_assets_job(
-        "a",
-        [asset1],
-        source_assets=[source1],
-        resource_defs={"special_io_manager": my_io_manager},
+    job = _get_job_from_assets(
+        [asset1, source1],
+        selection=[asset1],
+        resources={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1.op]
     result = job.execute_in_process()
@@ -356,7 +374,7 @@ def test_deps():
             # assert that the foo asset already executed
             assert os.path.exists(path)
 
-        job = build_assets_job("a", [foo, bar])
+        job = _get_job_from_assets([foo, bar])
         result = job.execute_in_process()
         assert result.success
         assert _asset_keys_for_node(result, "foo") == {AssetKey("foo")}
@@ -392,7 +410,7 @@ def test_multiple_deps():
     def qux(baz):
         return baz
 
-    job = build_assets_job("a", [foo, bar, baz, qux])
+    job = _get_job_from_assets([foo, bar, baz, qux])
 
     dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
@@ -434,7 +452,7 @@ def test_basic_graph_asset():
         keys_by_output_name={"result": AssetKey("cool_thing")},
         node_def=create_cool_thing,
     )
-    job = build_assets_job("graph_asset_job", [cool_thing_asset])
+    job = _get_job_from_assets([cool_thing_asset])
 
     result = job.execute_in_process()
     assert _asset_keys_for_node(result, "create_cool_thing.add_one_2") == {AssetKey("cool_thing")}
@@ -469,7 +487,7 @@ def test_input_mapped_graph_asset():
         node_def=create_cool_thing,
     )
 
-    job = build_assets_job("graph_asset_job", [a, b, cool_thing_asset])
+    job = _get_job_from_assets([a, b, cool_thing_asset])
 
     result = job.execute_in_process()
     assert result.success
@@ -518,9 +536,7 @@ def test_output_mapped_same_op_graph_asset():
         node_def=create_cool_things,
     )
 
-    job = build_assets_job(
-        "graph_asset_job", [a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one]
-    )
+    job = _get_job_from_assets([a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one])
 
     result = job.execute_in_process()
     assert result.success
@@ -575,9 +591,7 @@ def test_output_mapped_different_op_graph_asset():
         node_def=create_cool_things,
     )
 
-    job = build_assets_job(
-        "graph_asset_job", [a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one]
-    )
+    job = _get_job_from_assets([a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one])
 
     result = job.execute_in_process()
     assert result.success
@@ -655,7 +669,7 @@ def test_nasty_nested_graph_assets():
         node_def=create_twenty,
     )
 
-    job = build_assets_job("graph_asset_job", [zero, eight_and_five, thirteen_and_six, twenty])
+    job = _get_job_from_assets([zero, eight_and_five, thirteen_and_six, twenty])
 
     result = job.execute_in_process()
     assert result.success
@@ -891,7 +905,7 @@ def test_all_assets_job():
     def a2(a1):
         return 2
 
-    job = build_assets_job("graph_asset_job", [a1, a2])
+    job = _get_job_from_assets([a1, a2])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     assert node_handle_deps_by_asset[AssetKey("a1")] == {
@@ -930,7 +944,7 @@ def test_basic_graph():
         node_def=thing,
     )
 
-    job = build_assets_job("graph_asset_job", [complex_asset])
+    job = _get_job_from_assets([complex_asset])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
@@ -967,7 +981,7 @@ def test_hanging_op_graph():
         keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
         node_def=thing,
     )
-    job = build_assets_job("graph_asset_job", [complex_asset])
+    job = _get_job_from_assets([complex_asset])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
@@ -1011,7 +1025,7 @@ def test_nested_graph():
         node_def=thing,
     )
 
-    job = build_assets_job("graph_asset_job", [thing_asset])
+    job = _get_job_from_assets([thing_asset])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
@@ -1053,7 +1067,7 @@ def test_asset_in_nested_graph():
         node_def=thing,
     )
 
-    job = build_assets_job("graph_asset_job", [thing_asset])
+    job = _get_job_from_assets([thing_asset])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
@@ -1116,7 +1130,7 @@ def test_twice_nested_graph():
         },
     )
 
-    job = build_assets_job("graph_asset_job", [foo_asset, thing_asset])
+    job = _get_job_from_assets([foo_asset, thing_asset])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     outer_thing_handle = NodeHandle("outer_thing", parent=None)
@@ -1176,7 +1190,7 @@ def test_internal_asset_deps_assets():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    job = build_assets_job("graph_asset_job", [thing_asset, multi_asset_with_internal_deps])
+    job = _get_job_from_assets([thing_asset, multi_asset_with_internal_deps])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
     assert node_handle_deps_by_asset[AssetKey("thing")] == {
         NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None)),
@@ -1293,8 +1307,8 @@ def test_subset_of_asset_job():
         #     )
 
 
-def test_subset_of_build_assets_job():
-    foo_job = build_assets_job("foo_job", assets=[foo, bar, foo_bar, baz])
+def test_subset_of_assets_job():
+    foo_job = _get_job_from_assets(assets=[foo, bar, foo_bar, baz])
     with instance_for_test() as instance:
         result = foo_job.execute_in_process(
             instance=instance,
@@ -1697,9 +1711,7 @@ def test_source_asset_io_manager_def():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = build_assets_job(
-        name="test", assets=[my_derived_asset], source_assets=[my_source_asset]
-    )
+    source_asset_job = _get_job_from_assets(assets=[my_derived_asset, my_source_asset])
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1724,11 +1736,9 @@ def test_source_asset_io_manager_not_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = build_assets_job(
-        "the_job",
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-        resource_defs={"io_manager": the_manager},
+    source_asset_job = _get_job_from_assets(
+        assets=[my_derived_asset, my_source_asset],
+        resources={"io_manager": the_manager},
     )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
@@ -1754,11 +1764,9 @@ def test_source_asset_io_manager_key_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = build_assets_job(
-        "the_job",
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-        resource_defs={"some_key": the_manager},
+    source_asset_job = _get_job_from_assets(
+        assets=[my_derived_asset, my_source_asset],
+        resources={"some_key": the_manager},
     )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
@@ -1794,10 +1802,8 @@ def test_source_asset_requires_resource_defs():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = build_assets_job(
-        "the_job",
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
+    source_asset_job = _get_job_from_assets(
+        assets=[my_derived_asset, my_source_asset],
     )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
@@ -1821,7 +1827,7 @@ def test_other_asset_provides_req():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
     ):
-        build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
+        _get_job_from_assets(assets=[asset_reqs_foo, asset_provides_foo])
 
 
 @ignore_warning("Parameter `resource_defs` .* is experimental")
@@ -1838,7 +1844,7 @@ def test_transitive_deps_not_provided():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by resource with key 'unused' was not provided.",
     ):
-        build_assets_job(name="test", assets=[the_asset])
+        _get_job_from_assets(assets=[the_asset])
 
 
 @ignore_warning("Parameter `resource_defs` .* is experimental")
@@ -1853,7 +1859,7 @@ def test_transitive_resource_deps_provided():
     def the_asset():
         pass
 
-    the_job = build_assets_job(name="test", assets=[the_asset])
+    the_job = _get_job_from_assets(assets=[the_asset])
     assert the_job.execute_in_process().success
 
 
@@ -1879,7 +1885,7 @@ def test_transitive_io_manager_dep_not_provided():
             " was not provided."
         ),
     ):
-        build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])
+        _get_job_from_assets(assets=[my_derived_asset, my_source_asset])
 
 
 def test_resolve_dependency_in_group():
@@ -2032,7 +2038,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     }
 
 
-def test_coerce_resource_build_asset_job() -> None:
+def test_coerce_resource_asset_job() -> None:
     executed = {}
 
     class BareResourceObject:
@@ -2043,8 +2049,8 @@ def test_coerce_resource_build_asset_job() -> None:
         assert context.resources.bare_resource
         executed["yes"] = True
 
-    a_job = build_assets_job(
-        "my_job", assets=[an_asset], resource_defs={"bare_resource": BareResourceObject()}
+    a_job = _get_job_from_assets(
+        assets=[an_asset], resources={"bare_resource": BareResourceObject()}
     )
 
     assert a_job.execute_in_process().success
@@ -2067,7 +2073,7 @@ def test_assets_def_takes_bare_object():
         node_def=an_op,
         resource_defs={"bare_resource": BareResourceObject()},
     )
-    job = build_assets_job("graph_asset_job", [cool_thing_asset])
+    job = _get_job_from_assets([cool_thing_asset])
     result = job.execute_in_process()
     assert result.success
     assert executed["yes"]
@@ -2087,7 +2093,7 @@ def test_async_multi_asset():
             context.log.info(v.output_name)
             yield v
 
-    aio_job = build_assets_job(name="test", assets=[aio_gen_asset])
+    aio_job = _get_job_from_assets([aio_gen_asset])
     result = aio_job.execute_in_process()
     assert result.success
 
