@@ -1017,13 +1017,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 partition_mapping, self._partitions_def, upstream_partitions_def
             )
 
-    def get_group_name_for_asset_key(self, key: AssetKey) -> str:
+    def get_group_name_for_asset_key(self, key: AssetKey, default_group_name: str) -> str:
         if key in self._group_names_by_key:
             return self._group_names_by_key[key]
+        else:
+            return default_group_name
 
-        raise DagsterInvariantViolationError(
-            f"Asset key {key.to_user_string()} not found in AssetsDefinition"
-        )
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():

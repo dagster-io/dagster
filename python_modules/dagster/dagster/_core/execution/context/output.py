@@ -875,7 +875,7 @@ def build_output_context(
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")
-    group_name = check.opt_str_param(name, "group_name")
+    group_name = check.opt_str_param(group_name, "group_name")
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")

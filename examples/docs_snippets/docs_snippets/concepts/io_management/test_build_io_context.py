@@ -130,3 +130,16 @@ def test_input_context_partition_key():
 
     context = build_input_context()
     assert not context.has_partition_key
+
+
+def test_input_context_group_name():
+    context = build_input_context(group_name="default")
+    assert context.group_name == "default"
+
+
+    context = build_input_context(group_name="test_group")
+    assert context.group_name == "test_group"
+
+def test_output_context_group_name():
+    context = build_output_context(group_name="test_group")
+    assert context.group_name == "test_group"

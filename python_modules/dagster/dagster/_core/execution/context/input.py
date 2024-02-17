@@ -595,7 +595,7 @@ def build_input_context(
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
-    group_name = check.opt_str_param(name, "group_name")
+    group_name = check.opt_str_param(group_name, "group_name")
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     upstream_output = check.opt_inst_param(upstream_output, "upstream_output", OutputContext)
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
