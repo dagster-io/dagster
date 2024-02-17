@@ -26,6 +26,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.log import get_structlog_json_formatter
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
@@ -296,6 +297,32 @@ def test_json_console_logger(capsys):
                 found_msg = True
 
     assert found_msg
+
+
+def test_dagster_job_execution_json_logs(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    # https://github.com/pytest-dev/pytest/issues/2987#issuecomment-1460509126
+    #
+    # pytest captures log records using their handler. However, as a side-effect, this prevents
+    # Dagster's log formatting from being applied in a unit test.
+    #
+    # To test the formatting, we monkeypatch the handler's formatter to use the same formatter as
+    # the one used by Dagster when enabling JSON log format.
+    monkeypatch.setattr(caplog.handler, "formatter", get_structlog_json_formatter())
+    monkeypatch.setenv("DAGSTER_LOG_FORMAT", "json")
+
+    @op
+    def hello_world(context):
+        context.log.info("Hello, world!")
+
+    wrap_op_in_graph_and_execute(hello_world)
+
+    lines = [line for line in caplog.text.splitlines()]
+
+    assert lines
+    assert [json.loads(line) for line in lines]
 
 
 def test_job_logging(capsys):

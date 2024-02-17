@@ -74,6 +74,7 @@ def dev_command_options(f):
     required=False,
     default="colored",
     help="Format of the logs for dagster services",
+    envvar="DAGSTER_LOG_FORMAT",
 )
 @click.option(
     "--port",
@@ -118,6 +119,7 @@ def dev_command(
             ' running "pip install dagster-webserver" in your Python environment.'
         )
 
+    os.environ["DAGSTER_LOG_FORMAT"] = log_format
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
