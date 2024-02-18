@@ -1,48 +1,14 @@
 import io
-import os
 import sqlite3
-import tempfile
 
 import pytest
-from dagster import AssetSpec, Definitions, file_relative_path
-from dagster._core.definitions.materialize import materialize
+from dagster import AssetSpec, Definitions
+from dagster._core.definitions import build_assets_job
 from dagster_embedded_elt.sling import (
     SlingMode,
     SlingResource,
     build_sling_asset,
 )
-from dagster_embedded_elt.sling.resources import (
-    SlingSourceConnection,
-    SlingTargetConnection,
-)
-
-
-@pytest.fixture
-def test_csv():
-    return os.path.abspath(file_relative_path(__file__, "test.csv"))
-
-
-@pytest.fixture
-def temp_db():
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        dbpath = os.path.join(tmpdir_path, "sqlite.db")
-        yield dbpath
-
-
-@pytest.fixture
-def sling_sqlite_resource(temp_db):
-    return SlingResource(
-        source_connection=SlingSourceConnection(type="file"),
-        target_connection=SlingTargetConnection(
-            type="sqlite", connection_string=f"sqlite://{temp_db}"
-        ),
-    )
-
-
-@pytest.fixture
-def sqlite_connection(temp_db):
-    yield sqlite3.connect(temp_db)
-
 
 ASSET_SPEC = AssetSpec(
     key=["main", "tbl"],
@@ -74,10 +40,7 @@ def test_build_sling_asset(
 
     counts = None
     for _ in range(runs):
-        res = materialize(
-            [asset_def],
-            resources={"sling_resource": sling_sqlite_resource},
-        )
+        res = sling_job.execute_in_process()
         assert res.success
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
@@ -140,10 +103,10 @@ def test_update_mode(
         sling_resource_key="sling_resource",
     )
 
-    # First run should have 3 new rows
-    res = materialize(
+    sling_job_base = build_assets_job(
+        "sling_job",
         [asset_def_base],
-        resources={"sling_resource": sling_sqlite_resource},
+        resource_defs={"sling_resource": sling_sqlite_resource},
     )
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
@@ -153,7 +116,8 @@ def test_update_mode(
     cur.execute("UPDATE main.tbl set UPDATED_AT=999")
     sqlite_connection.commit()
 
-    res = materialize(
+    sling_job_update = build_assets_job(
+        "sling_job_update",
         [asset_def_update],
         resources={"sling_resource": sling_sqlite_resource},
     )
