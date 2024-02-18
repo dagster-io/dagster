@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 from dagster import AssetSpec, Definitions
-from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions import build_assets_job
 from dagster_embedded_elt.sling import (
     SlingMode,
     SlingResource,
@@ -22,7 +22,7 @@ ASSET_SPEC = AssetSpec(
     "mode,runs,expected", [(SlingMode.INCREMENTAL, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
 )
 def test_build_sling_asset(
-    path_to_test_csv: str,
+    test_csv: str,
     sling_sqlite_resource: SlingResource,
     mode: SlingMode,
     runs: int,
@@ -31,7 +31,7 @@ def test_build_sling_asset(
 ):
     asset_def = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{path_to_test_csv}",
+        source_stream=f"file://{test_csv}",
         target_object="main.tbl",
         mode=mode,
         primary_key="SPECIES_CODE",
@@ -40,22 +40,19 @@ def test_build_sling_asset(
 
     counts = None
     for _ in range(runs):
-        res = materialize(
-            [asset_def],
-            resources={"sling_resource": sling_sqlite_resource},
-        )
+        res = sling_job.execute_in_process()
         assert res.success
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
 
 
 def test_can_build_two_assets(
-    path_to_test_csv,
+    test_csv,
     sling_sqlite_resource: SlingResource,
 ):
     asset_def = build_sling_asset(
         asset_spec=AssetSpec(key="asset1"),
-        source_stream=f"file://{path_to_test_csv}",
+        source_stream=f"file://{test_csv}",
         target_object="main.first_tbl",
         mode=SlingMode.FULL_REFRESH,
         primary_key="SPECIES_CODE",
@@ -64,7 +61,7 @@ def test_can_build_two_assets(
 
     asset_def_two = build_sling_asset(
         asset_spec=AssetSpec(key="asset2"),
-        source_stream=f"file://{path_to_test_csv}",
+        source_stream=f"file://{test_csv}",
         target_object="main.second_tbl",
         mode=SlingMode.FULL_REFRESH,
         primary_key="SPECIES_CODE",
@@ -81,7 +78,7 @@ def test_can_build_two_assets(
 
 
 def test_update_mode(
-    path_to_test_csv: str,
+    test_csv: str,
     sling_sqlite_resource: SlingResource,
     sqlite_connection: sqlite3.Connection,
 ):
@@ -90,7 +87,7 @@ def test_update_mode(
     """
     asset_def_base = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{path_to_test_csv}",
+        source_stream=f"file://{test_csv}",
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
         sling_resource_key="sling_resource",
@@ -98,7 +95,7 @@ def test_update_mode(
 
     asset_def_update = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{path_to_test_csv}",
+        source_stream=f"file://{test_csv}",
         target_object="main.tbl",
         mode=SlingMode.INCREMENTAL,
         primary_key="SPECIES_NAME",
@@ -106,9 +103,10 @@ def test_update_mode(
         sling_resource_key="sling_resource",
     )
 
-    res = materialize(
+    sling_job_base = build_assets_job(
+        "sling_job",
         [asset_def_base],
-        resources={"sling_resource": sling_sqlite_resource},
+        resource_defs={"sling_resource": sling_sqlite_resource},
     )
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
@@ -118,7 +116,8 @@ def test_update_mode(
     cur.execute("UPDATE main.tbl set UPDATED_AT=999")
     sqlite_connection.commit()
 
-    res = materialize(
+    sling_job_update = build_assets_job(
+        "sling_job_update",
         [asset_def_update],
         resources={"sling_resource": sling_sqlite_resource},
     )
@@ -134,5 +133,5 @@ def test_update_mode(
     ],
 )
 def test_non_unicode_stdout(text, encoding, expected, sling_sqlite_resource: SlingResource):
-    lines = sling_sqlite_resource._process_stdout(text, encoding)  # noqa
+    lines = sling_sqlite_resource.process_stdout(text, encoding)
     assert list(lines) == expected
