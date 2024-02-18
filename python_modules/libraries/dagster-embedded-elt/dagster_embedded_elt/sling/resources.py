@@ -6,12 +6,19 @@ from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
-from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
+from dagster import (
+    ConfigurableResource,
+    MaterializeResult,
+    PermissiveConfig,
+    get_dagster_logger,
+)
 from dagster._annotations import experimental
 from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Extra, Field
 from sling import Sling
+
+from dagster_embedded_elt.sling.asset_decorator import DagsterSlingTranslator
 
 logger = get_dagster_logger()
 
@@ -120,6 +127,35 @@ class _SlingSyncBase:
             proc.wait()
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
+
+    def stream(
+        self,
+        *,
+        dagster_sling_translator: DagsterSlingTranslator,
+        source_stream: str,
+        target_object: str,
+        mode: SlingMode,
+        primary_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        target_options: Optional[Dict[str, Any]] = None,
+    ):
+        logs = ""
+        for line in self.sync(
+            source_stream,
+            target_object,
+            mode,
+            primary_key,
+            update_key,
+            source_options,
+            target_options,
+        ):
+            logger.info(line)
+            logs += line
+            # TODO: capture actual metadata here
+
+        output_name = dagster_sling_translator.get_asset_key_for_target(target_object)
+        yield MaterializeResult(asset_key=output_name, metadata={"logs": logs})
 
     def sync(
         self,
