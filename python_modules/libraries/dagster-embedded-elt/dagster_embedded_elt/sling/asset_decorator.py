@@ -1,26 +1,46 @@
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Callable, Iterable, List, Mapping, Optional
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
     BackfillPolicy,
+    FreshnessPolicy,
     PartitionsDefinition,
     multi_asset,
 )
-from dagster._utils.security import non_secure_md5_hash_str
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 
-def get_streams_from_replication(
-    replication_config: Mapping[str, Any],
-) -> Iterable[Mapping[str, Any]]:
-    """Returns a list of streams and their configs from a Sling replication config."""
-    for stream, config in replication_config.get("streams", {}).items():
-        if config and config.get("disabled", False):
-            continue
-        yield {"name": stream, "config": config}
+def get_streams_from_replication(replication_config: Mapping[str, Any]) -> Iterable[str]:
+    """Returns a list of streams from a Sling replication config.
+
+    If an `asset_key` is provided, it will be used instead. For example, below the stream name
+    will be read as `public.foo_users`
+
+
+    .. code-block:: yaml
+
+        streams:
+          public.users:
+            meta:
+              dagster:
+                asset_key: public.foo_users
+
+    Args:
+        replication_config: Mapping[str, Any]: A dictionary of a Sling replication config.
+    """
+    keys = []
+
+    for key, value in replication_config["streams"].items():
+        if isinstance(value, dict):
+            asset_key_config = value.get("meta", {}).get("dagster", {}).get("asset_key", [])
+            keys.append(asset_key_config if asset_key_config else key)
+        else:
+            keys.append(key)
+    return keys
 
 
 def sling_assets(
@@ -30,21 +50,27 @@ def sling_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    group_name: Optional[str] = None,
+    code_version: Optional[str] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Callable[..., AssetsDefinition]:
-    """Create a definition for how to materialize a set of Sling replication streams as Dagster assets, as
+    """Create a definition for how to materialize a Sling replication stream as a Dagster Asset, as
     described by a Sling replication config. This will create on Asset for every Sling target stream.
 
     A Sling Replication config is a configuration that maps sources to destinations. For the full
     spec and descriptions, see `Sling's Documentation <https://docs.slingdata.io/sling-cli/run/configuration>`_.
 
     Args:
-        replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary
-        of a replication config.
-        dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster
-          AssetKey.
+        replication_config: SlingReplicationParam: A path to a Sling replication config, or a dictionary of a replication config.
+        dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster AssetKey.
         partitions_def: Optional[PartitionsDefinition]: The partitions definition for this asset.
         backfill_policy: Optional[BackfillPolicy]: The backfill policy for this asset.
         op_tags: Optional[Mapping[str, Any]]: The tags for this asset.
+        group_name: Optional[str]: The group name for this asset.
+        code_version: Optional[str]: The code version for this asset.
+        freshness_policy: Optional[FreshnessPolicy]: The freshness policy for this asset.
+        auto_materialize_policy: Optional[AutoMaterializePolicy]: The auto materialize policy for this asset.
 
     Examples:
         Running a sync by providing a path to a Sling Replication config:
@@ -74,18 +100,13 @@ def sling_assets(
                     dagster_sling_translator=DagsterSlingTranslator(),
                 ):
                     context.log.info(lines)
+
+        Running a sync using a custom translator:
     """
     replication_config = validate_replication(replication_config)
     streams = get_streams_from_replication(replication_config)
 
-    group_name = dagster_sling_translator.get_group_name(replication_config)
-    code_version = non_secure_md5_hash_str(str(replication_config).encode())
-    freshness_policy = dagster_sling_translator.get_freshness_policy(replication_config)
-    auto_materialize_policy = dagster_sling_translator.get_auto_materialize_policy(
-        replication_config
-    )
-
-    specs: list[AssetSpec] = []
+    specs: List[AssetSpec] = []
     for stream in streams:
         specs.append(
             AssetSpec(
