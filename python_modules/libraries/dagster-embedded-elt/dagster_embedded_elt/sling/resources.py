@@ -5,11 +5,19 @@ from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
-from dagster import ConfigurableResource, EnvVar, PermissiveConfig, get_dagster_logger
+from dagster import (
+    ConfigurableResource,
+    EnvVar,
+    MaterializeResult,
+    PermissiveConfig,
+    get_dagster_logger,
+)
 from dagster._annotations import experimental
 from dagster._utils.env import environ
 from pydantic import Field
 from sling import Sling
+
+from dagster_embedded_elt.sling.asset_decorator import DagsterSlingTranslator
 
 logger = get_dagster_logger()
 
