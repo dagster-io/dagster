@@ -40,24 +40,25 @@ coverage==7.4.1
 croniter==2.0.1
 cryptography==41.0.7
 cycler==0.12.1
--e git+python_modules/dagster
--e git+python_modules/libraries/dagster-aws
--e git+python_modules/libraries/dagster-dbt
--e git+python_modules/libraries/dagster-duckdb
--e git+python_modules/libraries/dagster-duckdb-pandas
--e git+python_modules/libraries/dagster-duckdb-pyspark
--e git+python_modules/dagster-graphql
--e git+python_modules/libraries/dagster-pandas
--e git+python_modules/libraries/dagster-pandera
--e git+python_modules/dagster-pipes
--e git+python_modules/libraries/dagster-postgres
--e git+python_modules/libraries/dagster-pyspark
--e git+python_modules/libraries/dagster-slack
--e git+python_modules/libraries/dagster-snowflake
--e git+python_modules/libraries/dagster-snowflake-pandas
--e git+python_modules/libraries/dagster-snowflake-pyspark
--e git+python_modules/libraries/dagster-spark
--e git+python_modules/dagster-webserver
+-e python_modules/dagster
+-e python_modules/libraries/dagster-aws
+-e python_modules/libraries/dagster-dbt
+-e python_modules/libraries/dagster-duckdb
+-e python_modules/libraries/dagster-duckdb-pandas
+-e python_modules/libraries/dagster-duckdb-pyspark
+-e python_modules/dagster-graphql
+-e python_modules/libraries/dagster-pandas
+-e python_modules/libraries/dagster-pandera
+-e python_modules/dagster-pipes
+-e python_modules/libraries/dagster-postgres
+-e python_modules/libraries/dagster-polars[test,gcp,deltalake]
+-e python_modules/libraries/dagster-pyspark
+-e python_modules/libraries/dagster-slack
+-e python_modules/libraries/dagster-snowflake
+-e python_modules/libraries/dagster-snowflake-pandas
+-e python_modules/libraries/dagster-snowflake-pyspark
+-e python_modules/libraries/dagster-spark
+-e python_modules/dagster-webserver
 dbt-core==1.7.8
 dbt-duckdb==1.7.1
 dbt-extractor==0.5.1
