@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, cast, overload
 
 import polars as pl
 import pyarrow.dataset as ds
@@ -53,8 +53,9 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     """
     context_metadata = context.metadata or {}
 
-    storage_options: Optional[dict[str, Any]] = (
-        path.storage_options if hasattr(path, "storage_options") else None
+    storage_options = cast(
+        Optional[Dict[str, Any]],
+        (path.storage_options if hasattr(path, "storage_options") else None),
     )
 
     kwargs = dict(
