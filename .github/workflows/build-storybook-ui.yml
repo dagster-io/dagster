@@ -15,7 +15,7 @@ jobs:
       - name: Get branch preview subdomain
         if: github.event_name == 'pull_request'
         run: |
-          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
+          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${GITHUB_HEAD_REF:=$GITHUB_REF_NAME}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v3
