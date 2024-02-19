@@ -357,7 +357,7 @@ class AssetReconciliationScenario(
                 if run.is_observation:
                     observe(
                         instance=instance,
-                        source_assets=[
+                        assets=[
                             a
                             for a in self.assets
                             if isinstance(a, SourceAsset) and a.key in run.asset_keys
