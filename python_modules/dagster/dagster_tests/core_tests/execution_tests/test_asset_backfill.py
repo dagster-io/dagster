@@ -675,7 +675,7 @@ def _requested_asset_partitions_in_run_request(
         asset_partitions = []
         for asset_key in asset_keys:
             asset_partitions.extend(
-                asset_graph.get_asset_partitions_in_range(
+                asset_graph.get_partitions_in_range(
                     asset_key=asset_key,
                     partition_key_range=partition_range,
                     dynamic_partitions_store=MagicMock(),
