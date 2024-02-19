@@ -107,6 +107,7 @@ def main(
             "-e python_modules/libraries/dagster-pandera",
             "-e python_modules/libraries/dagster-snowflake",
             "-e python_modules/libraries/dagster-snowflake-pandas",
+            "-e python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         ]
 
     if sys.version_info > (3, 6) and sys.version_info < (3, 10):
