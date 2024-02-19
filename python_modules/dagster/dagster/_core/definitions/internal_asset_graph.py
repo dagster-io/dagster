@@ -139,17 +139,14 @@ class InternalAssetGraph(AssetGraph):
         return {key for ad in self._assets_defs if ad.is_observable for key in ad.keys}
 
     def is_observable(self, asset_key: AssetKey) -> bool:
-        # Performing an existence check temporarily until we change callsites
-        return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_observable
+        return self.get_assets_def(asset_key).is_observable
 
     @property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_external for key in ad.keys}
 
     def is_external(self, asset_key: AssetKey) -> bool:
-        # Preserving non-standard behavior of returning True for non-existent keys until callsites
-        # can be updated
-        return asset_key not in self.materializable_asset_keys
+        return self.get_assets_def(asset_key).is_external
 
     @property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
