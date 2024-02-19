@@ -219,7 +219,7 @@ fqdn==1.5.1
 frozenlist==1.4.1
 fsspec==2024.2.0
 future==0.18.3
-4.0.11
+gitdb==4.0.11
 GitPython==3.1.42
 google-api-core==2.17.1
 google-api-python-client==2.118.0
