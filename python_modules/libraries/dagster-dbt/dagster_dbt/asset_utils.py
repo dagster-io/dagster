@@ -578,14 +578,15 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
     # some nodes exist inside the dbt graph but are not assets
     resource_type = dbt_resource_props["resource_type"]
-    if resource_type == "metric":
-        return True
-    if (
-        resource_type == "model"
-        and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral"
-    ):
-        return True
-    return False
+
+    return any(
+        [
+            resource_type == "metric",
+            resource_type == "semantic_model",
+            resource_type == "model"
+            and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
+        ]
+    )
 
 
 def get_deps(
@@ -602,7 +603,7 @@ def get_deps(
         dbt_resource_props = dbt_nodes[unique_id]
         node_resource_type = dbt_resource_props["resource_type"]
 
-        # skip non-assets, such as metrics, tests, and ephemeral models
+        # skip non-assets, such as semantic models, metrics, tests, and ephemeral models
         if is_non_asset_node(dbt_resource_props) or node_resource_type not in asset_resource_types:
             continue
 

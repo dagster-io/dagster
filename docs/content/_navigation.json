@@ -1321,6 +1321,10 @@
             "path": "/_apidocs/libraries/dagster-papertrail"
           },
           {
+            "title": "Polars (dagster-polars)",
+            "path": "/_apidocs/libraries/dagster-polars"
+          },
+          {
             "title": "PostgreSQL (dagster-postgres)",
             "path": "/_apidocs/libraries/dagster-postgres"
           },

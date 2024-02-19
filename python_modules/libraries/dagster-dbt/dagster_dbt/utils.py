@@ -269,4 +269,5 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["sources"],
         **manifest["exposures"],
         **manifest["metrics"],
+        **manifest.get("semantic_models", {}),
     }
