@@ -10,8 +10,8 @@ import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {
   AssetNodeOverview,
-  AssetNodeOverviewEmpty,
   AssetNodeOverviewLoading,
+  AssetNodeOverviewNonSDA,
 } from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
@@ -111,7 +111,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
     }
     if (!definition) {
       return (
-        <AssetNodeOverviewEmpty assetKey={assetKey} lastMaterialization={lastMaterialization} />
+        <AssetNodeOverviewNonSDA assetKey={assetKey} lastMaterialization={lastMaterialization} />
       );
     }
     return (

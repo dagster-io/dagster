@@ -128,7 +128,11 @@ export const AssetNodeOverview = ({
     assetNode.description ? (
       <Description description={assetNode.description} maxHeight={260} />
     ) : (
-      <Caption color={Colors.textLight()}>No description provided</Caption>
+      <SectionEmptyState
+        title="No description found"
+        description="You can add a description to any asset by adding a `description` argument to it."
+        learnMoreLink="https://docs.dagster.io/_apidocs/assets#software-defined-assets"
+      />
     );
 
   const renderColumnsSection = () => {
@@ -142,7 +146,11 @@ export const AssetNodeOverview = ({
     return tableSchema ? (
       <TableSchema schema={tableSchema.schema} schemaLoadTimestamp={tableSchemaLoadTimestamp} />
     ) : (
-      <Caption color={Colors.textLight()}>No table schema</Caption>
+      <SectionEmptyState
+        title="No column schema found"
+        description="Dagster can render an assets column schema once it has been materialized."
+        learnMoreLink=""
+      />
     );
   };
 
@@ -347,6 +355,13 @@ export const AssetNodeOverview = ({
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
               event={materialization || observation || null}
+              emptyState={
+                <SectionEmptyState
+                  title="No metadata found"
+                  description="Attach metadata to your asset definition, materializations or observations to see it here."
+                  learnMoreLink="https://docs.dagster.io/concepts/assets/software-defined-assets#attaching-definition-metadata"
+                />
+              }
             />
           </LargeCollapsibleSection>
           <LargeCollapsibleSection
@@ -442,7 +457,7 @@ const MaterializationTag = ({
   </Tag>
 );
 
-export const AssetNodeOverviewEmpty = ({
+export const AssetNodeOverviewNonSDA = ({
   assetKey,
   lastMaterialization,
 }: {
@@ -537,6 +552,30 @@ const LargeCollapsibleSection = ({
     </Box>
   );
 };
+
+const SectionEmptyState = ({
+  title,
+  description,
+  learnMoreLink,
+}: {
+  title: string;
+  description: string;
+  learnMoreLink: string;
+}) => (
+  <Box
+    padding={24}
+    style={{background: Colors.backgroundLight(), borderRadius: 8}}
+    flex={{direction: 'column', gap: 8}}
+  >
+    <Subtitle2>{title}</Subtitle2>
+    <Body2>{description}</Body2>
+    {learnMoreLink ? (
+      <a href={learnMoreLink} target="_blank" rel="noreferrer">
+        Learn more
+      </a>
+    ) : undefined}
+  </Box>
+);
 
 /** We explicitly don't want to share partition-level information with stakeholders,
  * so this status component exposes only basic "materializing, success, failed, missing"
