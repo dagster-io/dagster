@@ -85,7 +85,6 @@ Modify `topstory_ids` to use an I/O manager:
 
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_topstory_ids_asset endbefore=end_topstory_ids_asset
 from typing import Dict, List  # add imports to the top of `assets.py`
-from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult, get_dagster_logger
 
 
 @asset
@@ -101,6 +100,9 @@ def topstory_ids() -> List:  # modify return type signature
 Modify `topstories` to use an I/O manager:
 
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_topstories_asset endbefore=end_topstories_asset
+from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
+
+
 @asset  # remove deps parameter
 def topstories(
     context: AssetExecutionContext,

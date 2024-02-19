@@ -1,4 +1,3 @@
-# ruff: noqa
 import base64  # noqa: I001
 from io import BytesIO
 
@@ -6,12 +5,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
+from dagster import asset
 
 # start_topstory_ids_asset
 
 
 from typing import Dict, List  # add imports to the top of `assets.py`
-from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult, get_dagster_logger
 
 
 @asset
@@ -27,6 +26,9 @@ def topstory_ids() -> List:  # modify return type signature
 # end_topstory_ids_asset
 
 # start_topstories_asset
+
+
+from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
 
 
 @asset  # remove deps parameter
