@@ -44,6 +44,10 @@ import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import datatype_array from '../icon-svgs/datatype_array.svg';
+import datatype_bool from '../icon-svgs/datatype_bool.svg';
+import datatype_number from '../icon-svgs/datatype_number.svg';
+import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
@@ -176,6 +180,10 @@ export const Icons = {
   backfill,
   badge,
   date,
+  datatype_array,
+  datatype_bool,
+  datatype_string,
+  datatype_number,
   expectation,
   execute,
   materialization,

@@ -95,15 +95,19 @@ export const AssetNodeOverview = ({
   const visibleJobNames = assetNode.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName));
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
-  const latestPartitionEvents = useLatestPartitionEvents(
+
+  const {materialization, observation} = useLatestPartitionEvents(
     assetNode,
     assetNodeLoadTimestamp,
     liveData,
   );
 
-  const tableSchema = [...(latestPartitionEvents.materialization?.metadataEntries || [])].find(
-    isCanonicalTableSchemaEntry,
-  );
+  let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
+  let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
+  if (!tableSchema) {
+    tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
+    tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
+  }
 
   return (
     <Box
@@ -143,7 +147,7 @@ export const AssetNodeOverview = ({
           {tableSchema ? (
             <TableSchema
               schema={tableSchema.schema}
-              schemaLoadTimestamp={latestPartitionEvents.materialization?.timestamp}
+              schemaLoadTimestamp={tableSchemaLoadTimestamp}
             />
           ) : (
             <Caption color={Colors.textLight()}>No table schema</Caption>
@@ -155,16 +159,10 @@ export const AssetNodeOverview = ({
             showTimestamps
             showFilter
             hideTableSchema
-            observations={
-              latestPartitionEvents.observation && latestPartitionEvents.materialization
-                ? [latestPartitionEvents.observation]
-                : []
-            }
+            observations={observation && materialization ? [observation] : []}
             definitionMetadata={assetMetadata}
             definitionLoadTimestamp={assetNodeLoadTimestamp}
-            event={
-              latestPartitionEvents.materialization || latestPartitionEvents.observation || null
-            }
+            event={materialization || observation || null}
           />
         </LargeCollapsibleSection>
         <LargeCollapsibleSection
