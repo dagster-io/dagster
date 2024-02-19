@@ -129,7 +129,7 @@ def get_expected_data_time_for_asset_key(
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
-    elif asset_graph.has_non_source_parents(asset_key):
+    elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then

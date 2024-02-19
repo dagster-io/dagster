@@ -436,7 +436,7 @@ def test_get_non_source_roots_missing_source(asset_graph_from_assets: Callable[.
     source_asset = SourceAsset("source_asset")
 
     asset_graph = asset_graph_from_assets([foo, bar, source_asset])
-    assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
+    assert asset_graph.get_materializable_roots(AssetKey("bar")) == {AssetKey("foo")}
 
 
 def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., AssetGraph]):

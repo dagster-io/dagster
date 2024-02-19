@@ -414,7 +414,7 @@ class AssetDaemonScenarioState(NamedTuple):
             cursor=cursor,
             auto_observe_asset_keys={
                 key
-                for key in self.asset_graph.source_asset_keys
+                for key in self.asset_graph.external_asset_keys
                 if self.asset_graph.get_auto_observe_interval_minutes(key) is not None
             },
             respect_materialization_data_versions=False,

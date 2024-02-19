@@ -190,7 +190,7 @@ def test_cross_repo_dep_with_source_asset(instance):
     asset_graph = ExternalAssetGraph.from_workspace(
         _make_context(instance, ["defs1", "downstream_defs"])
     )
-    assert len(asset_graph.source_asset_keys) == 0
+    assert len(asset_graph.external_asset_keys) == 0
     assert asset_graph.get_parents(AssetKey("downstream")) == {AssetKey("asset1")}
     assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream")}
     assert (
@@ -213,7 +213,7 @@ def test_cross_repo_dep_no_source_asset(instance):
     asset_graph = ExternalAssetGraph.from_workspace(
         _make_context(instance, ["defs1", "downstream_defs_no_source"])
     )
-    assert len(asset_graph.source_asset_keys) == 0
+    assert len(asset_graph.external_asset_keys) == 0
     assert asset_graph.get_parents(AssetKey("downstream_non_arg_dep")) == {AssetKey("asset1")}
     assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream_non_arg_dep")}
     assert (

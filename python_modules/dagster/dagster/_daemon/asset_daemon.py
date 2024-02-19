@@ -662,7 +662,7 @@ class AssetDaemon(DagsterDaemon):
             else:
                 eligible_keys = {
                     *asset_graph.materializable_asset_keys,
-                    *asset_graph.source_asset_keys,
+                    *asset_graph.external_asset_keys,
                 }
 
             auto_materialize_asset_keys = {

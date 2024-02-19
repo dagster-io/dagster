@@ -96,7 +96,7 @@ class ExternalAssetGraph(AssetGraph):
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes
-            if not node.is_source or node.is_observable
+            if node.is_executable
         }
 
         # Split the nodes into materializable, observable, and unexecutable nodes. Observable and
@@ -182,15 +182,6 @@ class ExternalAssetGraph(AssetGraph):
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.asset_key for node in self.asset_nodes}
-
-    @property
-    def source_asset_keys(self) -> AbstractSet[AssetKey]:
-        # If a node exists as a source in one location and a non-source in another, it does not show
-        # up here. This is arguably incorrect but is being kept as is for backcompat.
-        # `source_asset_keys` is slated for removal in any case.
-        return {
-            node.asset_key for node in self.asset_nodes if node.is_source
-        } - self.materializable_asset_keys
 
     @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -340,7 +331,7 @@ class ExternalAssetGraph(AssetGraph):
                 check.failed(
                     "external_repo must be passed in when getting job names for observable assets"
                 )
-            # for observable source assets, we need to select the job based on the partitions def
+            # for observable assets, we need to select the job based on the partitions def
             target_partitions_defs = {
                 self.get_partitions_def(asset_key) for asset_key in asset_keys
             }
@@ -368,7 +359,7 @@ class ExternalAssetGraph(AssetGraph):
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
                 if (
-                    # unpartitioned observable source assets may be materialized in any job
+                    # unpartitioned observable assets may be materialized in any job
                     target_partitions_def is None
                     or external_partitions_def == target_partitions_def
                 ) and all(asset_key in asset_keys_for_job for asset_key in asset_keys):
