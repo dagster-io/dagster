@@ -1,7 +1,7 @@
-import * as React from 'react';
+import {useEffect} from 'react';
 
 export const useFavicon = (href: string) => {
-  React.useEffect(() => {
+  useEffect(() => {
     const el = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
     if (!el) {
       return;

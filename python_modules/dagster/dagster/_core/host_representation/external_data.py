@@ -53,11 +53,15 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets import (
+    AssetOwner,
+    AssetsDefinition,
+    UserAssetOwner,
+)
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
@@ -99,7 +103,9 @@ from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import is_whitelisted_for_serdes_object
+from dagster._serdes.serdes import (
+    is_whitelisted_for_serdes_object,
+)
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -588,6 +594,7 @@ class ExternalSensorData(
                 target_dict, "target_dict", str, ExternalTargetData
             ),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultSensorStatus.RUNNING
                 if default_status == DefaultSensorStatus.RUNNING
@@ -1170,9 +1177,10 @@ class ExternalAssetNode(
             ("asset_key", AssetKey),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
+            ("execution_type", AssetExecutionType),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
-            ("op_names", Optional[Sequence[str]]),
+            ("op_names", Sequence[str]),
             ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
@@ -1196,6 +1204,7 @@ class ExternalAssetNode(
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
             ("backfill_policy", Optional[BackfillPolicy]),
             ("auto_observe_interval_minutes", Optional[float]),
+            ("owners", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -1209,6 +1218,7 @@ class ExternalAssetNode(
         asset_key: AssetKey,
         dependencies: Sequence[ExternalAssetDependency],
         depended_by: Sequence[ExternalAssetDependedBy],
+        execution_type: Optional[AssetExecutionType] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
@@ -1230,7 +1240,34 @@ class ExternalAssetNode(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[float] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
+        metadata = normalize_metadata(check.opt_mapping_param(metadata, "metadata", key_type=str))
+
+        # backcompat logic for execution type specified via metadata
+        if SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE in metadata:
+            val = metadata[SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE]
+            if not isinstance(val, TextMetadataValue):
+                check.failed(
+                    f"Expected metadata value for key {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE} to be a TextMetadataValue, got {val}"
+                )
+            metadata_execution_type = AssetExecutionType[check.not_none(val.value)]
+            if execution_type is not None:
+                check.invariant(
+                    execution_type == metadata_execution_type,
+                    f"Execution type {execution_type} in metadata does not match type inferred from metadata {metadata_execution_type}",
+                )
+            execution_type = metadata_execution_type
+        else:
+            execution_type = (
+                check.opt_inst_param(
+                    execution_type,
+                    "execution_type",
+                    AssetExecutionType,
+                )
+                or AssetExecutionType.MATERIALIZATION
+            )
+
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
             op_names = list(filter(None, [op_name]))
@@ -1265,9 +1302,7 @@ class ExternalAssetNode(
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
-            metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
-            ),
+            metadata=metadata,
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
@@ -1291,19 +1326,13 @@ class ExternalAssetNode(
             auto_observe_interval_minutes=check.opt_numeric_param(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            execution_type=check.inst_param(execution_type, "execution_type", AssetExecutionType),
         )
 
     @property
     def is_executable(self) -> bool:
-        metadata_value = self.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        if not metadata_value:
-            varietal_text = None
-        else:
-            check.inst(metadata_value, TextMetadataValue)  # for guaranteed runtime error
-            assert isinstance(metadata_value, TextMetadataValue)  # for type checker
-            varietal_text = metadata_value.value
-
-        return AssetExecutionType.is_executable(varietal_text)
+        return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
@@ -1545,6 +1574,8 @@ def external_asset_nodes_from_defs(
     group_name_by_asset_key: Dict[AssetKey, str] = {}
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
+    owners_by_asset_key: Dict[AssetKey, Sequence[AssetOwner]] = {}
+    execution_types_by_asset_key: Dict[AssetKey, AssetExecutionType] = {}
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
@@ -1568,6 +1599,9 @@ def external_asset_nodes_from_defs(
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, job_def))
             asset_info_by_asset_key[output_key] = asset_info
+            execution_types_by_asset_key[output_key] = asset_layer.execution_type_for_asset(
+                output_key
+            )
 
             for upstream_key in upstream_asset_keys:
                 partition_mapping = asset_layer.partition_mapping_for_node_input(
@@ -1594,6 +1628,7 @@ def external_asset_nodes_from_defs(
                 {key: assets_def.backfill_policy for key in assets_def.keys}
             )
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
+            owners_by_asset_key.update(assets_def.owners_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
 
@@ -1606,13 +1641,14 @@ def external_asset_nodes_from_defs(
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
-    ).difference(source_assets_by_key.keys())
+    ).difference({*source_assets_by_key.keys()})
 
     asset_nodes = [
         ExternalAssetNode(
             asset_key=asset_key,
             dependencies=list(deps[asset_key].values()),
             depended_by=list(dep_by[asset_key].values()),
+            execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=group_name_by_asset_key.get(asset_key),
             code_version=code_version_by_asset_key.get(asset_key),
@@ -1646,6 +1682,7 @@ def external_asset_nodes_from_defs(
                     asset_key=source_asset.key,
                     dependencies=list(deps[source_asset.key].values()),
                     depended_by=list(dep_by[source_asset.key].values()),
+                    execution_type=source_asset.execution_type,
                     job_names=job_names,
                     op_description=source_asset.description,
                     metadata=source_asset.metadata,
@@ -1658,6 +1695,7 @@ def external_asset_nodes_from_defs(
                         if source_asset.partitions_def
                         else None
                     ),
+                    freshness_policy=source_asset.freshness_policy,
                 )
             )
 
@@ -1697,11 +1735,20 @@ def external_asset_nodes_from_defs(
             node_handle = node_handle.parent
             graph_name = node_handle.name
 
+        if asset_key in source_assets_by_key:
+            source_asset = source_assets_by_key[asset_key]
+            is_observable = source_asset.is_observable
+            auto_observe_interval_minutes = source_asset.auto_observe_interval_minutes
+        else:
+            is_observable = False
+            auto_observe_interval_minutes = None
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
+                execution_type=execution_types_by_asset_key[asset_key],
                 compute_kind=node_def.tags.get("kind"),
                 # backcompat
                 op_name=graph_name
@@ -1716,6 +1763,8 @@ def external_asset_nodes_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 metadata=asset_metadata,
+                is_observable=is_observable,
+                auto_observe_interval_minutes=auto_observe_interval_minutes,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
@@ -1725,6 +1774,10 @@ def external_asset_nodes_from_defs(
                 backfill_policy=backfill_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
+                owners=[
+                    owner.email if isinstance(owner, UserAssetOwner) else owner.team
+                    for owner in owners_by_asset_key.get(asset_key, [])
+                ],
             )
         )
 
@@ -2087,9 +2140,7 @@ def external_sensor_data_from_def(
         sensor_type=sensor_def.sensor_type,
         asset_selection=serializable_asset_selection,
         run_tags=(
-            sensor_def.run_tags
-            if isinstance(sensor_def, AutomationPolicySensorDefinition)
-            else None
+            sensor_def.run_tags if isinstance(sensor_def, AutoMaterializeSensorDefinition) else None
         ),
     )
 

@@ -76,7 +76,7 @@ export default function MdxPage(props: Props) {
 }
 
 // Travel the tree to get the headings
-function getItems(node, current) {
+function getMDXItems(node, current) {
   if (!node) {
     return {};
   } else if (node.type === `paragraph`) {
@@ -91,12 +91,12 @@ function getItems(node, current) {
     return current;
   } else {
     if (node.type === `list`) {
-      current.items = node.children.map((i) => getItems(i, {}));
+      current.items = node.children.map((i) => getMDXItems(i, {}));
       return current;
     } else if (node.type === `listItem`) {
-      const heading = getItems(node.children[0], {});
+      const heading = getMDXItems(node.children[0], {});
       if (node.children.length > 1) {
-        getItems(node.children[1], heading);
+        getMDXItems(node.children[1], heading);
       }
       return heading;
     }
@@ -127,7 +127,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
     const node = generateToc(tree, {maxDepth: 4});
-    const tableOfContents = getItems(node.map, {});
+    const tableOfContents = getMDXItems(node.map, {});
 
     // 4. Render MDX
     const mdxSource = await renderToString(content, {

@@ -6,10 +6,8 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    ParentUpdatedRuleEvaluationData,
     TextRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 from ..base_scenario import (
@@ -72,33 +70,12 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         # need to run assets 1, 2 and 3 as they're all part of the same non-subsettable multi asset
-        # need to run asset 4 as it eagerly updates after asset 1
-        expected_run_requests=[
-            run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5"])
-        ],
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset5"])],
         expected_evaluations=[
-            AssetEvaluationSpec.from_single_rule(
-                "asset1",
-                AutoMaterializeRule.materialize_on_required_for_freshness(),
-                TextRuleEvaluationData("Required by downstream asset's policy"),
-            ),
             AssetEvaluationSpec.from_single_rule(
                 "asset2",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 TextRuleEvaluationData("Required by downstream asset's policy"),
-            ),
-            AssetEvaluationSpec.from_single_rule(
-                "asset3",
-                AutoMaterializeRule.materialize_on_required_for_freshness(),
-                TextRuleEvaluationData("Required by downstream asset's policy"),
-            ),
-            AssetEvaluationSpec.from_single_rule(
-                "asset4",
-                AutoMaterializeRule.materialize_on_parent_updated(),
-                ParentUpdatedRuleEvaluationData(
-                    updated_asset_keys=frozenset(),
-                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
-                ),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset5",

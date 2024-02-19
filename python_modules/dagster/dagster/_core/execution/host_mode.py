@@ -62,7 +62,7 @@ def _get_host_mode_executor(
     init_context = InitExecutorContext(
         job=recon_job,
         executor_def=executor_def,
-        executor_config=executor_config["config"],  # type: ignore  # (config typing)
+        executor_config=executor_config["config"],
         instance=instance,
     )
     check_cross_process_constraints(init_context)

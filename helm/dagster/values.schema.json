@@ -516,6 +516,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -567,6 +578,12 @@
             "type": "object",
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
+        "Container": {
+            "title": "Container",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
         },
         "UserDeployment": {
             "title": "UserDeployment",
@@ -685,6 +702,20 @@
                 "schedulerName": {
                     "title": "Schedulername",
                     "type": "string"
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
+                },
+                "sidecarContainers": {
+                    "title": "Sidecarcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
                 }
             },
             "required": [
@@ -2866,6 +2897,17 @@
                     "anyOf": [
                         {
                             "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
                         },
                         {
                             "type": "null"

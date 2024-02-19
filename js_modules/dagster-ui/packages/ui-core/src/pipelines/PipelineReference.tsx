@@ -1,11 +1,9 @@
-import {Box, Icon, colorAccentGray} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
+import {PipelineSnapshotLink} from './PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
-
-import {PipelineSnapshotLink} from './PipelinePathUtils';
 
 export interface Props {
   pipelineName: string;
@@ -56,7 +54,7 @@ export const PipelineReference = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <Icon color={colorAccentGray()} name="job" />
+          <Icon color={Colors.accentGray()} name="job" />
         </Box>
       )}
       <span>

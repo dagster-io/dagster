@@ -1,13 +1,12 @@
 import {gql, useSubscription} from '@apollo/client';
-import * as React from 'react';
-
-import {ComputeIoType} from '../graphql/types';
+import {useReducer} from 'react';
 
 import {
   ComputeLogForSubscriptionFragment,
   ComputeLogsSubscription,
   ComputeLogsSubscriptionVariables,
 } from './types/useComputeLogs.types';
+import {ComputeIoType} from '../graphql/types';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
@@ -70,7 +69,7 @@ const initialState: State = {
 };
 
 export const useComputeLogs = (runId: string, stepKey: string) => {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
     COMPUTE_LOGS_SUBSCRIPTION,

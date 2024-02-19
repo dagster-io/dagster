@@ -1,5 +1,6 @@
 import {
   Button,
+  Colors,
   Icon,
   IconName,
   Menu,
@@ -7,8 +8,6 @@ import {
   Popover,
   Spinner,
   Tooltip,
-  colorAccentReversed,
-  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -233,7 +232,7 @@ const ButtonWithConfiguration = ({
         disabled={disabled}
         icon={
           icon === 'dagster-spinner' ? (
-            <Spinner purpose="body-text" fillColor={colorAccentReversed()} />
+            <Spinner purpose="body-text" fillColor={Colors.accentReversed()} />
           ) : typeof icon === 'string' ? (
             <Icon name={icon} size={16} style={{textAlign: 'center', marginRight: 5}} />
           ) : (
@@ -254,7 +253,7 @@ const ButtonContainer = styled(Button)<{
   border-top-${({joined}) => joined}-radius: 0;
   border-bottom-${({joined}) => joined}-radius: 0;
   border-left: ${({joined}) =>
-    joined === 'left' ? `1px solid ${colorKeylineDefault()}` : 'transparent'};
+    joined === 'left' ? `1px solid ${Colors.keylineDefault()}` : 'transparent'};
   cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
   margin-left: ${({joined}) => (joined ? '0' : '6px')};
   ${({joined}) => (joined === 'right' ? 'padding-right: 8px;' : null)}

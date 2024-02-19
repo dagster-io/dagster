@@ -13,6 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
@@ -153,18 +154,17 @@ class ExternalAssetGraph(AssetGraph):
             node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
         }
 
-        is_observable_by_key = {key: False for key in all_non_source_keys}
+        is_observable_by_key = {}
         auto_observe_interval_minutes_by_key = {}
 
         for repo_handle, node in repo_handle_external_asset_nodes:
+            is_observable_by_key[node.asset_key] = (
+                node.execution_type == AssetExecutionType.OBSERVATION
+            )
+            auto_observe_interval_minutes_by_key[
+                node.asset_key
+            ] = node.auto_observe_interval_minutes
             if node.is_source:
-                # We need to set this even if the node is a regular asset in another code location.
-                # `is_observable` will only ever be consulted in the source asset context.
-                is_observable_by_key[node.asset_key] = node.is_observable
-                auto_observe_interval_minutes_by_key[
-                    node.asset_key
-                ] = node.auto_observe_interval_minutes
-
                 if node.asset_key in all_non_source_keys:
                     # one location's source is another location's non-source
                     continue

@@ -1,5 +1,4 @@
 import {Box, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';

@@ -1,12 +1,6 @@
 // Same as PartitionRangeStatus but we need a "MISSING" value
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentRed,
-  colorBackgroundLight,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import {CSSProperties} from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -45,13 +39,13 @@ export const assetPartitionStatusToText = (status: AssetPartitionStatus) => {
 const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
   switch (status) {
     case AssetPartitionStatus.MATERIALIZED:
-      return colorAccentGreen();
+      return Colors.accentGreen();
     case AssetPartitionStatus.MATERIALIZING:
-      return colorAccentBlue();
+      return Colors.accentBlue();
     case AssetPartitionStatus.FAILED:
-      return colorAccentRed();
+      return Colors.accentRed();
     case AssetPartitionStatus.MISSING:
-      return colorAccentGray();
+      return Colors.accentGray();
     default:
       assertUnreachable(status);
   }
@@ -59,7 +53,7 @@ const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
 
 export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): CSSProperties => {
   if (status.length === 0) {
-    return {background: colorBackgroundLight()};
+    return {background: Colors.backgroundLight()};
   }
   if (status.length === 1) {
     return {background: assetPartitionStatusToColor(status[0]!)};

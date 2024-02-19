@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
-import {colorAccentPrimary, colorAccentRed} from '../../theme/color';
+import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {TextInput} from '../TextInput';
 
@@ -12,7 +12,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       placeholder="Type anything…"
@@ -23,7 +23,7 @@ export const Default = () => {
 };
 
 export const WithIcon = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
@@ -35,27 +35,27 @@ export const WithIcon = () => {
 };
 
 export const StrokeColor = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      strokeColor={colorAccentRed()}
+      strokeColor={Colors.accentRed()}
     />
   );
 };
 
 export const RightElement = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      rightElement={<Icon name="info" color={colorAccentPrimary()} />}
+      rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
     />
   );
 };

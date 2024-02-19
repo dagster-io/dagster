@@ -1,7 +1,8 @@
 import {gql} from '@apollo/client';
 import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 
+import {DaemonHealth} from './DaemonHealth';
+import {DaemonStatusForListFragment} from './types/DaemonList.types';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -9,9 +10,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AutoMaterializeExperimentalTag} from '../assets/AutoMaterializePolicyPage/AutoMaterializeExperimentalBanner';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TimeFromNow} from '../ui/TimeFromNow';
-
-import {DaemonHealth} from './DaemonHealth';
-import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
 interface DaemonLabelProps {
   daemon: DaemonStatusForListFragment;

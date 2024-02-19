@@ -29,6 +29,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -38,7 +39,7 @@ setup(
         f"dagster-snowflake{pin}",
         "pandas",
         "requests",
-        "snowflake-connector-python[pandas]",
+        "snowflake-connector-python[pandas]>=2.1.0",
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy>=1.2",
     ],

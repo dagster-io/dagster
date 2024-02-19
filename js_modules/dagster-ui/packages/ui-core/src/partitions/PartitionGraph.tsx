@@ -1,5 +1,5 @@
-import {colorAccentPrimary, colorBorderDefault, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors} from '@dagster-io/ui-components';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
@@ -27,12 +27,10 @@ export const PartitionGraph = ({
   isJob,
   hiddenStepKeys,
 }: PartitionGraphProps) => {
-  const [hiddenPartitions, setHiddenPartitions] = React.useState<{[name: string]: boolean}>(
-    () => ({}),
-  );
-  const chart = React.useRef<any>(null);
+  const [hiddenPartitions, setHiddenPartitions] = useState<{[name: string]: boolean}>(() => ({}));
+  const chart = useRef<any>(null);
 
-  const onGraphClick = React.useCallback((event: MouseEvent) => {
+  const onGraphClick = useCallback((event: MouseEvent) => {
     const instance = chart.current;
     if (!instance) {
       return;
@@ -63,7 +61,7 @@ export const PartitionGraph = ({
     }));
   }, []);
 
-  const defaultOptions = React.useMemo(() => {
+  const defaultOptions = useMemo(() => {
     const titleOptions = title ? {display: true, text: title} : undefined;
     const scales = yLabel
       ? {
@@ -143,15 +141,15 @@ export const PartitionGraph = ({
             {
               label: allLabel,
               data: jobData,
-              borderColor: colorBorderDefault(),
-              backgroundColor: colorAccentPrimary(),
+              borderColor: Colors.borderDefault(),
+              backgroundColor: Colors.accentPrimary(),
             },
           ]),
       ...Object.keys(stepData).map((stepKey) => ({
         label: stepKey,
         data: stepData[stepKey as keyof typeof stepData],
         borderColor: colorHash(stepKey),
-        backgroundColor: colorAccentPrimary(),
+        backgroundColor: Colors.accentPrimary(),
       })),
     ],
   };
@@ -180,7 +178,7 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 
 const PartitionGraphContainer = styled.div`
   display: flex;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
   padding: 24px 12px;
   text-decoration: none;
 `;

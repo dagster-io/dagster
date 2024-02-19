@@ -22,6 +22,8 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
@@ -141,6 +143,10 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @property
+    def observable_keys(self) -> AbstractSet[AssetKey]:
+        return {key for key, is_observable in self._is_observable_by_key.items() if is_observable}
+
+    @property
     def auto_materialize_policies_by_key(
         self,
     ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
@@ -195,6 +201,16 @@ class AssetGraph:
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                is_observable = asset.execution_type == AssetExecutionType.OBSERVATION
+                is_observable_by_key.update({key: is_observable for key in asset.keys})
+
+                # Set auto_observe_interval_minutes for external observable assets
+                # This can be removed when/if we have a a solution for mapping
+                # `auto_observe_interval_minutes` to an AutoMaterialzePolicy
+                auto_observe_interval_minutes_by_key.update(
+                    {key: asset.auto_observe_interval_minutes for key in asset.keys}
+                )
 
                 if not asset.can_subset:
                     all_required_keys = {*asset.check_keys, *asset.keys}
@@ -304,6 +320,71 @@ class AssetGraph:
         if include_self:
             ancestors.add(asset_key)
         return ancestors
+
+    def get_parent_asset_subset(
+        self,
+        child_asset_subset: ValidAssetSubset,
+        parent_asset_key: AssetKey,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+    ) -> ValidAssetSubset:
+        """Given a child AssetSubset, returns the corresponding parent AssetSubset, based on the
+        relevant PartitionMapping.
+        """
+        child_asset_key = child_asset_subset.asset_key
+        child_partitions_def = self.get_partitions_def(child_asset_key)
+        parent_partitions_def = self.get_partitions_def(parent_asset_key)
+
+        if parent_partitions_def is None:
+            return ValidAssetSubset(parent_asset_key, value=child_asset_subset.size > 0)
+
+        partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
+        parent_partitions_subset = (
+            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                child_asset_subset.subset_value if child_partitions_def is not None else None,
+                downstream_partitions_def=child_partitions_def,
+                upstream_partitions_def=parent_partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
+            )
+        ).partitions_subset
+
+        return ValidAssetSubset(parent_asset_key, value=parent_partitions_subset)
+
+    def get_child_asset_subset(
+        self,
+        parent_asset_subset: ValidAssetSubset,
+        child_asset_key: AssetKey,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+    ) -> ValidAssetSubset:
+        """Given a parent AssetSubset, returns the corresponding child AssetSubset, based on the
+        relevant PartitionMapping.
+        """
+        parent_asset_key = parent_asset_subset.asset_key
+        parent_partitions_def = self.get_partitions_def(parent_asset_key)
+        child_partitions_def = self.get_partitions_def(child_asset_key)
+
+        if parent_partitions_def is None:
+            if parent_asset_subset.size > 0:
+                return ValidAssetSubset.all(
+                    child_asset_key, child_partitions_def, dynamic_partitions_store, current_time
+                )
+            else:
+                return ValidAssetSubset.empty(child_asset_key, child_partitions_def)
+
+        if child_partitions_def is None:
+            return ValidAssetSubset(child_asset_key, value=parent_asset_subset.size > 0)
+        else:
+            partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
+            child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
+                parent_asset_subset.subset_value,
+                parent_partitions_def,
+                downstream_partitions_def=child_partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
+            )
+            return ValidAssetSubset(child_asset_key, value=child_partitions_subset)
 
     def get_children_partitions(
         self,

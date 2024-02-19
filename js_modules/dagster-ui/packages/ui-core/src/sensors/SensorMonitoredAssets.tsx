@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {AssetLink} from '../assets/AssetLink';
 import {SensorMetadata} from '../graphql/types';

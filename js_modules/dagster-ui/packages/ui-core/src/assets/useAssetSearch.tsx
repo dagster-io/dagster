@@ -1,9 +1,9 @@
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
 
 const useSanitizedAssetSearch = (searchValue: string) => {
-  return React.useMemo(() => {
+  return useMemo(() => {
     return (searchValue || '')
       .replace(/(( ?> ?)|\.|\/)/g, '/')
       .toLowerCase()
@@ -16,7 +16,7 @@ export const useAssetSearch = <A extends {key: {path: string[]}}>(
   assets: A[],
 ): A[] => {
   const sanitizedSearch = useSanitizedAssetSearch(searchValue);
-  return React.useMemo(() => {
+  return useMemo(() => {
     // If there is no search value, match everything.
     if (!sanitizedSearch) {
       return assets;
@@ -31,7 +31,7 @@ export const useAssetNodeSearch = <A extends {assetKey: {path: string[]}}>(
 ): A[] => {
   const sanitizedSearch = useSanitizedAssetSearch(searchValue);
 
-  return React.useMemo(() => {
+  return useMemo(() => {
     // If there is no search value, match everything.
     if (!sanitizedSearch) {
       return assetNodes;

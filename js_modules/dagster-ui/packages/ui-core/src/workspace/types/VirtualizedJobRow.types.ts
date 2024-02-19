@@ -43,6 +43,7 @@ export type SingleJobQuery = {
           id: string;
           jobOriginId: string;
           name: string;
+          sensorType: Types.SensorType;
           sensorState: {
             __typename: 'InstigationState';
             id: string;

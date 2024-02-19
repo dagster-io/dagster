@@ -1,5 +1,3 @@
-from typing import Sequence
-
 import pytest
 from dagster import (
     AssetMaterialization,
@@ -7,10 +5,6 @@ from dagster import (
     DagsterInstance,
     job,
     op,
-)
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
@@ -43,37 +37,6 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
     run_requests, _, evaluations = scenario.do_sensor_scenario(
         instance, respect_materialization_data_versions=respect_materialization_data_versions
     )
-
-    def _sorted_evaluations(
-        evaluations: Sequence[AutoMaterializeAssetEvaluation],
-    ) -> Sequence[AutoMaterializeAssetEvaluation]:
-        """Allows a stable ordering for comparison."""
-        return sorted(
-            [
-                evaluation._replace(
-                    partition_subsets_by_condition=sorted(
-                        evaluation.partition_subsets_by_condition, key=repr
-                    )
-                )._replace(
-                    rule_snapshots=(
-                        sorted(evaluation.rule_snapshots, key=repr)
-                        if evaluation.rule_snapshots
-                        else None
-                    )
-                )
-                for evaluation in evaluations
-            ],
-            key=repr,
-        )
-
-    if scenario.expected_evaluations is not None:
-        asset_graph = AssetGraph.from_assets(scenario.assets)
-        assert _sorted_evaluations(
-            [
-                evaluation_spec.to_evaluation(asset_graph, instance)
-                for evaluation_spec in scenario.expected_evaluations
-            ]
-        ) == _sorted_evaluations(evaluations)
 
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 

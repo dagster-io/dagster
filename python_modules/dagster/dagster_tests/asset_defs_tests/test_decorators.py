@@ -1,4 +1,3 @@
-import warnings
 from typing import Any
 
 import pytest
@@ -48,16 +47,13 @@ from dagster._core.definitions.decorators.config_mapping_decorator import config
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.test_utils import ignore_warning
+from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def test_asset_no_decorator_args():
@@ -107,7 +103,7 @@ def test_asset_with_inputs_direct_call():
 def test_asset_with_config_schema():
     @asset(config_schema={"foo": int})
     def my_asset(context):
-        assert context.op_config["foo"] == 5
+        assert context.op_execution_context.op_config["foo"] == 5
 
     materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
 
@@ -118,7 +114,7 @@ def test_asset_with_config_schema():
 def test_multi_asset_with_config_schema():
     @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
     def my_asset(context):
-        assert context.op_config["foo"] == 5
+        assert context.op_execution_context.op_config["foo"] == 5
 
     materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
 

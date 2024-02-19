@@ -2,19 +2,18 @@ import {gql, useQuery} from '@apollo/client';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
-import React from 'react';
-
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {AssetKey} from '../assets/types';
-import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
+import {useMemo} from 'react';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {AssetKey} from '../assets/types';
+import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -48,7 +47,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
-  const repoFilteredNodes = React.useMemo(() => {
+  const repoFilteredNodes = useMemo(() => {
     // Apply any filters provided by the caller. This is where we do repo filtering
     let matching = nodes;
     if (options.hideNodesMatching) {
@@ -57,22 +56,19 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     return matching;
   }, [nodes, options.hideNodesMatching]);
 
-  const graphQueryItems = React.useMemo(
+  const graphQueryItems = useMemo(
     () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
     [repoFilteredNodes],
   );
 
-  const fullGraphQueryItems = React.useMemo(
-    () => (nodes ? buildGraphQueryItems(nodes) : []),
-    [nodes],
-  );
+  const fullGraphQueryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
 
-  const fullAssetGraphData = React.useMemo(
+  const fullAssetGraphData = useMemo(
     () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
     [fullGraphQueryItems],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = React.useMemo(() => {
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],

@@ -15,7 +15,8 @@
       },
       {
         "title": "Installation",
-        "path": "/getting-started/install"
+        "path": "/getting-started/install",
+        "nonMdx": true
       },
       {
         "title": "Creating a new project",
@@ -99,10 +100,6 @@
             "path": "/concepts/assets/asset-selection-syntax"
           },
           {
-            "title": "Auto-materializing assets",
-            "path": "/concepts/assets/asset-auto-execution"
-          },
-          {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
           },
@@ -112,10 +109,14 @@
           }
         ]
       },
-
       {
-        "title": "Schedules & Sensors",
+        "title": "Automation",
+        "path": "/concepts/automation",
         "children": [
+          {
+            "title": "Overview",
+            "path": "/concepts/automation"
+          },
           {
             "title": "Schedules",
             "path": "/concepts/partitions-schedules-sensors/schedules"
@@ -123,6 +124,10 @@
           {
             "title": "Sensors",
             "path": "/concepts/partitions-schedules-sensors/sensors"
+          },
+          {
+            "title": "Auto-materialization policies",
+            "path": "/concepts/assets/asset-auto-execution"
           },
           {
             "title": "Asset Sensors",
@@ -633,6 +638,20 @@
                     "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
+              },
+              {
+                "title": "Compute logs & error messages",
+                "path": "/dagster-cloud/managing-deployments/controlling-logs"
+              }
+            ]
+          },
+          {
+            "title":  "Best practices",
+            "path": "/dagster-cloud/best-practices",
+            "children": [
+              {
+                "title": "Managing multiple projects & teams",
+                "path": "/dagster-cloud/best-practices/managing-multiple-projects-and-teams"
               }
             ]
           },
@@ -640,6 +659,10 @@
             "title": "Insights",
             "path": "/dagster-cloud/insights",
             "children": [
+              {
+                "title": "Integrating asset metadata",
+                "path": "/dagster-cloud/insights/asset-metadata"
+              },
               {
                 "title": "Integrating external metrics",
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
@@ -996,10 +1019,6 @@
           {
             "title": "Structuring your project",
             "path": "/guides/dagster/recommended-project-structure"
-          },
-          {
-            "title": "Automating your pipelines",
-            "path": "/guides/dagster/automating-pipelines"
           },
           {
             "title": "Building machine learning pipelines",

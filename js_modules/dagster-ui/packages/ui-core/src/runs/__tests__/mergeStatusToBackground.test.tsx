@@ -1,9 +1,4 @@
-import {
-  colorAccentBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorBackgroundDisabled,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 
 import {RunStatus} from '../../graphql/types';
 import {TimelineRun} from '../RunTimeline';
@@ -32,38 +27,38 @@ describe('mergeStatusToBackground', () => {
   };
 
   it('uses a single color if all runs are the same status', () => {
-    expect(mergeStatusToBackground([failedA, failedB])).toBe(colorAccentRed());
-    expect(mergeStatusToBackground([succeededA, succeededB])).toBe(colorAccentGreen());
-    expect(mergeStatusToBackground([inProgressA, inProgressB])).toBe(colorAccentBlue());
-    expect(mergeStatusToBackground([queuedA, queuedB])).toBe(colorBackgroundDisabled());
-    expect(mergeStatusToBackground([scheduledA, scheduledB])).toBe(colorBackgroundDisabled());
+    expect(mergeStatusToBackground([failedA, failedB])).toBe(Colors.accentRed());
+    expect(mergeStatusToBackground([succeededA, succeededB])).toBe(Colors.accentGreen());
+    expect(mergeStatusToBackground([inProgressA, inProgressB])).toBe(Colors.accentBlue());
+    expect(mergeStatusToBackground([queuedA, queuedB])).toBe(Colors.backgroundDisabled());
+    expect(mergeStatusToBackground([scheduledA, scheduledB])).toBe(Colors.backgroundDisabled());
   });
 
   it('splits the background if there are two statuses, in order', () => {
     const failedSucceeded = mergeStatusToBackground([failedA, succeededA]);
     expect(failedSucceeded).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 50.0%, ${colorAccentGreen()} 50.0%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 50.0%, ${Colors.accentGreen()} 50.0%)`,
     );
     const succeededFailed = mergeStatusToBackground([succeededA, failedA]);
     expect(succeededFailed).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 50.0%, ${colorAccentGreen()} 50.0%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 50.0%, ${Colors.accentGreen()} 50.0%)`,
     );
     const succeededInProgress = mergeStatusToBackground([succeededA, inProgressA]);
     expect(succeededInProgress).toBe(
-      `linear-gradient(to right, ${colorAccentGreen()} 50.0%, ${colorAccentBlue()} 50.0%)`,
+      `linear-gradient(to right, ${Colors.accentGreen()} 50.0%, ${Colors.accentBlue()} 50.0%)`,
     );
 
     // More than two runs
     const failFailSuccess = mergeStatusToBackground([failedA, failedB, succeededA]);
     expect(failFailSuccess).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 66.7%, ${colorAccentGreen()} 66.7%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 66.7%, ${Colors.accentGreen()} 66.7%)`,
     );
   });
 
   it('splits the background if there are 3+ statuses, in order', () => {
     const succeedFailInProgress = mergeStatusToBackground([succeededA, failedA, inProgressA]);
     expect(succeedFailInProgress).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 33.3%, ${colorAccentGreen()} 33.3% 66.7%, ${colorAccentBlue()} 66.7%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 33.3%, ${Colors.accentGreen()} 33.3% 66.7%, ${Colors.accentBlue()} 66.7%)`,
     );
 
     const succeed2xFailInProgress = mergeStatusToBackground([
@@ -73,7 +68,7 @@ describe('mergeStatusToBackground', () => {
       inProgressA,
     ]);
     expect(succeed2xFailInProgress).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 25.0%, ${colorAccentGreen()} 25.0% 75.0%, ${colorAccentBlue()} 75.0%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 25.0%, ${Colors.accentGreen()} 25.0% 75.0%, ${Colors.accentBlue()} 75.0%)`,
     );
 
     const allOfTheAbove = mergeStatusToBackground([
@@ -84,7 +79,7 @@ describe('mergeStatusToBackground', () => {
       scheduledA,
     ]);
     expect(allOfTheAbove).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 20.0%, ${colorAccentGreen()} 20.0% 40.0%, ${colorAccentBlue()} 40.0% 60.0%, ${colorBackgroundDisabled()} 60.0% 80.0%, ${colorBackgroundDisabled()} 80.0%)`,
+      `linear-gradient(to right, ${Colors.accentRed()} 20.0%, ${Colors.accentGreen()} 20.0% 40.0%, ${Colors.accentBlue()} 40.0% 60.0%, ${Colors.backgroundDisabled()} 60.0% 80.0%, ${Colors.backgroundDisabled()} 80.0%)`,
     );
   });
 });

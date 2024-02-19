@@ -1,7 +1,12 @@
 import {ConditionType} from './PolicyEvaluationCondition';
-import {AssetConditionEvaluation} from './types';
+import {
+  AssetConditionEvaluationRecordFragment,
+  PartitionedAssetConditionEvaluationNodeFragment,
+  SpecificPartitionAssetConditionEvaluationNodeFragment,
+  UnpartitionedAssetConditionEvaluationNodeFragment,
+} from './types/GetEvaluationsQuery.types';
 
-type FlattenedConditionEvaluation<T> = {
+export type FlattenedConditionEvaluation<T> = {
   evaluation: T;
   id: number;
   parentId: number | null;
@@ -9,15 +14,32 @@ type FlattenedConditionEvaluation<T> = {
   type: ConditionType;
 };
 
-export const flattenEvaluations = <T extends AssetConditionEvaluation>(rootEvaluation: T) => {
-  const all: FlattenedConditionEvaluation<T>[] = [];
+type Evaluation =
+  | PartitionedAssetConditionEvaluationNodeFragment
+  | UnpartitionedAssetConditionEvaluationNodeFragment
+  | SpecificPartitionAssetConditionEvaluationNodeFragment;
+
+type FlattenedEvaluation =
+  | FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>
+  | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>
+  | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>;
+
+export const flattenEvaluations = (
+  evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>,
+  collapsedRecords: Set<string>,
+) => {
+  const all: FlattenedEvaluation[] = [];
   let counter = 0;
 
-  const append = (evaluation: T, parentId: number | null, depth: number) => {
+  const recordsById = Object.fromEntries(
+    evaluationRecord.evaluation.evaluationNodes.map((node) => [node.uniqueId, node]),
+  );
+
+  const append = (evaluation: Evaluation, parentId: number | null, depth: number) => {
     const id = counter + 1;
 
     const type =
-      evaluation.childEvaluations && evaluation.childEvaluations.length > 0 ? 'group' : 'leaf';
+      evaluation.childUniqueIds && evaluation.childUniqueIds.length > 0 ? 'group' : 'leaf';
 
     all.push({
       evaluation,
@@ -25,18 +47,19 @@ export const flattenEvaluations = <T extends AssetConditionEvaluation>(rootEvalu
       parentId: parentId === null ? counter : parentId,
       depth,
       type,
-    } as FlattenedConditionEvaluation<T>);
+    } as FlattenedEvaluation);
     counter = id;
 
-    if (evaluation.childEvaluations) {
+    if (evaluation.childUniqueIds && !collapsedRecords.has(evaluation.uniqueId)) {
       const parentCounter = counter;
-      evaluation.childEvaluations.forEach((child) => {
-        append(child as T, parentCounter, depth + 1);
+      evaluation.childUniqueIds.forEach((childId) => {
+        const child = recordsById[childId]!;
+        append(child, parentCounter, depth + 1);
       });
     }
   };
 
-  append(rootEvaluation, null, 0);
+  append(recordsById[evaluationRecord.evaluation.rootUniqueId]!, null, 0);
 
   return all;
 };

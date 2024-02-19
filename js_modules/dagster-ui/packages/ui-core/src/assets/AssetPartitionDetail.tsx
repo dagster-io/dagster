@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
+  Colors,
   Group,
   Heading,
   Icon,
@@ -10,23 +11,9 @@ import {
   Spinner,
   Subheading,
   Tag,
-  colorAccentGray,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
-import {RunStatus, StaleStatus} from '../graphql/types';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
@@ -37,13 +24,22 @@ import {StaleReasonsTags} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
-  AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
+  AssetPartitionLatestRunFragment,
   AssetPartitionStaleQuery,
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
+import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
+import {Timestamp} from '../app/time/Timestamp';
+import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {RunStatus, StaleStatus} from '../graphql/types';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
@@ -55,7 +51,7 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     ASSET_PARTITION_STALE_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
-  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
+  const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
@@ -80,7 +76,7 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     };
   }, [result.data]);
 
-  const {staleStatus, staleCauses} = React.useMemo(() => {
+  const {staleStatus, staleCauses} = useMemo(() => {
     if (stale.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         staleCauses: [],
@@ -221,10 +217,10 @@ export const AssetPartitionDetail = ({
 
   const observationsAboutLatest =
     latest?.__typename === 'MaterializationEvent'
-      ? group.all.filter(
+      ? (group.all.filter(
           (e) =>
             e.__typename === 'ObservationEvent' && Number(e.timestamp) > Number(latest.timestamp),
-        )
+        ) as AssetObservationFragment[])
       : [];
 
   return (
@@ -260,7 +256,7 @@ export const AssetPartitionDetail = ({
             ) : undefined}
           </div>
         ) : (
-          <Heading color={colorTextLight()}>No partition selected</Heading>
+          <Heading color={Colors.textLight()}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -342,7 +338,7 @@ export const AssetPartitionDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={colorAccentGray()} />
+                <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
@@ -363,7 +359,11 @@ export const AssetPartitionDetail = ({
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Metadata</Subheading>
-        <AssetEventMetadataEntriesTable event={latest} observations={observationsAboutLatest} />
+        <AssetEventMetadataEntriesTable
+          event={latest}
+          observations={observationsAboutLatest}
+          showDescriptions
+        />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Source data</Subheading>
@@ -388,9 +388,9 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
 );
 
 const PartitionHeadingTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
   fontSize: '18px',
   fontWeight: '600',
-  color: colorTextDefault(),
+  color: Colors.textDefault(),
 });

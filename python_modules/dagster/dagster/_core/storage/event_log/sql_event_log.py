@@ -3,7 +3,7 @@ import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -97,6 +97,7 @@ from .base import (
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
+    PlannedMaterializationInfo,
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import (
@@ -207,9 +208,7 @@ class SqlEventLogStorage(EventLogStorage):
             run_id=event.run_id,
             event=serialize_value(event),
             dagster_event_type=dagster_event_type,
-            # Postgres requires a datetime that is in UTC but has no timezone info set
-            # in order to be stored correctly
-            timestamp=datetime.utcfromtimestamp(event.timestamp),
+            timestamp=self._event_insert_timestamp(event),
             step_key=step_key,
             asset_key=asset_key_str,
             partition=partition,
@@ -420,9 +419,7 @@ class SqlEventLogStorage(EventLogStorage):
                             asset_key=asset_key_str,
                             key=key,
                             value=value,
-                            # Postgres requires a datetime that is in UTC but has no timezone info
-                            # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                            event_timestamp=self._event_insert_timestamp(event),
                         )
                         for key, value in tags.items()
                     ],
@@ -795,7 +792,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     event=serialize_value(event),
                     dagster_event_type=dagster_event_type,
-                    timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    timestamp=self._event_insert_timestamp(event),
                     step_key=event.step_key,
                     asset_key=asset_key_str,
                 )
@@ -1108,31 +1105,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
-    def fetch_planned_materializations(
-        self,
-        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        enforce_max_records_limit(limit)
-        if isinstance(records_filter, AssetRecordsFilter):
-            event_records_filter = records_filter.to_event_records_filter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                cursor=cursor,
-                ascending=ascending,
-            )
-        else:
-            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
-            asset_key = records_filter
-            event_records_filter = EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=asset_key,
-                before_cursor=before_cursor,
-                after_cursor=after_cursor,
-            )
-        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
-
     def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
@@ -1418,7 +1390,7 @@ class SqlEventLogStorage(EventLogStorage):
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
-        if not is_partial_query and self._can_mark_assets_as_migrated(rows):  # type: ignore
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
@@ -2246,6 +2218,24 @@ class SqlEventLogStorage(EventLogStorage):
             # they will be unutilized until free_concurrency_slots is called
             self.assign_pending_steps(keys_to_assign)
 
+    def delete_concurrency_limit(self, concurrency_key: str) -> None:
+        """Delete a concurrency limit and its associated slots.
+
+        Args:
+            concurrency_key (str): The key to delete.
+        """
+        # ensure that we have concurrency limits set for all keys
+        self._reconcile_concurrency_limits_from_slots()
+
+        with self.index_transaction() as conn:
+            if self.has_table(ConcurrencyLimitsTable.name):
+                conn.execute(
+                    ConcurrencyLimitsTable.delete().where(
+                        ConcurrencyLimitsTable.c.concurrency_key == concurrency_key
+                    )
+                )
+            self._allocate_concurrency_slots(conn, concurrency_key, 0)
+
     def _allocate_concurrency_slots(self, conn, concurrency_key: str, num: int) -> List[str]:
         keys_to_assign = []
         count_row = conn.execute(
@@ -2773,9 +2763,13 @@ class SqlEventLogStorage(EventLogStorage):
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                 )
             )
+
+    def _event_insert_timestamp(self, event):
+        # Postgres requires a datetime that is in UTC but has no timezone info
+        return datetime.fromtimestamp(event.timestamp, timezone.utc).replace(tzinfo=None)
 
     def _store_runless_asset_check_evaluation(
         self, event: EventLogEntry, event_id: Optional[int]
@@ -2795,7 +2789,7 @@ class SqlEventLogStorage(EventLogStorage):
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                     evaluation_event_storage_id=event_id,
                     materialization_event_storage_id=(
                         evaluation.target_materialization_data.storage_id
@@ -2827,7 +2821,7 @@ class SqlEventLogStorage(EventLogStorage):
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_timestamp=self._event_insert_timestamp(event),
                     evaluation_event_storage_id=event_id,
                     materialization_event_storage_id=(
                         evaluation.target_materialization_data.storage_id
@@ -2938,6 +2932,28 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_asset_checks(self):
         return self.has_table(AssetCheckExecutionsTable.name)
+
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
+        records = self._get_event_records(
+            event_records_filter=EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+                asset_partitions=[partition] if partition else None,
+            ),
+            limit=1,
+            ascending=False,
+        )
+        if not records:
+            return None
+
+        return PlannedMaterializationInfo(
+            storage_id=records[0].storage_id,
+            run_id=records[0].run_id,
+        )
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

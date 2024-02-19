@@ -133,6 +133,9 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
     AutoMaterializeRule as AutoMaterializeRule,
 )
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition as AutoMaterializeSensorDefinition,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
@@ -330,7 +333,10 @@ from dagster._core.definitions.resource_definition import (
     make_values_resource as make_values_resource,
     resource as resource,
 )
-from dagster._core.definitions.result import MaterializeResult as MaterializeResult
+from dagster._core.definitions.result import (
+    MaterializeResult as MaterializeResult,
+    ObserveResult as ObserveResult,
+)
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,

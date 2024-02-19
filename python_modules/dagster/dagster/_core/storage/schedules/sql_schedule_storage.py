@@ -20,8 +20,8 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
+from dagster._core.definitions.asset_condition.asset_condition import (
+    AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
@@ -485,7 +485,7 @@ class SqlScheduleStorage(ScheduleStorage):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
     ):
         if not asset_evaluations:
             return
@@ -499,8 +499,6 @@ class SqlScheduleStorage(ScheduleStorage):
                             "asset_key": evaluation.asset_key.to_string(),
                             "asset_evaluation_body": serialize_value(evaluation),
                             "num_requested": evaluation.num_requested,
-                            "num_skipped": evaluation.num_skipped,
-                            "num_discarded": evaluation.num_discarded,
                         }
                     ]
                 )
@@ -519,8 +517,6 @@ class SqlScheduleStorage(ScheduleStorage):
                         .values(
                             asset_evaluation_body=serialize_value(evaluation),
                             num_requested=evaluation.num_requested,
-                            num_skipped=evaluation.num_skipped,
-                            num_discarded=evaluation.num_discarded,
                         )
                     )
 

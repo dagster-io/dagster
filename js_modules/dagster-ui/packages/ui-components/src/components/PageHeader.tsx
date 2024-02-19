@@ -1,9 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorBackgroundLight} from '../theme/color';
-
 import {Box} from './Box';
+import {Colors} from './Color';
 import {IconName} from './Icon';
 
 interface Props {
@@ -20,7 +19,7 @@ export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
     <PageHeaderContainer
-      background={colorBackgroundLight()}
+      background={Colors.backgroundLight()}
       padding={{top: 16, left: 24, right: 12}}
       border="bottom"
     >

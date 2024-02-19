@@ -20,4 +20,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Debug console logging',
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
+  {
+    key: 'Use new asset automation page',
+    flagType: FeatureFlag.flagUseNewAutomationPage,
+  },
 ];

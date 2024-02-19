@@ -179,8 +179,8 @@ class ExternalRepository:
     def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
         return self._utilized_env_vars
 
-    def get_default_automation_policy_sensor_name(self):
-        return "default_automation_policy_sensor"
+    def get_default_auto_materialize_sensor_name(self):
+        return "default_auto_materialize_sensor"
 
     @property
     @cached_method
@@ -192,17 +192,17 @@ class ExternalRepository:
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         }
 
-        if self._instance.auto_materialize_use_automation_policy_sensors:
+        if self._instance.auto_materialize_use_sensors:
             asset_graph = ExternalAssetGraph.from_external_repository(self)
 
-            existing_automation_policy_sensors = {
+            existing_auto_materialize_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type == SensorType.AUTOMATION_POLICY
+                if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
             }
 
             covered_asset_keys = set()
-            for sensor in existing_automation_policy_sensors.values():
+            for sensor in existing_auto_materialize_sensors.values():
                 covered_asset_keys = covered_asset_keys.union(
                     check.not_none(sensor.asset_selection).resolve(asset_graph)
                 )
@@ -216,7 +216,7 @@ class ExternalRepository:
                 if asset_key not in covered_asset_keys:
                     default_sensor_asset_keys.add(asset_key)
 
-            for asset_key in asset_graph.source_asset_keys:
+            for asset_key in asset_graph.observable_keys:
                 if asset_graph.get_auto_observe_interval_minutes(asset_key) is None:
                     continue
 
@@ -225,7 +225,7 @@ class ExternalRepository:
 
             if default_sensor_asset_keys:
                 default_sensor_data = ExternalSensorData(
-                    name=self.get_default_automation_policy_sensor_name(),
+                    name=self.get_default_auto_materialize_sensor_name(),
                     job_name=None,
                     op_selection=None,
                     asset_selection=AssetSelection.keys(*default_sensor_asset_keys),
@@ -235,7 +235,7 @@ class ExternalRepository:
                     target_dict={},
                     metadata=None,
                     default_status=None,
-                    sensor_type=SensorType.AUTOMATION_POLICY,
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
                     run_tags=None,
                 )
                 sensor_datas[default_sensor_data.name] = ExternalSensor(
@@ -753,11 +753,7 @@ class ExternalSchedule:
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
-        return (
-            self._external_schedule_data.default_status
-            if self._external_schedule_data.default_status
-            else DefaultScheduleStatus.STOPPED
-        )
+        return self._external_schedule_data.default_status or DefaultScheduleStatus.STOPPED
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
@@ -952,12 +948,8 @@ class ExternalSensor:
         return self._external_sensor_data.metadata
 
     @property
-    def default_status(self) -> Optional[DefaultSensorStatus]:
-        return (
-            self._external_sensor_data.default_status
-            if self._external_sensor_data
-            else DefaultSensorStatus.STOPPED
-        )
+    def default_status(self) -> DefaultSensorStatus:
+        return self._external_sensor_data.default_status or DefaultSensorStatus.STOPPED
 
 
 class ExternalPartitionSet:

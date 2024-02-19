@@ -1,15 +1,17 @@
-import warnings
 from typing import Optional
 
 import dagster._check as check
 import pendulum
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     InputContext,
     IOManager,
@@ -38,16 +40,13 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import assert_namedtuple_lists_equal
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._core.test_utils import assert_namedtuple_lists_equal, raise_exception_on_warnings
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def get_upstream_partitions_for_partition_range(
@@ -155,8 +154,8 @@ def test_single_partitioned_asset_job():
             assert False, "shouldn't get here"
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context):
-        assert context.asset_partitions_def_for_output() == partitions_def
+    def my_asset(context: AssetExecutionContext):
+        assert context.assets_def.partitions_def == partitions_def
 
     my_job = build_assets_job(
         "my_job",
@@ -212,24 +211,24 @@ def test_access_partition_keys_from_context_direct_invocation():
     partitions_def = StaticPartitionsDefinition(["a"])
 
     @asset(partitions_def=partitions_def)
-    def partitioned_asset(context):
-        assert context.asset_partition_key_for_output() == "a"
+    def partitioned_asset(context: AssetExecutionContext):
+        assert context.partition_key == "a"
 
     context = build_asset_context(partition_key="a")
 
     # check unbound context
-    assert context.asset_partition_key_for_output() == "a"
+    assert context.partition_key == "a"
 
     # check bound context
     partitioned_asset(context)
 
     # check failure for non-partitioned asset
     @asset
-    def non_partitioned_asset(context):
+    def non_partitioned_asset(context: AssetExecutionContext):
         with pytest.raises(
-            CheckError, match="Tried to access partition_key for a non-partitioned asset"
+            CheckError, match="Tried to access partition_key for a non-partitioned run"
         ):
-            context.asset_partition_key_for_output()
+            _ = context.partition_key
 
     context = build_asset_context()
     non_partitioned_asset(context)
@@ -257,8 +256,8 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
                 assert context.asset_partition_key_range == PartitionKeyRange("a", "c")
 
     @asset(partitions_def=upstream_partitions_def)
-    def upstream_asset(context):
-        assert context.asset_partition_key_for_output() == "b"
+    def upstream_asset(context: AssetExecutionContext):
+        assert context.partition_key == "b"
 
     @asset
     def downstream_asset(upstream_asset):
@@ -540,7 +539,7 @@ def test_job_config_with_asset_partitions():
 
     @asset(config_schema={"a": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["a"] == 5
+        assert context.op_execution_context.op_config["a"] == 5
         assert context.partition_key == "2020-01-01"
 
     the_job = define_asset_job(
@@ -562,7 +561,7 @@ def test_job_partitioned_config_with_asset_partitions():
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @daily_partitioned_config(start_date="2020-01-01")
@@ -581,7 +580,7 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
 
     @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
     def asset1(context):
-        assert context.op_config["day_of_month"] == 1
+        assert context.op_execution_context.op_config["day_of_month"] == 1
         assert context.partition_key == "2020-01-01"
 
     @hourly_partitioned_config(start_date="2020-01-01-00:00")
@@ -606,7 +605,6 @@ def test_partition_range_single_run():
     @asset(partitions_def=partitions_def)
     def upstream_asset(context) -> None:
         key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
-        assert context.asset_partition_key_range_for_output() == key_range
         assert context.partition_key_range == key_range
         assert context.partition_time_window == TimeWindow(
             partitions_def.time_window_for_partition_key(key_range.start).start,
@@ -615,11 +613,11 @@ def test_partition_range_single_run():
         assert context.partition_keys == partitions_def.get_partition_keys_in_range(key_range)
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
-    def downstream_asset(context) -> None:
+    def downstream_asset(context: AssetExecutionContext) -> None:
         assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
-        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+        assert context.partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
 
@@ -653,17 +651,15 @@ def test_multipartition_range_single_run():
     )
 
     @asset(partitions_def=partitions_def)
-    def multipartitioned_asset(context) -> None:
-        key_range = context.asset_partition_key_range_for_output()
+    def multipartitioned_asset(context: AssetExecutionContext) -> None:
+        key_range = context.partition_key_range
 
         assert isinstance(key_range.start, MultiPartitionKey)
         assert isinstance(key_range.end, MultiPartitionKey)
         assert key_range.start == MultiPartitionKey({"date": "2020-01-01", "abc": "a"})
         assert key_range.end == MultiPartitionKey({"date": "2020-01-03", "abc": "a"})
 
-        assert all(
-            isinstance(key, MultiPartitionKey) for key in context.asset_partition_keys_for_output()
-        )
+        assert all(isinstance(key, MultiPartitionKey) for key in context.partition_keys)
 
     the_job = define_asset_job("job").resolve(
         asset_graph=AssetGraph.from_assets([multipartitioned_asset])
@@ -716,6 +712,39 @@ def test_multipartitioned_asset_partitions_time_window():
     ).success
 
 
+def test_dynamic_partition_range_single_run():
+    partitions_def = DynamicPartitionsDefinition(name="yolo")
+
+    @asset(partitions_def=partitions_def)
+    def dynamicpartitioned_asset(context: AssetExecutionContext) -> None:
+        key_range = context.partition_key_range
+
+        assert key_range.start == "a"
+        assert key_range.end == "c"
+
+        assert len(context.partition_keys) == 3
+
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([dynamicpartitioned_asset])
+    )
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("yolo", ["a", "b", "c"])
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "a",
+            ASSET_PARTITION_RANGE_END_TAG: "c",
+        },
+        instance=instance,
+    )
+    assert result.success
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("dynamicpartitioned_asset")
+    } == {"a", "b", "c"}
+
+
 def test_error_on_nonexistent_upstream_partition():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
     def upstream_asset(context):
@@ -725,7 +754,7 @@ def test_error_on_nonexistent_upstream_partition():
     def downstream_asset(context, upstream_asset):
         return upstream_asset + 1
 
-    with pendulum.test(create_pendulum_time(2020, 1, 2, 10, 0)):
+    with pendulum_freeze_time(create_pendulum_time(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="invalid partition keys",

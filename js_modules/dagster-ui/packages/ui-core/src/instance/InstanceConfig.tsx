@@ -3,48 +3,44 @@ import 'codemirror/addon/search/searchcursor';
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Code,
+  Colors,
+  Heading,
   PageHeader,
   Spinner,
-  Code,
-  Heading,
   StyledRawCodeMirror,
   Subheading,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorTextDefault,
-  colorBackgroundLime,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
-import * as React from 'react';
+import {memo, useContext, useMemo} from 'react';
 import {createGlobalStyle} from 'styled-components';
-
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config {
-    background-color: ${colorBackgroundDefault()};
-    box-shadow: 0 1px 0 ${colorKeylineDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    box-shadow: 0 1px 0 ${Colors.keylineDefault()};
+    color: ${Colors.textDefault()};
     height: 100%;
   }
 
   .CodeMirror.cm-s-instance-config {
     .config-highlight {
-      background-color: ${colorBackgroundLime()};
+      background-color: ${Colors.backgroundLime()};
     }
 `;
 
-export const InstanceConfig = React.memo(() => {
+export const InstanceConfig = memo(() => {
   useTrackPageView();
   useDocumentTitle('Configuration');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const {pageTitle} = useContext(InstancePageContext);
   const queryResult = useQuery<InstanceConfigQuery, InstanceConfigQueryVariables>(
     INSTANCE_CONFIG_QUERY,
     {
@@ -56,7 +52,7 @@ export const InstanceConfig = React.memo(() => {
   const {data} = queryResult;
   const config = data?.instance.info;
 
-  const handlers = React.useMemo(() => {
+  const handlers = useMemo(() => {
     return {
       onReady: (editor: CodeMirror.Editor) => {
         const documentHash = document.location.hash;

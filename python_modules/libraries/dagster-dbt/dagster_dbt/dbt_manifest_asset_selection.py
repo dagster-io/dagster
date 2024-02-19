@@ -1,4 +1,4 @@
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Any, Mapping, Optional
 
 from dagster import (
     AssetKey,
@@ -18,7 +18,11 @@ from .utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection):
+class DbtManifestAssetSelection(
+    AssetSelection,
+    frozen=True,
+    arbitrary_types_allowed=True,
+):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
@@ -40,22 +44,30 @@ class DbtManifestAssetSelection(AssetSelection):
             my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")
     """
 
-    def __init__(
-        self,
+    manifest: Mapping[str, Any]
+    select: str
+    dagster_dbt_translator: DagsterDbtTranslator
+    exclude: str
+
+    @classmethod
+    def build(
+        cls,
         manifest: DbtManifestParam,
         select: str = "fqn:*",
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
-    ) -> None:
-        self.manifest = validate_manifest(manifest)
-        self.select = check.str_param(select, "select")
-        self.exclude = check.opt_str_param(exclude, "exclude", default="")
-        self.dagster_dbt_translator = check.opt_inst_param(
-            dagster_dbt_translator,
-            "dagster_dbt_translator",
-            DagsterDbtTranslator,
-            DagsterDbtTranslator(),
+    ):
+        return cls(
+            manifest=validate_manifest(manifest),
+            select=check.str_param(select, "select"),
+            dagster_dbt_translator=check.opt_inst_param(
+                dagster_dbt_translator,
+                "dagster_dbt_translator",
+                DagsterDbtTranslator,
+                DagsterDbtTranslator(),
+            ),
+            exclude=check.opt_str_param(exclude, "exclude", default=""),
         )
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:

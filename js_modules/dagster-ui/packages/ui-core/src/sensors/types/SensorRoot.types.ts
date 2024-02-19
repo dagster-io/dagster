@@ -27,6 +27,8 @@ export type SensorRootQuery = {
         description: string | null;
         minIntervalSeconds: number;
         sensorType: Types.SensorType;
+        defaultStatus: Types.InstigationStatus;
+        canReset: boolean;
         nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         sensorState: {
           __typename: 'InstigationState';
@@ -125,4 +127,64 @@ export type SensorRootQuery = {
       }>;
     };
   };
+};
+
+export type SensorAssetSelectionQueryVariables = Types.Exact<{
+  sensorSelector: Types.SensorSelector;
+}>;
+
+export type SensorAssetSelectionQuery = {
+  __typename: 'Query';
+  sensorOrError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        assetSelection: {
+          __typename: 'AssetSelection';
+          assetSelectionString: string | null;
+          assets: Array<{
+            __typename: 'Asset';
+            id: string;
+            key: {__typename: 'AssetKey'; path: Array<string>};
+            definition: {
+              __typename: 'AssetNode';
+              id: string;
+              autoMaterializePolicy: {
+                __typename: 'AutoMaterializePolicy';
+                policyType: Types.AutoMaterializePolicyType;
+              } | null;
+            } | null;
+          }>;
+        } | null;
+      }
+    | {__typename: 'SensorNotFoundError'}
+    | {__typename: 'UnauthorizedError'};
+};
+
+export type SensorAssetSelectionFragment = {
+  __typename: 'AssetSelection';
+  assetSelectionString: string | null;
+  assets: Array<{
+    __typename: 'Asset';
+    id: string;
+    key: {__typename: 'AssetKey'; path: Array<string>};
+    definition: {
+      __typename: 'AssetNode';
+      id: string;
+      autoMaterializePolicy: {
+        __typename: 'AutoMaterializePolicy';
+        policyType: Types.AutoMaterializePolicyType;
+      } | null;
+    } | null;
+  }>;
 };

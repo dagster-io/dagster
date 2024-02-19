@@ -37,7 +37,7 @@ def asset3():
 blocking_check_scenarios = {
     "blocking_check_works_inside_run": AssetReconciliationScenario(
         assets=[asset1_with_blocking_check, asset2, asset3],
-        unevaluated_runs=[run(["asset1", "asset2"])],
+        unevaluated_runs=[run(["asset1"]), run(["asset2"]), run(["asset1", "asset2"])],
         expected_run_requests=[],
     ),
     "blocking_check_doesnt_work_across_runs": AssetReconciliationScenario(

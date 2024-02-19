@@ -1,7 +1,7 @@
 import memoize from 'lodash/memoize';
 
 import {HourCycle} from './HourCycle';
-import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
+import {DEFAULT_TIME_FORMAT, TimeFormat} from './TimestampFormat';
 import {browserTimezone} from './browserTimezone';
 
 type Config = {

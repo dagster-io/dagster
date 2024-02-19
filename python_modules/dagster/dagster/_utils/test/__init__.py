@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, Type, cast
+from typing import Any, Dict, List, Mapping, Optional, Set, Type, Union, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -26,6 +26,7 @@ from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
 from dagster._core.execution.context_creation_job import (
@@ -39,6 +40,7 @@ from dagster._core.execution.execute_in_process_result import ExecuteInProcessRe
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.event_log.base import EventLogConnection
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.sqlite_storage import SqliteStorageConfig
 from dagster._core.utility_ops import create_stub_op
@@ -301,6 +303,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
     ):
         self._sleep_interval = sleep_interval
         self._check_calls = defaultdict(int)
+        self._records_for_run_calls = defaultdict(int)
         super().__init__(base_dir, inst_data)
 
     @classmethod
@@ -317,8 +320,22 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
     def supports_global_concurrency_limits(self) -> bool:
         return True
 
+    def get_records_for_run(
+        self,
+        run_id: str,
+        cursor: Optional[str] = None,
+        of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        limit: Optional[int] = None,
+        ascending: bool = True,
+    ) -> EventLogConnection:
+        self._records_for_run_calls[run_id] = self._records_for_run_calls[run_id] + 1
+        return super().get_records_for_run(run_id, cursor, of_type, limit, ascending)
+
     def get_check_calls(self, step_key: str) -> int:
         return self._check_calls[step_key]
+
+    def get_records_for_run_calls(self, run_id: str) -> int:
+        return self._records_for_run_calls[run_id]
 
     def check_concurrency_claim(
         self, concurrency_key: str, run_id: str, step_key: str

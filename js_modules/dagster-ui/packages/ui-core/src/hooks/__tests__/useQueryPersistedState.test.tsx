@@ -1,6 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
 import {useQueryPersistedState} from '../useQueryPersistedState';
@@ -119,7 +119,7 @@ describe('useQueryPersistedState', () => {
   it('can coexist, even if you errantly retain the setter (just like setState)', async () => {
     const TestWithBug = () => {
       const [word, setWord] = useQueryPersistedState({queryKey: 'word'});
-      const onCapturedForever = React.useCallback(() => {
+      const onCapturedForever = useCallback(() => {
         setWord('world');
         // This is an intentional user error
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,7 +247,7 @@ describe('useQueryPersistedState', () => {
 
     const TestWithObject = () => {
       const [_, setFilters] = useQueryPersistedState<{isOn: boolean}>(
-        React.useMemo(
+        useMemo(
           () => ({
             encode: ({isOn}) => ({isOn: isOn ? 'yes' : 'no'}),
             decode: (qs) => ({isOn: qs.isOn === 'yes' ? true : false}),

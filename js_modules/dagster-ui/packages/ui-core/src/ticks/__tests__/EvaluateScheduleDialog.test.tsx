@@ -2,7 +2,6 @@ import {Resolvers} from '@apollo/client';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
 
 import {EvaluateScheduleDialog} from '../EvaluateScheduleDialog';
 import {

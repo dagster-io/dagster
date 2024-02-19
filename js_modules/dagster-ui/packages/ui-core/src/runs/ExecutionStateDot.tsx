@@ -1,13 +1,4 @@
-import {
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentGreenHover,
-  colorAccentRed,
-  colorAccentRedHover,
-  colorAccentYellow,
-  colorAccentYellowHover,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {IStepState} from './RunMetadataProvider';
@@ -20,24 +11,24 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
   transition: background 200ms linear;
   background: ${({state}) =>
     ({
-      [IStepState.RUNNING]: colorAccentGray(),
-      [IStepState.SUCCEEDED]: colorAccentGreen(),
-      [IStepState.SKIPPED]: colorAccentYellow(),
-      [IStepState.FAILED]: colorAccentRed(),
-      [IStepState.PREPARING]: colorAccentRed(),
-      [IStepState.RETRY_REQUESTED]: colorAccentRed(),
-      [IStepState.UNKNOWN]: colorAccentRed(),
+      [IStepState.RUNNING]: Colors.accentGray(),
+      [IStepState.SUCCEEDED]: Colors.accentGreen(),
+      [IStepState.SKIPPED]: Colors.accentYellow(),
+      [IStepState.FAILED]: Colors.accentRed(),
+      [IStepState.PREPARING]: Colors.accentRed(),
+      [IStepState.RETRY_REQUESTED]: Colors.accentRed(),
+      [IStepState.UNKNOWN]: Colors.accentRed(),
     })[state]};
   &:hover {
     background: ${({state}) =>
       ({
-        [IStepState.RUNNING]: colorAccentGrayHover(),
-        [IStepState.SUCCEEDED]: colorAccentGreenHover(),
-        [IStepState.SKIPPED]: colorAccentYellowHover(),
-        [IStepState.FAILED]: colorAccentRedHover(),
-        [IStepState.PREPARING]: colorAccentRedHover(),
-        [IStepState.RETRY_REQUESTED]: colorAccentRedHover(),
-        [IStepState.UNKNOWN]: colorAccentRedHover(),
+        [IStepState.RUNNING]: Colors.accentGrayHover(),
+        [IStepState.SUCCEEDED]: Colors.accentGreenHover(),
+        [IStepState.SKIPPED]: Colors.accentYellowHover(),
+        [IStepState.FAILED]: Colors.accentRedHover(),
+        [IStepState.PREPARING]: Colors.accentRedHover(),
+        [IStepState.RETRY_REQUESTED]: Colors.accentRedHover(),
+        [IStepState.UNKNOWN]: Colors.accentRedHover(),
       })[state]};
   }
 `;

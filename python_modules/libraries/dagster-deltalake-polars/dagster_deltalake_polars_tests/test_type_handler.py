@@ -4,6 +4,7 @@ from datetime import datetime
 import polars as pl
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -19,13 +20,16 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
+from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
 from deltalake import DeltaTable
 
 
 @pytest.fixture
 def io_manager(tmp_path) -> DeltaLakePolarsIOManager:
-    return DeltaLakePolarsIOManager(root_uri=str(tmp_path), storage_options=LocalConfig())
+    return DeltaLakePolarsIOManager(
+        root_uri=str(tmp_path), storage_options=LocalConfig(), mode=WriteMode.overwrite
+    )
 
 
 @op(out=Out(metadata={"schema": "a_df"}))
@@ -73,19 +77,38 @@ def b_plus_one(b_df: pl.DataFrame) -> pl.DataFrame:
     return b_df + 1
 
 
-def test_deltalake_io_manager_with_assets(tmp_path, io_manager):
+@asset(key_prefix=["my_schema"])
+def b_df_lazy() -> pl.LazyFrame:
+    return pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+
+@asset(key_prefix=["my_schema"])
+def b_plus_one_lazy(b_df_lazy: pl.LazyFrame) -> pl.LazyFrame:
+    return b_df_lazy.select(pl.all() + 1)
+
+
+@pytest.mark.parametrize(
+    "asset1,asset2,asset1_path,asset2_path",
+    [
+        (b_df, b_plus_one, "b_df", "b_plus_one"),
+        (b_df_lazy, b_plus_one_lazy, "b_df_lazy", "b_plus_one_lazy"),
+    ],
+)
+def test_deltalake_io_manager_with_assets(
+    tmp_path, io_manager, asset1, asset2, asset1_path, asset2_path
+):
     resource_defs = {"io_manager": io_manager}
 
     # materialize asset twice to ensure that tables get properly deleted
     for _ in range(2):
-        res = materialize([b_df, b_plus_one], resources=resource_defs)
+        res = materialize([asset1, asset2], resources=resource_defs)
         assert res.success
 
-        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_df"))
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/" + asset1_path))
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [1, 2, 3]
 
-        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_plus_one"))
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/" + asset2_path))
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [2, 3, 4]
 
@@ -124,19 +147,33 @@ def b_plus_one_columns(b_df: pl.DataFrame) -> pl.DataFrame:
     return b_df + 1
 
 
-def test_loading_columns(tmp_path, io_manager):
+@asset(
+    key_prefix=["my_schema"], ins={"b_df_lazy": AssetIn("b_df_lazy", metadata={"columns": ["a"]})}
+)
+def b_plus_one_columns_lazy(b_df_lazy: pl.LazyFrame) -> pl.LazyFrame:
+    return b_df_lazy.select(pl.all() + 1)
+
+
+@pytest.mark.parametrize(
+    "asset1,asset2,asset1_path,asset2_path",
+    [
+        (b_df, b_plus_one_columns, "b_df", "b_plus_one_columns"),
+        (b_df_lazy, b_plus_one_columns_lazy, "b_df_lazy", "b_plus_one_columns_lazy"),
+    ],
+)
+def test_loading_columns(tmp_path, io_manager, asset1, asset2, asset1_path, asset2_path):
     resource_defs = {"io_manager": io_manager}
 
     # materialize asset twice to ensure that tables get properly deleted
     for _ in range(2):
-        res = materialize([b_df, b_plus_one_columns], resources=resource_defs)
+        res = materialize([asset1, asset2], resources=resource_defs)
         assert res.success
 
-        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_df"))
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/" + asset1_path))
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [1, 2, 3]
 
-        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_plus_one_columns"))
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/" + asset2_path))
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [2, 3, 4]
 
@@ -171,11 +208,9 @@ def test_not_supported_type(tmp_path, io_manager):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context) -> pl.DataFrame:
-    partition = datetime.strptime(
-        context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
-    ).date()
-    value = context.op_config["value"]
+def daily_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
+    value = context.op_execution_context.op_config["value"]
 
     return pl.DataFrame(
         {
@@ -186,25 +221,53 @@ def daily_partitioned(context) -> pl.DataFrame:
     )
 
 
-def test_time_window_partitioned_asset(tmp_path, io_manager):
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "time"},
+    config_schema={"value": str},
+)
+def daily_partitioned_lazy(context) -> pl.LazyFrame:
+    partition = datetime.strptime(
+        context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
+    ).date()
+    value = context.op_config["value"]
+
+    return pl.LazyFrame(
+        {
+            "time": [partition, partition, partition],
+            "a": [value, value, value],
+            "b": [4, 5, 6],
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "asset1,asset1_path",
+    [
+        (daily_partitioned, "daily_partitioned"),
+        (daily_partitioned_lazy, "daily_partitioned_lazy"),
+    ],
+)
+def test_time_window_partitioned_asset(tmp_path, io_manager, asset1, asset1_path):
     resource_defs = {"io_manager": io_manager}
 
     materialize(
-        [daily_partitioned],
+        [asset1],
         partition_key="2022-01-01",
         resources=resource_defs,
-        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+        run_config={"ops": {"my_schema__" + asset1_path: {"config": {"value": "1"}}}},
     )
 
-    dt = DeltaTable(os.path.join(tmp_path, "my_schema/daily_partitioned"))
+    dt = DeltaTable(os.path.join(tmp_path, "my_schema/" + asset1_path))
     out_df = dt.to_pyarrow_table()
     assert out_df["a"].to_pylist() == ["1", "1", "1"]
 
     materialize(
-        [daily_partitioned],
+        [asset1],
         partition_key="2022-01-02",
         resources=resource_defs,
-        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+        run_config={"ops": {"my_schema__" + asset1_path: {"config": {"value": "2"}}}},
     )
 
     dt.update_incremental()
@@ -212,10 +275,10 @@ def test_time_window_partitioned_asset(tmp_path, io_manager):
     assert sorted(out_df["a"].to_pylist()) == ["1", "1", "1", "2", "2", "2"]
 
     materialize(
-        [daily_partitioned],
+        [asset1],
         partition_key="2022-01-01",
         resources=resource_defs,
-        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "3"}}}},
+        run_config={"ops": {"my_schema__" + asset1_path: {"config": {"value": "3"}}}},
     )
 
     dt.update_incremental()
@@ -265,8 +328,8 @@ def test_load_partitioned_asset(tmp_path, io_manager):
     config_schema={"value": str},
 )
 def static_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
-    value = context.op_config["value"]
+    partition = context.partition_key
+    value = context.op_execution_context.op_config["value"]
 
     return pl.DataFrame(
         {
@@ -328,7 +391,7 @@ def test_static_partitioned_asset(tmp_path, io_manager):
 def multi_partitioned(context) -> pl.DataFrame:
     partition = context.partition_key.keys_by_dimension
     time_partition = datetime.strptime(partition["time"], DELTA_DATE_FORMAT).date()
-    value = context.op_config["value"]
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
@@ -415,9 +478,9 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
     metadata={"partition_expr": "fruit"},
     config_schema={"value": str},
 )
-def dynamic_partitioned(context) -> pl.DataFrame:
-    partition = context.asset_partition_key_for_output()
-    value = context.op_config["value"]
+def dynamic_partitioned(context: AssetExecutionContext) -> pl.DataFrame:
+    partition = context.partition_key
+    value = context.op_execution_context.op_config["value"]
     return pl.DataFrame(
         {
             "fruit": [partition, partition, partition],

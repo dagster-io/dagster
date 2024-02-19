@@ -1,8 +1,16 @@
 import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
+  buildAssetKey,
+  buildAssetNode,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
+  buildCompositeConfigType,
+  buildConfigTypeField,
+  buildDimensionPartitionKeys,
+  buildPartitionDefinition,
+  buildRepository,
+  buildRepositoryLocation,
 } from '../../graphql/types';
 import {buildAssetTabs} from '../AssetTabs';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
@@ -22,31 +30,26 @@ const autoMaterializePolicy = buildAutoMaterializePolicy({
 });
 
 describe('buildAssetTabs', () => {
-  const definitionWithPartition: AssetViewDefinitionNodeFragment = {
+  const definitionWithPartition: AssetViewDefinitionNodeFragment = buildAssetNode({
     id: 'dagster_test.toys.repo.auto_materialize_repo_2.["eager_downstream_3_partitioned"]',
     hasAssetChecks: false,
     groupName: 'default',
-    partitionDefinition: {
+    partitionDefinition: buildPartitionDefinition({
       description: 'Daily, starting 2023-02-01 UTC.',
-      __typename: 'PartitionDefinition',
-    },
+    }),
     partitionKeysByDimension: [
-      {
+      buildDimensionPartitionKeys({
         name: 'default',
-        __typename: 'DimensionPartitionKeys',
-      },
+      }),
     ],
-    repository: {
+    repository: buildRepository({
       id: 'cbff94a5bb24f8af0414f4041c450c02725a6ee6',
       name: 'auto_materialize_repo_2',
-      location: {
+      location: buildRepositoryLocation({
         id: 'dagster_test.toys.repo',
         name: 'dagster_test.toys.repo',
-        __typename: 'RepositoryLocation',
-      },
-      __typename: 'Repository',
-    },
-    __typename: 'AssetNode',
+      }),
+    }),
     description: null,
     graphName: null,
     targetingInstigators: [],
@@ -57,30 +60,15 @@ describe('buildAssetTabs', () => {
     backfillPolicy: null,
     freshnessPolicy: null,
     requiredResources: [],
-    configField: {
-      name: 'config',
-      isRequired: false,
-      configType: {
-        givenName: 'Any',
-        __typename: 'RegularConfigType',
-        key: 'Any',
-        description: null,
-        isSelector: false,
-        typeParamKeys: [],
-        recursiveConfigTypes: [],
-      },
-      __typename: 'ConfigTypeField',
-    },
     hasMaterializePermission: true,
     computeKind: null,
     isPartitioned: true,
     isObservable: false,
     isExecutable: true,
     isSource: false,
-    assetKey: {
+    assetKey: buildAssetKey({
       path: ['eager_downstream_3_partitioned'],
-      __typename: 'AssetKey',
-    },
+    }),
     metadataEntries: [],
     type: {
       __typename: 'RegularDagsterType',
@@ -93,78 +81,59 @@ describe('buildAssetTabs', () => {
       isBuiltin: true,
       isNothing: false,
       metadataEntries: [],
-      inputSchemaType: {
+      inputSchemaType: buildCompositeConfigType({
         key: 'Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4',
         description: null,
         isSelector: true,
         typeParamKeys: [],
         fields: [
-          {
+          buildConfigTypeField({
             name: 'json',
             description: null,
             isRequired: true,
             configTypeKey: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             defaultValueAsJson: null,
-            __typename: 'ConfigTypeField',
-          },
-          {
+          }),
+          buildConfigTypeField({
             name: 'pickle',
             description: null,
             isRequired: true,
             configTypeKey: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             defaultValueAsJson: null,
             __typename: 'ConfigTypeField',
-          },
-          {
+          }),
+          buildConfigTypeField({
             name: 'value',
             description: null,
             isRequired: true,
             configTypeKey: 'Any',
             defaultValueAsJson: null,
             __typename: 'ConfigTypeField',
-          },
+          }),
         ],
-        __typename: 'CompositeConfigType',
         recursiveConfigTypes: [
-          {
+          buildCompositeConfigType({
             key: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             description: null,
             isSelector: false,
             typeParamKeys: [],
             fields: [
-              {
+              buildConfigTypeField({
                 name: 'path',
                 description: null,
                 isRequired: true,
                 configTypeKey: 'String',
                 defaultValueAsJson: null,
                 __typename: 'ConfigTypeField',
-              },
+              }),
             ],
-            __typename: 'CompositeConfigType',
-          },
-          {
-            givenName: 'String',
-            __typename: 'RegularConfigType',
-            key: 'String',
-            description: '',
-            isSelector: false,
-            typeParamKeys: [],
-          },
-          {
-            givenName: 'Any',
-            __typename: 'RegularConfigType',
-            key: 'Any',
-            description: null,
-            isSelector: false,
-            typeParamKeys: [],
-          },
+          }),
         ],
-      },
+      }),
       outputSchemaType: null,
       innerTypes: [],
     },
-  };
+  });
 
   // Copied from browser
   const definitionWithoutPartition: AssetViewDefinitionNodeFragment = {
@@ -313,7 +282,7 @@ describe('buildAssetTabs', () => {
       'plots',
       'definition',
       'lineage',
-      'auto-materialize-history',
+      'automation',
     ]);
   });
 
@@ -332,13 +301,7 @@ describe('buildAssetTabs', () => {
       params,
     });
     const tabKeys = tabList.map(({id}) => id);
-    expect(tabKeys).toEqual([
-      'events',
-      'plots',
-      'definition',
-      'lineage',
-      'auto-materialize-history',
-    ]);
+    expect(tabKeys).toEqual(['events', 'plots', 'definition', 'lineage', 'automation']);
   });
 
   it('hides partitions and auto-materialize tabs if no partitions or auto-materializing', () => {

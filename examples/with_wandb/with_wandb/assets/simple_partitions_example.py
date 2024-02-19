@@ -1,6 +1,7 @@
 import random
 
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     DailyPartitionsDefinition,
     TimeWindowPartitionMapping,
@@ -21,11 +22,11 @@ partitions_def = DailyPartitionsDefinition(start_date="2023-01-01", end_date="20
         }
     },
 )
-def create_my_daily_partitioned_asset(context):
+def create_my_daily_partitioned_asset(context: AssetExecutionContext):
     """Example writing an Artifact with daily partitions and custom metadata."""
     # Happens when the asset is materialized in multiple runs (one per partition)
     if context.has_partition_key:
-        partition_key = context.asset_partition_key_for_output()
+        partition_key = context.partition_key
         context.log.info(f"Creating partitioned asset for {partition_key}")
         return random.randint(0, 100)
 

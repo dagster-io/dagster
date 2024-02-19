@@ -1,13 +1,12 @@
-import {Spinner, Box, Caption} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionStatus} from '../partitions/PartitionStatus';
+import {Box, Caption, Spinner} from '@dagster-io/ui-components';
+import {memo} from 'react';
 
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
+import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {PartitionStatus} from '../partitions/PartitionStatus';
 
 interface Props {
   assetKey: AssetKey;
@@ -16,7 +15,7 @@ interface Props {
   selections?: PartitionDimensionSelection[];
 }
 
-export const PartitionHealthSummary = React.memo((props: Props) => {
+export const PartitionHealthSummary = memo((props: Props) => {
   const {showAssetKey, assetKey, data, selections} = props;
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 

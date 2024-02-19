@@ -1,28 +1,27 @@
 import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
-import React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
+import {JobBackfillsTable} from './JobBackfillsTable';
+import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
+import {PartitionGraph} from './PartitionGraph';
+import {PartitionStatus} from './PartitionStatus';
+import {PartitionPerAssetStatus, getVisibleItemCount} from './PartitionStepStatus';
+import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
+import {allPartitionsRange} from './SpanRepresentation';
+import {usePartitionStepQuery} from './usePartitionStepQuery';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
-  mergedAssetHealth,
   explodePartitionKeysInSelectionMatching,
   isTimeseriesDimension,
+  mergedAssetHealth,
 } from '../assets/MultipartitioningSupport';
 import {keyCountInSelections, usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {JobBackfillsTable} from './JobBackfillsTable';
-import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
-import {PartitionGraph} from './PartitionGraph';
-import {PartitionStatus} from './PartitionStatus';
-import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
-import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
-import {allPartitionsRange} from './SpanRepresentation';
-import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 export const AssetJobPartitionsView = ({
   partitionSetName,
@@ -46,7 +45,7 @@ export const AssetJobPartitionsView = ({
 
   const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
 
-  const {total, missing, merged} = React.useMemo(() => {
+  const {total, missing, merged} = useMemo(() => {
     const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));
     const selection = merged.dimensions.map((d) => ({
       selectedKeys: d.partitionKeys,
@@ -64,11 +63,11 @@ export const AssetJobPartitionsView = ({
     };
   }, [assetHealth]);
 
-  const [pageSize, setPageSize] = React.useState(60);
-  const [offset, setOffset] = React.useState<number>(0);
-  const [showAssets, setShowAssets] = React.useState(false);
+  const [pageSize, setPageSize] = useState(60);
+  const [offset, setOffset] = useState<number>(0);
+  const [showAssets, setShowAssets] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as

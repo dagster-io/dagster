@@ -1,6 +1,6 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {buildPartitionHealthMock} from '../../assets/__fixtures__/PartitionHealthQuery.fixtures';

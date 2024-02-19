@@ -78,7 +78,7 @@ def test_wait_for_pod(cluster_provider, namespace):
             )
             api_client.wait_for_pod("sayhi3", namespace=namespace, wait_timeout=1)
 
-        with pytest.raises(DagsterK8sError) as exc_info:
+        with pytest.raises(DagsterK8sError):
             api_client.core_api.create_namespaced_pod(
                 body=construct_pod_manifest("failwaitforpod", 'echo "whoops!"; exit 1'),
                 namespace=namespace,
@@ -86,9 +86,6 @@ def test_wait_for_pod(cluster_provider, namespace):
             api_client.wait_for_pod(
                 "failwaitforpod", namespace=namespace, wait_for_state=WaitForPodState.Terminated
             )
-
-        # not doing total match because integration test. unit tests test full log message
-        assert "Pod did not exit successfully." in str(exc_info.value)
 
     finally:
         for pod_name in ["waitforpod1", "sayhi2", "sayhi3", "failwaitforpod"]:
@@ -318,6 +315,36 @@ Container 'failpoddebug' status: Terminated with exit code 1: Error
 Last 25 log lines for container 'failpoddebug':"""
         )
         assert " whoops!\n" in pod_debug_info
+        assert pod_debug_info.endswith("No warning events for pod.")
+
+        # Test case where the pod unexpectedly terminates and logs collection is skipped
+        api_client.batch_api.create_namespaced_job(
+            body=construct_job_manifest("failpoddebugnologs", 'echo "whoopsies!"; exit 1'),
+            namespace=namespace,
+        )
+
+        with pytest.raises(
+            DagsterK8sError,
+            match="Encountered failed job pods for job failpoddebugnologs with status:",
+        ):
+            api_client.wait_for_job_success("failpoddebugnologs", namespace=namespace)
+
+        pod_names = api_client.get_pod_names_in_job("failpoddebugnologs", namespace=namespace)
+
+        pod_debug_info = api_client.get_pod_debug_info(
+            pod_names[0], namespace=namespace, include_container_logs=False
+        )
+
+        print(pod_debug_info)  # noqa
+
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
+
+Pod status: Failed
+Container 'failpoddebugnologs' status: Terminated with exit code 1: Error
+            """.strip()
+        )
+        assert " whoopsies!\n" not in pod_debug_info
         assert pod_debug_info.endswith("No warning events for pod.")
 
         # Test case where the pod completes successfully

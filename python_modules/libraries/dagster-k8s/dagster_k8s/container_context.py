@@ -1,5 +1,16 @@
 import copy
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, cast
+import logging
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    cast,
+)
 
 import dagster._check as check
 import kubernetes
@@ -8,7 +19,7 @@ from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.utils import parse_env_var
+from dagster._core.utils import get_env_var_name, parse_env_var
 from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
@@ -20,7 +31,7 @@ from .job import (
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
-from .models import k8s_snake_case_dict
+from .models import k8s_snake_case_dict, k8s_snake_case_keys
 
 
 def _dedupe_list(values):
@@ -204,6 +215,217 @@ class K8sContainerContext(
         parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
+    def _snake_case_allowed_fields(
+        self, only_allow_user_defined_k8s_config_fields: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        result = {}
+
+        for key in only_allow_user_defined_k8s_config_fields:
+            if key == "container_config":
+                model_class = kubernetes.client.V1Container
+            elif key in {"job_metadata", "pod_template_spec_metadata"}:
+                model_class = kubernetes.client.V1ObjectMeta
+            elif key == "pod_spec_config":
+                model_class = kubernetes.client.V1PodSpec
+            elif key == "job_spec_config":
+                model_class = kubernetes.client.V1JobSpec
+            else:
+                raise Exception(f"Unexpected key in allowlist {key}")
+            result[key] = k8s_snake_case_keys(
+                model_class, only_allow_user_defined_k8s_config_fields[key]
+            )
+        return result
+
+    def validate_user_k8s_config(
+        self,
+        only_allow_user_defined_k8s_config_fields: Optional[Mapping[str, Any]],
+        only_allow_user_defined_env_vars: Optional[Sequence[str]],
+    ) -> "K8sContainerContext":
+        used_fields = self._get_used_k8s_config_fields()
+
+        if only_allow_user_defined_k8s_config_fields is not None:
+            snake_case_allowlist = self._snake_case_allowed_fields(
+                only_allow_user_defined_k8s_config_fields
+            )
+
+            disallowed_fields = []
+
+            for key, used_fields_with_key in used_fields.items():
+                if isinstance(used_fields_with_key, set):
+                    for used_field in used_fields_with_key:
+                        if not snake_case_allowlist.get(key, {}).get(used_field):
+                            disallowed_fields.append(f"{key}.{used_field}")
+                else:
+                    check.invariant(isinstance(used_fields_with_key, bool))
+                    if used_fields_with_key and not only_allow_user_defined_k8s_config_fields.get(
+                        key
+                    ):
+                        disallowed_fields.append(key)
+
+            if disallowed_fields:
+                raise Exception(
+                    f"Attempted to create a pod with fields that violated the allowed list: {', '.join(disallowed_fields)}"
+                )
+
+        validated_container_context = self
+
+        if only_allow_user_defined_env_vars is not None:
+            validated_container_context = self._filter_user_defined_env_vars(
+                set(only_allow_user_defined_env_vars)
+            )
+
+        return validated_container_context
+
+    def _filter_user_defined_k8s_config_env_vars(
+        self,
+        user_defined_k8s_config: UserDefinedDagsterK8sConfig,
+        only_allow_user_defined_env_vars: Set[str],
+        discarded_env_var_names: Set[str],
+    ) -> UserDefinedDagsterK8sConfig:
+        """Filters out any env vars from the supplied UserDefinedDagsterK8sConfig
+        that are not in the supplied set of env var names and adds the names of
+        any env vars that were discarded to the passed-in discarded_env_var_names set.
+        """
+        if "env" not in user_defined_k8s_config.container_config:
+            return user_defined_k8s_config
+
+        filtered_env = []
+        for env_dict in user_defined_k8s_config.container_config["env"]:
+            env_key = env_dict["name"]
+            if env_key in only_allow_user_defined_env_vars:
+                filtered_env.append(env_dict)
+            else:
+                discarded_env_var_names.add(env_key)
+
+        return UserDefinedDagsterK8sConfig.from_dict(
+            {
+                **user_defined_k8s_config.to_dict(),
+                "container_config": {
+                    **user_defined_k8s_config.container_config,
+                    "env": filtered_env,
+                },
+            }
+        )
+
+    def _filter_user_defined_env_vars(
+        self,
+        only_allow_user_defined_env_vars: Set[str],
+    ) -> "K8sContainerContext":
+        discarded_env_var_names = set()
+
+        new_run_k8s_config = self._filter_user_defined_k8s_config_env_vars(
+            self.run_k8s_config,
+            only_allow_user_defined_env_vars,
+            discarded_env_var_names,
+        )
+
+        new_server_k8s_config = self._filter_user_defined_k8s_config_env_vars(
+            self.server_k8s_config,
+            only_allow_user_defined_env_vars,
+            discarded_env_var_names,
+        )
+
+        new_env_vars = []
+        for env_var in self.env_vars:
+            env_var_name = get_env_var_name(env_var)
+            if env_var_name in only_allow_user_defined_env_vars:
+                new_env_vars.append(env_var)
+            else:
+                discarded_env_var_names.add(env_var_name)
+
+        new_env = []
+        for env_map in self.env:
+            if env_map["name"] in only_allow_user_defined_env_vars:
+                new_env.append(env_map)
+            else:
+                discarded_env_var_names.add(env_map["name"])
+
+        if discarded_env_var_names:
+            logging.warning(
+                f"Excluding the following environment variables because they are not in the allowlist for user-defined environment variables: {', '.join(discarded_env_var_names)}"
+            )
+
+        return self._replace(
+            env_vars=new_env_vars,
+            env=new_env,
+            run_k8s_config=new_run_k8s_config,
+            server_k8s_config=new_server_k8s_config,
+        )
+
+    def _get_used_k8s_config_fields(self) -> Mapping[str, Mapping[str, Set[str]]]:
+        used_fields = {}
+        for key, fields in self.run_k8s_config.to_dict().items():
+            if key == "merge_behavior":
+                continue
+
+            used_fields[key] = used_fields.get(key, set()).union(
+                {field_key for field_key in fields}
+            )
+
+        for key, fields in self.server_k8s_config.to_dict().items():
+            if key == "merge_behavior":
+                continue
+
+            used_fields[key] = used_fields.get(key, set()).union(
+                {field_key for field_key in fields}
+            )
+
+        if self.image_pull_policy:
+            # image_pull_policy is equivalent to container_config.image_pull_policy
+            used_fields["container_config"].add("image_pull_policy")
+
+        if self.image_pull_secrets:
+            # image_pull_secrets is equivalent to pod_spec_config.image_pull_secrets
+            used_fields["pod_spec_config"].add("image_pull_secrets")
+
+        if self.service_account_name:
+            # service_account_name is equivalent to pod_spec_config.service_account_name
+            used_fields["pod_spec_config"].add("service_account_name")
+
+        if self.env_config_maps or self.env_secrets:
+            # env_config_maps and env_secrets end up on env_from on the container
+            used_fields["container_config"].add("env_from")
+
+        if self.env_vars:
+            # env_vars end up in the "env" field on the container
+            used_fields["container_config"].add("env")
+
+        if self.env:
+            # env is equivalent to container_config.env
+            used_fields["container_config"].add("env")
+
+        if self.volume_mounts:
+            # volume_mounts is equivalent to container_config.volume_mounts
+            used_fields["container_config"].add("volume_mounts")
+
+        if self.volumes:
+            # volumes is equivalent to pod_spec_config.volumes
+            used_fields["pod_spec_config"].add("volumes")
+
+        if self.labels:
+            # labels end up on both pod_template_spec_metadata.labels nad
+            # job_metadata.labels since they apply to both the pod and job
+            used_fields["pod_template_spec_metadata"].add("labels")
+            used_fields["job_metadata"].add("labels")
+
+        if self.resources:
+            # resources is equivalent to container_config.resources
+            used_fields["container_config"].add("resources")
+
+        if self.scheduler_name:
+            # scheduler_name is equivalent to pod_spec_config.scheduler_name
+            used_fields["pod_spec_config"].add("scheduler_name")
+
+        if self.security_context:
+            # security_context is equivalent to container_config.security_context
+            used_fields["container_config"].add("security_context")
+
+        if self.namespace:
+            used_fields["pod_template_spec_metadata"].add("namespace")
+            used_fields["job_metadata"].add("namespace")
+
+        return used_fields
+
     @staticmethod
     def create_for_run(
         dagster_run: DagsterRun,
@@ -234,20 +456,33 @@ class K8sContainerContext(
                 )
             )
 
+        user_defined_container_context = K8sContainerContext()
+
         if dagster_run.job_code_origin:
             run_container_context = dagster_run.job_code_origin.repository_origin.container_context
 
             if run_container_context:
-                context = context.merge(
+                user_defined_container_context = user_defined_container_context.merge(
                     K8sContainerContext.create_from_config(run_container_context)
                 )
 
         if include_run_tags:
             user_defined_k8s_config = get_user_defined_k8s_config(dagster_run.tags)
 
-            context = context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config))
+            user_defined_container_context = user_defined_container_context.merge(
+                K8sContainerContext(run_k8s_config=user_defined_k8s_config)
+            )
 
-        return context
+        # If there's an allowlist, make sure user_defined_container_context doesn't violate it
+        if run_launcher:
+            user_defined_container_context = (
+                user_defined_container_context.validate_user_k8s_config(
+                    run_launcher.only_allow_user_defined_k8s_config_fields,
+                    run_launcher.only_allow_user_defined_env_vars,
+                )
+            )
+
+        return context.merge(user_defined_container_context)
 
     @staticmethod
     def create_from_config(run_container_context) -> "K8sContainerContext":

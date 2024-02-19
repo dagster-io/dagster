@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import {Button} from './Button';
 import {ConfigEditorWithSchema} from './ConfigEditorWithSchema';
 import {Dialog, DialogFooter} from './Dialog';

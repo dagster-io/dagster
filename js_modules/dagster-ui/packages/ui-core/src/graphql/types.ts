@@ -74,8 +74,23 @@ export type ArrayConfigType = ConfigType &
     description: Maybe<Scalars['String']>;
     isSelector: Scalars['Boolean'];
     key: Scalars['String'];
-    ofType: ConfigType;
-    recursiveConfigTypes: Array<ConfigType>;
+    ofType:
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType;
+    recursiveConfigTypes: Array<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
     typeParamKeys: Array<Scalars['String']>;
   };
 
@@ -144,7 +159,24 @@ export type AssetCheckEvaluation = {
   __typename: 'AssetCheckEvaluation';
   assetKey: AssetKey;
   checkName: Scalars['String'];
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   severity: AssetCheckSeverity;
   success: Scalars['Boolean'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
@@ -244,6 +276,45 @@ export type AssetChecksOrError =
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetChecks;
+
+export type AssetConditionEvaluation = {
+  __typename: 'AssetConditionEvaluation';
+  evaluationNodes: Array<AssetConditionEvaluationNode>;
+  rootUniqueId: Scalars['String'];
+};
+
+export type AssetConditionEvaluationNode =
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode;
+
+export type AssetConditionEvaluationRecord = {
+  __typename: 'AssetConditionEvaluationRecord';
+  assetKey: AssetKey;
+  endTimestamp: Maybe<Scalars['Float']>;
+  evaluation: AssetConditionEvaluation;
+  evaluationId: Scalars['Int'];
+  id: Scalars['ID'];
+  numRequested: Scalars['Int'];
+  runIds: Array<Scalars['String']>;
+  startTimestamp: Maybe<Scalars['Float']>;
+  timestamp: Scalars['Float'];
+};
+
+export type AssetConditionEvaluationRecords = {
+  __typename: 'AssetConditionEvaluationRecords';
+  records: Array<AssetConditionEvaluationRecord>;
+};
+
+export type AssetConditionEvaluationRecordsOrError =
+  | AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError;
+
+export enum AssetConditionEvaluationStatus {
+  FALSE = 'FALSE',
+  SKIPPED = 'SKIPPED',
+  TRUE = 'TRUE',
+}
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
@@ -364,11 +435,29 @@ export type AssetNode = {
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition: Maybe<Run>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
   opNames: Array<Scalars['String']>;
   opVersion: Maybe<Scalars['String']>;
+  owners: Array<AssetOwner>;
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
@@ -380,7 +469,7 @@ export type AssetNode = {
   staleStatus: Maybe<StaleStatus>;
   staleStatusByPartition: Array<StaleStatus>;
   targetingInstigators: Array<Instigator>;
-  type: Maybe<DagsterType>;
+  type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
 };
 
 export type AssetNodeAssetChecksOrErrorArgs = {
@@ -456,6 +545,8 @@ export type AssetNotFoundError = Error & {
 
 export type AssetOrError = Asset | AssetNotFoundError;
 
+export type AssetOwner = TeamAssetOwner | UserAssetOwner;
+
 export type AssetPartitionStatuses =
   | DefaultPartitionStatuses
   | MultiPartitionStatuses
@@ -478,7 +569,23 @@ export type AssetPartitionsStatusCounts = {
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
+  assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']>;
+  assets: Array<Asset>;
+};
+
+export type AssetSubset = {
+  __typename: 'AssetSubset';
+  assetKey: AssetKey;
+  subsetValue: AssetSubsetValue;
+};
+
+export type AssetSubsetValue = {
+  __typename: 'AssetSubsetValue';
+  boolValue: Maybe<Scalars['Boolean']>;
+  isPartitioned: Scalars['Boolean'];
+  partitionKeyRanges: Maybe<Array<PartitionKeyRange>>;
+  partitionKeys: Maybe<Array<Scalars['String']>>;
 };
 
 export type AssetWipeMutationResult =
@@ -632,7 +739,15 @@ export type CompositeConfigType = ConfigType & {
   fields: Array<ConfigTypeField>;
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
-  recursiveConfigTypes: Array<ConfigType>;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   typeParamKeys: Array<Scalars['String']>;
 };
 
@@ -702,13 +817,28 @@ export type ConfigType = {
   description: Maybe<Scalars['String']>;
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
-  recursiveConfigTypes: Array<ConfigType>;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   typeParamKeys: Array<Scalars['String']>;
 };
 
 export type ConfigTypeField = {
   __typename: 'ConfigTypeField';
-  configType: ConfigType;
+  configType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
   configTypeKey: Scalars['String'];
   defaultValueAsJson: Maybe<Scalars['String']>;
   description: Maybe<Scalars['String']>;
@@ -869,16 +999,49 @@ export type DagsterRunEvent =
 export type DagsterType = {
   description: Maybe<Scalars['String']>;
   displayName: Scalars['String'];
-  innerTypes: Array<DagsterType>;
-  inputSchemaType: Maybe<ConfigType>;
+  innerTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+  inputSchemaType: Maybe<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   isBuiltin: Scalars['Boolean'];
   isList: Scalars['Boolean'];
   isNothing: Scalars['Boolean'];
   isNullable: Scalars['Boolean'];
   key: Scalars['String'];
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   name: Maybe<Scalars['String']>;
-  outputSchemaType: Maybe<ConfigType>;
+  outputSchemaType: Maybe<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
 };
 
 export type DagsterTypeNotFoundError = Error & {
@@ -936,7 +1099,24 @@ export type DimensionPartitionKeys = {
 export type DisplayableEvent = {
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
 };
 
 export type DryRunInstigationTick = {
@@ -992,7 +1172,24 @@ export type EngineEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -1005,7 +1202,15 @@ export type EnumConfigType = ConfigType & {
   givenName: Scalars['String'];
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
-  recursiveConfigTypes: Array<ConfigType>;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   typeParamKeys: Array<Scalars['String']>;
   values: Array<EnumConfigValue>;
 };
@@ -1205,7 +1410,24 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
     label: Maybe<Scalars['String']>;
     level: LogLevel;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     outputName: Scalars['String'];
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
@@ -1286,7 +1508,24 @@ export type ExpectationResult = DisplayableEvent & {
   __typename: 'ExpectationResult';
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   success: Scalars['Boolean'];
 };
 
@@ -1294,7 +1533,24 @@ export type FailureMetadata = DisplayableEvent & {
   __typename: 'FailureMetadata';
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
 };
 
 export type FeatureFlag = {
@@ -1381,7 +1637,24 @@ export type HandledOutputEvent = DisplayableEvent &
     level: LogLevel;
     managerKey: Scalars['String'];
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     outputName: Scalars['String'];
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
@@ -1429,10 +1702,27 @@ export type HookSkippedEvent = MessageEvent &
 
 export type IPipelineSnapshot = {
   dagsterTypeOrError: DagsterTypeOrError;
-  dagsterTypes: Array<DagsterType>;
+  dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
   description: Maybe<Scalars['String']>;
   graphName: Scalars['String'];
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   modes: Array<Mode>;
   name: Scalars['String'];
   parentSnapshotId: Maybe<Scalars['String']>;
@@ -1483,9 +1773,26 @@ export type Input = {
 export type InputDefinition = {
   __typename: 'InputDefinition';
   description: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   name: Scalars['String'];
-  type: DagsterType;
+  type: ListDagsterType | NullableDagsterType | RegularDagsterType;
 };
 
 export type InputMapping = {
@@ -1516,7 +1823,7 @@ export type Instance = {
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
-  useAutomationPolicySensors: Scalars['Boolean'];
+  useAutoMaterializeSensors: Scalars['Boolean'];
 };
 
 export type InstanceConcurrencyLimitArgs = {
@@ -1680,13 +1987,30 @@ export type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Job';
     dagsterTypeOrError: DagsterTypeOrError;
-    dagsterTypes: Array<DagsterType>;
+    dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']>;
     graphName: Scalars['String'];
     id: Scalars['ID'];
     isAssetJob: Scalars['Boolean'];
     isJob: Scalars['Boolean'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     modes: Array<Mode>;
     name: Scalars['String'];
     parentSnapshotId: Maybe<Scalars['String']>;
@@ -1841,17 +2165,50 @@ export type ListDagsterType = DagsterType &
     __typename: 'ListDagsterType';
     description: Maybe<Scalars['String']>;
     displayName: Scalars['String'];
-    innerTypes: Array<DagsterType>;
-    inputSchemaType: Maybe<ConfigType>;
+    innerTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+    inputSchemaType: Maybe<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
     isBuiltin: Scalars['Boolean'];
     isList: Scalars['Boolean'];
     isNothing: Scalars['Boolean'];
     isNullable: Scalars['Boolean'];
     key: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     name: Maybe<Scalars['String']>;
-    ofType: DagsterType;
-    outputSchemaType: Maybe<ConfigType>;
+    ofType: ListDagsterType | NullableDagsterType | RegularDagsterType;
+    outputSchemaType: Maybe<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
   };
 
 export type LoadedInputEvent = DisplayableEvent &
@@ -1865,7 +2222,24 @@ export type LoadedInputEvent = DisplayableEvent &
     level: LogLevel;
     managerKey: Scalars['String'];
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -1951,10 +2325,32 @@ export type MapConfigType = ConfigType & {
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
   keyLabelName: Maybe<Scalars['String']>;
-  keyType: ConfigType;
-  recursiveConfigTypes: Array<ConfigType>;
+  keyType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   typeParamKeys: Array<Scalars['String']>;
-  valueType: ConfigType;
+  valueType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
 };
 
 export type MarkdownMetadataEntry = MetadataEntry & {
@@ -1990,7 +2386,24 @@ export type MaterializationEvent = DisplayableEvent &
     label: Maybe<Scalars['String']>;
     level: LogLevel;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     partition: Maybe<Scalars['String']>;
     runId: Scalars['String'];
     runOrError: RunOrError;
@@ -2086,6 +2499,7 @@ export type Mutation = {
   __typename: 'Mutation';
   addDynamicPartition: AddDynamicPartitionResult;
   cancelPartitionBackfill: CancelBackfillResult;
+  deleteConcurrencyLimit: Scalars['Boolean'];
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
   freeConcurrencySlots: Scalars['Boolean'];
@@ -2127,6 +2541,10 @@ export type MutationAddDynamicPartitionArgs = {
 
 export type MutationCancelPartitionBackfillArgs = {
   backfillId: Scalars['String'];
+};
+
+export type MutationDeleteConcurrencyLimitArgs = {
+  concurrencyKey: Scalars['String'];
 };
 
 export type MutationDeletePipelineRunArgs = {
@@ -2303,8 +2721,23 @@ export type NullableConfigType = ConfigType &
     description: Maybe<Scalars['String']>;
     isSelector: Scalars['Boolean'];
     key: Scalars['String'];
-    ofType: ConfigType;
-    recursiveConfigTypes: Array<ConfigType>;
+    ofType:
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType;
+    recursiveConfigTypes: Array<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
     typeParamKeys: Array<Scalars['String']>;
   };
 
@@ -2313,17 +2746,50 @@ export type NullableDagsterType = DagsterType &
     __typename: 'NullableDagsterType';
     description: Maybe<Scalars['String']>;
     displayName: Scalars['String'];
-    innerTypes: Array<DagsterType>;
-    inputSchemaType: Maybe<ConfigType>;
+    innerTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+    inputSchemaType: Maybe<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
     isBuiltin: Scalars['Boolean'];
     isList: Scalars['Boolean'];
     isNothing: Scalars['Boolean'];
     isNullable: Scalars['Boolean'];
     key: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     name: Maybe<Scalars['String']>;
-    ofType: DagsterType;
-    outputSchemaType: Maybe<ConfigType>;
+    ofType: ListDagsterType | NullableDagsterType | RegularDagsterType;
+    outputSchemaType: Maybe<
+      | ArrayConfigType
+      | CompositeConfigType
+      | EnumConfigType
+      | MapConfigType
+      | NullableConfigType
+      | RegularConfigType
+      | ScalarUnionConfigType
+    >;
   };
 
 export type ObjectStoreOperationEvent = MessageEvent &
@@ -2343,7 +2809,24 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
   __typename: 'ObjectStoreOperationResult';
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   op: ObjectStoreOperationType;
 };
 
@@ -2364,7 +2847,24 @@ export type ObservationEvent = DisplayableEvent &
     label: Maybe<Scalars['String']>;
     level: LogLevel;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     partition: Maybe<Scalars['String']>;
     runId: Scalars['String'];
     runOrError: RunOrError;
@@ -2386,9 +2886,26 @@ export type OutputDefinition = {
   __typename: 'OutputDefinition';
   description: Maybe<Scalars['String']>;
   isDynamic: Maybe<Scalars['Boolean']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   name: Scalars['String'];
-  type: DagsterType;
+  type: ListDagsterType | NullableDagsterType | RegularDagsterType;
 };
 
 export type OutputMapping = {
@@ -2624,6 +3141,20 @@ export type PartitionTags = {
 
 export type PartitionTagsOrError = PartitionTags | PythonError;
 
+export type PartitionedAssetConditionEvaluationNode = {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+  candidateSubset: Maybe<AssetSubset>;
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  endTimestamp: Maybe<Scalars['Float']>;
+  numFalse: Maybe<Scalars['Int']>;
+  numSkipped: Maybe<Scalars['Int']>;
+  numTrue: Scalars['Int'];
+  startTimestamp: Maybe<Scalars['Float']>;
+  trueSubset: AssetSubset;
+  uniqueId: Scalars['String'];
+};
+
 export type Partitions = {
   __typename: 'Partitions';
   results: Array<Partition>;
@@ -2667,13 +3198,30 @@ export type Pipeline = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Pipeline';
     dagsterTypeOrError: DagsterTypeOrError;
-    dagsterTypes: Array<DagsterType>;
+    dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']>;
     graphName: Scalars['String'];
     id: Scalars['ID'];
     isAssetJob: Scalars['Boolean'];
     isJob: Scalars['Boolean'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     modes: Array<Mode>;
     name: Scalars['String'];
     parentSnapshotId: Maybe<Scalars['String']>;
@@ -2714,7 +3262,14 @@ export type PipelineConfigValidationError = {
 };
 
 export type PipelineConfigValidationInvalid = {
-  errors: Array<PipelineConfigValidationError>;
+  errors: Array<
+    | FieldNotDefinedConfigError
+    | FieldsNotDefinedConfigError
+    | MissingFieldConfigError
+    | MissingFieldsConfigError
+    | RuntimeMismatchConfigError
+    | SelectorTypeConfigError
+  >;
   pipelineName: Scalars['String'];
 };
 
@@ -2765,7 +3320,7 @@ export type PipelineRun = {
   jobName: Scalars['String'];
   mode: Scalars['String'];
   parentRunId: Maybe<Scalars['String']>;
-  pipeline: PipelineReference;
+  pipeline: PipelineSnapshot | UnknownPipeline;
   pipelineName: Scalars['String'];
   pipelineSnapshotId: Maybe<Scalars['String']>;
   repositoryOrigin: Maybe<RepositoryOrigin>;
@@ -2869,11 +3424,28 @@ export type PipelineSnapshot = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'PipelineSnapshot';
     dagsterTypeOrError: DagsterTypeOrError;
-    dagsterTypes: Array<DagsterType>;
+    dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']>;
     graphName: Scalars['String'];
     id: Scalars['ID'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     modes: Array<Mode>;
     name: Scalars['String'];
     parentSnapshotId: Maybe<Scalars['String']>;
@@ -2958,6 +3530,9 @@ export type Query = {
   allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
+  assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
+  assetConditionEvaluationRecordsOrError: Maybe<AssetConditionEvaluationRecordsOrError>;
+  assetConditionEvaluationsForEvaluationId: Maybe<AssetConditionEvaluationRecordsOrError>;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -3003,7 +3578,6 @@ export type Query = {
   shouldShowNux: Scalars['Boolean'];
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
-  unloadableInstigationStatesOrError: InstigationStatesOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
@@ -3022,6 +3596,22 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String'];
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
+};
+
+export type QueryAssetConditionEvaluationForPartitionArgs = {
+  assetKey: AssetKeyInput;
+  evaluationId: Scalars['Int'];
+  partition: Scalars['String'];
+};
+
+export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
+  assetKey: AssetKeyInput;
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
+};
+
+export type QueryAssetConditionEvaluationsForEvaluationIdArgs = {
+  evaluationId: Scalars['Int'];
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
@@ -3209,10 +3799,6 @@ export type QueryTopLevelResourceDetailsOrErrorArgs = {
   resourceSelector: ResourceSelector;
 };
 
-export type QueryUnloadableInstigationStatesOrErrorArgs = {
-  instigationType?: InputMaybe<InstigationType>;
-};
-
 export type QueryUtilizedEnvVarsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
@@ -3233,7 +3819,15 @@ export type RegularConfigType = ConfigType & {
   givenName: Scalars['String'];
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
-  recursiveConfigTypes: Array<ConfigType>;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   typeParamKeys: Array<Scalars['String']>;
 };
 
@@ -3241,16 +3835,49 @@ export type RegularDagsterType = DagsterType & {
   __typename: 'RegularDagsterType';
   description: Maybe<Scalars['String']>;
   displayName: Scalars['String'];
-  innerTypes: Array<DagsterType>;
-  inputSchemaType: Maybe<ConfigType>;
+  innerTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+  inputSchemaType: Maybe<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   isBuiltin: Scalars['Boolean'];
   isList: Scalars['Boolean'];
   isNothing: Scalars['Boolean'];
   isNullable: Scalars['Boolean'];
   key: Scalars['String'];
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   name: Maybe<Scalars['String']>;
-  outputSchemaType: Maybe<ConfigType>;
+  outputSchemaType: Maybe<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
 };
 
 export type ReloadNotSupported = Error & {
@@ -3436,7 +4063,24 @@ export type ResourceInitFailureEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -3455,7 +4099,24 @@ export type ResourceInitStartedEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -3474,7 +4135,24 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -3528,7 +4206,7 @@ export type Run = PipelineRun & {
   mode: Scalars['String'];
   parentPipelineSnapshotId: Maybe<Scalars['String']>;
   parentRunId: Maybe<Scalars['String']>;
-  pipeline: PipelineReference;
+  pipeline: PipelineSnapshot | UnknownPipeline;
   pipelineName: Scalars['String'];
   pipelineSnapshotId: Maybe<Scalars['String']>;
   repositoryOrigin: Maybe<RepositoryOrigin>;
@@ -3587,9 +4265,24 @@ export type RunCancelingEvent = MessageEvent &
 
 export type RunConfigSchema = {
   __typename: 'RunConfigSchema';
-  allConfigTypes: Array<ConfigType>;
+  allConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
   isRunConfigValid: PipelineConfigValidationResult;
-  rootConfigType: ConfigType;
+  rootConfigType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
   rootDefaultYaml: Scalars['String'];
 };
 
@@ -3606,7 +4299,14 @@ export type RunConfigSchemaOrError =
 
 export type RunConfigValidationInvalid = PipelineConfigValidationInvalid & {
   __typename: 'RunConfigValidationInvalid';
-  errors: Array<PipelineConfigValidationError>;
+  errors: Array<
+    | FieldNotDefinedConfigError
+    | FieldsNotDefinedConfigError
+    | MissingFieldConfigError
+    | MissingFieldsConfigError
+    | RuntimeMismatchConfigError
+    | SelectorTypeConfigError
+  >;
   pipelineName: Scalars['String'];
 };
 
@@ -3849,17 +4549,41 @@ export type ScalarUnionConfigType = ConfigType & {
   description: Maybe<Scalars['String']>;
   isSelector: Scalars['Boolean'];
   key: Scalars['String'];
-  nonScalarType: ConfigType;
+  nonScalarType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
   nonScalarTypeKey: Scalars['String'];
-  recursiveConfigTypes: Array<ConfigType>;
-  scalarType: ConfigType;
+  recursiveConfigTypes: Array<
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType
+  >;
+  scalarType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
   scalarTypeKey: Scalars['String'];
   typeParamKeys: Array<Scalars['String']>;
 };
 
 export type Schedule = {
   __typename: 'Schedule';
+  canReset: Scalars['Boolean'];
   cronSchedule: Scalars['String'];
+  defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']>;
   executionTimezone: Maybe<Scalars['String']>;
   futureTick: DryRunInstigationTick;
@@ -3976,6 +4700,8 @@ export type SelectorTypeConfigError = PipelineConfigValidationError & {
 export type Sensor = {
   __typename: 'Sensor';
   assetSelection: Maybe<AssetSelection>;
+  canReset: Scalars['Boolean'];
+  defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   jobOriginId: Scalars['String'];
@@ -4018,7 +4744,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
-  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
+  AUTO_MATERIALIZE = 'AUTO_MATERIALIZE',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',
@@ -4056,7 +4782,7 @@ export type ShutdownRepositoryLocationSuccess = {
 
 export type Solid = {
   __typename: 'Solid';
-  definition: ISolidDefinition;
+  definition: CompositeSolidDefinition | SolidDefinition;
   inputs: Array<Input>;
   isDynamicMapped: Scalars['Boolean'];
   name: Scalars['String'];
@@ -4115,6 +4841,32 @@ export type SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUn
 export type SolidStepStatusUnavailableError = Error & {
   __typename: 'SolidStepStatusUnavailableError';
   message: Scalars['String'];
+};
+
+export type SpecificPartitionAssetConditionEvaluationNode = {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
+  status: AssetConditionEvaluationStatus;
+  uniqueId: Scalars['String'];
 };
 
 export type StaleCause = {
@@ -4198,7 +4950,24 @@ export type StepWorkerStartedEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -4217,7 +4986,24 @@ export type StepWorkerStartingEvent = DisplayableEvent &
     markerEnd: Maybe<Scalars['String']>;
     markerStart: Maybe<Scalars['String']>;
     message: Scalars['String'];
-    metadataEntries: Array<MetadataEntry>;
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | UrlMetadataEntry
+    >;
     runId: Scalars['String'];
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
@@ -4322,6 +5108,11 @@ export type Target = {
   solidSelection: Maybe<Array<Scalars['String']>>;
 };
 
+export type TeamAssetOwner = {
+  __typename: 'TeamAssetOwner';
+  team: Scalars['String'];
+};
+
 export type TerminatePipelineExecutionFailure = {
   message: Scalars['String'];
   run: Run;
@@ -4411,7 +5202,24 @@ export type TypeCheck = DisplayableEvent & {
   __typename: 'TypeCheck';
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
-  metadataEntries: Array<MetadataEntry>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
   success: Scalars['Boolean'];
 };
 
@@ -4424,6 +5232,34 @@ export type UnknownPipeline = PipelineReference & {
   __typename: 'UnknownPipeline';
   name: Scalars['String'];
   solidSelection: Maybe<Array<Scalars['String']>>;
+};
+
+export type UnpartitionedAssetConditionEvaluationNode = {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+  childUniqueIds: Array<Scalars['String']>;
+  description: Scalars['String'];
+  endTimestamp: Maybe<Scalars['Float']>;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | UrlMetadataEntry
+  >;
+  startTimestamp: Maybe<Scalars['Float']>;
+  status: AssetConditionEvaluationStatus;
+  uniqueId: Scalars['String'];
 };
 
 export type UnpartitionedAssetStatus = {
@@ -4443,8 +5279,13 @@ export type UrlMetadataEntry = MetadataEntry & {
 
 export type UsedSolid = {
   __typename: 'UsedSolid';
-  definition: ISolidDefinition;
+  definition: CompositeSolidDefinition | SolidDefinition;
   invocations: Array<NodeInvocationSite>;
+};
+
+export type UserAssetOwner = {
+  __typename: 'UserAssetOwner';
+  email: Scalars['String'];
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -4488,11 +5329,18 @@ export type WorkspaceLocationStatusEntry = {
 export type WorkspaceOrError = PythonError | Workspace;
 
 export type WrappingConfigType = {
-  ofType: ConfigType;
+  ofType:
+    | ArrayConfigType
+    | CompositeConfigType
+    | EnumConfigType
+    | MapConfigType
+    | NullableConfigType
+    | RegularConfigType
+    | ScalarUnionConfigType;
 };
 
 export type WrappingDagsterType = {
-  ofType: DagsterType;
+  ofType: ListDagsterType | NullableDagsterType | RegularDagsterType;
 };
 
 export const buildAddDynamicPartitionSuccess = (
@@ -4601,9 +5449,26 @@ export const buildArrayConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -4936,6 +5801,70 @@ export const buildAssetChecks = (
   return {
     __typename: 'AssetChecks',
     checks: overrides && overrides.hasOwnProperty('checks') ? overrides.checks! : [],
+  };
+};
+
+export const buildAssetConditionEvaluation = (
+  overrides?: Partial<AssetConditionEvaluation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluation'} & AssetConditionEvaluation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluation');
+  return {
+    __typename: 'AssetConditionEvaluation',
+    evaluationNodes:
+      overrides && overrides.hasOwnProperty('evaluationNodes') ? overrides.evaluationNodes! : [],
+    rootUniqueId:
+      overrides && overrides.hasOwnProperty('rootUniqueId') ? overrides.rootUniqueId! : 'eos',
+  };
+};
+
+export const buildAssetConditionEvaluationRecord = (
+  overrides?: Partial<AssetConditionEvaluationRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluationRecord'} & AssetConditionEvaluationRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluationRecord');
+  return {
+    __typename: 'AssetConditionEvaluationRecord',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
+    evaluation:
+      overrides && overrides.hasOwnProperty('evaluation')
+        ? overrides.evaluation!
+        : relationshipsToOmit.has('AssetConditionEvaluation')
+        ? ({} as AssetConditionEvaluation)
+        : buildAssetConditionEvaluation({}, relationshipsToOmit),
+    evaluationId:
+      overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 5501,
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    numRequested:
+      overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
+    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.88,
+  };
+};
+
+export const buildAssetConditionEvaluationRecords = (
+  overrides?: Partial<AssetConditionEvaluationRecords>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetConditionEvaluationRecords'} & AssetConditionEvaluationRecords => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConditionEvaluationRecords');
+  return {
+    __typename: 'AssetConditionEvaluationRecords',
+    records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
 
@@ -5298,6 +6227,7 @@ export const buildAssetNode = (
     opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionDefinition:
       overrides && overrides.hasOwnProperty('partitionDefinition')
         ? overrides.partitionDefinition!
@@ -5346,9 +6276,15 @@ export const buildAssetNode = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
   };
 };
 
@@ -5447,10 +6383,55 @@ export const buildAssetSelection = (
   relationshipsToOmit.add('AssetSelection');
   return {
     __typename: 'AssetSelection',
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelectionString:
       overrides && overrides.hasOwnProperty('assetSelectionString')
         ? overrides.assetSelectionString!
         : 'dolores',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+  };
+};
+
+export const buildAssetSubset = (
+  overrides?: Partial<AssetSubset>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSubset'} & AssetSubset => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSubset');
+  return {
+    __typename: 'AssetSubset',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    subsetValue:
+      overrides && overrides.hasOwnProperty('subsetValue')
+        ? overrides.subsetValue!
+        : relationshipsToOmit.has('AssetSubsetValue')
+        ? ({} as AssetSubsetValue)
+        : buildAssetSubsetValue({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetSubsetValue = (
+  overrides?: Partial<AssetSubsetValue>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetSubsetValue'} & AssetSubsetValue => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetSubsetValue');
+  return {
+    __typename: 'AssetSubsetValue',
+    boolValue: overrides && overrides.hasOwnProperty('boolValue') ? overrides.boolValue! : false,
+    isPartitioned:
+      overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : false,
+    partitionKeyRanges:
+      overrides && overrides.hasOwnProperty('partitionKeyRanges')
+        ? overrides.partitionKeyRanges!
+        : [],
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
 };
 
@@ -5902,9 +6883,26 @@ export const buildConfigTypeField = (
     configType:
       overrides && overrides.hasOwnProperty('configType')
         ? overrides.configType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     configTypeKey:
       overrides && overrides.hasOwnProperty('configTypeKey')
         ? overrides.configTypeKey!
@@ -6045,9 +7043,26 @@ export const buildDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -6059,9 +7074,26 @@ export const buildDagsterType = (
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -7308,9 +8340,15 @@ export const buildInputDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
   };
 };
 
@@ -7414,10 +8452,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
         ? overrides.supportsConcurrencyLimits!
         : false,
-    useAutomationPolicySensors:
-      overrides && overrides.hasOwnProperty('useAutomationPolicySensors')
-        ? overrides.useAutomationPolicySensors!
-        : true,
+    useAutoMaterializeSensors:
+      overrides && overrides.hasOwnProperty('useAutoMaterializeSensors')
+        ? overrides.useAutoMaterializeSensors!
+        : false,
   };
 };
 
@@ -8002,9 +9040,26 @@ export const buildListDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -8016,15 +9071,38 @@ export const buildListDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -8214,9 +9292,26 @@ export const buildMapConfigType = (
     keyType:
       overrides && overrides.hasOwnProperty('keyType')
         ? overrides.keyType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -8226,9 +9321,26 @@ export const buildMapConfigType = (
     valueType:
       overrides && overrides.hasOwnProperty('valueType')
         ? overrides.valueType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -8576,6 +9688,10 @@ export const buildMutation = (
         : relationshipsToOmit.has('CancelBackfillSuccess')
         ? ({} as CancelBackfillSuccess)
         : buildCancelBackfillSuccess({}, relationshipsToOmit),
+    deleteConcurrencyLimit:
+      overrides && overrides.hasOwnProperty('deleteConcurrencyLimit')
+        ? overrides.deleteConcurrencyLimit!
+        : false,
     deletePipelineRun:
       overrides && overrides.hasOwnProperty('deletePipelineRun')
         ? overrides.deletePipelineRun!
@@ -8855,9 +9971,26 @@ export const buildNullableConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -8885,9 +10018,26 @@ export const buildNullableDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : false,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -8899,15 +10049,38 @@ export const buildNullableDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -9051,9 +10224,15 @@ export const buildOutputDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
   };
 };
 
@@ -9528,6 +10707,43 @@ export const buildPartitionTags = (
   };
 };
 
+export const buildPartitionedAssetConditionEvaluationNode = (
+  overrides?: Partial<PartitionedAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+} & PartitionedAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionedAssetConditionEvaluationNode');
+  return {
+    __typename: 'PartitionedAssetConditionEvaluationNode',
+    candidateSubset:
+      overrides && overrides.hasOwnProperty('candidateSubset')
+        ? overrides.candidateSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 9.74,
+    numFalse: overrides && overrides.hasOwnProperty('numFalse') ? overrides.numFalse! : 4729,
+    numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 5678,
+    numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.96,
+    trueSubset:
+      overrides && overrides.hasOwnProperty('trueSubset')
+        ? overrides.trueSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sed',
+  };
+};
+
 export const buildPartitions = (
   overrides?: Partial<Partitions>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9841,9 +11057,12 @@ export const buildPipelineRun = (
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : relationshipsToOmit.has('PipelineReference')
-        ? ({} as PipelineReference)
-        : buildPipelineReference({}, relationshipsToOmit),
+        : relationshipsToOmit.has('PipelineSnapshot')
+        ? ({} as PipelineSnapshot)
+        : buildPipelineSnapshot({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('UnknownPipeline')
+        ? ({} as UnknownPipeline)
+        : buildUnknownPipeline({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'animi',
     pipelineSnapshotId:
@@ -10217,6 +11436,24 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
         : [],
+    assetConditionEvaluationForPartition:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationForPartition')
+        ? overrides.assetConditionEvaluationForPartition!
+        : relationshipsToOmit.has('AssetConditionEvaluation')
+        ? ({} as AssetConditionEvaluation)
+        : buildAssetConditionEvaluation({}, relationshipsToOmit),
+    assetConditionEvaluationRecordsOrError:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationRecordsOrError')
+        ? overrides.assetConditionEvaluationRecordsOrError!
+        : relationshipsToOmit.has('AssetConditionEvaluationRecords')
+        ? ({} as AssetConditionEvaluationRecords)
+        : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
+    assetConditionEvaluationsForEvaluationId:
+      overrides && overrides.hasOwnProperty('assetConditionEvaluationsForEvaluationId')
+        ? overrides.assetConditionEvaluationsForEvaluationId!
+        : relationshipsToOmit.has('AssetConditionEvaluationRecords')
+        ? ({} as AssetConditionEvaluationRecords)
+        : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
@@ -10463,12 +11700,6 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    unloadableInstigationStatesOrError:
-      overrides && overrides.hasOwnProperty('unloadableInstigationStatesOrError')
-        ? overrides.unloadableInstigationStatesOrError!
-        : relationshipsToOmit.has('InstigationStates')
-        ? ({} as InstigationStates)
-        : buildInstigationStates({}, relationshipsToOmit),
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!
@@ -10543,9 +11774,26 @@ export const buildRegularDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : false,
@@ -10557,9 +11805,26 @@ export const buildRegularDagsterType = (
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -11178,9 +12443,12 @@ export const buildRun = (
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : relationshipsToOmit.has('PipelineReference')
-        ? ({} as PipelineReference)
-        : buildPipelineReference({}, relationshipsToOmit),
+        : relationshipsToOmit.has('PipelineSnapshot')
+        ? ({} as PipelineSnapshot)
+        : buildPipelineSnapshot({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('UnknownPipeline')
+        ? ({} as UnknownPipeline)
+        : buildUnknownPipeline({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'enim',
     pipelineSnapshotId:
@@ -11291,9 +12559,26 @@ export const buildRunConfigSchema = (
     rootConfigType:
       overrides && overrides.hasOwnProperty('rootConfigType')
         ? overrides.rootConfigType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     rootDefaultYaml:
       overrides && overrides.hasOwnProperty('rootDefaultYaml') ? overrides.rootDefaultYaml! : 'cum',
   };
@@ -11778,9 +13063,26 @@ export const buildScalarUnionConfigType = (
     nonScalarType:
       overrides && overrides.hasOwnProperty('nonScalarType')
         ? overrides.nonScalarType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     nonScalarTypeKey:
       overrides && overrides.hasOwnProperty('nonScalarTypeKey')
         ? overrides.nonScalarTypeKey!
@@ -11792,9 +13094,26 @@ export const buildScalarUnionConfigType = (
     scalarType:
       overrides && overrides.hasOwnProperty('scalarType')
         ? overrides.scalarType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
     scalarTypeKey:
       overrides && overrides.hasOwnProperty('scalarTypeKey') ? overrides.scalarTypeKey! : 'esse',
     typeParamKeys:
@@ -11810,8 +13129,13 @@ export const buildSchedule = (
   relationshipsToOmit.add('Schedule');
   return {
     __typename: 'Schedule',
+    canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : false,
     cronSchedule:
       overrides && overrides.hasOwnProperty('cronSchedule') ? overrides.cronSchedule! : 'possimus',
+    defaultStatus:
+      overrides && overrides.hasOwnProperty('defaultStatus')
+        ? overrides.defaultStatus!
+        : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'porro',
     executionTimezone:
@@ -12058,6 +13382,11 @@ export const buildSensor = (
         : relationshipsToOmit.has('AssetSelection')
         ? ({} as AssetSelection)
         : buildAssetSelection({}, relationshipsToOmit),
+    canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : true,
+    defaultStatus:
+      overrides && overrides.hasOwnProperty('defaultStatus')
+        ? overrides.defaultStatus!
+        : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
     id:
@@ -12234,9 +13563,12 @@ export const buildSolid = (
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : relationshipsToOmit.has('ISolidDefinition')
-        ? ({} as ISolidDefinition)
-        : buildISolidDefinition({}, relationshipsToOmit),
+        : relationshipsToOmit.has('CompositeSolidDefinition')
+        ? ({} as CompositeSolidDefinition)
+        : buildCompositeSolidDefinition({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('SolidDefinition')
+        ? ({} as SolidDefinition)
+        : buildSolidDefinition({}, relationshipsToOmit),
     inputs: overrides && overrides.hasOwnProperty('inputs') ? overrides.inputs! : [],
     isDynamicMapped:
       overrides && overrides.hasOwnProperty('isDynamicMapped') ? overrides.isDynamicMapped! : true,
@@ -12356,6 +13688,31 @@ export const buildSolidStepStatusUnavailableError = (
   return {
     __typename: 'SolidStepStatusUnavailableError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'accusantium',
+  };
+};
+
+export const buildSpecificPartitionAssetConditionEvaluationNode = (
+  overrides?: Partial<SpecificPartitionAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+} & SpecificPartitionAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SpecificPartitionAssetConditionEvaluationNode');
+  return {
+    __typename: 'SpecificPartitionAssetConditionEvaluationNode',
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ut',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetConditionEvaluationStatus.FALSE,
+    uniqueId:
+      overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'repudiandae',
   };
 };
 
@@ -12771,6 +14128,18 @@ export const buildTarget = (
   };
 };
 
+export const buildTeamAssetOwner = (
+  overrides?: Partial<TeamAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TeamAssetOwner'} & TeamAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TeamAssetOwner');
+  return {
+    __typename: 'TeamAssetOwner',
+    team: overrides && overrides.hasOwnProperty('team') ? overrides.team! : 'est',
+  };
+};
+
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -13016,6 +14385,34 @@ export const buildUnknownPipeline = (
   };
 };
 
+export const buildUnpartitionedAssetConditionEvaluationNode = (
+  overrides?: Partial<UnpartitionedAssetConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+} & UnpartitionedAssetConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnpartitionedAssetConditionEvaluationNode');
+  return {
+    __typename: 'UnpartitionedAssetConditionEvaluationNode',
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'veniam',
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 3.21,
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 2.94,
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetConditionEvaluationStatus.FALSE,
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'et',
+  };
+};
+
 export const buildUnpartitionedAssetStatus = (
   overrides?: Partial<UnpartitionedAssetStatus>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -13063,10 +14460,25 @@ export const buildUsedSolid = (
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : relationshipsToOmit.has('ISolidDefinition')
-        ? ({} as ISolidDefinition)
-        : buildISolidDefinition({}, relationshipsToOmit),
+        : relationshipsToOmit.has('CompositeSolidDefinition')
+        ? ({} as CompositeSolidDefinition)
+        : buildCompositeSolidDefinition({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('SolidDefinition')
+        ? ({} as SolidDefinition)
+        : buildSolidDefinition({}, relationshipsToOmit),
     invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
+  };
+};
+
+export const buildUserAssetOwner = (
+  overrides?: Partial<UserAssetOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UserAssetOwner'} & UserAssetOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UserAssetOwner');
+  return {
+    __typename: 'UserAssetOwner',
+    email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'velit',
   };
 };
 
@@ -13179,9 +14591,26 @@ export const buildWrappingConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ConfigType')
-        ? ({} as ConfigType)
-        : buildConfigType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ArrayConfigType')
+        ? ({} as ArrayConfigType)
+        : buildArrayConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('CompositeConfigType')
+        ? ({} as CompositeConfigType)
+        : buildCompositeConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('EnumConfigType')
+        ? ({} as EnumConfigType)
+        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
+        ? ({} as MapConfigType)
+        : buildMapConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableConfigType')
+        ? ({} as NullableConfigType)
+        : buildNullableConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularConfigType')
+        ? ({} as RegularConfigType)
+        : buildRegularConfigType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('ScalarUnionConfigType')
+        ? ({} as ScalarUnionConfigType)
+        : buildScalarUnionConfigType({}, relationshipsToOmit),
   };
 };
 
@@ -13196,8 +14625,14 @@ export const buildWrappingDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('DagsterType')
-        ? ({} as DagsterType)
-        : buildDagsterType({}, relationshipsToOmit),
+        : relationshipsToOmit.has('ListDagsterType')
+        ? ({} as ListDagsterType)
+        : buildListDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('NullableDagsterType')
+        ? ({} as NullableDagsterType)
+        : buildNullableDagsterType({}, relationshipsToOmit) ||
+          relationshipsToOmit.has('RegularDagsterType')
+        ? ({} as RegularDagsterType)
+        : buildRegularDagsterType({}, relationshipsToOmit),
   };
 };

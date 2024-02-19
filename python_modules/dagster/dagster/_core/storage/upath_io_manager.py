@@ -430,6 +430,17 @@ class UPathIOManager(MemoizableIOManager):
 
                 return self._load_multiple_inputs(context)
 
+    def _handle_transition_to_partitioned_asset(self, context: OutputContext, path: "UPath"):
+        # if the asset was previously non-partitioned, path will be a file, when it should
+        # be a directory for the partitioned asset. Delete the file, so that it can be made
+        # into a directory
+        if path.exists() and path.is_file():
+            context.log.warn(
+                f"Found file at {path} believed to correspond with previously non-partitioned version"
+                f" of {context.asset_key}. Removing {path} and replacing with directory for partitioned data files."
+            )
+            path.unlink(missing_ok=True)
+
     def handle_output(self, context: OutputContext, obj: Any):
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
@@ -443,6 +454,7 @@ class UPathIOManager(MemoizableIOManager):
             )
 
             path = next(iter(paths.values()))
+            self._handle_transition_to_partitioned_asset(context, path.parent)
         else:
             path = self._get_path(context)
         self.make_directory(path.parent)

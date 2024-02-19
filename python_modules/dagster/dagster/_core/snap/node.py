@@ -181,29 +181,6 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
     )
 
 
-# This and a set of shared props helps implement a de facto mixin for
-# Inheritance is quite difficult and counterintuitive in namedtuple land, so went with this scheme
-# instead.
-def _check_node_def_header_args(
-    name: str,
-    input_def_snaps: Sequence[InputDefSnap],
-    output_def_snaps: Sequence[OutputDefSnap],
-    description: Optional[str],
-    tags: Mapping[str, str],
-    config_field_snap: Optional[ConfigFieldSnap],
-):
-    return dict(
-        name=check.str_param(name, "name"),
-        input_def_snaps=check.sequence_param(input_def_snaps, "input_def_snaps", InputDefSnap),
-        output_def_snaps=check.sequence_param(output_def_snaps, "output_def_snaps", OutputDefSnap),
-        description=check.opt_str_param(description, "description"),
-        tags=check.mapping_param(tags, "tags"),
-        config_field_snap=check.opt_inst_param(
-            config_field_snap, "config_field_snap", ConfigFieldSnap
-        ),
-    )
-
-
 @whitelist_for_serdes(storage_name="CompositeSolidDefSnap")
 class GraphDefSnap(
     NamedTuple(
@@ -244,13 +221,15 @@ class GraphDefSnap(
             output_mapping_snaps=check.sequence_param(
                 output_mapping_snaps, "output_mapping_snaps", of_type=OutputMappingSnap
             ),
-            **_check_node_def_header_args(
-                name,
-                input_def_snaps,
-                output_def_snaps,
-                description,
-                tags,
-                config_field_snap,
+            name=check.str_param(name, "name"),
+            input_def_snaps=check.sequence_param(input_def_snaps, "input_def_snaps", InputDefSnap),
+            output_def_snaps=check.sequence_param(
+                output_def_snaps, "output_def_snaps", OutputDefSnap
+            ),
+            description=check.opt_str_param(description, "description"),
+            tags=check.mapping_param(tags, "tags"),
+            config_field_snap=check.opt_inst_param(
+                config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
         )
 
@@ -291,13 +270,15 @@ class OpDefSnap(
             required_resource_keys=check.sequence_param(
                 required_resource_keys, "required_resource_keys", str
             ),
-            **_check_node_def_header_args(
-                name,
-                input_def_snaps,
-                output_def_snaps,
-                description,
-                tags,
-                config_field_snap,
+            name=check.str_param(name, "name"),
+            input_def_snaps=check.sequence_param(input_def_snaps, "input_def_snaps", InputDefSnap),
+            output_def_snaps=check.sequence_param(
+                output_def_snaps, "output_def_snaps", OutputDefSnap
+            ),
+            description=check.opt_str_param(description, "description"),
+            tags=check.mapping_param(tags, "tags"),
+            config_field_snap=check.opt_inst_param(
+                config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
         )
 

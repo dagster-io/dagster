@@ -17,6 +17,10 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autoclass:: SourceAsset
 
+.. autodecorator:: observable_source_asset
+
+.. autoclass:: ObserveResult
+
 .. autofunction:: define_asset_job
 
 .. autoclass:: AssetSelection

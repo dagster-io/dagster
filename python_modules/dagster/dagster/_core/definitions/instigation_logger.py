@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+import traceback
 from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
 
@@ -60,7 +61,13 @@ class CapturedLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         self._has_logged = True
-        self._write_stream.write(_seven.json.dumps(record.__dict__) + "\n")
+
+        record_dict = record.__dict__
+        exc_info = record_dict.get("exc_info")
+        if exc_info:
+            record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
+
+        self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
 
 
 class InstigationLogger(logging.Logger):

@@ -28,6 +28,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -44,7 +45,7 @@ setup(
         "pyspark": ["dagster-pyspark"],
         "test": [
             "botocore!=1.32.1",
-            "moto[s3,server]>=2.2.8",
+            "moto[s3,server]>=2.2.8,<5.0",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
         ],

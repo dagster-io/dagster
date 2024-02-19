@@ -1,10 +1,10 @@
-import React from 'react';
+import {useMemo} from 'react';
 
 import {useStartTrace} from '../performance';
 
 export const useRunRootTrace = () => {
   const trace = useStartTrace('RunRoot');
-  return React.useMemo(() => {
+  return useMemo(() => {
     let logsLoaded = false;
     let runsLoaded = false;
     function onLoaded() {

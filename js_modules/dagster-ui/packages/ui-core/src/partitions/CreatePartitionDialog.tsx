@@ -2,6 +2,7 @@ import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -10,22 +11,20 @@ import {
   Spinner,
   TextInput,
   Tooltip,
-  colorAccentRed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {
+  AddDynamicPartitionMutation,
+  AddDynamicPartitionMutationVariables,
+} from './types/CreatePartitionDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  AddDynamicPartitionMutation,
-  AddDynamicPartitionMutationVariables,
-} from './types/CreatePartitionDialog.types';
 
 // Keep in sync with the backend which currently has 2 definitions:
 // INVALID_PARTITION_SUBSTRINGS and INVALID_STATIC_PARTITIONS_KEY_CHARACTERS
@@ -80,16 +79,16 @@ export const CreatePartitionDialog = ({
   refetch?: () => Promise<void>;
   onCreated: (partitionName: string) => void;
 }) => {
-  const [partitionName, setPartitionName] = React.useState('');
+  const [partitionName, setPartitionName] = useState('');
 
   const [createPartition] = useMutation<
     AddDynamicPartitionMutation,
     AddDynamicPartitionMutationVariables
   >(CREATE_PARTITION_MUTATION);
 
-  const [isSaving, setIsSaving] = React.useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const isValidPartitionName = React.useMemo(() => {
+  const isValidPartitionName = useMemo(() => {
     return (
       partitionName.length === 0 ||
       !INVALID_PARITION_SUBSTRINGS.some((s) => partitionName.includes(s))
@@ -206,8 +205,8 @@ export const CreatePartitionDialog = ({
                   handleSave();
                 }
               }}
-              strokeColor={isValidPartitionName ? undefined : colorAccentRed()}
-              ref={React.useCallback((inputElement: HTMLInputElement) => {
+              strokeColor={isValidPartitionName ? undefined : Colors.accentRed()}
+              ref={useCallback((inputElement: HTMLInputElement) => {
                 if (inputElement) {
                   inputElement.focus();
                 }

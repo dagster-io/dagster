@@ -1,22 +1,8 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  ButtonLink,
-  Group,
-  Caption,
-  colorTextLight,
-  colorTextDefault,
-  colorTextRed,
-} from '@dagster-io/ui-components';
+import {ButtonLink, Caption, Colors, Group} from '@dagster-io/ui-components';
 import qs from 'qs';
-import * as React from 'react';
+import {memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-
-import {assertUnreachable} from '../app/Util';
-import {RunStatus} from '../graphql/types';
-import {StatusTable} from '../instigation/InstigationUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   SchedulePartitionStatusFragment,
@@ -25,6 +11,12 @@ import {
   SchedulePartitionStatusResultFragment,
 } from './types/SchedulePartitionStatus.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {assertUnreachable} from '../app/Util';
+import {RunStatus} from '../graphql/types';
+import {StatusTable} from '../instigation/InstigationUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 
@@ -54,7 +46,7 @@ interface Props {
   schedule: ScheduleFragment;
 }
 
-export const SchedulePartitionStatus = React.memo((props: Props) => {
+export const SchedulePartitionStatus = memo((props: Props) => {
   const {repoAddress, schedule} = props;
   const repo = useRepository(repoAddress);
   const {name: scheduleName, partitionSet, pipelineName} = schedule;
@@ -62,7 +54,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
   const partitionSetName = partitionSet?.name;
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  const partitionPath = React.useMemo(() => {
+  const partitionPath = useMemo(() => {
     const query = partitionSetName
       ? qs.stringify(
           {
@@ -89,11 +81,11 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
     },
   });
 
-  const onClick = React.useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
+  const onClick = useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: colorTextLight()}}>Loading…</Caption>;
+      return <Caption style={{color: Colors.textLight()}}>Loading…</Caption>;
     }
 
     if (!data) {
@@ -114,7 +106,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
       );
     }
 
-    return <Caption style={{color: colorTextRed()}}>Partition set not found!</Caption>;
+    return <Caption style={{color: Colors.textRed()}}>Partition set not found!</Caption>;
   };
 
   return (
@@ -135,7 +127,7 @@ const RetrievedSchedulePartitionStatus = ({
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
-    return <span style={{color: colorTextLight()}}>None</span>;
+    return <span style={{color: Colors.textLight()}}>None</span>;
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
@@ -162,7 +154,7 @@ const RetrievedSchedulePartitionStatus = ({
                 {status === 'Failed' || status === 'Missing' ? (
                   <Link
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
-                    style={{color: colorTextDefault()}}
+                    style={{color: Colors.textDefault()}}
                   >
                     {(partitionsByType as any)[status].length}
                   </Link>

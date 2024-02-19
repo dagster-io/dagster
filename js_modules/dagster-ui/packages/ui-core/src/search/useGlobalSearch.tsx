@@ -1,15 +1,14 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as React from 'react';
+import {useCallback, useRef} from 'react';
 
+import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
+import {SearchResult, SearchResultType} from './types';
+import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
-
-import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
-import {SearchResult, SearchResultType} from './types';
-import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;
@@ -178,8 +177,8 @@ const EMPTY_RESPONSE = {queryString: '', results: []};
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
 export const useGlobalSearch = () => {
-  const primarySearch = React.useRef<WorkerSearchResult | null>(null);
-  const secondarySearch = React.useRef<WorkerSearchResult | null>(null);
+  const primarySearch = useRef<WorkerSearchResult | null>(null);
+  const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
   const primary = useLazyQuery<SearchPrimaryQuery>(SEARCH_PRIMARY_QUERY, {
     // Try to make aggressive use of workspace values from the Apollo cache.
@@ -209,7 +208,7 @@ export const useGlobalSearch = () => {
   const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
   // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
-  const initialize = React.useCallback(async () => {
+  const initialize = useCallback(async () => {
     if (!primarySearch.current) {
       performPrimaryLazyQuery();
     }
@@ -218,18 +217,18 @@ export const useGlobalSearch = () => {
     }
   }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
 
-  const searchPrimary = React.useCallback(async (queryString: string) => {
+  const searchPrimary = useCallback(async (queryString: string) => {
     return primarySearch.current ? primarySearch.current.search(queryString) : EMPTY_RESPONSE;
   }, []);
 
-  const searchSecondary = React.useCallback(async (queryString: string) => {
+  const searchSecondary = useCallback(async (queryString: string) => {
     return secondarySearch.current ? secondarySearch.current.search(queryString) : EMPTY_RESPONSE;
   }, []);
 
   // Terminate the workers. Be careful with this: for users with very large workspaces, we should
   // avoid constantly re-querying and restarting the threads. It should only be used when we know
   // that there is fresh data to repopulate search.
-  const terminate = React.useCallback(() => {
+  const terminate = useCallback(() => {
     primarySearch.current?.terminate();
     primarySearch.current = null;
     secondarySearch.current?.terminate();

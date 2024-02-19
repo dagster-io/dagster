@@ -1,15 +1,26 @@
+import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
+  FontFamily,
+  Heading,
+  Icon,
   MetadataTableWIP,
   PageHeader,
   Tag,
-  Heading,
-  FontFamily,
-  Icon,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
+import {EditCursorDialog} from './EditCursorDialog';
+import {SensorMonitoredAssets} from './SensorMonitoredAssets';
+import {SensorResetButton} from './SensorResetButton';
+import {SensorSwitch} from './SensorSwitch';
+import {SensorTargetList} from './SensorTargetList';
+import {SensorFragment} from './types/SensorFragment.types';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from './types/SensorRoot.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -17,12 +28,6 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
-
-import {EditCursorDialog} from './EditCursorDialog';
-import {SensorMonitoredAssets} from './SensorMonitoredAssets';
-import {SensorSwitch} from './SensorSwitch';
-import {SensorTargetList} from './SensorTargetList';
-import {SensorFragment} from './types/SensorFragment.types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -53,11 +58,13 @@ export const SensorDetails = ({
   repoAddress,
   daemonHealth,
   refreshState,
+  selectionQueryResult,
 }: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
+  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
 }) => {
   const {
     name,
@@ -65,7 +72,7 @@ export const SensorDetails = ({
     metadata,
   } = sensor;
 
-  const [isCursorEditing, setCursorEditing] = React.useState(false);
+  const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
     sensorName: sensor.name,
     repositoryName: repoAddress.name,
@@ -78,25 +85,18 @@ export const SensorDetails = ({
     sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
     sensor.sensorState.typeSpecificData.lastCursor;
 
-  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
 
   return (
     <>
       <PageHeader
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{name}</Heading>
-            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-          </Box>
-        }
+        title={<Heading>{name}</Heading>}
         icon="sensors"
         tags={
-          <>
-            <Tag icon="sensors">
-              Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </Tag>
-          </>
+          <Tag icon="sensors">
+            Sensor in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
         }
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -161,10 +161,31 @@ export const SensorDetails = ({
             <tr>
               <td>Target</td>
               <td>
-                <SensorTargetList targets={sensor.targets} repoAddress={repoAddress} />
+                <SensorTargetList
+                  targets={sensor.targets}
+                  repoAddress={repoAddress}
+                  selectionQueryResult={selectionQueryResult}
+                  sensorType={sensor.sensorType}
+                />
               </td>
             </tr>
           ) : null}
+          <tr>
+            <td>
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Running
+              </Box>
+            </td>
+            <td>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
+                <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                {sensor.canReset && <SensorResetButton repoAddress={repoAddress} sensor={sensor} />}
+              </Box>
+            </td>
+          </tr>
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
@@ -177,7 +198,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
-          {sensor.sensorType !== SensorType.AUTOMATION_POLICY ? (
+          {sensor.sensorType !== SensorType.AUTO_MATERIALIZE ? (
             <tr>
               <td>
                 <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>

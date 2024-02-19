@@ -1,18 +1,17 @@
 import {gql} from '@apollo/client';
-import {Alert, ButtonLink, Group, Mono, colorAccentReversed} from '@dagster-io/ui-components';
+import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
 import {
   DaemonNotRunningAlertInstanceFragment,
   UsingDefaultLauncherAlertInstanceFragment,
 } from './types/BackfillMessaging.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -41,7 +40,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={colorAccentReversed()}
+          color={Colors.accentReversed()}
           underline="always"
           onClick={() => {
             showCustomAlert({

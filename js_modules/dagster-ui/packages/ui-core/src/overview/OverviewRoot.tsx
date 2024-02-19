@@ -1,15 +1,13 @@
-import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
-
-import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
-import {InstanceBackfills} from '../instance/InstanceBackfills';
-import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
+import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
+import {InstanceBackfills} from '../instance/InstanceBackfills';
+import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
   return (
@@ -26,7 +24,7 @@ export const OverviewRoot = () => {
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
       </Route>
-      <Route path="/overview/automaterialize">
+      <Route path="/overview/automation">
         <AutomaterializationRoot />
       </Route>
       <Route path="/overview/backfills/:backfillId">

@@ -1,28 +1,15 @@
-import {
-  Box,
-  Tooltip,
-  useViewport,
-  colorKeylineDefault,
-  colorTextLight,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentBlue,
-  colorBackgroundLighter,
-  colorBackgroundDefault,
-  colorBorderDefault,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Tooltip, useViewport} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {assembleIntoSpans} from './SpanRepresentation';
 import {
   assetPartitionStatusToText,
   assetPartitionStatusesToStyle,
 } from '../assets/AssetPartitionStatus';
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
-import {runStatusToBackfillStateString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
-
-import {assembleIntoSpans} from './SpanRepresentation';
+import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
 
 type SelectionRange = {
   start: string;
@@ -315,7 +302,7 @@ export const PartitionStatus = ({
         <Box
           flex={{justifyContent: 'space-between'}}
           margin={{top: 4}}
-          style={{fontSize: '0.8rem', color: colorTextLight(), minHeight: 17}}
+          style={{fontSize: '0.8rem', color: Colors.textLight(), minHeight: 17}}
         >
           <span>{partitionNames[0]}</span>
           <span>{partitionNames[partitionNames.length - 1]}</span>
@@ -382,9 +369,9 @@ function assetHealthToColorSegments(ranges: Range[]) {
 
 const statusToBackgroundColor = (status: RunStatus | undefined) => {
   if (status === undefined) {
-    return colorAccentGray();
+    return Colors.accentGray();
   }
-  return status === RunStatus.NOT_STARTED ? colorAccentGrayHover() : RUN_STATUS_COLORS[status];
+  return status === RunStatus.NOT_STARTED ? Colors.accentGrayHover() : RUN_STATUS_COLORS[status];
 };
 
 function opRunStatusToColorRanges(
@@ -423,7 +410,7 @@ const SelectionSpansContainer = styled.div`
     position: absolute;
     top: 0;
     height: 8px;
-    border: 2px solid ${colorAccentBlue()};
+    border: 2px solid ${Colors.accentBlue()};
     border-bottom: 0;
   }
 `;
@@ -434,7 +421,7 @@ const PartitionSpansContainer = styled.div`
   border-radius: 4px;
   overflow: hidden;
   cursor: col-resize;
-  background: ${colorBackgroundLighter()};
+  background: ${Colors.backgroundLighter()};
 
   .color-span {
     width: 100%;
@@ -446,7 +433,7 @@ const PartitionSpansContainer = styled.div`
     width: 1px;
     position: absolute;
     z-index: 4;
-    background: ${colorKeylineDefault()};
+    background: ${Colors.keylineDefault()};
     top: 0;
   }
 `;
@@ -454,7 +441,7 @@ const PartitionSpansContainer = styled.div`
 const SelectionFade = styled.div`
   position: absolute;
   z-index: 5;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   opacity: 0.5;
   top: 0;
 `;
@@ -463,7 +450,7 @@ const SelectionHoverHighlight = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 4;
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   opacity: 0.7;
   top: 0;
 `;
@@ -472,7 +459,7 @@ const SelectionBorder = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 5;
-  border: 3px solid ${colorBorderDefault()};
+  border: 3px solid ${Colors.borderDefault()};
   border-radius: 4px;
   top: 0;
 `;

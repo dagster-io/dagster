@@ -1,9 +1,8 @@
 import * as React from 'react';
 
-import {useCodeLocationsStatus} from '../nav/useCodeLocationsStatus';
-
 import {StatusAndMessage} from './DeploymentStatusType';
 import {useDaemonStatus} from './useDaemonStatus';
+import {useCodeLocationsStatus} from '../nav/useCodeLocationsStatus';
 
 export type DeploymentStatusType = 'code-locations' | 'daemons';
 

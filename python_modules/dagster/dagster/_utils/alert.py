@@ -81,6 +81,11 @@ def send_email_via_starttls(
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
+@deprecated_param(
+    param="monitor_all_repositories",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitor_all_code_locations` instead.",
+)
 def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
@@ -114,8 +119,9 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
-    monitor_all_repositories: bool = False,
+    monitor_all_code_locations: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    monitor_all_repositories: bool = False,
 ) -> SensorDefinition:
     """Create a job failure sensor that sends email via the SMTP protocol.
 
@@ -139,7 +145,7 @@ def make_email_on_run_failure_sensor(
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails. To monitor jobs in external repositories,
             use RepositorySelector and JobSelector.
-        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+        monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition,  RepositorySelector, JobSelector]]]):
@@ -147,6 +153,9 @@ def make_email_on_run_failure_sensor(
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
 
     Examples:
         .. code-block:: python
@@ -186,12 +195,13 @@ def make_email_on_run_failure_sensor(
     )
 
     jobs = monitored_jobs if monitored_jobs else job_selection
+    monitor_all = monitor_all_code_locations or monitor_all_repositories
 
     @run_failure_sensor(
         name=name,
         monitored_jobs=jobs,
         default_status=default_status,
-        monitor_all_repositories=monitor_all_repositories,
+        monitor_all_code_locations=monitor_all,
     )
     def email_on_run_failure(context: RunFailureSensorContext):
         email_body = email_body_fn(context)

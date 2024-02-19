@@ -3,17 +3,11 @@ import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
-import {
-  colorAccentPrimary,
-  colorBackgroundDefault,
-  colorDialogBackground,
-  colorShadowDefault,
-} from '../theme/color';
-
 import {Box} from './Box';
+import {Colors} from './Color';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 interface Props
   extends Omit<
@@ -49,12 +43,12 @@ export const DialogHeader = (props: HeaderProps) => {
   const {icon, label} = props;
   return (
     <Box
-      background={colorBackgroundDefault()}
+      background={Colors.backgroundDefault()}
       padding={{vertical: 16, horizontal: 20}}
       border="bottom"
     >
       <Group direction="row" spacing={8} alignItems="center">
-        {icon ? <Icon name={icon} color={colorAccentPrimary()} /> : null}
+        {icon ? <Icon name={icon} color={Colors.accentPrimary()} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
       </Group>
     </Box>
@@ -67,7 +61,7 @@ interface BodyProps {
 
 export const DialogBody = ({children, ...rest}: BodyProps) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={colorBackgroundDefault()} {...rest}>
+    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.backgroundDefault()} {...rest}>
       {children}
     </Box>
   );
@@ -84,7 +78,7 @@ export const DialogFooter = ({children, left, topBorder}: DialogFooterProps) => 
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}
       border={topBorder ? 'top' : null}
-      background={colorBackgroundDefault()}
+      background={Colors.backgroundDefault()}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{left}</div>
@@ -104,7 +98,7 @@ export const DialogHeaderText = styled.div`
 
 export const GlobalDialogStyle = createGlobalStyle`
   .dagster-portal .bp4-overlay-backdrop {
-    background-color: ${colorDialogBackground()};
+    background-color: ${Colors.dialogBackground()};
   }
 
   .dagster-portal .bp4-dialog-container {
@@ -114,9 +108,9 @@ export const GlobalDialogStyle = createGlobalStyle`
   }
 
   .dagster-portal .bp4-dialog {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${Colors.backgroundDefault()};
     border-radius: 4px;
-    box-shadow: ${colorShadowDefault()} 0px 2px 12px;
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
     grid-row: 2;
     grid-column: 2;
     margin: 0 auto;

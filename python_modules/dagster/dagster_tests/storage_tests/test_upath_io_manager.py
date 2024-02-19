@@ -708,3 +708,23 @@ def test_upath_io_manager_async_allow_missing_partitions(
     )
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert len(downstream_asset_data) == 1, "1 partition should be missing"
+
+
+def test_upath_can_transition_from_non_partitioned_to_partitioned(
+    tmp_path: Path, daily: DailyPartitionsDefinition, start: datetime
+):
+    my_io_manager = PickleIOManager(UPath(tmp_path))
+
+    @asset
+    def my_asset():  # type: ignore
+        return 1
+
+    assert materialize([my_asset], resources={"io_manager": my_io_manager}).success
+
+    @asset(partitions_def=daily)
+    def my_asset():
+        return 1
+
+    assert materialize(
+        [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
+    ).success

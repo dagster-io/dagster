@@ -1,8 +1,11 @@
 import {pathHorizontalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
+import {AssetNodeKeyFragment} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
+  AssetCheckLiveFragment,
   AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
@@ -10,12 +13,16 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-  AssetCheckLiveFragment,
 } from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
-import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
+
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
@@ -227,6 +234,10 @@ export const buildLiveDataForNode = (
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
+}
+
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {

@@ -392,7 +392,15 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                         "For each auto-materialize tick that raises an error, how many times to retry that tick"
                     ),
                 ),
-                "use_automation_policy_sensors": Field(BoolSource, is_required=False),
+                "use_sensors": Field(BoolSource, is_required=False),
+                "use_threads": Field(Bool, is_required=False, default_value=False),
+                "num_workers": Field(
+                    int,
+                    is_required=False,
+                    description=(
+                        "How many threads to use to process ticks from multiple automation policy sensors in parallel"
+                    ),
+                ),
             }
         ),
         "concurrency": Field(

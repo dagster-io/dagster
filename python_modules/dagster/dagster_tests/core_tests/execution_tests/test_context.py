@@ -1,5 +1,3 @@
-import warnings
-
 import dagster._check as check
 import pytest
 from dagster import (
@@ -25,6 +23,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.test_utils import raise_exception_on_warnings
 
 
 def test_op_execution_context():
@@ -45,9 +44,7 @@ def test_op_execution_context():
 
 
 def test_instance_check():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
     class AssetExecutionContextSubclass(AssetExecutionContext):
         # allows us to confirm isinstance(context, AssetExecutionContext)
@@ -58,8 +55,8 @@ def test_instance_check():
     @op
     def test_op_context_instance_check(context: OpExecutionContext):
         step_context = context._step_execution_context  # noqa: SLF001
-        asset_context = AssetExecutionContext(step_execution_context=step_context)
         op_context = OpExecutionContext(step_execution_context=step_context)
+        asset_context = AssetExecutionContext(op_execution_context=op_context)
         with pytest.raises(DeprecationWarning):
             isinstance(asset_context, OpExecutionContext)
         assert not isinstance(op_context, AssetExecutionContext)

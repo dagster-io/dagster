@@ -1,8 +1,8 @@
 import {
+  DUNDER_REPO_NAME,
   buildRepoAddress,
   buildRepoPathForHuman,
   buildRepoPathForURL,
-  DUNDER_REPO_NAME,
 } from '../buildRepoAddress';
 
 describe('Repo address utilities', () => {

@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import string
 import uuid
 import warnings
@@ -115,6 +116,13 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
             warnings.warn(message)
 
 
+def get_env_var_name(env_var_str: str):
+    if "=" in env_var_str:
+        return env_var_str.split("=", maxsplit=1)[0]
+    else:
+        return env_var_str
+
+
 def parse_env_var(env_var_str: str) -> Tuple[str, str]:
     if "=" in env_var_str:
         split = env_var_str.split("=", maxsplit=1)
@@ -184,3 +192,8 @@ class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
     def submit(self, fn, *args, **kwargs):
         ctx = copy_context()
         return super().submit(ctx.run, fn, *args, **kwargs)
+
+
+def is_valid_email(email: str) -> bool:
+    regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+    return bool(re.fullmatch(regex, email))

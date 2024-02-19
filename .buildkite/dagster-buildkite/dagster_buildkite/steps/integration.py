@@ -1,11 +1,12 @@
 import os
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 import packaging.version
 
 from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
-from ..package_spec import PackageSpec
+from ..package_spec import PackageSpec, UnsupportedVersionsFunction
 from ..python_version import AvailablePythonVersion
+from ..step_builder import BuildkiteQueue
 from ..utils import (
     BuildkiteStep,
     BuildkiteTopLevelStep,
@@ -148,14 +149,14 @@ def _get_library_version(version: str) -> str:
 def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = [
         "-default",
-        "-markusercodedeploymentsubchart",
-        "-markdaemon",
         "-markredis",
-        "-markmonitoring",
     ]
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
     return build_integration_suite_steps(
-        directory, pytest_tox_factors, always_run_if=has_helm_changes
+        directory,
+        pytest_tox_factors,
+        queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
+        always_run_if=has_helm_changes,
     )
 
 
@@ -214,6 +215,9 @@ def build_integration_suite_steps(
     pytest_extra_cmds: Optional[Callable] = None,
     queue=None,
     always_run_if: Optional[Callable[[], bool]] = None,
+    unsupported_python_versions: Optional[
+        Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
+    ] = None,
 ) -> List[BuildkiteTopLevelStep]:
     pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
     return PackageSpec(
@@ -233,6 +237,7 @@ def build_integration_suite_steps(
         timeout_in_minutes=30,
         queue=queue,
         always_run_if=always_run_if,
+        unsupported_python_versions=unsupported_python_versions,
     ).build_steps()
 
 

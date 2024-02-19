@@ -4,22 +4,27 @@ import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
+  Colors,
   Icon,
   IconWrapper,
+  Menu,
   MenuDivider,
   MenuItem,
-  Menu,
   Select,
   Spinner,
   Suggest,
-  colorAccentGray,
-  colorBackgroundLighter,
-  colorBackgroundLighterHover,
-  colorBackgroundLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {
+  ConfigEditorGeneratorPipelineFragment,
+  ConfigEditorPipelinePresetFragment,
+  ConfigPartitionResultFragment,
+  ConfigPartitionsQuery,
+  ConfigPartitionsQueryVariables,
+  PartitionSetForConfigEditorFragment,
+} from './types/ConfigEditorConfigPicker.types';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
@@ -32,15 +37,6 @@ import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  ConfigEditorGeneratorPipelineFragment,
-  ConfigEditorPipelinePresetFragment,
-  PartitionSetForConfigEditorFragment,
-  ConfigPartitionResultFragment,
-  ConfigPartitionsQuery,
-  ConfigPartitionsQueryVariables,
-} from './types/ConfigEditorConfigPicker.types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
@@ -209,7 +205,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const rightElement = partitions.length ? (
     <SortButton onMouseDown={onClickSort}>
-      <Icon name="sort_by_alpha" color={colorAccentGray()} />
+      <Icon name="sort_by_alpha" color={Colors.accentGray()} />
     </SortButton>
   ) : undefined;
 
@@ -423,17 +419,17 @@ export const SortButton = styled.button`
   cursor: pointer;
   padding: 4px;
   margin: 3px 3px 0 0;
-  background-color: ${colorBackgroundLighter()};
+  background-color: ${Colors.backgroundLighter()};
   border-radius: 4px;
   transition: background-color 100ms;
 
   :focus {
-    background-color: ${colorBackgroundLighterHover()};
+    background-color: ${Colors.backgroundLighterHover()};
     outline: none;
   }
   :hover {
     ${IconWrapper} {
-      background-color: ${colorBackgroundLight()};
+      background-color: ${Colors.backgroundLight()};
     }
   }
 `;

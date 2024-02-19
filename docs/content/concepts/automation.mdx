@@ -1,0 +1,254 @@
+---
+title: "Automation | Dagster Docs"
+description: "Learn to automatically run your Dagster pipelines."
+---
+
+# Automation
+
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. Automating your Dagster pipelines can boost efficiency and ensure that data is produced consistently and reliably.
+
+When one of Dagster's automation methods is triggered, a **tick** is created, which indicates that a **run** should occur. The tick will kick off a run, which is a single instance of a pipeline being executed.
+
+In this guide, we'll cover the available automation methods Dagser provides and when to use each one.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Software-defined Assets][assets]
+- [Jobs][jobs] (_optional_)
+- [Ops][ops] (_optional; advanced_)
+
+---
+
+## Available methods
+
+In this section, we'll touch on each of the automation methods currently supported by Dagster. After that we'll discuss what to think about when [selecting a method](#selecting-a-method).
+
+### Schedules
+
+Schedules are Dagster's imperative approach, which allow you to specify when a job should run, such as Mondays at 9:00 AM. Jobs triggered by schedules can contain a subset of [assets][assets] or [ops][ops]. Refer to the [Schedules documentation][schedules] to learn more.
+
+### Sensors
+
+You can use sensors to run a job or materialize an asset in response to specific events. Sensors periodically check and execute logic to know whether to kick off a run. They are commonly used for situations where you want to materialize an asset after some externally observable event happens, such as:
+
+- A new file arrives in a specific location, such as Amazon S3
+- A webhook notification is received
+- An external system frees up a worker slot
+
+You can also use sensors to act on the status of a job run. Refer to the [Sensors documentation][sensors] to learn more.
+
+### Auto-materialize policies <Experimental />
+
+If you want a declarative approach to automating your pipelines, Auto-materialize policies (AMP) may be a good fit. AMPs allow you to assign policies to assets and let Dagster determine the best approach to keeping assets up-to-date while adhering to those policies.
+
+For example, with AMPs, you can update assets based on:
+
+- Whether an upstream dependency has been updated
+- Whether an upstream dependency has the latest data from its dependencies
+- Whether a materialization has occured since the last tick of a cron schedule
+- ... and more
+
+AMPs are declared on an asset-by-asset basis, but can be applied to multiple assets at once. Refer to the [Auto-materializing Assets documentation][auto-materialize-policies] to learn more.
+
+### Asset Sensors <Experimental />
+
+Asset sensors trigger jobs when a specified asset is materialized. Using asset sensors, you can instigate runs across jobs and code locations and keep downstream assets up-to-date with ease.
+
+Refer to the [Asset Sensor documentation][asset-sensors] to learn more.
+
+---
+
+## Selecting a method
+
+Before you dive into automating your pipelines, you should think about:
+
+- Is my pipeline made up of assets, ops, graphs, or some of everything?
+- How often does the data need to be refreshed?
+- Is the data partitioned, and do old records require updates?
+- Should updates occur in batches? Or should updates start when specific events occur?
+
+The following cheatsheet contains high-level details about each of the automation methods we covered, along with when to use each one.
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "20%",
+        }}
+      >
+        Method
+      </th>
+      <th
+        style={{
+          width: "30%",
+        }}
+      >
+        How it works
+      </th>
+      <th>May be a good fit if...</th>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Works with
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <a href="/concepts/partitions-schedules-sensors/schedules">Schedules</a>
+      </td>
+      <td>Starts a job at a specified time</td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You're using jobs, and
+          </li>
+          <li>You want to run the job at a specific time</li>
+        </ul>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Assets
+          </li>
+          <li>Ops</li>
+          <li>Graphs</li>
+        </ul>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/concepts/partitions-schedules-sensors/sensors">Sensors</a>
+      </td>
+      <td>
+        Starts a job or materializes a selection of assets when a specific event
+        occurs
+      </td>
+      <td>You want to trigger runs based off an event</td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Assets
+          </li>
+          <li>Ops</li>
+          <li>Graphs</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/concepts/assets/asset-auto-execution">
+          Auto-materialize policies
+        </a>
+      </td>
+      <td>
+        Automatically materializes an asset or selection of assets when
+        specified criteria (ex: upstream changes) are met
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You're not using jobs,
+          </li>
+          <li>You want a declarative approach, and</li>
+          <li>You're comfortable with experimental APIs</li>
+        </ul>
+      </td>
+      <td>Assets only</td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/concepts/partitions-schedules-sensors/asset-sensors">
+          Asset Sensors
+        </a>
+      </td>
+      <td>
+        Starts a job when a materialization occurs for a specific asset or
+        selection of assets
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You're using jobs,
+          </li>
+          <li>
+            You want to trigger a job in response to asset materialization(s),
+            and
+          </li>
+          <li>You're comfortable with experimental APIs</li>
+        </ul>
+      </td>
+      <td>Assets only</td>
+    </tr>
+  </tbody>
+</table>
+
+[assets]: /concepts/assets/software-defined-assets
+
+[ops]: /concepts/ops-jobs-graphs/ops
+
+[jobs]: /concepts/ops-jobs-graphs/jobs
+
+[op-jobs]: /concepts/ops-jobs-graphs/op-jobs
+
+[schedules]: /concepts/partitions-schedules-sensors/schedules
+
+[sensors]: /concepts/partitions-schedules-sensors/sensors
+
+[asset-sensors]: /concepts/partitions-schedules-sensors/asset-sensors
+
+[auto-materialize-policies]: /concepts/assets/asset-auto-execution

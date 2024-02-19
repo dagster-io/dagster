@@ -1,5 +1,6 @@
 import wandb
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -26,9 +27,9 @@ partitions_def = MultiPartitionsDefinition(
         }
     },
 )
-def create_my_multi_partitioned_asset(context):
+def create_my_multi_partitioned_asset(context: AssetExecutionContext):
     """Example writing an Artifact with mutli partitions and custom metadata."""
-    partition_key = context.asset_partition_key_for_output()
+    partition_key = context.partition_key
     context.log.info(f"Creating partitioned asset for {partition_key}")
     if partition_key == "red|2023-01-02":
         artifact = wandb.Artifact("my_multi_partitioned_asset", "dataset")

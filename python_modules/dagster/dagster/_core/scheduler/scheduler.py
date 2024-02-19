@@ -157,8 +157,7 @@ class Scheduler(abc.ABC):
         self, instance: DagsterInstance, external_schedule: ExternalSchedule
     ) -> InstigatorState:
         """If the given schedule has a default schedule status, then update the status to
-        `InstigatorStatus.DECLARED_IN_CODE` in schedule storage. Otherwise, update the status to
-        `InstigatorStatus.STOPPED`.
+        `InstigatorStatus.DECLARED_IN_CODE` in schedule storage.
 
         This should not be overridden by subclasses.
 
@@ -176,11 +175,7 @@ class Scheduler(abc.ABC):
             external_schedule.cron_schedule,
             start_timestamp=None,
         )
-        new_status = (
-            InstigatorStatus.DECLARED_IN_CODE
-            if external_schedule._external_schedule_data.default_status  # noqa: SLF001
-            else InstigatorStatus.STOPPED
-        )
+        new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
             reset_state = instance.add_instigator_state(

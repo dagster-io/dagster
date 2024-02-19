@@ -1,6 +1,4 @@
-import operator
 from enum import Enum
-from functools import reduce
 from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -13,7 +11,7 @@ from dagster._serdes.serdes import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_automation_evaluator import AssetAutomationEvaluator
+    from dagster._core.definitions.asset_condition.asset_condition import AssetCondition
     from dagster._core.definitions.auto_materialize_rule import (
         AutoMaterializeRule,
         AutoMaterializeRuleSnapshot,
@@ -65,6 +63,7 @@ class AutoMaterializePolicy(
         [
             ("rules", FrozenSet["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
+            ("asset_condition", Optional["AssetCondition"]),
         ],
     )
 ):
@@ -127,6 +126,7 @@ class AutoMaterializePolicy(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
+        asset_condition: Optional["AssetCondition"] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
@@ -135,12 +135,23 @@ class AutoMaterializePolicy(
             "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
             " to None. To disable auto materializing, remove the policy.",
         )
-        check.param_invariant(len(rules) > 0, "rules", "Must specify at least one rule.")
+        check.param_invariant(
+            bool(rules) ^ bool(asset_condition),
+            "asset_condition",
+            "Must specify exactly one of `rules` or `asset_condition`.",
+        )
+        if asset_condition is not None:
+            check.param_invariant(
+                max_materializations_per_minute is None,
+                "max_materializations_per_minute",
+                "`max_materializations_per_minute` is not supported when using `asset_condition`.",
+            )
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,
+            asset_condition=asset_condition,
         )
 
     @property
@@ -160,6 +171,19 @@ class AutoMaterializePolicy(
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
+
+    @staticmethod
+    def from_asset_condition(asset_condition: "AssetCondition") -> "AutoMaterializePolicy":
+        """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
+        the provided asset_condition evaluates to True.
+
+        Args:
+            asset_condition (AssetCondition): The condition which determines whether an asset
+                partition should be materialized.
+        """
+        return AutoMaterializePolicy(
+            rules=set(), max_materializations_per_minute=None, asset_condition=asset_condition
+        )
 
     @public
     @staticmethod
@@ -255,30 +279,39 @@ class AutoMaterializePolicy(
     def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
         return [rule.to_snapshot() for rule in self.rules]
 
-    def to_auto_materialize_policy_evaluator(self) -> "AssetAutomationEvaluator":
+    def to_asset_condition(self) -> "AssetCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .asset_automation_evaluator import AssetAutomationEvaluator, RuleCondition
+        from .asset_condition.asset_condition import (
+            AndAssetCondition,
+            NotAssetCondition,
+            OrAssetCondition,
+        )
+        from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
-        materialize_condition = (
-            reduce(
-                operator.or_,
-                [RuleCondition(rule) for rule in self.materialize_rules],
-            )
-            if self.materialize_rules
-            else None
+        if self.asset_condition is not None:
+            return self.asset_condition
+
+        materialize_condition = OrAssetCondition(
+            children=[
+                rule.to_asset_condition()
+                for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
+            ]
         )
-        skip_condition = (
-            ~reduce(
-                operator.or_,
-                [RuleCondition(rule) for rule in self.skip_rules],
-            )
-            if self.skip_rules
-            else None
+        skip_condition = OrAssetCondition(
+            children=[
+                rule.to_asset_condition()
+                for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
+            ]
         )
-        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn)
-        condition = reduce(operator.and_, filter(None, [materialize_condition, skip_condition]))
-        check.invariant(condition is not None, "must have at least one rule")
-        return AssetAutomationEvaluator(
-            condition=condition,
-            max_materializations_per_minute=self.max_materializations_per_minute,
-        )
+        children = [
+            materialize_condition,
+            NotAssetCondition([skip_condition]),
+        ]
+        if self.max_materializations_per_minute:
+            discard_condition = DiscardOnMaxMaterializationsExceededRule(
+                self.max_materializations_per_minute
+            ).to_asset_condition()
+            children.append(NotAssetCondition([discard_condition]))
+
+        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
+        return AndAssetCondition(children)

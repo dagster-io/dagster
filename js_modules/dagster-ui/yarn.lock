@@ -2395,7 +2395,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@npm:1.0.13, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@npm:1.0.14, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -2411,6 +2411,7 @@ __metadata:
     eslint-plugin-prettier: "npm:^5.0.0"
     eslint-plugin-react: "npm:^7.33.2"
     eslint-plugin-react-hooks: "npm:^4.6.0"
+    eslint-plugin-unused-imports: "npm:^3.0.0"
     jest: "npm:^29.7.0"
     prettier: "npm:^3.0.3"
     ts-jest: "npm:^29.1.1"
@@ -2431,7 +2432,7 @@ __metadata:
     "@babel/preset-env": "npm:^7.16.7"
     "@babel/preset-react": "npm:^7.16.7"
     "@babel/preset-typescript": "npm:^7.16.7"
-    "@dagster-io/eslint-config": "npm:1.0.13"
+    "@dagster-io/eslint-config": "npm:1.0.14"
     "@mdx-js/react": "npm:^1.6.22"
     "@react-hook/resize-observer": "npm:^1.2.6"
     "@rollup/plugin-babel": "npm:^5.3.1"
@@ -2475,7 +2476,6 @@ __metadata:
     eslint-plugin-storybook: "npm:^0.6.14"
     jest: "npm:^29.7.0"
     jest-environment-jsdom: "npm:^29.5.0"
-    nearest-color: "npm:^0.4.4"
     prettier: "npm:3.0.3"
     react: "npm:^18.2.0"
     react-docgen-typescript-plugin: "npm:^1.0.5"
@@ -2618,7 +2618,6 @@ __metadata:
     remark: "npm:^14.0.2"
     remark-gfm: "npm:3.0.1"
     resize-observer-polyfill: "npm:^1.5.1"
-    rgb-hex: "npm:^4.0.0"
     storybook: "npm:^7.4.5"
     strip-markdown: "npm:^6.0.0"
     styled-components: "npm:^5.3.3"
@@ -12582,6 +12581,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-plugin-unused-imports@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "eslint-plugin-unused-imports@npm:3.0.0"
+  dependencies:
+    eslint-rule-composer: "npm:^0.3.0"
+  peerDependencies:
+    "@typescript-eslint/eslint-plugin": ^6.0.0
+    eslint: ^8.0.0
+  peerDependenciesMeta:
+    "@typescript-eslint/eslint-plugin":
+      optional: true
+  checksum: 9433b80d4efdf3f8e43a38a7662b279b310020f3a80ffd2bbc56a375804b367bedfbe5b611b1969963e2de3b392bf1f389e89d2af810594ea3ab913c7e219ba1
+  languageName: node
+  linkType: hard
+
+"eslint-rule-composer@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "eslint-rule-composer@npm:0.3.0"
+  checksum: c751e71243c6750de553ca0f586a71c7e9d43864bcbd0536639f287332e3f1ed3337bb0db07020652fa90937ceb63b6cc14c0f71fb227e8fc20ca44ee67e837f
+  languageName: node
+  linkType: hard
+
 "eslint-scope@npm:5.1.1, eslint-scope@npm:^5.1.1":
   version: 5.1.1
   resolution: "eslint-scope@npm:5.1.1"
@@ -17858,13 +17879,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nearest-color@npm:^0.4.4":
-  version: 0.4.4
-  resolution: "nearest-color@npm:0.4.4"
-  checksum: f2bde65186826ad72eb049580a11ce506339b106a2ddb79a79ed1029878063194fa4833110ac723b7ef119fd874175770eaec7015c15e0605468a4c6a1675151
-  languageName: node
-  linkType: hard
-
 "negotiator@npm:0.6.3, negotiator@npm:^0.6.3":
   version: 0.6.3
   resolution: "negotiator@npm:0.6.3"
@@ -20738,13 +20752,6 @@ __metadata:
   version: 1.3.0
   resolution: "rfdc@npm:1.3.0"
   checksum: 76dedd9700cdf132947fde7ce1a8838c9cbb7f3e8f9188af0aaf97194cce745f42094dd2cf547426934cc83252ee2c0e432b2e0222a4415ab0db32de82665c69
-  languageName: node
-  linkType: hard
-
-"rgb-hex@npm:^4.0.0":
-  version: 4.0.1
-  resolution: "rgb-hex@npm:4.0.1"
-  checksum: 474505b0fbab1f10b3f72cee4350a491d6d491a0a72576025c6f72f2fe13490ddd46f4f00bb77916da5f5238d2f2adb3255543c64c7358a2c65577d27e7085e2
   languageName: node
   linkType: hard
 

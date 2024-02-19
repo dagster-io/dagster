@@ -24,7 +24,7 @@ The asset you built should look similar to the following code. Click **View answ
 @asset
 def taxi_zones_file():
     """
-        The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
     """
     raw_taxi_zones = requests.get(
         "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"

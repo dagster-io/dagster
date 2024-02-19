@@ -1,26 +1,15 @@
 import {QueryResult} from '@apollo/client';
-import {
-  PageHeader,
-  Box,
-  Heading,
-  Button,
-  Icon,
-  Tooltip,
-  colorTextDefault,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Button, Colors, Heading, Icon, PageHeader, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
+import {WorkspaceTabs} from './WorkspaceTabs';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {RepoAddress} from './types';
 import {QueryRefreshState} from '../app/QueryRefresh';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from '../nav/ReloadRepositoryLocationButton';
-
-import {WorkspaceTabs} from './WorkspaceTabs';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {RepoAddress} from './types';
 
 interface Props<TData> {
   repoAddress: RepoAddress;
@@ -37,12 +26,12 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
       title={
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Heading>
-            <Link to="/locations" style={{color: colorTextDefault()}}>
+            <Link to="/locations" style={{color: Colors.textDefault()}}>
               Deployment
             </Link>
           </Heading>
           <Heading>/</Heading>
-          <Heading style={{color: colorTextLight()}}>
+          <Heading style={{color: Colors.textLight()}}>
             {repoAddressAsHumanString(repoAddress)}
           </Heading>
         </Box>

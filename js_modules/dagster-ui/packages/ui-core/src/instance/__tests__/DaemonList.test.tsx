@@ -1,7 +1,6 @@
-import {MockedResponse, MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {GetAutoMaterializePausedQuery} from '../../assets/types/useAutomaterializeDaemonStatus.types';
@@ -18,8 +17,8 @@ jest.mock('../../app/Permissions', () => ({
   },
 }));
 
-jest.mock('../../assets/AutomationPolicySensorFlag', () => ({
-  useAutomationPolicySensorFlag: jest.fn().mockReturnValue('has-global-amp'),
+jest.mock('../../assets/AutoMaterializeSensorFlag', () => ({
+  useAutoMaterializeSensorFlag: jest.fn().mockReturnValue('has-global-amp'),
 }));
 
 const mockDaemons = [

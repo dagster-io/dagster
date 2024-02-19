@@ -501,7 +501,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
         return {}
 
 
-class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+class PipesMessageWriterChannel(ABC):
     """Object that writes messages back to the Dagster orchestration process."""
 
     @abstractmethod

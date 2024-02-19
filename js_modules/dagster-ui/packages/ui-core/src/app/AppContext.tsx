@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {createContext} from 'react';
 
 import {DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 
@@ -10,7 +10,7 @@ export type AppContextValue = {
   statusPolling?: Set<DeploymentStatusType>;
 };
 
-export const AppContext = React.createContext<AppContextValue>({
+export const AppContext = createContext<AppContextValue>({
   basePath: '',
   rootServerURI: '',
   telemetryEnabled: false,

@@ -34,7 +34,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -164,6 +164,7 @@ if TYPE_CHECKING:
         EventLogRecord,
         EventRecordsFilter,
         EventRecordsResult,
+        PlannedMaterializationInfo,
     )
     from dagster._core.storage.partition_status_cache import (
         AssetPartitionStatus,
@@ -931,8 +932,8 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("max_tick_retries", 3)
 
     @property
-    def auto_materialize_use_automation_policy_sensors(self) -> int:
-        return self.get_settings("auto_materialize").get("use_automation_policy_sensors", False)
+    def auto_materialize_use_sensors(self) -> int:
+        return self.get_settings("auto_materialize").get("use_sensors", False)
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
@@ -1372,7 +1373,8 @@ class DagsterInstance(DynamicPartitionsStore):
             if check.not_none(output.properties).is_asset_partitioned:
                 partitions_subset = job_partitions_def.subset_with_partition_keys(
                     job_partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end)
+                        PartitionKeyRange(partition_range_start, partition_range_end),
+                        dynamic_partitions_store=self,
                     )
                 ).to_serializable_subset()
 
@@ -2009,8 +2011,8 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
-    @public
     @traced
+    @deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],
@@ -2031,9 +2033,31 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.fetch_planned_materializations(
-            records_filter, limit, cursor, ascending
+        from dagster._core.event_api import EventLogCursor
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import (
+            EventRecordsFilter,
+            EventRecordsResult,
         )
+
+        event_records_filter = (
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, records_filter)
+            if isinstance(records_filter, AssetKey)
+            else records_filter.to_event_records_filter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, cursor=cursor, ascending=ascending
+            )
+        )
+        records = self._event_storage.get_event_records(
+            event_records_filter, limit=limit, ascending=ascending
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
     @public
     @traced
@@ -2204,6 +2228,14 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns a mapping of partition to storage id.
         """
         return self._event_storage.get_latest_storage_id_by_partition(asset_key, event_type)
+
+    @traced
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional["PlannedMaterializationInfo"]:
+        return self._event_storage.get_latest_planned_materialization_info(asset_key, partition)
 
     @public
     @traced
@@ -2654,7 +2686,7 @@ class DagsterInstance(DynamicPartitionsStore):
             schedule_info: Mapping[str, Mapping[str, object]] = {
                 schedule_state.instigator_name: {
                     "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.instigator_data.cron_schedule,
+                    "cron_schedule": schedule_state.instigator_data.cron_schedule,  # type: ignore
                     "schedule_origin_id": schedule_state.instigator_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }
@@ -2749,8 +2781,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def reset_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
-        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage. Otherwise, update the status to
-        `InstigatorStatus.STOPPED`.
+        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
 
         Args:
             instance (DagsterInstance): The current instance.
@@ -2770,11 +2801,7 @@ class DagsterInstance(DynamicPartitionsStore):
             min_interval=external_sensor.min_interval_seconds,
             sensor_type=external_sensor.sensor_type,
         )
-        new_status = (
-            InstigatorStatus.DECLARED_IN_CODE
-            if external_sensor._external_sensor_data.default_status  # noqa: SLF001
-            else InstigatorStatus.STOPPED
-        )
+        new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
             reset_state = self.add_instigator_state(
@@ -2937,7 +2964,7 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled or self.auto_materialize_use_automation_policy_sensors:
+        if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
         return daemons
 

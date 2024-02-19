@@ -36,6 +36,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -46,7 +47,7 @@ setup(
         "click>=7.0,<9.0",
         f"dagster{pin}",
         f"dagster-graphql{pin}",
-        "starlette",
+        "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
         "uvicorn[standard]",
     ],
     extras_require={

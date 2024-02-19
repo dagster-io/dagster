@@ -3,34 +3,39 @@ import {
   Box,
   Caption,
   Checkbox,
+  Colors,
+  IconName,
   MiddleTruncate,
+  Tag,
   Tooltip,
-  colorTextDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus} from '../graphql/types';
+import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {RepoAddress} from './types';
+import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
+import {workspacePathFromAddress} from './workspacePath';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
-import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
+import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+} from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {RepoAddress} from './types';
-import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
-import {workspacePathFromAddress} from './workspacePath';
-
-const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1.5fr 1fr 76px 120px 148px 180px';
-const TEMPLATE_COLUMNS = '1.5fr 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface SensorRowProps {
   name: string;
@@ -55,23 +60,43 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     height,
   } = props;
 
-  const [querySensor, queryResult] = useLazyQuery<SingleSensorQuery, SingleSensorQueryVariables>(
-    SINGLE_SENSOR_QUERY,
-    {
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          sensorName: name,
-        },
+  const [querySensor, sensorQueryResult] = useLazyQuery<
+    SingleSensorQuery,
+    SingleSensorQueryVariables
+  >(SINGLE_SENSOR_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
       },
     },
+  });
+
+  const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+    SensorAssetSelectionQuery,
+    SensorAssetSelectionQueryVariables
+  >(SENSOR_ASSET_SELECTIONS_QUERY, {
+    variables: {
+      sensorSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
+      },
+    },
+  });
+
+  useDelayedRowQuery(
+    React.useCallback(() => {
+      querySensor();
+      querySensorAssetSelection();
+    }, [querySensor, querySensorAssetSelection]),
   );
 
-  useDelayedRowQuery(querySensor);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
+  const {data} = sensorQueryResult;
 
   const sensorData = React.useMemo(() => {
     if (data?.sensorOrError.__typename !== 'Sensor') {
@@ -103,6 +128,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   const tick = sensorData?.sensorState.ticks[0];
 
+  const sensorType = sensorData?.sensorType;
+  const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -133,7 +161,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             >
               <Caption
                 style={{
-                  color: colorTextLight(),
+                  color: Colors.textLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -143,8 +171,28 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </Box>
         </RowCell>
         <RowCell>
+          <div>
+            {sensorInfo ? (
+              sensorInfo.description ? (
+                <Tooltip content={sensorInfo.description}>
+                  <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+                </Tooltip>
+              ) : (
+                <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
+              )
+            ) : null}
+          </div>
+        </RowCell>
+        <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            <SensorTargetList targets={sensorData?.targets} repoAddress={repoAddress} />
+            {sensorData ? (
+              <SensorTargetList
+                targets={sensorData.targets}
+                repoAddress={repoAddress}
+                selectionQueryResult={sensorAssetSelectionQueryResult}
+                sensorType={sensorData.sensorType}
+              />
+            ) : null}
           </Box>
         </RowCell>
         <RowCell>
@@ -157,11 +205,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           {sensorData ? (
-            <div style={{color: colorTextDefault()}}>
+            <div style={{color: Colors.textDefault()}}>
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -170,7 +218,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               <TickStatusTag tick={tick} />
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -183,7 +231,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               showSummary={false}
             />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
       </RowGrid>
@@ -201,7 +249,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: colorTextLight(),
+        color: Colors.textLight(),
       }}
     >
       {checkbox ? (
@@ -210,6 +258,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         </HeaderCell>
       ) : null}
       <HeaderCell>Name</HeaderCell>
+      <HeaderCell>Type</HeaderCell>
       <HeaderCell>Target</HeaderCell>
       <HeaderCell>Running</HeaderCell>
       <HeaderCell>Frequency</HeaderCell>
@@ -225,6 +274,50 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
     $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
   height: 100%;
 `;
+
+export const SENSOR_TYPE_META: Record<
+  SensorType,
+  {name: string; icon: IconName; description: string | null}
+> = {
+  [SensorType.ASSET]: {
+    name: 'Asset',
+    icon: 'asset',
+    description: 'Asset sensors instigate runs when a materialization occurs',
+  },
+  [SensorType.AUTO_MATERIALIZE]: {
+    name: 'Auto-materialize',
+    icon: 'materialization',
+    description:
+      'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
+  },
+  [SensorType.FRESHNESS_POLICY]: {
+    name: 'Freshness policy',
+    icon: 'hourglass',
+    description:
+      'Freshness sensors check the freshness of assets on each tick, then perform an action in response to that status',
+  },
+  [SensorType.MULTI_ASSET]: {
+    name: 'Multi-asset',
+    icon: 'multi_asset',
+    description:
+      'Multi asset sensors trigger job executions based on multiple asset materialization event streams',
+  },
+  [SensorType.RUN_STATUS]: {
+    name: 'Run status',
+    icon: 'alternate_email',
+    description: 'Run status sensors react to run status',
+  },
+  [SensorType.STANDARD]: {
+    name: 'Standard',
+    icon: 'sensors',
+    description: null,
+  },
+  [SensorType.UNKNOWN]: {
+    name: 'Standard',
+    icon: 'sensors',
+    description: null,
+  },
+};
 
 const SINGLE_SENSOR_QUERY = gql`
   query SingleSensorQuery($selector: SensorSelector!) {

@@ -1,23 +1,17 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
-
-import {
-  colorBackgroundDefault,
-  colorBorderDefault,
-  colorTextDefault,
-  colorTextDisabled,
-} from '../theme/color';
 
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
+import {Colors} from './Color';
 import {Icon} from './Icon';
-import {MenuItem, Menu} from './Menu';
+import {Menu, MenuItem} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
-import {Container as VirtualContainer, Inner, Row} from './VirtualizedTable';
+import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
 import {useViewport} from './useViewport';
 
 export type TagSelectorTagProps = {
@@ -49,6 +43,8 @@ type Props = {
   dropdownStyles?: React.CSSProperties;
   rowWidth?: number;
   rowHeight?: number;
+  closeOnSelect?: boolean;
+  usePortal?: boolean;
 };
 
 const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
@@ -64,7 +60,7 @@ const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
           maxWidth: '120px',
         }}
         data-tooltip={tag}
-        data-tooltip-style={DefaultTagTooltipStyle}
+        data-tooltip-style={TagSelectorDefaultTagTooltipStyle}
       >
         <MiddleTruncate text={tag} />
         <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
@@ -107,6 +103,8 @@ export const TagSelector = ({
   dropdownStyles,
   renderTagList,
   rowHeight = MENU_ITEM_HEIGHT,
+  closeOnSelect,
+  usePortal,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
@@ -141,6 +139,9 @@ export const TagSelector = ({
                 setSelectedTags(
                   selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
                 );
+                if (closeOnSelect) {
+                  setIsDropdownOpen(false);
+                }
               };
               if (renderDropdownItem) {
                 return <div>{renderDropdownItem(tag, {toggle, selected})}</div>;
@@ -162,6 +163,7 @@ export const TagSelector = ({
     return <Menu style={{width: viewport.width + 'px'}}>{dropdownContent}</Menu>;
   }, [
     allTags,
+    closeOnSelect,
     dropdownStyles,
     items,
     renderDropdown,
@@ -205,27 +207,28 @@ export const TagSelector = ({
           }
         }
       }}
-      content={<div ref={dropdownContainer}>{dropdown}</div>}
+      content={<div>{dropdown}</div>}
       targetTagName="div"
       onOpening={rowVirtualizer.measure}
       onOpened={rowVirtualizer.measure}
+      usePortal={usePortal}
     >
-      <Container
+      <TagSelectorContainer
         onClick={() => {
           setIsDropdownOpen((isOpen) => !isOpen);
         }}
         {...containerProps}
       >
-        <TagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagsContainer>
+        <TagSelectorTagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagSelectorTagsContainer>
         <div style={{cursor: 'pointer'}}>
           <Icon name={isDropdownOpen ? 'expand_less' : 'expand_more'} />
         </div>
-      </Container>
+      </TagSelectorContainer>
     </Popover>
   );
 };
 
-const Container = styled.div`
+export const TagSelectorContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -234,10 +237,10 @@ const Container = styled.div`
 `;
 
 const Placeholder = styled.div`
-  color: ${colorTextDisabled()};
+  color: ${Colors.textDisabled()};
 `;
 
-const TagsContainer = styled(Box)`
+export const TagSelectorTagsContainer = styled(Box)`
   overflow-x: auto;
 
   &::-webkit-scrollbar {
@@ -257,7 +260,7 @@ export const TagSelectorWithSearch = (
     allTags,
     selectedTags,
     setSelectedTags,
-    rowHeight,
+    rowHeight: _rowHeight,
     renderDropdown,
     searchPlaceholder,
     ...rest
@@ -303,8 +306,8 @@ export const TagSelectorWithSearch = (
   );
 };
 
-const DefaultTagTooltipStyle = JSON.stringify({
-  background: colorBackgroundDefault(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
+export const TagSelectorDefaultTagTooltipStyle = JSON.stringify({
+  background: Colors.backgroundDefault(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
 });

@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   DialogBody,
   DialogFooter,
   Icon,
@@ -10,13 +11,24 @@ import {
   Spinner,
   Subheading,
   Tooltip,
-  colorAccentGray,
-  colorBorderDefault,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  DaemonNotRunningAlert,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
+  UsingDefaultLauncherAlert,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+} from './BackfillMessaging';
+import {DimensionRangeWizard} from './DimensionRangeWizard';
+import {PartitionRunStatusCheckboxes, countsByState} from './PartitionRunStatusCheckboxes';
+import {
+  BackfillSelectorQuery,
+  BackfillSelectorQueryVariables,
+} from './types/BackfillSelector.types';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
@@ -35,21 +47,6 @@ import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  DaemonNotRunningAlert,
-  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
-  showBackfillErrorToast,
-  showBackfillSuccessToast,
-  UsingDefaultLauncherAlert,
-  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
-} from './BackfillMessaging';
-import {DimensionRangeWizard} from './DimensionRangeWizard';
-import {countsByState, PartitionRunStatusCheckboxes} from './PartitionRunStatusCheckboxes';
-import {
-  BackfillSelectorQuery,
-  BackfillSelectorQueryVariables,
-} from './types/BackfillSelector.types';
 
 interface BackfillOptions {
   reexecute: boolean;
@@ -240,7 +237,7 @@ export const BackfillPartitionSelector = ({
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed. Only applies for selections of failed partitions."
                     >
-                      <Icon name="info" color={colorAccentGray()} />
+                      <Icon name="info" color={Colors.accentGray()} />
                     </Tooltip>
                   </Box>
                 }
@@ -256,7 +253,7 @@ export const BackfillPartitionSelector = ({
                   placement="top"
                   content="Applies a step-selection to each run for the requested partitions."
                 >
-                  <Icon name="info" color={colorAccentGray()} />
+                  <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               </Box>
             }
@@ -272,7 +269,7 @@ export const BackfillPartitionSelector = ({
                 autoApplyChanges={true}
               />
               {query ? (
-                <div style={{color: colorTextLight()}}>
+                <div style={{color: Colors.textLight()}}>
                   {stepRows.length} step{stepRows.length === 1 ? '' : 's'} selected
                 </div>
               ) : null}
@@ -288,7 +285,7 @@ export const BackfillPartitionSelector = ({
             />
             {tags.length ? (
               <div
-                style={{border: `1px solid ${colorBorderDefault()}`, borderRadius: 8, padding: 3}}
+                style={{border: `1px solid ${Colors.borderDefault()}`, borderRadius: 8, padding: 3}}
               >
                 <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
               </div>

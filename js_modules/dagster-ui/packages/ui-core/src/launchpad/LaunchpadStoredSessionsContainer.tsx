@@ -1,16 +1,3 @@
-import * as React from 'react';
-
-import {
-  applyChangesToSession,
-  applyCreateSession,
-  IExecutionSessionChanges,
-  useExecutionSessionStorage,
-  useInitialDataForMode,
-} from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
-import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
-import {RepoAddress} from '../workspace/types';
-
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadTabs} from './LaunchpadTabs';
 import {LaunchpadType} from './types';
@@ -18,6 +5,16 @@ import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
 } from './types/LaunchpadAllowedRoot.types';
+import {
+  IExecutionSessionChanges,
+  applyChangesToSession,
+  applyCreateSession,
+  useExecutionSessionStorage,
+  useInitialDataForMode,
+} from '../app/ExecutionSessionStorage';
+import {useFeatureFlags} from '../app/Flags';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   launchpadType: LaunchpadType;

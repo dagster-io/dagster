@@ -31,7 +31,9 @@ from .valid_definitions import RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-
+    from dagster._core.definitions.partitioned_schedule import (
+        UnresolvedPartitionedAssetScheduleDefinition,
+    )
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
@@ -216,6 +218,9 @@ class CachingRepositoryData(RepositoryData):
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
         resource_key_mapping: Mapping[int, str],
+        unresolved_partitioned_asset_schedules: Mapping[
+            str, "UnresolvedPartitionedAssetScheduleDefinition"
+        ],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -276,6 +281,16 @@ class CachingRepositoryData(RepositoryData):
             self._validate_job,
         )
 
+        schedules = {
+            **schedules,
+            **{
+                name: self._resolve_partitioned_asset_schedule_lambda(
+                    unresolved_partitioned_asset_schedule
+                )
+                for name, unresolved_partitioned_asset_schedule in unresolved_partitioned_asset_schedules.items()
+            },
+        }
+
         self._schedules = CacheingDefinitionIndex(
             ScheduleDefinition,
             "ScheduleDefinition",
@@ -303,6 +318,15 @@ class CachingRepositoryData(RepositoryData):
         self._sensors.get_all_definitions()
 
         self._all_jobs = None
+
+    def _resolve_partitioned_asset_schedule_lambda(
+        self, unresolved_partitioned_asset_schedule: "UnresolvedPartitionedAssetScheduleDefinition"
+    ) -> Callable[[], ScheduleDefinition]:
+        def resolve_partitioned_asset_schedule() -> ScheduleDefinition:
+            job = self.get_job(unresolved_partitioned_asset_schedule.job.name)
+            return unresolved_partitioned_asset_schedule.resolve(job)
+
+        return resolve_partitioned_asset_schedule
 
     @staticmethod
     def from_dict(repository_definitions: Dict[str, Dict[str, Any]]) -> "CachingRepositoryData":

@@ -1,7 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 
+import {VirtualizedResourceTable} from './VirtualizedResourceTable';
+import {
+  WorkspaceResourcesQuery,
+  WorkspaceResourcesQueryVariables,
+} from './types/WorkspaceResourcesRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -11,19 +16,13 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {VirtualizedResourceTable} from './VirtualizedResourceTable';
-import {
-  WorkspaceResourcesQuery,
-  WorkspaceResourcesQueryVariables,
-} from './types/WorkspaceResourcesRoot.types';
-
 export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Resources: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = useState('');
 
   const selector = repoAddressToSelector(repoAddress);
 
@@ -41,14 +40,14 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const resources = React.useMemo(() => {
+  const resources = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.allTopLevelResourceDetails;
     }
     return [];
   }, [data]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return resources.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
   }, [resources, sanitizedSearch]);
@@ -59,7 +58,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading resources…</div>
+            <div style={{color: Colors.textLight()}}>Loading resources…</div>
           </Box>
         </Box>
       );

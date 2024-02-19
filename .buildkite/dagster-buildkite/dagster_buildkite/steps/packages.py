@@ -272,6 +272,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
+            AvailablePythonVersion.V3_12,
         ],
     ),
     PackageSpec(
@@ -287,43 +288,30 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on 3.9-incompatible extension libs
             AvailablePythonVersion.V3_9,
-            # depends on some packages not yet available on python 3.11
-            AvailablePythonVersion.V3_11,
+            # dagster-airflow dep
+            AvailablePythonVersion.V3_12,
         ],
     ),
     PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,
+            AvailablePythonVersion.V3_12,  # duckdb
         ],
     ),
     PackageSpec(
         "examples/with_great_expectations",
-        unsupported_python_versions=[
-            # Issue with pinned of great_expectations
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
-        unsupported_python_versions=[
-            # pyspark not yet 3.11 compatible
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "examples/with_pyspark_emr",
-        unsupported_python_versions=[
-            # pyspark not yet 3.11 compatible
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "examples/with_wandb",
         unsupported_python_versions=[
-            # wandb not yet 3.11 compatible
-            AvailablePythonVersion.V3_11,
+            # dagster-wandb dep
+            AvailablePythonVersion.V3_12,
         ],
     ),
     # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
@@ -334,6 +322,15 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/assets_dbt_python",
         pytest_tox_factors=["pypi"],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,  # duckdb
+        ],
+    ),
+    PackageSpec(
+        "examples/assets_dynamic_partitions",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,  # duckdb
+        ],
     ),
     PackageSpec(
         "examples/quickstart_aws",
@@ -353,8 +350,39 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
 ]
 
+
+def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[AvailablePythonVersion]:
+    if tox_factor == "general_tests_old_protobuf":
+        return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
+
+    if (
+        tox_factor
+        in {
+            "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
+        }
+    ):
+        return [AvailablePythonVersion.V3_11]
+
+    if tox_factor in {"scheduler_tests", "definitions_tests"}:
+        return [AvailablePythonVersion.V3_11]
+
+    if tox_factor in {
+        "definitions_tests_pendulum_1",
+        "definitions_tests_pendulum_2",
+        "scheduler_tests_pendulum_1",
+        "scheduler_tests_pendulum_2",
+        "type_signature_tests",
+    }:
+        return [AvailablePythonVersion.V3_12]
+
+    return []
+
+
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
-    PackageSpec("python_modules/automation"),
+    PackageSpec(
+        "python_modules/automation",
+        unsupported_python_versions=[AvailablePythonVersion.V3_12],
+    ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
@@ -368,32 +396,22 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
             "daemon_tests",
-            "definitions_tests_old_pendulum",
+            "definitions_tests",
+            "definitions_tests_pendulum_1",
+            "definitions_tests_pendulum_2",
             "general_tests",
             "general_tests_old_protobuf",
             "scheduler_tests",
-            "scheduler_tests_old_pendulum",
+            "scheduler_tests_pendulum_1",
+            "scheduler_tests_pendulum_2",
             "execution_tests",
             "storage_tests",
             "type_signature_tests",
-            "definitions_tests",
             "asset_defs_tests",
             "launcher_tests",
             "logging_tests",
         ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    in {
-                        "general_tests_old_protobuf",  # protobuf 3 not compatible with python 3.11
-                        "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
-                    }
-                )
-                else []
-            )
-        ),
+        unsupported_python_versions=_unsupported_dagster_python_versions,
     ),
     PackageSpec(
         "python_modules/dagster-graphql",
@@ -434,20 +452,21 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/dagster-test",
+        unsupported_python_versions=[
+            # dagster-airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            "dbt_14X_legacy",
-            "dbt_15X_legacy",
-            "dbt_16X_legacy",
-            "dbt_17X_legacy",
-            "dbt_14X",
-            "dbt_15X",
-            "dbt_16X",
-            "dbt_17X",
-            "dbt_14X_pydantic1",
-            "dbt_14X_legacy_pydantic1",
+            f"{deps_factor}-{command_factor}"
+            for deps_factor in ["dbt15", "dbt16", "dbt17", "pydantic1"]
+            for command_factor in ["cloud", "core", "legacy"]
+        ],
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
         ],
     ),
     PackageSpec(
@@ -467,6 +486,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
+            AvailablePythonVersion.V3_12,
         ],
         env_vars=[
             "AIRFLOW_HOME",
@@ -498,18 +518,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-celery",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_extra_cmds,
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,  # no celery support for 3.11
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_docker_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_11,  # no celery support for 3.11
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dask",
@@ -517,10 +531,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
-        unsupported_python_versions=[
-            # pyspark not supported on 3.11
-            AvailablePythonVersion.V3_11,
-        ],
         pytest_tox_factors=[
             "pydantic1",
             "pydantic2",
@@ -533,10 +543,31 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-duckdb",
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-duckdb-pandas",
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-duckdb-polars",
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-duckdb-pyspark",
         unsupported_python_versions=[
-            # pyspark not supported on 3.11
-            AvailablePythonVersion.V3_11,
+            # duckdb
+            AvailablePythonVersion.V3_12,
         ],
     ),
     PackageSpec(
@@ -571,17 +602,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "GCP_PROJECT_ID",
         ],
         pytest_extra_cmds=gcp_extra_cmds,
-        unsupported_python_versions=[
-            # pyspark not supported on 3.11
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            # great-expectations not yet supported on 3.11
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",
@@ -599,10 +622,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-mlflow",
-        unsupported_python_versions=[
-            # https://github.com/mlflow/mlflow/issues/7681
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-mysql",
@@ -610,10 +629,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
-        ],
-        unsupported_python_versions=[
-            # mysql-connector-python not supported on 3.11
-            AvailablePythonVersion.V3_11,
         ],
         always_run_if=has_storage_test_fixture_changes,
     ),
@@ -624,10 +639,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-pyspark",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-        unsupported_python_versions=[
-            # pyspark not supported on 3.11
-            AvailablePythonVersion.V3_11,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-postgres",
@@ -645,9 +656,20 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         retries=2,
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-wandb",
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagstermill",
         pytest_tox_factors=["papermill1", "papermill2"],
         retries=2,  # Workaround for flaky kernel issues
+        unsupported_python_versions=[
+            # duckdb
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",
