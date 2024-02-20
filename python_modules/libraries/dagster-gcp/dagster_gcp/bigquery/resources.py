@@ -1,7 +1,14 @@
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Any, Iterator, Optional
 
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster import (
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
+    _check as check,
+    resource,
+)
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from google.cloud import bigquery
 from pydantic import Field
@@ -96,3 +103,46 @@ def bigquery_resource(context):
     bq_resource = BigQueryResource.from_resource_context(context)
     with bq_resource.get_client() as client:
         yield client
+
+
+def fetch_last_updated_timestamps(
+    *,
+    client: bigquery.Client,
+    dataset_id: str,
+    table_ids: Sequence[str],
+) -> Mapping[str, datetime]:
+    """Get the last updated timestamps of a list BigQuery table.
+
+    Note that this only works on BigQuery tables, and not views.
+
+    Args:
+        client (bigquery.Client): The BigQuery client.
+        dataset_id (str): The BigQuery dataset ID.
+        table_ids (Sequence[str]): The table IDs to get the last updated timestamp for.
+
+    Returns:
+        Mapping[str, datetime]: A mapping of table IDs to their last updated timestamps (UTC).
+    """
+    check.invariant(
+        len(table_ids) > 0,
+        "At least one table ID must be provided.",
+    )
+    query = f"""
+        SELECT
+            table_id,
+            TIMESTAMP_MILLIS(last_modified_time) as last_modified_time
+        FROM
+            {dataset_id}.__TABLES__
+        WHERE
+            table_id IN ({", ".join([f'"{table_id}"' for table_id in table_ids])})
+    """
+
+    query_job = client.query(query)
+    results = query_job.result()
+    modified_times = {row.table_id: row.last_modified_time for row in results}
+
+    for table_id in table_ids:
+        if table_id not in modified_times:
+            raise ValueError(f"Table {table_id} not found in dataset {dataset_id}")
+
+    return modified_times

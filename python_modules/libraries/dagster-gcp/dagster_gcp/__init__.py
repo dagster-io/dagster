@@ -15,6 +15,7 @@ from .bigquery.ops import (
 from .bigquery.resources import (
     BigQueryResource as BigQueryResource,
     bigquery_resource as bigquery_resource,
+    fetch_last_updated_timestamps as fetch_last_updated_timestamps,
 )
 from .bigquery.types import BigQueryError as BigQueryError
 from .dataproc.ops import (
