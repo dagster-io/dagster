@@ -351,7 +351,7 @@ export const AssetNodeOverview = ({
               showTimestamps
               showFilter
               hideTableSchema
-              observations={observation && materialization ? [observation] : []}
+              observations={[]}
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
               event={materialization || observation || null}
