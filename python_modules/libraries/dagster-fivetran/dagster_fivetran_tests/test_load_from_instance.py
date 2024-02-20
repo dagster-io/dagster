@@ -13,7 +13,7 @@ from dagster import (
     asset,
     io_manager,
 )
-from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
@@ -196,10 +196,6 @@ def test_load_from_instance(
 
         # Kick off a run to materialize all assets
         final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
-        fivetran_sync_job = build_assets_job(
-            name="fivetran_assets_job",
-            assets=all_assets,
-        )
 
         with responses.RequestsMock() as rsps:
             api_prefixes = [(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}", tuple())]
@@ -227,7 +223,7 @@ def test_load_from_instance(
                 # final state will be updated
                 rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
-            result = fivetran_sync_job.execute_in_process()
+            result = materialize(all_assets)
             asset_materializations = [
                 event
                 for event in result.events_for_node("fivetran_sync_some_connector")

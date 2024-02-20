@@ -8,10 +8,10 @@ from dagster import (
     asset,
     build_init_resource_context,
 )
+from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.events import StepMaterializationData
-from dagster._legacy import build_assets_job
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
 from .utils import get_sample_connection_json, get_sample_job_json
@@ -60,10 +60,9 @@ def test_assets(schema_prefix, monkeypatch):
         status=200,
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
+    res = materialize_to_memory(
         ab_assets,
-        resource_defs={
+        resources={
             "airbyte": airbyte_resource.configured(
                 {
                     "host": "some_host",
@@ -73,8 +72,6 @@ def test_assets(schema_prefix, monkeypatch):
             )
         },
     )
-
-    res = ab_job.execute_in_process()
 
     materializations = [
         event.event_specific_data.materialization
@@ -154,11 +151,11 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         status=200,
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
-        ab_assets,
-        source_assets=[SourceAsset(AssetKey(source_asset))] if source_asset else None,
-        resource_defs={
+    source_assets = [SourceAsset(AssetKey(source_asset))] if source_asset else []
+    res = materialize_to_memory(
+        [*ab_assets, *source_assets],
+        selection=ab_assets,
+        resources={
             "airbyte": airbyte_resource.configured(
                 {
                     "host": "some_host",
@@ -168,8 +165,6 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
             )
         },
     )
-
-    res = ab_job.execute_in_process()
 
     materializations = [
         event.event_specific_data.materialization
@@ -210,12 +205,6 @@ def test_assets_cloud() -> None:
         group_name="foo",
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
-        ab_assets,
-        resource_defs={"airbyte": ab_resource},
-    )
-
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.POST,
@@ -234,7 +223,10 @@ def test_assets_cloud() -> None:
             json={"jobId": 1, "status": "succeeded", "jobType": "sync"},
         )
 
-        res = ab_job.execute_in_process()
+        res = materialize_to_memory(
+            ab_assets,
+            resources={"airbyte": ab_resource},
+        )
 
         materializations = [
             event.event_specific_data.materialization

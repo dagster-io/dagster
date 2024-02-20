@@ -30,9 +30,11 @@ from dagster import (
     materialize,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
@@ -157,12 +159,11 @@ def test_single_partitioned_asset_job():
     def my_asset(context: AssetExecutionContext):
         assert context.assets_def.partitions_def == partitions_def
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("my_asset"),
         [AssetMaterialization(asset_key=AssetKey(["my_asset"]), partition="b")],
@@ -179,8 +180,7 @@ def test_two_partitioned_assets_job():
     def downstream(upstream):
         assert upstream is None
 
-    my_job = build_assets_job("my_job", assets=[upstream, downstream])
-    result = my_job.execute_in_process(partition_key="b")
+    result = materialize_to_memory(assets=[upstream, downstream], partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream"),
         [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
@@ -204,7 +204,10 @@ def test_assets_job_with_different_partitions_defs():
         def downstream(upstream):
             assert upstream is None
 
-        build_assets_job("my_job", assets=[upstream, downstream])
+        Definitions(
+            assets=[upstream, downstream],
+            jobs=[define_asset_job("my_job", selection=[upstream, downstream])],
+        ).get_job_def("my_job")
 
 
 def test_access_partition_keys_from_context_direct_invocation():
@@ -298,12 +301,11 @@ def test_output_context_asset_partitions_time_window():
     def my_asset():
         pass
 
-    my_job = build_assets_job(
-        "my_job",
+    materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2021-06-06",
     )
-    my_job.execute_in_process(partition_key="2021-06-06")
 
 
 def test_input_context_asset_partitions_time_window():
@@ -362,13 +364,12 @@ def test_cross_job_different_partitions():
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
-    daily_job = build_assets_job(
-        name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
-    )
-    assert daily_job.execute_in_process(partition_key="2021-06-06").success
+    assert materialize(
+        assets=[daily_asset, hourly_asset],
+        selection=[daily_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="2021-06-06",
+    ).success
 
 
 def test_source_asset_partitions():
@@ -390,13 +391,11 @@ def test_source_asset_partitions():
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
-    daily_job = build_assets_job(
-        name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
-    )
-    assert daily_job.execute_in_process(partition_key="2021-06-06").success
+    assert materialize(
+        assets=[daily_asset, hourly_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="2021-06-06",
+    ).success
 
 
 def test_multi_assets_with_same_partitioning():
@@ -469,12 +468,11 @@ def test_single_partitioned_multi_asset_job():
     def my_asset():
         return (Output(1, output_name="out1"), Output(2, output_name="out2"))
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
 
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("my_asset"),
@@ -507,10 +505,9 @@ def test_two_partitioned_multi_assets_job():
     def downstream_asset_2(upstream_asset_2: int):
         del upstream_asset_2
 
-    my_job = build_assets_job(
-        "my_job", assets=[upstream_asset, downstream_asset_1, downstream_asset_2]
+    result = materialize_to_memory(
+        assets=[upstream_asset, downstream_asset_1, downstream_asset_2], partition_key="b"
     )
-    result = my_job.execute_in_process(partition_key="b")
 
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream_asset"),

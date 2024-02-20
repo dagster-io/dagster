@@ -136,7 +136,8 @@ def build_assets_job(
     op_retry_policy: Optional[RetryPolicy] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
-    """Builds a job that materializes the given assets.
+    """Builds a job that materializes the given assets. This is a private function that is used
+    during resolution of jobs created with `define_asset_job`.
 
     The dependencies between the ops in the job are determined by the asset dependencies defined
     in the metadata on the provided asset nodes.

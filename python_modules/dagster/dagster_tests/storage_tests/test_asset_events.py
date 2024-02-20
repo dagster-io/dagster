@@ -5,7 +5,6 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
     build_input_context,
-    io_manager,
     job,
     materialize,
     op,
@@ -17,7 +16,6 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
-from dagster._legacy import build_assets_job
 
 
 def n_asset_keys(path, n):
@@ -127,14 +125,9 @@ def test_io_manager_single_partition_add_input_metadata():
             context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
             return 1
 
-    @io_manager
-    def my_io_manager(_):
-        return MyIOManager()
-
-    assets_job = build_assets_job(
-        "assets_job", [asset_1, asset_2], resource_defs={"io_manager": my_io_manager}
+    result = materialize(
+        [asset_1, asset_2], resources={"io_manager": MyIOManager()}, partition_key="a"
     )
-    result = assets_job.execute_in_process(partition_key="a")
 
     get_observation = lambda event: event.event_specific_data.asset_observation
 

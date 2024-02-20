@@ -97,7 +97,6 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
@@ -3480,9 +3479,9 @@ class TestEventLogStorage:
                     storage.register_instance(created_instance)
 
                 asset_key = AssetKey("never_materializes_asset")
-                never_materializes_job = build_assets_job(
-                    "never_materializes_job", [never_materializes_asset]
-                )
+                never_materializes_job = Definitions(
+                    assets=[never_materializes_asset],
+                ).get_implicit_global_asset_job_def()
 
                 result = _execute_job_and_store_events(
                     created_instance, storage, never_materializes_job, run_id=run_id_1
