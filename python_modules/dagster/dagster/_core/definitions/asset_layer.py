@@ -894,24 +894,21 @@ def build_asset_selection_job(
                 f"{partitions_def}.",
             )
 
-    included_observables = [asset for asset in included_source_assets if asset.is_observable]
-    final_assets = [*included_assets, *included_observables]
-    final_asset_checks = included_checks_defs
-    final_source_assets = [
-        *(
-            source_asset
-            for source_asset in source_assets
-            if source_asset not in included_observables
-        ),
+    all_included_assets = [*included_assets, *included_source_assets]
+    executable_assets = [asset for asset in all_included_assets if asset.is_executable]
+    loadable_assets = [
+        *(asset for asset in all_included_assets if not asset.is_executable),
+        *(asset for asset in source_assets if asset not in included_source_assets),
         *excluded_assets,
     ]
+    final_asset_checks = included_checks_defs
 
     return build_assets_job(
         name=name,
-        executable_assets=final_assets,
+        executable_assets=executable_assets,
         asset_checks=final_asset_checks,
         config=config,
-        loadable_assets=final_source_assets,
+        loadable_assets=loadable_assets,
         resource_defs=resource_defs,
         executor_def=executor_def,
         partitions_def=partitions_def,

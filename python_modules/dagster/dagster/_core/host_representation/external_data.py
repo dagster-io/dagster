@@ -1402,6 +1402,7 @@ def external_repository_data_from_def(
     resource_datas = repository_def.get_top_level_resources()
     asset_graph = external_asset_nodes_from_defs(
         jobs,
+        assets_defs_by_key=repository_def.assets_defs_by_key,
         source_assets_by_key=repository_def.source_assets_by_key,
     )
 
@@ -1555,6 +1556,7 @@ def external_asset_checks_from_defs(
 
 def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
+    assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
@@ -1780,6 +1782,35 @@ def external_asset_nodes_from_defs(
                 ],
             )
         )
+
+    # Ensure any external assets that are have no nodes in any job are included in the asset graph
+    for asset in assets_defs_by_key.values():
+        for key in [
+            key
+            for key in asset.keys
+            if (key not in node_defs_by_asset_key) and key not in asset_keys_without_definitions
+        ]:
+            asset_nodes.append(
+                ExternalAssetNode(
+                    asset_key=key,
+                    dependencies=list(deps[key].values()),
+                    depended_by=list(dep_by[key].values()),
+                    execution_type=asset.execution_type,
+                    job_names=[],
+                    op_description=asset.descriptions_by_key.get(key),
+                    metadata=asset.metadata_by_key.get(key),
+                    group_name=asset.group_names_by_key.get(key),
+                    is_source=True,
+                    is_observable=asset.is_observable,
+                    auto_observe_interval_minutes=asset.auto_observe_interval_minutes,
+                    partitions_def_data=(
+                        external_partitions_definition_from_def(asset.partitions_def)
+                        if asset.partitions_def
+                        else None
+                    ),
+                    freshness_policy=asset.freshness_policies_by_key.get(key),
+                )
+            )
 
     defined = set()
     for node in asset_nodes:

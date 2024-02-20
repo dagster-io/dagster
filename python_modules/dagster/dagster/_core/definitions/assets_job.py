@@ -180,6 +180,11 @@ def build_assets_job(
 
     check.str_param(name, "name")
     check.iterable_param(executable_assets, "assets", of_type=(AssetsDefinition, SourceAsset))
+    for asset in executable_assets:
+        if not asset.is_executable:
+            keys = [asset.key] if isinstance(asset, SourceAsset) else asset.keys
+            check.failed(f"Passed unexecutable keys to executable_assets: {keys}")
+
     loadable_assets = check.opt_sequence_param(
         loadable_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
@@ -194,25 +199,27 @@ def build_assets_job(
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
     assets = [asset for asset in executable_assets if isinstance(asset, AssetsDefinition)]
-    source_assets = [asset for asset in executable_assets if isinstance(asset, SourceAsset)]
+    resolved_source_assets = [
+        asset for asset in executable_assets if isinstance(asset, SourceAsset)
+    ]
     for asset in loadable_assets or []:
         if isinstance(asset, AssetsDefinition):
-            source_assets += asset.to_source_assets()
+            resolved_source_assets += asset.to_source_assets()
         elif isinstance(asset, SourceAsset):
-            source_assets.append(asset)
+            resolved_source_assets.append(asset)
 
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
-    resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
+    resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
     deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
         assets, asset_checks, resolved_asset_deps
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets, source_assets)
-        resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
+        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
+        resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
 
         deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
             assets, asset_checks, resolved_asset_deps
@@ -227,7 +234,7 @@ def build_assets_job(
     else:
         node_defs = []
         observable_source_assets_by_node_handle: Mapping[NodeHandle, SourceAsset] = {}
-        for asset in source_assets:
+        for asset in resolved_source_assets:
             if (
                 isinstance(asset, SourceAsset)
                 and asset.is_observable
@@ -250,14 +257,14 @@ def build_assets_job(
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
         graph_def=graph,
         asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
-        source_assets=source_assets,
+        source_assets=resolved_source_assets,
         resolved_asset_deps=resolved_asset_deps,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
         observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(
-        assets, asset_checks, source_assets, wrapped_resource_defs
+        assets, asset_checks, resolved_source_assets, wrapped_resource_defs
     )
 
     if _asset_selection_data:
