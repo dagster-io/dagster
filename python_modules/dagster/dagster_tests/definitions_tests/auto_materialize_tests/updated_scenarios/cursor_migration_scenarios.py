@@ -13,38 +13,40 @@ from ..asset_daemon_scenario import (
     day_partition_key,
     hour_partition_key,
 )
-from ..base_scenario import (
-    run_request,
-)
+from ..base_scenario import run_request
 from .asset_daemon_scenario_states import (
     daily_partitions_def,
     hourly_partitions_def,
     one_asset,
     three_assets_in_sequence,
+    time_partitions_start_datetime,
     time_partitions_start_str,
 )
 
 cursor_migration_scenarios = [
     AssetDaemonScenario(
         id="one_asset_daily_partitions_never_materialized_respect_discards_migrate_after_discard",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
-        .with_current_time(time_partitions_start_str)
+        initial_graph=one_asset.with_asset_properties(partitions_def=daily_partitions_def),
+        execution_fn=lambda state: state.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=30, hours=4)
-        .with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        .with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(
-            run_request(asset_keys=["A"], partition_key=day_partition_key(state.current_time))
+            run_request(
+                asset_keys=["A"],
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=29),
+            )
         )
         .assert_evaluation(
             "A",
             [
                 AssetRuleEvaluationSpec(
                     AutoMaterializeRule.materialize_on_missing(),
-                    [day_partition_key(state.current_time, delta=-i) for i in range(30)],
+                    [day_partition_key(time_partitions_start_datetime, delta=i) for i in range(30)],
                 ),
                 AssetRuleEvaluationSpec(
                     DiscardOnMaxMaterializationsExceededRule(limit=1),
-                    [day_partition_key(state.current_time, delta=-i) for i in range(1, 30)],
+                    [day_partition_key(time_partitions_start_datetime, delta=i) for i in range(29)],
                 ),
             ],
             num_requested=1,
@@ -60,13 +62,17 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_two_years_never_materialized_migrate_after_run_requested",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_graph=one_asset.with_asset_properties(partitions_def=daily_partitions_def),
+        execution_fn=lambda state: state.evaluate_tick()
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(years=2, hours=4)
-        .with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        .with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(
-            run_request(asset_keys=["A"], partition_key=day_partition_key(state.current_time))
+            run_request(
+                asset_keys=["A"],
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=365 * 2 - 1),
+            )
         )
         .with_serialized_cursor(
             # this cursor was generate by running the above scenario before the cursor changes
@@ -80,23 +86,24 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="partitioned_non_root_asset_missing_after_migrate",
-        initial_state=three_assets_in_sequence.with_asset_properties(
+        initial_graph=three_assets_in_sequence.with_asset_properties(
             partitions_def=daily_partitions_def
-        )
-        .with_current_time(time_partitions_start_str)
+        ),
+        execution_fn=lambda state: state.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=10, hours=4)
-        .with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        .with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(
             run_request(
-                asset_keys=["A", "B", "C"], partition_key=day_partition_key(state.current_time)
+                asset_keys=["A", "B", "C"],
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=9),
             )
         )
         # materialize the previous day's partitions manually
         .with_runs(
             run_request(
                 asset_keys=["A", "B", "C"],
-                partition_key=day_partition_key(state.current_time, delta=-1),
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=8),
             )
         )
         .evaluate_tick()
@@ -114,10 +121,11 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_migrate",
-        initial_state=one_asset.with_asset_properties(
+        initial_graph=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
-        ).with_current_time("2020-01-01T00:05"),
-        execution_fn=lambda state: state.evaluate_tick()
+        ),
+        execution_fn=lambda state: state.with_current_time("2020-01-01T00:05")
+        .evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
         .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
         # next tick should not request any more runs
@@ -143,19 +151,22 @@ cursor_migration_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned_migrate",
-        initial_state=one_asset.with_asset_properties(
+        initial_graph=one_asset.with_asset_properties(
             partitions_def=hourly_partitions_def,
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule),
+        ),
+        execution_fn=lambda state: state.with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(days=1, minutes=5)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request(["A"], hour_partition_key(time_partitions_start_datetime, delta=23))
         )
-        .with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=1, minutes=5),
-        execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(["A"], hour_partition_key(state.current_time)))
         .assert_evaluation(
             "A",
             [
                 AssetRuleEvaluationSpec(
-                    basic_hourly_cron_rule, [hour_partition_key(state.current_time)]
+                    basic_hourly_cron_rule,
+                    [hour_partition_key(time_partitions_start_datetime, delta=23)],
                 )
             ],
         )
@@ -172,6 +183,8 @@ cursor_migration_scenarios = [
         .evaluate_tick(
             """{"latest_storage_id": null, "handled_root_asset_keys": [], "handled_root_partitions_by_asset_key": {"A": "{\"version\": 1, \"time_windows\": [[1357426800.0, 1357430400.0]], \"num_partitions\": 1}"}, "evaluation_id": 2, "last_observe_request_timestamp_by_asset_key": {}, "latest_evaluation_by_asset_key": {}, "latest_evaluation_timestamp": 1357430730.0}"""
         )
-        .assert_requested_runs(run_request(["A"], hour_partition_key(state.current_time, 1))),
+        .assert_requested_runs(
+            run_request(["A"], hour_partition_key(time_partitions_start_datetime, delta=24))
+        ),
     ),
 ]

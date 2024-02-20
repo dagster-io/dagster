@@ -3,7 +3,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 
 from ..asset_daemon_scenario import (
     AssetDaemonScenario,
-    AssetDaemonScenarioState,
+    AssetGraphSpec,
     day_partition_key,
 )
 from ..base_scenario import run_request
@@ -12,6 +12,7 @@ from .asset_daemon_scenario_states import (
     diamond,
     one_asset,
     one_asset_depends_on_two,
+    time_partitions_start_datetime,
     time_partitions_start_str,
     two_assets_depend_on_one,
     two_assets_in_sequence,
@@ -19,21 +20,21 @@ from .asset_daemon_scenario_states import (
 
 freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
-extended_diamond = AssetDaemonScenarioState(
+extended_diamond = AssetGraphSpec(
     asset_specs=[*diamond.asset_specs, AssetSpec("E", deps=["C"]), AssetSpec("F", deps=["D"])]
 )
 
 freshness_policy_scenarios = [
     AssetDaemonScenario(
         id="one_asset_lazy_never_materialized",
-        initial_state=one_asset.with_asset_properties(
+        initial_graph=one_asset.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy()
         ),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(),
     ),
     AssetDaemonScenario(
         id="one_asset_lazy_never_materialized_nothing_dep",
-        initial_state=AssetDaemonScenarioState(
+        initial_graph=AssetGraphSpec(
             asset_specs=[AssetSpec("B", deps=["A"])]
         ).with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(), freshness_policy=freshness_30m
@@ -42,7 +43,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_lazy_with_freshness_policy_never_materialized",
-        initial_state=one_asset.with_asset_properties(
+        initial_graph=one_asset.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=FreshnessPolicy(maximum_lag_minutes=10),
         ),
@@ -50,7 +51,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_eager_with_freshness_policies",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_graph=two_assets_in_sequence.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.eager(),
             freshness_policy=FreshnessPolicy(maximum_lag_minutes=1000),
         ),
@@ -62,7 +63,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_depends_on_two_lazy",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_graph=one_asset_depends_on_two.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         ),
@@ -90,7 +91,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_lazy_basic",
-        initial_state=diamond.with_asset_properties(
+        initial_graph=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         ),
@@ -119,7 +120,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_lazy_half_run_stale",
-        initial_state=diamond.with_asset_properties(
+        initial_graph=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         ),
@@ -131,7 +132,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_lazy_half_run_and_failures",
-        initial_state=diamond.with_asset_properties(
+        initial_graph=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         ),
@@ -178,7 +179,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_lazy_root_unselected",
-        initial_state=diamond.with_asset_properties(
+        initial_graph=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         ).with_asset_properties(keys=["A"], auto_materialize_policy=None),
@@ -192,7 +193,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="extended_diamond_lazy",
-        initial_state=extended_diamond.with_asset_properties(
+        initial_graph=extended_diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
         .with_asset_properties(keys=["E"], freshness_policy=freshness_30m)
@@ -219,16 +220,16 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_depend_on_one_lazy_with_cron_freshness",
-        initial_state=two_assets_depend_on_one.with_asset_properties(
+        initial_graph=two_assets_depend_on_one.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
         .with_asset_properties(keys=["B"], freshness_policy=freshness_30m)
         .with_asset_properties(
             keys=["C"],
             freshness_policy=FreshnessPolicy(cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60),
-        )
-        .with_current_time("2023-01-01T06:00"),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C"]))
+        ),
+        execution_fn=lambda state: state.with_current_time("2023-01-01T06:00")
+        .with_runs(run_request(["A", "B", "C"]))
         .with_current_time_advanced(minutes=90)
         .evaluate_tick()
         # A and B are stale, but C is not
@@ -241,7 +242,7 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="extended_diamond_with_source_lazy",
-        initial_state=extended_diamond.with_asset_properties(
+        initial_graph=extended_diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
         .with_asset_properties(keys=["A"], deps=["source"])
@@ -255,19 +256,20 @@ freshness_policy_scenarios = [
     ),
     AssetDaemonScenario(
         id="daily_to_unpartitioned_lazy",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_graph=two_assets_in_sequence.with_asset_properties(
             "A", partitions_def=daily_partitions_def
-        )
-        .with_asset_properties(
+        ).with_asset_properties(
             "B",
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
-        )
-        .with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=1),
-        execution_fn=lambda state: state.evaluate_tick()
+        ),
+        execution_fn=lambda state: state.with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(days=1)
+        .evaluate_tick()
         .assert_requested_runs()
-        .with_runs(run_request("A", partition_key=day_partition_key(state.current_time)))
+        .with_runs(
+            run_request("A", partition_key=day_partition_key(time_partitions_start_datetime))
+        )
         .evaluate_tick()
         .assert_requested_runs(run_request("B")),
     ),

@@ -5,7 +5,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 
 from ..asset_daemon_scenario import (
     AssetDaemonScenario,
-    AssetDaemonScenarioState,
+    AssetGraphSpec,
     AssetRuleEvaluationSpec,
 )
 from ..base_scenario import run_request
@@ -21,8 +21,9 @@ from .asset_daemon_scenario_states import (
 basic_scenarios = [
     AssetDaemonScenario(
         id="one_asset_never_materialized",
-        initial_state=one_asset.with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        initial_graph=one_asset,
+        execution_fn=lambda state: state.with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .assert_evaluation(
             "A", [AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing())]
@@ -30,16 +31,18 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_already_launched",
-        initial_state=one_asset.with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        initial_graph=one_asset,
+        execution_fn=lambda state: state.with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .evaluate_tick()
         .assert_requested_runs(),
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_never_materialized",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick()
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A", "B"]))
         .assert_evaluation(
             "A", [AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing())]
@@ -60,8 +63,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_child_not",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"]))
         .assert_evaluation(
@@ -82,8 +86,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_launch_two_children",
-        initial_state=two_assets_depend_on_one.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        initial_graph=two_assets_depend_on_one,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C"]))
         .assert_evaluation(
@@ -115,17 +120,19 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_materialized_with_source_asset_launch_child",
-        initial_state=AssetDaemonScenarioState(
+        initial_graph=AssetGraphSpec(
             asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A", "source"])]
-        ).with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        ),
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"])),
     ),
     AssetDaemonScenario(
         id="parent_rematerialized_after_tick",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A"]))
@@ -137,15 +144,17 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B"]), run_request(["A"]))
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B"]), run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"])),
     ),
     AssetDaemonScenario(
         id="one_parent_materialized_other_never_materialized",
-        initial_state=one_asset_depends_on_two.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        initial_graph=one_asset_depends_on_two,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C"]))
         .assert_evaluation(
@@ -161,8 +170,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_parent_materialized_others_materialized_before",
-        initial_state=one_asset_depends_on_two.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C"]))
+        initial_graph=one_asset_depends_on_two,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B", "C"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A"]))
@@ -183,22 +193,24 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_never_materialized",
-        initial_state=diamond.with_all_eager(),
-        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
-            run_request(["A", "B", "C", "D"])
-        ),
+        initial_graph=diamond,
+        execution_fn=lambda state: state.with_all_eager()
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B", "C", "D"])),
     ),
     AssetDaemonScenario(
         id="diamond_only_root_materialized",
-        initial_state=diamond.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]))
+        initial_graph=diamond,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B", "C", "D"])),
     ),
     AssetDaemonScenario(
         id="diamond_root_rematerialized",
-        initial_state=diamond.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
+        initial_graph=diamond,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A"]))
@@ -243,8 +255,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_root_and_one_in_middle_rematerialized",
-        initial_state=diamond.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
+        initial_graph=diamond,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A", "B"]))
@@ -253,8 +266,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="diamond_root_and_sink_rematerialized",
-        initial_state=diamond.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C", "D"]))
+        initial_graph=diamond,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B", "C", "D"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A", "D"]))
@@ -263,15 +277,17 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parents_materialized_separate_runs",
-        initial_state=three_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]), run_request(["B"]))
+        initial_graph=three_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]), run_request(["B"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["C"])),
     ),
     AssetDaemonScenario(
         id="parent_materialized_twice",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A"]), run_request(["A"]))
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A"]), run_request(["A"]))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"]))
         .evaluate_tick()
@@ -279,8 +295,9 @@ basic_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized_twice",
-        initial_state=two_assets_in_sequence.with_all_eager(),
-        execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
+        initial_graph=two_assets_in_sequence,
+        execution_fn=lambda state: state.with_all_eager()
+        .with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()
         .with_runs(run_request(["A"]), run_request(["A"]))

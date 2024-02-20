@@ -98,7 +98,7 @@ daemon_scenarios = [*basic_scenarios, *partition_scenarios]
 auto_materialize_sensor_scenarios = [
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
-        initial_state=one_asset.with_asset_properties(
+        initial_graph=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         ).with_current_time("2020-01-01T00:05"),
         execution_fn=lambda state: state.evaluate_tick()
@@ -120,7 +120,7 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="sensor_interval_respected",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_graph=two_assets_in_sequence.with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()  # No runs initially
@@ -136,7 +136,7 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_never_materialized",
-        initial_state=one_asset.with_all_eager(),
+        initial_graph=one_asset.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .assert_evaluation(
@@ -145,7 +145,7 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_already_launched",
-        initial_state=one_asset.with_all_eager(),
+        initial_graph=one_asset.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .with_current_time_advanced(seconds=30)
@@ -233,7 +233,7 @@ def _create_tick(instance: DagsterInstance, status: TickStatus, timestamp: float
 # valid at the start may not be valid when repeated.
 daemon_scenario = AssetDaemonScenario(
     id="simple_daemon_scenario",
-    initial_state=two_assets_in_sequence.with_asset_properties(
+    initial_graph=two_assets_in_sequence.with_asset_properties(
         partitions_def=two_partitions_def
     ).with_all_eager(2),
     execution_fn=lambda state: state.evaluate_tick(),
@@ -279,7 +279,7 @@ three_assets = AssetDaemonScenarioState(
 
 daemon_sensor_scenario = AssetDaemonScenario(
     id="simple_daemon_scenario",
-    initial_state=three_assets.with_auto_materialize_sensors(
+    initial_graph=three_assets.with_auto_materialize_sensors(
         [
             AutoMaterializeSensorDefinition(
                 name="auto_materialize_sensor_a",
@@ -683,7 +683,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
 
 def test_default_purge() -> None:
     with get_daemon_instance() as instance:
-        scenario_time = daemon_scenario.initial_state.current_time
+        scenario_time = daemon_scenario.initial_graph.current_time
         _create_tick(
             instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=8)).timestamp()
         )

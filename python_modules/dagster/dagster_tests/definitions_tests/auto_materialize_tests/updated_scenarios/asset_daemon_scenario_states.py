@@ -1,3 +1,6 @@
+import datetime
+from typing import Final
+
 import pendulum
 from dagster import AssetSpec, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
@@ -10,7 +13,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenarioState, MultiAssetSpec
+from ..asset_daemon_scenario import AssetGraphSpec, MultiAssetSpec
 
 ############
 # PARTITIONS
@@ -21,7 +24,7 @@ two_partitions_def = StaticPartitionsDefinition(["1", "2"])
 three_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
 time_partitions_start_str = "2013-01-05"
-time_partitions_start_datetime = pendulum.parse(time_partitions_start_str)
+time_partitions_start_datetime: Final[datetime.datetime] = pendulum.parse(time_partitions_start_str)
 hourly_partitions_def = HourlyPartitionsDefinition(start_date=time_partitions_start_str + "-00:00")
 daily_partitions_def = DailyPartitionsDefinition(start_date=time_partitions_start_str)
 time_multipartitions_def = MultiPartitionsDefinition(
@@ -36,25 +39,25 @@ self_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=
 ##############
 # BASIC STATES
 ##############
-one_asset = AssetDaemonScenarioState(asset_specs=[AssetSpec("A")])
+one_asset = AssetGraphSpec(asset_specs=[AssetSpec("A")])
 
-two_assets_in_sequence = AssetDaemonScenarioState(
+two_assets_in_sequence = AssetGraphSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"])],
 )
 
-three_assets_in_sequence = AssetDaemonScenarioState(
+three_assets_in_sequence = AssetGraphSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"]), AssetSpec("C", deps=["B"])],
 )
 
-two_assets_depend_on_one = AssetDaemonScenarioState(
+two_assets_depend_on_one = AssetGraphSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"]), AssetSpec("C", deps=["A"])]
 )
 
-one_asset_depends_on_two = AssetDaemonScenarioState(
+one_asset_depends_on_two = AssetGraphSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C", deps=["A", "B"])]
 )
 
-diamond = AssetDaemonScenarioState(
+diamond = AssetGraphSpec(
     asset_specs=[
         AssetSpec(key="A"),
         AssetSpec(key="B", deps=["A"]),
@@ -63,7 +66,7 @@ diamond = AssetDaemonScenarioState(
     ]
 )
 
-three_assets_not_subsettable = AssetDaemonScenarioState(
+three_assets_not_subsettable = AssetGraphSpec(
     asset_specs=[
         MultiAssetSpec(
             specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")],
