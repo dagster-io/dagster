@@ -21,6 +21,7 @@ from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
     WorkspaceProcessContext,
 )
 from dagster._core.workspace.workspace import (
@@ -115,7 +116,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
 
     def resolve_repositories(self, graphene_info: ResolveInfo):
         return [
-            GrapheneRepository(graphene_info.context.instance, repository, self._location)
+            GrapheneRepository(graphene_info.context, repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
 
@@ -252,10 +253,11 @@ class GrapheneRepository(graphene.ObjectType):
 
     def __init__(
         self,
-        instance: DagsterInstance,
+        workspace_context: BaseWorkspaceRequestContext,
         repository: ExternalRepository,
         repository_location: CodeLocation,
     ):
+        instance = workspace_context.instance
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
             repository_location, "repository_location", CodeLocation
