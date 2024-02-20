@@ -31,37 +31,37 @@ def _get_external_repo_from_context(
             return cl.get_repository(repository_name)
 
 
-class ParentAssetGraphDiffer:
-    """Given two asset graphs, parent_asset_graph and branch_asset_graph, we can compute how the
-    assets in branch_asset_graph have changed with respect to parent_asset_graph. The ChangeReason
-    enum contains the list of potential changes an asset can undergo. If the parent_asset_graph is None,
-    this indicates that the branch_asset_graph does not yet exist in the parent deployment. In this case
+class AssetGraphDiffer:
+    """Given two asset graphs, base_asset_graph and branch_asset_graph, we can compute how the
+    assets in branch_asset_graph have changed with respect to base_asset_graph. The ChangeReason
+    enum contains the list of potential changes an asset can undergo. If the base_asset_graph is None,
+    this indicates that the branch_asset_graph does not yet exist in the base deployment. In this case
     we will consider every asset New.
     """
 
     _branch_asset_graph: Optional["ExternalAssetGraph"]
     _branch_asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
-    _parent_asset_graph: Optional["ExternalAssetGraph"]
-    _parent_asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
+    _base_asset_graph: Optional["ExternalAssetGraph"]
+    _base_asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
 
     def __init__(
         self,
         branch_asset_graph: Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]],
-        parent_asset_graph: Optional[
+        base_asset_graph: Optional[
             Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]]
         ] = None,
     ):
-        if parent_asset_graph is None:
-            # if parent_asset_graph is None, then the asset graph in the branch deployment does not exist
+        if base_asset_graph is None:
+            # if base_asset_graph is None, then the asset graph in the branch deployment does not exist
             # in the parent deployment
-            self._parent_asset_graph = None
-            self._parent_asset_graph_load_fn = None
-        elif isinstance(parent_asset_graph, ExternalAssetGraph):
-            self._parent_asset_graph = parent_asset_graph
-            self._parent_asset_graph_load_fn = None
+            self._base_asset_graph = None
+            self._base_asset_graph_load_fn = None
+        elif isinstance(base_asset_graph, ExternalAssetGraph):
+            self._base_asset_graph = base_asset_graph
+            self._base_asset_graph_load_fn = None
         else:
-            self._parent_asset_graph = None
-            self._parent_asset_graph_load_fn = parent_asset_graph
+            self._base_asset_graph = None
+            self._base_asset_graph_load_fn = base_asset_graph
 
         if isinstance(branch_asset_graph, ExternalAssetGraph):
             self._branch_asset_graph = branch_asset_graph
@@ -77,7 +77,7 @@ class ParentAssetGraphDiffer:
         repository_name: str,
         branch_workspace: BaseWorkspaceRequestContext,
         parent_workspace: BaseWorkspaceRequestContext,
-    ) -> "ParentAssetGraphDiffer":
+    ) -> "AssetGraphDiffer":
         """Constructs a ParentAssetGraphDiffer for a particular repository in a code location for two
         deployment workspaces, the parent deployment and the branch deployment.
 
@@ -101,9 +101,9 @@ class ParentAssetGraphDiffer:
         parent_repo = _get_external_repo_from_context(
             parent_workspace, code_location_name, repository_name
         )
-        return ParentAssetGraphDiffer(
+        return AssetGraphDiffer(
             branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(branch_repo),
-            parent_asset_graph=(lambda: ExternalAssetGraph.from_external_repository(parent_repo))
+            base_asset_graph=(lambda: ExternalAssetGraph.from_external_repository(parent_repo))
             if parent_repo is not None
             else None,
         )
@@ -112,21 +112,21 @@ class ParentAssetGraphDiffer:
         """Computes the diff between a branch deployment asset and the
         corresponding parent deployment asset.
         """
-        if self.parent_asset_graph is None:
+        if self.base_asset_graph is None:
             # if the parent asset graph is None, it is because the the asset graph in the branch deployment
             # is new and doesn't exist in the parent deployment. Thus all assets are new.
             return [ChangeReason.NEW]
 
-        if asset_key not in self.parent_asset_graph.all_asset_keys:
+        if asset_key not in self.base_asset_graph.all_asset_keys:
             return [ChangeReason.NEW]
 
         changes = []
         if self.branch_asset_graph.get_code_version(
             asset_key
-        ) != self.parent_asset_graph.get_code_version(asset_key):
+        ) != self.base_asset_graph.get_code_version(asset_key):
             changes.append(ChangeReason.CODE_VERSION)
 
-        if self.branch_asset_graph.get_parents(asset_key) != self.parent_asset_graph.get_parents(
+        if self.branch_asset_graph.get_parents(asset_key) != self.base_asset_graph.get_parents(
             asset_key
         ):
             changes.append(ChangeReason.INPUTS)
@@ -144,7 +144,7 @@ class ParentAssetGraphDiffer:
         return self._branch_asset_graph
 
     @property
-    def parent_asset_graph(self) -> Optional["ExternalAssetGraph"]:
-        if self._parent_asset_graph is None and self._parent_asset_graph_load_fn is not None:
-            self._parent_asset_graph = self._parent_asset_graph_load_fn()
-        return self._parent_asset_graph
+    def base_asset_graph(self) -> Optional["ExternalAssetGraph"]:
+        if self._base_asset_graph is None and self._base_asset_graph_load_fn is not None:
+            self._base_asset_graph = self._base_asset_graph_load_fn()
+        return self._base_asset_graph

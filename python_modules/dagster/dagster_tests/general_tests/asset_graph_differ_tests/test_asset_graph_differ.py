@@ -6,8 +6,8 @@ from unittest import mock
 
 import pytest
 from dagster import DagsterInstance, instance_for_test
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer, ChangeReason
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.parent_asset_graph_differ import ChangeReason, ParentAssetGraphDiffer
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -31,7 +31,7 @@ def _make_location_entry(scenario_name: str, definitions_file: str, instance: Da
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             module_name=(
-                f"dagster_tests.general_tests.parent_asset_graph_differ_tests.asset_graph_scenarios.{scenario_name}.{definitions_file}"
+                f"dagster_tests.general_tests.asset_graph_differ_tests.asset_graph_scenarios.{scenario_name}.{definitions_file}"
             ),
             working_directory=os.getcwd(),
             attribute="defs",
@@ -70,7 +70,7 @@ def _make_workspace_context(
     )
 
 
-def get_parent_asset_graph_differ(
+def get_asset_graph_differ(
     instance,
     parent_code_locations: List[str],
     branch_code_location_to_definitions: Mapping[str, str],
@@ -80,9 +80,9 @@ def get_parent_asset_graph_differ(
     the corresponding repository in the parent deployment.
 
     For each deployment (parent and branch) we need to create a workspace context with a set of code locations in it.
-    The folders in asset_graph_scenarios define various code locations. Each folder contains a parent_asset_graph.py file, which
+    The folders in asset_graph_scenarios define various code locations. Each folder contains a base_asset_graph.py file, which
     contains the Definitions object for the parent deployment. The remaining files in the folder (prefixed branch_deployment_*)
-    are various modifications to the parent_asset_graph.py file, to represent branch deployments that may be opened against
+    are various modifications to the base_asset_graph.py file, to represent branch deployments that may be opened against
     the parent deployment. To make the workspace for each deployment, we need a list of code locations to load in the parent deployment
     and a mapping of code location names to definitions file names to load the correct changes in the branch deployment. Finally, we
     need the name of the code location to compare between the branch deployment and parent deployment.
@@ -96,10 +96,10 @@ def get_parent_asset_graph_differ(
     branch_worksapce_ctx = _make_workspace_context(instance, branch_code_location_to_definitions)
 
     parent_worksapce_ctx = _make_workspace_context(
-        instance, {code_location: "parent_asset_graph" for code_location in parent_code_locations}
+        instance, {code_location: "base_asset_graph" for code_location in parent_code_locations}
     )
 
-    return ParentAssetGraphDiffer.from_external_repositories(
+    return AssetGraphDiffer.from_external_repositories(
         code_location_name=code_location_to_diff,
         repository_name=SINGLETON_REPOSITORY_NAME,
         branch_workspace=branch_worksapce_ctx,
@@ -108,7 +108,7 @@ def get_parent_asset_graph_differ(
 
 
 def test_new_asset(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
         parent_code_locations=["basic_asset_graph"],
@@ -120,7 +120,7 @@ def test_new_asset(instance):
 
 
 def test_new_asset_connected(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
         parent_code_locations=["basic_asset_graph"],
@@ -135,7 +135,7 @@ def test_new_asset_connected(instance):
 
 
 def test_update_code_version(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
         parent_code_locations=["code_versions_asset_graph"],
@@ -149,7 +149,7 @@ def test_update_code_version(instance):
 
 
 def test_change_inputs(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
         parent_code_locations=["basic_asset_graph"],
@@ -163,7 +163,7 @@ def test_change_inputs(instance):
 
 
 def test_multiple_changes_for_one_asset(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
         parent_code_locations=["code_versions_asset_graph"],
@@ -180,7 +180,7 @@ def test_multiple_changes_for_one_asset(instance):
 
 
 def test_change_then_revert(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
         parent_code_locations=["code_versions_asset_graph"],
@@ -192,11 +192,11 @@ def test_change_then_revert(instance):
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.CODE_VERSION]
     assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
 
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
         parent_code_locations=["code_versions_asset_graph"],
-        branch_code_location_to_definitions={"code_versions_asset_graph": "parent_asset_graph"},
+        branch_code_location_to_definitions={"code_versions_asset_graph": "base_asset_graph"},
     )
 
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
@@ -204,7 +204,7 @@ def test_change_then_revert(instance):
 
 
 def test_large_asset_graph(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="huge_asset_graph",
         parent_code_locations=["huge_asset_graph"],
@@ -226,7 +226,7 @@ def test_multiple_code_locations(instance):
     # There are duplicate asset keys in the asset graphs of basic_asset_graph and code_versions_asset_graph
     # this test ensures that the ParentAssetGraph differ constructs AssetGraphs of the intended code location and does not
     # include assets from other code locations
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
         parent_code_locations=["basic_asset_graph", "code_versions_asset_graph"],
@@ -242,7 +242,7 @@ def test_multiple_code_locations(instance):
 
 
 def test_new_code_location(instance):
-    differ = get_parent_asset_graph_differ(
+    differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
         parent_code_locations=[],
