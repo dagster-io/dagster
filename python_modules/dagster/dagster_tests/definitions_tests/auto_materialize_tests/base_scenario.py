@@ -505,7 +505,10 @@ class AssetReconciliationScenario(
 
                 try:
                     list(
-                        AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                        AssetDaemon(  # noqa: SLF001
+                            settings=instance.get_auto_materialize_settings(),
+                            pre_sensor_interval_seconds=42,
+                        )._run_iteration_impl(
                             workspace_context,
                             threadpool_executor=None,
                             amp_tick_futures={},
