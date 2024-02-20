@@ -5,7 +5,15 @@ from functools import wraps
 from typing import Generator, Optional, Union
 from weakref import WeakKeyDictionary
 
-from dagster import AssetExecutionContext, OpExecutionContext, ConfigurableResource, InitResourceContext
+from dagster import (
+    AssetExecutionContext,
+    ConfigurableResource,
+    InitResourceContext,
+    OpExecutionContext,
+)
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+)
 from openai import Client
 from pydantic import Field, PrivateAttr
 
@@ -27,9 +35,7 @@ API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING = {
 context_to_counters = WeakKeyDictionary()
 
 
-def add_to_asset_metadata(
-    context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str] = None
-):
+def add_to_asset_metadata(context: AssetExecutionContext, usage_metadata: dict, output_name: str):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
     counters = context_to_counters[context]
@@ -39,7 +45,7 @@ def add_to_asset_metadata(
     context.add_output_metadata(dict(counters), output_name)
 
 
-def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[str], func):
+def with_usage_metadata(context: AssetExecutionContext, output_name: str, func):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`
     to log the OpenAI API usage metadata in the asset metadata.
@@ -77,7 +83,9 @@ def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[st
         )
     """
     if not isinstance(context, AssetExecutionContext):
-        raise TypeError("The `with_usage_metadata` can only be used when context is of type AssetExecutionContext.")
+        raise TypeError(
+            "The `with_usage_metadata` can only be used when context is of type AssetExecutionContext."
+        )
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -146,9 +154,7 @@ class OpenAIResource(ConfigurableResource):
         context: AssetExecutionContext,
         output_name: Optional[str],
     ):
-        for attribute_names in API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING[
-            api_endpoint_class
-        ]:
+        for attribute_names in API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING[api_endpoint_class]:
             curr = self._client.__getattribute__(api_endpoint_class.value)
             # Get the second to last attribute from the attribute list to reach the method.
             i = 0
@@ -173,7 +179,7 @@ class OpenAIResource(ConfigurableResource):
     def get_client(
         self,
         context: Union[AssetExecutionContext, OpExecutionContext],
-        output_name: Optional[str] = None,
+        asset_key: Optional[str] = None,
     ) -> Generator[Client, None, None]:
         """Returns an ``openai.Client`` for interacting with the OpenAI API.
 
@@ -184,6 +190,7 @@ class OpenAIResource(ConfigurableResource):
         Note that the endpoints are not and can not be wrapped
         to automatically capture the API usage metadata in an op context.
 
+        # TODO add op example here as well
         Examples:
         .. code-block:: python
 
@@ -212,6 +219,12 @@ class OpenAIResource(ConfigurableResource):
             )
         """
         if isinstance(context, AssetExecutionContext):
+            if asset_key is None:
+                if len(context.assets_def.keys_by_output_name.keys()) > 1:
+                    raise DagsterInvariantViolationError(
+                        "The argument `asset_key` must be specified for multi_asset with more than one asset."
+                    )
+                asset_key = context.asset_key
             # By default, when the resource is used in an asset context,
             # we wrap the methods of `openai.resources.Completions`,
             # `openai.resources.Embeddings` and `openai.resources.chat.Completions`.
@@ -225,7 +238,7 @@ class OpenAIResource(ConfigurableResource):
                 self._wrap_with_usage_metadata(
                     api_endpoint_class=api_endpoint_class,
                     context=context,
-                    output_name=output_name,
+                    output_name=asset_key,
                 )
         yield self._client
 
