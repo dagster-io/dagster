@@ -722,7 +722,10 @@ class KeysAssetSelection(AssetSelection, frozen=True):
         return len(self.selected_keys) > 1
 
     def __str__(self) -> str:
-        return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
+        if len(self.selected_keys) <= 3:
+            return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
+        else:
+            return f"{len(self.selected_keys)} assets"
 
 
 @whitelist_for_serdes

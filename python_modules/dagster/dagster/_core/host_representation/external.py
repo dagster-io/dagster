@@ -195,6 +195,8 @@ class ExternalRepository:
         if self._instance.auto_materialize_use_sensors:
             asset_graph = ExternalAssetGraph.from_external_repository(self)
 
+            has_any_auto_observe_source_assets = False
+
             existing_auto_materialize_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
@@ -220,15 +222,29 @@ class ExternalRepository:
                 if asset_graph.get_auto_observe_interval_minutes(asset_key) is None:
                     continue
 
+                has_any_auto_observe_source_assets = True
+
                 if asset_key not in covered_asset_keys:
                     default_sensor_asset_keys.add(asset_key)
 
             if default_sensor_asset_keys:
+                # Use AssetSelection.all if the default sensor is the only sensor - otherwise
+                # enumerate the assets that are not already included in some other
+                # non-default sensor
+                default_sensor_asset_selection = AssetSelection.all(
+                    include_sources=has_any_auto_observe_source_assets
+                )
+
+                for sensor in existing_auto_materialize_sensors.values():
+                    default_sensor_asset_selection = (
+                        default_sensor_asset_selection - check.not_none(sensor.asset_selection)
+                    )
+
                 default_sensor_data = ExternalSensorData(
                     name=self.get_default_auto_materialize_sensor_name(),
                     job_name=None,
                     op_selection=None,
-                    asset_selection=AssetSelection.keys(*default_sensor_asset_keys),
+                    asset_selection=default_sensor_asset_selection,
                     mode=None,
                     min_interval=30,
                     description=None,
