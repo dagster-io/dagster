@@ -1,5 +1,5 @@
 import sys
-from typing import Optional
+from typing import Dict, Optional
 
 from dagster import Config
 
@@ -7,6 +7,10 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+
+def _to_string_dict(dictionary: Dict) -> Dict[str, str]:
+    return {key: str(value) for key, value in dictionary.items() if value is not None}
 
 
 class LocalConfig(Config):
@@ -58,6 +62,9 @@ class AzureConfig(Config):
 
     container_name: Optional[str] = None
     """Storage container name"""
+
+    def dict(self) -> Dict[str, str]:
+        return _to_string_dict(super().dict())
 
 
 # TODO add documentation and config to handle atomic writes with S3
@@ -114,6 +121,9 @@ class S3Config(Config):
     allow_unsafe_rename: Optional[bool]
     """Allows tables writes that may conflict with concurrent writers."""
 
+    def dict(self) -> Dict[str, str]:
+        return _to_string_dict(super().dict())
+
 
 class GcsConfig(Config):
     """Storage configuration for Google Cloud Storage object store."""
@@ -131,6 +141,9 @@ class GcsConfig(Config):
 
     application_credentials: Optional[str]
     """Application credentials path"""
+
+    def dict(self) -> Dict[str, str]:
+        return _to_string_dict(super().dict())
 
 
 class ClientConfig(Config):
@@ -191,3 +204,6 @@ class ClientConfig(Config):
 
     user_agent: Optional[str]
     """User-Agent header to be used by this client"""
+
+    def dict(self) -> Dict[str, str]:
+        return _to_string_dict(super().dict())

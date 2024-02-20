@@ -1,9 +1,10 @@
 import os
 
 import pyarrow as pa
+import pytest
 from dagster import asset, materialize
 from dagster_deltalake import DeltaTableResource
-from dagster_deltalake.config import LocalConfig
+from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 from deltalake import write_deltalake
 
 
@@ -62,3 +63,24 @@ def test_resource_versioned(tmp_path):
             )
         },
     )
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        LocalConfig(),
+        AzureConfig(account_name="test", use_azure_cli=True),
+        GcsConfig(bucket="test"),
+        S3Config(bucket="test"),
+        ClientConfig(timeout=1),
+    ],
+)
+def test_resource_storage_options(tmp_path, config):
+    data = pa.table(
+        {
+            "a": pa.array([1, 2, 3], type=pa.int32()),
+            "b": pa.array([5, 6, 7], type=pa.int32()),
+        }
+    )
+
+    write_deltalake(os.path.join(tmp_path, "table"), data, storage_options=config.dict())
