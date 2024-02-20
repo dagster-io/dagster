@@ -227,7 +227,7 @@ kubectl config use-context dagster
 
 In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/user-code-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
 
-Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to setup the gRPC server as a deployment.
+This example installs all of the Dagster-related dependencies in the Dockerfile and then copies the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to set up the gRPC server as a deployment.
 
 The example user code repository includes:
 
