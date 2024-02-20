@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import hashlib
 import itertools
@@ -8,6 +9,7 @@ import sys
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
@@ -93,6 +95,7 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import pendulum_freeze_time
+from typing_extensions import Self
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -206,33 +209,17 @@ class MultiAssetSpec(NamedTuple):
     can_subset: bool = False
 
 
-class AssetDaemonScenarioState(NamedTuple):
-    """Specifies the state of a given AssetDaemonScenario. This state can be modified by changing
-    the set of asset definitions it contains, executing runs, updating the time, evaluating ticks, etc.
-
-    At any point in time, assertions can be made about the state of the scenario. Typically, you
-    would add runs to the scenario, evaluate a tick, then make assertions about the runs that were
-    requested for that tick, or the evaluations that were stored for each asset.
-
-    Args:
-        asset_specs (Sequence[AssetSpec]): The specs describing all assets that are part of this
-            scenario.
-        current_time (datetime): The current time of the scenario.
+@dataclass(frozen=True)
+class AssetScenarioState:
+    """Generic base class for an object which can be used to specify relevent state when simulating
+    an interaction that mutates state involving assets (e.g. their definitions or the state of
+    the event log).
     """
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
-    current_time: datetime.datetime = pendulum.now("UTC")
-    run_requests: Sequence[RunRequest] = []
-    serialized_cursor: str = serialize_value(AssetDaemonCursor.empty(0))
-    evaluations: Sequence[AssetConditionEvaluation] = []
-    logger: logging.Logger = logging.getLogger("dagster.amp")
-    tick_index: int = 1
-    # this is set by the scenario runner
+    current_time: datetime.datetime = field(default=pendulum.now("UTC"))
+    logger: logging.Logger = field(default=logging.getLogger("dagster.amp"))
     scenario_instance: Optional[DagsterInstance] = None
-    is_daemon: bool = False
-    sensor_name: Optional[str] = None
-    auto_materialize_sensors: Optional[Sequence[AutoMaterializeSensorDefinition]] = None
-    threadpool_executor: Optional[ThreadPoolExecutor] = None
 
     @property
     def instance(self) -> DagsterInstance:
@@ -278,7 +265,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @property
     def defs(self) -> Definitions:
-        return Definitions(assets=self.assets, sensors=self.auto_materialize_sensors)
+        return Definitions(assets=self.assets)
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -286,7 +273,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
     def with_asset_properties(
         self, keys: Optional[Iterable[CoercibleToAssetKey]] = None, **kwargs
-    ) -> "AssetDaemonScenarioState":
+    ) -> Self:
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
         for spec in self.asset_specs:
@@ -312,16 +299,47 @@ class AssetDaemonScenarioState(NamedTuple):
                         new_asset_specs.append(spec._replace(**kwargs))
                 else:
                     new_asset_specs.append(spec)
-        return self._replace(asset_specs=new_asset_specs)
+        return dataclasses.replace(self, asset_specs=new_asset_specs)
+
+
+@dataclass(frozen=True)
+class AssetDaemonScenarioState(AssetScenarioState):
+    """Specifies the state of a given AssetDaemonScenario. This state can be modified by changing
+    the set of asset definitions it contains, executing runs, updating the time, evaluating ticks, etc.
+
+    At any point in time, assertions can be made about the state of the scenario. Typically, you
+    would add runs to the scenario, evaluate a tick, then make assertions about the runs that were
+    requested for that tick, or the evaluations that were stored for each asset.
+
+    Args:
+        asset_specs (Sequence[AssetSpec]): The specs describing all assets that are part of this
+            scenario.
+        current_time (datetime): The current time of the scenario.
+    """
+
+    run_requests: Sequence[RunRequest] = field(default_factory=list)
+    serialized_cursor: str = field(default=serialize_value(AssetDaemonCursor.empty(0)))
+    evaluations: Sequence[AssetConditionEvaluation] = field(default_factory=list)
+    tick_index: int = 1
+    # this is set by the scenario runner
+    scenario_instance: Optional[DagsterInstance] = None
+    is_daemon: bool = False
+    sensor_name: Optional[str] = None
+    auto_materialize_sensors: Optional[Sequence[AutoMaterializeSensorDefinition]] = None
+    threadpool_executor: Optional[ThreadPoolExecutor] = None
+
+    @property
+    def defs(self) -> Definitions:
+        return Definitions(assets=self.assets, sensors=self.auto_materialize_sensors)
 
     def with_auto_materialize_sensors(
         self,
         sensors: Optional[Sequence[AutoMaterializeSensorDefinition]],
-    ):
-        return self._replace(auto_materialize_sensors=sensors)
+    ) -> "AssetDaemonScenarioState":
+        return dataclasses.replace(self, auto_materialize_sensors=sensors)
 
     def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
-        return self._replace(serialized_cursor=serialized_cursor)
+        return dataclasses.replace(self, serialized_cursor=serialized_cursor)
 
     def with_all_eager(
         self, max_materializations_per_minute: int = 1
@@ -333,13 +351,15 @@ class AssetDaemonScenarioState(NamedTuple):
         )
 
     def with_current_time(self, time: str) -> "AssetDaemonScenarioState":
-        return self._replace(current_time=pendulum.parse(time))
+        return dataclasses.replace(self, current_time=pendulum.parse(time))
 
     def with_current_time_advanced(self, **kwargs) -> "AssetDaemonScenarioState":
         # hacky support for adding years
         if "years" in kwargs:
             kwargs["days"] = kwargs.get("days", 0) + 365 * kwargs.pop("years")
-        return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
+        return dataclasses.replace(
+            self, current_time=self.current_time + datetime.timedelta(**kwargs)
+        )
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
         start = datetime.datetime.now()
@@ -360,7 +380,9 @@ class AssetDaemonScenarioState(NamedTuple):
                     selection=rr.asset_selection,
                 )
         # increment current_time by however much time elapsed during the materialize call
-        return self._replace(current_time=pendulum.from_timestamp(test_time_fn()))
+        return dataclasses.replace(
+            self, current_time=self.current_time + (datetime.datetime.now() - start)
+        )
 
     def with_not_started_runs(self) -> "AssetDaemonScenarioState":
         """Execute all runs in the NOT_STARTED state and delete them from the instance. The scenario
@@ -554,7 +576,8 @@ class AssetDaemonScenarioState(NamedTuple):
             else:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
 
-        return self._replace(
+        return dataclasses.replace(
+            self,
             run_requests=new_run_requests,
             serialized_cursor=serialize_value(new_cursor),
             evaluations=new_evaluations,
@@ -777,7 +800,10 @@ class AssetDaemonScenario(NamedTuple):
     def evaluate_fast(self) -> None:
         self.initial_state.logger.setLevel(logging.DEBUG)
         self.execution_fn(
-            self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
+            dataclasses.replace(
+                self.initial_state,
+                scenario_instance=DagsterInstance.ephemeral(),
+            )
         )
 
     def evaluate_daemon(
@@ -785,7 +811,8 @@ class AssetDaemonScenario(NamedTuple):
     ) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
         return self.execution_fn(
-            self.initial_state._replace(
+            dataclasses.replace(
+                self.initial_state,
                 scenario_instance=instance,
                 is_daemon=True,
                 sensor_name=sensor_name,
