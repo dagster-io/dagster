@@ -11,7 +11,7 @@ def test_all_libraries_register() -> None:
     assert str(library_dir).endswith("python_modules/libraries")
 
     for library in os.listdir(library_dir):
-        if library.endswith("CONTRIBUTING.md"):
+        if library.startswith(".") or library.endswith("CONTRIBUTING.md"):
             continue
         result = subprocess.run(["grep", register_call, (library_dir / library), "-r"], check=False)
         assert (

@@ -2062,21 +2062,27 @@ def test_asset_owners():
     def my_asset():
         pass
 
-    assert my_asset.owners_by_key == {
-        my_asset.key: [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
-    }
+    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    assert my_asset.owners_by_key == {my_asset.key: owners}
+    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
 
-    @asset(owners=[])
-    def asset_2():
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset_2():
         pass
 
-    assert asset_2.owners_by_key == {}
+    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
 
-    @asset(owners=None)
+    @asset(owners=[])
     def asset_3():
         pass
 
     assert asset_3.owners_by_key == {}
+
+    @asset(owners=None)
+    def asset_4():
+        pass
+
+    assert asset_4.owners_by_key == {}
 
 
 def test_invalid_asset_owners():

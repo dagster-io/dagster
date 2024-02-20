@@ -32,6 +32,7 @@ from ..dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
+    test_dbt_semantic_models_path,
     test_meta_config_path,
 )
 
@@ -784,6 +785,18 @@ def test_dbt_with_python_interleaving(
         },
     }
     result = subset_job.execute_in_process()
+    assert result.success
+
+
+def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_semantic_models_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_semantic_models_path))},
+    )
     assert result.success
 
 

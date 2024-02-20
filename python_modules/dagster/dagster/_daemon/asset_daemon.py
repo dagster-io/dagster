@@ -7,7 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Dict, Mapping, Optional, Sequence, Set, Type, cast
+from typing import Any, Dict, Mapping, Optional, Sequence, Set, Type, cast
 
 import pendulum
 
@@ -311,7 +311,7 @@ class AutoMaterializeLaunchContext:
 
 
 class AssetDaemon(DagsterDaemon):
-    def __init__(self, pre_sensor_interval_seconds: int):
+    def __init__(self, settings: Mapping[str, Any], pre_sensor_interval_seconds: int):
         self._initialized_evaluation_id = False
         self._evaluation_id_lock = threading.Lock()
         self._next_evaluation_id = None
@@ -320,6 +320,8 @@ class AssetDaemon(DagsterDaemon):
         self._last_pre_sensor_submit_time = None
 
         self._checked_migration_to_sensors = False
+
+        self._settings = settings
 
         super().__init__()
 
@@ -400,11 +402,10 @@ class AssetDaemon(DagsterDaemon):
         amp_tick_futures: Dict[Optional[str], Future] = {}
         threadpool_executor = None
         with ExitStack() as stack:
-            settings = instance.get_settings("auto_materialize")
-            if settings.get("use_threads"):
+            if self._settings.get("use_threads"):
                 threadpool_executor = stack.enter_context(
                     InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_workers"),
+                        max_workers=self._settings.get("num_workers"),
                         thread_name_prefix="asset_daemon_worker",
                     )
                 )
