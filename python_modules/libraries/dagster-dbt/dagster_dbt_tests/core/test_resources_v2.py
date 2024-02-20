@@ -231,23 +231,18 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
         )
 
 
-def test_dbt_without_partial_parse(dbt: DbtCliResource) -> None:
-    dbt.cli(["clean"]).wait()
-
-    dbt_cli_compile_without_partial_parse_invocation = dbt.cli(["compile"])
-
-    assert dbt_cli_compile_without_partial_parse_invocation.is_successful()
-    assert any(
-        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
-        for event in dbt_cli_compile_without_partial_parse_invocation.stream_raw_events()
-    )
-
-
-def test_dbt_with_partial_parse(dbt: DbtCliResource) -> None:
-    dbt.cli(["clean"]).wait()
+def test_dbt_partial_parse(dbt: DbtCliResource) -> None:
+    test_jaffle_shop_path.joinpath("target", PARTIAL_PARSE_FILE_NAME).unlink(missing_ok=True)
 
     # Run `dbt compile` to generate the partial parse file
-    dbt_cli_compile_invocation = dbt.cli(["compile"]).wait()
+    dbt_cli_compile_invocation = dbt.cli(["compile"])
+
+    # Assert that partial parsing was not used.
+    assert dbt_cli_compile_invocation.is_successful()
+    assert any(
+        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
+        for event in dbt_cli_compile_invocation.stream_raw_events()
+    )
 
     # Copy the partial parse file to the target directory
     partial_parse_file_path = test_jaffle_shop_path.joinpath(
@@ -378,9 +373,9 @@ def test_dbt_cli_default_selection(
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, exclude=exclude)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        dbt_cli_invocation = dbt.cli(["run"], context=context)
+        dbt_cli_invocation = dbt.cli(["build"], context=context)
 
-        expected_args = ["dbt", "run", "--select", "fqn:*"]
+        expected_args = ["dbt", "build", "--select", "fqn:*"]
         if exclude:
             expected_args += ["--exclude", exclude]
 

@@ -19,14 +19,8 @@ if TYPE_CHECKING:
 runner = CliRunner()
 
 
-@pytest.fixture(name="disable_openblas_threading_affinity")
-def disable_openblas_threading_affinity_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENBLAS_MAIN_FREE", "1")
-    monkeypatch.setenv("GOTOBLAS_MAIN_FREE", "1")
-
-
 @pytest.fixture(name="dbt_project_dir")
-def dbt_project_dir_fixture(tmp_path: Path, disable_openblas_threading_affinity) -> Path:
+def dbt_project_dir_fixture(tmp_path: Path) -> Path:
     dbt_project_dir = tmp_path.joinpath("test_jaffle_shop")
     shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
 
