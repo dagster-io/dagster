@@ -6,7 +6,7 @@ from ..base_scenario import run_request
 from ..utils.asset_daemon_scenario import (
     AssetDaemonScenario,
 )
-from ..utils.asset_scenario_states import one_asset, two_assets_in_sequence
+from ..utils.asset_scenario_states import daily_partitions_def, one_asset, two_assets_in_sequence
 
 custom_condition_scenarios = [
     AssetDaemonScenario(
@@ -60,5 +60,31 @@ custom_condition_scenarios = [
         # parent is newer, and has not been updated since cron
         .evaluate_tick()
         .assert_requested_runs(run_request("B")),
+    ),
+    AssetDaemonScenario(
+        id="last_partition_time_partition_scenario",
+        initial_state=one_asset.with_asset_properties(
+            auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(
+                AssetCondition.latest_partitions() & AssetCondition.missing()
+            ),
+            partitions_def=daily_partitions_def,
+        ).with_current_time("2024-01-02 00:01:00"),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request("A", partition_key="2024-01-01"))
+        .with_current_time("2024-01-10 00:01:00")
+        .evaluate_tick()
+        .assert_requested_runs(run_request("A", partition_key="2024-01-09")),
+    ),
+    AssetDaemonScenario(
+        id="last_partition_unpartitioned_scenario",
+        initial_state=one_asset.with_asset_properties(
+            auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(
+                AssetCondition.latest_partitions() & AssetCondition.missing()
+            ),
+        ),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request("A"))
+        .evaluate_tick()
+        .assert_requested_runs(),
     ),
 ]

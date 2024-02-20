@@ -430,6 +430,18 @@ class AssetCondition(ABC):
             AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(cron_schedule, timezone)
         )
 
+    @staticmethod
+    def latest_partitions() -> "AssetCondition":
+        """Returns an AssetCondition that is true for the latest asset partition of an asset. For
+        unpartioned assets, this will always be true. For time-partitioned assets and
+        multi-partitioned assets with a time window dimension, this will be true for all partitions
+        in the latest time window. For all other partitions definitions, this will be true for the
+        final partition of the asset.
+        """
+        from .latest_partition_condition import LatestPartitionsCondition
+
+        return LatestPartitionsCondition()
+
 
 class RuleCondition(
     NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
