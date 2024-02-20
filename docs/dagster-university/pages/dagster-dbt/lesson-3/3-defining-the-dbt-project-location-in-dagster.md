@@ -19,7 +19,6 @@ The `Path` class from the `pathlib` standard library will help us create an accu
 
 ```python
 DBT_DIRECTORY = Path(__file__).joinpath("..", "..", "..", "analytics").resolve()
-# DBT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "analytics"))
 ```
 
 This line creates a new constant called `DBT_DIRECTORY`. This line might look a little complicated, so let’s break it down:
