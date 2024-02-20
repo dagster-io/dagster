@@ -1,3 +1,5 @@
+from dagster._core.libraries import DagsterLibraryRegistry
+
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.io_managers.parquet import PolarsParquetIOManager
 from dagster_polars.types import (
@@ -44,3 +46,5 @@ try:
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])
 except ImportError:
     pass
+
+DagsterLibraryRegistry.register("dagster-gcp", __version__)
