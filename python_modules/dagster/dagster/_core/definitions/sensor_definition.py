@@ -976,10 +976,11 @@ class SensorDefinition(IHasInternalInit):
     @property
     def job_name(self) -> Optional[str]:
         """Optional[str]: The name of the job that is targeted by this sensor."""
-        if len(self._targets) > 1:
-            raise DagsterInvalidInvocationError(
-                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
-                " jobs."
+        if len(self._targets) == 0:
+            raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        elif len(self._targets) > 1:
+            raise DagsterInvalidDefinitionError(
+                "job_name property not available when SensorDefinition has multiple jobs."
             )
         return self._targets[0].job_name
 
