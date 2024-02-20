@@ -111,29 +111,30 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
     def submit_run(self, instance, external_job, workspace, **kwargs):
         location = workspace.get_code_location(external_job.handle.location_name)
-        external_job_origin = external_job.get_external_origin()
-        subset_result = location.get_subset_external_job_result(
+        subset_job = location.get_external_job(
             JobSubsetSelector(
-                location_name=external_job_origin.location_name,
-                repository_name=external_job_origin.external_repository_origin.repository_name,
-                job_name=external_job_origin.job_name,
+                location_name=location.name,
+                repository_name=external_job.handle.repository_name,
+                job_name=external_job.handle.job_name,
                 op_selection=None,
                 asset_selection=kwargs.get("asset_selection"),
             )
         )
-        if subset_result.external_job_data.job_snapshot:
-            job_snapshot = subset_result.external_job_data.job_snapshot
-            parent_job_snapshot = external_job.job_snapshot
-        else:
-            job_snapshot = external_job.job_snapshot
-            parent_job_snapshot = None
+        external_execution_plan = location.get_external_execution_plan(
+            subset_job,
+            {},
+            step_keys_to_execute=None,
+            known_state=None,
+            instance=instance,
+        )
         run = create_run_for_test(
             instance,
-            external_job_origin=external_job.get_external_origin(),
-            job_code_origin=external_job.get_python_origin(),
-            job_name=external_job.name,
-            job_snapshot=job_snapshot,
-            parent_job_snapshot=parent_job_snapshot,
+            external_job_origin=subset_job.get_external_origin(),
+            job_code_origin=subset_job.get_python_origin(),
+            job_name=subset_job.name,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            job_snapshot=subset_job.job_snapshot,
+            parent_job_snapshot=subset_job.parent_job_snapshot,
             status=DagsterRunStatus.NOT_STARTED,
             **kwargs,
         )

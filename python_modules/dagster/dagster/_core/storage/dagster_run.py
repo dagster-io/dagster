@@ -251,6 +251,7 @@ class DagsterRun(
             ("external_job_origin", Optional["ExternalJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
+            ("root_op_concurrency_keys", Optional[Sequence[Optional[str]]]),
         ],
     )
 ):
@@ -277,6 +278,7 @@ class DagsterRun(
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
+        root_op_concurrency_keys: Optional[Sequence[Optional[str]]] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -343,6 +345,9 @@ class DagsterRun(
             ),
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
+            ),
+            root_op_concurrency_keys=check.opt_list_param(
+                root_op_concurrency_keys, "root_op_concurrency_keys", of_type=(str, type(None))
             ),
         )
 

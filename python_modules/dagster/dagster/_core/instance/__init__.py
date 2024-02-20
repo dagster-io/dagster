@@ -1234,10 +1234,14 @@ class DagsterInstance(DynamicPartitionsStore):
             else None
         )
 
-        if job_snapshot:
-            from ..op_concurrency_limits_counter import compute_concurrency_tags_for_snapshot
+        if execution_plan_snapshot:
+            from ..op_concurrency_limits_counter import compute_root_concurrency_keys_for_snapshot
 
-            tags = {**tags, **compute_concurrency_tags_for_snapshot(job_snapshot)}
+            root_concurrency_keys = compute_root_concurrency_keys_for_snapshot(
+                execution_plan_snapshot
+            )
+        else:
+            root_concurrency_keys = None
 
         return DagsterRun(
             job_name=job_name,
@@ -1258,6 +1262,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
+            root_op_concurrency_keys=root_concurrency_keys,
         )
 
     def _ensure_persisted_job_snapshot(
