@@ -126,7 +126,7 @@ export function _buildSourceAssetNodeStatusContent({
     ) : undefined;
 
     return {
-      case: StatusCase.OVERDUE,
+      case: StatusCase.OVERDUE as const,
       background: Colors.backgroundRed(),
       border: Colors.accentRed(),
       content: (
