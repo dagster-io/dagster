@@ -166,9 +166,13 @@ def test_asset_selection_groups(all_assets: _AssetList):
 def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+    assert str(sel) == "alice or bob"
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+    sel = AssetSelection.keys("alice", "bob", "carol", "dave")
+    assert str(sel) == "4 assets"
 
 
 def test_asset_selection_key_prefixes(all_assets: _AssetList):
