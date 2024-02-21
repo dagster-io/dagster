@@ -24,8 +24,8 @@ if TYPE_CHECKING:
         PartitionsDefinition,
         ResourceDefinition,
     )
-    from dagster._core.definitions.asset_graph import InternalAssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
     from dagster._core.definitions.run_config import RunConfig
 
 

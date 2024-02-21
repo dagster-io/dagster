@@ -21,7 +21,7 @@ from dagster._core.selector.subset_selector import (
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_check_spec import AssetCheckKey
-from .asset_graph import AssetGraph, InternalAssetGraph
+from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
 from .events import (
     AssetKey,
@@ -29,6 +29,7 @@ from .events import (
     CoercibleToAssetKeyPrefix,
     key_prefix_from_coercible,
 )
+from .internal_asset_graph import InternalAssetGraph
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[

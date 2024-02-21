@@ -16,13 +16,14 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
 )
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
