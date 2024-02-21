@@ -42,8 +42,6 @@ export const AssetNodeLineageGraph = ({
 
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
 
-  // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
-  // and so that different assets dont invalidate each others layout
   const {layout, loading} = useAssetLayout(assetGraphData, allGroups, 'horizontal');
   const viewportEl = useRef<SVGViewport>();
   const history = useHistory();
