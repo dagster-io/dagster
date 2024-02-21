@@ -63,7 +63,9 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
   return `${JSON.stringify(opts)}${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
-    nodes: Object.keys(graphData.nodes).sort(),
+    nodes: Object.keys(graphData.nodes)
+      .sort()
+      .map((key) => graphData.nodes[key]),
     expandedGroups: graphData.expandedGroups,
   })}`;
 };
