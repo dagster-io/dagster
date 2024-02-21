@@ -107,6 +107,67 @@ export function _buildSourceAssetNodeStatusContent({
       ),
     };
   }
+  if (isAssetOverdue(liveData)) {
+    const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+
+    const lastMaterializationLink = lastMaterialization ? (
+      <span style={{overflow: 'hidden'}}>
+        <AssetRunLink
+          assetKey={assetKey}
+          runId={lastMaterialization.runId}
+          event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
+        >
+          <TimestampDisplay
+            timestamp={Number(lastMaterialization.timestamp) / 1000}
+            timeFormat={{showSeconds: false, showTimezone: false}}
+          />
+        </AssetRunLink>
+      </span>
+    ) : undefined;
+
+    return {
+      case: StatusCase.OVERDUE as const,
+      background: Colors.backgroundRed(),
+      border: Colors.accentRed(),
+      content: (
+        <>
+          {expanded && (
+            <Icon
+              name="partition_failure"
+              color={Colors.accentRed()}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
+
+          {liveData.runWhichFailedToMaterialize ? (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
+              <span style={{color: Colors.textRed()}}>Failed, Overdue</span>
+            </OverdueLineagePopover>
+          ) : (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
+              <span style={{color: Colors.textRed()}}>Overdue</span>
+            </OverdueLineagePopover>
+          )}
+
+          {expanded && <SpacerDot />}
+
+          {runWhichFailedToMaterialize ? (
+            <span style={{overflow: 'hidden'}}>
+              <AssetRunLink assetKey={assetKey} runId={runWhichFailedToMaterialize.id}>
+                <TimestampDisplay
+                  timestamp={Number(runWhichFailedToMaterialize.endTime)}
+                  timeFormat={{showSeconds: false, showTimezone: false}}
+                />
+              </AssetRunLink>
+            </span>
+          ) : (
+            lastMaterializationLink
+          )}
+        </>
+      ),
+    };
+  }
   if (liveData?.lastObservation) {
     return {
       case: StatusCase.SOURCE_OBSERVED as const,

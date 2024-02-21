@@ -32,6 +32,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
+
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -66,9 +67,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
-          {isSource && !definition.isObservable ? null : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          )}
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
