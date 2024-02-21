@@ -15,12 +15,25 @@ from .utils import (
 
 
 @pytest.mark.parametrize(
-    "final_status,expected_behavior",
-    [("Success", 0), ("Error", 1), ("Cancelled", 1), ("Running", 2), ("FooBarBaz", 3)],
+    ["statuses", "expected_behavior"],
+    [
+        (["Queued", "Starting", "Running", "Success"], 0),
+        (["Queued", "Starting", "Running", "Error"], 1),
+        (["Queued", "Starting", "Running", "Cancelled"], 1),
+        (["Running"], 2),
+        (["FooBarBaz"], 3),
+    ],
 )
-def test_run_materializations(final_status, expected_behavior, dbt_cloud):
+def test_run_materializations(statuses, expected_behavior, dbt_cloud) -> None:
+    final_status = statuses[-1]
+    is_terminal_status = final_status in ["Success", "Error", "Cancelled"]
     my_dbt_cloud = dbt_cloud_run_op.configured(
-        {"job_id": SAMPLE_JOB_ID, "poll_interval": 0.05, "poll_timeout": 1}, name="my_dbt_cloud"
+        {
+            "job_id": SAMPLE_JOB_ID,
+            "poll_interval": 0.01,
+            "poll_timeout": None if is_terminal_status else 0.01,
+        },
+        name="my_dbt_cloud",
     )
 
     @job(resource_defs={"dbt_cloud": dbt_cloud})
@@ -37,15 +50,7 @@ def test_run_materializations(final_status, expected_behavior, dbt_cloud):
             rsps.POST, f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/", json=sample_run_details()
         )
         # endpoint for polling run details
-        for i in range(10):
-            if i == 0:
-                status = "Queued"
-            elif i == 1:
-                status = "Starting"
-            elif i < 9:
-                status = "Running"
-            else:
-                status = final_status
+        for status in statuses:
             rsps.add(
                 rsps.GET,
                 f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/",
