@@ -649,7 +649,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 )
                 previous_last_partition_key = context.partitions_def.get_last_partition_key(
                     current_time=datetime.datetime.fromtimestamp(
-                        context.previous_evaluation_timestamp or 0
+                        context.previous_evaluation_timestamp or 0, tz=datetime.timezone.utc
                     )
                 )
                 if last_partition_key != previous_last_partition_key:
