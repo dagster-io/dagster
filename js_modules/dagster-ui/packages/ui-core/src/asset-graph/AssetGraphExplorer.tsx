@@ -705,7 +705,8 @@ const AssetGraphExplorerWithData = ({
                     <MenuItem
                       text={
                         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                          Expand all groups
+                          {areAllGroupsCollapsed ? <KeyboardTag>⌥E</KeyboardTag> : null}
                         </Box>
                       }
                       icon="unfold_more"
