@@ -1,6 +1,5 @@
 import random
 import string
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -817,7 +816,6 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                     get_default_daemon_logger("SchedulerDaemon"),
                     external_schedule,
                     schedule_state,
-                    threading.Lock(),
                     pendulum.now("UTC"),
                     max_catchup_runs=0,
                     max_tick_retries=0,

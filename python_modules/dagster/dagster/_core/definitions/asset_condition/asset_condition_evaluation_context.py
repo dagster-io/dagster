@@ -267,13 +267,18 @@ class AssetConditionEvaluationContext:
         return storage_id
 
     @property
+    def parent_has_or_will_update_subset(self) -> ValidAssetSubset:
+        """Returns the set of asset partitions whose parents have updated since the last time this
+        condition was evaluated, or will update on this tick.
+        """
+        return self.parent_has_updated_subset | self.root_context.parent_will_update_subset
+
+    @property
     def candidate_parent_has_or_will_update_subset(self) -> ValidAssetSubset:
         """Returns the set of candidates for this tick which have parents that have updated since
         the previous tick, or will update on this tick.
         """
-        return self.candidate_subset & (
-            self.parent_has_updated_subset | self.root_context.parent_will_update_subset
-        )
+        return self.candidate_subset & self.parent_has_or_will_update_subset
 
     @property
     def candidates_not_evaluated_on_previous_tick_subset(self) -> ValidAssetSubset:

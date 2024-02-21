@@ -510,7 +510,7 @@ class MaterializeOnParentUpdatedRule(
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
         ] = defaultdict(set)
 
-        subset_to_evaluate = context.candidate_parent_has_or_will_update_subset
+        subset_to_evaluate = context.parent_has_or_will_update_subset
         for asset_partition in subset_to_evaluate.asset_partitions:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
                 dynamic_partitions_store=context.instance_queryer,
@@ -635,8 +635,28 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 else context.candidate_subset
             )
         else:
-            # to retain compatibility with the previous behavior of this rule, we only count a non-root
-            # asset as missing if at least one of its parents has updated since the previous tick
+            # to avoid causing potential perf issues, we are maintaing the previous behavior of
+            # only marking a non-root asset as missing if at least one of its parents has updated
+            # since the previous tick.
+            # on top of this, we also check the latest time partition of the asset to see if it's
+            # missing on the tick that it pops into existence
+            asset_partitions_to_evaluate = (
+                context.candidate_parent_has_or_will_update_subset.asset_partitions
+            )
+            if isinstance(context.partitions_def, TimeWindowPartitionsDefinition):
+                last_partition_key = context.partitions_def.get_last_partition_key(
+                    current_time=context.evaluation_time
+                )
+                previous_last_partition_key = context.partitions_def.get_last_partition_key(
+                    current_time=datetime.datetime.fromtimestamp(
+                        context.previous_evaluation_timestamp or 0, tz=datetime.timezone.utc
+                    )
+                )
+                if last_partition_key != previous_last_partition_key:
+                    asset_partitions_to_evaluate |= {
+                        AssetKeyPartitionKey(context.asset_key, last_partition_key)
+                    }
+
             handled_subset = None
             unhandled_candidates = (
                 AssetSubset.from_asset_partitions_set(
@@ -644,7 +664,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                     context.partitions_def,
                     {
                         ap
-                        for ap in context.candidate_parent_has_or_will_update_subset.asset_partitions
+                        for ap in asset_partitions_to_evaluate
                         if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                             ap
                         )

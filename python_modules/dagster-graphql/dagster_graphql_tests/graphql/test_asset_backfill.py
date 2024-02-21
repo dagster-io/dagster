@@ -884,6 +884,42 @@ def test_asset_backfill_preview_static_partitioned():
             assert target_asset_partitions[2]["partitions"] is None
 
 
+def test_asset_backfill_error_raised_upon_invalid_params_provided():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_daily_hourly_non_partitioned_repo", instance
+        ) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["hourly"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "2024-01-01-00:00",
+                                        "end": "2024-01-01-01:00",
+                                    }
+                                },
+                            }
+                        ],
+                        "assetSelection": [{"path": ["hourly"]}],
+                    }
+                },
+            )
+            assert launch_backfill_result.data
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "partitions_by_assets cannot be used together with asset_selection, selector, or partitionNames"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
 def _get_backfill_data(
     launch_backfill_result: GqlResult, instance: DagsterInstance, repo
 ) -> Tuple[str, AssetBackfillData]:
