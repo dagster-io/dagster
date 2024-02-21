@@ -1,6 +1,5 @@
 import pytest
 
-from .asset_daemon_scenario import AssetDaemonScenario
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import cron_scenarios
 from .updated_scenarios.cursor_migration_scenarios import cursor_migration_scenarios
@@ -10,6 +9,7 @@ from .updated_scenarios.latest_materialization_run_tag_scenarios import (
     latest_materialization_run_tag_scenarios,
 )
 from .updated_scenarios.partition_scenarios import partition_scenarios
+from .utils.asset_daemon_scenario import AssetDaemonScenario
 
 all_scenarios = (
     basic_scenarios

@@ -1,13 +1,13 @@
 from dagster import AutoMaterializePolicy, FreshnessPolicy
 from dagster._core.definitions.asset_spec import AssetSpec
 
-from ..asset_daemon_scenario import (
+from ..base_scenario import run_request
+from ..utils import day_partition_key
+from ..utils.asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetDaemonScenarioState,
-    day_partition_key,
 )
-from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..utils.asset_scenario_states import (
     daily_partitions_def,
     diamond,
     one_asset,

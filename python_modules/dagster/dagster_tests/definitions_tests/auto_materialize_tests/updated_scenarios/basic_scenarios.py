@@ -3,13 +3,13 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
 
-from ..asset_daemon_scenario import (
+from ..base_scenario import run_request
+from ..utils.asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetDaemonScenarioState,
     AssetRuleEvaluationSpec,
 )
-from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..utils.asset_scenario_states import (
     diamond,
     one_asset,
     one_asset_depends_on_two,

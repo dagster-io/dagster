@@ -5,9 +5,13 @@ from dagster._core.definitions.auto_materialize_rule import (
     WaitingOnAssetsRuleEvaluationData,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec, hour_partition_key
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..utils import hour_partition_key
+from ..utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
+from ..utils.asset_scenario_states import (
     daily_partitions_def,
     dynamic_partitions_def,
     hourly_partitions_def,

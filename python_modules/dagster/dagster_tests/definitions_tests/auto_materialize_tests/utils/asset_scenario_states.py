@@ -10,7 +10,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenarioState, MultiAssetSpec
+from .asset_scenario_state import AssetScenarioState, MultiAssetSpec
 
 ############
 # PARTITIONS
@@ -36,25 +36,25 @@ self_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=
 ##############
 # BASIC STATES
 ##############
-one_asset = AssetDaemonScenarioState(asset_specs=[AssetSpec("A")])
+one_asset = AssetScenarioState(asset_specs=[AssetSpec("A")])
 
-two_assets_in_sequence = AssetDaemonScenarioState(
+two_assets_in_sequence = AssetScenarioState(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"])],
 )
 
-three_assets_in_sequence = AssetDaemonScenarioState(
+three_assets_in_sequence = AssetScenarioState(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"]), AssetSpec("C", deps=["B"])],
 )
 
-two_assets_depend_on_one = AssetDaemonScenarioState(
+two_assets_depend_on_one = AssetScenarioState(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"]), AssetSpec("C", deps=["A"])]
 )
 
-one_asset_depends_on_two = AssetDaemonScenarioState(
+one_asset_depends_on_two = AssetScenarioState(
     asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C", deps=["A", "B"])]
 )
 
-diamond = AssetDaemonScenarioState(
+diamond = AssetScenarioState(
     asset_specs=[
         AssetSpec(key="A"),
         AssetSpec(key="B", deps=["A"]),
@@ -63,7 +63,7 @@ diamond = AssetDaemonScenarioState(
     ]
 )
 
-three_assets_not_subsettable = AssetDaemonScenarioState(
+three_assets_not_subsettable = AssetScenarioState(
     asset_specs=[
         MultiAssetSpec(
             specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")],

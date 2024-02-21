@@ -11,17 +11,15 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-    day_partition_key,
-    hour_partition_key,
-    multi_partition_key,
-)
 from ..base_scenario import (
     run_request,
 )
-from .asset_daemon_scenario_states import (
+from ..utils import day_partition_key, hour_partition_key, multi_partition_key
+from ..utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
+from ..utils.asset_scenario_states import (
     daily_partitions_def,
     dynamic_partitions_def,
     hourly_partitions_def,

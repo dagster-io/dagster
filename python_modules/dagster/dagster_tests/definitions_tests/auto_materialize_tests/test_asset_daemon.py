@@ -43,17 +43,7 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._serdes.serdes import serialize_value
 
-from .asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetDaemonScenarioState,
-    AssetRuleEvaluationSpec,
-)
 from .base_scenario import run_request
-from .updated_scenarios.asset_daemon_scenario_states import (
-    one_asset,
-    two_assets_in_sequence,
-    two_partitions_def,
-)
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import (
     basic_hourly_cron_rule,
@@ -61,6 +51,16 @@ from .updated_scenarios.cron_scenarios import (
     get_cron_policy,
 )
 from .updated_scenarios.partition_scenarios import partition_scenarios
+from .utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetDaemonScenarioState,
+    AssetRuleEvaluationSpec,
+)
+from .utils.asset_scenario_states import (
+    one_asset,
+    two_assets_in_sequence,
+    two_partitions_def,
+)
 
 
 @contextmanager
