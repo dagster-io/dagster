@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 from dagster import AssetSpec, Definitions
-from dagster._core.definitions import build_assets_job
+from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import (
     SlingMode,
     SlingResource,
@@ -40,7 +40,10 @@ def test_build_sling_asset(
 
     counts = None
     for _ in range(runs):
-        res = sling_job.execute_in_process()
+        res = materialize(
+            [asset_def],
+            resources={"sling_resource": sling_sqlite_resource},
+        )
         assert res.success
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
@@ -103,10 +106,9 @@ def test_update_mode(
         sling_resource_key="sling_resource",
     )
 
-    sling_job_base = build_assets_job(
-        "sling_job",
+    res = materialize(
         [asset_def_base],
-        resource_defs={"sling_resource": sling_sqlite_resource},
+        resources={"sling_resource": sling_sqlite_resource},
     )
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
@@ -116,8 +118,7 @@ def test_update_mode(
     cur.execute("UPDATE main.tbl set UPDATED_AT=999")
     sqlite_connection.commit()
 
-    sling_job_update = build_assets_job(
-        "sling_job_update",
+    res = materialize(
         [asset_def_update],
         resources={"sling_resource": sling_sqlite_resource},
     )
