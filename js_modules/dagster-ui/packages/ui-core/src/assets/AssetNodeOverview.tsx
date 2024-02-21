@@ -14,7 +14,7 @@ import {
   IconName,
   MiddleTruncate,
   NonIdealState,
-  Spinner,
+  Skeleton,
   Subtitle1,
   Subtitle2,
   Tag,
@@ -190,7 +190,7 @@ export const AssetNodeOverview = ({
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Key">
-        {displayNameForAssetKey(assetNode.assetKey)}
+        <MiddleTruncate text={displayNameForAssetKey(assetNode.assetKey)} />
       </AttributeAndValue>
 
       <AttributeAndValue label="Group">
@@ -404,25 +404,38 @@ const AssetNodeOverviewContainer = ({
   left: React.ReactNode;
   right: React.ReactNode;
 }) => (
-  <Box flex={{direction: 'row', gap: 8}} style={{width: '100%', height: '100%', overflowY: 'auto'}}>
-    <Box padding={{horizontal: 24, vertical: 12}} flex={{direction: 'column'}} style={{flex: 1}}>
+  <Box
+    flex={{direction: 'row', gap: 8}}
+    style={{width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden'}}
+  >
+    <Box
+      flex={{direction: 'column'}}
+      padding={{horizontal: 24, vertical: 12}}
+      style={{flex: 1, minWidth: 0}}
+    >
       {left}
     </Box>
     <Box
-      style={{width: '30%'}}
       border={{side: 'left'}}
       flex={{direction: 'column'}}
       padding={{left: 24, vertical: 12, right: 12}}
+      style={{width: '30%', minWidth: 250}}
     >
       {right}
     </Box>
   </Box>
 );
 
-const AttributeAndValue = ({label, children}: {label: string; children: React.ReactNode}) => (
+const AttributeAndValue = ({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) => (
   <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
     <Subtitle2>{label}</Subtitle2>
-    <Body2>
+    <Body2 style={{maxWidth: '100%'}}>
       <Box flex={{gap: 2}}>
         {children && !(children instanceof Array && children.length === 0) ? children : <NoValue />}
       </Box>
@@ -491,16 +504,34 @@ export const AssetNodeOverviewNonSDA = ({
 export const AssetNodeOverviewLoading = () => (
   <AssetNodeOverviewContainer
     left={
-      <LargeCollapsibleSection header="Status" icon="status">
-        <Box padding={24}>
-          <Spinner purpose="section" />
-        </Box>
-      </LargeCollapsibleSection>
+      <>
+        <LargeCollapsibleSection header="Status" icon="status">
+          <Box flex={{direction: 'column', gap: 6}}>
+            <Skeleton $height={20} $width={170} />
+            <Skeleton $height={24} $width={240} />
+          </Box>
+        </LargeCollapsibleSection>
+        <LargeCollapsibleSection header="Description" icon="sticky_note">
+          <Box flex={{direction: 'column', gap: 6}}>
+            <Skeleton $height={16} $width="90%" />
+            <Skeleton $height={16} />
+            <Skeleton $height={16} $width="60%" />
+          </Box>
+        </LargeCollapsibleSection>
+      </>
     }
     right={
       <LargeCollapsibleSection header="Definition" icon="info">
-        <Box padding={24}>
-          <Spinner purpose="section" />
+        <Box flex={{direction: 'column', gap: 12}}>
+          <AttributeAndValue label={<Skeleton $width={60} />}>
+            <Skeleton $height={20} $width={220} />
+          </AttributeAndValue>
+          <AttributeAndValue label={<Skeleton $width={80} />}>
+            <Skeleton $height={24} $width={180} />
+          </AttributeAndValue>
+          <AttributeAndValue label={<Skeleton $width={120} />}>
+            <Skeleton $height={24} $width={240} />
+          </AttributeAndValue>
         </Box>
       </LargeCollapsibleSection>
     }
