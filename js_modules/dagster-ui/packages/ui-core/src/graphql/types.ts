@@ -3573,6 +3573,7 @@ export type Query = {
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
   schedulesOrError: SchedulesOrError;
+  searchWorkspace: Array<Scalars['String']>;
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
@@ -3784,6 +3785,10 @@ export type QueryScheduleOrErrorArgs = {
 export type QuerySchedulesOrErrorArgs = {
   repositorySelector: RepositorySelector;
   scheduleStatus?: InputMaybe<InstigationStatus>;
+};
+
+export type QuerySearchWorkspaceArgs = {
+  query: Scalars['String'];
 };
 
 export type QuerySensorOrErrorArgs = {
@@ -11674,6 +11679,8 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    searchWorkspace:
+      overrides && overrides.hasOwnProperty('searchWorkspace') ? overrides.searchWorkspace! : [],
     sensorOrError:
       overrides && overrides.hasOwnProperty('sensorOrError')
         ? overrides.sensorOrError!

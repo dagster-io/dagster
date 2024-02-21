@@ -32,6 +32,9 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
     fetch_auto_materialize_asset_evaluations,
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
+from dagster_graphql.implementation.search import (
+    search_workspace
+)
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
@@ -552,6 +555,11 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
+    )
+
+    searchWorkspace = graphene.Field(
+        non_null_list(graphene.String),
+        query=graphene.Argument(graphene.NonNull(graphene.String)),
     )
 
     @capture_error
@@ -1184,3 +1192,10 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
         )
+
+    def resolve_searchWorkspace(
+        self,
+        graphene_info: ResolveInfo,
+        query: str,
+    ) -> Sequence[str]:
+        return search_workspace(graphene_info.context, query)

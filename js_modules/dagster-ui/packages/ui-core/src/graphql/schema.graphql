@@ -3222,6 +3222,7 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  searchWorkspace(query: String!): [String!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError

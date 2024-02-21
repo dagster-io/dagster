@@ -40,6 +40,8 @@ setup(
         "gql[requests]>=3,<4",
         "requests",
         "starlette",  # used for run_in_threadpool utility fn
+        "fuzzywuzzy",
+        "python-Levenshtein"
     ],
     entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
 )
