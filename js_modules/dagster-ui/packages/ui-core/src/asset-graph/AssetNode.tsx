@@ -302,7 +302,7 @@ export const NameTooltipStyle = JSON.stringify({
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.backgroundGray(),
+  background: Colors.backgroundLight(),
   border: `none`,
 });
 

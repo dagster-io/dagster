@@ -70,6 +70,7 @@ export const GroupOutline = styled.div<{$minimal: boolean}>`
   pointer-events: none;
 
   border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  border-top: 0;
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
@@ -84,7 +85,6 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   border-radius: 8px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom: 0;
   position: relative;
   transition:
     background 100ms linear,

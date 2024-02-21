@@ -63,7 +63,7 @@ export const layoutAssetGraph = (
           marginy: MARGIN,
           nodesep: 40,
           edgesep: 10,
-          ranksep: 10,
+          ranksep: 20,
           ranker,
         },
   );
@@ -204,7 +204,10 @@ export const layoutAssetGraph = (
     }
     for (const group of Object.values(groups)) {
       if (group.expanded) {
-        group.bounds = padBounds(group.bounds, {x: 15, top: 65, bottom: -15});
+        group.bounds =
+          opts.direction === 'horizontal'
+            ? padBounds(group.bounds, {x: 15, top: 65, bottom: -15})
+            : padBounds(group.bounds, {x: 15, top: 40, bottom: -20});
       }
     }
   }

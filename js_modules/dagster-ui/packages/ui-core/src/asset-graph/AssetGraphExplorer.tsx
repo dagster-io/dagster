@@ -951,7 +951,6 @@ const ToggleGroupsButton = ({
         }
       >
         <Button
-          title="Expand all groups"
           icon={<Icon name="unfold_more" />}
           onClick={() => setExpandedGroups(allGroups)}
           style={{background: Colors.backgroundDefault()}}
@@ -966,7 +965,6 @@ const ToggleGroupsButton = ({
         }
       >
         <Button
-          title="Collapse all groups"
           icon={<Icon name="unfold_less" />}
           onClick={() => setExpandedGroups([])}
           style={{background: Colors.backgroundDefault()}}
@@ -997,7 +995,6 @@ const ToggleDirectionButton = ({
         }
       >
         <Button
-          title="Change graph to vertical orientation"
           icon={<Icon name="graph_vertical" />}
           onClick={() => setDirection('vertical')}
           style={{background: Colors.backgroundDefault()}}
@@ -1012,7 +1009,6 @@ const ToggleDirectionButton = ({
         }
       >
         <Button
-          title="Change graph to horizontal orientation"
           icon={<Icon name="graph_horizontal" />}
           onClick={() => setDirection('horizontal')}
           style={{background: Colors.backgroundDefault()}}
