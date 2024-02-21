@@ -84,7 +84,6 @@ export class LiveDataThread<T> {
       this._batchedQueryKeys();
     };
     try {
-      console.log('fetching', {keys});
       const data = await this.queryKeys(keys);
       this.manager._updateFetchedKeys(keys, data);
       doNextFetch();
