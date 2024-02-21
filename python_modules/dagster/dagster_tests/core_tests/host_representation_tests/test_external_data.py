@@ -51,7 +51,7 @@ def _get_external_asset_nodes_from_definitions(
 ) -> Sequence[ExternalAssetNode]:
     repo = defs.get_repository_def()
     return external_asset_nodes_from_defs(
-        repo.get_all_jobs(), source_assets_by_key=repo.source_assets_by_key
+        repo.get_all_jobs(), repo.assets_defs_by_key, source_assets_by_key=repo.source_assets_by_key
     )
 
 
