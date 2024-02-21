@@ -21,7 +21,7 @@ from dagster import (
     repository,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -485,7 +485,7 @@ def test_dynamic_dimension_in_multipartitioned_asset():
 
     dynamic_multipartitioned_job = define_asset_job(
         "dynamic_multipartitioned_job", [my_asset, asset2], partitions_def=multipartitions_def
-    ).resolve(asset_graph=AssetGraph.from_assets([my_asset, asset2]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([my_asset, asset2]))
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("dynamic", ["1"])
@@ -538,7 +538,7 @@ def test_context_partition_time_window():
 
     multipartitioned_job = define_asset_job(
         "my_job", [my_asset], partitions_def=partitions_def
-    ).resolve(asset_graph=AssetGraph.from_assets([my_asset]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([my_asset]))
     multipartitioned_job.execute_in_process(
         partition_key=MultiPartitionKey({"date": "2020-01-01", "static": "a"})
     )
@@ -558,7 +558,7 @@ def test_context_invalid_partition_time_window():
 
     multipartitioned_job = define_asset_job(
         "my_job", [my_asset], partitions_def=partitions_def
-    ).resolve(asset_graph=AssetGraph.from_assets([my_asset]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([my_asset]))
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(

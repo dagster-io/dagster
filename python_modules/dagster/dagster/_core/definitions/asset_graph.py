@@ -22,9 +22,12 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import (
@@ -35,8 +38,6 @@ from dagster._core.selector.subset_selector import (
 from dagster._utils.cached_method import cached_method
 
 from .asset_check_spec import AssetCheckKey
-from .asset_checks import AssetChecksDefinition
-from .assets import AssetsDefinition
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
@@ -47,7 +48,6 @@ from .partition_mapping import (
     UpstreamPartitionsResult,
     infer_partition_mapping,
 )
-from .source_asset import SourceAsset
 from .time_window_partitions import (
     get_time_partition_key,
     get_time_partitions_def,

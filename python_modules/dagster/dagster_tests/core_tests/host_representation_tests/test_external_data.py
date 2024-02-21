@@ -20,11 +20,11 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
@@ -348,10 +348,10 @@ def test_assets_excluded_from_subset_not_in_job():
 
     all_assets = [abc, a2, c2]
     as_job = define_asset_job("as_job", selection="a*").resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
     cs_job = define_asset_job("cs_job", selection="*c2").resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
 
     external_asset_nodes = _get_external_asset_nodes_from_definitions(
@@ -608,7 +608,7 @@ def test_inter_op_dependency():
         pass
 
     subset_job = define_asset_job("subset_job", selection="mixed").resolve(
-        asset_graph=AssetGraph.from_assets([in1, in2, assets, downstream]),
+        asset_graph=InternalAssetGraph.from_assets([in1, in2, assets, downstream]),
     )
     all_assets_job = define_asset_job("assets_job", [in1, in2, assets, downstream])
 

@@ -11,6 +11,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -29,7 +30,6 @@ from .events import (
     CoercibleToAssetKeyPrefix,
     key_prefix_from_coercible,
 )
-from .internal_asset_graph import InternalAssetGraph
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -332,7 +332,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
             asset_graph = all_assets
         else:
             check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-            asset_graph = AssetGraph.from_assets(all_assets)
+            asset_graph = InternalAssetGraph.from_assets(all_assets)
 
         return self.resolve_inner(asset_graph)
 

@@ -37,7 +37,6 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
@@ -45,6 +44,7 @@ from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import (
@@ -719,7 +719,7 @@ def partitioned_asset():
 daily_partitioned_job = define_asset_job(
     "daily_partitioned_job",
     partitions_def=daily_partitions_def,
-).resolve(asset_graph=AssetGraph.from_assets([partitioned_asset]))
+).resolve(asset_graph=InternalAssetGraph.from_assets([partitioned_asset]))
 
 
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, monitored_jobs=[daily_partitioned_job])

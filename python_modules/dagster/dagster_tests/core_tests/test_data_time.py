@@ -17,12 +17,12 @@ from dagster import (
     multi_asset,
     repository,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
@@ -106,7 +106,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
     all_assets = [a, bcd, e, f]
 
-    asset_graph = AssetGraph.from_assets(all_assets)
+    asset_graph = InternalAssetGraph.from_assets(all_assets)
 
     with DagsterInstance.ephemeral() as instance:
         # mapping from asset key to a mapping of materialization timestamp to run index

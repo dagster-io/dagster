@@ -16,7 +16,7 @@ from dagster import (
     file_relative_path,
 )
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
@@ -184,7 +184,7 @@ def test_load_assets_from_dbt_cloud_job(
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
@@ -298,7 +298,7 @@ def test_load_assets_from_cached_compile_run(
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
@@ -536,7 +536,7 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     materialize_cereal_assets = define_asset_job(
         name="materialize_partitioned_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(
@@ -631,7 +631,7 @@ def test_subsetting(
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=asset_selection,
-    ).resolve(asset_graph=AssetGraph.from_assets([*dbt_cloud_assets, hanger1, hanger2]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([*dbt_cloud_assets, hanger1, hanger2]))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
