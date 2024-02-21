@@ -26,7 +26,10 @@ import {AssetKey} from '../assets/types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
-  const name = `${group.groupName} `;
+  const name = group.groupName;
+  const nameWidth = group.bounds.width - 36; // padding and icon
+  const maxLengthAtFontSize = (fontSize: number) => Math.floor(nameWidth / (fontSize * 0.53));
+
   const location = repoAddressAsHumanString({
     name: group.repositoryName,
     location: group.repositoryLocationName,
@@ -40,7 +43,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           data-tooltip-style={GroupNameTooltipStyle}
           style={{fontSize: 30, fontWeight: 600, lineHeight: '30px'}}
         >
-          {withMiddleTruncation(name, {maxLength: 14})}
+          {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(30)})}
         </div>
       </Box>
     );
@@ -53,11 +56,11 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           data-tooltip-style={GroupNameTooltipStyle}
           style={{fontSize: 20, fontWeight: 600, lineHeight: '1.1em'}}
         >
-          {withMiddleTruncation(name, {maxLength: 22})}
+          {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(20)})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em', color: Colors.textLight()}}>
-        {withMiddleTruncation(location, {maxLength: 31})}
+      <Box style={{fontSize: 14, lineHeight: '1em', color: Colors.textLight()}}>
+        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(14)})}
       </Box>
     </Box>
   );

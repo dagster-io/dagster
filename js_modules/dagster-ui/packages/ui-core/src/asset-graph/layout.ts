@@ -95,7 +95,7 @@ export const layoutAssetGraph = (
       if (expandedGroups.includes(groupId)) {
         g.setNode(groupId, {}); // sized based on it's children
       } else {
-        g.setNode(groupId, {width: 270, height: 110});
+        g.setNode(groupId, {width: 320, height: 110});
       }
     });
   }
@@ -245,12 +245,12 @@ export const layoutAssetGraph = (
   };
 };
 
-export const ASSET_LINK_NAME_MAX_LENGTH = 10;
+export const ASSET_LINK_NAME_MAX_LENGTH = 30;
 
 export const getAssetLinkDimensions = (label: string, opts: LayoutAssetGraphOptions) => {
   return opts.horizontalDAGs
-    ? {width: 32 + 8 * Math.min(ASSET_LINK_NAME_MAX_LENGTH, label.length), height: 90}
-    : {width: 106, height: 90};
+    ? {width: 32 + 7.1 * Math.min(ASSET_LINK_NAME_MAX_LENGTH, label.length), height: 50}
+    : {width: 106, height: 50};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
@@ -270,7 +270,7 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
   return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
-export const ASSET_NODE_NAME_MAX_LENGTH = 28;
+export const ASSET_NODE_NAME_MAX_LENGTH = 38;
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
@@ -282,7 +282,7 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const width = 265;
+  const width = 320;
 
   let height = 100; // top tags area + name + description
 

@@ -21,8 +21,8 @@ export const AssetNodeLink = memo(({assetKey}: {assetKey: {path: string[]}}) => 
 
 const AssetNodeLinkContainer = styled.div`
   display: flex;
-  padding: 4px 8px 6px;
-  margin-top: 26px;
+  padding: 4px 0 6px 8px;
+  margin-top: 6px;
   line-height: 30px;
   font-family: ${FontFamily.monospace};
   color: ${Colors.linkDefault()};
