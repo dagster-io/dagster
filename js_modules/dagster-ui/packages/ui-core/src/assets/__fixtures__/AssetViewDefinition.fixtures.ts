@@ -24,20 +24,18 @@ export const AssetViewDefinitionNonSDA = buildQueryMock<
     assetKey: {path: ['non_sda_asset']},
   },
   data: {
-    assetOrError: {
+    assetOrError: buildAsset({
       id: '["non_sda_asset"]',
-      key: {
+      key: buildAssetKey({
         path: ['non_sda_asset'],
-        __typename: 'AssetKey',
-      },
+      }),
       assetMaterializations: [
         buildMaterializationEvent({
           timestamp: LatestMaterializationTimestamp,
         }),
       ],
       definition: null,
-      __typename: 'Asset',
-    },
+    }),
   },
 });
 
