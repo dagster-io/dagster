@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Collapse} from '@blueprintjs/core';
 import {
@@ -21,7 +20,7 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useContext, useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
@@ -29,23 +28,18 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {SimpleStakeholderAssetStatus} from './SimpleStakeholderAssetStatus';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
-import {asAssetKeyInput} from './asInput';
 import {AssetChecksStatusSummary} from './asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
-import {
-  AssetOverviewMetadataEventsQuery,
-  AssetOverviewMetadataEventsQueryVariables,
-} from './types/AssetNodeOverview.types';
+import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../app/Util';
-import {Timestamp} from '../app/time/Timestamp';
-import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
-import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
@@ -54,21 +48,17 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
-import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema, isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
+import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {titleForRun} from '../runs/RunUtils';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const AssetNodeOverview = ({
@@ -88,7 +78,7 @@ export const AssetNodeOverview = ({
     assetNode.repository.name,
     assetNode.repository.location.name,
   );
-  const location = useLocationForRepoAddress(repoAddress);
+  const location = useRepositoryLocationForAddress(repoAddress);
 
   const {assetType, assetMetadata} = metadataForAssetNode(assetNode);
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
@@ -109,7 +99,11 @@ export const AssetNodeOverview = ({
       <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
         <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
         <Box flex={{gap: 8, alignItems: 'center'}}>
-          <SimpleAssetStatus liveData={liveData} assetNode={assetNode} />
+          {liveData ? (
+            <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
+          ) : (
+            <NoValue />
+          )}
           {assetNode && assetNode.freshnessPolicy && (
             <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
           )}
@@ -445,31 +439,6 @@ const AttributeAndValue = ({
 
 const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
 
-const MaterializationTag = ({
-  assetKey,
-  event,
-  stepKey,
-}: {
-  assetKey: AssetKey;
-  event: {timestamp: string; runId: string};
-  stepKey: string | null;
-}) => (
-  <Tag intent="success">
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <StatusCaseDot statusCase={StatusCase.MATERIALIZED} />
-      <AssetRunLink
-        assetKey={assetKey}
-        runId={event.runId}
-        event={{timestamp: event.timestamp, stepKey}}
-      >
-        <Box style={{color: Colors.textGreen()}} flex={{gap: 4}}>
-          <Timestamp timestamp={{ms: Number(event.timestamp)}} />
-        </Box>
-      </AssetRunLink>
-    </Box>
-  </Tag>
-);
-
 export const AssetNodeOverviewNonSDA = ({
   assetKey,
   lastMaterialization,
@@ -537,6 +506,9 @@ export const AssetNodeOverviewLoading = () => (
     }
   />
 );
+
+// BG: This should probably be moved to ui-components, but waiting to see if we
+// adopt it more broadly.
 
 const LargeCollapsibleSection = ({
   header,
@@ -608,72 +580,6 @@ const SectionEmptyState = ({
   </Box>
 );
 
-/** We explicitly don't want to share partition-level information with stakeholders,
- * so this status component exposes only basic "materializing, success, failed, missing"
- * states.
- */
-const SimpleAssetStatus = ({
-  liveData,
-  assetNode,
-}: {
-  liveData: LiveDataForNode | undefined;
-  assetNode: AssetNodeDefinitionFragment;
-}) => {
-  if (!liveData) {
-    return <NoValue />;
-  }
-
-  if ((liveData.inProgressRunIds || []).length > 0) {
-    return (
-      <Caption>
-        Materializing in{' '}
-        <AssetRunLink assetKey={assetNode.assetKey} runId={liveData.inProgressRunIds[0]!} />
-      </Caption>
-    );
-  }
-
-  if (liveData.runWhichFailedToMaterialize) {
-    return (
-      <Tag intent="danger">
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          <StatusCaseDot statusCase={StatusCase.FAILED_MATERIALIZATION} />
-          Failed in
-          <AssetRunLink
-            assetKey={assetNode.assetKey}
-            runId={liveData.runWhichFailedToMaterialize.id}
-          >
-            <Box style={{color: Colors.textRed()}}>
-              {titleForRun(liveData.runWhichFailedToMaterialize)}
-            </Box>
-          </AssetRunLink>
-        </Box>
-      </Tag>
-    );
-  }
-  if (liveData.lastMaterialization) {
-    return (
-      <MaterializationTag
-        assetKey={assetNode.assetKey}
-        event={liveData.lastMaterialization}
-        stepKey={liveData.stepKey}
-      />
-    );
-  }
-  if (liveData.lastObservation && assetNode.isSource) {
-    return (
-      <Tag intent="none">
-        <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
-      </Tag>
-    );
-  }
-
-  return (
-    <Caption color={Colors.textLighter()}>
-      {assetNode.isSource ? 'Never observed' : 'Never materialized'}
-    </Caption>
-  );
-};
-
 const AssetLinksWithStatus = ({
   assets,
   displayedByDefault = 20,
@@ -719,68 +625,3 @@ const AssetLinksWithStatus = ({
     </Box>
   );
 };
-
-function useLocationForRepoAddress(repoAddress: RepoAddress) {
-  const {locationEntries} = useContext(WorkspaceContext);
-  return locationEntries.find(
-    (r) =>
-      r.locationOrLoadError?.__typename === 'RepositoryLocation' &&
-      r.locationOrLoadError.repositories.some(
-        (repo) => repo.name === repoAddress.name && repo.location.name === repoAddress.location,
-      ),
-  );
-}
-
-function useLatestPartitionEvents(
-  assetNode: AssetNodeDefinitionFragment,
-  assetNodeLoadTimestamp: number | undefined,
-  liveData: LiveDataForNode | undefined,
-) {
-  const refreshHint = liveData?.lastMaterialization?.timestamp;
-
-  const {data, refetch} = useQuery<
-    AssetOverviewMetadataEventsQuery,
-    AssetOverviewMetadataEventsQueryVariables
-  >(ASSET_OVERVIEW_METADATA_EVENTS_QUERY, {
-    variables: {assetKey: asAssetKeyInput(assetNode)},
-  });
-
-  React.useEffect(() => {
-    refetch();
-  }, [refetch, refreshHint, assetNodeLoadTimestamp]);
-
-  const materialization =
-    data?.assetOrError.__typename === 'Asset'
-      ? data.assetOrError.assetMaterializations[0]
-      : undefined;
-  const observation =
-    data?.assetOrError.__typename === 'Asset' ? data.assetOrError.assetObservations[0] : undefined;
-
-  return {materialization, observation};
-}
-
-export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
-  query AssetOverviewMetadataEventsQuery($assetKey: AssetKeyInput!) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
-        id
-        assetMaterializations(limit: 1, partitionInLast: 1) {
-          timestamp
-          runId
-          metadataEntries {
-            ...MetadataEntryFragment
-          }
-        }
-        assetObservations(limit: 1, partitionInLast: 1) {
-          timestamp
-          runId
-          metadataEntries {
-            ...MetadataEntryFragment
-          }
-        }
-      }
-    }
-  }
-
-  ${METADATA_ENTRY_FRAGMENT}
-`;
