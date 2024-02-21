@@ -5,10 +5,13 @@ import {
   Caption,
   CollapsibleSection,
   Colors,
+  CursorHistoryControls,
   Icon,
   NonIdealState,
+  Spinner,
   Subtitle1,
   Subtitle2,
+  Table,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -18,6 +21,7 @@ import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {ASSET_CHECK_DETAILS_QUERY, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
@@ -25,18 +29,25 @@ import {
   ExecuteChecksButton,
 } from './ExecuteChecksButton';
 import {ASSET_CHECK_TABLE_FRAGMENT} from './VirtualizedAssetCheckTable';
+import {
+  AssetCheckDetailsQuery,
+  AssetCheckDetailsQueryVariables,
+} from './types/AssetCheckDetailModal.types';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
-import {ExecuteChecksButtonCheckFragment} from './types/ExecuteChecksButton.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
+import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {linkToRunEvent} from '../../runs/RunUtils';
+import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetFeatureContext} from '../AssetFeatureContext';
+import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {AssetKey} from '../types';
 
 export const AssetChecks = ({
@@ -56,30 +67,8 @@ export const AssetChecks = ({
     queryKey: 'checkDetail',
   });
 
-  function executeButton(check?: ExecuteChecksButtonCheckFragment) {
-    const assetNode = data?.assetNodeOrError;
-    if (assetNode?.__typename !== 'AssetNode') {
-      return <span />;
-    }
-    const checksOrError = assetNode.assetChecksOrError;
-    if (checksOrError?.__typename !== 'AssetChecks') {
-      return <span />;
-    }
-    return (
-      <ExecuteChecksButton
-        assetNode={assetNode}
-        checks={check ? [check] : checksOrError.checks}
-        label={check ? 'Execute' : undefined}
-      />
-    );
-  }
-
-  const {AssetChecksBanner} = useContext(AssetFeatureContext);
-
-  const [didDismissAssetChecksBanner, setDidDismissAssetChecksBanner] = useStateWithStorage(
-    'asset-checks-experimental-banner',
-    (json) => !!json,
-  );
+  const assetNode =
+    data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
   const checks = React.useMemo(() => {
     if (data?.assetNodeOrError.__typename !== 'AssetNode') {
@@ -92,6 +81,13 @@ export const AssetChecks = ({
       COMMON_COLLATOR.compare(a.name, b.name),
     );
   }, [data]);
+
+  const {AssetChecksBanner} = useContext(AssetFeatureContext);
+
+  const [didDismissAssetChecksBanner, setDidDismissAssetChecksBanner] = useStateWithStorage(
+    'asset-checks-experimental-banner',
+    (json) => !!json,
+  );
 
   const [searchValue, setSearchValue] = React.useState('');
 
@@ -124,11 +120,12 @@ export const AssetChecks = ({
     return null;
   }
 
-  if (!checks.length || !selectedCheck) {
+  if (!checks.length || !selectedCheck || !assetNode) {
     return (
       <Box flex={{alignItems: 'center'}} padding={32}>
         <NonIdealState
           title="No checks defined for this asset"
+          icon="asset_check"
           description={
             <Box flex={{direction: 'column', gap: 6}}>
               <Body2>
@@ -170,7 +167,7 @@ export const AssetChecks = ({
             <Subtitle1>
               Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
             </Subtitle1>
-            {executeButton()}
+            <ExecuteChecksButton assetNode={assetNode} checks={checks} />
           </Box>
           <Box
             flex={{direction: 'column', gap: 8, grow: 1}}
@@ -238,7 +235,7 @@ export const AssetChecks = ({
               <Icon name="asset_check" />
               <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
-            {executeButton(selectedCheck)}
+            <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
           </Box>
           <Box
             flex={{grow: 1, direction: 'column', gap: 12}}
@@ -248,7 +245,33 @@ export const AssetChecks = ({
               header={<Subtitle2>About</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
             >
-              <Box border="bottom" padding={{vertical: 12}}>
+              <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
+                <Body2>
+                  {selectedCheck.description ?? (
+                    <Caption color={Colors.textLight()}>No description provided</Caption>
+                  )}
+                </Body2>
+                {/* {selectedCheck.dependencies?.length ? (
+                  <Box flex={{direction: 'row', gap: 6}}>
+                    {assetNode.dependencies.map((dep) => {
+                      const key = dep.asset.assetKey;
+                      return (
+                        <Link to={assetDetailsPathForKey(key)} key={tokenForAssetKey(key)}>
+                          <Tag icon="asset">{displayNameForAssetKey(key)}</Tag>
+                        </Link>
+                      );
+                    })}
+                  </Box>
+                ) : (
+                  <Caption color={Colors.textLight()}>No dependencies</Caption>
+                )} */}
+              </Box>
+            </CollapsibleSection>
+            <CollapsibleSection
+              header={<Subtitle2>Latest execution</Subtitle2>}
+              headerWrapperProps={headerWrapperProps}
+            >
+              <Box padding={{top: 12}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
                   <Box flex={{direction: 'column', gap: 5}}>
                     <Subtitle2>Evaluation Result</Subtitle2>
@@ -283,19 +306,15 @@ export const AssetChecks = ({
               </Box>
             </CollapsibleSection>
             <CollapsibleSection
-              header={<Subtitle2>Latest execution</Subtitle2>}
-              headerWrapperProps={headerWrapperProps}
-            >
-              <Box padding={{vertical: 12}}>
-                <Subtitle2>About</Subtitle2>
-              </Box>
-            </CollapsibleSection>
-            <CollapsibleSection
               header={<Subtitle2>Execution history</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
             >
-              <Box padding={{vertical: 12}}>
-                <Subtitle2>About</Subtitle2>
+              <Box padding={{top: 12}}>
+                {lastExecution ? (
+                  <CheckExecutions assetKey={assetKey} checkName={selectedCheckName} />
+                ) : (
+                  <Caption color={Colors.textLight()}>No execution history</Caption>
+                )}
               </Box>
             </CollapsibleSection>
           </Box>
@@ -303,6 +322,108 @@ export const AssetChecks = ({
       </Box>
     </Box>
   );
+};
+
+const CheckExecutions = ({assetKey, checkName}: {assetKey: AssetKeyInput; checkName: string}) => {
+  const {queryResult, paginationProps} = useCursorPaginatedQuery<
+    AssetCheckDetailsQuery,
+    AssetCheckDetailsQueryVariables
+  >({
+    query: ASSET_CHECK_DETAILS_QUERY,
+    variables: {
+      assetKey,
+      checkName,
+    },
+    nextCursorForResult: (data) => {
+      if (!data) {
+        return undefined;
+      }
+      return data.assetCheckExecutions[PAGE_SIZE - 1]?.id.toString();
+    },
+    getResultArray: (data) => {
+      if (!data) {
+        return [];
+      }
+      return data.assetCheckExecutions || [];
+    },
+    pageSize: PAGE_SIZE,
+  });
+
+  // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
+  const executions = queryResult.data?.assetCheckExecutions;
+
+  const runHistory = () => {
+    if (!executions) {
+      return;
+    }
+    return (
+      <div>
+        <Table>
+          <thead>
+            <tr>
+              <th style={{width: '160px'}}>Evaluation Result</th>
+              <th style={{width: '200px'}}>Timestamp</th>
+              <th style={{width: '200px'}}>Target materialization</th>
+              <th>Metadata</th>
+            </tr>
+          </thead>
+          <tbody>
+            {executions.map((execution) => {
+              return (
+                <tr key={execution.id}>
+                  <td>
+                    <AssetCheckStatusTag execution={execution} />
+                  </td>
+                  <td>
+                    {execution.evaluation?.timestamp ? (
+                      <Link
+                        to={linkToRunEvent(
+                          {id: execution.runId},
+                          {stepKey: execution.stepKey, timestamp: execution.timestamp},
+                        )}
+                      >
+                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
+                      </Link>
+                    ) : (
+                      <TimestampDisplay timestamp={execution.timestamp} />
+                    )}
+                  </td>
+                  <td>
+                    {execution.evaluation?.targetMaterialization ? (
+                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
+                        <TimestampDisplay
+                          timestamp={execution.evaluation.targetMaterialization.timestamp}
+                        />
+                      </Link>
+                    ) : (
+                      ' - '
+                    )}
+                  </td>
+                  <td>
+                    <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+        <div style={{paddingBottom: '16px'}}>
+          <CursorHistoryControls {...paginationProps} />
+        </div>
+      </div>
+    );
+  };
+
+  if (!executions) {
+    return (
+      <Box flex={{direction: 'column'}} padding={24}>
+        <Spinner purpose="section" />
+      </Box>
+    );
+  }
+  return <Box flex={{direction: 'column'}}>{runHistory()}</Box>;
 };
 
 const FixedScrollContainer = ({children}: {children: React.ReactNode}) => {

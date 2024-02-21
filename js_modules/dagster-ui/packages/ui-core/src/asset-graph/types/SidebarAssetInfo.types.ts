@@ -15660,6 +15660,11 @@ export type SidebarAssetFragment = {
           | null;
       }
     | null;
+  dependencies: Array<{
+    __typename: 'AssetDependency';
+    inputName: string;
+    asset: {__typename: 'AssetNode'; assetKey: {__typename: 'AssetKey'; path: Array<string>}};
+  }>;
 };
 
 export type SidebarAssetQueryVariables = Types.Exact<{
@@ -31415,6 +31420,11 @@ export type SidebarAssetQuery = {
                 | null;
             }
           | null;
+        dependencies: Array<{
+          __typename: 'AssetDependency';
+          inputName: string;
+          asset: {__typename: 'AssetNode'; assetKey: {__typename: 'AssetKey'; path: Array<string>}};
+        }>;
       }
     | {__typename: 'AssetNotFoundError'};
 };

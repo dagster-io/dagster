@@ -12,7 +12,13 @@ export type ExecuteChecksButtonAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   jobNames: Array<string>;
+  description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  dependencies: Array<{
+    __typename: 'AssetDependency';
+    inputName: string;
+    asset: {__typename: 'AssetNode'; assetKey: {__typename: 'AssetKey'; path: Array<string>}};
+  }>;
   repository: {
     __typename: 'Repository';
     id: string;
