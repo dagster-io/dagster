@@ -266,13 +266,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             batch += queued_runs
             batch = self._priority_sort(batch)
 
-            if instance.run_coordinator.block_op_concurrency_limited_runs:
+            if instance.run_coordinator.should_block_op_concurrency_limited_runs:
                 global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
                     instance,
                     batch,
                     in_progress_run_records,
-                    instance.run_coordinator.op_concurrency_slot_offset,
-                    instance.run_coordinator.op_concurrency_runs_started_buffer_seconds,
+                    instance.run_coordinator.op_concurrency_slot_buffer,
                 )
             else:
                 global_concurrency_limits_counter = None
@@ -289,6 +288,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
                     to_remove.append(run)
+                    concurrency_keys = (
+                        run.root_op_concurrency.key_counts.keys() if run.root_op_concurrency else []
+                    )
+                    self._logger.info(
+                        f"Keeping {run.run_id} queued due to blocked op concurrency keys: {concurrency_keys}"
+                    )
                 elif global_concurrency_limits_counter:
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
 

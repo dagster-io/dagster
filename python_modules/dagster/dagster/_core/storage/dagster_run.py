@@ -148,6 +148,34 @@ class DagsterRunStatsSnapshot(
         )
 
 
+@whitelist_for_serdes
+class RootOpConcurrency(
+    NamedTuple(
+        "_RootOpConcurrency",
+        [
+            ("key_counts", Mapping[str, int]),
+            ("has_unconstrained_root_nodes", bool),
+        ],
+    )
+):
+    """Utility class to help calculate the immediate impact of launching a run on the op concurrency
+    slots that will be available for other runs.
+    """
+
+    def __new__(
+        cls,
+        key_counts: Mapping[str, int],
+        has_unconstrained_root_nodes: bool,
+    ):
+        return super(RootOpConcurrency, cls).__new__(
+            cls,
+            key_counts=check.dict_param(key_counts, "key_counts", key_type=str, value_type=int),
+            has_unconstrained_root_nodes=check.bool_param(
+                has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
+            ),
+        )
+
+
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
@@ -251,7 +279,7 @@ class DagsterRun(
             ("external_job_origin", Optional["ExternalJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
-            ("root_op_concurrency_keys", Optional[Sequence[Optional[str]]]),
+            ("root_op_concurrency", Optional[RootOpConcurrency]),
         ],
     )
 ):
@@ -278,7 +306,7 @@ class DagsterRun(
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
-        root_op_concurrency_keys: Optional[Sequence[Optional[str]]] = None,
+        root_op_concurrency: Optional[RootOpConcurrency] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -346,8 +374,8 @@ class DagsterRun(
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
             ),
-            root_op_concurrency_keys=check.opt_list_param(
-                root_op_concurrency_keys, "root_op_concurrency_keys", of_type=(str, type(None))
+            root_op_concurrency=check.opt_inst_param(
+                root_op_concurrency, "root_op_concurrency", RootOpConcurrency
             ),
         )
 

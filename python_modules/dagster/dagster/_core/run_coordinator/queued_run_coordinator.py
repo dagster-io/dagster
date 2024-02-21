@@ -61,9 +61,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         dequeue_num_workers: Optional[int] = None,
         max_user_code_failure_retries: Optional[int] = None,
         user_code_failure_retry_delay: Optional[int] = None,
-        block_op_concurrency_limited_runs: Optional[bool] = None,
-        op_concurrency_slot_offset: Optional[int] = None,
-        op_concurrency_runs_started_buffer_seconds: Optional[int] = None,
+        block_op_concurrency_limited_runs: Optional[Mapping[str, Any]] = None,
         inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data: Optional[ConfigurableClassData] = check.opt_inst_param(
@@ -96,22 +94,19 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         self._user_code_failure_retry_delay: int = check.opt_int_param(
             user_code_failure_retry_delay, "user_code_failure_retry_delay", 60
         )
-        self._block_op_concurrency_limited_runs: bool = check.opt_bool_param(
-            block_op_concurrency_limited_runs, "block_op_concurrency_limited_runs", False
+        self._should_block_op_concurrency_limited_runs: bool = bool(
+            block_op_concurrency_limited_runs and block_op_concurrency_limited_runs.get("enabled")
         )
-        self._op_concurrency_slot_offset: int = check.opt_int_param(
-            op_concurrency_slot_offset, "op_concurrency_slot_offset", 0
+        self._op_concurrency_slot_buffer: int = (
+            block_op_concurrency_limited_runs.get("op_concurrency_slot_buffer", 0)
+            if block_op_concurrency_limited_runs
+            else 0
         )
-        self._op_concurrency_runs_started_buffer_seconds: int = check.opt_int_param(
-            op_concurrency_runs_started_buffer_seconds,
-            "op_concurrency_runs_started_buffer_seconds",
-            0,
-        )
-        if self._op_concurrency_slot_offset or self._op_concurrency_runs_started_buffer_seconds:
+        if self._op_concurrency_slot_buffer:
             check.invariant(
-                self._block_op_concurrency_limited_runs,
-                "op_concurrency_slot_offset and op_concurrency_runs_started_buffer_seconds can "
-                "only be set if block_op_concurrency_limited_runs is True.",
+                self._should_block_op_concurrency_limited_runs,
+                "op_concurrency_slot_buffer can only be set if block_op_concurrency_limited_runs "
+                "is enabled",
             )
 
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
@@ -142,16 +137,12 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         return self._dequeue_num_workers
 
     @property
-    def block_op_concurrency_limited_runs(self) -> bool:
-        return self._block_op_concurrency_limited_runs
+    def should_block_op_concurrency_limited_runs(self) -> bool:
+        return self._should_block_op_concurrency_limited_runs
 
     @property
-    def op_concurrency_slot_offset(self) -> int:
-        return self._op_concurrency_slot_offset
-
-    @property
-    def op_concurrency_runs_started_buffer_seconds(self) -> int:
-        return self._op_concurrency_runs_started_buffer_seconds
+    def op_concurrency_slot_buffer(self) -> int:
+        return self._op_concurrency_slot_buffer
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
@@ -238,33 +229,19 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 ),
             ),
             "block_op_concurrency_limited_runs": Field(
-                config=bool,
-                is_required=False,
-                description=(
-                    "Determines whether or not a run will be dequeued if it consists of ops that "
-                    "will all be blocked waiting for global op concurrency slot to be free."
-                ),
-            ),
-            "op_concurrency_slot_offset": Field(
-                config=IntSource,
-                is_required=False,
-                default_value=0,
-                description=(
-                    "Determines the number of pending runs waiting for concurrency slots allowed "
-                    "when deciding to dequeue a run. Only used block_op_concurrency_limited_runs "
-                    "is True."
-                ),
-            ),
-            "op_concurrency_runs_started_buffer_seconds": Field(
-                config=IntSource,
-                is_required=False,
-                default_value=0,
-                description=(
-                    "Determines the number of seconds that runs in the `STARTED` state will block "
-                    "concurrency key slots for its root nodes. Used as a buffer to allow run "
-                    "workers to grab slots before the run coordinator dequeues more runs. Only "
-                    "used when block_op_concurrency_limited_runs is True."
-                ),
+                {
+                    "enabled": Field(Bool, is_required=False),
+                    "op_concurrency_slot_buffer": Field(
+                        int,
+                        is_required=False,
+                        description=(
+                            "Determines whether or not a run will be dequeued if it consists of ops that "
+                            "will all be initially blocked waiting for global op concurrency slots to be "
+                            "free."
+                        ),
+                        default_value=0,
+                    ),
+                }
             ),
         }
 
@@ -282,10 +259,6 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             max_user_code_failure_retries=config_value.get("max_user_code_failure_retries"),
             user_code_failure_retry_delay=config_value.get("user_code_failure_retry_delay"),
             block_op_concurrency_limited_runs=config_value.get("block_op_concurrency_limited_runs"),
-            op_concurrency_slot_offset=config_value.get("op_concurrency_slot_offset"),
-            op_concurrency_runs_started_buffer_seconds=config_value.get(
-                "op_concurrency_runs_started_buffer_seconds"
-            ),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
