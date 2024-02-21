@@ -4,7 +4,11 @@ import dagster._check as check
 import pendulum
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
-from dagster._core.errors import DagsterError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterError,
+    DagsterInvariantViolationError,
+    DagsterUserCodeProcessError,
+)
 from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -98,7 +102,7 @@ def create_and_launch_partition_backfill(
     if (
         asset_selection or backfill_params.get("selector") or backfill_params.get("partitionNames")
     ) and partitions_by_assets:
-        raise DagsterError(
+        raise DagsterInvariantViolationError(
             "partitions_by_assets cannot be used together with asset_selection, selector, or"
             " partitionNames"
         )
@@ -130,7 +134,7 @@ def create_and_launch_partition_backfill(
             return GraphenePartitionSetNotFoundError(partition_set_name)
 
         if len(matches) != 1:
-            raise DagsterError(
+            raise DagsterInvariantViolationError(
                 "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
                     num=len(matches), partition_set_name=partition_set_name
                 )
