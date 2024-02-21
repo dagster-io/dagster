@@ -53,13 +53,12 @@ export const ExpandedGroupNode = ({
           )}
         </GroupNodeHeaderBox>
       </ContextMenuWrapper>
-      <GroupOutline $minimal={minimal} />
       {dialog}
     </div>
   );
 };
 
-const GroupOutline = styled.div<{$minimal: boolean}>`
+export const GroupOutline = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;

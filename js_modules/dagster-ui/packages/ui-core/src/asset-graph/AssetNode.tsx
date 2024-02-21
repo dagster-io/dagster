@@ -5,11 +5,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
-import {useAssetNodeMenu} from './AssetNodeMenu';
+import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
@@ -19,7 +19,6 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -126,28 +125,8 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
 };
 
 export const AssetNodeContextMenuWrapper = React.memo(
-  ({
-    children,
-    graphData,
-    explorerPath,
-    onChangeExplorerPath,
-    selectNode,
-    node,
-  }: {
-    children: React.ReactNode;
-    graphData: GraphData;
-    node: GraphNode;
-    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-    explorerPath?: ExplorerPath;
-    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  }) => {
-    const {dialog, menu} = useAssetNodeMenu({
-      graphData,
-      explorerPath,
-      onChangeExplorerPath,
-      selectNode,
-      node,
-    });
+  ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
+    const {dialog, menu} = useAssetNodeMenu(menuProps);
     return (
       <>
         <ContextMenuWrapper menu={menu} stopPropagation>
