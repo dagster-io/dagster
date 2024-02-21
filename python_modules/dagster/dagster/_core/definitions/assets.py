@@ -159,6 +159,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             key_type=str,
             value_type=AssetKey,
         )
+        _validate_keys_by_output_name(keys_by_output_name)
 
         check.opt_mapping_param(
             check_specs_by_output_name,
@@ -1533,6 +1534,21 @@ def _infer_keys_by_output_names(
         ):
             inferred_keys_by_output_names[output_name] = AssetKey([output_name])
     return inferred_keys_by_output_names
+
+
+def _validate_keys_by_output_name(keys_by_output_name: Mapping[str, AssetKey]) -> None:
+    """Ensures that only one output corresponds to each asset key."""
+    output_names_by_key: Dict[AssetKey, str] = {}
+    for output_name, asset_key in keys_by_output_name.items():
+        if asset_key in output_names_by_key:
+            other_output_name = output_names_by_key[asset_key]
+            raise DagsterInvalidDefinitionError(
+                f"Output '{output_name} and output '{other_output_name}' both point to the same "
+                f"asset key: '{asset_key.to_user_string()}'. In the keys_by_output_name argument to"
+                "AssetsDefinition, each asset must correspond to only one asset."
+            )
+
+        output_names_by_key[asset_key] = output_name
 
 
 def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):

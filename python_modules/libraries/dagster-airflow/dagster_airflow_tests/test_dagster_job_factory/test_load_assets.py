@@ -65,8 +65,8 @@ def test_load_assets_from_airflow_dag():
         assets = load_assets_from_airflow_dag(
             dag=asset_dag,
             task_ids_by_asset_key={
-                AssetKey("foo_asset"): {"foo", "bar"},
-                AssetKey("biz_asset"): {"biz", "baz"},
+                AssetKey("foo_asset"): {"foo"},
+                AssetKey("biz_asset"): {"biz"},
             },
             upstream_dependencies_by_asset_key={
                 AssetKey("foo_asset"): {

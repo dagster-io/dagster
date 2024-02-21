@@ -2119,3 +2119,17 @@ def test_multi_asset_owners():
         AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
         AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
     }
+
+
+def test_multiple_output_names_same_asset_key():
+    with pytest.raises(DagsterInvalidDefinitionError, match="both point to the same asset key"):
+
+        @op(out={"out1": Out(), "out2": Out()})
+        def op1():
+            ...
+
+        AssetsDefinition(
+            node_def=op1,
+            keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")},
+            keys_by_input_name={},
+        )

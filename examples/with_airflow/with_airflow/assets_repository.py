@@ -17,14 +17,9 @@ def new_upstream_asset_2():
 simple_assets = load_assets_from_airflow_dag(
     simple_dag,
     task_ids_by_asset_key={
-        AssetKey("task_instances_0"): {
-            "get_task_instance_0",
-            "get_task_instance_0_0",
-            "get_task_instance_0_1",
-            "get_task_instance_0_2",
-        },
+        AssetKey("task_instances_0"): {"get_task_instance_0"},
         AssetKey("task_instance_2"): {"get_task_instance_2"},
-        AssetKey("new_asset"): {"sink_task_bar", "sink_task_foo"},
+        AssetKey("new_asset"): {"sink_task_bar"},
         AssetKey("task_instances_1"): {"get_task_instance_1"},
         AssetKey("task_instances_1_0"): {"get_task_instance_1_0"},
         AssetKey("task_instances_1_1"): {"get_task_instance_1_1"},
