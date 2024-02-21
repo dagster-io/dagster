@@ -31,15 +31,17 @@ def sling_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[..., AssetsDefinition]:
-    """Create a definition for how to materialize a Sling replication stream as a Dagster Asset, as
+    """Create a definition for how to materialize a set of Sling replication streams as Dagster assets, as
     described by a Sling replication config. This will create on Asset for every Sling target stream.
 
     A Sling Replication config is a configuration that maps sources to destinations. For the full
     spec and descriptions, see `Sling's Documentation <https://docs.slingdata.io/sling-cli/run/configuration>`_.
 
     Args:
-        replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary of a replication config.
-        dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster AssetKey.
+        replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary
+        of a replication config.
+        dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster
+          AssetKey.
         partitions_def: Optional[PartitionsDefinition]: The partitions definition for this asset.
         backfill_policy: Optional[BackfillPolicy]: The backfill policy for this asset.
         op_tags: Optional[Mapping[str, Any]]: The tags for this asset.
@@ -72,8 +74,6 @@ def sling_assets(
                     dagster_sling_translator=DagsterSlingTranslator(),
                 ):
                     context.log.info(lines)
-
-        Running a sync using a custom translator:
     """
     replication_config = validate_replication(replication_config)
     streams = get_streams_from_replication(replication_config)
