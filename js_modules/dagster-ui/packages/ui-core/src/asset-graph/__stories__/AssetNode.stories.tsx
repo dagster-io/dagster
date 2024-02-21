@@ -52,7 +52,7 @@ export const LiveStates = () => {
           >
             <AssetNode definition={definitionCopy} selected={false} />
           </div>
-          <div style={{position: 'relative', width: dimensions.width, height: 130}}>
+          <div style={{position: 'relative', width: dimensions.width, height: 104}}>
             <div style={{position: 'absolute', width: dimensions.width}}>
               <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
             </div>
