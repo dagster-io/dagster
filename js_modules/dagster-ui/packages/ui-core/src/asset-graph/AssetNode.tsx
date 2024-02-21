@@ -205,7 +205,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -221,8 +221,8 @@ export const AssetNodeMinimal = ({
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
-            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 14})}
+            <MinimalName style={{fontSize: 28}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
@@ -303,7 +303,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
-  padding: '3px 6px',
+  padding: '3px 0 3px 6px',
   color: Colors.textDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
@@ -361,7 +361,7 @@ const MinimalAssetNodeBox = styled.div<{
 
   border-radius: 16px;
   position: relative;
-  padding: 4px;
+  padding: 2px;
   height: 100%;
   min-height: 86px;
   &:hover {
