@@ -68,6 +68,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
@@ -1635,12 +1636,16 @@ class DagsterInstance(DynamicPartitionsStore):
         root_run_id = parent_run.root_run_id or parent_run.run_id
         parent_run_id = parent_run.run_id
 
+        # these can differ from external_job.tags if tags were added at launch time
+        parent_run_tags = (
+            {key: val for key, val in parent_run.tags.items() if key != RUN_FAILURE_REASON_TAG}
+            if use_parent_run_tags
+            else {}
+        )
+
         tags = merge_dicts(
             external_job.tags,
-            (
-                # these can differ from external_job.tags if tags were added at launch time
-                parent_run.tags if use_parent_run_tags else {}
-            ),
+            parent_run_tags,
             extra_tags or {},
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
