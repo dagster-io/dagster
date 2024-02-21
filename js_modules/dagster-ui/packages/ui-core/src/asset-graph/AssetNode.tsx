@@ -33,7 +33,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
 
   const {liveData} = useAssetLiveData(definition.assetKey);
 
-  console.log({liveData, isSource}, !definition.isObservable);
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
