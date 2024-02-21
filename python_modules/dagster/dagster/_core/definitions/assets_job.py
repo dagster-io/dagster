@@ -67,37 +67,36 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    if len(asset_graph.all_partitions_defs) == 0:
-        return [
+    ag = asset_graph
+    unpartitioned_executable_keys = ag.unpartitioned_asset_keys & ag.executable_asset_keys
+    executable_keys_by_partitions_def = [
+        (None, unpartitioned_executable_keys),
+        *(
+            (pd, ag.asset_keys_for_partitions_def(partitions_def=pd) & ag.executable_asset_keys)
+            for pd in asset_graph.all_partitions_defs
+        )
+    ]
+
+    # exclude partitions defs with no executable assets
+    job_pairs = [pair for pair in executable_keys_by_partitions_def if pair[1]]
+    job_defs: List[JobDefinition] = []
+    for i, pair in enumerate(job_pairs):
+        partitions_def, keys = pair
+
+        # For now, to preserve behavior keep all asset checks in all base jobs. When checks
+        # support partitions, they should only go in the corresponding partitioned job.
+        executable_keys = keys | unpartitioned_executable_keys
+        selection = (AssetSelection.keys(*executable_keys) | AssetSelection.all_asset_checks())
+        job_defs.append(
             build_assets_job(
-                name=ASSET_BASE_JOB_PREFIX,
-                asset_graph=asset_graph,
-                executor_def=executor_def,
+                f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                get_asset_graph_for_job(asset_graph, selection),
                 resource_defs=resource_defs,
+                executor_def=executor_def,
+                partitions_def=partitions_def,
             )
-        ]
-    else:
-        jobs = []
-        for i, partitions_def in enumerate(asset_graph.all_partitions_defs):
-            executable_asset_keys = asset_graph.executable_asset_keys & {
-                *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
-                *asset_graph.unpartitioned_asset_keys,
-            }
-            # For now, to preserve behavior keep all asset checks in all base jobs. When checks
-            # support partitions, they should only go in the corresponding partitioned job.
-            selection = (
-                AssetSelection.keys(*executable_asset_keys) | AssetSelection.all_asset_checks()
-            )
-            jobs.append(
-                build_assets_job(
-                    f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    get_asset_graph_for_job(asset_graph, selection),
-                    resource_defs=resource_defs,
-                    executor_def=executor_def,
-                    partitions_def=partitions_def,
-                )
-            )
-        return jobs
+        )
+    return job_defs
 
 
 def build_assets_job(
