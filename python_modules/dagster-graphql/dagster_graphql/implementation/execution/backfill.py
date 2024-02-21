@@ -95,17 +95,13 @@ def create_and_launch_partition_backfill(
 
     partitions_by_assets = backfill_params.get("partitionsByAssets")
 
-    check.invariant(
-        (
-            asset_selection is None
-            and backfill_params.get("selector") is None
-            and backfill_params.get("partitionNames") is None
-            if partitions_by_assets
-            else True
-        ),
-        "partitions_by_assets cannot be used together with asset_selection, selector, or"
-        " partitionNames",
-    )
+    if (
+        asset_selection or backfill_params.get("selector") or backfill_params.get("partitionNames")
+    ) and partitions_by_assets:
+        raise DagsterError(
+            "partitions_by_assets cannot be used together with asset_selection, selector, or"
+            " partitionNames"
+        )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
 
@@ -133,12 +129,12 @@ def create_and_launch_partition_backfill(
         if not matches:
             return GraphenePartitionSetNotFoundError(partition_set_name)
 
-        check.invariant(
-            len(matches) == 1,
-            "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
-                num=len(matches), partition_set_name=partition_set_name
-            ),
-        )
+        if len(matches) != 1:
+            raise DagsterError(
+                "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
+                    num=len(matches), partition_set_name=partition_set_name
+                )
+            )
         external_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
