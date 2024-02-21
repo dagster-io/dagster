@@ -7,7 +7,7 @@ PREREQUISITES
 
 USAGE
 
-    python scripts/find-missing-pyobject-sphinx-references.py
+    python scripts/validate-pyobjects.py
 
 
 """
