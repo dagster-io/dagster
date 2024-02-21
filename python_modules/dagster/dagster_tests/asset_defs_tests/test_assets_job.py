@@ -1951,16 +1951,17 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
     def unpartitioned_asset(): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
-            daily_asset,
-            daily_asset2,
-            daily_asset_different_start_date,
-            hourly_asset,
-            unpartitioned_asset,
-        ],
+        asset_graph=AssetGraph.from_assets(
+            [
+                daily_asset,
+                daily_asset2,
+                daily_asset_different_start_date,
+                hourly_asset,
+                unpartitioned_asset,
+            ]
+        ),
         executor_def=None,
         resource_defs={},
-        asset_checks=[],
     )
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
@@ -1995,14 +1996,15 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     def asset_x(asset_b: B): ...
 
     jobs = get_base_asset_jobs(
-        assets=[
-            asset_x,
-            create_external_asset_from_source_asset(asset_a),
-            create_external_asset_from_source_asset(asset_b),
-        ],
+        asset_graph=AssetGraph.from_assets(
+            [
+                asset_x,
+                create_external_asset_from_source_asset(asset_a),
+                create_external_asset_from_source_asset(asset_b),
+            ]
+        ),
         executor_def=None,
         resource_defs={},
-        asset_checks=[],
     )
     assert len(jobs) == 2
     assert {job_def.name for job_def in jobs} == {

@@ -254,6 +254,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     def assets_defs(self) -> Sequence[AssetsDefinition]:
         return list(dict.fromkeys(asset.assets_def for asset in self.asset_nodes))
 
+    def assets_defs_for_keys(self, keys: Iterable[AssetKey]) -> Sequence[AssetsDefinition]:
+        return list(dict.fromkeys([self.get(key).assets_def for key in keys]))
+
     @property
     def asset_checks_defs(self) -> Sequence[AssetChecksDefinition]:
         return list(dict.fromkeys(self._asset_checks_defs_by_key.values()))
