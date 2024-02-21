@@ -7,7 +7,7 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {
   AssetOverviewMetadataEventsQuery,
   AssetOverviewMetadataEventsQueryVariables,
-} from './types/AssetNodeOverview.types';
+} from './types/useLatestPartitionEvents.types';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
