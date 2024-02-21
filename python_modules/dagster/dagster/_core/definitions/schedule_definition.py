@@ -84,7 +84,7 @@ class DefaultScheduleStatus(Enum):
 
 
 def get_or_create_schedule_context(
-    fn: Callable, *args: Any, **kwargs: Any
+    fn: Callable[..., Any], *args: Any, **kwargs: Any
 ) -> "ScheduleEvaluationContext":
     """Based on the passed resource function and the arguments passed to it, returns the
     user-passed ScheduleEvaluationContext or creates one if it is not passed.

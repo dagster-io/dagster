@@ -37,14 +37,8 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # * can be present when sources are sharded tables
-    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
-
-
-def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    # hyphens are valid in dbt model names, but not in output names
-    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
+def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("-", "_").replace("*", "_star")
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -140,7 +134,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=output_name_fn(dbt_resource_props),
+                output_name=dagster_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
@@ -275,4 +269,5 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["sources"],
         **manifest["exposures"],
         **manifest["metrics"],
+        **manifest.get("semantic_models", {}),
     }

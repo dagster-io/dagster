@@ -158,6 +158,16 @@
           'pipelineName': '__ASSET_JOB_7',
           'solidSelection': None,
         }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_8',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_9',
+          'solidSelection': None,
+        }),
       ]),
     }),
     dict({
@@ -286,6 +296,16 @@
         dict({
           'mode': 'default',
           'pipelineName': '__ASSET_JOB_7',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_8',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_9',
           'solidSelection': None,
         }),
       ]),

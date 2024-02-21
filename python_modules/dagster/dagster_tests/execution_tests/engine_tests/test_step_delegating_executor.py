@@ -1,3 +1,4 @@
+import os
 import subprocess
 import tempfile
 import threading
@@ -33,7 +34,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
 
 from .retry_jobs import (
@@ -130,6 +131,29 @@ def test_execute():
             run_config={"execution": {"config": {}}},
         )
         TestStepHandler.wait_for_processes()
+
+    assert any(
+        [
+            "Starting execution with step handler TestStepHandler" in event.message
+            for event in result.all_events
+        ]
+    )
+    assert any(["STEP_START" in event for event in result.all_events])
+    assert result.success
+    assert TestStepHandler.saw_baz_op
+    assert TestStepHandler.verify_step_count == 0
+
+
+def test_execute_with_tailer_offset():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        with environ({"DAGSTER_EXECUTOR_POP_EVENTS_OFFSET": "100000"}):
+            result = execute_job(
+                reconstructable(foo_job),
+                instance=instance,
+                run_config={"execution": {"config": {}}},
+            )
+            TestStepHandler.wait_for_processes()
 
     assert any(
         [
@@ -346,6 +370,7 @@ def test_execute_using_repository_data():
         recon_repo = ReconstructableRepository.for_module(
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
             fn_name="pending_repo",
+            working_directory=os.path.join(os.path.dirname(__file__), "..", "..", ".."),
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 

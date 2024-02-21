@@ -1040,6 +1040,8 @@ def _create_sensor_run(
     job_tags = validate_tags(external_job.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
+        # this gets applied in the sensor definition too, but we apply it here for backcompat
+        # with sensors before the tag was added to the sensor definition
         DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:

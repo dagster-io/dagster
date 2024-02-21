@@ -3,10 +3,10 @@ jaffle_shop:
   outputs:
     dev:
       type: duckdb
-      path: "jaffle_shop.duckdb"
+      path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH') }}"
       threads: 24
 
     error_dev:
       type: duckdb
-      path: "jaffle_shop.duckdb"
+      path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH') }}"
       threads: '{{ env_var("DBT_DUCKDB_THREADS")}}'

@@ -39,7 +39,7 @@ from dagster import (
     asset,
     materialize,
 )
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
@@ -488,7 +488,8 @@ class AssetDaemonScenarioState(NamedTuple):
 
             list(
                 AssetDaemon(  # noqa: SLF001
-                    pre_sensor_interval_seconds=42
+                    settings=self.instance.get_auto_materialize_settings(),
+                    pre_sensor_interval_seconds=42,
                 )._run_iteration_impl(
                     workspace_context,
                     threadpool_executor=self.threadpool_executor,

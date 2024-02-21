@@ -45,11 +45,14 @@ from dagster._utils.schedules import (
     reverse_cron_string_iterator,
 )
 
-from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
 from .asset_graph import sort_key_for_asset_partition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetConditionResult
+    from dagster._core.definitions.asset_condition.asset_condition import (
+        AssetCondition,
+        AssetConditionResult,
+    )
 
 
 class AutoMaterializeRule(ABC):
@@ -75,6 +78,12 @@ class AutoMaterializeRule(ABC):
         complete the sentence: 'Indicates an asset should be (materialize/skipped) when ____'.
         """
         ...
+
+    def to_asset_condition(self) -> "AssetCondition":
+        """Converts this AutoMaterializeRule into an AssetCondition."""
+        from .asset_condition.asset_condition import RuleCondition
+
+        return RuleCondition(rule=self)
 
     @abstractmethod
     def evaluate_for_asset(
@@ -257,7 +266,7 @@ class MaterializeOnRequiredForFreshnessRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.root_context
@@ -371,7 +380,7 @@ class MaterializeOnCronRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         new_asset_partitions_to_request = self.get_new_asset_partitions_to_request(context)
         asset_subset_to_request = AssetSubset.from_asset_partitions_set(
@@ -492,7 +501,7 @@ class MaterializeOnParentUpdatedRule(
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         asset_partitions_by_updated_parents: Mapping[
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
@@ -613,7 +622,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded.
         """
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         if context.asset_key in context.asset_graph.root_materializable_or_observable_asset_keys:
             handled_subset = self.get_handled_subset(context)
@@ -666,7 +675,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -713,7 +722,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self,
         context: AssetConditionEvaluationContext,
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -783,7 +792,7 @@ class SkipOnNotAllParentsUpdatedRule(
         self,
         context: AssetConditionEvaluationContext,
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -984,7 +993,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         passed_time_window = self.passed_time_window(context)
         has_new_passed_time_window = passed_time_window.end.timestamp() > (
@@ -1054,7 +1063,7 @@ class SkipOnRequiredButNonexistentParentsRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -1103,7 +1112,7 @@ class SkipOnBackfillInProgressRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         backfilling_subset = (
             # this backfilling subset is aware of the current partitions definitions, and so will
@@ -1138,7 +1147,7 @@ class DiscardOnMaxMaterializationsExceededRule(
     def evaluate_for_asset(
         self, context: AssetConditionEvaluationContext
     ) -> "AssetConditionResult":
-        from .asset_condition import AssetConditionResult
+        from .asset_condition.asset_condition import AssetConditionResult
 
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(

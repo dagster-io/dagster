@@ -8,7 +8,7 @@ description: "Learn to integrate Dagster Pipes with AWS Lambda to launch externa
 <Note>
   <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
   Amazon Web Services (AWS) Lambda resource. For further customization, use the{" "}
-  <a href="/guides/dagster-pipes/customizing-dagster-pipes-protocols">
+  <a href="/guides/dagster-pipes/dagster-pipes-details-and-customization">
     <code>open_pipes_session</code> approach
   </a>{" "}
   instead.
@@ -178,7 +178,7 @@ In your Dagster project, create a file named `dagster_lambda_pipes.py` and paste
 
 import boto3
 from dagster import AssetExecutionContext, Definitions, asset
-from dagster_aws import PipesLambdaClient
+from dagster_aws.pipes import PipesLambdaClient
 
 
 @asset
@@ -234,7 +234,7 @@ At this point, `dagster_lambda_pipes.py` should look like the following:
 
 import boto3
 from dagster import AssetExecutionContext, Definitions, asset
-from dagster_aws import PipesLambdaClient
+from dagster_aws.pipes import PipesLambdaClient
 
 
 @asset

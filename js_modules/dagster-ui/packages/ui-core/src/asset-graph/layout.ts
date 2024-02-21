@@ -288,8 +288,6 @@ export const getAssetNodeDimensions = (def: {
 
   if (def.isSource && def.isObservable) {
     height += 30; // status row
-  } else if (def.isSource) {
-    height += 0; // no status row
   } else {
     height += 26; // status row
     if (def.isPartitioned) {

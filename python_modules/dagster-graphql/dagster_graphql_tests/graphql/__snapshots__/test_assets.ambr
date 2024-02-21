@@ -576,7 +576,7 @@
       }),
       dict({
         'freshnessInfo': dict({
-          'currentMinutesLate': None,
+          'currentMinutesLate': 0.0,
           'latestMaterializationMinutesLate': None,
         }),
         'freshnessPolicy': dict({

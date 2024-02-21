@@ -41,7 +41,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .utils import input_name_fn, output_name_fn
+from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -51,12 +51,12 @@ DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
-    """Return the corresponding Dagster asset key for a dbt model.
+    """Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
 
     Args:
         dbt_assets (AssetsDefinition): An AssetsDefinition object produced by
             load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets.
-        model_name (str): The name of the dbt model.
+        model_name (str): The name of the dbt model, seed, or snapshot.
 
     Returns:
         AssetKey: The corresponding Dagster asset key.
@@ -84,11 +84,11 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
     matching_models = [
         value
         for value in manifest["nodes"].values()
-        if value["name"] == model_name and value["resource_type"] == "model"
+        if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
     ]
 
     if len(matching_models) == 0:
-        raise KeyError(f"Could not find a dbt model with name: {model_name}")
+        raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
 
     return dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
 
@@ -143,7 +143,7 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        output_name_fn(value): dagster_dbt_translator.get_asset_key(value)
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_key(value)
         for value in matching_nodes
     }
 
@@ -346,6 +346,8 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 
     if dbt_resource_props["resource_type"] == "source":
         components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]
+    elif dbt_resource_props.get("version"):
+        components = [dbt_resource_props["alias"]]
     else:
         configured_schema = dbt_resource_props["config"].get("schema")
         if configured_schema is not None:
@@ -362,7 +364,7 @@ def default_metadata_from_dbt_resource_props(
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        metadata["table_schema"] = MetadataValue.table_schema(
+        metadata["columns"] = MetadataValue.table_schema(
             TableSchema(
                 columns=[
                     TableColumn(
@@ -576,14 +578,15 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
     # some nodes exist inside the dbt graph but are not assets
     resource_type = dbt_resource_props["resource_type"]
-    if resource_type == "metric":
-        return True
-    if (
-        resource_type == "model"
-        and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral"
-    ):
-        return True
-    return False
+
+    return any(
+        [
+            resource_type == "metric",
+            resource_type == "semantic_model",
+            resource_type == "model"
+            and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
+        ]
+    )
 
 
 def get_deps(
@@ -600,7 +603,7 @@ def get_deps(
         dbt_resource_props = dbt_nodes[unique_id]
         node_resource_type = dbt_resource_props["resource_type"]
 
-        # skip non-assets, such as metrics, tests, and ephemeral models
+        # skip non-assets, such as semantic models, metrics, tests, and ephemeral models
         if is_non_asset_node(dbt_resource_props) or node_resource_type not in asset_resource_types:
             continue
 
@@ -674,7 +677,7 @@ def get_asset_deps(
     for unique_id, parent_unique_ids in deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         fqns_by_output_name[output_name] = dbt_resource_props["fqn"]
 
         metadata_by_output_name[output_name] = {
@@ -746,7 +749,7 @@ def get_asset_deps(
 
             # if this parent is not one of the selected nodes, it's an input
             if parent_unique_id not in deps:
-                input_name = input_name_fn(parent_node_info)
+                input_name = dagster_name_fn(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     check_specs_by_output_name = cast(

@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 from dagster import AssetSpec, Definitions, file_relative_path
-from dagster._core.definitions import build_assets_job
+from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import (
     SlingMode,
     SlingResource,
@@ -94,15 +94,12 @@ def test_build_sling_asset(
         sling_resource_key="sling_resource",
     )
 
-    sling_job = build_assets_job(
-        "sling_job",
-        [asset_def],
-        resource_defs={"sling_resource": sling_sqlite_resource},
-    )
-
     counts = None
     for _ in range(runs):
-        res = sling_job.execute_in_process()
+        res = materialize(
+            [asset_def],
+            resources={"sling_resource": sling_sqlite_resource},
+        )
         assert res.success
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
@@ -165,14 +162,11 @@ def test_update_mode(
         sling_resource_key="sling_resource",
     )
 
-    sling_job_base = build_assets_job(
-        "sling_job",
-        [asset_def_base],
-        resource_defs={"sling_resource": sling_sqlite_resource},
-    )
-
     # First run should have 3 new rows
-    res = sling_job_base.execute_in_process()
+    res = materialize(
+        [asset_def_base],
+        resources={"sling_resource": sling_sqlite_resource},
+    )
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
 
@@ -181,12 +175,10 @@ def test_update_mode(
     cur.execute("UPDATE main.tbl set UPDATED_AT=999")
     sqlite_connection.commit()
 
-    sling_job_update = build_assets_job(
-        "sling_job_update",
+    res = materialize(
         [asset_def_update],
-        resource_defs={"sling_resource": sling_sqlite_resource},
+        resources={"sling_resource": sling_sqlite_resource},
     )
-    res = sling_job_update.execute_in_process()
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
 
@@ -224,18 +216,15 @@ def test_build_assets_from_sling_stream(
         primary_key="SPECIES_CODE",
     )
 
-    sling_job = build_assets_job(
-        "sling_job",
-        [asset_def],
-        resource_defs={
-            "sling_file_connection": sling_file_connection,
-            "sling_sqlite_connection": sling_sqlite_connection,
-        },
-    )
-
     counts = None
     for _ in range(runs):
-        res = sling_job.execute_in_process()
+        res = materialize(
+            [asset_def],
+            resources={
+                "sling_file_connection": sling_file_connection,
+                "sling_sqlite_connection": sling_sqlite_connection,
+            },
+        )
         assert res.success
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
@@ -268,17 +257,15 @@ def test_reuse_sling_connection_resource(
         primary_key="SPECIES_CODE",
     )
 
-    sling_job = build_assets_job(
-        "sling_job",
+    res = materialize(
         [asset_def, asset_def_two],
-        resource_defs={
+        resources={
             "sling_file_connection": sling_file_connection,
             "sling_staging_file_connection": sling_staging_file_connection,
             "sling_sqlite_connection": sling_sqlite_connection,
         },
     )
 
-    res = sling_job.execute_in_process()
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
     assert sqlite_connection.execute("SELECT count(1) FROM main.staging_tbl").fetchone()[0] == 4
@@ -311,17 +298,15 @@ def test_update_mode_from_stream(
         update_key="UPDATED_AT",
     )
 
-    sling_job_base = build_assets_job(
-        "sling_job",
+    res = materialize(
         [asset_def_base],
-        resource_defs={
+        resources={
             "sling_file_connection": sling_file_connection,
             "sling_sqlite_connection": sling_sqlite_connection,
         },
     )
 
     # First run should have 3 new rows
-    res = sling_job_base.execute_in_process()
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
 
@@ -330,14 +315,12 @@ def test_update_mode_from_stream(
     cur.execute("UPDATE main.tbl set UPDATED_AT=999")
     sqlite_connection.commit()
 
-    sling_job_update = build_assets_job(
-        "sling_job_update",
+    res = materialize(
         [asset_def_update],
-        resource_defs={
+        resources={
             "sling_file_connection": sling_file_connection,
             "sling_sqlite_connection": sling_sqlite_connection,
         },
     )
-    res = sling_job_update.execute_in_process()
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3

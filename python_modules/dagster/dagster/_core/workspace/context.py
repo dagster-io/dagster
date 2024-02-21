@@ -308,6 +308,9 @@ class BaseWorkspaceRequestContext(IWorkspace):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_external_notebook_data(notebook_path=notebook_path)
 
+    def get_parent_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
+        return None
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(

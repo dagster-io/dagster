@@ -1,8 +1,10 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._utils.warnings import disable_dagster_warnings
 
 from ..instance import DagsterInstance
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def observe(
-    source_assets: Sequence[SourceAsset],
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
@@ -26,8 +28,8 @@ def observe(
     By default, will materialize assets to the local filesystem.
 
     Args:
-        source_assets (Sequence[SourceAsset]):
-            The source assets to materialize.
+        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+            The assets to observe.
         resources (Optional[Mapping[str, object]]):
             The resources needed for execution. Can provide resource instances
             directly, or resource definitions. Note that if provided resources
@@ -41,15 +43,17 @@ def observe(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
-    source_assets = check.sequence_param(source_assets, "assets", of_type=(SourceAsset))
+    assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
 
     with disable_dagster_warnings():
-        observation_job = build_assets_job("in_process_observation_job", [], source_assets)
+        observation_job = define_asset_job(
+            "in_process_observation_job", selection=AssetSelection.all(include_sources=True)
+        )
         defs = Definitions(
-            assets=source_assets,
+            assets=assets,
             jobs=[observation_job],
             resources=resources,
         )

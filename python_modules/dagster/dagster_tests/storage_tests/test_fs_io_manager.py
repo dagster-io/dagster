@@ -29,7 +29,7 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import AssetIn, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
@@ -223,9 +223,10 @@ def get_assets_job(io_manager_def, partitions_def=None):
     def asset2(asset1):
         return asset1 + [4]
 
-    return build_assets_job(
-        name="a", assets=[asset1, asset2], resource_defs={"io_manager": io_manager_def}
-    )
+    return Definitions(
+        assets=[asset1, asset2],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_job_def_for_assets([asset1.key, asset2.key])
 
 
 def test_fs_io_manager_handles_assets():
@@ -397,13 +398,12 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
             partitions_def=partitions_def,
         )
 
-        job_def = build_assets_job(
-            name="a",
+        result = materialize(
             assets=[one, four_asset],
-            resource_defs={"io_manager": io_manager_def},
+            resources={"io_manager": io_manager_def},
+            partition_key="A",
         )
 
-        result = job_def.execute_in_process(partition_key="A")
         assert result.success
 
         handled_output_events = list(

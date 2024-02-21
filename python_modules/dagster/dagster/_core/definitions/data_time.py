@@ -38,6 +38,8 @@ from dagster._utils import datetime_as_float, make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+DATA_TIME_METADATA_KEY = "dagster/data_time"
+
 
 class CachingDataTimeResolver:
     _instance_queryer: CachingInstanceQueryer
@@ -502,6 +504,30 @@ class CachingDataTimeResolver:
 
         return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
 
+    def _get_source_data_time(
+        self, asset_key: AssetKey, current_time: datetime.datetime
+    ) -> Optional[datetime.datetime]:
+        latest_record = self.instance_queryer.get_latest_materialization_or_observation_record(
+            AssetKeyPartitionKey(asset_key)
+        )
+        if latest_record is None:
+            return None
+        observation = latest_record.asset_observation
+        if observation is None:
+            check.failed(
+                "when invoked on a source asset, "
+                "get_latest_materialization_or_observation_record should always return an "
+                "observation"
+            )
+
+        data_time = observation.metadata.get(DATA_TIME_METADATA_KEY)
+        if data_time is None:
+            return None
+        else:
+            return datetime.datetime.utcfromtimestamp(cast(float, data_time.value)).replace(
+                tzinfo=datetime.timezone.utc
+            )
+
     def get_minutes_overdue(
         self,
         asset_key: AssetKey,
@@ -513,7 +539,12 @@ class CachingDataTimeResolver:
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
 
+        if self.asset_graph.is_source(asset_key):
+            current_data_time = self._get_source_data_time(asset_key, current_time=evaluation_time)
+        else:
+            current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
+
         return freshness_policy.minutes_overdue(
-            data_time=self.get_current_data_time(asset_key, current_time=evaluation_time),
+            data_time=current_data_time,
             evaluation_time=evaluation_time,
         )

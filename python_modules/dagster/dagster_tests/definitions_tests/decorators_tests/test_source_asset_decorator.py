@@ -1,10 +1,9 @@
 import pytest
-from dagster import Definitions
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import io_manager
@@ -48,16 +47,8 @@ def test_no_context_observable_asset():
         executed["yes"] = True
         return DataVersion("version-string")
 
-    asset_job = build_assets_job(
-        "source_job", source_assets=[observable_asset_no_context], assets=[]
-    )
-
-    defs = Definitions(jobs=[asset_job], assets=[observable_asset_no_context])
-
-    job_def = defs.get_job_def("source_job")
-
-    assert job_def.execute_in_process().success
-
+    result = observe([observable_asset_no_context])
+    assert result.success
     assert executed["yes"]
 
 

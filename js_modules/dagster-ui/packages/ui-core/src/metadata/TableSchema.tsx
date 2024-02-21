@@ -1,5 +1,15 @@
 import {gql} from '@apollo/client';
-import {Box, Caption, Colors, Mono, Tag, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Colors,
+  Icon,
+  IconName,
+  Mono,
+  Tag,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {useState} from 'react';
 
@@ -14,7 +24,7 @@ const MAX_CONSTRAINT_TAG_CHARS = 30;
 
 interface ITableSchemaProps {
   schema: ITableSchema;
-  schemaLoadTimestamp?: string | undefined;
+  schemaLoadTimestamp?: number | undefined;
   itemHorizontalPadding?: Spacing;
 }
 
@@ -36,7 +46,7 @@ export const TableSchema = ({
 
   return (
     <Box padding={{horizontal: itemHorizontalPadding}}>
-      <Box padding={{bottom: 12}} flex={{justifyContent: 'space-between'}}>
+      <Box padding={{bottom: 12}} flex={{alignItems: 'center', justifyContent: 'space-between'}}>
         <TextInput
           value={filter}
           style={{minWidth: 250}}
@@ -45,9 +55,9 @@ export const TableSchema = ({
           placeholder="Filter columns"
         />
         {schemaLoadTimestamp && (
-          <Box>
-            Updated <Timestamp timestamp={{ms: Number(schemaLoadTimestamp)}} />
-          </Box>
+          <Caption color={Colors.textLighter()}>
+            Updated <Timestamp timestamp={{ms: schemaLoadTimestamp}} />
+          </Caption>
         )}
       </Box>
       {multiColumnConstraints.length > 0 && (
@@ -75,7 +85,7 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} />
+                <TypeTag type={column.type} icon={iconForType(column.type)} />
                 {!column.constraints.nullable && NonNullableTag}
                 {column.constraints.unique && UniqueTag}
                 {column.constraints.other.map((constraint, i) => (
@@ -98,7 +108,34 @@ export const TableSchema = ({
   );
 };
 
-const TypeTag = ({type}: {type: string}) => <Tag intent="none">{type}</Tag>;
+const iconForType = (type: string): IconName | null => {
+  const lower = type.toLowerCase();
+  if (lower.includes('bool')) {
+    return 'datatype_bool';
+  }
+  if (['char', 'str', 'text', 'uuid'].some((term) => lower.includes(term))) {
+    return 'datatype_string';
+  }
+  if (lower.includes('arr') || lower.includes('[]')) {
+    return 'datatype_array';
+  }
+  if (['int', 'float', 'double', 'num', 'decimal'].some((term) => lower.includes(term))) {
+    return 'datatype_number';
+  }
+  if (lower.includes('time') || lower.includes('date')) {
+    return 'schedule';
+  }
+  return null;
+};
+
+const TypeTag = ({type, icon}: {type: string; icon: IconName | null}) => (
+  <Tag intent="none">
+    <Box flex={{gap: 4}}>
+      {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
+      {type}
+    </Box>
+  </Tag>
+);
 
 const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
 

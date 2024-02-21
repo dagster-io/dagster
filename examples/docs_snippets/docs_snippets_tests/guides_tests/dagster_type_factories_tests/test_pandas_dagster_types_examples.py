@@ -49,6 +49,8 @@ def test_job_2_no_clean_fails():
         job_2.execute_in_process()
 
 
+# Unskip when this is resolved: https://github.com/unionai-oss/pandera/issues/1500
+@pytest.mark.skip("Test is broken by second order dependency of pandera")
 @pytest.mark.usefixtures("in_tmpdir")
 def test_job_2_no_clean_succeeds():
     assert job_2.execute_in_process(

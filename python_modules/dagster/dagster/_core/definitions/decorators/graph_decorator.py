@@ -103,7 +103,7 @@ class _Graph:
 
 
 @overload
-def graph(compose_fn: Callable) -> GraphDefinition:
+def graph(compose_fn: Callable[..., Any]) -> GraphDefinition:
     ...
 
 

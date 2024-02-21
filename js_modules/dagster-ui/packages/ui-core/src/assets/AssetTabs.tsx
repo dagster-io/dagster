@@ -56,14 +56,14 @@ export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringif
 
 export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, AssetTabConfig> => {
   const {definition, params} = input;
-  const experimental = featureEnabled(FeatureFlag.flagUseNewAutomationPage);
+  const flagUseNewOverviewPage = featureEnabled(FeatureFlag.flagUseNewOverviewPage);
 
   return {
     overview: {
       id: 'overview',
       title: 'Overview',
       to: buildAssetViewParams({...params, view: 'overview'}),
-      hidden: !experimental,
+      hidden: !flagUseNewOverviewPage,
     },
     partitions: {
       id: 'partitions',
@@ -91,14 +91,14 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       title: 'Definition',
       to: buildAssetViewParams({...params, view: 'definition'}),
       disabled: !definition,
-      hidden: experimental,
+      hidden: flagUseNewOverviewPage,
     },
     lineage: {
       id: 'lineage',
       title: 'Lineage',
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
-      hidden: experimental,
+      hidden: flagUseNewOverviewPage,
     },
     automation: {
       id: 'automation',

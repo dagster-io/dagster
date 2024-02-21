@@ -35,7 +35,6 @@ from dagster import (
     materialize,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
@@ -221,12 +220,11 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
         return upstream_asset
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream_asset, downstream_asset],
-        resource_defs={"io_manager": dummy_io_manager},
+        resources={"io_manager": dummy_io_manager},
+        partition_key="A",
     )
-    result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
 
@@ -247,12 +245,11 @@ def test_upath_io_manager_load_multiple_inputs(dummy_io_manager: DummyIOManager)
     def downstream_asset(upstream_asset):
         return upstream_asset
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream_asset, downstream_asset],
-        resource_defs={"io_manager": dummy_io_manager},
+        resources={"io_manager": dummy_io_manager},
+        partition_key=MultiPartitionKey({"a": "a", "1": "1"}),
     )
-    result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"1|a", "1|b"}
 
@@ -310,12 +307,11 @@ def test_upath_io_manager_static_partitions_with_dot():
     def my_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
-    my_job = build_assets_job(
-        "my_job",
+    materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": tracking_io_manager},
+        resources={"io_manager": tracking_io_manager},
+        partition_key="0.0-to-1.0",
     )
-    my_job.execute_in_process(partition_key="0.0-to-1.0")
 
     assert dumped_path is not None
     assert "0.0-to-1.0" == dumped_path.name
@@ -348,12 +344,11 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
     def my_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
-    my_job = build_assets_job(
-        "my_job",
+    materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": tracking_io_manager},
+        resources={"io_manager": tracking_io_manager},
+        partition_key="0.0-to-1.0",
     )
-    my_job.execute_in_process(partition_key="0.0-to-1.0")
 
     assert dumped_path is not None
     assert "0.0-to-1.0.ext" == dumped_path.name

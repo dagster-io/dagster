@@ -54,8 +54,10 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, normalize_to_repository
+from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import (
@@ -449,7 +451,7 @@ SensorEvaluationFunction: TypeAlias = Callable[
 ]
 
 
-def get_context_param_name(fn: Callable) -> Optional[str]:
+def get_context_param_name(fn: Callable[..., Any]) -> Optional[str]:
     """Determines the sensor's context parameter name by excluding all resource parameters."""
     resource_params = {param.name for param in get_resource_args(fn)}
 
@@ -855,9 +857,14 @@ class SensorDefinition(IHasInternalInit):
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
         _check_dynamic_partitions_requests(dynamic_partitions_requests)
-        resolved_run_requests = self.resolve_run_requests(
-            run_requests, context, self._asset_selection, dynamic_partitions_requests
-        )
+        resolved_run_requests = [
+            run_request.with_replaced_attrs(
+                tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),
+            )
+            for run_request in self.resolve_run_requests(
+                run_requests, context, self._asset_selection, dynamic_partitions_requests
+            )
+        ]
 
         return SensorExecutionData(
             resolved_run_requests,
@@ -969,10 +976,11 @@ class SensorDefinition(IHasInternalInit):
     @property
     def job_name(self) -> Optional[str]:
         """Optional[str]: The name of the job that is targeted by this sensor."""
-        if len(self._targets) > 1:
-            raise DagsterInvalidInvocationError(
-                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
-                " jobs."
+        if len(self._targets) == 0:
+            raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        elif len(self._targets) > 1:
+            raise DagsterInvalidDefinitionError(
+                "job_name property not available when SensorDefinition has multiple jobs."
             )
         return self._targets[0].job_name
 
@@ -1181,7 +1189,7 @@ T = TypeVar("T")
 
 
 def get_sensor_context_from_args_or_kwargs(
-    fn: Callable,
+    fn: Callable[..., Any],
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
@@ -1225,7 +1233,7 @@ def get_sensor_context_from_args_or_kwargs(
 
 
 def get_or_create_sensor_context(
-    fn: Callable,
+    fn: Callable[..., Any],
     *args: Any,
     context_type: Type = SensorEvaluationContext,
     **kwargs: Any,

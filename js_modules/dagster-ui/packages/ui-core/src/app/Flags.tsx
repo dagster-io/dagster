@@ -12,6 +12,7 @@ export const FeatureFlag = {
   flagSidebarResources: 'flagSidebarResources' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
   flagUseNewAutomationPage: 'flagUseNewAutomationPage' as const,
+  flagUseNewOverviewPage: 'flagUseNewOverviewPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
