@@ -275,10 +275,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         instance.run_coordinator.op_concurrency_slot_buffer,
                     )
                 except:
-                    self._logger.error(
-                        "Failed to initialize op concurrency counter: \n%s",
-                        serializable_error_info_from_exc_info(sys.exc_info()),
-                    )
+                    self._logger.exception("Failed to initialize op concurrency counter")
                     # when we cannot initialize the global concurrency counter, we should fall back
                     # to not blocking any runs based on op concurrency limits
                     global_concurrency_limits_counter = None
@@ -297,12 +294,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
                     to_remove.append(run)
-                    concurrency_keys = (
-                        run.root_op_concurrency.key_counts.keys() if run.root_op_concurrency else []
-                    )
-                    self._logger.info(
-                        f"Keeping {run.run_id} queued due to blocked op concurrency keys: {concurrency_keys}"
-                    )
                 elif global_concurrency_limits_counter:
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
 

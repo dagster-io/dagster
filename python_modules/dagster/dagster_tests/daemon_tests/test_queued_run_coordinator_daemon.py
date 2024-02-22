@@ -1092,7 +1092,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             instance, external_job, workspace, run_id="run-2", asset_selection=set([foo_key])
         )
         instance.event_log_storage.set_concurrency_slots("foo", 1)
-        with environ({"RUN_COORDINATOR_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS": "0"}):
+        with environ({"DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS": "0"}):
             list(daemon.run_iteration(concurrency_limited_workspace_context))
             assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1"])
             list(daemon.run_iteration(concurrency_limited_workspace_context))
@@ -1175,7 +1175,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         freeze_datetime = to_timezone(
             create_pendulum_time(year=2024, month=2, day=21, tz="UTC"), "US/Pacific"
         )
-        with environ({"RUN_COORDINATOR_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS": "1"}):
+        with environ({"DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS": "1"}):
             with pendulum_freeze_time(freeze_datetime):
                 assert instance.get_run_by_id("run-1").status == DagsterRunStatus.STARTING
                 instance.handle_run_event(

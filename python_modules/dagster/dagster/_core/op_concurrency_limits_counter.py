@@ -7,13 +7,13 @@ import pendulum
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .instance import DagsterInstance
-from .storage.dagster_run import DagsterRun, DagsterRunStatus, RootOpConcurrency, RunRecord
+from .storage.dagster_run import DagsterRun, DagsterRunStatus, RunOpConcurrency, RunRecord
 from .storage.tags import GLOBAL_CONCURRENCY_TAG
 
 
-def compute_root_op_concurrency_info_for_snapshot(
+def compute_run_op_concurrency_info_for_snapshot(
     plan_snapshot: ExecutionPlanSnapshot,
-) -> Optional[RootOpConcurrency]:
+) -> Optional[RunOpConcurrency]:
     """Utility function called at run creation time to add the concurrency info needed to keep track
     of concurrency limits for each in-flight run.
     """
@@ -34,8 +34,8 @@ def compute_root_op_concurrency_info_for_snapshot(
     if len(concurrency_key_counts) == 0:
         return None
 
-    return RootOpConcurrency(
-        key_counts=dict(concurrency_key_counts),
+    return RunOpConcurrency(
+        root_key_counts=dict(concurrency_key_counts),
         has_unconstrained_root_nodes=has_unconstrained_root_nodes,
     )
 
@@ -54,7 +54,7 @@ class GlobalOpConcurrencyLimitsCounter:
         self._in_progress_concurrency_key_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
         self._started_run_concurrency_keys_allotted_seconds = int(
-            os.getenv("RUN_COORDINATOR_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS", "5")
+            os.getenv("DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS", "5")
         )
 
         # fetch all the concurrency info for all of the runs at once, so we can claim in the correct
@@ -69,8 +69,8 @@ class GlobalOpConcurrencyLimitsCounter:
         # runs
         all_concurrency_keys = set()
         for run in queued_runs:
-            if run.root_op_concurrency:
-                all_concurrency_keys.update(run.root_op_concurrency.key_counts.keys())
+            if run.run_op_concurrency:
+                all_concurrency_keys.update(run.run_op_concurrency.root_key_counts.keys())
 
         for key in all_concurrency_keys:
             if key is None:
@@ -93,24 +93,22 @@ class GlobalOpConcurrencyLimitsCounter:
         for record in in_progress_records:
             if (
                 self._should_allocate_slots_for_root_concurrency_keys(record)
-                and record.dagster_run.root_op_concurrency
+                and record.dagster_run.run_op_concurrency
             ):
                 for (
                     concurrency_key,
                     count,
-                ) in record.dagster_run.root_op_concurrency.key_counts.items():
+                ) in record.dagster_run.run_op_concurrency.root_key_counts.items():
                     self._in_progress_concurrency_key_counts[concurrency_key] += count
 
     def is_blocked(self, run: DagsterRun) -> bool:
         # if any of the ops in the run can make progress (not blocked by concurrency keys), we
         # should dequeue
-        if not run.root_op_concurrency or run.root_op_concurrency.has_unconstrained_root_nodes:
+        if not run.run_op_concurrency or run.run_op_concurrency.has_unconstrained_root_nodes:
             # if there exists a root node that is not concurrency blocked, we should dequeue.
-            # a None concurrency key count means there exists a non-zero count of root nodes that
-            # do not have a concurrency key set on it
             return False
 
-        for concurrency_key in run.root_op_concurrency.key_counts.keys():
+        for concurrency_key in run.run_op_concurrency.root_key_counts.keys():
             if concurrency_key not in self._concurrency_info_by_key:
                 # there is no concurrency limit set for this key, we should dequeue
                 return False
@@ -130,8 +128,8 @@ class GlobalOpConcurrencyLimitsCounter:
         return True
 
     def update_counters_with_launched_item(self, run: DagsterRun):
-        if not run.root_op_concurrency:
+        if not run.run_op_concurrency:
             return
-        for concurrency_key, count in run.root_op_concurrency.key_counts.items():
+        for concurrency_key, count in run.run_op_concurrency.root_key_counts.items():
             if concurrency_key:
                 self._launched_concurrency_key_counts[concurrency_key] += count
