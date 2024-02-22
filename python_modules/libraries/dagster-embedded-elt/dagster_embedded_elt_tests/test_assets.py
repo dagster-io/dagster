@@ -22,7 +22,7 @@ ASSET_SPEC = AssetSpec(
     "mode,runs,expected", [(SlingMode.INCREMENTAL, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
 )
 def test_build_sling_asset(
-    test_csv: str,
+    path_to_test_csv: str,
     sling_sqlite_resource: SlingResource,
     mode: SlingMode,
     runs: int,
@@ -31,7 +31,7 @@ def test_build_sling_asset(
 ):
     asset_def = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{test_csv}",
+        source_stream=f"file://{path_to_test_csv}",
         target_object="main.tbl",
         mode=mode,
         primary_key="SPECIES_CODE",
@@ -50,12 +50,12 @@ def test_build_sling_asset(
 
 
 def test_can_build_two_assets(
-    test_csv,
+    path_to_test_csv,
     sling_sqlite_resource: SlingResource,
 ):
     asset_def = build_sling_asset(
         asset_spec=AssetSpec(key="asset1"),
-        source_stream=f"file://{test_csv}",
+        source_stream=f"file://{path_to_test_csv}",
         target_object="main.first_tbl",
         mode=SlingMode.FULL_REFRESH,
         primary_key="SPECIES_CODE",
@@ -64,7 +64,7 @@ def test_can_build_two_assets(
 
     asset_def_two = build_sling_asset(
         asset_spec=AssetSpec(key="asset2"),
-        source_stream=f"file://{test_csv}",
+        source_stream=f"file://{path_to_test_csv}",
         target_object="main.second_tbl",
         mode=SlingMode.FULL_REFRESH,
         primary_key="SPECIES_CODE",
@@ -81,7 +81,7 @@ def test_can_build_two_assets(
 
 
 def test_update_mode(
-    test_csv: str,
+    path_to_test_csv: str,
     sling_sqlite_resource: SlingResource,
     sqlite_connection: sqlite3.Connection,
 ):
@@ -90,7 +90,7 @@ def test_update_mode(
     """
     asset_def_base = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{test_csv}",
+        source_stream=f"file://{path_to_test_csv}",
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
         sling_resource_key="sling_resource",
@@ -98,7 +98,7 @@ def test_update_mode(
 
     asset_def_update = build_sling_asset(
         asset_spec=ASSET_SPEC,
-        source_stream=f"file://{test_csv}",
+        source_stream=f"file://{path_to_test_csv}",
         target_object="main.tbl",
         mode=SlingMode.INCREMENTAL,
         primary_key="SPECIES_NAME",
