@@ -1029,21 +1029,42 @@ class GrapheneAssetNode(graphene.ObjectType):
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = partitions or self.get_partition_keys()
+        query_all_partitions = partitions is None
+        partitions = self.get_partition_keys() if query_all_partitions else partitions
 
-        events_for_partitions = get_asset_materializations(
-            graphene_info,
-            self._external_asset_node.asset_key,
-            partitions,
-        )
+        if query_all_partitions or len(partitions) > 1000:
+            # when there are many partitions, it's much more efficient to grab the latest storage
+            # id for all partitions and then query for the materialization events based on those
+            # storage ids
+            latest_storage_ids = sorted(
+                (
+                    graphene_info.context.instance.event_log_storage.get_latest_storage_id_by_partition(
+                        self._external_asset_node.asset_key, DagsterEventType.ASSET_MATERIALIZATION
+                    )
+                ).values()
+            )
+            events_for_partitions = get_asset_materializations(
+                graphene_info,
+                asset_key=self._external_asset_node.asset_key,
+                storage_ids=latest_storage_ids,
+            )
+            latest_materialization_by_partition = {
+                get_partition(event): event for event in events_for_partitions
+            }
+        else:
+            events_for_partitions = get_asset_materializations(
+                graphene_info,
+                self._external_asset_node.asset_key,
+                partitions,
+            )
 
-        latest_materialization_by_partition = {}
-        for event in events_for_partitions:  # events are sorted in order of newest to oldest
-            event_partition = get_partition(event)
-            if event_partition not in latest_materialization_by_partition:
-                latest_materialization_by_partition[event_partition] = event
-            if len(latest_materialization_by_partition) == len(partitions):
-                break
+            latest_materialization_by_partition = {}
+            for event in events_for_partitions:  # events are sorted in order of newest to oldest
+                event_partition = get_partition(event)
+                if event_partition not in latest_materialization_by_partition:
+                    latest_materialization_by_partition[event_partition] = event
+                if len(latest_materialization_by_partition) == len(partitions):
+                    break
 
         # return materializations in the same order as the provided partitions, None if
         # materialization does not exist

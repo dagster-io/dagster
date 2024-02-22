@@ -17,9 +17,7 @@ from typing import (
 import dagster._seven as seven
 from dagster import (
     AssetKey,
-    DagsterEventType,
     DagsterInstance,
-    EventRecordsFilter,
     MultiPartitionsDefinition,
     _check as check,
 )
@@ -38,12 +36,14 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
@@ -279,6 +279,7 @@ def get_asset_materializations(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     tags: Optional[Mapping[str, str]] = None,
+    storage_ids: Optional[Sequence[int]] = None,
 ) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -286,17 +287,30 @@ def get_asset_materializations(
     check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
 
     instance = graphene_info.context.instance
-    event_records = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=asset_key,
-            asset_partitions=partitions,
-            before_timestamp=before_timestamp,
-            after_timestamp=after_timestamp,
-            tags=tags,
-        ),
-        limit=limit,
+    records_filter = AssetRecordsFilter(
+        asset_key=asset_key,
+        asset_partitions=partitions,
+        before_timestamp=before_timestamp,
+        after_timestamp=after_timestamp,
+        tags=tags,
+        storage_ids=storage_ids,
     )
+    if limit is None:
+        event_records = []
+        cursor = None
+        while True:
+            event_records_result = instance.fetch_materializations(
+                records_filter=records_filter, cursor=cursor, limit=get_max_event_records_limit()
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_materializations(
+            records_filter=records_filter, limit=limit
+        ).records
+
     return [event_record.event_log_entry for event_record in event_records]
 
 
@@ -312,17 +326,30 @@ def get_asset_observations(
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
     check.opt_float_param(after_timestamp, "after_timestamp")
+
     instance = graphene_info.context.instance
-    event_records = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_OBSERVATION,
-            asset_key=asset_key,
-            asset_partitions=partitions,
-            before_timestamp=before_timestamp,
-            after_timestamp=after_timestamp,
-        ),
-        limit=limit,
+    records_filter = AssetRecordsFilter(
+        asset_key=asset_key,
+        asset_partitions=partitions,
+        before_timestamp=before_timestamp,
+        after_timestamp=after_timestamp,
     )
+    if limit is None:
+        event_records = []
+        cursor = None
+        while True:
+            event_records_result = instance.fetch_observations(
+                records_filter=records_filter, cursor=cursor, limit=get_max_event_records_limit()
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_observations(
+            records_filter=records_filter, limit=limit
+        ).records
+
     return [event_record.event_log_entry for event_record in event_records]
 
 
