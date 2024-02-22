@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
@@ -952,6 +953,8 @@ class GrapheneQuery(graphene.ObjectType):
             asset_graph=load_asset_graph,
         )
 
+        base_deployment_context = graphene_info.context.get_base_deployment_context()
+
         nodes = [
             GrapheneAssetNode(
                 node.repository_location,
@@ -962,6 +965,15 @@ class GrapheneQuery(graphene.ObjectType):
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
+                # base_deployment_context will be None if we are not in a branch deployment
+                asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    code_location_name=node.repository_location.name,
+                    repository_name=node.external_repository.name,
+                    branch_workspace=graphene_info.context,
+                    base_workspace=base_deployment_context,
+                )
+                if base_deployment_context is not None
+                else None,
             )
             for node in results
         ]
