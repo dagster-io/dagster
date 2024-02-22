@@ -76,6 +76,10 @@ class AssetConditionEvaluationContext:
 
     start_timestamp: float
     root_ref: Optional["AssetConditionEvaluationContext"] = None
+    # Captures if this evaluation is happening in the context of a scheduling policy evaluation.
+    # The key difference is that if it is, then we can assume that any asset partition that
+    # evaluated as True on the previous tick was requested at that point in time.
+    is_scheduling_policy_evaluation: bool = True
 
     @staticmethod
     def create(
@@ -87,6 +91,7 @@ class AssetConditionEvaluationContext:
         daemon_context: "AssetDaemonContext",
         evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        is_scheduling_policy_evaluation: bool = True,
     ) -> "AssetConditionEvaluationContext":
         partitions_def = instance_queryer.asset_graph.get_partitions_def(asset_key)
 
@@ -109,6 +114,7 @@ class AssetConditionEvaluationContext:
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             start_timestamp=pendulum.now("UTC").timestamp(),
+            is_scheduling_policy_evaluation=is_scheduling_policy_evaluation,
         )
 
     def for_child(
@@ -220,7 +226,8 @@ class AssetConditionEvaluationContext:
     def previous_tick_requested_subset(self) -> AssetSubset:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
         if (
-            self.previous_evaluation_state is None
+            not self.is_scheduling_policy_evaluation
+            or self.previous_evaluation_state is None
             or self.previous_evaluation_state.previous_evaluation is None
         ):
             return self.empty_subset()

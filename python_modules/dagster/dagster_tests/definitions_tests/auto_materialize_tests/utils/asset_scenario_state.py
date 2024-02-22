@@ -155,8 +155,9 @@ class AssetScenarioState:
             )
         )
 
-    def with_current_time(self, time: str) -> Self:
-        return dataclasses.replace(self, current_time=pendulum.parse(time))
+    def with_current_time(self, time: Union[str, datetime.datetime]) -> Self:
+        time = pendulum.parse(time) if isinstance(time, str) else time
+        return dataclasses.replace(self, current_time=time)
 
     def with_current_time_advanced(self, **kwargs) -> Self:
         # hacky support for adding years
