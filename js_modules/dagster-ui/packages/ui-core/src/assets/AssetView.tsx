@@ -419,7 +419,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   return {
     definitionQueryResult: result,
     definition: asset.definition,
-    lastMaterialization: asset.assetMaterializations[0],
+    lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
   };
 };
 
