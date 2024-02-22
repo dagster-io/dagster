@@ -17,29 +17,84 @@ Welcome to Dagster! In this guide, you'll get up-and-running with the [Dagster Q
 
 ## Introduction
 
-You can run the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project without installing anything locally by using the pre-configured [GitHub Codespace](https://github.com/features/codespaces)! For more information on how to use the quickstart project, see the [README](https://github.com/dagster-io/dagster-quickstart/blob/main/README.md) file in the project's repository.
+The [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project can be used without installing anything on your machine by using the pre-configured [GitHub Codespace](https://github.com/features/codespaces)! But if you prefer to run things on your own machine, we've got you covered.
 
-## Navigate the UI & Materialize Assets
+### Option 1: Using GitHub Codespaces
+
+
+1. Fork the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) repository
+
+2. From the **Code** dropdown, select **Create codespace on main**
+
+<Image
+  width={400}
+  height={400}
+  alt="Create codespace"
+  src="/images/getting-started/quickstart/github-codespace-create.png"
+  />
+
+3. Once the codespace has loaded, run `dagster dev` in the terminal to start the Dagster process:
+
+   ```bash
+   dagster dev
+   ```
+
+4. When prompted, click **Open in Browser**.
+
+<Image
+  width={400}
+  height={300}
+  alt="Codespace Open In Browser"
+  src="/images/getting-started/quickstart/github-codespace-open-in-browser.png"
+  />
+
+5. **Success!** 
+
+### Option 2: Running Locally
+
+1. Clone the Dagster Quickstart repository:
+
+   ```bash
+   git clone https://github.com/dagster-io/dagster-quickstart && cd dagster-quickstart
+   ```
+
+2. Install the required dependencies.
+
+   We use `-e` to install dependencies in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs). This allows changes to be automatically applied when we modify code. 
+
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+3. Run the project!
+
+   ```bash
+   dagster dev
+   ```
+
+3. Open [localhost:3000](localhost:3000) in the browser.
+
+## Exploring the UI
 
 If you've followed the instructions in the README of **Dagster Quickstart** project, you should have a running instance of Dagster! From here, we can run our data pipeline.
 
 In the UI, click **Materialize All** when viewing the lineage of assets. In Dagster, _materialization_ is the word we use to describe running the code associated with an asset and producing an output.
 
 <Image
-alt="HackerNews assets in Dagster's Asset Graph, unmaterialized"
-src="/images/getting-started/quickstart/quickstart-unmaterialized.png"
-width={1000}
-height={816}
-/>
+  alt="HackerNews assets in Dagster's Asset Graph, unmaterialized"
+  src="/images/getting-started/quickstart/quickstart-unmaterialized.png"
+  width={2000}
+  height={816}
+  />
 
 That's it! You now have two materialized Dagster assets:
 
 <Image
-alt="HackerNews asset graph"
-src="/images/getting-started/quickstart/quickstart.png"
-width={2402}
-height={1956}
-/>
+  alt="HackerNews asset graph"
+  src="/images/getting-started/quickstart/quickstart.png"
+  width={2000}
+  height={1956}
+  />
 
 But wait - there's more. Because the `hackernews_top_stories` asset returned some `metadata`, you can view the metadata right in the UI:
 
@@ -47,11 +102,11 @@ But wait - there's more. Because the `hackernews_top_stories` asset returned som
 2. In the sidebar, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:
 
 <Image
-alt="Markdown preview of HackerNews top 10 stories"
-src="/images/getting-started/quickstart/hn-preview.png"
-width={3444}
-height={1754}
-/>
+  alt="Markdown preview of HackerNews top 10 stories"
+  src="/images/getting-started/quickstart/hn-preview.png"
+  width={2000}
+  height={1754}
+  />
 
 ## The Code, Explained
 
