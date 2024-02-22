@@ -80,8 +80,10 @@ import gitlab from '../icon-svgs/gitlab.svg';
 import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
+import graph_vertical from '../icon-svgs/graph_vertical.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
@@ -242,6 +244,8 @@ export const Icons = {
   graph_downstream,
   graph_upstream,
   graph_neighbors,
+  graph_horizontal,
+  graph_vertical,
 
   // Material icons
   add,

@@ -22,9 +22,10 @@ import {AssetEdges} from './AssetEdges';
 import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
+import {AssetNodeMenuProps} from './AssetNodeMenu';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {ExpandedGroupNode} from './ExpandedGroupNode';
+import {ExpandedGroupNode, GroupOutline} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
@@ -36,7 +37,7 @@ import {
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
-import {AssetGraphLayout, GroupLayout} from './layout';
+import {AssetGraphLayout, AssetLayoutDirection, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -51,6 +52,7 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useStartTrace} from '../performance';
 import {
   GraphExplorerOptions,
@@ -227,6 +229,10 @@ const AssetGraphExplorerWithData = ({
     return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
 
+  const [direction, setDirection] = useStateWithStorage<AssetLayoutDirection>(
+    'asset-graph-direction',
+    (json) => (['vertical', 'horizontal'].includes(json) ? json : 'horizontal'),
+  );
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
@@ -235,7 +241,7 @@ const AssetGraphExplorerWithData = ({
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
-  const {layout, loading, async} = useAssetLayout(assetGraphData, expandedGroups);
+  const {layout, loading, async} = useAssetLayout(assetGraphData, expandedGroups, direction);
 
   React.useEffect(() => {
     if (!loading) {
@@ -456,47 +462,6 @@ const AssetGraphExplorerWithData = ({
 
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
 
-  const toggleGroupsButton = allGroups.length > 1 && (
-    <ShortcutHandler
-      key="toggle-groups"
-      shortcutLabel="⌥E"
-      onShortcut={() => setExpandedGroups(expandedGroups.length === 0 ? allGroups : [])}
-      shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
-    >
-      {expandedGroups.length === 0 ? (
-        <Tooltip
-          content={
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
-            </Box>
-          }
-        >
-          <Button
-            title="Expand all groups"
-            icon={<Icon name="unfold_more" />}
-            onClick={() => setExpandedGroups(allGroups)}
-            style={{background: Colors.backgroundDefault()}}
-          />
-        </Tooltip>
-      ) : (
-        <Tooltip
-          content={
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
-            </Box>
-          }
-        >
-          <Button
-            title="Collapse all groups"
-            icon={<Icon name="unfold_less" />}
-            onClick={() => setExpandedGroups([])}
-            style={{background: Colors.backgroundDefault()}}
-          />
-        </Tooltip>
-      )}
-    </ShortcutHandler>
-  );
-
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     setFilters?.({
       ...filters,
@@ -521,7 +486,23 @@ const AssetGraphExplorerWithData = ({
       graphWidth={layout.width}
       graphHeight={layout.height}
       graphHasNoMinimumZoom={false}
-      additionalToolbarElements={toggleGroupsButton}
+      additionalToolbarElements={
+        <>
+          {allGroups.length > 1 && (
+            <ToggleGroupsButton
+              key="toggle-groups"
+              expandedGroups={expandedGroups}
+              setExpandedGroups={setExpandedGroups}
+              allGroups={allGroups}
+            />
+          )}
+          <ToggleDirectionButton
+            key="toggle-direction"
+            direction={direction}
+            setDirection={setDirection}
+          />
+        </>
+      }
       onClick={onClickBackground}
       onArrowKeyDown={onArrowKeyDown}
       onDoubleClick={(e) => {
@@ -539,31 +520,14 @@ const AssetGraphExplorerWithData = ({
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject
-                key={group.id}
                 {...group.bounds}
-                className="group"
+                key={`${group.id}-outline`}
                 onDoubleClick={(e) => {
                   zoomToGroup(group.id);
                   e.stopPropagation();
                 }}
               >
-                <ExpandedGroupNode
-                  setHighlighted={setHighlighted}
-                  preferredJobName={explorerPath.pipelineName}
-                  onFilterToGroup={() => onFilterToGroup(group)}
-                  group={{
-                    ...group,
-                    assets: groupedAssets[group.id] || [],
-                  }}
-                  minimal={scale < MINIMAL_SCALE}
-                  onCollapse={() => {
-                    focusGroupIdAfterLayoutRef.current = group.id;
-                    setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
-                  }}
-                  toggleSelectAllNodes={(e: React.MouseEvent) => {
-                    toggleSelectAllGroupNodesById(e, group.id);
-                  }}
-                />
+                <GroupOutline $minimal={scale < MINIMAL_SCALE} />
               </foreignObject>
             ))}
 
@@ -572,51 +536,78 @@ const AssetGraphExplorerWithData = ({
             selected={selectedGraphNodes.map((n) => n.id)}
             highlighted={highlighted}
             edges={layout.edges}
+            direction={direction}
             strokeWidth={4}
           />
 
           {Object.values(layout.groups)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-            .filter((group) => !group.expanded)
             .sort((a, b) => a.id.length - b.id.length)
-            .map((group) => (
-              <foreignObject
-                key={group.id}
-                {...group.bounds}
-                className="group"
-                onMouseEnter={() => setHighlighted([group.id])}
-                onMouseLeave={() => setHighlighted(null)}
-                onDoubleClick={(e) => {
-                  if (!viewportEl.current) {
-                    return;
-                  }
-                  const targetScale = viewportEl.current.scaleForSVGBounds(
-                    group.bounds.width,
-                    group.bounds.height,
-                  );
-                  viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
-                  e.stopPropagation();
-                }}
-              >
-                <CollapsedGroupNode
-                  preferredJobName={explorerPath.pipelineName}
-                  onFilterToGroup={() => onFilterToGroup(group)}
-                  minimal={scale < MINIMAL_SCALE}
-                  group={{
-                    ...group,
-                    assetCount: allGroupCounts[group.id] || 0,
-                    assets: groupedAssets[group.id] || [],
+            .map((group) =>
+              group.expanded ? (
+                <foreignObject
+                  key={group.id}
+                  {...group.bounds}
+                  className="group"
+                  onDoubleClick={(e) => {
+                    zoomToGroup(group.id);
+                    e.stopPropagation();
                   }}
-                  onExpand={() => {
-                    focusGroupIdAfterLayoutRef.current = group.id;
-                    setExpandedGroups([...expandedGroups, group.id]);
+                >
+                  <ExpandedGroupNode
+                    setHighlighted={setHighlighted}
+                    preferredJobName={explorerPath.pipelineName}
+                    onFilterToGroup={() => onFilterToGroup(group)}
+                    group={{...group, assets: groupedAssets[group.id] || []}}
+                    minimal={scale < MINIMAL_SCALE}
+                    onCollapse={() => {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
+                    }}
+                    toggleSelectAllNodes={(e: React.MouseEvent) => {
+                      toggleSelectAllGroupNodesById(e, group.id);
+                    }}
+                  />
+                </foreignObject>
+              ) : (
+                <foreignObject
+                  key={group.id}
+                  {...group.bounds}
+                  className="group"
+                  onMouseEnter={() => setHighlighted([group.id])}
+                  onMouseLeave={() => setHighlighted(null)}
+                  onDoubleClick={(e) => {
+                    if (!viewportEl.current) {
+                      return;
+                    }
+                    const targetScale = viewportEl.current.scaleForSVGBounds(
+                      group.bounds.width,
+                      group.bounds.height,
+                    );
+                    viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
+                    e.stopPropagation();
                   }}
-                  toggleSelectAllNodes={(e: React.MouseEvent) => {
-                    toggleSelectAllGroupNodesById(e, group.id);
-                  }}
-                />
-              </foreignObject>
-            ))}
+                >
+                  <CollapsedGroupNode
+                    preferredJobName={explorerPath.pipelineName}
+                    onFilterToGroup={() => onFilterToGroup(group)}
+                    minimal={scale < MINIMAL_SCALE}
+                    group={{
+                      ...group,
+                      assetCount: allGroupCounts[group.id] || 0,
+                      assets: groupedAssets[group.id] || [],
+                    }}
+                    onExpand={() => {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups([...expandedGroups, group.id]);
+                    }}
+                    toggleSelectAllNodes={(e: React.MouseEvent) => {
+                      toggleSelectAllGroupNodesById(e, group.id);
+                    }}
+                  />
+                </foreignObject>
+              ),
+            )}
 
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
@@ -630,7 +621,7 @@ const AssetGraphExplorerWithData = ({
                 return;
               }
 
-              const contextMenuProps = {
+              const contextMenuProps: AssetNodeMenuProps = {
                 graphData: fullAssetGraphData,
                 node: graphNode,
                 explorerPath,
@@ -641,6 +632,7 @@ const AssetGraphExplorerWithData = ({
                 <foreignObject
                   {...bounds}
                   key={id}
+                  style={{overflow: 'visible'}}
                   onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
                   onClick={(e) => onSelectNode(e, {path}, graphNode)}
@@ -648,7 +640,6 @@ const AssetGraphExplorerWithData = ({
                     viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
                     e.stopPropagation();
                   }}
-                  style={{overflow: 'visible'}}
                 >
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
@@ -704,7 +695,7 @@ const AssetGraphExplorerWithData = ({
                           Collapse all groups <KeyboardTag>⌥E</KeyboardTag>
                         </Box>
                       }
-                      icon={<Icon name="unfold_less" />}
+                      icon="unfold_less"
                       onClick={() => {
                         setExpandedGroups([]);
                       }}
@@ -714,13 +705,35 @@ const AssetGraphExplorerWithData = ({
                     <MenuItem
                       text={
                         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                          Expand all groups <KeyboardTag>⌥E</KeyboardTag>
+                          Expand all groups
+                          {areAllGroupsCollapsed ? <KeyboardTag>⌥E</KeyboardTag> : null}
                         </Box>
                       }
-                      icon={<Icon name="unfold_more" />}
+                      icon="unfold_more"
                       onClick={() => {
                         setExpandedGroups(allGroups);
                       }}
+                    />
+                  )}
+                  {direction === 'horizontal' ? (
+                    <MenuItem
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Vertical orientation <KeyboardTag>⌥O</KeyboardTag>
+                        </Box>
+                      }
+                      icon="graph_vertical"
+                      onClick={() => setDirection?.('vertical')}
+                    />
+                  ) : (
+                    <MenuItem
+                      text={
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          Horizontal orientation <KeyboardTag>⌥O</KeyboardTag>
+                        </Box>
+                      }
+                      icon="graph_horizontal"
+                      onClick={() => setDirection?.('horizontal')}
                     />
                   )}
                 </Menu>
@@ -915,3 +928,93 @@ const GraphQueryInputFlexWrap = styled.div`
     }
   }
 `;
+
+const ToggleGroupsButton = ({
+  expandedGroups,
+  setExpandedGroups,
+  allGroups,
+}: {
+  expandedGroups: string[];
+  setExpandedGroups: (v: string[]) => void;
+  allGroups: string[];
+}) => (
+  <ShortcutHandler
+    shortcutLabel="⌥E"
+    onShortcut={() => setExpandedGroups(expandedGroups.length === 0 ? allGroups : [])}
+    shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
+  >
+    {expandedGroups.length === 0 ? (
+      <Tooltip
+        content={
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            Expand all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+          </Box>
+        }
+      >
+        <Button
+          icon={<Icon name="unfold_more" />}
+          onClick={() => setExpandedGroups(allGroups)}
+          style={{background: Colors.backgroundDefault()}}
+        />
+      </Tooltip>
+    ) : (
+      <Tooltip
+        content={
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            Collapse all groups <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+          </Box>
+        }
+      >
+        <Button
+          icon={<Icon name="unfold_less" />}
+          onClick={() => setExpandedGroups([])}
+          style={{background: Colors.backgroundDefault()}}
+        />
+      </Tooltip>
+    )}
+  </ShortcutHandler>
+);
+
+const ToggleDirectionButton = ({
+  direction,
+  setDirection,
+}: {
+  direction: AssetLayoutDirection;
+  setDirection: (d: AssetLayoutDirection) => void;
+}) => (
+  <ShortcutHandler
+    shortcutLabel="⌥O"
+    onShortcut={() => setDirection(direction === 'vertical' ? 'horizontal' : 'vertical')}
+    shortcutFilter={(e) => e.altKey && e.code === 'KeyO'}
+  >
+    {direction === 'horizontal' ? (
+      <Tooltip
+        content={
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            Change graph to vertical orientation <KeyboardTag $withinTooltip>⌥O</KeyboardTag>
+          </Box>
+        }
+      >
+        <Button
+          icon={<Icon name="graph_vertical" />}
+          onClick={() => setDirection('vertical')}
+          style={{background: Colors.backgroundDefault()}}
+        />
+      </Tooltip>
+    ) : (
+      <Tooltip
+        content={
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            Change graph to horizontal orientation <KeyboardTag $withinTooltip>⌥O</KeyboardTag>
+          </Box>
+        }
+      >
+        <Button
+          icon={<Icon name="graph_horizontal" />}
+          onClick={() => setDirection('horizontal')}
+          style={{background: Colors.backgroundDefault()}}
+        />
+      </Tooltip>
+    )}
+  </ShortcutHandler>
+);
