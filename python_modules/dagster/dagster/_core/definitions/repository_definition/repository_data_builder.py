@@ -262,7 +262,7 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets(
+    asset_graph = InternalAssetGraph.from_assets(
         [*assets_defs, *source_assets], asset_checks=asset_checks_defs
     )
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
@@ -363,7 +363,7 @@ def build_caching_repository_data_from_dict(
         elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
             repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
-                asset_graph=AssetGraph.from_assets([]),
+                asset_graph=InternalAssetGraph.from_assets([]),
                 default_executor_def=None,
             )
         elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):

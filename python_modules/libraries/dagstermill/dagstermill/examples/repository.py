@@ -23,7 +23,7 @@ from dagster import (
     with_resources,
 )
 from dagster._config.pythonic_config import Config
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
@@ -604,7 +604,7 @@ assets = with_resources(
 def make_resolved_job(asset):
     return define_asset_job(
         name=f"{asset.key.to_user_string()}_job", selection=AssetSelection.assets(asset).upstream()
-    ).resolve(asset_graph=AssetGraph.from_assets(assets))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets(assets))
 
 
 hello_world_asset_job = make_resolved_job(hello_world_asset)

@@ -62,6 +62,7 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
@@ -281,7 +282,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @property
     def asset_graph(self) -> AssetGraph:
-        return AssetGraph.from_assets(self.assets)
+        return InternalAssetGraph.from_assets(self.assets)
 
     def with_asset_properties(
         self, keys: Optional[Iterable[CoercibleToAssetKey]] = None, **kwargs

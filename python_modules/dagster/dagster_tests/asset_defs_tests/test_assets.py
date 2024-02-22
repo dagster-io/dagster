@@ -37,12 +37,12 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -1054,7 +1054,7 @@ def test_graph_backed_asset_subset():
         return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [
                 AssetsDefinition.from_graph(my_graph, can_subset=True),
             ]
@@ -1083,7 +1083,7 @@ def test_graph_backed_asset_partial_output_selection():
         return one, two
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [
                 AssetsDefinition.from_graph(graph_asset, can_subset=True),
             ]
@@ -1130,7 +1130,7 @@ def test_input_subsetting_graph_backed_asset():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            asset_graph=AssetGraph.from_assets(
+            asset_graph=InternalAssetGraph.from_assets(
                 with_resources(
                     [
                         upstream_1,
@@ -1248,7 +1248,7 @@ def test_graph_backed_asset_subset_context(
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(three, can_subset=True)],
         )
     )
@@ -1329,7 +1329,7 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
         }
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
         )
     )
@@ -1391,7 +1391,7 @@ def test_nested_graph_subset_context(
         return {"a": a, "b": b, "c": c, "d": d}
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
         )
     )
@@ -1428,7 +1428,7 @@ def test_graph_backed_asset_reused():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            asset_graph=AssetGraph.from_assets(
+            asset_graph=InternalAssetGraph.from_assets(
                 with_resources(
                     [
                         upstream,
@@ -1543,7 +1543,7 @@ def test_context_assets_def():
         return 2
 
     asset_job = define_asset_job("yay", [a, b]).resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [a, b],
         )
     )

@@ -31,9 +31,9 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -543,7 +543,7 @@ def test_job_config_with_asset_partitions():
         "job",
         partitions_def=daily_partitions_def,
         config={"ops": {"asset1": {"config": {"a": 5}}}},
-    ).resolve(asset_graph=AssetGraph.from_assets([asset1]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([asset1]))
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
@@ -566,7 +566,7 @@ def test_job_partitioned_config_with_asset_partitions():
         return {"ops": {"asset1": {"config": {"day_of_month": start.day}}}}
 
     the_job = define_asset_job("job", config=myconfig).resolve(
-        asset_graph=AssetGraph.from_assets([asset1])
+        asset_graph=InternalAssetGraph.from_assets([asset1])
     )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
@@ -592,7 +592,7 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
         ),
     ):
         define_asset_job("job", config=myconfig).resolve(
-            asset_graph=AssetGraph.from_assets([asset1])
+            asset_graph=InternalAssetGraph.from_assets([asset1])
         )
 
 
@@ -619,7 +619,7 @@ def test_partition_range_single_run():
         )
 
     the_job = define_asset_job("job").resolve(
-        asset_graph=AssetGraph.from_assets([upstream_asset, downstream_asset])
+        asset_graph=InternalAssetGraph.from_assets([upstream_asset, downstream_asset])
     )
 
     result = the_job.execute_in_process(
@@ -659,7 +659,7 @@ def test_multipartition_range_single_run():
         assert all(isinstance(key, MultiPartitionKey) for key in context.partition_keys)
 
     the_job = define_asset_job("job").resolve(
-        asset_graph=AssetGraph.from_assets([multipartitioned_asset])
+        asset_graph=InternalAssetGraph.from_assets([multipartitioned_asset])
     )
 
     result = the_job.execute_in_process(
@@ -722,7 +722,7 @@ def test_dynamic_partition_range_single_run():
         assert len(context.partition_keys) == 3
 
     the_job = define_asset_job("job").resolve(
-        asset_graph=AssetGraph.from_assets([dynamicpartitioned_asset])
+        asset_graph=InternalAssetGraph.from_assets([dynamicpartitioned_asset])
     )
 
     instance = DagsterInstance.ephemeral()

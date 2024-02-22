@@ -16,7 +16,6 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
 )
@@ -387,7 +386,7 @@ class RepositoryDefinition:
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
-        return AssetGraph.from_assets(
+        return InternalAssetGraph.from_assets(
             [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
         )
 
