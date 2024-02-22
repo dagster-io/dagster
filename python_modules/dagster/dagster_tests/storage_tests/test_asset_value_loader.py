@@ -242,6 +242,37 @@ def test_partition_key():
             assert value == 5
 
 
+def test_group_name():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return context.group_name
+
+        def load_input(self, context):
+            return context.group_name
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @asset(group_name="test_group")
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return with_resources([asset1, asset2], resource_defs={"io_manager": my_io_manager})
+
+    with instance_for_test() as instance:
+        with repo.get_asset_value_loader(instance=instance) as loader:
+            assert loader.load_asset_value(AssetKey("asset1")) == "test_group"
+            assert loader.load_asset_value(AssetKey("asset2")) == "default"
+
+
+
 def test_partitions_with_fs_io_manager():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})

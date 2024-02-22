@@ -59,6 +59,7 @@ class InputContext:
         self,
         *,
         name: Optional[str] = None,
+        group_name: Optional[str] = None,
         job_name: Optional[str] = None,
         op_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
@@ -79,6 +80,7 @@ class InputContext:
         from dagster._core.execution.build_resources import build_resources
 
         self._name = name
+        self._group_name = group_name
         self._job_name = job_name
         self._op_def = op_def
         self._config = config
@@ -153,6 +155,18 @@ class InputContext:
             )
 
         return self._name
+
+    @public
+    @property
+    def group_name(self) -> str:
+        """The name of the input that we're loading."""
+        if self._group_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access group_name, "
+                "but it was not provided when constructing the InputContext"
+            )
+
+        return self._group_name
 
     @property
     def job_name(self) -> str:
@@ -521,6 +535,7 @@ class InputContext:
 
 def build_input_context(
     name: Optional[str] = None,
+    group_name: Optional[str] = None,
     config: Optional[Any] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     upstream_output: Optional["OutputContext"] = None,
@@ -543,6 +558,7 @@ def build_input_context(
 
     Args:
         name (Optional[str]): The name of the input that we're loading.
+        group_name (Optional[str]): The group name of the input that we're loading.
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
@@ -579,6 +595,7 @@ def build_input_context(
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
+    group_name = check.opt_str_param(group_name, "group_name")
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     upstream_output = check.opt_inst_param(upstream_output, "upstream_output", OutputContext)
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
@@ -605,6 +622,7 @@ def build_input_context(
 
     return InputContext(
         name=name,
+        group_name=group_name,
         job_name=None,
         config=config,
         metadata=metadata,

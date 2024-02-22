@@ -65,6 +65,7 @@ class OutputContext:
 
     _step_key: Optional[str]
     _name: Optional[str]
+    _group_name: Optional[str]
     _job_name: Optional[str]
     _run_id: Optional[str]
     _metadata: ArbitraryMetadataMapping
@@ -90,6 +91,7 @@ class OutputContext:
         self,
         step_key: Optional[str] = None,
         name: Optional[str] = None,
+        group_name: Optional[str] = None,
         job_name: Optional[str] = None,
         run_id: Optional[str] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
@@ -111,6 +113,7 @@ class OutputContext:
 
         self._step_key = step_key
         self._name = name
+        self._group_name = group_name
         self._job_name = job_name
         self._run_id = run_id
         self._metadata = metadata or {}
@@ -185,6 +188,18 @@ class OutputContext:
             )
 
         return self._name
+
+    @public
+    @property
+    def group_name(self) -> str:
+        """The name of the output that produced the output."""
+        if self._group_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access group_name, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._group_name
 
     @property
     def job_name(self) -> str:
@@ -805,6 +820,7 @@ def step_output_version(
 def build_output_context(
     step_key: Optional[str] = None,
     name: Optional[str] = None,
+    group_name: Optional[str] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
@@ -826,6 +842,7 @@ def build_output_context(
     Args:
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
+        group_name (Optional[str]): The group name of the output that produced the output.
         metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
@@ -858,6 +875,7 @@ def build_output_context(
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")
+    group_name = check.opt_str_param(group_name, "group_name")
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
@@ -872,6 +890,7 @@ def build_output_context(
     return OutputContext(
         step_key=step_key,
         name=name,
+        group_name=group_name,
         job_name=None,
         run_id=run_id,
         metadata=metadata,

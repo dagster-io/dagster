@@ -11,7 +11,7 @@ from dagster._core.definitions.job_definition import (
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_GROUP_NAME
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
@@ -109,6 +109,7 @@ class AssetValueLoader:
             io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
             io_manager_def = resource_defs[io_manager_key]
             name = assets_def.get_output_name_for_asset_key(asset_key)
+            group_name = assets_def.get_group_name_for_asset_key(asset_key, DEFAULT_GROUP_NAME)
             output_metadata = assets_def.metadata_by_key[asset_key]
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
             asset_partitions_def = assets_def.partitions_def
@@ -122,6 +123,7 @@ class AssetValueLoader:
             io_manager_key = source_asset.get_io_manager_key()
             io_manager_def = resource_defs[io_manager_key]
             name = asset_key.path[-1]
+            group_name = source_asset.group_name
             output_metadata = source_asset.raw_metadata
             op_def = None
             asset_partitions_def = source_asset.partitions_def
@@ -147,10 +149,12 @@ class AssetValueLoader:
 
         input_context = build_input_context(
             name=None,
+            group_name=group_name,
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
                 name=name,
+                group_name=group_name,
                 metadata=output_metadata,
                 asset_key=asset_key,
                 op_def=op_def,
