@@ -35,7 +35,7 @@ API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING = {
 context_to_counters = WeakKeyDictionary()
 
 
-def add_to_asset_metadata(context: AssetExecutionContext, usage_metadata: dict, output_name: str):
+def add_to_asset_metadata(context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str]):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
     counters = context_to_counters[context]
@@ -45,7 +45,7 @@ def add_to_asset_metadata(context: AssetExecutionContext, usage_metadata: dict, 
     context.add_output_metadata(dict(counters), output_name)
 
 
-def with_usage_metadata(context: AssetExecutionContext, output_name: str, func):
+def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[str], func):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`
     to log the OpenAI API usage metadata in the asset metadata.
@@ -83,7 +83,7 @@ def with_usage_metadata(context: AssetExecutionContext, output_name: str, func):
         )
     """
     if not isinstance(context, AssetExecutionContext):
-        raise TypeError(
+        raise DagsterInvariantViolationError(
             "The `with_usage_metadata` can only be used when context is of type AssetExecutionContext."
         )
 
@@ -224,7 +224,6 @@ class OpenAIResource(ConfigurableResource):
                     raise DagsterInvariantViolationError(
                         "The argument `asset_key` must be specified for multi_asset with more than one asset."
                     )
-                asset_key = context.asset_key
             # By default, when the resource is used in an asset context,
             # we wrap the methods of `openai.resources.Completions`,
             # `openai.resources.Embeddings` and `openai.resources.chat.Completions`.
