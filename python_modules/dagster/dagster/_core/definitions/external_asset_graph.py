@@ -13,7 +13,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
@@ -158,9 +157,7 @@ class ExternalAssetGraph(AssetGraph):
         auto_observe_interval_minutes_by_key = {}
 
         for repo_handle, node in repo_handle_external_asset_nodes:
-            is_observable_by_key[node.asset_key] = (
-                node.execution_type == AssetExecutionType.OBSERVATION
-            )
+            is_observable_by_key[node.asset_key] = node.is_observable
             auto_observe_interval_minutes_by_key[
                 node.asset_key
             ] = node.auto_observe_interval_minutes
