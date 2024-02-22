@@ -178,7 +178,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                 .forEach((assetNode) => {
                   folderNodes.push({
                     id: assetNode.id,
-                    path: locationName + ':' + groupNode.groupName + ':' + assetNode.assetKey,
+                    path: [
+                      locationName,
+                      groupNode.groupName,
+                      tokenForAssetKey(assetNode.assetKey),
+                    ].join(':'),
                     level: 3,
                   });
                 });
