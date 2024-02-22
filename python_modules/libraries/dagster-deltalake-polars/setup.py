@@ -36,8 +36,8 @@ setup(
     packages=find_packages(exclude=["dagster_deltalake_polars_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-deltalake{pin}",
+        "dagster==1.6.6",
+        "dagster-deltalake==0.22.6",
         "polars[pyarrow]",
     ],
     zip_safe=False,
