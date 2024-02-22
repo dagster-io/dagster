@@ -169,8 +169,8 @@ class SlingResource(ConfigurableResource):
 
     """
 
-    source_connection: SlingSourceConnection
-    target_connection: SlingTargetConnection
+    source_connection: Optional[SlingSourceConnection] = None
+    target_connection: Optional[SlingTargetConnection] = None
     connections: List[SlingConnectionResource] = []
 
     @contextlib.contextmanager

@@ -13,27 +13,27 @@ from dagster_embedded_elt.sling import (
 )
 
 base_replication_config_path = (
-    Path(__file__).joinpath("..", "replication_configs/test_base_config/replication.yaml").resolve()
+    Path(__file__).joinpath("..", "replication_configs/base_config/replication.yaml").resolve()
 )
 
 
 @pytest.fixture
-def sqlite_connection(temp_db):
-    yield sqlite3.connect(temp_db)
+def sqlite_connection(path_to_temp_sqlite_db):
+    yield sqlite3.connect(path_to_temp_sqlite_db)
 
 
 @pytest.fixture
-def temp_db(tmp_path):
+def path_to_temp_sqlite_db(tmp_path):
     dbpath = os.path.join(tmp_path, "sqlite.db")
     yield dbpath
 
 
 @pytest.fixture
-def sling_sqlite_resource(temp_db):
+def sling_sqlite_resource(path_to_temp_sqlite_db):
     return SlingResource(
         source_connection=SlingSourceConnection(type="file"),
         target_connection=SlingTargetConnection(
-            type="sqlite", connection_string=f"sqlite://{temp_db}"
+            type="sqlite", connection_string=f"sqlite://{path_to_temp_sqlite_db}"
         ),
     )
 
@@ -44,14 +44,14 @@ def sling_file_connection():
 
 
 @pytest.fixture
-def sling_sqlite_connection(temp_db):
+def sling_sqlite_connection(path_to_temp_sqlite_db):
     return SlingConnectionResource(
-        name="SLING_SQLITE", type="sqlite", connection_string=f"sqlite://{temp_db}"
+        name="SLING_SQLITE", type="sqlite", connection_string=f"sqlite://{path_to_temp_sqlite_db}"
     )
 
 
 @pytest.fixture
-def test_csv():
+def path_to_test_csv():
     return os.path.abspath(file_relative_path(__file__, "test.csv"))
 
 
@@ -73,3 +73,14 @@ def replication_params(request):
 @pytest.fixture
 def replication_config():
     return base_replication_config()
+
+
+@pytest.fixture
+def csv_to_sqlite_replication_config(path_to_test_csv):
+    with open(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+    ) as f:
+        conf = yaml.safe_load(f)
+
+    conf["streams"][f"file://{path_to_test_csv}"] = {"object": "main.tbl"}
+    return conf
