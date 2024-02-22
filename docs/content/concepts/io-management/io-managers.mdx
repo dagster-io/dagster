@@ -52,8 +52,13 @@ If you find yourself writing the same code at the start and end of each asset or
 
 However, I/O managers are not required, nor are they the best option in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but doesn't need to load that table in memory in order to execute the query:
 
-```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
-ENOENT: no such file or directory, open '/Users/jamie/dev/dagster/examples/docs_snippets/docs_snippets/tutorial/saving/no_io_assets_examples.py'
+```python file=/concepts/io_management/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
+@asset(deps=[orders])
+def returns():
+    conn = get_snowflake_connection()
+    conn.execute(
+        "CREATE TABLE returns AS SELECT * from orders WHERE status = 'RETURNED'"
+    )
 ```
 
 Other reasons you may not want to use I/O managers:
