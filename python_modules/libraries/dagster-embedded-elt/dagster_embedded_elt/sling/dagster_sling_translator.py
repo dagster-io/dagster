@@ -37,7 +37,7 @@ class DagsterSlingTranslator:
                     def sanitize_stream_name(cls, stream_name: str) -> str:
                         return stream_name.replace(".", "")
         """
-        return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', ""))
+        return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', "").lower())
 
     @public
     def get_asset_key(self, stream_definition: Mapping[str, Any]) -> AssetKey:
@@ -85,6 +85,7 @@ class DagsterSlingTranslator:
                     return AssetKey(map[stream_name])
         """
         config = stream_definition.get("config", {}) or {}
+        object_key = config.get("object")
         meta = config.get("meta", {})
         asset_key = meta.get("dagster", {}).get("asset_key")
 
@@ -96,7 +97,8 @@ class DagsterSlingTranslator:
                 )
             return AssetKey(asset_key.split("."))
 
-        stream_name = stream_definition["name"]
+        # You can override the Sling Replication default object with an object key
+        stream_name = object_key or stream_definition["name"]
         sanitized_components = self.sanitize_stream_name(stream_name).split(".")
         return AssetKey([self.target_prefix] + sanitized_components)
 
