@@ -952,7 +952,7 @@ class GrapheneQuery(graphene.ObjectType):
             instance=graphene_info.context.instance,
             asset_graph=load_asset_graph,
         )
-
+g
         base_deployment_context = graphene_info.context.get_base_deployment_context()
 
         nodes = [

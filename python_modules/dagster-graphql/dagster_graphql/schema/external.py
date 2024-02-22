@@ -282,7 +282,7 @@ class GrapheneRepository(graphene.ObjectType):
                 base_workspace=base_deployment_context,
             )
             print("THE EXTERNAL ASSET GRAPH FOR PARENT")
-            print(self._parent_asset_graph_differ.parent_asset_graph)
+            print(self._asset_graph_differ.base_asset_graph)
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
