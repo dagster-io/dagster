@@ -1259,13 +1259,20 @@ class ExternalAssetNode(
                 )
             execution_type = metadata_execution_type
         else:
+            if is_source and is_observable:
+                default_execution_type = AssetExecutionType.OBSERVATION
+            elif is_source:
+                default_execution_type = AssetExecutionType.UNEXECUTABLE
+            else:
+                default_execution_type = AssetExecutionType.MATERIALIZATION
+
             execution_type = (
                 check.opt_inst_param(
                     execution_type,
                     "execution_type",
                     AssetExecutionType,
                 )
-                or AssetExecutionType.MATERIALIZATION
+                or default_execution_type
             )
 
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
