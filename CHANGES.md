@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.6.6 (core) / 0.22.6 (libraries)
+
+### New
+
+- Dagster officially supports Python 3.12.
+- `dagster-polars` has been added as an integration. Thanks @danielgafni!
+- [dagster-dbt] `@dbt_assets` now supports loading projects with semantic models.
+- [dagster-dbt] `@dbt_assets` now supports loading projects with model versions.
+- [dagster-dbt] `get_asset_key_for_model` now supports retrieving asset keys for seeds and snapshots. Thanks @aksestok!
+- [dagster-duckdb] The Dagster DuckDB integration supports DuckDB version 0.10.0.
+- [UPath I/O manager] If a non-partitioned asset is updated to have partitions, the file containing the non-partitioned asset data will be deleted when the partitioned asset is materialized, rather than raising an error.
+
+### Bugfixes
+
+- Fixed an issue where creating a backfill of assets with dynamic partitions and a backfill policy would sometimes fail with an exception.
+- Fixed an issue with the type annotations on the `@asset` decorator causing a false positive in Pyright strict mode. Thanks @tylershunt!
+- [ui] On the asset graph, nodes are slightly wider allowing more text to be displayed, and group names are no longer truncated.
+- [ui] Fixed an issue where the groups in the asset graph would not update after an asset was switched between groups.
+- [dagster-k8s] Fixed an issue where setting the `security_context` field on the `k8s_job_executor` didn't correctly set the security context on the launched step pods. Thanks @krgn!
+
+### Experimental
+
+- Observable source assets can now yield `ObserveResult`s with no `data_version`.
+- You can now include `FreshnessPolicy`s on observable source assets. These assets will be considered “Overdue” when the latest value for the “dagster/data_time” metadata value is older than what’s allowed by the freshness policy.
+- [ui] In Dagster Cloud, a new feature flag allows you to enable an overhauled asset overview page with a high-level stakeholder view of the asset’s health, properties, and column schema.
+
+### Documentation
+
+- Updated docs to reflect newly-added support for Python 3.12.
+
+### Dagster Cloud
+
+- [kubernetes] Fixed an issue where the Kubernetes agent would sometimes leave dangling kubernetes services if the agent was interrupted during the middle of being terminated.
+
 ## 1.6.5 (core) / 0.22.5 (libraries)
 
 ### New
