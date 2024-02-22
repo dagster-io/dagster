@@ -1,2 +1,0 @@
-export BUILDKITE_GIT_CLONE_FLAGS="--filter tree:0"
-export BUILDKITE_GIT_CLONE_MIRROR_FLAGS="--filter tree:0"
