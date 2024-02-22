@@ -134,5 +134,5 @@ def test_update_mode(
     ],
 )
 def test_non_unicode_stdout(text, encoding, expected, sling_sqlite_resource: SlingResource):
-    lines = sling_sqlite_resource.process_stdout(text, encoding)
+    lines = sling_sqlite_resource._process_stdout(text, encoding)  # noqa
     assert list(lines) == expected
