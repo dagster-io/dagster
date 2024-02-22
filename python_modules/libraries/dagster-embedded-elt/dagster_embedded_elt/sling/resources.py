@@ -2,7 +2,9 @@ import contextlib
 import json
 import os
 import re
+import sys
 import tempfile
+import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
@@ -25,6 +27,8 @@ from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTran
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
+
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
 class SlingMode(str, Enum):
@@ -172,6 +176,7 @@ class SlingResource(ConfigurableResource):
     source_connection: Optional[SlingSourceConnection] = None
     target_connection: Optional[SlingTargetConnection] = None
     connections: List[SlingConnectionResource] = []
+    _stdout: List[str] = []
 
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
@@ -207,21 +212,23 @@ class SlingResource(ConfigurableResource):
         ):
             yield
 
-    def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
+    def _clean_line(self, line: str) -> str:
+        """Removes ANSI escape sequences from a line of output."""
+        return ANSI_ESCAPE.sub("", line).replace("INF", "")
+
+    def _process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
-        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         for line in stdout:
             assert isinstance(line, bytes)
             fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
-            clean_line: str = ansi_escape.sub("", fmt_line).replace("INF", "")
-            yield clean_line
+            yield self._clean_line(fmt_line)
 
     def _exec_sling_cmd(
         self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
     ) -> Generator[str, None, None]:
         with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
             if proc.stdout:
-                for line in self.process_stdout(proc.stdout, encoding=encoding):
+                for line in self._process_stdout(proc.stdout, encoding=encoding):
                     yield line
 
             proc.wait()
@@ -242,10 +249,18 @@ class SlingResource(ConfigurableResource):
         """Runs a Sling sync from the given source table to the given destination table. Generates
         output lines from the Sling CLI.
         """
-        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
+        if (
+            self.source_connection
+            and self.source_connection.type == "file"
+            and not source_stream.startswith("file://")
+        ):
             source_stream = "file://" + source_stream
 
-        if self.target_connection.type == "file" and not target_object.startswith("file://"):
+        if (
+            self.target_connection
+            and self.target_connection.type == "file"
+            and not target_object.startswith("file://")
+        ):
             target_object = "file://" + target_object
 
         with self._setup_config():
@@ -300,17 +315,30 @@ class SlingResource(ConfigurableResource):
 
             logger.debug(f"Running Sling replication with command: {cmd}")
 
+            # Get start time from wall clock
+            start_time = time.time()
             results = sling._run(  # noqa
                 cmd=cmd,
                 temp_file=temp_file,
                 return_output=True,
                 env=env,
             )
+        for row in results.split("\n"):
+            clean_line = self._clean_line(row)
+            sys.stdout.write(clean_line + "\n")
+            self._stdout.append(clean_line)
 
-        logger.info(results)
+        end_time = time.time()
+
         for stream in stream_definition:
             output_name = dagster_sling_translator.get_asset_key(stream)
-            yield MaterializeResult(asset_key=output_name)
+            yield MaterializeResult(
+                asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+            )
+
+    def stream_raw_logs(self) -> Generator[str, None, None]:
+        """Returns the logs from the Sling CLI."""
+        yield from self._stdout
 
 
 def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
