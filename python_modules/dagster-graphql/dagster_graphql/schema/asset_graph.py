@@ -1025,7 +1025,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             events_for_partitions = get_asset_materializations(
                 graphene_info,
                 asset_key=self._external_asset_node.asset_key,
-                partitions=partitions,
                 storage_ids=latest_storage_ids,
             )
             latest_materialization_by_partition = {
