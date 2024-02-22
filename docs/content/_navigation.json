@@ -10,8 +10,8 @@
         "path": "/getting-started/what-why-dagster"
       },
       {
-        "title": "Hello, Dagster!",
-        "path": "/getting-started/hello-dagster"
+        "title": "Quickstart",
+        "path": "/getting-started/quickstart"
       },
       {
         "title": "Installation",
