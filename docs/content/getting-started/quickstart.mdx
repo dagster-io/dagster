@@ -134,13 +134,14 @@ import json
 
 import pandas as pd
 import requests
-from dagster_quickstart.configurations import HNStoriesConfig
 
 from dagster import (
     MaterializeResult,
     MetadataValue,
     asset,
 )
+
+from .configurations import HNStoriesConfig
 
 
 @asset
