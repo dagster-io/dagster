@@ -1234,6 +1234,17 @@ class DagsterInstance(DynamicPartitionsStore):
             else None
         )
 
+        if execution_plan_snapshot:
+            from ..op_concurrency_limits_counter import (
+                compute_run_op_concurrency_info_for_snapshot,
+            )
+
+            run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
+                execution_plan_snapshot
+            )
+        else:
+            run_op_concurrency = None
+
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -1253,6 +1264,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
+            run_op_concurrency=run_op_concurrency,
         )
 
     def _ensure_persisted_job_snapshot(

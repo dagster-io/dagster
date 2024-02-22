@@ -17,6 +17,7 @@ from dagster._core.errors import (
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
+from dagster._core.op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
 from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator,
     RunQueueConfig,
@@ -25,6 +26,7 @@ from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
+    RunRecord,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -36,6 +38,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 PAGE_SIZE = 100
+CONCURRENCY_BLOCKED_MESSAGE_INTERVAL = 300
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -196,16 +199,17 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         max_concurrent_runs = run_queue_config.max_concurrent_runs
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
-        in_progress_runs = self._get_in_progress_runs(instance)
+        in_progress_run_records = self._get_in_progress_run_records(instance)
+        in_progress_runs = [record.dagster_run for record in in_progress_run_records]
 
         max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
-        max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
+        max_runs_to_launch = max_concurrent_runs - len(in_progress_run_records)
         if max_concurrent_runs_enabled:
             # Possibly under 0 if runs were launched without queuing
             if max_runs_to_launch <= 0:
                 self._logger.info(
                     "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                        len(in_progress_runs), max_concurrent_runs
+                        len(in_progress_run_records), max_concurrent_runs
                     )
                 )
                 return []
@@ -259,9 +263,24 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
                 tag_concurrency_limits, in_progress_runs
             )
-
             batch += queued_runs
             batch = self._priority_sort(batch)
+
+            if instance.run_coordinator.should_block_op_concurrency_limited_runs:
+                try:
+                    global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
+                        instance,
+                        batch,
+                        in_progress_run_records,
+                        instance.run_coordinator.op_concurrency_slot_buffer,
+                    )
+                except:
+                    self._logger.exception("Failed to initialize op concurrency counter")
+                    # when we cannot initialize the global concurrency counter, we should fall back
+                    # to not blocking any runs based on op concurrency limits
+                    global_concurrency_limits_counter = None
+            else:
+                global_concurrency_limits_counter = None
 
             to_remove = []
             for run in batch:
@@ -269,6 +288,14 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     to_remove.append(run)
                 else:
                     tag_concurrency_limits_counter.update_counters_with_launched_item(run)
+
+                if (
+                    global_concurrency_limits_counter
+                    and global_concurrency_limits_counter.is_blocked(run)
+                ):
+                    to_remove.append(run)
+                elif global_concurrency_limits_counter:
+                    global_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 location_name = (
                     run.external_job_origin.location_name if run.external_job_origin else None
@@ -284,8 +311,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         return batch
 
-    def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
-        return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+    def _get_in_progress_run_records(self, instance: DagsterInstance) -> Sequence[RunRecord]:
+        return instance.get_run_records(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs: Iterable[DagsterRun]) -> List[DagsterRun]:
         def get_priority(run: DagsterRun) -> int:
