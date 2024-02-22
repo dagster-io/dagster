@@ -647,6 +647,7 @@ type AssetNode {
     limit: Int
   ): [ObservationEvent!]!
   backfillPolicy: BackfillPolicy
+  changedReasons: [ChangeReason!]!
   computeKind: String
   configField: ConfigTypeField
   dataVersion(partition: String): String
@@ -710,6 +711,12 @@ type BackfillPolicy {
 enum BackfillPolicyType {
   SINGLE_RUN
   MULTI_RUN
+}
+
+enum ChangeReason {
+  NEW
+  CODE_VERSION
+  INPUTS
 }
 
 type AssetDependency {
