@@ -32,7 +32,6 @@ const autoMaterializePolicy = buildAutoMaterializePolicy({
 describe('buildAssetTabs', () => {
   const definitionWithPartition: AssetViewDefinitionNodeFragment = buildAssetNode({
     id: 'dagster_test.toys.repo.auto_materialize_repo_2.["eager_downstream_3_partitioned"]',
-    hasAssetChecks: false,
     groupName: 'default',
     partitionDefinition: buildPartitionDefinition({
       description: 'Daily, starting 2023-02-01 UTC.',
@@ -139,7 +138,6 @@ describe('buildAssetTabs', () => {
   const definitionWithoutPartition: AssetViewDefinitionNodeFragment = {
     id: 'dagster_test.toys.repo.auto_materialize_repo_1.["lazy_downstream_1"]',
     groupName: 'default',
-    hasAssetChecks: false,
     partitionDefinition: null,
     partitionKeysByDimension: [],
     repository: {
