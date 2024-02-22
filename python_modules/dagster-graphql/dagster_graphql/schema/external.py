@@ -272,14 +272,14 @@ class GrapheneRepository(graphene.ObjectType):
         self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
 
         self._asset_graph_differ = None
-        parent_deployment_context = workspace_context.get_parent_deployment_context()
-        if parent_deployment_context is not None:
+        base_deployment_context = workspace_context.get_base_deployment_context()
+        if base_deployment_context is not None:
             # then we are in a branch deployment
             self._asset_graph_differ = AssetGraphDiffer.from_external_repositories(
                 code_location_name=self._repository_location.name,
                 repository_name=self._repository.name,
                 branch_workspace=workspace_context,
-                parent_workspace=parent_deployment_context,
+                base_workspace=base_deployment_context,
             )
         super().__init__(name=repository.name)
 

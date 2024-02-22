@@ -437,7 +437,7 @@ class ISolidDefinitionMixin:
                 context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
             )
 
-            parent_deployment_context = graphene_info.context.get_parent_deployment_context()
+            base_deployment_context = graphene_info.context.get_base_deployment_context()
 
             return [
                 GrapheneAssetNode(
@@ -445,14 +445,14 @@ class ISolidDefinitionMixin:
                     ext_repo,
                     node,
                     asset_checks_loader=asset_checks_loader,
-                    # parent_deployment_context will be None if we are not in a branch deployment
+                    # base_deployment_context will be None if we are not in a branch deployment
                     asset_graph_differ=AssetGraphDiffer.from_external_repositories(
                         code_location_name=location.name,
                         repository_name=ext_repo.name,
                         branch_workspace=graphene_info.context,
-                        parent_workspace=parent_deployment_context,
+                        base_workspace=base_deployment_context,
                     )
-                    if parent_deployment_context is not None
+                    if base_deployment_context is not None
                     else None,
                 )
                 for node in nodes
