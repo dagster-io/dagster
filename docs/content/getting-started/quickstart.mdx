@@ -8,7 +8,7 @@ description: Run dagster for the first time
 Welcome to Dagster! In this guide, you'll get up-and-running with the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project. This project demonstrates the power of Dagster, and provides a starting point to allow further exploration of Dagster's features.
 
 <Note>
-  Looking to scaffold a new project? Check out <Link href="/getting-started/create-new-project">Create a New Project</Link>!
+  Looking to scaffold a new project? Check out <Link href="/getting-started/create-new-project">Create a New Project</Link> guide!
 </Note>
 
 ---
@@ -52,6 +52,11 @@ height={1754}
 />
 
 ## The Code, Explained
+
+In the quickstart project we define two **Assets** by using the `@asset` decorator.
+
+* `hackernews_top_story_ids` pulls a list of top stories from the Hacker News API, and stores them as a JSON file.
+* `hackernews_top_stories` depends on the first asset, and pulls data for each of these stories storing them as a CSV
 
 ```python file=/getting-started/quickstart/assets.py
 import json
@@ -97,6 +102,8 @@ def hackernews_top_stories(config: HNStoriesConfig) -> MaterializeResult:
         }
     )
 ```
+
+From the `hackernews_top_stories` asset, we return a materialization result with some metadata. This is what is exposed in the Dagster UI, and allows us to see a markdown preview of the top stories!
 
 ---
 
