@@ -22,7 +22,7 @@
 
 ### Experimental
 
-- Observable source assets can now yield `ObserveResult`s with no `data_version`
+- Observable source assets can now yield `ObserveResult`s with no `data_version`.
 - You can now include `FreshnessPolicy`s on observable source assets. These assets will be considered “Overdue” when the latest value for the “dagster/data_time” metadata value is older than what’s allowed by the freshness policy.
 - [ui] In Dagster Cloud, a new feature flag allows you to enable an overhauled asset overview page with a high-level stakeholder view of the asset’s health, properties, and column schema.
 
