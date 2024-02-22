@@ -2,7 +2,8 @@ from typing import Any, Dict
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
