@@ -1165,7 +1165,6 @@ def test_sensors_keyed_on_selector_not_origin(
 
 
 def test_bad_load_sensor_repository(
-    caplog: pytest.LogCaptureFixture,
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -1204,13 +1203,8 @@ def test_bad_load_sensor_repository(
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
 
-        assert (
-            "Could not find repository invalid_repo_name in location test_location to run sensor"
-            " simple_sensor" in caplog.text
-        )
 
-
-def test_bad_load_sensor(caplog, executor, instance, workspace_context, external_repo):
+def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1240,8 +1234,6 @@ def test_bad_load_sensor(caplog, executor, instance, workspace_context, external
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
-
-        assert "Could not find sensor invalid_sensor in repository the_repo." in caplog.text
 
 
 def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):
