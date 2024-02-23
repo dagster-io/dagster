@@ -95,8 +95,6 @@ export const AssetChecks = ({
     return checks.filter((check) => check.name.toLowerCase().includes(searchValue.toLowerCase()));
   }, [checks, searchValue]);
 
-  React.useEffect(() => {}, []);
-
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -273,7 +271,7 @@ export const AssetChecks = ({
             >
               <Box padding={{top: 12}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
-                  <Box flex={{direction: 'column', gap: 5}}>
+                  <Box flex={{direction: 'column', gap: 6}}>
                     <Subtitle2>Evaluation Result</Subtitle2>
                     <div>
                       <AssetCheckStatusTag
@@ -282,7 +280,7 @@ export const AssetChecks = ({
                     </div>
                   </Box>
                   {lastExecution ? (
-                    <Box flex={{direction: 'column', gap: 5}}>
+                    <Box flex={{direction: 'column', gap: 6}}>
                       <Subtitle2>Timestamp</Subtitle2>
                       <Link
                         to={linkToRunEvent(
@@ -295,7 +293,7 @@ export const AssetChecks = ({
                     </Box>
                   ) : null}
                   {targetMaterialization ? (
-                    <Box flex={{direction: 'column', gap: 5}}>
+                    <Box flex={{direction: 'column', gap: 6}}>
                       <Subtitle2>Target materialization</Subtitle2>
                       <Link to={`/runs/${targetMaterialization.runId}`}>
                         <Timestamp timestamp={{unix: targetMaterialization.timestamp}} />
