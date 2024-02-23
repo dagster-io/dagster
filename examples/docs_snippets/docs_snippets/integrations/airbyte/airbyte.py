@@ -133,7 +133,7 @@ def scope_airbyte_cloud_manual_config():
         destination_tables=["releases", "tags", "teams"],
     )
 
-    defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instance})
+    defs = Definitions(assets=airbyte_assets, resources={"airbyte": airbyte_instance})
     # end_airbyte_cloud_manual_config
 
 
