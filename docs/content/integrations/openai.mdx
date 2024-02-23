@@ -1,3 +1,144 @@
 ---
 title: "Dagster OpenAI"
+description: The dagster-openai library provides the ability to build OpenAI pipelines with Dagster, through helpful resources.
+---
+
+# Dagster OpenAI
+
+This library provides the ability to build OpenAI pipelines with Dagster, through helpful resources.
+
+This library includes a resource, <PyObject module="dagster_openai" object="OpenAIResource" />, using the <a href="https://github.com/openai/openai-python">OpenAI Python API Library</a>, which provides a simple way to interact with OpenAI API.
+
+When used with Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets), the resource automatically logs OpenAI usage metadata in the asset metadata. More details can be found in [relevant APIs](#dagster-openai-relevant-apis).
+
+
+---
+
+## <a name="dagster-openai-relevant-apis"></a>Relevant APIs
+
+| Name                                                                        | Description                                                                           |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| <PyObject module="dagster_openai" object="with_usage_metadata" />           | The function wrapper used on OpenAI API Endpoint methods to log OpenAI usage metadata |
+| <PyObject module="dagster_openai" object="OpenAIResource" />                | The OpenAI Resource used for handing the client                                       |
+
+---
+
+## Getting started
+
+To get started with `dagster-openai` and OpenAI, familiarize yourself with the <a href="https://github.com/openai/openai-python">OpenAI Python API Library</a> by reading their docs which describe how to interact with the OpenAI API using Python.
+
+More information is also available the <a href="https://platform.openai.com/docs/introduction">OpenAI API documentation website</a>.
+
+---
+
+## Prerequisites
+
+To get started, you will need to install the `dagster` and `dagster-openai` Python packages:
+
+```bash
+pip install dagster dagster-openai
+```
+
+Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys) to use the resource, which can be generated in your OpenAI account.
+
+---
+
+## Connecting to OpenAI
+
+The first step in using OpenAI with Dagster is to tell Dagster how to connect to an OpenAI Client using an OpenAI [resource](/concepts/resources). This resource contains the credentials needed to interact with OpenAI API.
+
+We will supply our credentials as environment variables. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
+
+```bash
+export OPENAI_API_KEY=...
+```
+
+Then, we can instruct Dagster to authorize the OpenAI resource using the environment variables:
+
+```python dedent=4
+from dagster_openai import OpenAIResource
+from dagster import EnvVar
+
+# Pull API key from environment variables
+openai = OpenAIResource(
+    api_key=EnvVar("OPENAI_API_KEY"),
+)
+```
+
+---
+
+## Using OpenAI resource with assets
+
+The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the `Definitions` objects.
+
+```python dedent=4
+from dagster import (
+    AssetExecutionContext,
+    Definitions,
+    EnvVar,
+    asset,
+    define_asset_job,
+)
+from dagster_openai import OpenAIResource
+
+
+@asset(compute_kind="OpenAI")
+def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
+    with openai.get_client(context) as client:
+        client.chat.completions.create(
+            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test."}]
+        )
+
+
+openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
+
+defs = Definitions(
+    assets=[openai_asset],
+    jobs=[openai_asset_job],
+    resources={
+        "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
+    },
+)
+```
+
+After materializing your asset, your OpenAI usage metadata will be available in the Events and Plots tab of your asset.
+TODO: add iamges.
+
+---
+
+## Using OpenAI resource with ops
+
+The OpenAI resource can also be used in ops in order to interact with the OpenAI API.
+
+Note that, currently, the OpenAI resource can be used in ops to interact with OpenAI API, but cannot log OpenAI Usage metadata.
+
+```python dedent=4
+from dagster import (
+    Definitions,
+    EnvVar,
+    GraphDefinition,
+    OpExecutionContext,
+    op,
+)
+from dagster_openai import OpenAIResource
+
+
+@op
+def openai_op(context: OpExecutionContext, openai: OpenAIResource):
+    with openai.get_client(context) as client:
+        client.chat.completions.create(
+            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+        )
+
+
+openai_op_job = GraphDefinition(name="openai_op_job", node_defs=[openai_op]).to_job()
+
+defs = Definitions(
+    jobs=[openai_op_job],
+    resources={
+        "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
+    },
+)
+```
+
 ---
