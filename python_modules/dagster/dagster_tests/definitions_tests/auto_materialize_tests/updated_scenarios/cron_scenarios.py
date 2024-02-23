@@ -72,6 +72,38 @@ cron_scenarios = [
         .assert_requested_runs(),
     ),
     AssetDaemonScenario(
+        id="basic_hourly_cron_unpartitioned_rule_added_later",
+        initial_state=one_asset.with_asset_properties(
+            # this policy will never materialize the asset
+            auto_materialize_policy=AutoMaterializePolicy(
+                rules={AutoMaterializeRule.skip_on_parent_missing()}
+            )
+        ),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs()
+        # rule added after the first tick, should capture that this asset was not materialized
+        # since the previous tick
+        .with_asset_properties(auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule))
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A"]))
+        .with_not_started_runs()
+        # back to the original policy which never materializes
+        .with_current_time_advanced(seconds=30)
+        .with_asset_properties(
+            auto_materialize_policy=AutoMaterializePolicy(
+                rules={AutoMaterializeRule.skip_on_parent_missing()}
+            )
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now we add the policy back in, but it's already been materialized since the previous tick
+        # so it shouldn't execute again
+        .with_current_time_advanced(seconds=30)
+        .with_asset_properties(auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule))
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+    AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_multi_asset",
         initial_state=three_assets_not_subsettable.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
