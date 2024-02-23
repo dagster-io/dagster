@@ -1,4 +1,4 @@
-source: SLING_FILE 
+source: SLING_FILE
 target: SLING_SQLITE
 
 defaults:
