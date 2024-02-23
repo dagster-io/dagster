@@ -134,7 +134,7 @@ setup(
             "pytest-xdist==3.3.1",
             "pytest>=7.0.1",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
-            "syrupy<4",  # 3.7 compatible,
+            "syrupy>=4.0.0",
             "tox==3.25.0",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
