@@ -1,15 +1,21 @@
 from dagster import Definitions, file_relative_path
-from dagster_embedded_elt.sling import DagsterSlingTranslator, sling_assets
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from dagster_embedded_elt.sling import (
+    DagsterSlingTranslator,
+    sling_assets,
+)
+from dagster_embedded_elt.sling.resources import (
+    SlingConnectionResource,
+    SlingResource,
+)
 
-replication_config = file_relative_path(__file__, "sling_replication.yaml")
+replication_config = file_relative_path(__file__, "../sling_replication.yaml")
 
 sling_resource = SlingResource(
     connections=[
         SlingConnectionResource(
             name="MY_POSTGRES",
             type="postgres",
-            connection_string="postgres://postgres:postgres@localhost:5432/finance?sslmode=disable",
+            connection_string="postgres://postgres:postgres@localhost:54321/finance?sslmode=disable",
         ),
         SlingConnectionResource(
             name="MY_DUCKDB",
@@ -31,6 +37,10 @@ def my_assets(context, sling: SlingResource):
 
 
 defs = Definitions(
-    assets=[my_assets],
-    resources={"sling": sling_resource},
+    assets=[
+        my_assets,
+    ],
+    resources={
+        "sling": sling_resource,
+    },
 )
