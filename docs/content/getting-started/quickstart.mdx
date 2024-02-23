@@ -179,7 +179,7 @@ def hackernews_top_stories(config: HNStoriesConfig) -> MaterializeResult:
     )
 ```
 
-From the `hackernews_top_stories` asset, we return a materialization result with some metadata. This is what is exposed in the Dagster UI, and allows us to see a markdown preview of the top stories!
+The `hackernews_top_stories` asset returns a `MaterializeResult` with metadata, which is displayed in the Dagster UI, providing a markdown preview of the top stories.
 
 ---
 
