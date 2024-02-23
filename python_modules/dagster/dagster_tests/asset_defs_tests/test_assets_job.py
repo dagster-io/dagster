@@ -2887,3 +2887,21 @@ def test_subset_cycle_dependencies():
     result = job.execute_in_process()
     assert result.success
     assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("b")}
+
+
+def test_exclude_assets_without_keys():
+    @asset
+    def foo():
+        pass
+
+    # This is a valid AssetsDefinition but has no keys. It should not be executed.
+    @multi_asset()
+    def ghost():
+        assert False
+
+    foo_job = Definitions(
+        assets=[foo, ghost],
+        jobs=[define_asset_job("foo_job", [foo])],
+    ).get_job_def("foo_job")
+
+    assert foo_job.execute_in_process().success
