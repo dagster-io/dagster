@@ -2,7 +2,7 @@ import logging
 import sqlite3
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, file_relative_path
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import (
     SlingReplicationParam,
@@ -27,6 +27,26 @@ def test_replication_param_defs(replication_params: SlingReplicationParam):
         for key in [
             "target/public/accounts",
             "target/public/users",
+            "target/departments",
+            "target/public/transactions",
+            "target/public/all_users",
+        ]
+    }
+
+
+def test_disabled_asset():
+    @sling_assets(
+        replication_config=file_relative_path(
+            __file__, "replication_configs/base_config_disabled/replication.yaml"
+        )
+    )
+    def my_sling_assets():
+        ...
+
+    assert my_sling_assets.keys == {
+        AssetKey.from_user_string(key)
+        for key in [
+            "target/public/accounts",
             "target/departments",
             "target/public/transactions",
             "target/public/all_users",

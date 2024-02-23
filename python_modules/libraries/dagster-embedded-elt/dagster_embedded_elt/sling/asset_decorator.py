@@ -17,10 +17,10 @@ def get_streams_from_replication(
     replication_config: Mapping[str, Any],
 ) -> Iterable[Mapping[str, Any]]:
     """Returns a list of streams and their configs from a Sling replication config."""
-    return [
-        {"name": stream, "config": config}
-        for stream, config in replication_config.get("streams", {}).items()
-    ]
+    for stream, config in replication_config.get("streams", {}).items():
+        if config and config.get("disabled", False):
+            continue
+        yield {"name": stream, "config": config}
 
 
 def sling_assets(
