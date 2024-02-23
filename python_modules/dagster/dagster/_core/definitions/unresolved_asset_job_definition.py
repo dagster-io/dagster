@@ -181,7 +181,7 @@ class UnresolvedAssetJobDefinition(
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
-        assets = asset_graph.assets
+        assets = asset_graph.assets_defs
         source_assets = asset_graph.source_assets
         selected_asset_keys = self.selection.resolve(asset_graph)
         if asset_graph.includes_materializable_and_source_assets(selected_asset_keys):
@@ -229,7 +229,7 @@ class UnresolvedAssetJobDefinition(
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
-            asset_checks=asset_graph.asset_checks,
+            asset_checks=asset_graph.asset_checks_defs,
             config=self.config,
             source_assets=source_assets,
             description=self.description,

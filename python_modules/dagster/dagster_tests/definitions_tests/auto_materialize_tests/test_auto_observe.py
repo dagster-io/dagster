@@ -64,7 +64,7 @@ def test_single_observable_source_asset_no_prior_observe_requests(
         current_timestamp=1000,
         last_observe_request_timestamp_by_asset_key={},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -81,7 +81,7 @@ def test_single_observable_source_asset_prior_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 + 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -98,7 +98,7 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 - 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 0
 

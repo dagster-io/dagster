@@ -543,7 +543,7 @@ class Definitions:
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
-        for assets_def in self.get_asset_graph().assets:
+        for assets_def in self.get_asset_graph().assets_defs:
             if asset_key in assets_def.keys:
                 return assets_def
 

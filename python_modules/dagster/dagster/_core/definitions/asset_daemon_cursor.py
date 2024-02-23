@@ -231,7 +231,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
 
     previous_evaluation_state = []
     cursor_keys = (
-        asset_graph.auto_materialize_policies_by_key.keys()
+        asset_graph.materializable_asset_keys
         if asset_graph
         else latest_evaluation_by_asset_key.keys()
     )

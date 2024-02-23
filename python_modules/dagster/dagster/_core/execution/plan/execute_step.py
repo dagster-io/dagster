@@ -881,6 +881,18 @@ def _store_output(
 def _log_materialization_or_observation_events_for_asset(
     step_context, output_context, output, output_def, manager_metadata
 ):
+    # This is a temporary workaround to prevent duplicate observation events from external
+    # observable assets that were auto-converted from source assets. These assets yield
+    # observation events through the context in their body, and will continue to do so until we
+    # can convert them to using ObserveResult, which requires a solution to partition-scoped
+    # metadata and data version on output. We identify these auto-converted assets by looking
+    # for OBSERVATION-type asset that have this special metadata key (added in
+    # `wrap_source_asset_observe_fn_in_op_compute_fn`), which should only occur for these
+    # auto-converted source assets. This can be removed when source asset observation functions
+    # are converted to use ObserveResult.
+    if SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata:
+        return
+
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
@@ -912,35 +924,20 @@ def _log_materialization_or_observation_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        # This is a temporary workaround to prevent duplicate observation events from external
-        # observable assets that were auto-converted from source assets. These assets yield
-        # observation events through the context in their body, and will continue to do so until we
-        # can convert them to using ObserveResult, which requires a solution to partition-scoped
-        # metadata and data version on output. We identify these auto-converted assets by looking
-        # for OBSERVATION-type asset that have this special metadata key (added in
-        # `wrap_source_asset_observe_fn_in_op_compute_fn`), which should only occur for these
-        # auto-converted source assets. This can be removed when source asset observation functions
-        # are converted to use ObserveResult.
-        if (
-            execution_type == AssetExecutionType.OBSERVATION
-            and SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata
-        ):
-            pass
-        else:
-            yield from (
-                (
-                    _dagster_event_for_asset_event(step_context, event)
-                    for event in _get_output_asset_events(
-                        asset_key,
-                        partitions,
-                        output,
-                        output_def,
-                        manager_metadata,
-                        step_context,
-                        execution_type,
-                    )
+        yield from (
+            (
+                _dagster_event_for_asset_event(step_context, event)
+                for event in _get_output_asset_events(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                    execution_type,
                 )
             )
+        )
 
 
 def _dagster_event_for_asset_event(

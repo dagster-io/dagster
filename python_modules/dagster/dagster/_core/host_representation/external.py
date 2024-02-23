@@ -211,14 +211,15 @@ class ExternalRepository:
 
             default_sensor_asset_keys = set()
 
-            for asset_key, policy in asset_graph.auto_materialize_policies_by_key.items():
+            for asset_key in asset_graph.materializable_asset_keys:
+                policy = asset_graph.get_auto_materialize_policy(asset_key)
                 if not policy:
                     continue
 
                 if asset_key not in covered_asset_keys:
                     default_sensor_asset_keys.add(asset_key)
 
-            for asset_key in asset_graph.observable_keys:
+            for asset_key in asset_graph.observable_asset_keys:
                 if asset_graph.get_auto_observe_interval_minutes(asset_key) is None:
                     continue
 

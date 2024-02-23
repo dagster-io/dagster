@@ -686,9 +686,10 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
             else asset_graph.materializable_asset_keys
         )
         return {
-            asset_key
-            for asset_key, group in asset_graph.group_names_by_key.items()
-            if group in self.selected_groups and asset_key in base_set
+            key
+            for group in self.selected_groups
+            for key in asset_graph.asset_keys_for_group(group)
+            if key in base_set
         }
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
