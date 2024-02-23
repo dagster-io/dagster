@@ -186,6 +186,7 @@ describe('buildAssetTabs', () => {
       __typename: 'AssetKey',
     },
     metadataEntries: [],
+    owners: [],
     type: {
       __typename: 'RegularDagsterType',
       key: 'Any',
