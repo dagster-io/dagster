@@ -1,5 +1,7 @@
 import asyncio
+import sys
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
@@ -11,6 +13,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import PythonFileTarget
 from typing_extensions import Protocol, TypeAlias, TypedDict
 
+from dagster_graphql import __file__ as dagster_graphql_init_py
 from dagster_graphql.schema import create_schema
 
 
@@ -222,3 +225,11 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
     selector = infer_repository_selector(graphql_context)
     selector = {**selector, **{"resourceName": name}}
     return selector
+
+
+def ensure_dagster_graphql_tests_import() -> None:
+    dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_package_root / "dagster_graphql_tests"
+    ).exists(), "Could not find dagster_graphql_tests where expected"
+    sys.path.append(dagster_package_root.as_posix())

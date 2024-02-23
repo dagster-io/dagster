@@ -15,7 +15,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     GqlResult,
@@ -23,6 +23,8 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     main_repo_location_name,
 )
+
+ensure_dagster_tests_import()
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
     root_assets_different_partitions_same_downstream,
 )
