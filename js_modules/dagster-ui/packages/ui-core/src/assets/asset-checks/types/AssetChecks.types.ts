@@ -13,7 +13,6 @@ export type AssetChecksQuery = {
         __typename: 'AssetNode';
         id: string;
         jobNames: Array<string>;
-        description: string | null;
         assetChecksOrError:
           | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
           | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
@@ -183,11 +182,6 @@ export type AssetChecksQuery = {
               }>;
             };
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
-        dependencies: Array<{
-          __typename: 'AssetDependency';
-          inputName: string;
-          asset: {__typename: 'AssetNode'; assetKey: {__typename: 'AssetKey'; path: Array<string>}};
-        }>;
         repository: {
           __typename: 'Repository';
           id: string;
