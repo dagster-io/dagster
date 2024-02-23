@@ -98,6 +98,13 @@ export const AssetNodeOverview = ({
     return <AssetNodeOverviewLoading />;
   }
 
+  let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
+  let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
+  if (!tableSchema) {
+    tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
+    tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
+  }
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
       <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
@@ -132,25 +139,6 @@ export const AssetNodeOverview = ({
         learnMoreLink="https://docs.dagster.io/_apidocs/assets#software-defined-assets"
       />
     );
-
-  const renderColumnsSection = () => {
-    let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
-    let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
-    if (!tableSchema) {
-      tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
-      tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
-    }
-
-    return tableSchema ? (
-      <TableSchema schema={tableSchema.schema} schemaLoadTimestamp={tableSchemaLoadTimestamp} />
-    ) : (
-      <SectionEmptyState
-        title="No column schema found"
-        description="Dagster can render an assets column schema once it has been materialized."
-        learnMoreLink=""
-      />
-    );
-  };
 
   const renderLineageSection = () => (
     <>
@@ -340,9 +328,14 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Description" icon="sticky_note">
             {renderDescriptionSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Columns" icon="view_column">
-            {renderColumnsSection()}
-          </LargeCollapsibleSection>
+          {tableSchema && (
+            <LargeCollapsibleSection header="Columns" icon="view_column">
+              <TableSchema
+                schema={tableSchema.schema}
+                schemaLoadTimestamp={tableSchemaLoadTimestamp}
+              />
+            </LargeCollapsibleSection>
+          )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
             <AssetEventMetadataEntriesTable
               showHeader
