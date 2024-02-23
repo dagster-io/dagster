@@ -126,8 +126,8 @@ height={1754}
 
 The quickstart project defines two **Assets** using the `@asset` decorator:
 
-- `hackernews_top_story_ids` pulls a list of top stories from the Hacker News API, and stores them as a JSON file.
-- `hackernews_top_stories` depends on the first asset, and pulls data for each of these stories storing them as a CSV
+- `hackernews_top_story_ids` retrieves the top stories from the Hacker News API and saves them as a JSON file.
+- `hackernews_top_stories` builds upon the first asset, retrieving data for each story and saving it as a CSV file.
 
 ```python file=/getting-started/quickstart/assets.py
 import json
