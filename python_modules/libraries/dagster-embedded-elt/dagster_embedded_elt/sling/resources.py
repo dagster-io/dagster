@@ -18,8 +18,9 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._utils.env import environ
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
 from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
@@ -29,6 +30,7 @@ from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, 
 logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+DEPRECATION_WARNING_TEXT = "{name} has been deprecated, use `SlingConnectionResource` for both source and target connections."
 
 
 class SlingMode(str, Enum):
@@ -44,6 +46,10 @@ class SlingMode(str, Enum):
     BACKFILL = "backfill"
 
 
+@deprecated(
+    breaking_version="0.23.0",
+    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingSourceConnection"),
+)
 class SlingSourceConnection(PermissiveConfig):
     """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
@@ -77,6 +83,10 @@ class SlingSourceConnection(PermissiveConfig):
     )
 
 
+@deprecated(
+    breaking_version="0.23.0",
+    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingTargetConnection"),
+)
 class SlingTargetConnection(PermissiveConfig):
     """A Sling Target Connection defines the target connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
@@ -181,6 +191,22 @@ class SlingResource(ConfigurableResource):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
+        if self.source_connection:
+            deprecation_warning(
+                "source_connection",
+                "0.23",
+                "source_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
+                stacklevel=4,
+            )
+
+        if self.target_connection:
+            deprecation_warning(
+                "target_connection",
+                "0.23",
+                "target_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
+                stacklevel=4,
+            )
+
         sling_source = None
         sling_target = None
         if self.source_connection:
@@ -235,6 +261,10 @@ class SlingResource(ConfigurableResource):
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
 
+    @deprecated(
+        breaking_version="0.23.0",
+        additional_warn_text="sync has been deprecated, use `replicate` instead.",
+    )
     def sync(
         self,
         source_stream: str,
