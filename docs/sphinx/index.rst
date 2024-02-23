@@ -59,6 +59,7 @@
    sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
    sections/api/apidocs/libraries/dagster-mysql
+   sections/api/apidocs/libraries/dagster-openai
    sections/api/apidocs/libraries/dagster-pagerduty
    sections/api/apidocs/libraries/dagster-pandas
    sections/api/apidocs/libraries/dagster-pandera
