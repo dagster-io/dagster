@@ -88,11 +88,15 @@ export const AssetNodeOverview = ({
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
-  const {materialization, observation} = useLatestPartitionEvents(
+  const {materialization, observation, loading} = useLatestPartitionEvents(
     assetNode,
     assetNodeLoadTimestamp,
     liveData,
   );
+
+  if (loading) {
+    return <AssetNodeOverviewLoading />;
+  }
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
