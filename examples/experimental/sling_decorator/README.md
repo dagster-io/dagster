@@ -22,7 +22,7 @@ Next, validate that everything works locally:
 
 ```bash
 pip install --upgrade sling
-make sync   # runs sling 
+make sync   # runs sling
 make verify
 ```
 
@@ -31,7 +31,7 @@ You should see output similar to this
 ```
                 POSTGRES
 --------------------------------
- all_user_id |      name      
+ all_user_id |      name
 -------------+----------------
            1 | Alice Johnson
            2 | Bob Williams
@@ -66,6 +66,7 @@ pip install -e
 ```
 
 Now run Dagster to load the sample Sling pipeline:
+
 ```shell
-dagster dev 
+dagster dev
 ```
