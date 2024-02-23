@@ -36,7 +36,7 @@ export function useLatestPartitionEvents(
   const observation =
     data?.assetOrError.__typename === 'Asset' ? data.assetOrError.assetObservations[0] : undefined;
 
-  return {materialization, observation};
+  return {materialization, observation, loading: !data};
 }
 
 export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`

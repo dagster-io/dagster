@@ -98,7 +98,6 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       title: 'Lineage',
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
-      hidden: flagUseNewOverviewPage,
     },
     automation: {
       id: 'automation',

@@ -27,6 +27,7 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
+import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
@@ -88,11 +89,22 @@ export const AssetNodeOverview = ({
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
-  const {materialization, observation} = useLatestPartitionEvents(
+  const {materialization, observation, loading} = useLatestPartitionEvents(
     assetNode,
     assetNodeLoadTimestamp,
     liveData,
   );
+
+  if (loading) {
+    return <AssetNodeOverviewLoading />;
+  }
+
+  let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
+  let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
+  if (!tableSchema) {
+    tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
+    tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
+  }
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'row'}}>
@@ -128,25 +140,6 @@ export const AssetNodeOverview = ({
         learnMoreLink="https://docs.dagster.io/_apidocs/assets#software-defined-assets"
       />
     );
-
-  const renderColumnsSection = () => {
-    let tableSchema = materialization?.metadataEntries.find(isCanonicalTableSchemaEntry);
-    let tableSchemaLoadTimestamp = materialization ? Number(materialization.timestamp) : undefined;
-    if (!tableSchema) {
-      tableSchema = assetNode?.metadataEntries.find(isCanonicalTableSchemaEntry);
-      tableSchemaLoadTimestamp = assetNodeLoadTimestamp;
-    }
-
-    return tableSchema ? (
-      <TableSchema schema={tableSchema.schema} schemaLoadTimestamp={tableSchemaLoadTimestamp} />
-    ) : (
-      <SectionEmptyState
-        title="No column schema found"
-        description="Dagster can render an assets column schema once it has been materialized."
-        learnMoreLink=""
-      />
-    );
-  };
 
   const renderLineageSection = () => (
     <>
@@ -241,6 +234,18 @@ export const AssetNodeOverview = ({
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
         )}
       </AttributeAndValue>
+
+      <AttributeAndValue label="Auto-materialize policy">
+        {assetNode.autoMaterializePolicy && (
+          <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
+        )}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Freshness policy">
+        {assetNode.freshnessPolicy && (
+          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+        )}
+      </AttributeAndValue>
     </Box>
   );
 
@@ -314,12 +319,6 @@ export const AssetNodeOverview = ({
         )}
       </AttributeAndValue>
 
-      <AttributeAndValue label="Freshness policy">
-        {assetNode.autoMaterializePolicy && (
-          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
-        )}
-      </AttributeAndValue>
-
       <AttributeAndValue label="Backfill policy">
         {assetNode.backfillPolicy?.description}
       </AttributeAndValue>
@@ -336,9 +335,14 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Description" icon="sticky_note">
             {renderDescriptionSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Columns" icon="view_column">
-            {renderColumnsSection()}
-          </LargeCollapsibleSection>
+          {tableSchema && (
+            <LargeCollapsibleSection header="Columns" icon="view_column">
+              <TableSchema
+                schema={tableSchema.schema}
+                schemaLoadTimestamp={tableSchemaLoadTimestamp}
+              />
+            </LargeCollapsibleSection>
+          )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
             <AssetEventMetadataEntriesTable
               showHeader
