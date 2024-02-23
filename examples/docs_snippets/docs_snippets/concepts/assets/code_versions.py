@@ -1,6 +1,6 @@
 import json
 
-from dagster import AssetOut, AssetSpec, Output, asset, multi_asset
+from dagster import AssetSpec, MaterializeResult, Output, asset, multi_asset
 
 
 # start_single_asset
@@ -20,8 +20,10 @@ def asset_with_version():
 def multi_asset_with_versions():
     with open("data/a.json", "w") as f:
         json.dump(100, f)
+        yield MaterializeResult("a")
     with open("data/b.json", "w") as f:
         json.dump(200, f)
+        yield MaterializeResult("b")
 
 
 # end_multi_asset
