@@ -501,18 +501,14 @@ class AssetGraph:
         )
 
     def is_source(self, asset_key: AssetKey) -> bool:
-        # Preserve behavior of returning True for missing asset keys here until callsites can be
-        # adjusted.
-        return (
-            asset_key in self.source_asset_keys or asset_key not in self.materializable_asset_keys
-        )
+        return asset_key in self.source_asset_keys
 
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
         """Determines if an asset has any parents which are not source assets."""
         if self.is_source(asset_key):
             return False
         return any(
-            not self.is_source(parent_key)
+            self.has_asset(parent_key) and self.is_materializable(parent_key)
             for parent_key in self.get_parents(asset_key) - {asset_key}
         )
 
@@ -525,7 +521,9 @@ class AssetGraph:
         return {
             key
             for key in self.upstream_key_iterator(asset_key)
-            if not self.is_source(key) and not self.has_non_source_parents(key)
+            if self.has_asset(key)
+            and self.is_materializable(key)
+            and not self.has_non_source_parents(key)
         }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
