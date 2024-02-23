@@ -6,7 +6,7 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
@@ -37,7 +37,7 @@ type Props = {
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
-  const trace = useStartTrace('OverviewTimelineRoot');
+  const trace = usePageLoadTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 

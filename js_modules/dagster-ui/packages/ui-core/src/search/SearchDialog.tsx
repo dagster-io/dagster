@@ -12,6 +12,7 @@ import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';
+import {Trace, createTrace} from '../performance';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -83,11 +84,29 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
+  const isFirstSearch = React.useRef(true);
+  const currentTrace = React.useRef<null | Trace>(null);
+
   const openSearch = React.useCallback(() => {
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
   }, [initialize, trackEvent]);
+
+  React.useEffect(() => {
+    if (primaryResults && secondaryResults) {
+      currentTrace.current?.endTrace();
+    }
+  }, [primaryResults, secondaryResults]);
+
+  React.useEffect(() => {
+    if (!shown && currentTrace.current) {
+      // When the dialog closes:
+      // Either the trace finished and we logged it, or it didn't and so we throw it away
+      // Either way we don't need the current trace object anymore
+      currentTrace.current = null;
+    }
+  }, [shown]);
 
   const searchAndHandlePrimary = React.useCallback(
     async (queryString: string) => {
@@ -106,10 +125,18 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   );
 
   const debouncedSearch = React.useMemo(() => {
-    return debounce(async (queryString: string) => {
+    const debouncedSearch = debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
       searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
+    return (queryString: string) => {
+      if (!currentTrace.current && isFirstSearch.current) {
+        const trace = createTrace('Search');
+        currentTrace.current = trace;
+        trace.startTrace();
+      }
+      return debouncedSearch(queryString);
+    };
   }, [searchAndHandlePrimary, searchAndHandleSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
