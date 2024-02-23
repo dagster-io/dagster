@@ -112,10 +112,12 @@ const AssetSidebarAssetLabel = ({
 
   return (
     <ContextMenuWrapper stopPropagation menu={menu} wrapperOuterStyles={{width: '100%'}}>
-      <FocusableLabelContainer isSelected={isSelected} isLastSelected={isLastSelected}>
-        <StatusDot node={node} />
-        <MiddleTruncate text={getDisplayName(node)} />
-      </FocusableLabelContainer>
+      <FocusableLabelContainer
+        isSelected={isSelected}
+        isLastSelected={isLastSelected}
+        icon={<StatusDot node={node} />}
+        text={getDisplayName(node)}
+      />
       <ExpandMore onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
       </ExpandMore>
@@ -137,10 +139,12 @@ const AssetSidebarGroupLabel = ({
 
   return (
     <ContextMenuWrapper stopPropagation menu={menu} wrapperOuterStyles={{width: '100%'}}>
-      <FocusableLabelContainer isSelected={isSelected} isLastSelected={isLastSelected}>
-        <Icon name="asset_group" />
-        <MiddleTruncate text={node.groupNode.groupName} />
-      </FocusableLabelContainer>
+      <FocusableLabelContainer
+        isSelected={isSelected}
+        isLastSelected={isLastSelected}
+        icon={<Icon name="asset_group" />}
+        text={node.groupNode.groupName}
+      />
       <ExpandMore onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
       </ExpandMore>
@@ -156,10 +160,12 @@ const AssetSidebarLocationLabel = ({
 }: Omit<AssetSidebarNodeProps, 'node'> & {node: FolderNodeCodeLocationType}) => {
   return (
     <Box style={{width: '100%'}} onContextMenu={(e) => e.preventDefault()}>
-      <FocusableLabelContainer isSelected={isSelected} isLastSelected={isLastSelected}>
-        <Icon name="folder_open" />
-        <MiddleTruncate text={node.locationName} />
-      </FocusableLabelContainer>
+      <FocusableLabelContainer
+        isSelected={isSelected}
+        isLastSelected={isLastSelected}
+        icon={<Icon name="folder_open" />}
+        text={node.locationName}
+      />
     </Box>
   );
 };
@@ -167,11 +173,13 @@ const AssetSidebarLocationLabel = ({
 const FocusableLabelContainer = ({
   isSelected,
   isLastSelected,
-  children,
+  icon,
+  text,
 }: {
   isSelected: boolean;
   isLastSelected: boolean;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  text: string;
 }) => {
   const ref = React.useRef<HTMLButtonElement | null>(null);
   React.useLayoutEffect(() => {
@@ -188,21 +196,11 @@ const FocusableLabelContainer = ({
     <GrayOnHoverBox
       ref={ref}
       style={{
-        width: '100%',
-        borderRadius: '8px',
         ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
       }}
     >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto minmax(0, 1fr)',
-          gap: '6px',
-          alignItems: 'center',
-        }}
-      >
-        {children}
-      </div>
+      {icon}
+      <MiddleTruncate text={text} />
     </GrayOnHoverBox>
   );
 };
@@ -241,12 +239,13 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   border-radius: 8px;
   user-select: none;
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   flex-direction: row;
   align-items: center;
   padding: 5px 8px;
   justify-content: space-between;
-  gap: 6;
+  gap: 6px;
   flex-grow: 1;
   flex-shrink: 1;
   transition: background 100ms linear;
