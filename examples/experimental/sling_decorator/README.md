@@ -62,7 +62,7 @@ To install this example and its dependencies, run:
 
 ```shell
 cd my-dagster-project
-pip install -e
+pip install -e .
 ```
 
 Now run Dagster to load the sample Sling pipeline:

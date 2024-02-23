@@ -30,7 +30,7 @@ sync: check_version
 verify:	
 	@echo "		POSTGRES"
 	@echo "--------------------------------"
-	@echo "SELECT * FROM public.\"all_Users\";" | PGPASSWORD=postgres psql -h localhost -p 54321 -U postgres finance
+	@echo "SELECT * FROM public.\"all_Users\";" | docker exec -i sling-postgres psql -U postgres -d finance
 	@echo "		DUCKDB"
 	@echo "--------------------------------"
 	@echo "SELECT * FROM public.all_users;" | duckdb /var/tmp/duckdb.db
