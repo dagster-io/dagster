@@ -27,6 +27,7 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
+import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
@@ -233,6 +234,18 @@ export const AssetNodeOverview = ({
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
         )}
       </AttributeAndValue>
+
+      <AttributeAndValue label="Auto-materialize policy">
+        {assetNode.autoMaterializePolicy && (
+          <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
+        )}
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Freshness policy">
+        {assetNode.freshnessPolicy && (
+          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+        )}
+      </AttributeAndValue>
     </Box>
   );
 
@@ -303,12 +316,6 @@ export const AssetNodeOverview = ({
           >
             View type details
           </ButtonLink>
-        )}
-      </AttributeAndValue>
-
-      <AttributeAndValue label="Freshness policy">
-        {assetNode.autoMaterializePolicy && (
-          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
         )}
       </AttributeAndValue>
 
