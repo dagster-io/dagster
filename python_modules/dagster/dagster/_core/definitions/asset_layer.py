@@ -933,7 +933,8 @@ def _subset_assets_defs(
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 
-    for asset in set(assets):
+    # Do not match any assets with no keys
+    for asset in set(a for a in assets if a.has_keys):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
 
