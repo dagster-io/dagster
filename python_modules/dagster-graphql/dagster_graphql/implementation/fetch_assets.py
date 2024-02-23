@@ -143,38 +143,22 @@ def asset_node_iter(
 def get_additional_required_keys(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["AssetKey"]:
-    additional_required = list()
+    asset_nodes_by_key = get_asset_nodes_by_asset_key(graphene_info)
 
-    # Find the assets corresponding to the provided asset keys. For each asset
-    # with an op_name, retrieve the op and collect the names of required outputs
-    for _, repo, external_asset_node in asset_node_iter(graphene_info):
-        if external_asset_node.asset_key in asset_keys:
-            if not external_asset_node.job_names or not external_asset_node.op_name:
-                continue
+    # the set of atomic execution ids that any of the input asset keys are a part of
+    required_atomic_execution_ids = {
+        asset_nodes_by_key[asset_key].external_asset_node.atomic_execution_unit_id
+        for asset_key in asset_keys
+    } - {None}
 
-            job = repo.get_full_external_job(external_asset_node.job_names[0])
-            node_def = job.get_node_def_snap(external_asset_node.op_name)
+    # the set of all asset keys that are part of the required atomic execution units
+    required_asset_keys = {
+        asset_node.external_asset_node.asset_key
+        for asset_node in asset_nodes_by_key.values()
+        if asset_node.external_asset_node.atomic_execution_unit_id in required_atomic_execution_ids
+    }
 
-            # ignore ops with a single output - the auto-applied name "result" does not
-            # follow the "output name is asset name" pattern used in multi-assets.
-            if len(node_def.output_def_snaps) == 1:
-                continue
-        
-            for out in node_def.output_def_snaps:
-                if out.is_required or not external_asset_node.de and out.name != external_asset_node.asset_key.path[-1]:
-                    additional_required.append((node_def.name, out.name))
-    
-    if not additional_required:
-        return []
-
-    # Find the assets corresponding to the op names + op output names we identified as
-    # required. This step de-dupes and ensures any odd non-asset outputs aren't returned
-    return [
-            node.asset_key
-            for _, _, node in asset_node_iter(graphene_info)
-            if (node.op_name, node.asset_key.path[-1]) in additional_required
-        ]
-
+    return list(required_asset_keys - asset_keys)
 
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
