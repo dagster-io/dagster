@@ -25,7 +25,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={},
                 run_tags={},
-                auto_observe_asset_keys=asset_graph.source_asset_keys,
+                auto_observe_asset_keys=asset_graph.external_asset_keys,
             )
         )
         == 0
@@ -38,7 +38,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): 1},
                 run_tags={},
-                auto_observe_asset_keys=asset_graph.source_asset_keys,
+                auto_observe_asset_keys=asset_graph.external_asset_keys,
             )
         )
         == 0

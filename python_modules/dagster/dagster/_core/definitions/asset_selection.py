@@ -215,8 +215,9 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
         """Returns a selection that includes all materializable assets that are upstream of any of
-        the assets in this selection, selecting the assets in this selection by default. Includes the asset checks targeting the returned assets. Iterates
-        through each asset in this selection and returns the union of all upstream assets.
+        the assets in this selection, selecting the assets in this selection by default. Includes
+        the asset checks targeting the returned assets. Iterates through each asset in this
+        selection and returns the union of all upstream assets.
 
         Because mixed selections of source and materializable assets are currently not supported,
         keys corresponding to `SourceAssets` will not be included as upstream of regular assets.
@@ -798,7 +799,7 @@ class UpstreamAssetSelection(
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
-        return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
+        return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
@@ -830,7 +831,7 @@ class ParentSourcesAssetSelection(
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)
-        return {key for key in all_upstream if key in asset_graph.source_asset_keys}
+        return {key for key in all_upstream if key in asset_graph.external_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))

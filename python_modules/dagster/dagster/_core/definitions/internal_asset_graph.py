@@ -24,10 +24,6 @@ class InternalAssetGraph(AssetGraph):
     ):
         from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
-        # Temporarily preserved until all source asset access is removed
-        self._source_assets = source_assets
-        self._orig_assets_defs = assets_defs
-
         self._assets_defs = [
             *assets_defs,
             *(create_external_asset_from_source_asset(sa) for sa in source_assets),
@@ -77,13 +73,7 @@ class InternalAssetGraph(AssetGraph):
 
     @property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
-        # Temporarily return the original set of assets defs passed in until source assets are
-        # elimintaed
-        return self._orig_assets_defs
-
-    @property
-    def source_assets(self) -> Sequence[SourceAsset]:
-        return self._source_assets
+        return self._assets_defs
 
     def get_assets_def(self, asset_key: AssetKey) -> AssetsDefinition:
         return self._assets_defs_by_key[asset_key]
@@ -106,33 +96,32 @@ class InternalAssetGraph(AssetGraph):
     def has_asset_check(self, asset_check_key: AssetCheckKey) -> bool:
         return asset_check_key in self._asset_checks_defs_by_key
 
-    def includes_materializable_and_source_assets(self, asset_keys: AbstractSet[AssetKey]) -> bool:
+    def includes_materializable_and_external_assets(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> bool:
         """Returns true if the given asset keys contains at least one materializable asset and
-        at least one source asset.
+        at least one external asset.
         """
-        selected_source_assets = self.source_asset_keys & asset_keys
-        selected_regular_assets = asset_keys - self.source_asset_keys
-        return len(selected_source_assets) > 0 and len(selected_regular_assets) > 0
+        selected_external_assets = self.external_asset_keys & asset_keys
+        selected_materializable_assets = self.materializable_asset_keys & asset_keys
+        return len(selected_external_assets) > 0 and len(selected_materializable_assets) > 0
 
     @property
     @cached_method
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
-        return generate_asset_dep_graph(self._assets_defs, self._source_assets)
+        return generate_asset_dep_graph(self._assets_defs, [])
 
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs for key in ad.keys}
 
     @property
-    def source_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {sa.key for sa in self.source_assets}
-
-    @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_materializable for key in ad.keys}
 
     def is_materializable(self, asset_key: AssetKey) -> bool:
-        return self.get_assets_def(asset_key).is_materializable
+        # Performing an existence check temporarily until we change callsites
+        return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_materializable
 
     @property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -153,7 +142,8 @@ class InternalAssetGraph(AssetGraph):
         return {key for ad in self._assets_defs if ad.is_executable for key in ad.keys}
 
     def is_executable(self, asset_key: AssetKey) -> bool:
-        return self.get_assets_def(asset_key).is_executable
+        # Performing an existence check temporarily until we change callsites
+        return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_executable
 
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         return {

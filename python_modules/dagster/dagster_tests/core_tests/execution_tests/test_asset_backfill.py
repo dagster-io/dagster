@@ -323,7 +323,9 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
             elif failures == "root_failures":
                 fail_asset_partitions = set(
                     (
-                        backfill_data.target_subset.filter_asset_keys(asset_graph.root_asset_keys)
+                        backfill_data.target_subset.filter_asset_keys(
+                            asset_graph.root_materializable_asset_keys
+                        )
                     ).iterate_asset_partitions()
                 )
             elif failures == "random_half_failures":
@@ -463,7 +465,7 @@ def make_random_subset(
 ) -> AssetGraphSubset:
     # all partitions downstream of half of the partitions in each partitioned root asset
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         partitions_def = asset_graph.get_partitions_def(root_asset_key)
 
         if partitions_def is not None:
@@ -496,7 +498,7 @@ def make_subset_from_partition_keys(
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
     root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-    for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
+    for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         if asset_graph.get_partitions_def(root_asset_key) is not None:
             root_asset_partitions.update(
                 AssetKeyPartitionKey(root_asset_key, partition_key)

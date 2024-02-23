@@ -624,7 +624,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """
         from .asset_condition.asset_condition import AssetConditionResult
 
-        if context.asset_key in context.asset_graph.root_materializable_or_observable_asset_keys:
+        if context.asset_key in context.asset_graph.root_executable_asset_keys:
             handled_subset = self.get_handled_subset(context)
             unhandled_candidates = (
                 context.candidate_subset

@@ -409,7 +409,7 @@ class AssetReconciliationScenario(
                 cursor=cursor,
                 auto_observe_asset_keys={
                     key
-                    for key in asset_graph.source_asset_keys
+                    for key in asset_graph.observable_asset_keys
                     if asset_graph.get_auto_observe_interval_minutes(key) is not None
                 },
                 respect_materialization_data_versions=respect_materialization_data_versions,

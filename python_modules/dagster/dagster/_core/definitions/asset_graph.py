@@ -155,17 +155,15 @@ class AssetGraph:
         ...
 
     @functools.cached_property
-    def root_asset_keys(self) -> AbstractSet[AssetKey]:
-        """Non-source asset keys that have no non-source parents."""
+    def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Materializable asset keys that have no materializable parents."""
         from .asset_selection import AssetSelection
 
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
     @functools.cached_property
-    def root_materializable_or_observable_asset_keys(self) -> AbstractSet[AssetKey]:
-        """Materializable or observable source asset keys that have no parents which are
-        materializable or observable.
-        """
+    def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Executable asset keys that have no executable parents."""
         return fetch_sources(
             self.asset_dep_graph, self.observable_asset_keys | self.materializable_asset_keys
         )
@@ -500,30 +498,27 @@ class AssetGraph:
             current_time=current_time,
         )
 
-    def is_source(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.source_asset_keys
-
-    def has_non_source_parents(self, asset_key: AssetKey) -> bool:
-        """Determines if an asset has any parents which are not source assets."""
-        if self.is_source(asset_key):
+    def has_materializable_parents(self, asset_key: AssetKey) -> bool:
+        """Determines if an asset has any parents which are materializable."""
+        if self.is_external(asset_key):
             return False
         return any(
             self.has_asset(parent_key) and self.is_materializable(parent_key)
             for parent_key in self.get_parents(asset_key) - {asset_key}
         )
 
-    def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+    def get_materializable_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets upstream of the given asset which do not consume any other
-        AssetsDefinitions (but may consume SourceAssets).
+        materializable assets.
         """
-        if not self.has_non_source_parents(asset_key):
+        if not self.has_materializable_parents(asset_key):
             return {asset_key}
         return {
             key
             for key in self.upstream_key_iterator(asset_key)
             if self.has_asset(key)
             and self.is_materializable(key)
-            and not self.has_non_source_parents(key)
+            and not self.has_materializable_parents(key)
         }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
@@ -532,8 +527,6 @@ class AssetGraph:
         queue = deque([asset_key])
         while queue:
             current_key = queue.popleft()
-            if self.is_source(current_key):
-                continue
             for parent_key in self.get_parents(current_key):
                 if parent_key not in visited:
                     yield parent_key

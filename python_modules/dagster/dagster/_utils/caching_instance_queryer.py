@@ -185,7 +185,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._asset_record_cache[asset_key]
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
-        if self.asset_graph.is_source(asset_key):
+        if self.asset_graph.is_external(asset_key):
             return DagsterEventType.ASSET_OBSERVATION
         else:
             return DagsterEventType.ASSET_MATERIALIZATION
@@ -535,7 +535,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
         """
-        if self.asset_graph.is_source(child_asset_key):
+        if self.asset_graph.is_external(child_asset_key):
             return set(), latest_storage_id
 
         child_partitions_def = self.asset_graph.get_partitions_def(child_asset_key)
@@ -805,7 +805,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not updated_after_cursor:
             return set()
         if after_cursor is None or (
-            not self.asset_graph.is_source(asset_key) and not respect_materialization_data_versions
+            not self.asset_graph.is_external(asset_key)
+            and not respect_materialization_data_versions
         ):
             return updated_after_cursor
 
