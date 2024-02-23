@@ -54,11 +54,7 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Using Dagster to save your data",
-        "path": "/tutorial/saving-your-data"
-      },
-      {
-        "title": "Part 7: Connecting to external services",
+        "title": "Part 6: Connecting to external services",
         "path": "/tutorial/connecting-to-external-services"
       },
       {
