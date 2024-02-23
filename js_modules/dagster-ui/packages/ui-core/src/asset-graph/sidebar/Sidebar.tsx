@@ -178,7 +178,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                 .forEach((assetNode) => {
                   folderNodes.push({
                     id: assetNode.id,
-                    path: locationName + ':' + groupNode.groupName + ':' + assetNode.assetKey,
+                    path: [
+                      locationName,
+                      groupNode.groupName,
+                      tokenForAssetKey(assetNode.assetKey),
+                    ].join(':'),
                     level: 3,
                   });
                 });
@@ -326,11 +330,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                 selectNode(e, nextNode.id);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
                 const open = e.code === 'ArrowRight';
+                const node = renderedNodes[indexOfLastSelectedNode];
+                if (!node || 'path' in node) {
+                  return;
+                }
                 setOpenNodes((nodes) => {
-                  const node = renderedNodes[indexOfLastSelectedNode];
-                  if (!node) {
-                    return nodes;
-                  }
                   const openNodes = new Set(nodes);
                   if (open) {
                     openNodes.add(nodePathKey(node));
