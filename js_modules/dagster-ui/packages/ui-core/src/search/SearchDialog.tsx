@@ -94,10 +94,10 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   }, [initialize, trackEvent]);
 
   React.useEffect(() => {
-    if (primaryResults && secondaryResults) {
+    if (!loading && primaryResults && secondaryResults) {
       firstSearchTrace.current?.endTrace();
     }
-  }, [primaryResults, secondaryResults]);
+  }, [loading, primaryResults, secondaryResults]);
 
   React.useEffect(() => {
     if (!shown && firstSearchTrace.current) {
