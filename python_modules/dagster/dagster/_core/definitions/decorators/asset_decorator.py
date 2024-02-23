@@ -657,6 +657,8 @@ def multi_asset(
                         Nothing,
                         is_required=not (can_subset or asset_spec.skippable),
                         description=asset_spec.description,
+                        code_version=asset_spec.code_version,
+                        metadata=asset_spec.metadata,
                     ),
                 )
             if upstream_asset_deps:

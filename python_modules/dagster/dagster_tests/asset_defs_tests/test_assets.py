@@ -2119,3 +2119,29 @@ def test_multi_asset_owners():
         AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
         AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
     }
+
+
+def test_asset_spec_with_code_versions():
+    @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
+    def multi_asset_with_versions():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_versions.code_versions_by_key == {
+        AssetKey(["a"]): "1",
+        AssetKey(["b"]): "2",
+    }
+
+
+def test_asset_spec_with_metadata():
+    @multi_asset(
+        specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
+    )
+    def multi_asset_with_metadata():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_metadata.metadata_by_key == {
+        AssetKey(["a"]): {"foo": "1"},
+        AssetKey(["b"]): {"bar": "2"},
+    }
