@@ -5,6 +5,7 @@ from dagster import (
     AllPartitionMapping,
     AssetKey,
     AssetOut,
+    AssetSpec,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
@@ -108,6 +109,31 @@ def test_asset_with_config_schema():
 
     with pytest.raises(DagsterInvalidConfigError):
         materialize_to_memory([my_asset])
+
+
+def test_multi_asset_with_no_outs_or_specs():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Multi-asset invalid_multi_asset must specify at least one out or at least one spec.",
+    ):
+
+        @multi_asset(name="invalid_multi_asset")
+        def invalid_asset(context):
+            pass
+
+
+def test_multi_asset_with_both_outs_and_specs():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Multi-asset invalid_multi_asset must specify only outs or specs but not both.",
+    ):
+
+        @multi_asset(
+            outs={"o1": AssetOut()},
+            specs=[AssetSpec("asset_1"), AssetSpec("asset_2")],
+        )
+        def invalid_multi_asset(context):
+            pass
 
 
 def test_multi_asset_with_config_schema():

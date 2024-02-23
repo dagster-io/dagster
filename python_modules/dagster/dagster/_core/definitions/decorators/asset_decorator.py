@@ -644,8 +644,14 @@ def multi_asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
 
-        if asset_out_map and specs:
-            raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
+        if not asset_out_map and not specs:
+            raise DagsterInvalidDefinitionError(
+                f"Multi-asset {op_name} must specify at least one out or at least one spec."
+            )
+        elif asset_out_map and specs:
+            raise DagsterInvalidDefinitionError(
+                f"Multi-asset {op_name} must specify only outs or specs but not both."
+            )
         elif specs:
             output_tuples_by_asset_key = {}
             for asset_spec in specs:

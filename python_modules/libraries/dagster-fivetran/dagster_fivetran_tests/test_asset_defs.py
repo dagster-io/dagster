@@ -48,7 +48,6 @@ def test_fivetran_group_label(group_name, expected_group_name):
 @pytest.mark.parametrize(
     "tables,infer_missing_tables,should_error",
     [
-        ([], False, False),
         (["schema1.tracked"], False, False),
         (["schema1.tracked", "schema2.tracked"], False, False),
         (["does.not_exist"], False, True),
