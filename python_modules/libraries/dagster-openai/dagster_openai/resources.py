@@ -54,67 +54,67 @@ def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[st
     to log the OpenAI API usage metadata in the asset metadata.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import (
-            AssetExecutionContext,
-            AssetKey,
-            AssetSelection,
-            AssetSpec,
-            Definitions,
-            EnvVar,
-            MaterializeResult,
-            asset,
-            define_asset_job,
-            multi_asset,
-        )
-        from dagster_openai import OpenAIResource, with_usage_metadata
+            from dagster import (
+                AssetExecutionContext,
+                AssetKey,
+                AssetSelection,
+                AssetSpec,
+                Definitions,
+                EnvVar,
+                MaterializeResult,
+                asset,
+                define_asset_job,
+                multi_asset,
+            )
+            from dagster_openai import OpenAIResource, with_usage_metadata
 
 
-        @asset(compute_kind="OpenAI")
-        def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
-            with openai.get_client(context) as client:
-                client.fine_tuning.jobs.create = with_usage_metadata(
-                    context=context, output_name="some_output_name", func=client.fine_tuning.jobs.create
+            @asset(compute_kind="OpenAI")
+            def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
+                with openai.get_client(context) as client:
+                    client.fine_tuning.jobs.create = with_usage_metadata(
+                        context=context, output_name="some_output_name", func=client.fine_tuning.jobs.create
+                    )
+                    client.fine_tuning.jobs.create(model="gpt-3.5-turbo", training_file="some_training_file")
+
+
+            openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
+
+
+            @multi_asset(
+                specs=[
+                    AssetSpec("my_asset1"),
+                    AssetSpec("my_asset2"),
+                ]
+            )
+            def openai_multi_asset(context: AssetExecutionContext, openai: OpenAIResource):
+                with openai.get_client(context, asset_key=AssetKey("my_asset1")) as client:
+                    client.chat.completions.create(
+                        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+                    )
+
+                # The materialization of `my_asset1` will include both OpenAI usage metadata
+                # and the metadata added when calling `MaterializeResult`.
+                return (
+                    MaterializeResult(asset_key="my_asset1", metadata={"foo": "bar"}),
+                    MaterializeResult(asset_key="my_asset2", metadata={"baz": "qux"}),
                 )
-                client.fine_tuning.jobs.create(model="gpt-3.5-turbo", training_file="some_training_file")
 
 
-        openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
-
-
-        @multi_asset(
-            specs=[
-                AssetSpec("my_asset1"),
-                AssetSpec("my_asset2"),
-            ]
-        )
-        def openai_multi_asset(context: AssetExecutionContext, openai: OpenAIResource):
-            with openai.get_client(context, asset_key=AssetKey("my_asset1")) as client:
-                client.chat.completions.create(
-                    model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
-                )
-
-            # The materialization of `my_asset1` will include both OpenAI usage metadata
-            # and the metadata added when calling `MaterializeResult`.
-            return (
-                MaterializeResult(asset_key="my_asset1", metadata={"foo": "bar"}),
-                MaterializeResult(asset_key="my_asset2", metadata={"baz": "qux"}),
+            openai_multi_asset_job = define_asset_job(
+                name="openai_multi_asset_job", selection=AssetSelection.assets(openai_multi_asset)
             )
 
 
-        openai_multi_asset_job = define_asset_job(
-            name="openai_multi_asset_job", selection=AssetSelection.assets(openai_multi_asset)
-        )
-
-
-        defs = Definitions(
-            assets=[openai_asset, openai_multi_asset],
-            jobs=[openai_asset_job, openai_multi_asset_job],
-            resources={
-                "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
-            },
-        )
+            defs = Definitions(
+                assets=[openai_asset, openai_multi_asset],
+                jobs=[openai_asset_job, openai_multi_asset_job],
+                resources={
+                    "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
+                },
+            )
     """
     if not isinstance(context, AssetExecutionContext):
         raise DagsterInvariantViolationError(
@@ -228,49 +228,49 @@ class OpenAIResource(ConfigurableResource):
         :param asset_key: the ``asset_key`` of the asset for which a materialization should include the metadata.
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import (
-                AssetExecutionContext,
-                Definitions,
-                EnvVar,
-                GraphDefinition,
-                OpExecutionContext,
-                asset,
-                define_asset_job,
-                op,
-            )
-            from dagster_openai import OpenAIResource
-
-
-            @op
-            def openai_op(context: OpExecutionContext, openai: OpenAIResource):
-                with openai.get_client(context) as client:
-                    client.chat.completions.create(
-                        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
-                    )
+                from dagster import (
+                    AssetExecutionContext,
+                    Definitions,
+                    EnvVar,
+                    GraphDefinition,
+                    OpExecutionContext,
+                    asset,
+                    define_asset_job,
+                    op,
+                )
+                from dagster_openai import OpenAIResource
 
 
-            openai_op_job = GraphDefinition(name="openai_op_job", node_defs=[openai_op]).to_job()
+                @op
+                def openai_op(context: OpExecutionContext, openai: OpenAIResource):
+                    with openai.get_client(context) as client:
+                        client.chat.completions.create(
+                            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+                        )
 
 
-            @asset(compute_kind="OpenAI")
-            def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
-                with openai.get_client(context) as client:
-                    client.chat.completions.create(
-                        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
-                    )
+                openai_op_job = GraphDefinition(name="openai_op_job", node_defs=[openai_op]).to_job()
 
 
-            openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
+                @asset(compute_kind="OpenAI")
+                def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
+                    with openai.get_client(context) as client:
+                        client.chat.completions.create(
+                            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+                        )
 
-            defs = Definitions(
-                assets=[openai_asset],
-                jobs=[openai_asset_job, openai_op_job],
-                resources={
-                    "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
-                },
-            )
+
+                openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
+
+                defs = Definitions(
+                    assets=[openai_asset],
+                    jobs=[openai_asset_job, openai_op_job],
+                    resources={
+                        "openai": OpenAIResource(api_key=EnvVar("OPENAI_API_KEY")),
+                    },
+                )
         """
         if isinstance(context, AssetExecutionContext):
             if asset_key is None:
