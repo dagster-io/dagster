@@ -85,7 +85,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   const numRenderedResults = renderedResults.length;
 
   const isFirstSearch = React.useRef(true);
-  const currentTrace = React.useRef<null | Trace>(null);
+  const firstSearchTrace = React.useRef<null | Trace>(null);
 
   const openSearch = React.useCallback(() => {
     trackEvent('searchOpen');
@@ -95,16 +95,16 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
 
   React.useEffect(() => {
     if (primaryResults && secondaryResults) {
-      currentTrace.current?.endTrace();
+      firstSearchTrace.current?.endTrace();
     }
   }, [primaryResults, secondaryResults]);
 
   React.useEffect(() => {
-    if (!shown && currentTrace.current) {
+    if (!shown && firstSearchTrace.current) {
       // When the dialog closes:
       // Either the trace finished and we logged it, or it didn't and so we throw it away
-      // Either way we don't need the current trace object anymore
-      currentTrace.current = null;
+      // Either way we don't need the trace object anymore
+      firstSearchTrace.current = null;
     }
   }, [shown]);
 
@@ -130,9 +130,10 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
       searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
     return (queryString: string) => {
-      if (!currentTrace.current && isFirstSearch.current) {
-        const trace = createTrace('Search');
-        currentTrace.current = trace;
+      if (!firstSearchTrace.current && isFirstSearch.current) {
+        isFirstSearch.current = false;
+        const trace = createTrace('SearchDialog:FirstSearch');
+        firstSearchTrace.current = trace;
         trace.startTrace();
       }
       return debouncedSearch(queryString);
