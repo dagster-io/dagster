@@ -11,6 +11,7 @@ import {
   PartitionRangeStatus,
   buildAssetCheck,
   buildAssetChecks,
+  buildConfigTypeField,
   buildDaemonHealth,
   buildDaemonStatus,
   buildDimensionDefinitionType,
@@ -33,6 +34,7 @@ import {
   LAUNCH_ASSET_LOADER_QUERY,
   LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
 } from '../LaunchAssetExecutionButton';
+import {asAssetKeyInput} from '../asInput';
 import {LaunchAssetWarningsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
 import {
   LaunchAssetCheckUpstreamQuery,
@@ -132,6 +134,26 @@ export const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG: AssetNodeForGraphQueryFra
   assetKey: {
     __typename: 'AssetKey',
     path: ['unpartitioned_asset_with_required_config'],
+  },
+};
+
+export const MULTI_ASSET_OUT_1: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["multi_asset_out_1"]',
+  jobNames: ['__ASSET_JOB_7'],
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['multi_asset_out_1'],
+  },
+};
+
+export const MULTI_ASSET_OUT_2: AssetNodeForGraphQueryFragment = {
+  ...UNPARTITIONED_ASSET,
+  id: 'test.py.repo.["multi_asset_out_2"]',
+  jobNames: ['__ASSET_JOB_7'],
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['multi_asset_out_2'],
   },
 };
 
@@ -685,6 +707,20 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
     },
   };
 
+const BaseRegularConfigType = buildConfigTypeField({
+  name: 'config',
+  isRequired: false,
+  configType: {
+    __typename: 'RegularConfigType',
+    givenName: 'Any',
+    key: 'Any',
+    description: null,
+    isSelector: false,
+    typeParamKeys: [],
+    recursiveConfigTypes: [],
+  },
+});
+
 export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLoaderQuery> = {
   request: {
     query: LAUNCH_ASSET_LOADER_QUERY,
@@ -699,6 +735,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_DAILY,
           requiredResources: [],
+          configField: BaseRegularConfigType,
           assetChecksOrError: buildAssetChecks({checks: []}),
           backfillPolicy: null,
           partitionDefinition: {
@@ -708,25 +745,12 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
             dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
             __typename: 'PartitionDefinition',
           },
-          configField: {
-            name: 'config',
-            isRequired: false,
-            configType: {
-              __typename: 'RegularConfigType',
-              givenName: 'Any',
-              key: 'Any',
-              description: null,
-              isSelector: false,
-              typeParamKeys: [],
-              recursiveConfigTypes: [],
-            },
-            __typename: 'ConfigTypeField',
-          },
           __typename: 'AssetNode',
         },
         {
           ...ASSET_WEEKLY,
           requiredResources: [],
+          configField: BaseRegularConfigType,
           assetChecksOrError: buildAssetChecks({checks: []}),
           backfillPolicy: null,
           partitionDefinition: {
@@ -736,24 +760,11 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
             dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
             __typename: 'PartitionDefinition',
           },
-          configField: {
-            name: 'config',
-            isRequired: false,
-            configType: {
-              __typename: 'RegularConfigType',
-              givenName: 'Any',
-              key: 'Any',
-              description: null,
-              isSelector: false,
-              typeParamKeys: [],
-              recursiveConfigTypes: [],
-            },
-            __typename: 'ConfigTypeField',
-          },
           __typename: 'AssetNode',
         },
       ],
       assetNodeDefinitionCollisions: [],
+      assetNodeAdditionalRequiredKeys: [],
     },
   },
 };
@@ -850,6 +861,7 @@ type LaunchAssetLoaderQueryAssetNode = LaunchAssetLoaderQuery['assetNodes'][0];
 const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_DAILY,
   requiredResources: [],
+  configField: BaseRegularConfigType,
   assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
@@ -859,26 +871,13 @@ const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
   },
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
   __typename: 'AssetNode',
 };
 
 const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY,
   requiredResources: [],
+  configField: BaseRegularConfigType,
   assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
@@ -888,7 +887,6 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
   },
-
   dependencyKeys: [
     {
       __typename: 'AssetKey',
@@ -899,26 +897,13 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
       path: ['asset_weekly_root'],
     },
   ],
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
   __typename: 'AssetNode',
 };
 
 const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY_ROOT,
   requiredResources: [],
+  configField: BaseRegularConfigType,
   assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
@@ -927,20 +912,6 @@ const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     description: 'Weekly, starting 2020-01-01 UTC.',
     dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
-  },
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
   },
   __typename: 'AssetNode',
 };
@@ -968,55 +939,50 @@ const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   __typename: 'AssetNode',
 };
 
-const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...UNPARTITIONED_ASSET_OTHER_REPO,
+const MULTI_ASSET_OUT_1_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
+  ...MULTI_ASSET_OUT_1,
   requiredResources: [],
+  configField: BaseRegularConfigType,
   assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: null,
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
+  __typename: 'AssetNode',
+};
+
+const MULTI_ASSET_OUT_2_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
+  ...MULTI_ASSET_OUT_2,
+  requiredResources: [],
+  configField: BaseRegularConfigType,
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
+  partitionDefinition: null,
+  __typename: 'AssetNode',
+};
+
+const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
+  ...UNPARTITIONED_ASSET_OTHER_REPO,
+  requiredResources: [],
+  configField: BaseRegularConfigType,
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
+  partitionDefinition: null,
   __typename: 'AssetNode',
 };
 
 const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   requiredResources: [],
+  configField: {...BaseRegularConfigType, isRequired: true},
   assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: null,
-  configField: {
-    name: 'config',
-    isRequired: true,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
   __typename: 'AssetNode',
 };
 
 const CHECKED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...CHECKED_ASSET,
   requiredResources: [],
+  configField: BaseRegularConfigType,
   assetChecksOrError: buildAssetChecks({
     checks: [
       buildAssetCheck({
@@ -1028,20 +994,6 @@ const CHECKED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   }),
   backfillPolicy: null,
   partitionDefinition: null,
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
   __typename: 'AssetNode',
 };
 
@@ -1052,6 +1004,8 @@ export const LOADER_RESULTS = [
   UNPARTITIONED_ASSET_LOADER_RESULT,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT,
   UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT,
+  MULTI_ASSET_OUT_1_LOADER_RESULT,
+  MULTI_ASSET_OUT_2_LOADER_RESULT,
   CHECKED_ASSET_LOADER_RESULT,
 ];
 
@@ -1063,21 +1017,24 @@ export const PartitionHealthAssetMocks = [
 
 export function buildLaunchAssetLoaderMock(
   assetKeys: AssetKeyInput[],
+  overrides: Partial<LaunchAssetLoaderQuery> = {},
 ): MockedResponse<LaunchAssetLoaderQuery> {
   return {
     request: {
       query: LAUNCH_ASSET_LOADER_QUERY,
       variables: {
-        assetKeys: assetKeys.map((a) => ({path: a.path})),
+        assetKeys: assetKeys.map(asAssetKeyInput),
       },
     },
     result: {
       data: {
         __typename: 'Query',
         assetNodeDefinitionCollisions: [],
+        assetNodeAdditionalRequiredKeys: [],
         assetNodes: LOADER_RESULTS.filter((a) =>
           assetKeys.some((k) => tokenForAssetKey(k) === tokenForAssetKey(a.assetKey)),
         ),
+        ...overrides,
       },
     },
   };

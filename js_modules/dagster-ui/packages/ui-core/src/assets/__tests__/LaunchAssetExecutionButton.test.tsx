@@ -4,10 +4,13 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
+import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
+import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
 import * as WorkspaceContext from '../../workspace/WorkspaceContext';
+import {ADDITIONAL_REQUIRED_KEYS_WARNING} from '../AssetDefinedInMultipleReposNotice';
 import {
   AssetsInScope,
   ERROR_INVALID_ASSET_SELECTION,
@@ -24,6 +27,8 @@ import {
   LaunchAssetLoaderResourceJob7Mock,
   LaunchAssetLoaderResourceJob8Mock,
   LaunchAssetLoaderResourceMyAssetJobMock,
+  MULTI_ASSET_OUT_1,
+  MULTI_ASSET_OUT_2,
   PartitionHealthAssetMocks,
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_OTHER_REPO,
@@ -37,6 +42,7 @@ import {
   buildLaunchAssetLoaderMock,
   buildLaunchAssetWarningsMock,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
+import {asAssetKeyInput} from '../asInput';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
@@ -574,6 +580,43 @@ describe('LaunchAssetExecutionButton', () => {
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchPureAllMutationMock);
     });
   });
+
+  describe('multi-asset subsetting', () => {
+    it('should present a warning if pre-flight check indicates other asset keys are required', async () => {
+      const launchMock = buildExpectedLaunchSingleRunMutation({
+        mode: 'default',
+        executionMetadata: {tags: []},
+        runConfigData: '{}',
+        selector: {
+          repositoryLocationName: 'test.py',
+          repositoryName: 'repo',
+          pipelineName: '__ASSET_JOB_7',
+          assetSelection: [
+            asAssetKeyInput(MULTI_ASSET_OUT_1.assetKey),
+            asAssetKeyInput(MULTI_ASSET_OUT_2.assetKey),
+          ],
+          assetCheckSelection: [],
+        },
+      });
+      renderButton({
+        scope: {all: [MULTI_ASSET_OUT_1]},
+        launchMock,
+      });
+      await clickMaterializeButton();
+
+      // The alert should appear
+      expect(await screen.findByText(ADDITIONAL_REQUIRED_KEYS_WARNING)).toBeDefined();
+      expect(
+        await screen.findByText(displayNameForAssetKey(MULTI_ASSET_OUT_2.assetKey)),
+      ).toBeDefined();
+
+      // Click Confirm
+      await userEvent.click(await screen.findByTestId('confirm-button-ok'));
+
+      // The launch should contain both MULTI_ASSET_OUT_1 and MULTI_ASSET_OUT_2
+      await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+    });
+  });
 });
 
 // Helpers to make tests more concise
@@ -601,16 +644,22 @@ function renderButton({
     buildConfigPartitionSelectionLatestPartitionMock('2020-01-02', 'my_asset_job_partition_set'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', 'my_asset_job_partition_set'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', '__ASSET_JOB_7_partition_set'),
+    buildLaunchAssetLoaderMock([MULTI_ASSET_OUT_1.assetKey], {
+      assetNodeAdditionalRequiredKeys: [MULTI_ASSET_OUT_2.assetKey],
+    }),
+    buildLaunchAssetLoaderMock([MULTI_ASSET_OUT_1.assetKey, MULTI_ASSET_OUT_2.assetKey]),
     buildLaunchAssetLoaderMock(assetKeys),
     ...(launchMock ? [launchMock] : []),
   ];
 
   render(
     <TestProvider>
-      <CustomAlertProvider />
-      <MockedProvider mocks={mocks}>
-        <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
-      </MockedProvider>
+      <CustomConfirmationProvider>
+        <CustomAlertProvider />
+        <MockedProvider mocks={mocks}>
+          <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
+        </MockedProvider>
+      </CustomConfirmationProvider>
     </TestProvider>,
   );
 }
