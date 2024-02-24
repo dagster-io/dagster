@@ -248,6 +248,10 @@ class RepositoryDefinition:
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
+    @property
+    def external_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return {k: v for k, v in self.assets_defs_by_key.items() if v.is_external}
+
     def has_implicit_global_asset_job_def(self) -> bool:
         """Returns true is there is a single implicit asset job for all asset keys in a repository."""
         return self.has_job(ASSET_BASE_JOB_PREFIX)
@@ -349,9 +353,7 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        ) as loader:
+        with AssetValueLoader(self.assets_defs_by_key, instance=instance) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -380,15 +382,11 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        )
+        return AssetValueLoader(self.assets_defs_by_key, instance=instance)
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
-        return InternalAssetGraph.from_assets(
-            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
-        )
+        return InternalAssetGraph.from_assets(list(dict.fromkeys(self.assets_defs_by_key.values())))
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

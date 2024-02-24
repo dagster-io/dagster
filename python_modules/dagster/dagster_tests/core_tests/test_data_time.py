@@ -333,7 +333,7 @@ def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
             key = AssetKey(arg)
-            observe(assets=[versioned_repo.source_assets_by_key[key]], instance=instance)
+            observe(assets=[versioned_repo.external_assets_defs_by_key[key]], instance=instance)
             latest_record = instance.get_latest_data_version_record(key, is_source=True)
             latest_timestamp = latest_record.timestamp
             times_by_key[key].append(

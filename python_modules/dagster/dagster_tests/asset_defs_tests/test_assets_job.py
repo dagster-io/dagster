@@ -40,6 +40,7 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
@@ -1978,7 +1979,6 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
             hourly_asset,
             unpartitioned_asset,
         ],
-        source_assets=[],
         executor_def=None,
         resource_defs={},
         asset_checks=[],
@@ -2022,10 +2022,8 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     jobs = get_base_asset_jobs(
         assets=[
             asset_x,
-        ],
-        source_assets=[
-            asset_a,
-            asset_b,
+            create_external_asset_from_source_asset(asset_a),
+            create_external_asset_from_source_asset(asset_b),
         ],
         executor_def=None,
         resource_defs={},

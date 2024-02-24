@@ -250,10 +250,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
             repo_assets = self._repository_def.assets_defs_by_key.values()
-            repo_source_assets = self._repository_def.source_assets_by_key.values()
-            self._monitored_asset_keys = list(
-                monitored_assets.resolve([*repo_assets, *repo_source_assets])
-            )
+            self._monitored_asset_keys = list(monitored_assets.resolve(repo_assets))
         else:
             self._monitored_asset_keys = monitored_assets
 
@@ -263,13 +260,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
             self._assets_by_key[asset_key] = assets_def
 
-            source_asset_def = self._repository_def.source_assets_by_key.get(asset_key)
             self._partitions_def_by_asset_key[asset_key] = (
-                assets_def.partitions_def
-                if assets_def
-                else source_asset_def.partitions_def
-                if source_asset_def
-                else None
+                assets_def.partitions_def if assets_def else None
             )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
