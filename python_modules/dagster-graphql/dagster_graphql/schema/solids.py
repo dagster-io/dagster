@@ -66,7 +66,6 @@ class GrapheneOutputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     is_dynamic = graphene.Boolean()
-    is_required = graphene.Boolean()
     type = graphene.NonNull(GrapheneDagsterType)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
 
@@ -79,7 +78,6 @@ class GrapheneOutputDefinition(graphene.ObjectType):
         solid_def_name: str,
         output_def_name: str,
         is_dynamic: bool,
-        is_required: bool,
     ):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedJob
@@ -94,7 +92,6 @@ class GrapheneOutputDefinition(graphene.ObjectType):
             name=self._output_def_snap.name,
             description=self._output_def_snap.description,
             is_dynamic=is_dynamic,
-            is_required=is_required,
         )
 
     def resolve_type(self, _graphene_info) -> GrapheneDagsterTypeUnion:
@@ -203,7 +200,6 @@ class GrapheneOutput(graphene.ObjectType):
             self._solid_def_snap.name,
             self._output_name,
             self._output_def_snap.is_dynamic,
-            self._output_def_snap.is_required,
         )
 
     def resolve_depended_by(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneInput]:
@@ -302,7 +298,6 @@ class GrapheneOutputMapping(graphene.ObjectType):
             self._solid_def_snap.name,
             self._output_mapping_snap.external_output_name,
             self._output_def_snap.is_dynamic,
-            self._output_def_snap.is_required,
         )
 
 
@@ -414,7 +409,6 @@ class ISolidDefinitionMixin:
                 self.solid_def_name,
                 output_def_snap.name,
                 output_def_snap.is_dynamic,
-                output_def_snap.is_required,
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
