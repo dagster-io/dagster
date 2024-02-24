@@ -191,6 +191,42 @@ class HookContext:
         """Computed output values in an op."""
         return self.solid_output_values
 
+    @property
+    def solid_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+        """The applied output metadata.
+
+        Returns a dictionary where keys are output names and the values are:
+            * the output metadata in the normal case
+            * a dictionary from mapping key to corresponding metadata in the mapped case
+        """
+        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        captured = self._step_execution_context.step_output_capture
+
+        if captured is None:
+            check.failed("Outputs were unexpectedly not captured for hook")
+
+        # parse metadata from step_output_handle
+        for step_output_handle in captured.keys():
+            if step_output_handle.mapping_key:
+                if results.get(step_output_handle.output_name) is None:
+                    results[step_output_handle.output_name] = {
+                        step_output_handle.mapping_key: step_output_handle.metadata
+                    }
+                else:
+                    results[step_output_handle.output_name][
+                        step_output_handle.mapping_key
+                    ] = step_output_handle.metadata
+            else:
+                results[step_output_handle.output_name] = step_output_handle.metadata
+
+        return results
+
+    @public
+    @property
+    def op_output_metadata(self):
+        """Applied output metadata in an op."""
+        return self.solid_output_metadata
+
 
 class UnboundHookContext(HookContext):
     def __init__(
