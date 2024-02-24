@@ -7,6 +7,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Tuple,
     Type,
     cast,
 )
@@ -238,6 +239,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
+            elif field and safe_is_subclass(field.annotation, Tuple):
+                modified_data[key] = list(value) if value is not None else None
             else:
                 if field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
                     modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
@@ -353,6 +356,8 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
             return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
+    elif isinstance(value, Tuple):
+        return [_config_value_to_dict_representation(None, v) for v in value]
 
     return value
 

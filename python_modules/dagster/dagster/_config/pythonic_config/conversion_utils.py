@@ -6,6 +6,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -18,6 +19,7 @@ from dagster import (
 )
 from dagster._config.config_type import (
     Array,
+    ConfigAnyInstance as DagsterAny,
     ConfigType,
     Noneable,
 )
@@ -190,6 +192,8 @@ def _config_type_for_type_on_pydantic_field(
     if safe_is_subclass(get_origin(potential_dagster_type), List):
         list_inner_type = get_args(potential_dagster_type)[0]
         return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
+    elif safe_is_subclass(get_origin(potential_dagster_type), Tuple):
+        return Array(Noneable(DagsterAny))
     elif is_optional(potential_dagster_type):
         optional_inner_type = next(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
