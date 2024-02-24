@@ -158,16 +158,30 @@ class StepOutputData(
 class StepOutputHandle(
     NamedTuple(
         "_StepOutputHandle",
-        [("step_key", str), ("output_name", str), ("mapping_key", Optional[str])],
+        [
+            ("step_key", str),
+            ("output_name", str),
+            ("metadata", Mapping[str, MetadataValue]),
+            ("mapping_key", Optional[str]),
+        ],
     )
 ):
     """A reference to a specific output that has or will occur within the scope of an execution."""
 
-    def __new__(cls, step_key: str, output_name: str = "result", mapping_key: Optional[str] = None):
+    def __new__(
+        cls,
+        step_key: str,
+        output_name: str = "result",
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        mapping_key: Optional[str] = None,
+    ):
         return super(StepOutputHandle, cls).__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),
             output_name=check.str_param(output_name, "output_name"),
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
+            ),
             mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
 
