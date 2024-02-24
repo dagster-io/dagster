@@ -3,7 +3,6 @@ import without from 'lodash/without';
 
 import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {
   AssetKeyInput,
   LaunchBackfillParams,
@@ -11,12 +10,21 @@ import {
   PartitionRangeStatus,
   buildAssetCheck,
   buildAssetChecks,
+  buildAssetKey,
+  buildAssetNode,
   buildConfigTypeField,
   buildDaemonHealth,
   buildDaemonStatus,
   buildDimensionDefinitionType,
   buildInstance,
+  buildMaterializationEvent,
+  buildMode,
+  buildPartitionDefinition,
   buildPartitionSets,
+  buildRegularConfigType,
+  buildRepository,
+  buildRepositoryLocation,
+  buildRun,
   buildRunLauncher,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
@@ -44,21 +52,42 @@ import {
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
-export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {
-  __typename: 'AssetNode',
+const REPO = buildRepository({
+  id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+  name: 'repo',
+  location: buildRepositoryLocation({
+    id: 'test.py',
+    name: 'test.py',
+  }),
+});
+
+const OTHER_REPO = buildRepository({
+  id: '000000000000000000000000000000000000000',
+  name: 'other-repo',
+  location: buildRepositoryLocation({
+    id: 'other-location.py',
+    name: 'other-location.py',
+  }),
+});
+
+const BASE_CONFIG_TYPE_FIELD = buildConfigTypeField({
+  name: 'config',
+  isRequired: false,
+  configType: buildRegularConfigType({
+    givenName: 'Any',
+    key: 'Any',
+    description: null,
+    isSelector: false,
+    typeParamKeys: [],
+    recursiveConfigTypes: [],
+  }),
+});
+
+export const UNPARTITIONED_ASSET = buildAssetNode({
   id: 'test.py.repo.["unpartitioned_asset"]',
   groupName: 'mapped',
   hasMaterializePermission: true,
-  repository: {
-    __typename: 'Repository',
-    id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-    name: 'repo',
-    location: {
-      __typename: 'RepositoryLocation',
-      id: 'test.py',
-      name: 'test.py',
-    },
-  },
+  repository: REPO,
   dependencyKeys: [],
   dependedByKeys: [],
   graphName: null,
@@ -71,119 +100,90 @@ export const UNPARTITIONED_ASSET: AssetNodeForGraphQueryFragment = {
   isObservable: false,
   isExecutable: true,
   isSource: false,
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['unpartitioned_asset'],
-  },
-};
+  assetKey: buildAssetKey({path: ['unpartitioned_asset']}),
+  requiredResources: [],
+  configField: BASE_CONFIG_TYPE_FIELD,
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
+  partitionDefinition: null,
+});
 
-export const CHECKED_ASSET: AssetNodeForGraphQueryFragment = {
+export const CHECKED_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["checked_asset"]',
   jobNames: ['__ASSET_JOB_7', 'checks_included_job', 'checks_excluded_job'],
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['checked_asset'],
-  },
-};
+  assetKey: buildAssetKey({path: ['checked_asset']}),
+  configField: BASE_CONFIG_TYPE_FIELD,
+  assetChecksOrError: buildAssetChecks({
+    checks: [
+      buildAssetCheck({
+        name: 'CHECK_1',
+        assetKey: buildAssetKey({path: ['checked_asset']}),
+        jobNames: ['checks_included_job', '__ASSET_JOB_0'],
+      }),
+    ],
+  }),
+});
 
-export const UNPARTITIONED_SOURCE_ASSET: AssetNodeForGraphQueryFragment = {
+export const UNPARTITIONED_SOURCE_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_source_asset"]',
   isSource: true,
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['unpartitioned_source_asset'],
-  },
-};
+  assetKey: buildAssetKey({path: ['unpartitioned_source_asset']}),
+});
 
-export const UNPARTITIONED_NON_EXECUTABLE_ASSET: AssetNodeForGraphQueryFragment = {
+export const UNPARTITIONED_NON_EXECUTABLE_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_non_executable_asset"]',
   isExecutable: false,
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['unpartitioned_non_executable_asset'],
-  },
-};
+  assetKey: buildAssetKey({path: ['unpartitioned_non_executable_asset']}),
+});
 
-export const UNPARTITIONED_ASSET_OTHER_REPO: AssetNodeForGraphQueryFragment = {
+export const UNPARTITIONED_ASSET_OTHER_REPO = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_asset_other_repo"]',
   opNames: ['unpartitioned_asset_other_repo'],
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['unpartitioned_asset_other_repo'],
-  },
-  repository: {
-    __typename: 'Repository',
-    id: '000000000000000000000000000000000000000',
-    name: 'other-repo',
-    location: {
-      __typename: 'RepositoryLocation',
-      id: 'other-location.py',
-      name: 'other-location.py',
-    },
-  },
-};
+  assetKey: buildAssetKey({path: ['unpartitioned_asset_other_repo']}),
+  repository: OTHER_REPO,
+});
 
-export const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG: AssetNodeForGraphQueryFragment = {
+export const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_asset_with_required_config"]',
   opNames: ['unpartitioned_asset_with_required_config'],
-  assetKey: {
-    __typename: 'AssetKey',
+  assetKey: buildAssetKey({
     path: ['unpartitioned_asset_with_required_config'],
-  },
-};
+  }),
+  configField: {...BASE_CONFIG_TYPE_FIELD, isRequired: true},
+  assetChecksOrError: buildAssetChecks({checks: []}),
+});
 
-export const MULTI_ASSET_OUT_1: AssetNodeForGraphQueryFragment = {
+export const MULTI_ASSET_OUT_1 = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["multi_asset_out_1"]',
   jobNames: ['__ASSET_JOB_7'],
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['multi_asset_out_1'],
-  },
-};
+  assetKey: buildAssetKey({path: ['multi_asset_out_1']}),
+});
 
-export const MULTI_ASSET_OUT_2: AssetNodeForGraphQueryFragment = {
+export const MULTI_ASSET_OUT_2 = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["multi_asset_out_2"]',
   jobNames: ['__ASSET_JOB_7'],
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['multi_asset_out_2'],
-  },
-};
+  assetKey: buildAssetKey({path: ['multi_asset_out_2']}),
+});
 
 export const ASSET_DAILY_PARTITION_KEYS = generateDailyTimePartitions(
   new Date('2020-01-01'),
   new Date('2023-02-22'),
 );
 
-export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
-  __typename: 'AssetNode',
+export const ASSET_DAILY = buildAssetNode({
   id: 'test.py.repo.["asset_daily"]',
   groupName: 'mapped',
   hasMaterializePermission: true,
-  repository: {
-    __typename: 'Repository',
-    id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-    name: 'repo',
-    location: {
-      __typename: 'RepositoryLocation',
-      id: 'test.py',
-      name: 'test.py',
-    },
-  },
+  repository: REPO,
   dependencyKeys: [],
-  dependedByKeys: [
-    {
-      __typename: 'AssetKey',
-      path: ['asset_weekly'],
-    },
-  ],
+  dependedByKeys: [{__typename: 'AssetKey', path: ['asset_weekly']}],
   graphName: null,
   jobNames: ['__ASSET_JOB_7', 'my_asset_job'],
   opNames: ['asset_daily'],
@@ -194,32 +194,28 @@ export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
   isObservable: false,
   isExecutable: true,
   isSource: false,
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['asset_daily'],
-  },
-};
+  assetKey: buildAssetKey({path: ['asset_daily']}),
+  requiredResources: [],
+  configField: BASE_CONFIG_TYPE_FIELD,
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
+  partitionDefinition: buildPartitionDefinition({
+    name: 'Foo',
+    type: PartitionDefinitionType.TIME_WINDOW,
+    description: 'Daily, starting 2020-01-01 UTC.',
+    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
+  }),
+});
 
-export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
+export const ASSET_WEEKLY = buildAssetNode({
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_weekly"]',
   groupName: 'mapped',
   hasMaterializePermission: true,
-  repository: {
-    __typename: 'Repository',
-    id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-    name: 'repo',
-    location: {
-      __typename: 'RepositoryLocation',
-      id: 'test.py',
-      name: 'test.py',
-    },
-  },
+  repository: REPO,
   dependencyKeys: [
-    {
-      __typename: 'AssetKey',
-      path: ['asset_daily'],
-    },
+    buildAssetKey({path: ['asset_daily']}),
+    buildAssetKey({path: ['asset_weekly_root']}),
   ],
   dependedByKeys: [],
   graphName: null,
@@ -232,28 +228,38 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   isObservable: false,
   isExecutable: true,
   isSource: false,
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['asset_weekly'],
-  },
-};
+  assetKey: buildAssetKey({path: ['asset_weekly']}),
+  requiredResources: [],
+  configField: BASE_CONFIG_TYPE_FIELD,
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
+  partitionDefinition: buildPartitionDefinition({
+    name: 'Foo',
+    type: PartitionDefinitionType.TIME_WINDOW,
+    description: 'Weekly, starting 2020-01-01 UTC.',
+    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
+  }),
+});
 
-export const ASSET_WEEKLY_ROOT: AssetNodeForGraphQueryFragment = {
+export const ASSET_WEEKLY_ROOT = buildAssetNode({
   ...ASSET_WEEKLY,
   id: 'test.py.repo.["asset_weekly_root"]',
   dependencyKeys: [],
-  assetKey: {
-    __typename: 'AssetKey',
-    path: ['asset_weekly_root'],
-  },
-};
+  assetKey: buildAssetKey({path: ['asset_weekly_root']}),
+  opNames: ['asset_weekly_root'],
+  assetMaterializations: [
+    buildMaterializationEvent({
+      runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
+    }),
+  ],
+});
 
 export const buildLaunchAssetWarningsMock = (
   upstreamAssetKeys: AssetKeyInput[],
 ): MockedResponse<LaunchAssetWarningsQuery> => ({
   request: {
     query: LAUNCH_ASSET_WARNINGS_QUERY,
-    variables: {upstreamAssetKeys: upstreamAssetKeys.map((a) => ({path: a.path}))},
+    variables: {upstreamAssetKeys: upstreamAssetKeys.map(asAssetKeyInput)},
   },
   result: {
     data: {
@@ -329,7 +335,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
   result: {
     data: {
       __typename: 'Query',
-      assetNodeOrError: {
+      assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_daily"]',
         partitionKeysByDimension: [
           {
@@ -343,8 +349,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
           ranges: PartitionHealthAssetDailyMaterializedRanges,
           __typename: 'TimePartitionStatuses',
         },
-        __typename: 'AssetNode',
-      },
+      }),
     },
   },
 };
@@ -368,7 +373,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
   result: {
     data: {
       __typename: 'Query',
-      assetNodeOrError: {
+      assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly"]',
         partitionKeysByDimension: [
           {
@@ -386,8 +391,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
           ranges: [],
           __typename: 'TimePartitionStatuses',
         },
-        __typename: 'AssetNode',
-      },
+      }),
     },
   },
 };
@@ -404,7 +408,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
   result: {
     data: {
       __typename: 'Query',
-      assetNodeOrError: {
+      assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly_root"]',
         partitionKeysByDimension: [
           {
@@ -422,8 +426,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
           ranges: [],
           __typename: 'TimePartitionStatuses',
         },
-        __typename: 'AssetNode',
-      },
+      }),
     },
   },
 };
@@ -445,11 +448,10 @@ export const buildLaunchAssetLoaderGenericJobMock = (jobName: string) => {
         pipelineOrError: {
           id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
           modes: [
-            {
+            buildMode({
               id: 'da3055161c528f4c839339deb4a362ec1be4f079-default',
               resources: [],
-              __typename: 'Mode',
-            },
+            }),
           ],
           __typename: 'Pipeline',
         },
@@ -695,31 +697,16 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
         pipelineOrError: {
           id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
           modes: [
-            {
-              __typename: 'Mode',
+            buildMode({
               id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
               resources: [],
-            },
+            }),
           ],
           __typename: 'Pipeline',
         },
       },
     },
   };
-
-const BaseRegularConfigType = buildConfigTypeField({
-  name: 'config',
-  isRequired: false,
-  configType: {
-    __typename: 'RegularConfigType',
-    givenName: 'Any',
-    key: 'Any',
-    description: null,
-    isSelector: false,
-    typeParamKeys: [],
-    recursiveConfigTypes: [],
-  },
-});
 
 export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLoaderQuery> = {
   request: {
@@ -731,38 +718,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
   result: {
     data: {
       __typename: 'Query',
-      assetNodes: [
-        {
-          ...ASSET_DAILY,
-          requiredResources: [],
-          configField: BaseRegularConfigType,
-          assetChecksOrError: buildAssetChecks({checks: []}),
-          backfillPolicy: null,
-          partitionDefinition: {
-            name: 'Foo',
-            type: PartitionDefinitionType.TIME_WINDOW,
-            description: 'Daily, starting 2020-01-01 UTC.',
-            dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
-            __typename: 'PartitionDefinition',
-          },
-          __typename: 'AssetNode',
-        },
-        {
-          ...ASSET_WEEKLY,
-          requiredResources: [],
-          configField: BaseRegularConfigType,
-          assetChecksOrError: buildAssetChecks({checks: []}),
-          backfillPolicy: null,
-          partitionDefinition: {
-            name: 'Foo',
-            type: PartitionDefinitionType.TIME_WINDOW,
-            description: 'Weekly, starting 2020-01-01 UTC.',
-            dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
-            __typename: 'PartitionDefinition',
-          },
-          __typename: 'AssetNode',
-        },
-      ],
+      assetNodes: [ASSET_DAILY, ASSET_WEEKLY],
       assetNodeDefinitionCollisions: [],
       assetNodeAdditionalRequiredKeys: [],
     },
@@ -780,25 +736,7 @@ export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetC
     result: {
       data: {
         __typename: 'Query',
-        assetNodes: [
-          {
-            id: 'test.py.repo.["asset_weekly_root"]',
-            assetKey: {
-              path: ['asset_weekly_root'],
-              __typename: 'AssetKey',
-            },
-            isSource: false,
-            opNames: ['asset_weekly_root'],
-            graphName: null,
-            assetMaterializations: [
-              {
-                runId: '8fec6fcd-7a05-4f1c-8cf8-4bfd6965eeba',
-                __typename: 'MaterializationEvent',
-              },
-            ],
-            __typename: 'AssetNode',
-          },
-        ],
+        assetNodes: [ASSET_WEEKLY_ROOT],
       },
     },
   };
@@ -856,157 +794,16 @@ export function buildConfigPartitionSelectionLatestPartitionMock(
   };
 }
 
-type LaunchAssetLoaderQueryAssetNode = LaunchAssetLoaderQuery['assetNodes'][0];
-
-const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...ASSET_DAILY,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: {
-    name: 'Foo',
-    type: PartitionDefinitionType.TIME_WINDOW,
-    description: 'Daily, starting 2020-01-01 UTC.',
-    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
-    __typename: 'PartitionDefinition',
-  },
-  __typename: 'AssetNode',
-};
-
-const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...ASSET_WEEKLY,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: {
-    name: 'Foo',
-    type: PartitionDefinitionType.TIME_WINDOW,
-    description: 'Weekly, starting 2020-01-01 UTC.',
-    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
-    __typename: 'PartitionDefinition',
-  },
-  dependencyKeys: [
-    {
-      __typename: 'AssetKey',
-      path: ['asset_daily'],
-    },
-    {
-      __typename: 'AssetKey',
-      path: ['asset_weekly_root'],
-    },
-  ],
-  __typename: 'AssetNode',
-};
-
-const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...ASSET_WEEKLY_ROOT,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: {
-    name: 'Foo',
-    type: PartitionDefinitionType.TIME_WINDOW,
-    description: 'Weekly, starting 2020-01-01 UTC.',
-    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
-    __typename: 'PartitionDefinition',
-  },
-  __typename: 'AssetNode',
-};
-
-const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...UNPARTITIONED_ASSET,
-  requiredResources: [],
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  configField: {
-    name: 'config',
-    isRequired: false,
-    configType: {
-      __typename: 'RegularConfigType',
-      givenName: 'Any',
-      key: 'Any',
-      description: null,
-      isSelector: false,
-      typeParamKeys: [],
-      recursiveConfigTypes: [],
-    },
-    __typename: 'ConfigTypeField',
-  },
-  __typename: 'AssetNode',
-};
-
-const MULTI_ASSET_OUT_1_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...MULTI_ASSET_OUT_1,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  __typename: 'AssetNode',
-};
-
-const MULTI_ASSET_OUT_2_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...MULTI_ASSET_OUT_2,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  __typename: 'AssetNode',
-};
-
-const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...UNPARTITIONED_ASSET_OTHER_REPO,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  __typename: 'AssetNode',
-};
-
-const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
-  requiredResources: [],
-  configField: {...BaseRegularConfigType, isRequired: true},
-  assetChecksOrError: buildAssetChecks({checks: []}),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  __typename: 'AssetNode',
-};
-
-const CHECKED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
-  ...CHECKED_ASSET,
-  requiredResources: [],
-  configField: BaseRegularConfigType,
-  assetChecksOrError: buildAssetChecks({
-    checks: [
-      buildAssetCheck({
-        name: 'CHECK_1',
-        assetKey: CHECKED_ASSET.assetKey,
-        jobNames: ['checks_included_job', '__ASSET_JOB_0'],
-      }),
-    ],
-  }),
-  backfillPolicy: null,
-  partitionDefinition: null,
-  __typename: 'AssetNode',
-};
-
 export const LOADER_RESULTS = [
-  ASSET_DAILY_LOADER_RESULT,
-  ASSET_WEEKLY_LOADER_RESULT,
-  ASSET_WEEKLY_ROOT_LOADER_RESULT,
-  UNPARTITIONED_ASSET_LOADER_RESULT,
-  UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT,
-  UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT,
-  MULTI_ASSET_OUT_1_LOADER_RESULT,
-  MULTI_ASSET_OUT_2_LOADER_RESULT,
-  CHECKED_ASSET_LOADER_RESULT,
+  ASSET_DAILY,
+  ASSET_WEEKLY,
+  ASSET_WEEKLY_ROOT,
+  UNPARTITIONED_ASSET,
+  UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
+  UNPARTITIONED_ASSET_OTHER_REPO,
+  MULTI_ASSET_OUT_1,
+  MULTI_ASSET_OUT_2,
+  CHECKED_ASSET,
 ];
 
 export const PartitionHealthAssetMocks = [
@@ -1070,12 +867,11 @@ export function buildExpectedLaunchSingleRunMutation(
         __typename: 'Mutation',
         launchPipelineExecution: {
           __typename: 'LaunchRunSuccess',
-          run: {
-            __typename: 'Run',
+          run: buildRun({
             runId: 'RUN_ID',
             id: 'RUN_ID',
             pipelineName: executionParams['selector']['pipelineName']!,
-          },
+          }),
         },
       },
     })),
