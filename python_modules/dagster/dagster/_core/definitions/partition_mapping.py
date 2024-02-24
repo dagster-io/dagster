@@ -700,7 +700,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "abc": DimensionPartitionMapping(
                         dimension_name="123",
@@ -733,7 +733,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "daily": DimensionPartitionMapping(
                         dimension_name="daily",
