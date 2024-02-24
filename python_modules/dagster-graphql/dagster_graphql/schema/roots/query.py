@@ -423,7 +423,7 @@ class GrapheneQuery(graphene.ObjectType):
     assetNodeAdditionalRequiredKeys = graphene.Field(
         non_null_list(GrapheneAssetKey),
         assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
-        description="Retrieve a list of additional asset keys that must be materialized with the provided selection (with @multi_asset is_required=True within the same ops.)",
+        description="Retrieve a list of additional asset keys that must be materialized with the provided selection (due to @multi_assets with can_subset=False constraints.)",
     )
 
     assetNodeDefinitionCollisions = graphene.Field(
