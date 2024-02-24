@@ -50,6 +50,7 @@ setup(
         f"dagster-graphql{pin}",
         "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
         "uvicorn[standard]",
+        "urllib3 <2",
     ],
     extras_require={
         "notebook": ["nbconvert"],  # notebooks support
