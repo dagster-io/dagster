@@ -1,11 +1,14 @@
 from dagster import (
     AssetKey,
     Definitions,
+    DynamicPartitionsDefinition,
     InputContext,
     IOManager,
     IOManagerDefinition,
     OutputContext,
     asset,
+    job,
+    op,
     with_resources,
 )
 
@@ -27,11 +30,15 @@ def get_assets():
     def asset2():
         ...
 
+    partitions_def = DynamicPartitionsDefinition(name="partitions")
+
+    @asset(partitions_def=partitions_def)
+    def asset3():
+        ...
+
     return with_resources(
-        [asset1, asset2],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        [asset1, asset2, asset3],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
 
@@ -63,3 +70,26 @@ def load_multiple_asset_values():
 
     del asset1_value
     del asset2_value
+
+
+def load_partitioned_asset_dynamically():
+    defs = Definitions(assets=assets)
+
+    # partitioned_asset_dynamically_start_marker
+
+    @op
+    def dynamic_partition_loader(context, asset_key, partition_key):
+        with defs.get_asset_value_loader(instance=context.instance) as loader:
+            partition_value = loader.load_asset_value(
+                AssetKey(asset_key),
+                partition_key=partition_key,
+            )
+
+            return partition_value
+
+    # partitioned_asset_dynamically_end_marker
+
+    @job
+    def adhoc_partition_load():
+        """Job wrapper of dynamic_partition_loader."""
+        dynamic_partition_loader()
