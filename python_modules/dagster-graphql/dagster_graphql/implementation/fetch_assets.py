@@ -13,7 +13,6 @@ from typing import (
     Union,
     cast,
 )
-from dagster._core.snap.node import OpDefSnap
 
 import dagster._seven as seven
 from dagster import (
@@ -65,7 +64,6 @@ if TYPE_CHECKING:
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
     from ..schema.pipelines.pipeline import (
         GrapheneAsset,
-        GrapheneAssetKey,
         GrapheneDefaultPartitionStatuses,
         GrapheneMultiPartitionStatuses,
         GrapheneTimePartitionStatuses,
@@ -140,6 +138,7 @@ def asset_node_iter(
         for external_asset_node in repository.get_external_asset_nodes():
             yield location, repository, external_asset_node
 
+
 def get_additional_required_keys(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["AssetKey"]:
@@ -159,6 +158,7 @@ def get_additional_required_keys(
     }
 
     return list(required_asset_keys - asset_keys)
+
 
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
