@@ -91,7 +91,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[List[str]] = ...,
-    scheduling_policiy: Optional[SchedulingPolicy] = ...,
+    scheduling_policy: Optional[SchedulingPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 

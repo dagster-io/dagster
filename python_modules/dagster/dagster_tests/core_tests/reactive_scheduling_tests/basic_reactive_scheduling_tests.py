@@ -7,11 +7,11 @@ def test_include_scheduling_policy() -> None:
     assert SchedulingPolicy
 
 
-def test_scheduling_policy_parameter():
+def test_scheduling_policy_parameter() -> None:
     scheduling_policy = SchedulingPolicy()
 
     @asset(scheduling_policy=scheduling_policy)
-    def an_asset():
+    def an_asset() -> None:
         raise Exception("never executed")
 
     assert an_asset.scheduling_policies_by_key[AssetKey(["an_asset"])] is scheduling_policy
