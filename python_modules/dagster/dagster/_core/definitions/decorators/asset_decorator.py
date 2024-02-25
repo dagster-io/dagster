@@ -909,6 +909,7 @@ def multi_asset(
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             owners_by_key=owners_by_key,
+            scheduling_policies_by_key=None, # not support on multi-asset yet
         )
 
     return inner
