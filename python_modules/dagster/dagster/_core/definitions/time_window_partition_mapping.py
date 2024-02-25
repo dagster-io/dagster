@@ -3,7 +3,11 @@ from typing import List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
@@ -127,8 +131,17 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
+        # TODO: Why isn't this handled?
+        if isinstance(downstream_partitions_subset, AllPartitionsSubset):
+            assert downstream_partitions_def
+            downstream_partitions_subset = downstream_partitions_def.subset_with_all_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+
         if not isinstance(downstream_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset")
+            check.failed(
+                f"downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset. Got {downstream_partitions_subset}"
+            )
 
         return self._map_partitions(
             downstream_partitions_subset.partitions_def,
@@ -199,7 +212,9 @@ class TimeWindowPartitionMapping(
         that did not exist in to_partitions_def.
         """
         if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
+            check.failed(
+                f"from_partitions_subset must be a BaseTimeWindowPartitionsSubset. Got {from_partitions_subset}"
+            )
 
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
