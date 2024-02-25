@@ -156,18 +156,23 @@ def ascending_scheduling_pulse(
                 continue
 
             parent_subset = graph.get_parent_asset_subset(current, parent_asset_key)
-            included: Set[AssetPartition] = set()
-            for asset_partition in parent_subset.asset_partitions:
-                parent_reaction = parent_info.scheduling_policy.request_from_downstream(
-                    graph.context, asset_partition
-                )
-                if parent_reaction.include and asset_partition not in visited:
-                    included.add(asset_partition)
-
-            requested_subset = graph.make_valid_subset(parent_info.asset_key, included)
+            requested_subset = _compute_requested_upstream_subset(parent_info, parent_subset)
 
             if requested_subset.asset_partitions:
                 _ascend(requested_subset)
+
+    def _compute_requested_upstream_subset(
+        parent_info: ReactiveAssetInfo, parent_subset: ValidAssetSubset
+    ) -> ValidAssetSubset:
+        included: Set[AssetPartition] = set()
+        for asset_partition in parent_subset.asset_partitions:
+            parent_reaction = parent_info.scheduling_policy.request_from_downstream(
+                graph.context, asset_partition
+            )
+            if parent_reaction.include and asset_partition not in visited:
+                included.add(asset_partition)
+
+        return graph.make_valid_subset(parent_info.asset_key, included)
 
     _ascend(starting_subset)
 
@@ -191,18 +196,24 @@ def descending_scheduling_pulse(
                 continue
 
             child_subset = graph.get_child_asset_subset(current, child_asset_key)
-            included: Set[AssetPartition] = set()
-            for asset_partition in child_subset.asset_partitions:
-                child_reaction = child_info.scheduling_policy.request_from_upstream(
-                    graph.context, asset_partition
-                )
-                if child_reaction.include and asset_partition not in visited:
-                    included.add(asset_partition)
-
-            requested_subset = graph.make_valid_subset(child_info.asset_key, included)
+            requested_subset = _compute_requested_downstream_subset(child_info, child_subset)
 
             if requested_subset.asset_partitions:
                 _descend(requested_subset)
+
+    def _compute_requested_downstream_subset(
+        child_info: ReactiveAssetInfo, child_subset: ValidAssetSubset
+    ) -> ValidAssetSubset:
+        included: Set[AssetPartition] = set()
+        for asset_partition in child_subset.asset_partitions:
+            child_reaction = child_info.scheduling_policy.request_from_upstream(
+                graph.context, asset_partition
+            )
+            if child_reaction.include and asset_partition not in visited:
+                included.add(asset_partition)
+
+        requested_subset = graph.make_valid_subset(child_info.asset_key, included)
+        return requested_subset
 
     _descend(starting_subset)
 
