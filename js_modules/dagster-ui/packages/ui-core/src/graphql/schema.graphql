@@ -3007,7 +3007,6 @@ type OutputDefinition {
   name: String!
   description: String
   isDynamic: Boolean
-  isRequired: Boolean
   type: DagsterType!
   metadataEntries: [MetadataEntry!]!
 }

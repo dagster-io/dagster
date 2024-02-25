@@ -2893,7 +2893,6 @@ export type OutputDefinition = {
   __typename: 'OutputDefinition';
   description: Maybe<Scalars['String']>;
   isDynamic: Maybe<Scalars['Boolean']>;
-  isRequired: Maybe<Scalars['Boolean']>;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -10233,7 +10232,6 @@ export const buildOutputDefinition = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quis',
     isDynamic: overrides && overrides.hasOwnProperty('isDynamic') ? overrides.isDynamic! : false,
-    isRequired: overrides && overrides.hasOwnProperty('isRequired') ? overrides.isRequired! : true,
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellendus',
