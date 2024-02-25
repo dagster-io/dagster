@@ -155,7 +155,6 @@ def upward_ascent(
     to_execute: Set[AssetPartition] = set()
 
     def _ascend(current: ValidAssetSubset):
-        print(f"_ascend: current: ({current})")
         to_execute.update(current.asset_partitions)
         visited.update(current.asset_partitions)
 
