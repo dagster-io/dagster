@@ -10,7 +10,6 @@ from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
-from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -118,6 +117,17 @@ class ReactiveSchedulingGraph(NamedTuple):
             current_time=self.context.evaluation_time,
         ).as_valid(parent_assets_def.partitions_def)
 
+    def get_child_asset_subset(
+        self, asset_subset: ValidAssetSubset, child_asset_key: AssetKey
+    ) -> ValidAssetSubset:
+        child_assets_def = self.repository_def.assets_defs_by_key[child_asset_key]
+        return self.asset_graph.get_child_asset_subset(
+            parent_asset_subset=asset_subset,
+            child_asset_key=child_asset_key,
+            dynamic_partitions_store=self.instance,
+            current_time=self.context.evaluation_time,
+        ).as_valid(child_assets_def.partitions_def)
+
 
 class ReactionSchedulingPlan(NamedTuple):
     requested_partitions: Set[AssetPartition]
@@ -140,7 +150,10 @@ def build_reactive_scheduling_plan(
     )
 
     upward_requested_partitions = ascending_scheduling_pulse(scheduling_graph, starting_subset)
-    return ReactionSchedulingPlan(requested_partitions=upward_requested_partitions)
+    downward_requested_partitions = descending_scheduling_pulse(scheduling_graph, starting_subset)
+    return ReactionSchedulingPlan(
+        requested_partitions=upward_requested_partitions | downward_requested_partitions
+    )
 
 
 def ascending_scheduling_pulse(
@@ -174,6 +187,41 @@ def ascending_scheduling_pulse(
                 _ascend(requested_subset)
 
     _ascend(starting_subset)
+
+    return to_execute
+
+
+def descending_scheduling_pulse(
+    graph: ReactiveSchedulingGraph,
+    starting_subset: ValidAssetSubset,
+) -> Set[AssetPartition]:
+    visited: Set[AssetPartition] = set()
+    to_execute: Set[AssetPartition] = set()
+
+    def _descend(current: ValidAssetSubset):
+        to_execute.update(current.asset_partitions)
+        visited.update(current.asset_partitions)
+
+        for child_asset_key in graph.asset_graph.get_children(current.asset_key):
+            child_info = graph.get_asset_info(child_asset_key)
+            if not child_info:
+                continue
+
+            child_subset = graph.get_child_asset_subset(current, child_asset_key)
+            included: Set[AssetPartition] = set()
+            for asset_partition in child_subset.asset_partitions:
+                child_reaction = child_info.scheduling_policy.request_from_upstream(
+                    graph.context, asset_partition
+                )
+                if child_reaction.include and asset_partition not in visited:
+                    included.add(asset_partition)
+
+            requested_subset = graph.make_valid_subset(child_info.asset_key, included)
+
+            if requested_subset.asset_partitions:
+                _descend(requested_subset)
+
+    _descend(starting_subset)
 
     return to_execute
 
@@ -251,6 +299,11 @@ class AlwaysDeferSchedulingPolicy(SchedulingPolicy):
     ) -> RequestReaction:
         return RequestReaction(include=True)
 
+    def request_from_upstream(
+        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
+    ) -> RequestReaction:
+        return RequestReaction(include=True)
+
 
 def run_request_assets(run_request: RunRequest) -> Set[AssetKey]:
     return set(run_request.asset_selection) if run_request.asset_selection else set()
@@ -291,8 +344,6 @@ def test_launch_on_every_tick_with_partitioned_upstream() -> None:
     def down() -> None:
         ...
 
-    assert materialize([up, down], partition_key="1").success
-
     defs = Definitions(assets=[up, down])
 
     run_requests = run_scheduling_pulse_on_asset(defs, "down")
@@ -304,3 +355,32 @@ def test_launch_on_every_tick_with_partitioned_upstream() -> None:
     assert run_request_assets(run_requests[1]) == asset_key_set("up", "down")
     assert run_requests[1].partition_key == "2"
     assert not run_scheduling_pulse_on_asset(defs, "up")
+
+
+def test_launch_on_every_tick_with_partitioned_downstream() -> None:
+    static_partitions_def = StaticPartitionsDefinition(["1", "2"])
+
+    @asset(partitions_def=static_partitions_def, scheduling_policy=AlwaysLaunchSchedulingPolicy())
+    def up() -> None:
+        ...
+
+    @asset(
+        partitions_def=static_partitions_def,
+        deps=[up],
+        scheduling_policy=AlwaysDeferSchedulingPolicy(),
+    )
+    def down() -> None:
+        ...
+
+    defs = Definitions(assets=[up, down])
+
+    run_requests = run_scheduling_pulse_on_asset(defs, "up")
+
+    assert len(run_requests) == 2
+
+    assert run_request_assets(run_requests[0]) == asset_key_set("up", "down")
+    assert run_requests[0].partition_key == "1"
+    assert run_request_assets(run_requests[1]) == asset_key_set("up", "down")
+    assert run_requests[1].partition_key == "2"
+
+    assert not run_scheduling_pulse_on_asset(defs, "down")
