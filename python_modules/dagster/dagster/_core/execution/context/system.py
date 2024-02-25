@@ -891,6 +891,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_output_capture
 
     @property
+    def output_metadata(self) -> Optional[Dict[str, Any]]:
+        return self._output_metadata
+
+    @property
     def previous_attempt_count(self) -> int:
         return self.get_known_state().get_retry_state().get_attempt_count(self._step.key)
 
