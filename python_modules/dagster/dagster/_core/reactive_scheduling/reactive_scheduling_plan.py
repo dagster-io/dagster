@@ -166,7 +166,7 @@ def ascending_scheduling_pulse(
     ) -> ValidAssetSubset:
         included: Set[AssetPartition] = set()
         for asset_partition in parent_subset.asset_partitions:
-            parent_reaction = parent_info.scheduling_policy.request_from_downstream(
+            parent_reaction = parent_info.scheduling_policy.react_to_downstream_request(
                 graph.context, asset_partition
             )
             if parent_reaction.include and asset_partition not in visited:
@@ -206,7 +206,7 @@ def descending_scheduling_pulse(
     ) -> ValidAssetSubset:
         included: Set[AssetPartition] = set()
         for asset_partition in child_subset.asset_partitions:
-            child_reaction = child_info.scheduling_policy.request_from_upstream(
+            child_reaction = child_info.scheduling_policy.react_to_upstream_request(
                 graph.context, asset_partition
             )
             if child_reaction.include and asset_partition not in visited:

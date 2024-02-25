@@ -42,12 +42,12 @@ class AlwaysDeferSchedulingPolicy(SchedulingPolicy):
     def schedule(self, context: SchedulingExecutionContext) -> SchedulingResult:
         return SchedulingResult(launch=False)
 
-    def request_from_downstream(
+    def react_to_downstream_request(
         self, context: SchedulingExecutionContext, asset_partition: AssetPartition
     ) -> RequestReaction:
         return RequestReaction(include=True)
 
-    def request_from_upstream(
+    def react_to_upstream_request(
         self, context: SchedulingExecutionContext, asset_partition: AssetPartition
     ) -> RequestReaction:
         return RequestReaction(include=True)
