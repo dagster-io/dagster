@@ -48,6 +48,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.reactive_scheduling.scheduling_policy import SchedulingPolicy
 from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
@@ -113,6 +114,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
     _owners_by_key: Mapping[AssetKey, Sequence[AssetOwner]]
+    _scheduling_policies_by_key: Mapping[AssetKey, SchedulingPolicy]
 
     def __init__(
         self,
@@ -136,6 +138,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         is_subset: bool = False,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        scheduling_policies_by_key: Optional[Mapping[AssetKey, SchedulingPolicy]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -364,6 +367,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, owners in (owners_by_key or {}).items()
         }
 
+        self._scheduling_policies_by_key = (
+            scheduling_policies_by_key if scheduling_policies_by_key else {}
+        )
+
     @staticmethod
     def dagster_internal_init(
         *,
@@ -386,6 +393,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]],
+        scheduling_policies_by_key: Optional[Mapping[AssetKey, SchedulingPolicy]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -407,6 +415,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys,
             is_subset=is_subset,
             owners_by_key=owners_by_key,
+            scheduling_policies_by_key=scheduling_policies_by_key,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -629,6 +638,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        scheduling_policies_by_key: Optional[Mapping[AssetKey, SchedulingPolicy]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _assign_output_names_to_check_specs,
@@ -767,6 +777,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=None,
             is_subset=False,
             owners_by_key=owners_by_key,
+            scheduling_policies_by_key=scheduling_policies_by_key,
         )
 
     @public
@@ -956,6 +967,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[AssetOwner]]:
         return self._owners_by_key
+
+    @property
+    def scheduling_policies_by_key(self) -> Mapping[AssetKey, SchedulingPolicy]:
+        return self._scheduling_policies_by_key
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -1208,6 +1223,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
+            # TODO add scheduling policies
         )
 
         return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
@@ -1463,6 +1479,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
             owners_by_key=self._owners_by_key,
+            # TODO add scheduling policies
         )
 
 
