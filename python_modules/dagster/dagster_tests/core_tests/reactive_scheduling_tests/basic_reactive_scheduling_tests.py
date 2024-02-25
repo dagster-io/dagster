@@ -139,15 +139,11 @@ def build_reactive_scheduling_plan(
         else make_asset_partitions(starting_key, scheduling_result.partition_keys),
     )
 
-    # import code
-
-    # code.interact(local=locals())
-
-    upward_requested_partitions = upward_ascent(scheduling_graph, starting_subset)
+    upward_requested_partitions = ascending_scheduling_pulse(scheduling_graph, starting_subset)
     return ReactionSchedulingPlan(requested_partitions=upward_requested_partitions)
 
 
-def upward_ascent(
+def ascending_scheduling_pulse(
     graph: ReactiveSchedulingGraph,
     starting_subset: ValidAssetSubset,
 ) -> Set[AssetPartition]:
