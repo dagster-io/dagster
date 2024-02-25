@@ -1223,8 +1223,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=selected_asset_check_keys
             if selected_asset_check_keys
             else self._selected_asset_check_keys,
-            # TODO add scheduling policies
         )
+
+        check.failed("Not implemented")
 
         return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
@@ -1479,7 +1480,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
             owners_by_key=self._owners_by_key,
-            # TODO add scheduling policies
+            scheduling_policies_by_key=self._scheduling_policies_by_key,
         )
 
 
