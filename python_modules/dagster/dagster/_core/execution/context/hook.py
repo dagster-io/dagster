@@ -213,7 +213,9 @@ class HookContext:
                         step_output_handle.mapping_key: metadata
                     }
                 else:
-                    results[step_output_handle.output_name][step_output_handle.mapping_key] = metadata
+                    results[step_output_handle.output_name][
+                        step_output_handle.mapping_key
+                    ] = metadata
             else:
                 results[step_output_handle.output_name] = metadata
 
@@ -224,6 +226,7 @@ class HookContext:
     def op_output_metadata(self):
         """Computed output values in an op."""
         return self.solid_output_metadata
+
 
 class UnboundHookContext(HookContext):
     def __init__(
