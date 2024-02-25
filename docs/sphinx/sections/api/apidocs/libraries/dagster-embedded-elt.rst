@@ -10,23 +10,30 @@ provides a simple way to sync data between databases and file systems.
 
 Related documentation pages: `embedded-elt </integrations/embedded-elt>`_.
 
-
-******
-Sling
-******
-
 .. currentmodule:: dagster_embedded_elt.sling
 
-Assets
-======
+***************************
+dagster-embedded-elt.sling
+***************************
 
-.. autofunction:: build_sling_asset
+Assets (Sling)
+==============
 
-Resources
-=========
+.. autodecorator:: sling_assets
+
+.. autoclass:: DagsterSlingTranslator
+
+Resources (Sling)
+=================
 
 .. autoclass:: SlingResource
-   :members: sync
+    :members: sync, replicate
 
+.. autoclass:: SlingConnectionResource
+
+Deprecated
+-----------
+
+.. autofunction:: build_sling_asset
 .. autoclass:: dagster_embedded_elt.sling.resources.SlingSourceConnection
 .. autoclass:: dagster_embedded_elt.sling.resources.SlingTargetConnection

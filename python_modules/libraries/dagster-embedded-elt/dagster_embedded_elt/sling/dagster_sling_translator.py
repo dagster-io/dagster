@@ -49,10 +49,12 @@ class DagsterSlingTranslator:
 
         For example:
 
-        stream_definition = {"public.users":
-            {'sql': 'select all_user_id, name from public."all_Users"',
-            'object': 'public.all_users'}
-        }
+        .. code-block:: python
+
+            stream_definition = {"public.users":
+                {'sql': 'select all_user_id, name from public."all_Users"',
+                'object': 'public.all_users'}
+            }
 
         By default, this returns the class's target_prefix paramater concatenated with the stream name.
         A stream named "public.accounts" will create an AssetKey named "target_public_accounts".
@@ -78,11 +80,13 @@ class DagsterSlingTranslator:
         Examples:
             Using a custom mapping for streams:
 
-            class CustomSlingTranslator(DagsterSlingTranslator):
-                @classmethod
-                def get_asset_key_for_target(self, stream_definition) -> AssetKey:
-                    map = {"stream1": "asset1", "stream2": "asset2"}
-                    return AssetKey(map[stream_name])
+            .. code-block:: python
+
+                class CustomSlingTranslator(DagsterSlingTranslator):
+                    @classmethod
+                    def get_asset_key_for_target(self, stream_definition) -> AssetKey:
+                        map = {"stream1": "asset1", "stream2": "asset2"}
+                        return AssetKey(map[stream_name])
         """
         config = stream_definition.get("config", {}) or {}
         object_key = config.get("object")
@@ -131,12 +135,13 @@ class DagsterSlingTranslator:
         Examples:
             Using a custom mapping for streams:
 
-            class CustomSlingTranslator(DagsterSlingTranslator):
-                @classmethod
-                def get_deps_asset_key(cls, stream_name: str) -> AssetKey:
-                    map = {"stream1": "asset1", "stream2": "asset2"}
-                    return AssetKey(map[stream_name])
+            .. code-block:: python
 
+                class CustomSlingTranslator(DagsterSlingTranslator):
+                    @classmethod
+                    def get_deps_asset_key(cls, stream_name: str) -> AssetKey:
+                        map = {"stream1": "asset1", "stream2": "asset2"}
+                        return AssetKey(map[stream_name])
 
         """
         config = stream_definition.get("config", {}) or {}
