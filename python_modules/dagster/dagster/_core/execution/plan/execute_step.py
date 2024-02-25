@@ -568,6 +568,7 @@ def _type_check_and_store_output(
     # capture output at the step level for threading the computed output values to hook context
     if step_context.step_output_capture is not None:
         step_context.step_output_capture[step_output_handle] = output.value
+        step_context.output_metadata[step_output_handle] = output.metadata
 
     version = (
         resolve_step_output_versions(
