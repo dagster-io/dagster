@@ -94,8 +94,8 @@ def databricks_asset(
         }
     )
 
-    print("This will be forwarded back to Dagster stdout")  # noqa: T201
-    print("This will be forwarded back to Dagster stderr", file=sys.stderr)  # noqa: T201
+    print("This will be forwarded back to Dagster stdout")
+    print("This will be forwarded back to Dagster stderr", file=sys.stderr)
 
     extras = {"some_parameter": 100}
 
