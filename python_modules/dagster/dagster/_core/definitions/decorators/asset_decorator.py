@@ -32,6 +32,7 @@ from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.reactive_scheduling.scheduling_policy import SchedulingPolicy
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.warnings import (
     disable_dagster_warnings,
@@ -90,6 +91,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[List[str]] = ...,
+    scheduling_policy: Optional[SchedulingPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -131,6 +133,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[List[str]] = None,
+    scheduling_policy: Optional[SchedulingPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -248,6 +251,7 @@ def asset(
             check_specs=check_specs,
             key=key,
             owners=owners,
+            scheduling_policy=scheduling_policy,
         )
 
     if compute_fn is not None:
@@ -321,6 +325,7 @@ class _Asset:
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners: Optional[Sequence[str]] = None,
+        scheduling_policy: Optional[SchedulingPolicy] = None,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -349,6 +354,7 @@ class _Asset:
         self.check_specs = check_specs
         self.key = key
         self.owners = owners
+        self.scheduling_policy = scheduling_policy
 
     def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -494,6 +500,9 @@ class _Asset:
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             owners_by_key={out_asset_key: self.owners} if self.owners else None,
+            scheduling_policies_by_key={out_asset_key: self.scheduling_policy}
+            if self.scheduling_policy
+            else None,
         )
 
 
@@ -900,6 +909,7 @@ def multi_asset(
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             owners_by_key=owners_by_key,
+            scheduling_policies_by_key=None,  # not support on multi-asset yet
         )
 
     return inner
