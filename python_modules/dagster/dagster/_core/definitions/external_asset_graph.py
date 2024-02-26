@@ -180,10 +180,12 @@ class ExternalAssetGraph(AssetGraph):
         return {"upstream": upstream, "downstream": downstream}
 
     @property
+    @cached_method
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.asset_key for node in self.asset_nodes}
 
     @property
+    @cached_method
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {
             node.asset_key
@@ -195,6 +197,7 @@ class ExternalAssetGraph(AssetGraph):
         return self.get_asset_node(asset_key).execution_type == AssetExecutionType.MATERIALIZATION
 
     @property
+    @cached_method
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {
             node.asset_key
@@ -208,6 +211,7 @@ class ExternalAssetGraph(AssetGraph):
         return self.get_asset_node(asset_key).is_observable
 
     @property
+    @cached_method
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {
             node.asset_key
@@ -219,6 +223,7 @@ class ExternalAssetGraph(AssetGraph):
         return self.get_asset_node(asset_key).execution_type != AssetExecutionType.MATERIALIZATION
 
     @property
+    @cached_method
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.asset_key for node in self.asset_nodes if node.is_executable}
 

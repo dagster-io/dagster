@@ -112,10 +112,12 @@ class InternalAssetGraph(AssetGraph):
         return generate_asset_dep_graph(self._assets_defs, [])
 
     @property
+    @cached_method
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs for key in ad.keys}
 
     @property
+    @cached_method
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_materializable for key in ad.keys}
 
@@ -124,6 +126,7 @@ class InternalAssetGraph(AssetGraph):
         return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_materializable
 
     @property
+    @cached_method
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_observable for key in ad.keys}
 
@@ -131,6 +134,7 @@ class InternalAssetGraph(AssetGraph):
         return self.get_assets_def(asset_key).is_observable
 
     @property
+    @cached_method
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_external for key in ad.keys}
 
@@ -138,6 +142,7 @@ class InternalAssetGraph(AssetGraph):
         return self.get_assets_def(asset_key).is_external
 
     @property
+    @cached_method
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for ad in self._assets_defs if ad.is_executable for key in ad.keys}
 
