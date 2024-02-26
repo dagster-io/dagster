@@ -2,7 +2,6 @@ import inspect
 import logging
 from collections import defaultdict
 from contextlib import ExitStack
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -65,6 +64,7 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
+from .sensor_enums import DefaultSensorStatus, SensorType, DEFAULT_SENSOR_DAEMON_INTERVAL
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -83,24 +83,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
-@whitelist_for_serdes
-class DefaultSensorStatus(Enum):
-    RUNNING = "RUNNING"
-    STOPPED = "STOPPED"
-
-
-@whitelist_for_serdes
-class SensorType(Enum):
-    STANDARD = "STANDARD"
-    RUN_STATUS = "RUN_STATUS"
-    ASSET = "ASSET"
-    MULTI_ASSET = "MULTI_ASSET"
-    FRESHNESS_POLICY = "FRESHNESS_POLICY"
-    AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
-    UNKNOWN = "UNKNOWN"
-
-
-DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
 @deprecated_param(
