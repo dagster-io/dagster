@@ -124,9 +124,6 @@ def copy_scaffold(
     shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
     dagster_project_dir.joinpath("__init__.py").unlink()
 
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
             dbt_project_dir,
@@ -136,7 +133,18 @@ def copy_scaffold(
     dbt_project_dir_relative_path_parts = [
         f'"{part}"' for part in dbt_project_dir_relative_path.parts
     ]
-    dbt_parse_command = ['"--quiet", "parse"']
+
+    package_data_dir_relative_parts = None
+    if use_dbt_project_package_data_dir:
+        package_data_dir_relative_path = Path(
+            os.path.relpath(
+                dagster_project_dir.joinpath("dbt-project"),
+                start=dagster_project_dir.joinpath(project_name, "definitions.py"),
+            )
+        )
+        package_data_dir_relative_parts = [
+            f'"{part}"' for part in package_data_dir_relative_path.parts
+        ]
 
     env = Environment(loader=FileSystemLoader(dagster_project_dir))
 
@@ -149,11 +157,10 @@ def copy_scaffold(
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
                 dbt_project_name=dbt_project_name,
-                dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
-                use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
+                package_data_dir_relative_parts=package_data_dir_relative_parts,
             ).dump(destination_path)
 
             path.unlink()

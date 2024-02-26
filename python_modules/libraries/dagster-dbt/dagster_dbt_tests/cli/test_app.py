@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from dagster_dbt.cli.app import app
+from dagster_dbt.errors import DagsterDbtManifestNotPreparedError
 from typer.testing import CliRunner
 
 from ..dbt_projects import test_jaffle_shop_path
@@ -71,18 +72,6 @@ def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
     assert materialize_dbt_models_schedule.cron_schedule == "0 0 * * *"
 
 
-def _update_dbt_project_path(
-    dbt_project_dir: Path,
-    dagster_project_dir: Path,
-    use_dbt_project_package_data_dir: bool,
-) -> Path:
-    if use_dbt_project_package_data_dir:
-        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
-        shutil.copytree(src=test_jaffle_shop_path, dst=dbt_project_dir)
-
-    return dbt_project_dir
-
-
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_precompiled_manifest(
     monkeypatch: pytest.MonkeyPatch,
@@ -101,16 +90,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
         dagster_project_dir=dagster_project_dir,
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
-
-    dbt_project_dir = _update_dbt_project_path(
-        dbt_project_dir=dbt_project_dir,
-        dagster_project_dir=dagster_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
-    )
-
-    subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
-
-    assert dbt_project_dir.joinpath("target", "manifest.json").exists()
+    subprocess.run(["python", f"{project_name}/artifacts.py"], cwd=dagster_project_dir, check=True)
 
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
@@ -119,11 +99,19 @@ def test_project_scaffold_command_with_precompiled_manifest(
 
 
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
+@pytest.mark.parametrize(
+    "allow_compile_env_var",
+    [
+        "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD",
+        "DAGSTER_IS_DEV_CLI",
+    ],
+)
 def test_project_scaffold_command_with_runtime_manifest(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     dbt_project_dir: Path,
     use_dbt_project_package_data_dir: bool,
+    allow_compile_env_var: str,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
@@ -137,13 +125,7 @@ def test_project_scaffold_command_with_runtime_manifest(
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
-    dbt_project_dir = _update_dbt_project_path(
-        dbt_project_dir=dbt_project_dir,
-        dagster_project_dir=dagster_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
-    )
-
-    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
+    monkeypatch.setenv(allow_compile_env_var, "1")
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
@@ -169,16 +151,10 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
-    dbt_project_dir = _update_dbt_project_path(
-        dbt_project_dir=dbt_project_dir,
-        dagster_project_dir=dagster_project_dir,
-        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
-    )
-
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(DagsterDbtManifestNotPreparedError):
         monkeypatch.delenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", raising=False)
         importlib.import_module(f"{project_name}.{project_name}.definitions")
 

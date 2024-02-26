@@ -52,9 +52,9 @@ import pandas as pd
 from dagster import AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from .constants import dbt_manifest_path, dbt_project_dir
+from .artifacts import dbt_artifacts
 
-duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
+duckdb_database_path = dbt_artifacts.project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
@@ -70,7 +70,7 @@ def raw_customers(context: AssetExecutionContext) -> None:
     context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-@dbt_assets(manifest=dbt_manifest_path)
+@dbt_assets(manifest=dbt_artifacts.project_dir)
 def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
@@ -92,14 +92,14 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 
 from .assets import jaffle_shop_dbt_assets, raw_customers
-from .constants import dbt_project_dir
+from .artifacts import dbt_artifacts
 from .schedules import schedules
 
 defs = Definitions(
     assets=[raw_customers, jaffle_shop_dbt_assets],
     schedules=schedules,
     resources={
-        "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
+        "dbt": dbt_artifacts.get_cli_resource(),
     },
 )
 ```
@@ -166,7 +166,7 @@ This is a standard dbt source definition, with one addition: it includes metadat
 If the Dagster UI is still running from the previous section, click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
 
 ```shell
-DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
+dagster dev
 ```
 
 Our `raw_customers` model is now defined as a Python asset. We can also see that assets downstream of this new Python asset, such as `stg_customers` and `customers`, are now marked stale because the code definition of `raw_customers` has changed.

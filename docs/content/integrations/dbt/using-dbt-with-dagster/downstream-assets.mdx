@@ -50,7 +50,7 @@ To add the `order_count_chart` asset:
    from dagster import MetadataValue, AssetExecutionContext, asset
    from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
-   from .constants import dbt_manifest_path, dbt_project_dir
+   from .artifacts import dbt_artifacts
    ```
 
    This adds an import for plotly, as well as <PyObject module="dagster_dbt" object="get_asset_key_for_model" /> and <PyObject module="dagster" object="MetadataValue" />, which we'll use in our asset.
@@ -93,14 +93,14 @@ To add the `order_count_chart` asset:
    from dagster_dbt import DbtCliResource
 
    from .assets import jaffle_shop_dbt_assets, order_count_chart, raw_customers
-   from .constants import dbt_project_dir
+   from .artifacts import dbt_artifacts
    from .schedules import schedules
 
    defs = Definitions(
        assets=[raw_customers, jaffle_shop_dbt_assets, order_count_chart],
        schedules=schedules,
        resources={
-           "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
+           "dbt": dbt_artifacts.get_cli_resource(),
        },
    )
    ```

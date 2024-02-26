@@ -82,44 +82,37 @@ The manifest can be created in two ways:
 
 When deploying your Dagster project to production, **we recommend generating the manifest at build time** to avoid the overhead of recompiling your dbt project every time your Dagster code is executed. A `manifest.json` should be precompiled and included in the Python package for your Dagster code.
 
-In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface, we offer you both ways to load your dbt models:
+In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface, we use <PyObject module="dagster_dbt" object="DbtArtifacts" /> to handle this for us:
 
 ```python startafter=start_compile_dbt_manifest endbefore=end_compile_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
 import os
 from pathlib import Path
 
-from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtArtifacts
 
-dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+# This class helps us manage expectations that
+# * If using `dagster dev` (or set the environment variable DAGSTER_DBT_PARSE_PROJECT_ON_LOAD) compile the manifest on load.
+# * If not expect the manifest.json to already be prepared. This can be done by running this file as a script.
+dbt_artifacts = DbtArtifacts(
+    project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+)
 
-# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
-# Otherwise, we expect a manifest to be present in the project's target directory.
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_manifest_path = (
-        dbt.cli(
-            ["--quiet", "parse"],
-            target_path=Path("target"),
-        )
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-else:
-    dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+if __name__ == "__main__":
+    # Run this file as a script as part of deployment process to prepare manifest
+    dbt_artifacts.prepare()
 ```
-
-As the comment explains, the code gives you a choice about how to create this dbt manifest. Based on the `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` environment variable, either:
-
-1. **At run time**: This code generates the `manifest.json` for you. This is the easiest option during development because you never need to worry about the file being out-of-date with your dbt project, or
-2. **At build time**: This code leaves it up to you to generate the `manifest.json` file on your own, and this code just reads it.
 
 When developing locally, you can run the following command to generate the manifest at run time for your dbt and Dagster project:
 
 ```shell
-DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
+dagster dev
 ```
 
-In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your project uses the precompiled manifest.
+As part of deploying to production, this code can be run as a script to handle compiling the manifest.
+
+```shell
+python artifacts.py
+```
 
 ---
 
