@@ -1,5 +1,6 @@
 from dagster import asset
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import SensorDefinition, build_sensor_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.reactive_scheduling_sensor import (
@@ -13,7 +14,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
 )
 
 
-def test_build_reactive_scheduling_sensor():
+def test_build_reactive_scheduling_sensor() -> None:
     class AlwaysLaunchSchedulingPolicy(SchedulingPolicy):
         tick_settings = TickSettings(
             tick_cron="* * * * *",
@@ -42,6 +43,8 @@ def test_build_reactive_scheduling_sensor():
     )
 
     sensor_result = sensor_def(context=sensor_context)
+    assert isinstance(sensor_result, SensorResult)
+    assert sensor_result.run_requests
     assert len(sensor_result.run_requests) == 1
     rr = sensor_result.run_requests[0]
     assert rr.asset_selection
