@@ -1,5 +1,5 @@
 import datetime
-from typing import List, NamedTuple, Optional, Set
+from typing import AbstractSet, List, NamedTuple, Optional, Set
 
 from dagster import (
     _check as check,
@@ -9,7 +9,9 @@ from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
     PartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -29,6 +31,25 @@ class ReactiveAssetInfo(NamedTuple):
     asset_key: AssetKey
     scheduling_policy: SchedulingPolicy
     partitions_def: Optional[PartitionsDefinition]
+
+
+class AssetPartitionRange:
+    __slots__ = ["_asset_subset"]
+
+    def __init__(self, asset_subset: ValidAssetSubset):
+        self._asset_subset = asset_subset
+
+    @property
+    def asset_partitions(self) -> AbstractSet[AssetPartition]:
+        return self._asset_subset.asset_partitions
+
+    @property
+    def is_complete(self) -> bool:
+        return (
+            self._asset_subset.bool_value
+            if self._asset_subset.is_partitioned
+            else isinstance(self._asset_subset.value, AllPartitionsSubset)
+        )
 
 
 class ReactiveSchedulingGraph(NamedTuple):
@@ -67,35 +88,51 @@ class ReactiveSchedulingGraph(NamedTuple):
             else None
         )
 
-    def make_valid_subset(
-        self,
-        asset_key: AssetKey,
-        asset_partitions: Optional[Set[AssetPartition]] = None,
+    def get_all_parent_partitions(
+        self, asset_partition: AssetPartition
+    ) -> AbstractSet[AssetPartition]:
+        return self.asset_graph.get_parents_partitions(
+            dynamic_partitions_store=self.queryer,
+            current_time=self.tick_dt,
+            asset_key=asset_partition.asset_key,
+            partition_key=asset_partition.partition_key,
+        ).parent_partitions
+
+    def make_valid_unpartitioned_subset(
+        self, asset_key: AssetKey, selected: bool
     ) -> ValidAssetSubset:
-        asset_info = self.get_asset_info(asset_key)
-        assert asset_info
-        if asset_partitions is not None:
-            # explicit partitions. do as you are told
-            check.invariant(
-                asset_info.partitions_def is not None,
-                "If you pass in asset_partitions it must be partitioned asset",
-            )
-            return AssetSubset.from_asset_partitions_set(
-                asset_key=asset_key,
-                asset_partitions_set=asset_partitions,
-                partitions_def=asset_info.partitions_def,
+        asset_info = self.get_required_asset_info(asset_key)
+        check.invariant(asset_info.partitions_def is None, "Asset must be unpartitioned")
+        return AssetSubset(asset_key, selected).as_valid(partitions_def=None)
+
+    def make_valid_partitioned_subset(
+        self, asset_key: AssetKey, partition_keys: Set[str]
+    ) -> ValidAssetSubset:
+        asset_info = self.get_required_asset_info(asset_key)
+        check.invariant(asset_info.partitions_def, "Asset must be partitioned")
+        return AssetSubset.from_asset_partitions_set(
+            asset_key=asset_key,
+            asset_partitions_set={
+                AssetPartition(asset_key, partition_key) for partition_key in partition_keys
+            },
+            partitions_def=asset_info.partitions_def,
+        )
+
+    def make_valid_subset(
+        self, asset_info: ReactiveAssetInfo, partition_keys: Optional[Set[str]]
+    ) -> ValidAssetSubset:
+        if asset_info.partitions_def:
+            assert partition_keys is not None
+            return self.make_valid_partitioned_subset(
+                asset_key=asset_info.asset_key,
+                # better logic for defaults here
+                partition_keys=partition_keys,
             )
         else:
-            # I think this business logic should be farther up the stack really
-            if asset_info.partitions_def is None:
-                return AssetSubset(asset_key, True).as_valid(asset_info.partitions_def)
-            else:
-                return AssetSubset.all(
-                    asset_key,
-                    asset_info.partitions_def,
-                    self.instance,
-                    current_time=self.tick_dt,
-                )
+            check.invariant(partition_keys is None)
+            return self.make_valid_unpartitioned_subset(
+                asset_key=asset_info.asset_key, selected=True
+            )
 
     def get_parent_asset_subset(
         self, asset_subset: ValidAssetSubset, parent_asset_key: AssetKey
@@ -132,18 +169,8 @@ def make_asset_partitions(ak: AssetKey, partition_keys: Set[str]) -> Set[AssetPa
 def build_reactive_scheduling_plan(
     context: SchedulingExecutionContext,
     scheduling_graph: ReactiveSchedulingGraph,
-    starting_key: AssetKey,  # starting asset key
-    scheduling_result: SchedulingResult,
+    starting_subset: ValidAssetSubset,
 ) -> ReactionSchedulingPlan:
-    starting_subset = scheduling_graph.make_valid_subset(
-        starting_key,
-        (
-            None
-            if scheduling_result.partition_keys is None
-            else make_asset_partitions(starting_key, scheduling_result.partition_keys)
-        ),
-    )
-
     upward_requested_partitions = ascending_scheduling_pulse(
         context, scheduling_graph, starting_subset
     )
@@ -151,7 +178,11 @@ def build_reactive_scheduling_plan(
         context, scheduling_graph, starting_subset
     )
     return ReactionSchedulingPlan(
-        requested_partitions=upward_requested_partitions | downward_requested_partitions
+        requested_partitions=(
+            upward_requested_partitions
+            | downward_requested_partitions
+            | starting_subset.asset_partitions
+        )
     )
 
 
@@ -189,11 +220,22 @@ def ascending_scheduling_pulse(
             if parent_reaction.include and asset_partition not in visited:
                 included.add(asset_partition)
 
-        return graph.make_valid_subset(parent_info.asset_key, included)
+        return make_valid_subset_from_included(graph, parent_info, included)
 
     _ascend(starting_subset)
 
     return to_execute
+
+
+def make_valid_subset_from_included(
+    graph: ReactiveSchedulingGraph, asset_info: ReactiveAssetInfo, included: Set[AssetPartition]
+) -> ValidAssetSubset:
+    if asset_info.partitions_def:
+        return graph.make_valid_partitioned_subset(
+            asset_info.asset_key, {check.not_none(ap.partition_key) for ap in included}
+        )
+    else:
+        return graph.make_valid_unpartitioned_subset(asset_info.asset_key, bool(included))
 
 
 def descending_scheduling_pulse(
@@ -230,8 +272,7 @@ def descending_scheduling_pulse(
             if child_reaction.include and asset_partition not in visited:
                 included.add(asset_partition)
 
-        requested_subset = graph.make_valid_subset(child_info.asset_key, included)
-        return requested_subset
+        return make_valid_subset_from_included(graph, child_info, included)
 
     _descend(starting_subset)
 
@@ -241,6 +282,19 @@ def descending_scheduling_pulse(
 class PulseResult(NamedTuple):
     run_requests: List[RunRequest]
     scheduling_result: Optional[SchedulingResult]
+
+
+# TODO incorporate time for time-partitioned assets
+# get_new_asset_partitions_to_request has this logic
+def default_partition_keys(partitions_def: Optional[PartitionsDefinition]) -> Optional[Set[str]]:
+    if not partitions_def:
+        return None
+
+    if isinstance(partitions_def, StaticPartitionsDefinition):
+        return set(partitions_def.get_partition_keys())
+    else:
+        last_partition_key = partitions_def.get_last_partition_key()
+        return {last_partition_key} if last_partition_key else set()
 
 
 def pulse_policy_on_asset(
@@ -276,11 +330,16 @@ def pulse_policy_on_asset(
     if not scheduling_result.launch:
         return PulseResult(run_requests=[], scheduling_result=scheduling_result)
 
+    starting_subset = scheduling_graph.make_valid_subset(
+        asset_info,
+        scheduling_result.explicit_partition_keys
+        or default_partition_keys(asset_info.partitions_def),
+    )
+
     scheduling_plan = build_reactive_scheduling_plan(
         context=context,
         scheduling_graph=scheduling_graph,
-        starting_key=asset_key,
-        scheduling_result=scheduling_result,
+        starting_subset=starting_subset,
     )
 
     return PulseResult(
@@ -293,3 +352,23 @@ def pulse_policy_on_asset(
         ),
         scheduling_result,
     )
+
+
+def make_valid_asset_subset(
+    scheduling_graph: ReactiveSchedulingGraph,
+    asset_info: ReactiveAssetInfo,
+    partition_keys: Optional[Set[str]],
+) -> ValidAssetSubset:
+    if asset_info.partitions_def:
+        starting_subset = scheduling_graph.make_valid_partitioned_subset(
+            asset_key=asset_info.asset_key,
+            # better logic for defaults here
+            partition_keys=partition_keys or default_partition_keys(asset_info.partitions_def),
+        )
+    else:
+        check.invariant(partition_keys is None)
+        starting_subset = scheduling_graph.make_valid_unpartitioned_subset(
+            asset_key=asset_info.asset_key, selected=True
+        )
+
+    return starting_subset

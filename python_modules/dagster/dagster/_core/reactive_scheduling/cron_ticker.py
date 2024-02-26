@@ -86,4 +86,6 @@ class Cron(SchedulingPolicy):
         if not asset_partitions:
             return SchedulingResult(launch=False)
 
-        return SchedulingResult(launch=True, partition_keys=get_partition_keys(asset_partitions))
+        return SchedulingResult(
+            launch=True, explicit_partition_keys=get_partition_keys(asset_partitions)
+        )

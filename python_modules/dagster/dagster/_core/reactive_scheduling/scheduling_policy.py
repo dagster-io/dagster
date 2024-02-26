@@ -18,7 +18,7 @@ AssetPartition: TypeAlias = AssetKeyPartitionKey
 class SchedulingResult(NamedTuple):
     launch: bool
     cursor: Optional[str] = None
-    partition_keys: Optional[Set[str]] = None
+    explicit_partition_keys: Optional[Set[str]] = None
 
 
 class SchedulingExecutionContext(NamedTuple):
