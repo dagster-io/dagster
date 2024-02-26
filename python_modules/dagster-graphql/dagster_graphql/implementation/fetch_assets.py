@@ -139,6 +139,27 @@ def asset_node_iter(
             yield location, repository, external_asset_node
 
 
+def get_additional_required_keys(
+    graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
+) -> List["AssetKey"]:
+    asset_nodes_by_key = get_asset_nodes_by_asset_key(graphene_info)
+
+    # the set of atomic execution ids that any of the input asset keys are a part of
+    required_atomic_execution_ids = {
+        asset_nodes_by_key[asset_key].external_asset_node.atomic_execution_unit_id
+        for asset_key in asset_keys
+    } - {None}
+
+    # the set of all asset keys that are part of the required atomic execution units
+    required_asset_keys = {
+        asset_node.external_asset_node.asset_key
+        for asset_node in asset_nodes_by_key.values()
+        if asset_node.external_asset_node.atomic_execution_unit_id in required_atomic_execution_ids
+    }
+
+    return list(required_asset_keys - asset_keys)
+
+
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["GrapheneAssetNodeDefinitionCollision"]:
