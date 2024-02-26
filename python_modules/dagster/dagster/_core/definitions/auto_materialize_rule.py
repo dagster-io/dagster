@@ -305,6 +305,76 @@ def missed_cron_ticks(
         missed_ticks.append(dt)
     return missed_ticks
 
+# def get_new_asset_partitions_to_request(
+#     self, context: AssetConditionEvaluationContext
+# ) -> AbstractSet[AssetKeyPartitionKey]:
+#     missed_ticks = missed_cron_ticks(
+#         CronEvaluationData(
+#             cron_schedule=self.cron_schedule,
+#             timezone=self.timezone,
+#             previous=context.previous_evaluation_timestamp,
+#             current=context.evaluation_time.timestamp(),
+#         )
+#     )
+
+#     if not missed_ticks:
+#         return set()
+
+#     partitions_def = context.partitions_def
+#     if partitions_def is None:
+#         return {AssetKeyPartitionKey(context.asset_key)}
+
+#     # if all_partitions is set, then just return all partitions if any ticks have been missed
+#     if self.all_partitions:
+#         return {
+#             AssetKeyPartitionKey(context.asset_key, partition_key)
+#             for partition_key in partitions_def.get_partition_keys(
+#                 current_time=context.evaluation_time,
+#                 dynamic_partitions_store=context.instance_queryer,
+#             )
+#         }
+
+#     # for partitions_defs without a time component, just return the last partition if any ticks
+#     # have been missed
+#     time_partitions_def = get_time_partitions_def(partitions_def)
+#     if time_partitions_def is None:
+#         return {
+#             AssetKeyPartitionKey(
+#                 context.asset_key,
+#                 partitions_def.get_last_partition_key(
+#                     dynamic_partitions_store=context.instance_queryer
+#                 ),
+#             )
+#         }
+
+#     missed_time_partition_keys = filter(
+#         None,
+#         [
+#             time_partitions_def.get_last_partition_key(
+#                 current_time=missed_tick,
+#                 dynamic_partitions_store=context.instance_queryer,
+#             )
+#             for missed_tick in missed_ticks
+#         ],
+#     )
+#     # for multi partitions definitions, request to materialize all partitions for each missed
+#     # cron schedule tick
+#     if isinstance(partitions_def, MultiPartitionsDefinition):
+#         return {
+#             AssetKeyPartitionKey(context.asset_key, partition_key)
+#             for time_partition_key in missed_time_partition_keys
+#             for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
+#                 partitions_def.time_window_dimension.name,
+#                 time_partition_key,
+#                 dynamic_partitions_store=context.instance_queryer,
+#             )
+#         }
+#     else:
+#         return {
+#             AssetKeyPartitionKey(context.asset_key, time_partition_key)
+#             for time_partition_key in missed_time_partition_keys
+#         }
+
 
 @whitelist_for_serdes
 class MaterializeOnCronRule(
