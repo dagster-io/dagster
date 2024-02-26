@@ -27,8 +27,7 @@ To complete this course, you’ll need:
 
 Even if you’ve already completed the Dagster Essentials course, you should still clone the project as some things may have changed.
 
-Run the following to clone the project: (TODO - may need to add a destination folder)
+Run the following to clone the project:
 
 ```bash
-git clone https://github.com/dagster-io/project-dagster-university -b dbt/starter-kit
-```
+git clone https://github.com/dagster-io/project-dagster-university -b module/dagster-and-dbt/starter
