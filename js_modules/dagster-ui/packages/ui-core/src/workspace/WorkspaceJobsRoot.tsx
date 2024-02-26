@@ -14,10 +14,10 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const trace = useStartTrace('WorkspaceJobsRoot');
+  const trace = usePageLoadTrace('WorkspaceJobsRoot');
   useTrackPageView();
 
   const repoName = repoAddressAsHumanString(repoAddress);
