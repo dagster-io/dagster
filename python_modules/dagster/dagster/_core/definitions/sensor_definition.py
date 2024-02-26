@@ -2,7 +2,6 @@ import inspect
 import logging
 from collections import defaultdict
 from contextlib import ExitStack
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -73,6 +72,7 @@ from .run_request import (
     SensorResult,
     SkipReason,
 )
+from .sensor_enums import DEFAULT_SENSOR_DAEMON_INTERVAL, DefaultSensorStatus, SensorType
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
@@ -81,26 +81,6 @@ if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-
-
-@whitelist_for_serdes
-class DefaultSensorStatus(Enum):
-    RUNNING = "RUNNING"
-    STOPPED = "STOPPED"
-
-
-@whitelist_for_serdes
-class SensorType(Enum):
-    STANDARD = "STANDARD"
-    RUN_STATUS = "RUN_STATUS"
-    ASSET = "ASSET"
-    MULTI_ASSET = "MULTI_ASSET"
-    FRESHNESS_POLICY = "FRESHNESS_POLICY"
-    AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
-    UNKNOWN = "UNKNOWN"
-
-
-DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
 @deprecated_param(
