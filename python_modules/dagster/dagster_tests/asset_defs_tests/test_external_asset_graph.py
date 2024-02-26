@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 from unittest import mock
@@ -437,3 +438,42 @@ def test_cycle_status(instance):
     resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
     for key in asset_graph.all_asset_keys:
         resolver.get_status(key)
+
+
+@asset
+def single_materializable_asset():
+    ...
+
+
+@observable_source_asset
+def single_observable_asset():
+    ...
+
+
+dup_materialization_defs_a = Definitions(assets=[single_materializable_asset])
+dup_materialization_defs_b = Definitions(assets=[single_materializable_asset])
+dup_observation_defs_a = Definitions(assets=[single_observable_asset])
+dup_observation_defs_b = Definitions(assets=[single_observable_asset])
+
+
+def test_dup_node_detection(instance):
+    with pytest.warns(
+        UserWarning,
+        match=re.compile(
+            r'Only one MATERIALIZATION node is allowed per asset.*"single_materializable_asset"',
+            re.DOTALL,
+        ),
+    ):
+        ExternalAssetGraph.from_workspace(
+            _make_context(instance, ["dup_materialization_defs_a", "dup_materialization_defs_b"])
+        )
+
+    with pytest.warns(
+        UserWarning,
+        match=re.compile(
+            r'Only one OBSERVATION node is allowed per asset.*"single_observable_asset"', re.DOTALL
+        ),
+    ):
+        ExternalAssetGraph.from_workspace(
+            _make_context(instance, ["dup_observation_defs_a", "dup_observation_defs_b"])
+        )

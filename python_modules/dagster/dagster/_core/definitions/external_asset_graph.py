@@ -1,7 +1,9 @@
+import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    DefaultDict,
     Dict,
     Iterable,
     List,
@@ -116,6 +118,9 @@ class ExternalAssetGraph(AssetGraph):
 
         asset_nodes_by_key = {}
 
+        _warn_on_duplicate_nodes(materializable_node_pairs, AssetExecutionType.MATERIALIZATION)
+        _warn_on_duplicate_nodes(observable_node_pairs, AssetExecutionType.OBSERVATION)
+
         # It is possible for multiple nodes to exist that share the same key. This is invalid if
         # more than one node is materializable or if more than one node is observable. It is valid
         # if there is at most one materializable node and at most one observable node, with all
@@ -123,15 +128,11 @@ class ExternalAssetGraph(AssetGraph):
         # representing the asset. This will always be the materializable node if one exists; then
         # the observable node if it exists; then finally the first-encountered unexecutable node.
         for repo_handle, node in materializable_node_pairs:
-            if node.asset_key in asset_nodes_by_key:
-                check.failed("Found two materialization nodes with the same asset key")
             asset_nodes_by_key[node.asset_key] = node
 
         for repo_handle, node in observable_node_pairs:
             if node.asset_key in asset_nodes_by_key:
                 current_node = asset_nodes_by_key[node.asset_key]
-                if current_node.is_observable:
-                    check.failed("Found two observable source nodes with the same asset key")
                 asset_nodes_by_key[node.asset_key] = current_node._replace(is_observable=True)
             else:
                 asset_nodes_by_key[node.asset_key] = node
@@ -388,3 +389,24 @@ class ExternalAssetGraph(AssetGraph):
                 asset_key
             )
         return list(asset_keys_by_repo.values())
+
+
+def _warn_on_duplicate_nodes(
+    node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+    execution_type: AssetExecutionType,
+) -> None:
+    repo_handles_by_asset_key: DefaultDict[AssetKey, List[RepositoryHandle]] = defaultdict(list)
+    for repo_handle, node in node_pairs:
+        repo_handles_by_asset_key[node.asset_key].append(repo_handle)
+
+    duplicates = {k: v for k, v in repo_handles_by_asset_key.items() if len(v) > 1}
+    duplicate_lines = []
+    for asset_key, repo_handles in duplicates.items():
+        locations = [repo_handle.code_location_origin.location_name for repo_handle in repo_handles]
+        duplicate_lines.append(f"  {asset_key.to_string()}: {locations}")
+    duplicate_str = "\n".join(duplicate_lines)
+    if duplicates:
+        warnings.warn(
+            f"Found {execution_type.value} nodes for some asset keys in multiple code locations."
+            f" Only one {execution_type.value} node is allowed per asset key. Duplicates:\n {duplicate_str}"
+        )
