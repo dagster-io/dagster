@@ -19,7 +19,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DAGSTER_META_KEY
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
@@ -1474,5 +1474,5 @@ def test_logging_run_status_sensor(
         assert len(records) == 1
         assert records
         record = records[0]
-        assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
+        assert record[LOG_RECORD_METADATA_ATTR]["orig_message"] == f"run succeeded: {run.run_id}"
         instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore

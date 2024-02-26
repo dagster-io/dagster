@@ -48,7 +48,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.log_manager import DagsterLogRecord
+from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -219,7 +219,7 @@ class _EventListenerLogHandler(logging.Handler):
         self._instance = instance
         super(_EventListenerLogHandler, self).__init__()
 
-    def emit(self, record: DagsterLogRecord) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         from dagster._core.events import EngineEventData
         from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
 
@@ -228,7 +228,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,  # type: ignore
+                meta=get_log_record_metadata(record),
                 record=record,
             )
         )
