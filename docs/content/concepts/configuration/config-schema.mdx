@@ -65,7 +65,7 @@ class MyOpConfig(Config):
 
 @op
 def print_greeting(config: MyOpConfig):
-    print(f"hello {config.person_name}")  # noqa: T201
+    print(f"hello {config.person_name}")
 ```
 
 You can also build config into [jobs](/concepts/ops-jobs-graphs/jobs).
