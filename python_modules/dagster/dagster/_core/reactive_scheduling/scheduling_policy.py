@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, NamedTuple, Optional, Set
 
 from typing_extensions import TypeAlias
 
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.sensor_enums import DefaultSensorStatus
 
 if TYPE_CHECKING:
@@ -21,9 +21,12 @@ class SchedulingResult(NamedTuple):
 
 
 class SchedulingExecutionContext(NamedTuple):
-    evaluation_time: datetime
+    # todo have this take the scheduling graph
+    previous_dt: Optional[datetime]
+    evaluation_dt: datetime
     repository_def: "RepositoryDefinition"
     instance: "DagsterInstance"
+    asset_key: AssetKey
 
 
 class RequestReaction(NamedTuple):

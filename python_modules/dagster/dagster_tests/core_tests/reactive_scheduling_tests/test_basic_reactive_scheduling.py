@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Set
 
-from dagster import (
-    asset,
-)
+from dagster import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
@@ -23,13 +21,15 @@ def run_scheduling_pulse_on_asset(
     defs: Definitions,
     asset_key: CoercibleToAssetKey,
     instance: Optional[DagsterInstance] = None,
-    evaluation_time: Optional[datetime] = None,
+    evaluation_dt: Optional[datetime] = None,
+    previous_dt: Optional[datetime] = None,
 ) -> List[RunRequest]:
     return pulse_policy_on_asset(
         asset_key=AssetKey.from_coercible(asset_key),
         repository_def=defs.get_repository_def(),
         instance=instance or DagsterInstance.ephemeral(),
-        evaluation_time=evaluation_time or datetime.now(),
+        evaluation_dt=evaluation_dt or datetime.now(),
+        previous_dt=previous_dt,
     )
 
 
