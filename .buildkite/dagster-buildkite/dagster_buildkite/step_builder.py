@@ -57,7 +57,6 @@ class CommandStepBuilder:
     def _base_docker_settings(self) -> Dict[str, object]:
         return {
             "shell": ["/bin/bash", "-xeuc"],
-            "always-pull": True,
             "mount-ssh-agent": True,
             "mount-buildkite-agent": True,
         }
