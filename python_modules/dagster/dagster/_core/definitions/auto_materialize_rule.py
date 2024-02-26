@@ -274,26 +274,33 @@ class MaterializeOnRequiredForFreshnessRule(
         return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
 
 
+class CronEvaluationData(NamedTuple):
+    cron_schedule: str
+    timezone: str
+    previous: Optional[float]
+    current: float
+
+
 def missed_cron_ticks(
-    cron_schedule: str, timezone: str, previous: Optional[float], current: float
+    cron_data: CronEvaluationData,
 ) -> Sequence[datetime.datetime]:
     """Return the cron ticks between previous and current. If previous is None, return the last tick."""
-    if not previous:
+    if not cron_data.previous:
         previous_dt = next(
             reverse_cron_string_iterator(
-                end_timestamp=current,
-                cron_string=cron_schedule,
-                execution_timezone=timezone,
+                end_timestamp=cron_data.current,
+                cron_string=cron_data.cron_schedule,
+                execution_timezone=cron_data.timezone,
             )
         )
         return [previous_dt]
     missed_ticks = []
     for dt in cron_string_iterator(
-        start_timestamp=previous,
-        cron_string=cron_schedule,
-        execution_timezone=timezone,
+        start_timestamp=cron_data.previous,
+        cron_string=cron_data.cron_schedule,
+        execution_timezone=cron_data.timezone,
     ):
-        if dt.timestamp() > current:
+        if dt.timestamp() > cron_data.current:
             break
         missed_ticks.append(dt)
     return missed_ticks
@@ -319,10 +326,12 @@ class MaterializeOnCronRule(
         self, context: AssetConditionEvaluationContext
     ) -> AbstractSet[AssetKeyPartitionKey]:
         missed_ticks = missed_cron_ticks(
-            cron_schedule=self.cron_schedule,
-            timezone=self.timezone,
-            previous=context.previous_evaluation_timestamp,
-            current=context.evaluation_time.timestamp(),
+            CronEvaluationData(
+                cron_schedule=self.cron_schedule,
+                timezone=self.timezone,
+                previous=context.previous_evaluation_timestamp,
+                current=context.evaluation_time.timestamp(),
+            )
         )
 
         if not missed_ticks:
