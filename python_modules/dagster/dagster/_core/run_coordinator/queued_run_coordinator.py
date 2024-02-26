@@ -28,6 +28,8 @@ class RunQueueConfig(
             ("tag_concurrency_limits", Sequence[Mapping[str, Any]]),
             ("max_user_code_failure_retries", int),
             ("user_code_failure_retry_delay", int),
+            ("should_block_op_concurrency_limited_runs", bool),
+            ("op_concurrency_slot_buffer", int),
         ],
     )
 ):
@@ -37,6 +39,8 @@ class RunQueueConfig(
         tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]],
         max_user_code_failure_retries: int = 0,
         user_code_failure_retry_delay: int = 60,
+        should_block_op_concurrency_limited_runs: bool = False,
+        op_concurrency_slot_buffer: int = 0,
     ):
         return super(RunQueueConfig, cls).__new__(
             cls,
@@ -44,6 +48,10 @@ class RunQueueConfig(
             check.opt_sequence_param(tag_concurrency_limits, "tag_concurrency_limits"),
             check.int_param(max_user_code_failure_retries, "max_user_code_failure_retries"),
             check.int_param(user_code_failure_retry_delay, "user_code_failure_retry_delay"),
+            check.bool_param(
+                should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
+            ),
+            check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
         )
 
 
@@ -122,6 +130,8 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             tag_concurrency_limits=self._tag_concurrency_limits,
             max_user_code_failure_retries=self._max_user_code_failure_retries,
             user_code_failure_retry_delay=self._user_code_failure_retry_delay,
+            should_block_op_concurrency_limited_runs=self._should_block_op_concurrency_limited_runs,
+            op_concurrency_slot_buffer=self._op_concurrency_slot_buffer,
         )
 
     @property
@@ -239,7 +249,6 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                             "will all be initially blocked waiting for global op concurrency slots to be "
                             "free."
                         ),
-                        default_value=0,
                     ),
                 }
             ),

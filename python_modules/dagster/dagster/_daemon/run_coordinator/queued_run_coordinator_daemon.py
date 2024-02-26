@@ -266,13 +266,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             batch += queued_runs
             batch = self._priority_sort(batch)
 
-            if instance.run_coordinator.should_block_op_concurrency_limited_runs:
+            if run_queue_config.should_block_op_concurrency_limited_runs:
                 try:
                     global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
                         instance,
                         batch,
                         in_progress_run_records,
-                        instance.run_coordinator.op_concurrency_slot_buffer,
+                        run_queue_config.op_concurrency_slot_buffer,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
