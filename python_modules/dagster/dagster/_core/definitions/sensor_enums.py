@@ -1,5 +1,7 @@
-from dagster._serdes import whitelist_for_serdes
 from enum import Enum
+
+from dagster._serdes import whitelist_for_serdes
+
 
 @whitelist_for_serdes
 class DefaultSensorStatus(Enum):

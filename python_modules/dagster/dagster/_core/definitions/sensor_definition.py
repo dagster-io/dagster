@@ -64,7 +64,6 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
-from .sensor_enums import DefaultSensorStatus, SensorType, DEFAULT_SENSOR_DAEMON_INTERVAL
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -73,6 +72,7 @@ from .run_request import (
     SensorResult,
     SkipReason,
 )
+from .sensor_enums import DEFAULT_SENSOR_DAEMON_INTERVAL, DefaultSensorStatus, SensorType
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
@@ -81,8 +81,6 @@ if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-
-
 
 
 @deprecated_param(
