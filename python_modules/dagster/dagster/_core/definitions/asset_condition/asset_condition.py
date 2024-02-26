@@ -307,7 +307,7 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
 
 
 class AssetCondition(ABC):
-    """An AutomationCondition represents some state of the world that can influence if an asset
+    """An AssetCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AutomationConditions can be combined together to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
     """
