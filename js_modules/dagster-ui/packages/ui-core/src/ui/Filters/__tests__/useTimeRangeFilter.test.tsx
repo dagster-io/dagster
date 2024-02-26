@@ -97,8 +97,8 @@ describe('CustomTimeRangeFilterDialog', () => {
     );
 
     // Mock selecting start and end dates
-    const startDate = moment().subtract(10, 'days');
-    const endDate = moment().subtract(5, 'days');
+    const startDate = moment().startOf('day').subtract(10, 'days');
+    const endDate = moment().endOf('day').subtract(5, 'days');
 
     act(() => {
       ((mockReactDates.mock.calls[0] as any)[0] as any).onDatesChange({
@@ -206,7 +206,7 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is after/)).toBeInTheDocument();
+    expect(getByText(/Created after/)).toBeInTheDocument();
   });
 
   it('should render custom filter state with upper boundary', () => {
@@ -220,7 +220,7 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is before/)).toBeInTheDocument();
+    expect(getByText(/Created before/)).toBeInTheDocument();
   });
 
   it('should render custom filter state with both boundaries', () => {
@@ -237,6 +237,6 @@ describe('ActiveFilterState', () => {
       />,
     );
 
-    expect(getByText(/Timestamp is in range/)).toBeInTheDocument();
+    expect(getByText(/Created from/)).toBeInTheDocument();
   });
 });
