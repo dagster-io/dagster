@@ -9,6 +9,7 @@ import {collectHeadings, RightSidebar} from 'components/SidebarNavigation';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
+import Script from 'next/script';
 import * as React from 'react';
 
 import FeedbackModal from '../components/FeedbackModal';
@@ -16,6 +17,8 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import {VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import * as gtag from '../util/gtag';
+
+const GTM_TRACKING_ID = process.env.NEXT_PUBLIC_DOCS_GTM_ID;
 
 const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
@@ -154,6 +157,25 @@ const MyApp = ({Component, pageProps}: AppProps) => {
   return (
     <>
       <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
+      {/* {process.env.NODE_ENV === 'production' ? ( */}
+      <>
+        <Script id="gtm">
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','${GTM_TRACKING_ID}');`}
+        </Script>
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_TRACKING_ID}`}
+            height="0"
+            width="0"
+            style={{display: 'none', visibility: 'hidden'}}
+          ></iframe>
+        </noscript>
+      </>
+      {/* ) : null} */}
       <PersistentTabProvider>
         <Layout asPath={asPath} pageProps={pageProps}>
           <Component {...pageProps} />
