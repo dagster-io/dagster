@@ -409,7 +409,7 @@ class DagsterLogManager(logging.Logger):
         self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
     ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
-        (such as the solid name or pipeline name) will be automatically attached to the created record.
+        (such as the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),
@@ -421,7 +421,7 @@ class DagsterLogManager(logging.Logger):
 
     def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
-        the solid name or pipeline name) will be automatically attached to the created record.
+        the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),

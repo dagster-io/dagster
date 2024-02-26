@@ -1,8 +1,9 @@
-from typing import Mapping, NamedTuple, Optional, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
@@ -110,7 +111,7 @@ class EventLogEntry(
         return serialize_value(self)
 
     @staticmethod
-    def from_json(json_str: str):
+    def from_json(json_str: str) -> "EventLogEntry":
         return deserialize_value(json_str, EventLogEntry)
 
     @public
@@ -182,7 +183,9 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
     )
 
 
-def construct_event_logger(event_record_callback):
+def construct_event_logger(
+    event_record_callback: Callable[[EventLogEntry], None],
+) -> LoggerDefinition:
     """Callback receives a stream of event_records. Piggybacks on the logging machinery."""
     check.callable_param(event_record_callback, "event_record_callback")
 

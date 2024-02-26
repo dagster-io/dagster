@@ -1,17 +1,32 @@
 import copy
 import logging
+import logging.config
 import sys
 import traceback
-from typing import Mapping, NamedTuple, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import coloredlogs
 import structlog
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import deprecated
-from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
+
+if TYPE_CHECKING:
+    from dagster._core.execution.context.logger import InitLoggerContext
 
 
 class JsonFileHandler(logging.Handler):
@@ -77,8 +92,11 @@ class StructuredLoggerMessage(
         )
 
 
+StructuredLoggerCallback: TypeAlias = Callable[[StructuredLoggerMessage], None]
+
+
 class StructuredLoggerHandler(logging.Handler):
-    def __init__(self, callback):
+    def __init__(self, callback: StructuredLoggerCallback):
         super(StructuredLoggerHandler, self).__init__()
         self.callback = check.is_callable(callback, "callback")
 
@@ -99,14 +117,16 @@ class StructuredLoggerHandler(logging.Handler):
             logging.exception(str(e))
 
 
-def construct_single_handler_logger(name, level, handler):
+def construct_single_handler_logger(
+    name: str, level: Union[str, int], handler: logging.Handler
+) -> LoggerDefinition:
     check.str_param(name, "name")
     check.inst_param(handler, "handler", logging.Handler)
 
     level = coerce_valid_log_level(level)
 
     @logger
-    def single_handler_logger(_init_context):
+    def single_handler_logger(_init_context: "InitLoggerContext"):
         klass = logging.getLoggerClass()
         logger_ = klass(name, level=level)
         logger_.addHandler(handler)
@@ -157,7 +177,9 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
     return base_builtin
 
 
-def define_structured_logger(name, callback, level):
+def define_structured_logger(
+    name: str, callback: StructuredLoggerCallback, level: Union[str, int]
+) -> LoggerDefinition:
     check.str_param(name, "name")
     check.callable_param(callback, "callback")
     level = coerce_valid_log_level(level)
@@ -165,7 +187,7 @@ def define_structured_logger(name, callback, level):
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
 
-def define_json_file_logger(name, json_path, level):
+def define_json_file_logger(name: str, json_path: str, level: Union[str, int]) -> LoggerDefinition:
     check.str_param(name, "name")
     check.str_param(json_path, "json_path")
     level = coerce_valid_log_level(level)
@@ -175,7 +197,7 @@ def define_json_file_logger(name, json_path, level):
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def get_stack_trace_array(exception):
+def get_stack_trace_array(exception: Exception) -> Sequence[str]:
     check.inst_param(exception, "exception", Exception)
     if hasattr(exception, "__traceback__"):
         tb = exception.__traceback__
@@ -184,15 +206,15 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def default_format_string():
+def default_format_string() -> str:
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
-def default_date_format_string():
+def default_date_format_string() -> str:
     return "%Y-%m-%d %H:%M:%S %z"
 
 
-def define_default_formatter():
+def define_default_formatter() -> logging.Formatter:
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
@@ -224,7 +246,9 @@ def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
     subject="loggers.dagit",
     emit_runtime_warning=False,
 )
-def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
+def configure_loggers(
+    handler: str = "default", formatter: str = "colored", log_level: Union[str, int] = "INFO"
+):
     structlog.configure(
         processors=[
             *get_structlog_shared_processors(),
@@ -234,7 +258,7 @@ def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
     )
     json_formatter = get_structlog_json_formatter()
 
-    LOGGING_CONFIG = {
+    LOGGING_CONFIG: Dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
@@ -291,15 +315,15 @@ def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
     logging.config.dictConfig(LOGGING_CONFIG)
 
 
-def create_console_logger(name, level):
+def create_console_logger(name: str, level: Union[str, int]) -> logging.Logger:
     klass = logging.getLoggerClass()
-    handler = klass(name, level=level)
+    logger = klass(name, level=level)
     coloredlogs.install(
-        logger=handler,
+        logger=logger,
         level=level,
         fmt=default_format_string(),
         datefmt=default_date_format_string(),
         field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
         level_styles={"debug": {}, "error": {"color": "red"}},
     )
-    return handler
+    return logger

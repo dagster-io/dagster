@@ -441,7 +441,7 @@ def create_log_manager(
 ) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
-    pipeline_def, resolved_run_config, dagster_run = (
+    job_def, resolved_run_config, dagster_run = (
         context_creation_data.job_def,
         context_creation_data.resolved_run_config,
         context_creation_data.dagster_run,
@@ -453,14 +453,14 @@ def create_log_manager(
     # via ConfigurableDefinition (@configured) to incoming logger configs. See docstring for more details.
 
     loggers = []
-    for logger_key, logger_def in pipeline_def.loggers.items() or default_loggers().items():
+    for logger_key, logger_def in job_def.loggers.items() or default_loggers().items():
         if logger_key in resolved_run_config.loggers:
             loggers.append(
                 logger_def.logger_fn(
                     InitLoggerContext(
                         resolved_run_config.loggers.get(logger_key, {}).get("config"),
                         logger_def,
-                        job_def=pipeline_def,
+                        job_def=job_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -473,7 +473,7 @@ def create_log_manager(
                     InitLoggerContext(
                         logger_config,
                         logger_def,
-                        job_def=pipeline_def,
+                        job_def=job_def,
                         run_id=dagster_run.run_id,
                     )
                 )
