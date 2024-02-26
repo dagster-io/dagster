@@ -212,7 +212,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <SearchTrigger onClick={openSearch}>
+        <SearchTrigger onClick={openSearch} data-search-trigger="1">
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Box flex={{alignItems: 'center', gap: 4}}>
               <div
@@ -242,6 +242,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
           <SearchBox hasQueryString={!!queryString.length}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
             <SearchInput
+              data-search-input="1"
               autoFocus
               spellCheck={false}
               onChange={onChange}
