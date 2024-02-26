@@ -315,21 +315,15 @@ class MaterializeOnCronRule(
     def description(self) -> str:
         return f"not materialized since last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def missed_cron_ticks(
+    def get_new_asset_partitions_to_request(
         self, context: AssetConditionEvaluationContext
-    ) -> Sequence[datetime.datetime]:
-        """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        return missed_cron_ticks(
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        missed_ticks = missed_cron_ticks(
             cron_schedule=self.cron_schedule,
             timezone=self.timezone,
             previous=context.previous_evaluation_timestamp,
             current=context.evaluation_time.timestamp(),
         )
-
-    def get_new_asset_partitions_to_request(
-        self, context: AssetConditionEvaluationContext
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        missed_ticks = self.missed_cron_ticks(context)
 
         if not missed_ticks:
             return set()
