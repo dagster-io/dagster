@@ -65,9 +65,12 @@ export type TimeRangeFilter = FilterObject & {
   state: [number | null, number | null];
   setState: (state: TimeRangeState) => void;
 };
+
 type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
+
 type Args = {
   name: string;
+  activeFilterTerm: string;
   icon: IconName;
 
   // This hook is NOT a "controlled component". Changing state only updates the component's current state.
@@ -77,7 +80,14 @@ type Args = {
   state?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
 };
-export function useTimeRangeFilter({name, icon, state, onStateChanged}: Args): TimeRangeFilter {
+
+export function useTimeRangeFilter({
+  name,
+  activeFilterTerm,
+  icon,
+  state,
+  onStateChanged,
+}: Args): TimeRangeFilter {
   const {
     timezone: [_timezone],
   } = useContext(TimeContext);
@@ -153,6 +163,7 @@ export function useTimeRangeFilter({name, icon, state, onStateChanged}: Args): T
       },
       activeJSX: (
         <ActiveFilterState
+          activeFilterTerm={activeFilterTerm}
           timeRanges={timeRanges}
           state={innerState}
           timezone={timezone}
@@ -177,11 +188,13 @@ function TimeRangeResult({range}: {range: string}) {
 }
 
 export function ActiveFilterState({
+  activeFilterTerm,
   state,
   remove,
   timezone,
   timeRanges,
 }: {
+  activeFilterTerm: string;
   state: TimeRangeState;
   remove: () => void;
   timezone: string;
@@ -258,7 +271,11 @@ export function ActiveFilterState({
   return (
     <FilterTag
       iconName="date"
-      label={<Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>Created {dateLabel}</Box>}
+      label={
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          {activeFilterTerm} {dateLabel}
+        </Box>
+      }
       onRemove={remove}
     />
   );
