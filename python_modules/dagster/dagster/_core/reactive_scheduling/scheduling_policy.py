@@ -17,13 +17,15 @@ AssetPartition: TypeAlias = AssetKeyPartitionKey
 
 class SchedulingResult(NamedTuple):
     launch: bool
+    cursor: Optional[str] = None
     partition_keys: Optional[Set[str]] = None
 
 
 class SchedulingExecutionContext(NamedTuple):
     # todo have this take the scheduling graph
-    previous_dt: Optional[datetime]
-    evaluation_dt: datetime
+    previous_tick_dt: Optional[datetime]
+    evaluation_tick_dt: datetime
+
     repository_def: "RepositoryDefinition"
     instance: "DagsterInstance"
     asset_key: AssetKey

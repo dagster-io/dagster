@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.assets import AssetsDefinition
@@ -10,8 +10,22 @@ from dagster._core.definitions.sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
 )
+from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 from .reactive_scheduling_plan import pulse_policy_on_asset
+
+
+@whitelist_for_serdes
+class ReactiveSchedulingCursor(NamedTuple):
+    tick_timestamp: float
+    user_defined_cursor: Optional[str] = None
+
+    @property
+    def tick_dt(self) -> datetime:
+        return datetime.fromtimestamp(self.tick_timestamp)
+
+    def to_json(self) -> str:
+        return serialize_value(self)
 
 
 def build_reactive_scheduling_sensor(
@@ -39,15 +53,25 @@ def build_reactive_scheduling_sensor(
         )
         assert context.repository_def
 
-        run_requests = pulse_policy_on_asset(
+        previous_cursor: Optional[ReactiveSchedulingCursor] = (
+            deserialize_value(context.cursor, as_type=ReactiveSchedulingCursor)
+            if context.cursor
+            else None
+        )
+
+        tick_dt = datetime.now()
+
+        pulse_result = pulse_policy_on_asset(
             asset_key=asset_key,
             repository_def=context.repository_def,
             instance=context.instance,
-            # TODO: What is the best way to get time in here?
-            evaluation_dt=datetime.now(),
-            previous_dt=None,  # get from cursor
+            evaluation_dt=tick_dt,
+            previous_dt=previous_cursor.tick_dt if previous_cursor else None,
         )
 
-        return SensorResult(run_requests=run_requests)
+        return SensorResult(
+            run_requests=pulse_result.run_requests,
+            cursor=serialize_value(ReactiveSchedulingCursor(tick_timestamp=tick_dt.timestamp())),
+        )
 
     return sensor_fn

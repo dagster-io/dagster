@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import AbstractSet, Optional, Set
+from typing import AbstractSet, NamedTuple, Optional, Set
 
 from dagster import (
     _check as check,
@@ -16,6 +16,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
     SchedulingResult,
     TickSettings,
 )
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 def get_partition_keys(asset_partitions: AbstractSet[AssetPartition]) -> Optional[Set[str]]:
@@ -28,6 +29,11 @@ def get_partition_keys(asset_partitions: AbstractSet[AssetPartition]) -> Optiona
         {ap.asset_key for ap in asset_partitions} == {next(iter(asset_partitions)).asset_key}
     )
     return {ap.partition_key for ap in asset_partitions if ap.partition_key is not None}
+
+
+@whitelist_for_serdes
+class CronCursor(NamedTuple):
+    previous_launch_timestamp: Optional[float]
 
 
 class Cron(SchedulingPolicy):
@@ -51,8 +57,8 @@ class Cron(SchedulingPolicy):
             CronEvaluationData(
                 cron_schedule=self.cron_schedule,
                 timezone=self.timezone,
-                previous_datetime=context.previous_dt,
-                current_datetime=context.evaluation_dt,
+                previous_datetime=context.previous_tick_dt,
+                current_datetime=context.evaluation_tick_dt,
             ),
             asset_key=context.asset_key,
             dynamic_partitions_store=context.instance,
@@ -79,8 +85,8 @@ def test_daily_cron_schedule() -> None:
     current_dt = datetime.fromisoformat("2021-01-02T00:00:01")
     result = cron.schedule(
         SchedulingExecutionContext(
-            previous_dt=previous_dt,
-            evaluation_dt=current_dt,
+            previous_tick_dt=previous_dt,
+            evaluation_tick_dt=current_dt,
             repository_def=defs.get_repository_def(),
             instance=DagsterInstance.ephemeral(),
             asset_key=daily_scheduled.key,
