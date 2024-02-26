@@ -124,7 +124,9 @@ class ExternalAssetGraph(AssetGraph):
         # the observable node if it exists; then finally the first-encountered unexecutable node.
         for repo_handle, node in materializable_node_pairs:
             if node.asset_key in asset_nodes_by_key:
-                check.failed("Found two materialization nodes with the same asset key")
+                check.failed(
+                    f"Found two materialization nodes with the same asset key: {node.asset_key.to_user_string()}"
+                )
             asset_nodes_by_key[node.asset_key] = node
 
         for repo_handle, node in observable_node_pairs:
