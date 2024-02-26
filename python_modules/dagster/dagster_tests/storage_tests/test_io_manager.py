@@ -19,6 +19,7 @@ from dagster import (
     IOManagerDefinition,
     Nothing,
     Out,
+    Output,
     ReexecutionOptions,
     asset,
     build_input_context,
@@ -38,7 +39,9 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.context.output import get_output_context
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
@@ -1137,3 +1140,46 @@ def test_telemetry_dagster_io_manager():
         return MyIOManager()
 
     assert my_io_manager._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_metadata_in_io_manager():
+    expected_metadata = {"foo": "bar"}
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            normalized_metadata = (
+                {
+                    key: value if isinstance(value, str) else value.text
+                    for key, value in context.metadata.items()
+                }
+                if context.metadata
+                else None
+            )
+            assert normalized_metadata == expected_metadata
+
+        def load_input(self, context: InputContext):
+            return 1
+
+    @asset(metadata=expected_metadata)
+    def metadata_on_def():
+        return 1
+
+    materialize([metadata_on_def], resources={"io_manager": MyIOManager()})
+
+    @asset
+    def metadata_on_output():
+        return Output(1, metadata=expected_metadata)
+
+    materialize([metadata_on_output], resources={"io_manager": MyIOManager()})
+
+    @asset
+    def metadata_added_to_context(context: AssetExecutionContext):
+        context.add_output_metadata(expected_metadata)
+
+    materialize([metadata_added_to_context], resources={"io_manager": MyIOManager()})
+
+    @asset(metadata={"foo": "value_should_be_overriden"})
+    def override_metadata(context: AssetExecutionContext):
+        context.add_output_metadata(expected_metadata)
+
+    materialize([override_metadata], resources={"io_manager": MyIOManager()})

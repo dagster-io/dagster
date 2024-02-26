@@ -30,6 +30,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
@@ -212,7 +213,8 @@ class OutputContext:
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
         """A dict of the metadata that is assigned to the OutputDefinition that produced
-        the output.
+        the output, or attached to the output at runtime. If duplicate metadata keys are used,
+        the value used at runtime will take precedence.
         """
         return self._metadata
 
@@ -725,6 +727,7 @@ def get_output_context(
     resources: Optional["Resources"],
     version: Optional[str],
     warn_on_step_context_use: bool = False,
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Args:
     run_id (str): The run ID of the run that produced the output, not necessarily the run that
@@ -754,6 +757,9 @@ def get_output_context(
         metadata = job_def.asset_layer.metadata_for_asset(asset_info.key) or output_def.metadata
     else:
         metadata = output_def.metadata
+
+    if output_metadata is not None:
+        metadata = merge_dicts(metadata, output_metadata)
 
     if step_context:
         check.invariant(

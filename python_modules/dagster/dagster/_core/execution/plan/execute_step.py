@@ -766,7 +766,7 @@ def _store_output(
 ) -> Iterator[DagsterEvent]:
     output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
-    output_context = step_context.get_output_context(step_output_handle)
+    output_context = step_context.get_output_context(step_output_handle, output.metadata)
 
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
