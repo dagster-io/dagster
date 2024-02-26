@@ -2489,7 +2489,7 @@ __metadata:
     storybook: "npm:^7.4.5"
     typescript: "npm:5.3.2"
     webpack: "npm:^5.88.1"
-    yaml: "npm:2.2.2"
+    yaml: "npm:2.4.0"
   peerDependencies:
     "@blueprintjs/core": ^4.20.2
     "@blueprintjs/popover2": 1.13.12
@@ -2627,7 +2627,7 @@ __metadata:
     typescript: "npm:5.3.2"
     webpack: "npm:^5.88.1"
     worker-loader: "npm:^3.0.8"
-    yaml: "npm:2.2.2"
+    yaml: "npm:2.4.0"
   peerDependencies:
     "@apollo/client": 3.7.13
     "@blueprintjs/core": ^4.20.2
@@ -23932,10 +23932,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:2.2.2":
-  version: 2.2.2
-  resolution: "yaml@npm:2.2.2"
-  checksum: 991384bf875dd1df9ab8e3393d6db7010d222eef4e750f17590b5d3d96d3f3ad49420f58fff6a3896321fb64d08f4bb3b4edf0d337fdfd6e960119ef5aa0527c
+"yaml@npm:2.4.0":
+  version: 2.4.0
+  resolution: "yaml@npm:2.4.0"
+  bin:
+    yaml: bin.mjs
+  checksum: 60cdb4499365a9649b4fb5cfbc496a1cd415013166f1c97aef7bf002caa0ad146058c3af91dda94c5799085d8728f1e8859b3854897ecebd10b84d7b054f0a40
   languageName: node
   linkType: hard
 

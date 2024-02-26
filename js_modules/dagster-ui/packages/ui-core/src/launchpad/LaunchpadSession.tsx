@@ -282,14 +282,9 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       return false;
     }
     try {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
-
-      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
-
       return (
-        yaml.stringify(currentUserConfig, {sortMapEntries: true}) !==
-        yaml.stringify(updatedRunConfigData, {sortMapEntries: true})
+        mergeYaml(rootDefaultYaml, currentSession.runConfigYaml, {sortMapEntries: true}) !==
+        mergeYaml({}, currentSession.runConfigYaml, {sortMapEntries: true})
       );
     } catch (err) {
       return false;
@@ -299,10 +294,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
-      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(config, runConfigData);
-      const runConfigYaml = yaml.stringify(updatedRunConfigData);
-      onSaveSession({runConfigYaml});
+      onSaveSession({runConfigYaml: mergeYaml(config, currentSession.runConfigYaml)});
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
     }
@@ -310,13 +302,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const onExpandDefaults = () => {
     if (rootDefaultYaml) {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
-
-      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
-      const mergedYaml = yaml.stringify(updatedRunConfigData);
-
-      onSaveSession({runConfigYaml: mergedYaml});
+      onSaveSession({runConfigYaml: mergeYaml(rootDefaultYaml, currentSession.runConfigYaml)});
     }
   };
 
@@ -520,12 +506,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = yaml.stringify(
-          merge(
-            yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml)),
-            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
-          ),
-        );
+        runConfigYaml = mergeYaml(currentSession.runConfigYaml, partition.runConfigOrError.yaml);
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
@@ -938,3 +919,45 @@ const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
 
   ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
+
+/**
+ * Utility function to merge two YAML documents:
+ * - Stringify string values with quotes. Avoids known issues with "5:30" becoming 5:30 which parses as a Sexagesimal number
+ * - When merging arrays, combine rather than concatenate (the default deepmerge behavior)
+ * -
+ */
+function mergeYaml(
+  base: string | Record<string, any>,
+  overrides: string | Record<string, any>,
+  extraOpts?: yaml.SchemaOptions,
+) {
+  const baseObj = typeof base === 'string' ? yaml.parse(sanitizeConfigYamlString(base)) : base;
+
+  const overridesObj =
+    typeof overrides === 'string' ? yaml.parse(sanitizeConfigYamlString(overrides)) : overrides;
+
+  const arrayCombineMerge: merge.Options['arrayMerge'] = (target, source, options) => {
+    const destination = target.slice();
+
+    source.forEach((item, index) => {
+      if (typeof destination[index] === 'undefined') {
+        destination[index] = options?.cloneUnlessOtherwiseSpecified(item, options);
+      } else if (options?.isMergeableObject(item)) {
+        destination[index] = merge(target[index], item, options);
+      } else if (target.indexOf(item) === -1) {
+        destination.push(item);
+      }
+    });
+    return destination;
+  };
+
+  const mergedObj = merge(baseObj, overridesObj, {
+    arrayMerge: arrayCombineMerge,
+  });
+
+  return yaml.stringify(mergedObj, {
+    defaultKeyType: 'PLAIN',
+    defaultStringType: 'QUOTE_SINGLE',
+    ...extraOpts,
+  });
+}
