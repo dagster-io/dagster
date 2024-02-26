@@ -1,9 +1,15 @@
 from dagster import DagsterInstance, Definitions, asset
 from dagster._core.definitions.materialize import materialize
+from dagster._core.reactive_scheduling.reactive_scheduling_plan import ReactiveSchedulingGraph
 from dagster._core.reactive_scheduling.scheduling_policy import (
     AssetPartition,
+    RequestReaction,
+    SchedulingExecutionContext,
+    SchedulingPolicy,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+from .test_policies import AlwaysLaunchSchedulingPolicy
 
 
 def test_get_parent_asset_partitions_updated_after_child() -> None:
@@ -35,64 +41,58 @@ def test_get_parent_asset_partitions_updated_after_child() -> None:
     assert updated == {AssetPartition(up.key)}
 
 
-# class OnParentUpdatedPolicy(SchedulingPolicy):
-#     def react_to_downstream_request(
-#         self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-#     ) -> RequestReaction:
-#         # print(f"react_to_downstream_request: {asset_partition}")
-#         # here we respect upstream versioning to see if we actually need this
-#         scheduling_graph = ReactiveSchedulingGraph.from_context(context)
+class OnAnyParentOutOfSyncPolicy(SchedulingPolicy):
+    def react_to_downstream_request(
+        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
+    ) -> RequestReaction:
+        # here we respect upstream versioning to see if we actually need this
+        scheduling_graph = ReactiveSchedulingGraph.from_context(context)
 
-#         parent_partitions = scheduling_graph.get(
-#             asset_partition=asset_partition,
-#         )
+        parent_partitions = scheduling_graph.get_all_parent_partitions(
+            asset_partition=asset_partition,
+        )
 
-#         # eventually this should be pre-computed
-#         updated_parent_partitions = context.queryer.get_parent_asset_partitions_updated_after_child(
-#             asset_partition=asset_partition,
-#             parent_asset_partitions=parent_partitions,
-#             respect_materialization_data_versions=True,
-#             ignored_parent_keys=set(),
-#         )
+        # eventually this should be pre-computed
+        updated_parent_partitions = context.queryer.get_parent_asset_partitions_updated_after_child(
+            asset_partition=asset_partition,
+            parent_asset_partitions=parent_partitions,
+            respect_materialization_data_versions=True,
+            ignored_parent_keys=set(),
+        )
 
-#         # import code
+        return RequestReaction(include=bool(updated_parent_partitions))
 
-#         # code.interact(local=locals())
-#         return RequestReaction(include=bool(updated_parent_partitions))
-
-#     def react_to_upstream_request(
-#         self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-#     ) -> RequestReaction:
-#         # upstream demands request overrides any updating behavior
-#         # note: is this true?
-#         # TODO: what about getting the other upstreams?
-#         return RequestReaction(include=True)
+    def react_to_upstream_request(
+        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
+    ) -> RequestReaction:
+        # upstream demands request overrides any updating behavior
+        # note: is this true?
+        # TODO: what about getting the other upstreams?
+        return RequestReaction(include=True)
 
 
 def test_on_parent_basic_on_parent_updated() -> None:
-    ...
+    @asset
+    def upup() -> None:
+        ...
 
-    # @asset
-    # def upup() -> None:
-    #     ...
+    @asset(deps=[upup], scheduling_policy=OnAnyParentOutOfSyncPolicy())
+    def up() -> None:
+        ...
 
-    # @asset(deps=[upup], scheduling_policy=OnParentUpdatedPolicy())
-    # def up() -> None:
-    #     ...
+    @asset(deps=[up], scheduling_policy=AlwaysLaunchSchedulingPolicy())
+    def down() -> None:
+        ...
 
-    # @asset(deps=[up], scheduling_policy=AlwaysLaunchSchedulingPolicy())
-    # def down() -> None:
-    #     ...
+    defs = Definitions(assets=[upup, up, down])
 
-    # defs = Definitions(assets=[upup, up, down])
+    queryer = CachingInstanceQueryer.ephemeral(defs)
 
-    # queryer = CachingInstanceQueryer.ephemeral(defs)
-
-    # assert (
-    #     defs.get_implicit_global_asset_job_def()
-    #     .execute_in_process(instance=queryer.instance)
-    #     .success
-    # )
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(instance=queryer.instance)
+        .success
+    )
 
     # # everything up-to-date
 

@@ -1,5 +1,5 @@
 import datetime
-from typing import List, NamedTuple, Optional, Set
+from typing import AbstractSet, List, NamedTuple, Optional, Set
 
 from dagster import (
     _check as check,
@@ -66,6 +66,16 @@ class ReactiveSchedulingGraph(NamedTuple):
             if asset_key in assets_def.scheduling_policies_by_key
             else None
         )
+
+    def get_all_parent_partitions(
+        self, asset_partition: AssetPartition
+    ) -> AbstractSet[AssetPartition]:
+        return self.asset_graph.get_parents_partitions(
+            dynamic_partitions_store=self.queryer,
+            current_time=self.tick_dt,
+            asset_key=asset_partition.asset_key,
+            partition_key=asset_partition.partition_key,
+        ).parent_partitions
 
     def make_valid_subset(
         self,
