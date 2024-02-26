@@ -562,6 +562,11 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
+        observable_asset_key = self.job_def.asset_layer.observable_asset_key_for_node(
+            self.node_handle
+        )
+        if observable_asset_key:
+            return observable_asset_key
         return next(iter(self.assets_def.keys_by_output_name.values()))
 
     @public
@@ -570,6 +575,19 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """If there is a backing AssetsDefinition for what is currently executing."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         return assets_def is not None
+
+    @public
+    @property
+    def observable_asset_key(self) -> AssetKey:
+        """If the current step corresponds to an observable asset, returns the AssetKey for the
+        observable asset.
+        """
+        asset_key = self.job_def.asset_layer.observable_asset_key_for_node(self.node_handle)
+        if not asset_key:
+            raise DagsterInvariantViolationError(
+                "Cannot call `context.observable_asset_key` in a non-observable asset."
+            )
+        return asset_key
 
     @public
     @property
