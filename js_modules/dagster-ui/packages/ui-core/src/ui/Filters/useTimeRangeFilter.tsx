@@ -70,7 +70,7 @@ type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 
 type Args = {
   name: string;
-  activeFilterTerm: string;
+  activeFilterTerm?: string;
   icon: IconName;
 
   // This hook is NOT a "controlled component". Changing state only updates the component's current state.
@@ -163,7 +163,7 @@ export function useTimeRangeFilter({
       },
       activeJSX: (
         <ActiveFilterState
-          activeFilterTerm={activeFilterTerm}
+          activeFilterTerm={activeFilterTerm || name}
           timeRanges={timeRanges}
           state={innerState}
           timezone={timezone}
@@ -172,7 +172,7 @@ export function useTimeRangeFilter({
       ),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, innerState, timeRanges, timezone, timeRangesArray],
+    [name, icon, innerState, timeRanges, timezone, timeRangesArray, activeFilterTerm],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
