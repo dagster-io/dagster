@@ -71,6 +71,7 @@ from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_group_name
 
 if TYPE_CHECKING:
+    from .asset_graph import AssetKeyOrCheckKey
     from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
@@ -900,6 +901,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         }
 
     @property
+    def asset_and_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
+        return merge_dicts(
+            self.keys_by_output_name,
+            {
+                output_name: spec.key
+                for output_name, spec in self.check_specs_by_output_name.items()
+            },
+        )
+
+    @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         return {
@@ -1215,6 +1226,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def _subset_graph_backed_asset(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
+        selected_asset_check_keys: AbstractSet[AssetCheckKey],
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
 
@@ -1230,6 +1242,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         op_selection: List[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_node_handles_by_asset_key[asset_key]
+            for dep_node_handle in dep_node_handles:
+                op_selection.append(".".join(dep_node_handle.path[1:]))
+        for asset_check_key in selected_asset_check_keys:
+            dep_node_handles = dep_node_handles_by_asset_key[asset_check_key.asset_key]
             for dep_node_handle in dep_node_handles:
                 op_selection.append(".".join(dep_node_handle.path[1:]))
 
@@ -1268,13 +1284,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         if asset_subselection == self.keys and asset_check_subselection == self.check_keys:
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
-            check.invariant(
-                selected_asset_check_keys == self.check_keys,
-                "Subsetting graph-backed assets with checks is not yet supported",
-            )
-
             subsetted_node = self._subset_graph_backed_asset(
-                asset_subselection,
+                asset_subselection, asset_check_subselection
             )
 
             # The subsetted node should only include asset inputs that are dependencies of the
