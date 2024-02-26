@@ -13,6 +13,7 @@ from typing import (
     Set,
 )
 from arrow import get
+from kopf import all_
 
 import pytz
 
@@ -318,6 +319,7 @@ def get_new_asset_partitions_to_request(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition],
     dynamic_partitions_store: DynamicPartitionsStore,
+    all_partitions: bool,
 ) -> AbstractSet[AssetKeyPartitionKey]:
     missed_ticks = missed_cron_ticks(cron_data)
 
@@ -328,7 +330,7 @@ def get_new_asset_partitions_to_request(
         return {AssetKeyPartitionKey(asset_key)}
 
     # if all_partitions is set, then just return all partitions if any ticks have been missed
-    if self.all_partitions:
+    if all_partitions:
         return {
             AssetKeyPartitionKey(asset_key, partition_key)
             for partition_key in partitions_def.get_partition_keys(
@@ -408,6 +410,7 @@ class MaterializeOnCronRule(
             asset_key=context.asset_key,
             partitions_def=context.partitions_def,
             dynamic_partitions_store=context.instance_queryer,
+            all_partitions=self.all_partitions,
         )
 
     def evaluate_for_asset(
