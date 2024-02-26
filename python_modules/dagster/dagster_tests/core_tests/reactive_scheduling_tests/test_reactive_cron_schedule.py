@@ -34,7 +34,7 @@ def test_daily_cron_schedule_no_previous_launch() -> None:
         )
     )
     assert result.launch
-    assert result.partition_keys is None
+    assert result.explicit_partition_keys is None
 
 
 def test_daily_cron_schedule_previous_launch_in_window() -> None:
@@ -64,4 +64,4 @@ def test_daily_cron_schedule_previous_launch_in_window() -> None:
         )
     )
     assert not result.launch
-    assert result.partition_keys is None
+    assert result.explicit_partition_keys is None
