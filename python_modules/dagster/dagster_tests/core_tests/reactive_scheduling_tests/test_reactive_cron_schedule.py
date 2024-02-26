@@ -28,7 +28,7 @@ def test_daily_cron_schedule_no_previous_launch() -> None:
             tick_dt=current_dt,
             repository_def=defs.get_repository_def(),
             queryer=CachingInstanceQueryer.ephemeral(defs),
-            asset_key=daily_scheduled.key,
+            ticked_asset_key=daily_scheduled.key,
             # no previous launches
             previous_cursor=None,
         )
@@ -57,7 +57,7 @@ def test_daily_cron_schedule_previous_launch_in_window() -> None:
             tick_dt=current_dt,
             repository_def=defs.get_repository_def(),
             queryer=CachingInstanceQueryer.ephemeral(defs),
-            asset_key=daily_scheduled.key,
+            ticked_asset_key=daily_scheduled.key,
             previous_cursor=CronCursor(
                 previous_launch_timestamp=previous_launch_dt.timestamp()
             ).serialize(),

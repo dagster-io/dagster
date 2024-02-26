@@ -1,20 +1,28 @@
+from typing import Optional, Set
 from uuid import uuid4
 
 from dagster import DagsterInstance, Definitions, asset
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.observe import observe
-from dagster._core.reactive_scheduling.reactive_scheduling_plan import ReactiveSchedulingGraph
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.reactive_scheduling.reactive_scheduling_plan import (
+    PulseResult,
+)
 from dagster._core.reactive_scheduling.scheduling_policy import (
     AssetPartition,
-    RequestReaction,
-    SchedulingExecutionContext,
-    SchedulingPolicy,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .test_policies import AlwaysLaunchSchedulingPolicy, run_scheduling_pulse_on_asset
+from .test_policies import (
+    AlwaysLaunchSchedulingPolicy,
+    IncludeOnAllParentsOutOfSync,
+    IncludeOnAnyParentOutOfSync,
+    run_scheduling_pulse_on_asset,
+)
 
 
 def test_get_parent_asset_partitions_updated_after_child() -> None:
@@ -44,68 +52,6 @@ def test_get_parent_asset_partitions_updated_after_child() -> None:
     )
 
     assert updated == {AssetPartition(up.key)}
-
-
-class IncludeOnAnyParentOutOfSync(SchedulingPolicy):
-    def react_to_downstream_request(
-        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-    ) -> RequestReaction:
-        # here we respect upstream versioning to see if we actually need this
-
-        scheduling_graph = ReactiveSchedulingGraph.from_context(context)
-
-        parent_partitions = scheduling_graph.get_all_parent_partitions(
-            asset_partition=asset_partition,
-        )
-
-        # eventually this should be pre-computed
-        updated_parent_partitions = context.queryer.get_parent_asset_partitions_updated_after_child(
-            asset_partition=asset_partition,
-            parent_asset_partitions=parent_partitions,
-            respect_materialization_data_versions=True,
-            ignored_parent_keys=set(),
-        )
-
-        return RequestReaction(include=bool(updated_parent_partitions))
-
-    def react_to_upstream_request(
-        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-    ) -> RequestReaction:
-        # upstream demands request overrides any updating behavior
-        # note: is this true?
-        # TODO: what about getting the other upstreams?
-        return RequestReaction(include=True)
-
-
-class IncludeOnAllParentsOutOfSync(SchedulingPolicy):
-    def react_to_downstream_request(
-        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-    ) -> RequestReaction:
-        # here we respect upstream versioning to see if we actually need this
-
-        scheduling_graph = ReactiveSchedulingGraph.from_context(context)
-
-        parent_partitions = scheduling_graph.get_all_parent_partitions(
-            asset_partition=asset_partition,
-        )
-
-        # eventually this should be pre-computed
-        updated_parent_partitions = context.queryer.get_parent_asset_partitions_updated_after_child(
-            asset_partition=asset_partition,
-            parent_asset_partitions=parent_partitions,
-            respect_materialization_data_versions=True,
-            ignored_parent_keys=set(),
-        )
-
-        return RequestReaction(include=updated_parent_partitions == parent_partitions)
-
-    def react_to_upstream_request(
-        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
-    ) -> RequestReaction:
-        # upstream demands request overrides any updating behavior
-        # note: is this true?
-        # TODO: what about getting the other upstreams?
-        return RequestReaction(include=True)
 
 
 def test_on_parent_basic_on_parent_updated() -> None:
@@ -275,3 +221,72 @@ def test_on_parent_all_parent_policy_both_parents() -> None:
 
     pulse_result = run_scheduling_pulse_on_asset(defs, "launchy_asset", instance=instance)
     assert set(pulse_result.run_requests[0].asset_selection or []) == {launchy_asset.key, down.key}
+
+
+def run_request_with_partition(
+    pulse_result: PulseResult, partition_key: str
+) -> Optional[RunRequest]:
+    for run_request in pulse_result.run_requests:
+        if run_request.partition_key == partition_key:
+            return run_request
+    return None
+
+
+def asset_selection_of_partition(pulse_result: PulseResult, partition_key: str) -> Set[AssetKey]:
+    run_request = run_request_with_partition(pulse_result, partition_key)
+    if not run_request:
+        return set()
+    return set(run_request.asset_selection) if run_request.asset_selection else set()
+
+
+def test_on_parent_all_parent_policy_both_parents_static_partitioned() -> None:
+    static_partitions_def = StaticPartitionsDefinition(["1", "2"])
+
+    @asset(partitions_def=static_partitions_def)
+    def up_one() -> None:
+        ...
+
+    @asset(partitions_def=static_partitions_def)
+    def up_two() -> None:
+        ...
+
+    @asset(
+        deps=[up_one, up_two],
+        scheduling_policy=IncludeOnAllParentsOutOfSync(),
+        partitions_def=static_partitions_def,
+    )
+    def down() -> None:
+        ...
+
+    @asset(
+        deps=[down],
+        scheduling_policy=AlwaysLaunchSchedulingPolicy(),
+        partitions_def=static_partitions_def,
+    )
+    def launchy_asset() -> None:
+        ...
+
+    defs = Definitions(assets=[up_one, up_two, down, launchy_asset])
+    instance = DagsterInstance.ephemeral()
+
+    # set up both partitions with one materialization
+    assert materialize(
+        assets=[up_one, up_two, down, launchy_asset], instance=instance, partition_key="1"
+    ).success
+    assert materialize(
+        assets=[up_one, up_two, down, launchy_asset], instance=instance, partition_key="2"
+    ).success
+
+    pulse_result = run_scheduling_pulse_on_asset(defs, "launchy_asset", instance=instance)
+    assert len(pulse_result.run_requests) == 2
+
+    assert asset_selection_of_partition(pulse_result, "1") == {launchy_asset.key}
+    assert asset_selection_of_partition(pulse_result, "2") == {launchy_asset.key}
+
+    assert materialize(assets=[up_one, up_two], instance=instance, partition_key="1").success
+
+    pulse_result = run_scheduling_pulse_on_asset(defs, "launchy_asset", instance=instance)
+    assert len(pulse_result.run_requests) == 2
+
+    assert asset_selection_of_partition(pulse_result, "1") == {launchy_asset.key, down.key}
+    assert asset_selection_of_partition(pulse_result, "2") == {launchy_asset.key}

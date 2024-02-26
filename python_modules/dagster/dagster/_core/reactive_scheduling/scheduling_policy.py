@@ -28,7 +28,7 @@ class SchedulingExecutionContext(NamedTuple):
 
     queryer: "CachingInstanceQueryer"
     repository_def: "RepositoryDefinition"
-    asset_key: AssetKey
+    ticked_asset_key: AssetKey
     previous_cursor: Optional[str]
 
     @property
