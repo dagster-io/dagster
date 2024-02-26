@@ -61,7 +61,7 @@ class Cron(SchedulingPolicy):
         )
 
         graph = ReactiveSchedulingGraph.from_context(context)
-        asset_info = graph.get_required_asset_info(context.asset_key)
+        asset_info = graph.get_required_asset_info(context.ticked_asset_key)
 
         cron_cursor = CronCursor.deserialize(context.previous_cursor)
         previous_launch_dt = (
@@ -77,7 +77,7 @@ class Cron(SchedulingPolicy):
                 previous_datetime=previous_launch_dt,
                 current_datetime=context.tick_dt,
             ),
-            asset_key=context.asset_key,
+            asset_key=context.ticked_asset_key,
             dynamic_partitions_store=context.instance,
             partitions_def=asset_info.partitions_def,
             all_partitions=False,  # hardcode for now,
@@ -86,6 +86,12 @@ class Cron(SchedulingPolicy):
         if not asset_partitions:
             return SchedulingResult(launch=False)
 
-        return SchedulingResult(
-            launch=True, explicit_partition_keys=get_partition_keys(asset_partitions)
-        )
+        if asset_info.partitions_def:
+            return SchedulingResult(
+                launch=True,
+                explicit_partition_keys={
+                    check.not_none(ap.partition_key) for ap in asset_partitions
+                },
+            )
+        else:
+            return SchedulingResult(launch=True)

@@ -318,7 +318,7 @@ def pulse_policy_on_asset(
         repository_def=repository_def,
         queryer=queryer,
         tick_dt=tick_dt,
-        asset_key=asset_key,
+        ticked_asset_key=asset_key,
         previous_tick_dt=previous_tick_dt,
         previous_cursor=previous_cursor,
     )
