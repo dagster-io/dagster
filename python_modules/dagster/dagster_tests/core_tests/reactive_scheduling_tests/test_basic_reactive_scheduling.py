@@ -26,13 +26,15 @@ def run_scheduling_pulse_on_asset(
     instance: Optional[DagsterInstance] = None,
     evaluation_dt: Optional[datetime] = None,
     previous_dt: Optional[datetime] = None,
+    previous_cursor: Optional[str] = None,
 ) -> PulseResult:
     return pulse_policy_on_asset(
         asset_key=AssetKey.from_coercible(asset_key),
         repository_def=defs.get_repository_def(),
         instance=instance or DagsterInstance.ephemeral(),
-        evaluation_dt=evaluation_dt or datetime.now(),
-        previous_dt=previous_dt,
+        tick_dt=evaluation_dt or datetime.now(),
+        previous_tick_dt=previous_dt,
+        previous_cursor=previous_cursor,
     )
 
 

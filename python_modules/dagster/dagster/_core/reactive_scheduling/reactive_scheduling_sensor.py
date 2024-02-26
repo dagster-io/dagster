@@ -65,8 +65,9 @@ def build_reactive_scheduling_sensor(
             asset_key=asset_key,
             repository_def=context.repository_def,
             instance=context.instance,
-            evaluation_dt=tick_dt,
-            previous_dt=previous_cursor.tick_dt if previous_cursor else None,
+            tick_dt=tick_dt,
+            previous_tick_dt=previous_cursor.tick_dt if previous_cursor else None,
+            previous_cursor=previous_cursor.user_defined_cursor if previous_cursor else None,
         )
 
         return SensorResult(

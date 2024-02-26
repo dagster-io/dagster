@@ -33,14 +33,14 @@ class ReactiveAssetInfo(NamedTuple):
 class ReactiveSchedulingGraph(NamedTuple):
     instance: DagsterInstance
     repository_def: RepositoryDefinition
-    evaluation_dt: datetime.datetime
+    tick_dt: datetime.datetime
 
     @staticmethod
     def from_context(context: SchedulingExecutionContext):
         return ReactiveSchedulingGraph(
             instance=context.instance,
             repository_def=context.repository_def,
-            evaluation_dt=context.evaluation_tick_dt,
+            tick_dt=context.tick_dt,
         )
 
     @property
@@ -89,7 +89,7 @@ class ReactiveSchedulingGraph(NamedTuple):
                     asset_key,
                     asset_info.partitions_def,
                     self.instance,
-                    current_time=self.evaluation_dt,
+                    current_time=self.tick_dt,
                 )
 
     def get_parent_asset_subset(
@@ -100,7 +100,7 @@ class ReactiveSchedulingGraph(NamedTuple):
             child_asset_subset=asset_subset,
             parent_asset_key=parent_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.evaluation_dt,
+            current_time=self.tick_dt,
         ).as_valid(parent_assets_def.partitions_def)
 
     def get_child_asset_subset(
@@ -111,7 +111,7 @@ class ReactiveSchedulingGraph(NamedTuple):
             parent_asset_subset=asset_subset,
             child_asset_key=child_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.evaluation_dt,
+            current_time=self.tick_dt,
         ).as_valid(child_assets_def.partitions_def)
 
 
@@ -241,14 +241,15 @@ class PulseResult(NamedTuple):
 def pulse_policy_on_asset(
     asset_key: AssetKey,
     repository_def: RepositoryDefinition,
-    previous_dt: Optional[datetime.datetime],
-    evaluation_dt: datetime.datetime,
+    previous_tick_dt: Optional[datetime.datetime],
+    tick_dt: datetime.datetime,
     instance: DagsterInstance,
+    previous_cursor: Optional[str],
 ) -> PulseResult:
     scheduling_graph = ReactiveSchedulingGraph(
         repository_def=repository_def,
         instance=instance,
-        evaluation_dt=evaluation_dt,
+        tick_dt=tick_dt,
     )
     asset_info = scheduling_graph.get_asset_info(asset_key)
     if not asset_info:
@@ -257,9 +258,10 @@ def pulse_policy_on_asset(
     context = SchedulingExecutionContext(
         repository_def=repository_def,
         instance=instance,
-        evaluation_tick_dt=evaluation_dt,
+        tick_dt=tick_dt,
         asset_key=asset_key,
-        previous_tick_dt=previous_dt,
+        previous_tick_dt=previous_tick_dt,
+        previous_cursor=previous_cursor,
     )
 
     scheduling_result = asset_info.scheduling_policy.schedule(context)
