@@ -35,6 +35,8 @@ class JsonFileHandler(logging.Handler):
         self.json_path = check.str_param(json_path, "json_path")
 
     def emit(self, record: logging.LogRecord) -> None:
+        from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+
         try:
             log_dict = copy.copy(record.__dict__)
 
@@ -45,9 +47,9 @@ class JsonFileHandler(logging.Handler):
             # and uploads all of those properties to a redshift table for
             # in order to do analytics on the log
 
-            if "dagster_meta" in log_dict:
-                dagster_meta_dict = log_dict["dagster_meta"]
-                del log_dict["dagster_meta"]
+            if LOG_RECORD_METADATA_ATTR in log_dict:
+                dagster_meta_dict = log_dict[LOG_RECORD_METADATA_ATTR]
+                del log_dict[LOG_RECORD_METADATA_ATTR]
             else:
                 dagster_meta_dict = {}
 
@@ -69,7 +71,7 @@ class StructuredLoggerMessage(
             ("name", str),
             ("message", str),
             ("level", int),
-            ("meta", Mapping[object, object]),
+            ("meta", Mapping[str, object]),
             ("record", logging.LogRecord),
         ],
     )
@@ -79,7 +81,7 @@ class StructuredLoggerMessage(
         name: str,
         message: str,
         level: int,
-        meta: Mapping[object, object],
+        meta: Mapping[str, object],
         record: logging.LogRecord,
     ):
         return super(StructuredLoggerMessage, cls).__new__(

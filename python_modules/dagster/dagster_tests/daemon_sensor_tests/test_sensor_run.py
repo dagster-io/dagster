@@ -65,7 +65,7 @@ from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DAGSTER_META_KEY
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -2987,9 +2987,9 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
     assert len(records) == 3
-    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
-    assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
-    assert records[2][DAGSTER_META_KEY]["orig_message"] == ("goodbye goodbye")
+    assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
+    assert records[1][LOG_RECORD_METADATA_ATTR]["orig_message"].endswith("hello hello")
+    assert records[2][LOG_RECORD_METADATA_ATTR]["orig_message"] == ("goodbye goodbye")
     assert records[2]["exc_info"].startswith("Traceback")
     assert "Exception: hi hi" in records[2]["exc_info"]
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
@@ -3037,7 +3037,7 @@ def test_sensor_logging_on_tick_failure(
     records = get_instigation_log_records(instance, tick.log_key)
 
     assert len(records) == 1
-    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
 
     assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
