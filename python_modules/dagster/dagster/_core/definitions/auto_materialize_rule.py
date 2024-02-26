@@ -12,8 +12,6 @@ from typing import (
     Sequence,
     Set,
 )
-from arrow import get
-from kopf import all_
 
 import pytz
 
@@ -281,8 +279,12 @@ class MaterializeOnRequiredForFreshnessRule(
 class CronEvaluationData(NamedTuple):
     cron_schedule: str
     timezone: str
-    previous: Optional[float]
+    previous_datetime: Optional[datetime.datetime]
     current_datetime: datetime.datetime
+
+    @property
+    def previous(self) -> Optional[float]:
+        return self.previous_datetime.timestamp() if self.previous_datetime else None
 
     @property
     def current(self) -> float:
@@ -404,7 +406,11 @@ class MaterializeOnCronRule(
             cron_data=CronEvaluationData(
                 cron_schedule=self.cron_schedule,
                 timezone=self.timezone,
-                previous=context.previous_evaluation_timestamp,
+                previous_datetime=datetime.datetime.fromtimestamp(
+                    context.previous_evaluation_timestamp
+                )
+                if context.previous_evaluation_timestamp
+                else None,
                 current_datetime=context.evaluation_time,
             ),
             asset_key=context.asset_key,
