@@ -40,7 +40,7 @@ setup(
         f"dagster-snowflake{pin}",
         "pandas",
         "requests",
-        "snowflake-connector-python[pandas]>=2.1.0",
+        "snowflake-connector-python[pandas]>=3.4.0",
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy>=1.2",
     ],
