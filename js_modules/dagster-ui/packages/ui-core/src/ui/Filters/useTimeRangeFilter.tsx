@@ -70,7 +70,6 @@ type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 
 type Args = {
   name: string;
-  activeFilterTerm?: string;
   icon: IconName;
 
   // This hook is NOT a "controlled component". Changing state only updates the component's current state.
@@ -79,11 +78,12 @@ type Args = {
   // to the old state and pass that in.
   state?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
+  activeFilterTerm?: string;
 };
 
 export function useTimeRangeFilter({
   name,
-  activeFilterTerm,
+  activeFilterTerm = 'Timestamp',
   icon,
   state,
   onStateChanged,
@@ -163,7 +163,7 @@ export function useTimeRangeFilter({
       },
       activeJSX: (
         <ActiveFilterState
-          activeFilterTerm={activeFilterTerm || name}
+          activeFilterTerm={activeFilterTerm}
           timeRanges={timeRanges}
           state={innerState}
           timezone={timezone}
