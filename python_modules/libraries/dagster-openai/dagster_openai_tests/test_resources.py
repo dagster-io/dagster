@@ -2,14 +2,15 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
-    AssetOut,
     AssetSelection,
+    AssetSpec,
     Definitions,
     OpExecutionContext,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
     graph_asset,
+    materialize_to_memory,
     multi_asset,
     op,
 )
@@ -71,20 +72,11 @@ def test_openai_resource_with_asset(mock_client, mock_context, mock_wrapper):
         assert mock_client.called
         assert mock_wrapper.call_count == 3
 
-    result = (
-        Definitions(
-            assets=[openai_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_asset_job", selection=AssetSelection.assets(openai_asset)
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
@@ -116,20 +108,11 @@ def test_openai_resource_with_graph_backed_asset(mock_client, mock_context, mock
     def openai_asset():
         return openai_op(model_version_op(), message_op())
 
-    result = (
-        Definitions(
-            assets=[openai_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_asset_job", selection=AssetSelection.assets(openai_asset)
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
@@ -140,10 +123,7 @@ def test_openai_resource_with_graph_backed_asset(mock_client, mock_context, mock
 @patch("dagster_openai.resources.Client")
 def test_openai_resource_with_multi_asset(mock_client, mock_context, mock_wrapper):
     @multi_asset(
-        outs={
-            "status": AssetOut(),
-            "result": AssetOut(),
-        },
+        specs=[AssetSpec("status"), AssetSpec("result")],
     )
     def openai_multi_asset(openai_resource: OpenAIResource):
         assert openai_resource
@@ -179,21 +159,11 @@ def test_openai_resource_with_multi_asset(mock_client, mock_context, mock_wrappe
                 )
         return None, None
 
-    result = (
-        Definitions(
-            assets=[openai_multi_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_multi_asset_job",
-                    selection=AssetSelection.assets(openai_multi_asset),
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_multi_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_multi_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
@@ -321,20 +291,11 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
                 output_name="openai_asset",
             )
 
-    result = (
-        Definitions(
-            assets=[openai_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_asset_job", selection=AssetSelection.assets(openai_asset)
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
@@ -386,20 +347,11 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
     def openai_asset():
         return openai_op(model_version_op(), training_file_op())
 
-    result = (
-        Definitions(
-            assets=[openai_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_asset_job", selection=AssetSelection.assets(openai_asset)
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
@@ -410,10 +362,7 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
 @patch("dagster_openai.resources.Client")
 def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper):
     @multi_asset(
-        outs={
-            "status": AssetOut(),
-            "result": AssetOut(),
-        },
+        specs=[AssetSpec("status"), AssetSpec("result")],
     )
     def openai_multi_asset(openai_resource: OpenAIResource):
         assert openai_resource
@@ -449,21 +398,11 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
             )
         return None, None
 
-    result = (
-        Definitions(
-            assets=[openai_multi_asset],
-            jobs=[
-                define_asset_job(
-                    name="openai_multi_asset_job",
-                    selection=AssetSelection.assets(openai_multi_asset),
-                )
-            ],
-            resources={
-                "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
-            },
-        )
-        .get_job_def("openai_multi_asset_job")
-        .execute_in_process()
+    result = materialize_to_memory(
+        [openai_multi_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
     )
 
     assert result.success
