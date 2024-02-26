@@ -9,7 +9,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .test_policies import AlwaysLaunchSchedulingPolicy
+from .test_policies import AlwaysLaunchSchedulingPolicy, run_scheduling_pulse_on_asset
 
 
 def test_get_parent_asset_partitions_updated_after_child() -> None:
@@ -46,6 +46,7 @@ class OnAnyParentOutOfSyncPolicy(SchedulingPolicy):
         self, context: SchedulingExecutionContext, asset_partition: AssetPartition
     ) -> RequestReaction:
         # here we respect upstream versioning to see if we actually need this
+
         scheduling_graph = ReactiveSchedulingGraph.from_context(context)
 
         parent_partitions = scheduling_graph.get_all_parent_partitions(
@@ -86,32 +87,26 @@ def test_on_parent_basic_on_parent_updated() -> None:
 
     defs = Definitions(assets=[upup, up, down])
 
-    queryer = CachingInstanceQueryer.ephemeral(defs)
+    instance = DagsterInstance.ephemeral()
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance).success
+
+    # everything up-to-date
+
+    pulse_result = run_scheduling_pulse_on_asset(defs, "down", instance=instance)
+
+    # this should only launch itself
+    assert set(pulse_result.run_requests[0].asset_selection or []) == {down.key}
 
     assert (
         defs.get_implicit_global_asset_job_def()
-        .execute_in_process(instance=queryer.instance)
+        .execute_in_process(instance=instance, asset_selection=[upup.key])
         .success
     )
-
-    # # everything up-to-date
-
-    # pulse_result = run_scheduling_pulse_on_asset(
-    #     defs,
-    #     "down",
-    #     queryer=queryer,
-    # )
-
-    # assert set(pulse_result.run_requests[0].asset_selection or []) == {down.key}
-
     # assert materialize(assets=[upup], instance=queryer.instance).success
 
-    # # new data in upup
+    # new data in upup
 
-    # pulse_result = run_scheduling_pulse_on_asset(
-    #     defs,
-    #     "down",
-    #     queryer=queryer,
-    # )
+    pulse_result = run_scheduling_pulse_on_asset(defs, "down", instance=instance)
 
-    # assert set(pulse_result.run_requests[0].asset_selection or []) == {down.key, up.key}
+    assert set(pulse_result.run_requests[0].asset_selection or []) == {down.key, up.key}
