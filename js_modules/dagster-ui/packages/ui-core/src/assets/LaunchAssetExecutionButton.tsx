@@ -346,13 +346,12 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
 
     if ('assetNodeAdditionalRequiredKeys' in data && data.assetNodeAdditionalRequiredKeys.length) {
-      setState({type: 'none'});
       try {
         await confirm(buildAssetAdditionalRequiredKeysAlert(data));
       } catch {
+        setState({type: 'none'});
         return; // user declined confirm
       }
-      setState({type: 'loading'});
       if (assetKeysOrJob instanceof Array) {
         data = await onLoad([...assetKeysOrJob, ...data.assetNodeAdditionalRequiredKeys]);
       }
@@ -363,22 +362,18 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
     if (next.type === 'error') {
-      showCustomAlert({
-        title: 'Unable to Materialize',
-        body: next.error,
-      });
+      showCustomAlert({title: 'Unable to Materialize', body: next.error});
       setState({type: 'none'});
       return;
     }
 
     const missing = await upstreamAssetsWithNoMaterializations(client, assets);
     if (missing.length) {
-      setState({type: 'none'});
       try {
         await confirm(buildUpstreamAssetsWithNoMaterializationsAlert(missing));
-        setState({type: 'loading'});
       } catch {
-        return;
+        setState({type: 'none'});
+        return; // user declined confirm
       }
     }
 
@@ -699,6 +694,7 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
 
 export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQuery) {
   return {
+    catchOnCancel: true,
     title: ADDITIONAL_REQUIRED_KEYS_WARNING,
     description: (
       <div style={{overflow: 'auto'}}>
@@ -720,6 +716,7 @@ export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQue
 }
 export function buildUpstreamAssetsWithNoMaterializationsAlert(missing: AssetKey[]) {
   return {
+    catchOnCancel: true,
     title: 'Are you sure?',
     description: (
       <>
