@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from typing import List, NamedTuple, Optional, Set
 
 from dagster import (
@@ -31,19 +31,24 @@ class ReactiveAssetInfo(NamedTuple):
 
 
 class ReactiveSchedulingGraph(NamedTuple):
-    context: SchedulingExecutionContext
+    instance: DagsterInstance
+    repository_def: RepositoryDefinition
+    evaluation_dt: datetime.datetime
 
-    @property
-    def instance(self) -> DagsterInstance:
-        return self.context.instance
-
-    @property
-    def repository_def(self) -> RepositoryDefinition:
-        return self.context.repository_def
+    @staticmethod
+    def from_context(context: SchedulingExecutionContext):
+        return ReactiveSchedulingGraph(
+            instance=context.instance,
+            repository_def=context.repository_def,
+            evaluation_dt=context.evaluation_dt,
+        )
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
-        return self.context.repository_def.asset_graph
+        return self.repository_def.asset_graph
+
+    def get_required_asset_info(self, asset_key: AssetKey) -> ReactiveAssetInfo:
+        return check.not_none(self.get_asset_info(asset_key))
 
     def get_asset_info(self, asset_key: AssetKey) -> Optional[ReactiveAssetInfo]:
         assets_def = self.asset_graph.get_assets_def(asset_key)
@@ -84,7 +89,7 @@ class ReactiveSchedulingGraph(NamedTuple):
                     asset_key,
                     asset_info.partitions_def,
                     self.instance,
-                    current_time=self.context.evaluation_time,
+                    current_time=self.evaluation_dt,
                 )
 
     def get_parent_asset_subset(
@@ -95,7 +100,7 @@ class ReactiveSchedulingGraph(NamedTuple):
             child_asset_subset=asset_subset,
             parent_asset_key=parent_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.context.evaluation_time,
+            current_time=self.evaluation_dt,
         ).as_valid(parent_assets_def.partitions_def)
 
     def get_child_asset_subset(
@@ -106,7 +111,7 @@ class ReactiveSchedulingGraph(NamedTuple):
             parent_asset_subset=asset_subset,
             child_asset_key=child_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.context.evaluation_time,
+            current_time=self.evaluation_dt,
         ).as_valid(child_assets_def.partitions_def)
 
 
@@ -119,6 +124,7 @@ def make_asset_partitions(ak: AssetKey, partition_keys: Set[str]) -> Set[AssetPa
 
 
 def build_reactive_scheduling_plan(
+    context: SchedulingExecutionContext,
     scheduling_graph: ReactiveSchedulingGraph,
     starting_key: AssetKey,  # starting asset key
     scheduling_result: SchedulingResult,
@@ -132,14 +138,19 @@ def build_reactive_scheduling_plan(
         ),
     )
 
-    upward_requested_partitions = ascending_scheduling_pulse(scheduling_graph, starting_subset)
-    downward_requested_partitions = descending_scheduling_pulse(scheduling_graph, starting_subset)
+    upward_requested_partitions = ascending_scheduling_pulse(
+        context, scheduling_graph, starting_subset
+    )
+    downward_requested_partitions = descending_scheduling_pulse(
+        context, scheduling_graph, starting_subset
+    )
     return ReactionSchedulingPlan(
         requested_partitions=upward_requested_partitions | downward_requested_partitions
     )
 
 
 def ascending_scheduling_pulse(
+    context: SchedulingExecutionContext,
     graph: ReactiveSchedulingGraph,
     starting_subset: ValidAssetSubset,
 ) -> Set[AssetPartition]:
@@ -167,7 +178,7 @@ def ascending_scheduling_pulse(
         included: Set[AssetPartition] = set()
         for asset_partition in parent_subset.asset_partitions:
             parent_reaction = parent_info.scheduling_policy.react_to_downstream_request(
-                graph.context, asset_partition
+                context, asset_partition
             )
             if parent_reaction.include and asset_partition not in visited:
                 included.add(asset_partition)
@@ -180,6 +191,7 @@ def ascending_scheduling_pulse(
 
 
 def descending_scheduling_pulse(
+    context: SchedulingExecutionContext,
     graph: ReactiveSchedulingGraph,
     starting_subset: ValidAssetSubset,
 ) -> Set[AssetPartition]:
@@ -207,7 +219,7 @@ def descending_scheduling_pulse(
         included: Set[AssetPartition] = set()
         for asset_partition in child_subset.asset_partitions:
             child_reaction = child_info.scheduling_policy.react_to_upstream_request(
-                graph.context, asset_partition
+                context, asset_partition
             )
             if child_reaction.include and asset_partition not in visited:
                 included.add(asset_partition)
@@ -223,18 +235,26 @@ def descending_scheduling_pulse(
 def pulse_policy_on_asset(
     asset_key: AssetKey,
     repository_def: RepositoryDefinition,
-    evaluation_time: datetime,
+    previous_dt: Optional[datetime.datetime],
+    evaluation_dt: datetime.datetime,
     instance: DagsterInstance,
 ) -> List[RunRequest]:
-    context = SchedulingExecutionContext(
+    scheduling_graph = ReactiveSchedulingGraph(
         repository_def=repository_def,
         instance=instance,
-        evaluation_time=evaluation_time,
+        evaluation_dt=evaluation_dt,
     )
-    scheduling_graph = ReactiveSchedulingGraph(context=context)
     asset_info = scheduling_graph.get_asset_info(asset_key)
     if not asset_info:
         return []
+
+    context = SchedulingExecutionContext(
+        repository_def=repository_def,
+        instance=instance,
+        evaluation_dt=evaluation_dt,
+        asset_key=asset_key,
+        previous_dt=previous_dt,
+    )
 
     scheduling_result = asset_info.scheduling_policy.schedule(context)
 
@@ -244,6 +264,7 @@ def pulse_policy_on_asset(
         return []
 
     scheduling_plan = build_reactive_scheduling_plan(
+        context=context,
         scheduling_graph=scheduling_graph,
         starting_key=asset_key,
         scheduling_result=scheduling_result,

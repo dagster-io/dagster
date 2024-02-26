@@ -44,7 +44,8 @@ def build_reactive_scheduling_sensor(
             repository_def=context.repository_def,
             instance=context.instance,
             # TODO: What is the best way to get time in here?
-            evaluation_time=datetime.now(),
+            evaluation_dt=datetime.now(),
+            previous_dt=None,  # get from cursor
         )
 
         return SensorResult(run_requests=run_requests)
