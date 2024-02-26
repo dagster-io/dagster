@@ -12,6 +12,7 @@ from dagster import (
     InitResourceContext,
     OpExecutionContext,
 )
+from dagster._annotations import experimental
 from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
@@ -36,7 +37,7 @@ API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING = {
 context_to_counters = WeakKeyDictionary()
 
 
-def add_to_asset_metadata(
+def _add_to_asset_metadata(
     context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str]
 ):
     if context not in context_to_counters:
@@ -48,6 +49,7 @@ def add_to_asset_metadata(
     context.add_output_metadata(dict(counters), output_name)
 
 
+@experimental
 def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[str], func):
     """This wrapper can be used on any endpoint of the
     `openai library <https://github.com/openai/openai-python>`
@@ -132,13 +134,14 @@ def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[st
         }
         if hasattr(usage, "completion_tokens"):
             usage_metadata["openai.completion_tokens"] = usage.completion_tokens
-        add_to_asset_metadata(context, usage_metadata, output_name)
+        _add_to_asset_metadata(context, usage_metadata, output_name)
 
         return response
 
     return wrapper
 
 
+@experimental
 class OpenAIResource(ConfigurableResource):
     """This resource is wrapper over the
     `openai library <https://github.com/openai/openai-python>`_.
