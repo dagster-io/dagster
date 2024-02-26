@@ -3954,6 +3954,10 @@ export type Repository = {
   usedSolids: Array<UsedSolid>;
 };
 
+export type RepositorySensorsArgs = {
+  sensorType?: InputMaybe<SensorType>;
+};
+
 export type RepositoryUsedSolidArgs = {
   name: Scalars['String'];
 };

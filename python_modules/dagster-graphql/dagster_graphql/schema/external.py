@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import graphene
 from dagster import (
@@ -9,6 +9,9 @@ from dagster import (
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.host_representation import (
     CodeLocation,
     ExternalRepository,
@@ -45,7 +48,7 @@ from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .resources import GrapheneResourceDetails
 from .schedules import GrapheneSchedule
-from .sensors import GrapheneSensor
+from .sensors import GrapheneSensor, GrapheneSensorType
 from .used_solid import GrapheneUsedSolid
 from .util import ResolveInfo, non_null_list
 
@@ -243,7 +246,9 @@ class GrapheneRepository(graphene.ObjectType):
     origin = graphene.NonNull(GrapheneRepositoryOrigin)
     partitionSets = non_null_list(GraphenePartitionSet)
     schedules = non_null_list(GrapheneSchedule)
-    sensors = non_null_list(GrapheneSensor)
+    sensors = graphene.Field(
+        non_null_list(GrapheneSensor), sensorType=graphene.Argument(GrapheneSensorType)
+    )
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
@@ -306,7 +311,7 @@ class GrapheneRepository(graphene.ObjectType):
             key=lambda schedule: schedule.name,
         )
 
-    def resolve_sensors(self, _graphene_info: ResolveInfo):
+    def resolve_sensors(self, _graphene_info: ResolveInfo, sensorType: Optional[SensorType] = None):
         return [
             GrapheneSensor(
                 sensor,
@@ -317,6 +322,7 @@ class GrapheneRepository(graphene.ObjectType):
             for sensor in sorted(
                 self._repository.get_external_sensors(), key=lambda sensor: sensor.name
             )
+            if not sensorType or sensor.sensor_type == sensorType
         ]
 
     def resolve_pipelines(self, _graphene_info: ResolveInfo):
