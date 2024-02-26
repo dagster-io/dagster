@@ -4,11 +4,11 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.cron_ticker import Cron, CronCursor
 from dagster._core.reactive_scheduling.scheduling_policy import (
     SchedulingExecutionContext,
 )
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 def test_daily_cron_schedule_no_previous_launch() -> None:
@@ -27,7 +27,7 @@ def test_daily_cron_schedule_no_previous_launch() -> None:
             previous_tick_dt=previous_dt,
             tick_dt=current_dt,
             repository_def=defs.get_repository_def(),
-            instance=DagsterInstance.ephemeral(),
+            queryer=CachingInstanceQueryer.ephemeral(defs),
             asset_key=daily_scheduled.key,
             # no previous launches
             previous_cursor=None,
@@ -56,7 +56,7 @@ def test_daily_cron_schedule_previous_launch_in_window() -> None:
             previous_tick_dt=previous_dt,
             tick_dt=current_dt,
             repository_def=defs.get_repository_def(),
-            instance=DagsterInstance.ephemeral(),
+            queryer=CachingInstanceQueryer.ephemeral(defs),
             asset_key=daily_scheduled.key,
             previous_cursor=CronCursor(
                 previous_launch_timestamp=previous_launch_dt.timestamp()
