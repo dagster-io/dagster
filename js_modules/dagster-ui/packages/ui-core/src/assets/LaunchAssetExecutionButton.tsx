@@ -349,13 +349,12 @@ export const useMaterializationAction = (preferredJobName?: string) => {
       setState({type: 'none'});
       try {
         await confirm(buildAssetAdditionalRequiredKeysAlert(data));
-
-        if (assetKeysOrJob instanceof Array) {
-          data = await onLoad([...assetKeysOrJob, ...data.assetNodeAdditionalRequiredKeys]);
-        }
-        setState({type: 'loading'});
       } catch {
-        return;
+        return; // user declined confirm
+      }
+      setState({type: 'loading'});
+      if (assetKeysOrJob instanceof Array) {
+        data = await onLoad([...assetKeysOrJob, ...data.assetNodeAdditionalRequiredKeys]);
       }
     }
 
