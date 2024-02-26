@@ -39,6 +39,11 @@ class SchedulingPolicy:
     ) -> RequestReaction:
         ...
 
+    def request_from_upstream(
+        self, context: SchedulingExecutionContext, asset_partition: AssetPartition
+    ) -> RequestReaction:
+        ...
+
 
 class DefaultSchedulingPolicy(SchedulingPolicy):
     def schedule(self, context: SchedulingExecutionContext) -> SchedulingResult:
