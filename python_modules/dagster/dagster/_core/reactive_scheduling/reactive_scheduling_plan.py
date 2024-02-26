@@ -6,7 +6,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_daemon_context import build_run_requests
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import (
     PartitionsDefinition,
@@ -221,19 +221,18 @@ def descending_scheduling_pulse(
 
 
 def pulse_policy_on_asset(
-    asset_key: CoercibleToAssetKey,
+    asset_key: AssetKey,
     repository_def: RepositoryDefinition,
     evaluation_time: datetime,
     instance: DagsterInstance,
 ) -> List[RunRequest]:
-    ak = AssetKey.from_coercible(asset_key)
     context = SchedulingExecutionContext(
         repository_def=repository_def,
         instance=instance,
         evaluation_time=evaluation_time,
     )
     scheduling_graph = ReactiveSchedulingGraph(context=context)
-    asset_info = scheduling_graph.get_asset_info(ak)
+    asset_info = scheduling_graph.get_asset_info(asset_key)
     if not asset_info:
         return []
 
@@ -246,7 +245,7 @@ def pulse_policy_on_asset(
 
     scheduling_plan = build_reactive_scheduling_plan(
         scheduling_graph=scheduling_graph,
-        starting_key=ak,
+        starting_key=asset_key,
         scheduling_result=scheduling_result,
     )
 
