@@ -274,6 +274,31 @@ class MaterializeOnRequiredForFreshnessRule(
         return AssetConditionResult.create(context, true_subset, subsets_with_metadata)
 
 
+def missed_cron_ticks(
+    cron_schedule: str, timezone: str, previous: Optional[float], current: float
+) -> Sequence[datetime.datetime]:
+    """Return the cron ticks between previous and current. If previous is None, return the last tick."""
+    if not previous:
+        previous_dt = next(
+            reverse_cron_string_iterator(
+                end_timestamp=current,
+                cron_string=cron_schedule,
+                execution_timezone=timezone,
+            )
+        )
+        return [previous_dt]
+    missed_ticks = []
+    for dt in cron_string_iterator(
+        start_timestamp=previous,
+        cron_string=cron_schedule,
+        execution_timezone=timezone,
+    ):
+        if dt.timestamp() > current:
+            break
+        missed_ticks.append(dt)
+    return missed_ticks
+
+
 @whitelist_for_serdes
 class MaterializeOnCronRule(
     AutoMaterializeRule,
@@ -294,25 +319,12 @@ class MaterializeOnCronRule(
         self, context: AssetConditionEvaluationContext
     ) -> Sequence[datetime.datetime]:
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        if not context.previous_evaluation_timestamp:
-            previous_dt = next(
-                reverse_cron_string_iterator(
-                    end_timestamp=context.evaluation_time.timestamp(),
-                    cron_string=self.cron_schedule,
-                    execution_timezone=self.timezone,
-                )
-            )
-            return [previous_dt]
-        missed_ticks = []
-        for dt in cron_string_iterator(
-            start_timestamp=context.previous_evaluation_timestamp,
-            cron_string=self.cron_schedule,
-            execution_timezone=self.timezone,
-        ):
-            if dt > context.evaluation_time:
-                break
-            missed_ticks.append(dt)
-        return missed_ticks
+        return missed_cron_ticks(
+            cron_schedule=self.cron_schedule,
+            timezone=self.timezone,
+            previous=context.previous_evaluation_timestamp,
+            current=context.evaluation_time.timestamp(),
+        )
 
     def get_new_asset_partitions_to_request(
         self, context: AssetConditionEvaluationContext
