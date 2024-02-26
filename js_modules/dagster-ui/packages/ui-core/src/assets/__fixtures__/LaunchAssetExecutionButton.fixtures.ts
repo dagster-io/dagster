@@ -16,16 +16,19 @@ import {
   buildDaemonHealth,
   buildDaemonStatus,
   buildDimensionDefinitionType,
+  buildDimensionPartitionKeys,
   buildInstance,
   buildMaterializationEvent,
   buildMode,
   buildPartitionDefinition,
+  buildPartitionSet,
   buildPartitionSets,
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
   buildRun,
   buildRunLauncher,
+  buildTimePartitionStatuses,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
@@ -103,7 +106,7 @@ export const UNPARTITIONED_ASSET = buildAssetNode({
   assetKey: buildAssetKey({path: ['unpartitioned_asset']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
-  assetChecksOrError: buildAssetChecks({checks: []}),
+  assetChecksOrError: buildAssetChecks(),
   backfillPolicy: null,
   partitionDefinition: null,
 });
@@ -155,7 +158,7 @@ export const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG = buildAssetNode({
     path: ['unpartitioned_asset_with_required_config'],
   }),
   configField: {...BASE_CONFIG_TYPE_FIELD, isRequired: true},
-  assetChecksOrError: buildAssetChecks({checks: []}),
+  assetChecksOrError: buildAssetChecks(),
 });
 
 export const MULTI_ASSET_OUT_1 = buildAssetNode({
@@ -197,7 +200,7 @@ export const ASSET_DAILY = buildAssetNode({
   assetKey: buildAssetKey({path: ['asset_daily']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
-  assetChecksOrError: buildAssetChecks({checks: []}),
+  assetChecksOrError: buildAssetChecks(),
   backfillPolicy: null,
   partitionDefinition: buildPartitionDefinition({
     name: 'Foo',
@@ -231,7 +234,7 @@ export const ASSET_WEEKLY = buildAssetNode({
   assetKey: buildAssetKey({path: ['asset_weekly']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
-  assetChecksOrError: buildAssetChecks({checks: []}),
+  assetChecksOrError: buildAssetChecks(),
   backfillPolicy: null,
   partitionDefinition: buildPartitionDefinition({
     name: 'Foo',
@@ -338,17 +341,15 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_daily"]',
         partitionKeysByDimension: [
-          {
+          buildDimensionPartitionKeys({
             name: 'default',
-            __typename: 'DimensionPartitionKeys',
             partitionKeys: ASSET_DAILY_PARTITION_KEYS,
             type: PartitionDefinitionType.TIME_WINDOW,
-          },
+          }),
         ],
-        assetPartitionStatuses: {
+        assetPartitionStatuses: buildTimePartitionStatuses({
           ranges: PartitionHealthAssetDailyMaterializedRanges,
-          __typename: 'TimePartitionStatuses',
-        },
+        }),
       }),
     },
   },
@@ -376,21 +377,19 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly"]',
         partitionKeysByDimension: [
-          {
+          buildDimensionPartitionKeys({
             name: 'default',
-            __typename: 'DimensionPartitionKeys',
             type: PartitionDefinitionType.TIME_WINDOW,
             partitionKeys: generateDailyTimePartitions(
               new Date('2020-01-01'),
               new Date('2023-02-22'),
               7,
             ),
-          },
+          }),
         ],
-        assetPartitionStatuses: {
+        assetPartitionStatuses: buildTimePartitionStatuses({
           ranges: [],
-          __typename: 'TimePartitionStatuses',
-        },
+        }),
       }),
     },
   },
@@ -411,21 +410,19 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset_weekly_root"]',
         partitionKeysByDimension: [
-          {
+          buildDimensionPartitionKeys({
             name: 'default',
-            __typename: 'DimensionPartitionKeys',
             type: PartitionDefinitionType.TIME_WINDOW,
             partitionKeys: generateDailyTimePartitions(
               new Date('2020-01-01'),
               new Date('2023-02-22'),
               7,
             ),
-          },
+          }),
         ],
-        assetPartitionStatuses: {
+        assetPartitionStatuses: buildTimePartitionStatuses({
           ranges: [],
-          __typename: 'TimePartitionStatuses',
-        },
+        }),
       }),
     },
   },
@@ -475,11 +472,10 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
       __typename: 'Query',
       partitionSetsOrError: {
         results: [
-          {
+          buildPartitionSet({
             id: '5b10aae97b738c48a4262b1eca530f89b13e9afc',
             name: '__ASSET_JOB_7_partition_set',
-            __typename: 'PartitionSet',
-          },
+          }),
         ],
         __typename: 'PartitionSets',
       },
@@ -580,11 +576,10 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
       __typename: 'Query',
       partitionSetsOrError: {
         results: [
-          {
+          buildPartitionSet({
             id: '129179973a9144278c2429d3ba680bf0f809a59b',
             name: '__ASSET_JOB_8_partition_set',
-            __typename: 'PartitionSet',
-          },
+          }),
         ],
         __typename: 'PartitionSets',
       },
@@ -686,11 +681,10 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
         __typename: 'Query',
         partitionSetsOrError: {
           results: [
-            {
+            buildPartitionSet({
               id: '129179973a9144278c2429d3ba680bf0f809a59b',
               name: 'my_asset_job_partition_set',
-              __typename: 'PartitionSet',
-            },
+            }),
           ],
           __typename: 'PartitionSets',
         },
