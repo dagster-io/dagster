@@ -33,14 +33,14 @@ class ReactiveAssetInfo(NamedTuple):
 class ReactiveSchedulingGraph(NamedTuple):
     instance: DagsterInstance
     repository_def: RepositoryDefinition
-    evaluation_dt: datetime.datetime
+    tick_dt: datetime.datetime
 
     @staticmethod
     def from_context(context: SchedulingExecutionContext):
         return ReactiveSchedulingGraph(
             instance=context.instance,
             repository_def=context.repository_def,
-            evaluation_dt=context.evaluation_dt,
+            tick_dt=context.tick_dt,
         )
 
     @property
@@ -89,7 +89,7 @@ class ReactiveSchedulingGraph(NamedTuple):
                     asset_key,
                     asset_info.partitions_def,
                     self.instance,
-                    current_time=self.evaluation_dt,
+                    current_time=self.tick_dt,
                 )
 
     def get_parent_asset_subset(
@@ -100,7 +100,7 @@ class ReactiveSchedulingGraph(NamedTuple):
             child_asset_subset=asset_subset,
             parent_asset_key=parent_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.evaluation_dt,
+            current_time=self.tick_dt,
         ).as_valid(parent_assets_def.partitions_def)
 
     def get_child_asset_subset(
@@ -111,11 +111,12 @@ class ReactiveSchedulingGraph(NamedTuple):
             parent_asset_subset=asset_subset,
             child_asset_key=child_asset_key,
             dynamic_partitions_store=self.instance,
-            current_time=self.evaluation_dt,
+            current_time=self.tick_dt,
         ).as_valid(child_assets_def.partitions_def)
 
 
 class ReactionSchedulingPlan(NamedTuple):
+    # computed requested partitions
     requested_partitions: Set[AssetPartition]
 
 
@@ -232,28 +233,35 @@ def descending_scheduling_pulse(
     return to_execute
 
 
+class PulseResult(NamedTuple):
+    run_requests: List[RunRequest]
+    scheduling_result: Optional[SchedulingResult]
+
+
 def pulse_policy_on_asset(
     asset_key: AssetKey,
     repository_def: RepositoryDefinition,
-    previous_dt: Optional[datetime.datetime],
-    evaluation_dt: datetime.datetime,
+    previous_tick_dt: Optional[datetime.datetime],
+    tick_dt: datetime.datetime,
     instance: DagsterInstance,
-) -> List[RunRequest]:
+    previous_cursor: Optional[str],
+) -> PulseResult:
     scheduling_graph = ReactiveSchedulingGraph(
         repository_def=repository_def,
         instance=instance,
-        evaluation_dt=evaluation_dt,
+        tick_dt=tick_dt,
     )
     asset_info = scheduling_graph.get_asset_info(asset_key)
     if not asset_info:
-        return []
+        return PulseResult(run_requests=[], scheduling_result=None)
 
     context = SchedulingExecutionContext(
         repository_def=repository_def,
         instance=instance,
-        evaluation_dt=evaluation_dt,
+        tick_dt=tick_dt,
         asset_key=asset_key,
-        previous_dt=previous_dt,
+        previous_tick_dt=previous_tick_dt,
+        previous_cursor=previous_cursor,
     )
 
     scheduling_result = asset_info.scheduling_policy.schedule(context)
@@ -261,7 +269,7 @@ def pulse_policy_on_asset(
     check.invariant(scheduling_result, "Scheduling policy must return a SchedulingResult")
 
     if not scheduling_result.launch:
-        return []
+        return PulseResult(run_requests=[], scheduling_result=scheduling_result)
 
     scheduling_plan = build_reactive_scheduling_plan(
         context=context,
@@ -270,10 +278,13 @@ def pulse_policy_on_asset(
         scheduling_result=scheduling_result,
     )
 
-    return list(
-        build_run_requests(
-            asset_partitions=scheduling_plan.requested_partitions,
-            asset_graph=scheduling_graph.asset_graph,
-            run_tags={},
-        )
+    return PulseResult(
+        list(
+            build_run_requests(
+                asset_partitions=scheduling_plan.requested_partitions,
+                asset_graph=scheduling_graph.asset_graph,
+                run_tags={},
+            )
+        ),
+        scheduling_result,
     )

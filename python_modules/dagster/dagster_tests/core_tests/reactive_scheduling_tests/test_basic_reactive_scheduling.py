@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Set
+from typing import Optional, Set
 
 from dagster import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -7,7 +7,10 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
-from dagster._core.reactive_scheduling.reactive_scheduling_plan import pulse_policy_on_asset
+from dagster._core.reactive_scheduling.reactive_scheduling_plan import (
+    PulseResult,
+    pulse_policy_on_asset,
+)
 from dagster._core.reactive_scheduling.scheduling_policy import (
     AssetPartition,
     RequestReaction,
@@ -23,13 +26,15 @@ def run_scheduling_pulse_on_asset(
     instance: Optional[DagsterInstance] = None,
     evaluation_dt: Optional[datetime] = None,
     previous_dt: Optional[datetime] = None,
-) -> List[RunRequest]:
+    previous_cursor: Optional[str] = None,
+) -> PulseResult:
     return pulse_policy_on_asset(
         asset_key=AssetKey.from_coercible(asset_key),
         repository_def=defs.get_repository_def(),
         instance=instance or DagsterInstance.ephemeral(),
-        evaluation_dt=evaluation_dt or datetime.now(),
-        previous_dt=previous_dt,
+        tick_dt=evaluation_dt or datetime.now(),
+        previous_tick_dt=previous_dt,
+        previous_cursor=previous_cursor,
     )
 
 
@@ -86,7 +91,10 @@ def test_never_launch() -> None:
 
     definitions = Definitions(assets=[never_launching])
 
-    assert run_scheduling_pulse_on_asset(defs=definitions, asset_key="never_launching") == []
+    assert (
+        run_scheduling_pulse_on_asset(defs=definitions, asset_key="never_launching").run_requests
+        == []
+    )
 
 
 def test_launch_on_every_tick() -> None:
@@ -100,7 +108,7 @@ def test_launch_on_every_tick() -> None:
         AssetKey.from_coercible("always_launching")
     ]
 
-    run_requests = run_scheduling_pulse_on_asset(definitions, "always_launching")
+    run_requests = run_scheduling_pulse_on_asset(definitions, "always_launching").run_requests
     assert len(run_requests) == 1
     assert run_request_assets(run_requests[0]) == asset_key_set("always_launching")
 
@@ -130,7 +138,7 @@ def test_launch_on_every_tick_with_partitioned_upstream() -> None:
 
     defs = Definitions(assets=[upup, up, down])
 
-    run_requests = run_scheduling_pulse_on_asset(defs, "down")
+    run_requests = run_scheduling_pulse_on_asset(defs, "down").run_requests
 
     assert len(run_requests) == 2
 
@@ -138,8 +146,8 @@ def test_launch_on_every_tick_with_partitioned_upstream() -> None:
     assert run_requests[0].partition_key == "1"
     assert run_request_assets(run_requests[1]) == asset_key_set("upup", "up", "down")
     assert run_requests[1].partition_key == "2"
-    assert not run_scheduling_pulse_on_asset(defs, "up")
-    assert not run_scheduling_pulse_on_asset(defs, "upup")
+    assert not run_scheduling_pulse_on_asset(defs, "up").run_requests
+    assert not run_scheduling_pulse_on_asset(defs, "upup").run_requests
 
 
 def test_launch_on_every_tick_with_partitioned_downstream() -> None:
@@ -159,7 +167,7 @@ def test_launch_on_every_tick_with_partitioned_downstream() -> None:
 
     defs = Definitions(assets=[up, down])
 
-    run_requests = run_scheduling_pulse_on_asset(defs, "up")
+    run_requests = run_scheduling_pulse_on_asset(defs, "up").run_requests
 
     assert len(run_requests) == 2
 
@@ -168,4 +176,4 @@ def test_launch_on_every_tick_with_partitioned_downstream() -> None:
     assert run_request_assets(run_requests[1]) == asset_key_set("up", "down")
     assert run_requests[1].partition_key == "2"
 
-    assert not run_scheduling_pulse_on_asset(defs, "down")
+    assert not run_scheduling_pulse_on_asset(defs, "down").run_requests
