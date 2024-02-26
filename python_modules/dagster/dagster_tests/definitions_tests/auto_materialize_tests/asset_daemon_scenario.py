@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 import itertools
 import json
 import logging
@@ -34,9 +33,11 @@ from dagster import (
     DagsterRunStatus,
     Definitions,
     MultiPartitionKey,
+    RepositoryDefinition,
     RunRequest,
     RunsFilter,
     asset,
+    create_repository_using_definitions_args,
     materialize,
 )
 from dagster._core.definitions.asset_condition.asset_condition import (
@@ -64,9 +65,13 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    PendingRepositoryDefinition,
+)
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
+from dagster._core.host_representation.external_data import external_repository_data_from_def
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
@@ -91,27 +96,46 @@ from dagster._daemon.asset_daemon import (
     asset_daemon_cursor_from_instigator_serialized_cursor,
     get_current_evaluation_id,
 )
-from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
+from dagster._serdes import (
+    create_snapshot_id,
+)
+from dagster._serdes.serdes import (
+    DeserializationError,
+    deserialize_value,
+    serialize_value,
+)
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from .base_scenario import FAIL_TAG, run_request
 
 
 def get_code_location_origin(
-    scenario_state: "AssetDaemonScenarioState", location_name=None
+    scenario_state: "AssetDaemonScenarioState",
+    location_name="test_location",
+    repository_name=SINGLETON_REPOSITORY_NAME,
 ) -> InProcessCodeLocationOrigin:
     """Hacky method to allow us to point a code location at a module-scoped attribute, even though
     the attribute is not defined until the scenario is run.
     """
-    attribute_name = (
-        f"_asset_daemon_target_{hashlib.md5(str(scenario_state.asset_specs).encode()).hexdigest()}"
+    repository = create_repository_using_definitions_args(
+        name=repository_name,
+        assets=scenario_state.assets,
+        executor=in_process_executor,
+        sensors=scenario_state.auto_materialize_sensors,
     )
+
+    return _get_code_location_origin_from_repository(
+        cast(RepositoryDefinition, repository), location_name=location_name
+    )
+
+
+def _get_code_location_origin_from_repository(repository: RepositoryDefinition, location_name: str):
+    attribute_name = (
+        f"_asset_daemon_target_{create_snapshot_id(external_repository_data_from_def(repository))}"
+    )
+
     if attribute_name not in globals():
-        globals()[attribute_name] = Definitions(
-            assets=scenario_state.assets,
-            executor=in_process_executor,
-            sensors=scenario_state.auto_materialize_sensors,
-        )
+        globals()[attribute_name] = repository
 
     return InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
@@ -122,7 +146,7 @@ def get_code_location_origin(
             working_directory=os.getcwd(),
             attribute=attribute_name,
         ),
-        location_name=location_name or "test_location",
+        location_name=location_name,
     )
 
 
@@ -221,6 +245,8 @@ class AssetDaemonScenarioState(NamedTuple):
     """
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
+    additional_repositories: Sequence[Union[RepositoryDefinition, PendingRepositoryDefinition]] = []
+
     current_time: datetime.datetime = pendulum.now("UTC")
     run_requests: Sequence[RunRequest] = []
     serialized_cursor: str = serialize_value(AssetDaemonCursor.empty(0))
@@ -283,6 +309,12 @@ class AssetDaemonScenarioState(NamedTuple):
     @property
     def asset_graph(self) -> AssetGraph:
         return InternalAssetGraph.from_assets(self.assets)
+
+    def with_additional_repositories(
+        self,
+        additional_repositories: Sequence[Union[RepositoryDefinition, PendingRepositoryDefinition]],
+    ) -> "AssetDaemonScenarioState":
+        return self._replace(additional_repositories=additional_repositories)
 
     def with_asset_properties(
         self, keys: Optional[Iterable[CoercibleToAssetKey]] = None, **kwargs
@@ -434,7 +466,14 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @contextmanager
     def _create_workspace_context(self):
-        target = InProcessTestWorkspaceLoadTarget(get_code_location_origin(self))
+        origins = [
+            _get_code_location_origin_from_repository(repository, f"extra_location_{i}")
+            for i, repository in enumerate(self.additional_repositories)
+        ] + [
+            get_code_location_origin(self),
+        ]
+
+        target = InProcessTestWorkspaceLoadTarget(origins)
         with create_test_daemon_workspace_context(
             workspace_load_target=target, instance=self.instance
         ) as workspace_context:
