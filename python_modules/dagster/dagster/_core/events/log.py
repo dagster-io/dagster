@@ -12,7 +12,6 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.log import (
-    JsonEventLoggerHandler,
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
@@ -192,26 +191,5 @@ def construct_event_logger(event_record_callback):
         "debug",
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
-        ),
-    )
-
-
-def construct_json_event_logger(json_path):
-    """Record a stream of event records to json."""
-    check.str_param(json_path, "json_path")
-    return construct_single_handler_logger(
-        "json-event-record-logger",
-        "debug",
-        JsonEventLoggerHandler(
-            json_path,
-            lambda record: construct_event_record(
-                StructuredLoggerMessage(
-                    name=record.name,
-                    message=record.msg,
-                    level=record.levelno,
-                    meta=record.dagster_meta,
-                    record=record,
-                )
-            ),
         ),
     )
