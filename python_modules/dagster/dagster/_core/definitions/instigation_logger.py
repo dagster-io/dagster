@@ -117,7 +117,7 @@ class InstigationLogger(logging.Logger):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
-    def _annotate_record(self, record) -> logging.LogRecord:
+    def _annotate_record(self, record: logging.LogRecord) -> logging.LogRecord:
         if self._repository_name and self._name:
             message = record.getMessage()
             setattr(
