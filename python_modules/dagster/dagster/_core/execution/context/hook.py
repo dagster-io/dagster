@@ -200,7 +200,7 @@ class HookContext:
             * a dictionary from mapping key to corresponding metadata in the mapped case
         """
         results: Dict[str, Union[Any, Dict[str, Any]]] = {}
-        captured = self._step_execution_context.output_metadata
+        captured = self._step_execution_context.step_output_metadata_capture
 
         if captured is None:
             check.failed("Outputs were unexpectedly not captured for hook")
