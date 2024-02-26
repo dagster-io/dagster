@@ -13,7 +13,7 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -40,6 +40,7 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -703,6 +704,29 @@ class TestRunStorage:
         assert {
             run.run_id for run in storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
         } == set()
+
+    def test_failure_event_updates_tags(self, storage):
+        assert storage
+        one = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.handle_run_event(
+            one,  # fail one after two has fails and three has succeeded
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                job_name="some_pipeline",
+                event_specific_data=JobFailureData(
+                    error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+                ),
+            ),
+        )
+
+        run = _get_run_by_id(storage, one)
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
     def test_fetch_records_by_update_timestamp(self, storage):
         assert storage
