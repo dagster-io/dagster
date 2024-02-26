@@ -11,7 +11,7 @@ if TYPE_CHECKING:
         RepositoryDefinition,
     )
     from dagster._core.instance import DagsterInstance
-
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 AssetPartition: TypeAlias = AssetKeyPartitionKey
 
 
@@ -26,10 +26,14 @@ class SchedulingExecutionContext(NamedTuple):
     previous_tick_dt: Optional[datetime]
     tick_dt: datetime
 
+    queryer: "CachingInstanceQueryer"
     repository_def: "RepositoryDefinition"
-    instance: "DagsterInstance"
     asset_key: AssetKey
     previous_cursor: Optional[str]
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self.queryer.instance
 
 
 class RequestReaction(NamedTuple):

@@ -22,6 +22,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
     SchedulingPolicy,
     SchedulingResult,
 )
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 class ReactiveAssetInfo(NamedTuple):
@@ -31,14 +32,18 @@ class ReactiveAssetInfo(NamedTuple):
 
 
 class ReactiveSchedulingGraph(NamedTuple):
-    instance: DagsterInstance
+    queryer: CachingInstanceQueryer
     repository_def: RepositoryDefinition
     tick_dt: datetime.datetime
+
+    @property
+    def instance(self) -> DagsterInstance:
+        return self.queryer.instance
 
     @staticmethod
     def from_context(context: SchedulingExecutionContext):
         return ReactiveSchedulingGraph(
-            instance=context.instance,
+            queryer=context.queryer,
             repository_def=context.repository_def,
             tick_dt=context.tick_dt,
         )
@@ -243,12 +248,12 @@ def pulse_policy_on_asset(
     repository_def: RepositoryDefinition,
     previous_tick_dt: Optional[datetime.datetime],
     tick_dt: datetime.datetime,
-    instance: DagsterInstance,
+    queryer: CachingInstanceQueryer,
     previous_cursor: Optional[str],
 ) -> PulseResult:
     scheduling_graph = ReactiveSchedulingGraph(
         repository_def=repository_def,
-        instance=instance,
+        queryer=queryer,
         tick_dt=tick_dt,
     )
     asset_info = scheduling_graph.get_asset_info(asset_key)
@@ -257,7 +262,7 @@ def pulse_policy_on_asset(
 
     context = SchedulingExecutionContext(
         repository_def=repository_def,
-        instance=instance,
+        queryer=queryer,
         tick_dt=tick_dt,
         asset_key=asset_key,
         previous_tick_dt=previous_tick_dt,

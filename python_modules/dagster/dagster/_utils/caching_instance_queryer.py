@@ -26,6 +26,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     PartitionsSubset,
@@ -89,6 +90,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._respect_materialization_data_versions = (
             self._instance.auto_materialize_respect_materialization_data_versions
+        )
+
+    @staticmethod
+    def ephemeral(defs: Definitions) -> "CachingInstanceQueryer":
+        return CachingInstanceQueryer(
+            DagsterInstance.ephemeral(), defs.get_repository_def().asset_graph
         )
 
     @property
