@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, NamedTuple, Optional, Set
 from typing_extensions import TypeAlias
 
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.sensor_enums import DefaultSensorStatus
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -29,7 +30,16 @@ class RequestReaction(NamedTuple):
     include: bool
 
 
+class TickSettings(NamedTuple):
+    tick_cron: str
+    sensor_name: Optional[str] = None
+    description: Optional[str] = None
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED
+
+
 class SchedulingPolicy:
+    tick_settings: Optional[TickSettings] = None
+
     # TODO: support resources on schedule
     def schedule(self, context: SchedulingExecutionContext) -> SchedulingResult:
         ...

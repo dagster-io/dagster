@@ -26,7 +26,7 @@ def run_scheduling_pulse_on_asset(
     evaluation_time: Optional[datetime] = None,
 ) -> List[RunRequest]:
     return pulse_policy_on_asset(
-        asset_key=asset_key,
+        asset_key=AssetKey.from_coercible(asset_key),
         repository_def=defs.get_repository_def(),
         instance=instance or DagsterInstance.ephemeral(),
         evaluation_time=evaluation_time or datetime.now(),
