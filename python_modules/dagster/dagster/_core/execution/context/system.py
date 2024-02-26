@@ -152,11 +152,11 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.all_tags()
+        return {k: str(v) for k, v in self.log.metadata.items()}
 
     @property
     def event_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.event_tags()
+        return {k: str(v) for k, v in self.log.metadata.items() if k != "job_tags"}
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
