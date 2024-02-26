@@ -2071,7 +2071,7 @@ type Repository {
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
-  sensors: [Sensor!]!
+  sensors(sensorType: SensorType): [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
@@ -2100,6 +2100,16 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+}
+
+enum SensorType {
+  STANDARD
+  RUN_STATUS
+  ASSET
+  MULTI_ASSET
+  FRESHNESS_POLICY
+  AUTO_MATERIALIZE
+  UNKNOWN
 }
 
 type AssetGroup {
@@ -2909,16 +2919,6 @@ type Target {
 
 type SensorMetadata {
   assetKeys: [AssetKey!]
-}
-
-enum SensorType {
-  STANDARD
-  RUN_STATUS
-  ASSET
-  MULTI_ASSET
-  FRESHNESS_POLICY
-  AUTO_MATERIALIZE
-  UNKNOWN
 }
 
 type AssetSelection {
