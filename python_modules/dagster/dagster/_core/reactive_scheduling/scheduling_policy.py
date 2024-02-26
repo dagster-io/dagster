@@ -27,10 +27,10 @@ class SchedulingExecutionContext(NamedTuple):
 
 class RequestReaction(NamedTuple):
     include: bool
-    pass
 
 
 class SchedulingPolicy:
+    # TODO: support resources on schedule
     def schedule(self, context: SchedulingExecutionContext) -> SchedulingResult:
         ...
 
