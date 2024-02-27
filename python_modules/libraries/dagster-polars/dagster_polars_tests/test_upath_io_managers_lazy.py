@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import polars as pl
 import polars.testing as pl_testing
@@ -9,15 +9,20 @@ from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
+    DynamicOut,
+    DynamicOutput,
     IdentityPartitionMapping,
     MultiPartitionKey,
     MultiPartitionMapping,
     MultiPartitionsDefinition,
     OpExecutionContext,
+    Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
+    graph,
     materialize,
+    op,
 )
 from dagster_polars import (
     BasePolarsUPathIOManager,
@@ -383,3 +388,33 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
         [upstream.to_source_asset(), downstream],
         partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
     )
+
+
+def test_upath_io_manager_collect_dynamic_outputs(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    io_manager, df = io_manager_and_df
+    num_repeat = 3
+
+    @op(out=DynamicOut(io_manager_key="polars_io_manager"))
+    def load_batches():
+        for i in range(num_repeat):
+            yield DynamicOutput(df)
+
+    @op(out=Out(io_manager_key="polars_io_manager"))
+    def no_op(df: pl.LazyFrame) -> pl.LazyFrame:
+        return df
+
+    @op(out=Out(io_manager_key="polars_io_manager"))
+    def concat_dfs(dfs: List[pl.LazyFrame]) -> pl.LazyFrame:
+        return pl.concat(dfs)
+
+    @graph
+    def my_graph():
+        return concat_dfs(load_batches().map(no_op))
+
+    my_job = my_graph.to_job()
+
+    res = my_job.execute_in_process(resources={"polars_io_manager": io_manager})
+
+    assert len(res.output_for_node("concat_dfs")) == len(df) * num_repeat
