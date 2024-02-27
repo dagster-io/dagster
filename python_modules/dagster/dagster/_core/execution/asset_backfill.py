@@ -1339,6 +1339,9 @@ def should_backfill_atomic_asset_partitions_unit(
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
         )
+        parent_partitions_by_key = defaultdict(set)
+        for parent in parent_partitions_result.parent_partitions:
+            parent_partitions_by_key[parent.asset_key].add(parent.partition_key)
 
         if parent_partitions_result.required_but_nonexistent_parents_partitions:
             raise DagsterInvariantViolationError(
@@ -1359,7 +1362,7 @@ def should_backfill_atomic_asset_partitions_unit(
             # partition mappings which are not one-one with the child to be executed in a way
             # that respects the dependencies
             has_partition_mapping_safe_backfill_policy = (
-                parent_backfill_policy
+                parent_backfill_policy is not None
                 and (
                     # single run backfill policy can incorporate all partitions in one run
                     parent_backfill_policy.max_partitions_per_run is None
@@ -1376,7 +1379,7 @@ def should_backfill_atomic_asset_partitions_unit(
                     (
                         # always allow runs to be grouped if there is a simple 1-1 partition mapping
                         parent.partition_key == candidate.partition_key
-                        and len(parent_partitions_result.parent_partitions) == 1
+                        or len(parent_partitions_by_key[parent.asset_key]) == 1
                     )
                     # candidate shares a partition key that is already being requested by the parent
                     # and both candidate and parent have backfill policies and max_partitions_per_run is
