@@ -309,7 +309,10 @@ export const AssetChecks = ({
             >
               <Box padding={{top: 12}}>
                 {lastExecution ? (
-                  <CheckExecutions assetKey={assetKey} checkName={selectedCheckName} />
+                  <CheckExecutions
+                    assetKey={assetKey}
+                    checkName={selectedCheckName || selectedCheck.name}
+                  />
                 ) : (
                   <Caption color={Colors.textLight()}>No execution history</Caption>
                 )}
