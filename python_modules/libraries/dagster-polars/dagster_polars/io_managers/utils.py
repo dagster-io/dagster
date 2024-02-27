@@ -13,7 +13,6 @@ from dagster import (
     TableRecord,
     TableSchema,
 )
-from packaging.version import Version
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
     Any,
@@ -73,31 +72,37 @@ def get_metadata_schema(
 def get_table_metadata(
     context: OutputContext,
     df: pl.DataFrame,
-    schema: TableSchema,
+    schema: Optional[TableSchema] = None,
     n_rows: Optional[int] = 5,
     fraction: Optional[float] = None,
 ) -> Optional[TableMetadataValue]:
     """Takes the polars DataFrame and takes a sample of the data and returns it as TableMetaDataValue.
-    A lazyframe this is not possible without doing possible a very costly operation.
+    With LazyFrame this is not possible without doing possible a very costly operation.
 
     Args:
         context (OutputContext): output context
         df (pl.DataFrame): polars frame
-        schema (TableSchema): dataframe schema,
-        n_rows (Optional[int], optional): number of rows to sample from. Defaults to 5.
-        fraction (Optional[float], optional): fraction of rows to sample from. Defaults to None.
+        schema (Optional[TableSchema]): dataframe schema
+        n_rows (Optional[int]): number of rows to sample from. Defaults to 5.
+        fraction (Optional[float]): fraction of rows to sample from. Defaults to None.
+        with_schema (bool): if to include the schema in the metadata
 
     Returns:
         Tuple[TableSchema, Optional[TableMetadataValue]]: schema metadata, and optional sample metadata
     """
-    assert not fraction and n_rows, "only one of n_rows and frac should be set"
-    n_rows = min(n_rows, len(df))
-    df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
+    if n_rows is not None:
+        n_rows = min(n_rows, len(df))
+
+    if fraction is not None or n_rows is not None:
+        df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
+    else:
+        df_sample = df
 
     try:
         # this can fail sometimes
         # because TableRecord doesn't support all python types
         df_sample_dict = df_sample.to_dicts()
+
         table = MetadataValue.table(
             records=[
                 TableRecord(
@@ -122,21 +127,6 @@ def get_table_metadata(
     return table
 
 
-def get_polars_df_stats(
-    df: pl.DataFrame,
-) -> Dict[str, Dict[str, Union[str, int, float]]]:
-    describe = df.describe().fill_null(pl.lit("null"))
-    # TODO(ion): replace once there is a index column selector
-    if Version(pl.__version__) >= Version("0.20.6"):
-        col_name = "statistic"
-    else:
-        col_name = "describe"
-    return {
-        col: {stat: describe[col][i] for i, stat in enumerate(describe[col_name].to_list())}
-        for col in describe.columns[1:]
-    }
-
-
 def get_polars_metadata(
     context: OutputContext, df: Union[pl.DataFrame, pl.LazyFrame]
 ) -> Dict[str, MetadataValue]:
@@ -153,26 +143,33 @@ def get_polars_metadata(
     """
     assert context.metadata is not None
 
-    schema = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
+    schema_metadata = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
 
     metadata = {}
 
     if isinstance(df, pl.DataFrame):
-        table = get_table_metadata(
+        table_metadata = get_table_metadata(
             context=context,
             df=df,
-            schema=schema,
+            schema=schema_metadata,
             n_rows=context.metadata.get("n_rows", 5),
             fraction=context.metadata.get("fraction"),
         )
-        metadata["stats"] = MetadataValue.json(get_polars_df_stats(df))
-        metadata["row_count"] = MetadataValue.int(df.shape[0])
-    else:
-        table = None
 
-    if table is not None:
-        metadata["table"] = table
+        df_stats = df.describe()
+
+        stats_metadata = get_table_metadata(
+            context=context,
+            df=df_stats,
+            n_rows=None,
+            fraction=None,
+        )
+
+        metadata["columns"] = table_metadata
+        metadata["stats"] = stats_metadata
+        metadata["row_count"] = MetadataValue.int(df.shape[0])
+        metadata["estimated_size_mb"] = MetadataValue.float(df.estimated_size(unit="mb"))
     else:
-        metadata["schema"] = schema
+        metadata["columns"] = schema_metadata
 
     return metadata

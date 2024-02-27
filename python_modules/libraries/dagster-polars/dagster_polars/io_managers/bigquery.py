@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Type
+from typing import List, Optional, Sequence, Type
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
@@ -106,7 +106,7 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
         return pl.DataFrame(result)
 
     @property
-    def supported_types(self):
+    def supported_types(self) -> List:
         return [pl.DataFrame]
 
 
