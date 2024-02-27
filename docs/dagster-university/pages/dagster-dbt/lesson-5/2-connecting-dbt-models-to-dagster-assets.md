@@ -38,7 +38,7 @@ Open the `assets/dbt.py` file and do the following:
     
 3. In this class, create a method called `get_asset_key.`
 
-   This is a Pythonic `@classmethod` of the `DagsterDbtTranslator`, so let’s annotate it with the `@classmethod` decorator and have its first argument be `cls`, which is a reference to [the class methods](https://builtin.com/software-engineering-perspectives/python-cls). The second argument refers to a dictionary/JSON object for the dbt model’s properties, which is based on the manifest file from earlier. Let’s call that second argument `dbt_resource_props`. The return value of this function is an object of the `AssetKey` class.
+   This is a method of `DagsterDbtTranslator` class that we'll override and customize to do as we need. It is a `@classmethod`, so we'll annotate it with the `@classmethod` decorator and have its first argument be `cls`, to follow [Pythonic conventions](https://builtin.com/software-engineering-perspectives/python-cls). The second argument refers to a dictionary/JSON object for the dbt model’s properties, which is based on the manifest file from earlier. Let’s call that second argument `dbt_resource_props`. The return value of this function is an object of the `AssetKey` class.
     
     ```python
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
