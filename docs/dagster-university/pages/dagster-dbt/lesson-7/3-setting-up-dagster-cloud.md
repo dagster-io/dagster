@@ -43,4 +43,4 @@ Error: Some locations failed to load after being synced by the agent:
 Error loading dagster_university: {'__typename': 'PythonError', 'message': "FileNotFoundError: [Errno 2] No such file or directory: '/venvs/3eca07cc1eb5/lib/python3.8/site-packages/working_directory/root/analytics/target/manifest.json'\n" ...
 ```
 
-It looks like the deployment failed because Dagster could not find a dbt manifest file. In the next section of this lesson, we’ll walk you through fixing this.
+Your deployment failed because Dagster could not find a dbt manifest file. In the next section of this lesson, we’ll walk you through fixing this.
