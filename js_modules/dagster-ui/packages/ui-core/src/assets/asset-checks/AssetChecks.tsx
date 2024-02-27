@@ -309,7 +309,10 @@ export const AssetChecks = ({
             >
               <Box padding={{top: 12}}>
                 {lastExecution ? (
-                  <CheckExecutions assetKey={assetKey} checkName={selectedCheckName} />
+                  <CheckExecutions
+                    assetKey={assetKey}
+                    checkName={selectedCheckName || selectedCheck.name}
+                  />
                 ) : (
                   <Caption color={Colors.textLight()}>No execution history</Caption>
                 )}
@@ -443,7 +446,7 @@ const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
   cursor: pointer;
   border-radius: 8px;
   &:hover {
-    background: ${Colors.backgroundBlue()};
+    background: ${Colors.backgroundLightHover()};
   }
   ${({$selected}) => ($selected ? `background: ${Colors.backgroundBlue()};` : '')}
 `;
