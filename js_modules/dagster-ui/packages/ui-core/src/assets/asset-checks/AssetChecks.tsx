@@ -446,7 +446,7 @@ const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
   cursor: pointer;
   border-radius: 8px;
   &:hover {
-    background: ${Colors.backgroundBlue()};
+    background: ${Colors.backgroundLightHover()};
   }
   ${({$selected}) => ($selected ? `background: ${Colors.backgroundBlue()};` : '')}
 `;
