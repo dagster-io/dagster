@@ -3,7 +3,7 @@ import logging
 import threading
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
-from typing_extensions import Protocol
+from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
@@ -14,25 +14,46 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
     from dagster._core.storage.dagster_run import DagsterRun
 
-DAGSTER_META_KEY = "dagster_meta"
+# Python's logging system allows you to attach arbitrary values to a log message/record by passing a
+# dictionary as `extra` to a logging method. The keys of extra are "splatted" directly into the
+# `logging.LogRecord` created by this call-- i.e. `foo` will be set as an attribute on the
+# `LogRecord`, not `extra`. The lack of an intervening abstraction between attached data and the
+# `LogRecord` necessitates providing our own. There are only types of data that we attach: (1) a
+# `DagsterEvent`; (2) a dictionary of assorted metadata about the context of the log message. The
+# below APIs should be used for get/set/has operations on these types of data.
+
+LOG_RECORD_EVENT_ATTR: Final = "dagster_event"
 
 
-class IDagsterMeta(Protocol):
-    @property
-    def dagster_meta(self) -> "DagsterLoggingMetadata":
-        ...
+def get_log_record_event(record: logging.LogRecord) -> "DagsterEvent":
+    return cast("DagsterEvent", getattr(record, LOG_RECORD_EVENT_ATTR))
 
 
-# The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`
-# property of `IDagsterMeta`. We ignore this error because we don't need to implement this method--
-# `DagsterLogRecord` is a stub class that is never instantiated. We only ever cast
-# `logging.LogRecord` objects to `DagsterLogRecord`, because it gives us typed access to the
-# `dagster_meta` property. `dagster_meta` itself is set on these `logging.LogRecord` objects via the
-# `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
-# `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
-# defined via `extra`.
-class DagsterLogRecord(logging.LogRecord, IDagsterMeta):
-    pass
+def set_log_record_event(record: logging.LogRecord, event: "DagsterEvent") -> None:
+    setattr(record, LOG_RECORD_EVENT_ATTR, event)
+
+
+def has_log_record_event(record: logging.LogRecord) -> bool:
+    return hasattr(record, LOG_RECORD_EVENT_ATTR)
+
+
+LOG_RECORD_METADATA_ATTR: Final = "dagster_meta"
+
+DagsterLogRecordMetadata: TypeAlias = Mapping[str, Any]
+
+
+def get_log_record_metadata(record: logging.LogRecord) -> "DagsterLogRecordMetadata":
+    return getattr(record, LOG_RECORD_METADATA_ATTR)
+
+
+def set_log_record_metadata(
+    record: logging.LogRecord, metadata: "DagsterLogRecordMetadata"
+) -> None:
+    setattr(record, LOG_RECORD_METADATA_ATTR, metadata)
+
+
+def has_log_record_metadata(record: logging.LogRecord) -> bool:
+    return hasattr(record, LOG_RECORD_METADATA_ATTR)
 
 
 class DagsterMessageProps(
@@ -248,28 +269,24 @@ class DagsterLogHandler(logging.Handler):
         ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
-    def _convert_record(self, record: logging.LogRecord) -> DagsterLogRecord:
-        # we store the originating DagsterEvent in the DAGSTER_META_KEY field, if applicable
-        dagster_meta = getattr(record, DAGSTER_META_KEY, None)
+    def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
+        # If this was a logged DagsterEvent, the event will be stored on the record
+        event = get_log_record_event(record) if has_log_record_event(record) else None
 
         # generate some properties for this specific record
         dagster_message_props = DagsterMessageProps(
-            orig_message=record.getMessage(), dagster_event=dagster_meta
+            orig_message=record.getMessage(), dagster_event=event
         )
 
         # set the dagster meta info for the record
-        setattr(
-            record,
-            DAGSTER_META_KEY,
-            get_dagster_meta_dict(self._logging_metadata, dagster_message_props),
+        set_log_record_metadata(
+            record, get_dagster_meta_dict(self._logging_metadata, dagster_message_props)
         )
 
         # update the message to be formatted like other dagster logs
         record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
         record.args = ()
-
-        # DagsterLogRecord is a LogRecord with a `dagster_meta` field
-        return cast(DagsterLogRecord, record)
+        return record
 
     def filter(self, record: logging.LogRecord) -> bool:
         """If you list multiple levels of a python logging hierarchy as managed loggers, and do not
@@ -283,9 +300,7 @@ class DagsterLogHandler(logging.Handler):
             # we need to set a default value for all other threads here.
             self._local_thread_context.should_capture = True
 
-        return self._local_thread_context.should_capture and not isinstance(
-            getattr(record, DAGSTER_META_KEY, None), dict
-        )
+        return self._local_thread_context.should_capture and not has_log_record_metadata(record)
 
     def emit(self, record: logging.LogRecord) -> None:
         """For any received record, add Dagster metadata, and have handlers handle it."""
@@ -409,7 +424,7 @@ class DagsterLogManager(logging.Logger):
         self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
     ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
-        (such as the solid name or pipeline name) will be automatically attached to the created record.
+        (such as the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),
@@ -417,11 +432,11 @@ class DagsterLogManager(logging.Logger):
             msg (str): message describing the event
             dagster_event (DagsterEvent): DagsterEvent that will be logged
         """
-        self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
+        self.log(level=level, msg=msg, extra={LOG_RECORD_EVENT_ATTR: dagster_event})
 
     def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
-        the solid name or pipeline name) will be automatically attached to the created record.
+        the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),
@@ -431,7 +446,9 @@ class DagsterLogManager(logging.Logger):
         """
         level = coerce_valid_log_level(level)
         # log DagsterEvents regardless of level
-        if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
+        if self.isEnabledFor(level) or (
+            "extra" in kwargs and LOG_RECORD_EVENT_ATTR in kwargs["extra"]
+        ):
             self._log(level, msg, args, **kwargs)
 
     def with_tags(self, **new_tags: str) -> "DagsterLogManager":

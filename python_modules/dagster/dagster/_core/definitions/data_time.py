@@ -38,6 +38,8 @@ from dagster._utils import datetime_as_float, make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+DATA_TIME_METADATA_KEY = "dagster/data_time"
+
 
 class CachingDataTimeResolver:
     _instance_queryer: CachingInstanceQueryer
@@ -174,10 +176,7 @@ class CachingDataTimeResolver:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
         for parent_key in self.asset_graph.get_parents(asset_key):
-            if (
-                parent_key in self.asset_graph.source_asset_keys
-                and not self.asset_graph.is_observable(parent_key)
-            ):
+            if not self.asset_graph.is_executable(asset_key):
                 continue
 
             input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
@@ -218,7 +217,7 @@ class CachingDataTimeResolver:
             asset_key, record_id, record_tags_dict
         )
         if not upstream_records_by_key:
-            if not self.asset_graph.has_non_source_parents(asset_key):
+            if not self.asset_graph.has_materializable_parents(asset_key):
                 return {
                     asset_key: datetime.datetime.fromtimestamp(
                         record_timestamp, tz=datetime.timezone.utc
@@ -307,7 +306,7 @@ class CachingDataTimeResolver:
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
-            return {key: None for key in self.asset_graph.get_non_source_roots(asset_key)}
+            return {key: None for key in self.asset_graph.get_materializable_roots(asset_key)}
         record_timestamp = check.not_none(record_timestamp)
 
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
@@ -372,7 +371,7 @@ class CachingDataTimeResolver:
 
         # if you're here, then this asset is planned, but not materialized. in the worst case, this
         # asset's data time will be equal to the current time once it finishes materializing
-        if not self.asset_graph.has_non_source_parents(asset_key):
+        if not self.asset_graph.has_materializable_parents(asset_key):
             return current_time
 
         data_time = current_time
@@ -502,18 +501,47 @@ class CachingDataTimeResolver:
 
         return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
 
+    def _get_source_data_time(
+        self, asset_key: AssetKey, current_time: datetime.datetime
+    ) -> Optional[datetime.datetime]:
+        latest_record = self.instance_queryer.get_latest_materialization_or_observation_record(
+            AssetKeyPartitionKey(asset_key)
+        )
+        if latest_record is None:
+            return None
+        observation = latest_record.asset_observation
+        if observation is None:
+            check.failed(
+                "when invoked on a source asset, "
+                "get_latest_materialization_or_observation_record should always return an "
+                "observation"
+            )
+
+        data_time = observation.metadata.get(DATA_TIME_METADATA_KEY)
+        if data_time is None:
+            return None
+        else:
+            return datetime.datetime.utcfromtimestamp(cast(float, data_time.value)).replace(
+                tzinfo=datetime.timezone.utc
+            )
+
     def get_minutes_overdue(
         self,
         asset_key: AssetKey,
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
-        freshness_policy = self.asset_graph.freshness_policies_by_key.get(asset_key)
+        freshness_policy = self.asset_graph.get_freshness_policy(asset_key)
         if freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
 
+        if self.asset_graph.is_external(asset_key):
+            current_data_time = self._get_source_data_time(asset_key, current_time=evaluation_time)
+        else:
+            current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
+
         return freshness_policy.minutes_overdue(
-            data_time=self.get_current_data_time(asset_key, current_time=evaluation_time),
+            data_time=current_data_time,
             evaluation_time=evaluation_time,
         )

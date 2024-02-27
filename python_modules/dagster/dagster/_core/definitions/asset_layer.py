@@ -718,13 +718,11 @@ class AssetLayer(NamedTuple):
             check.failed(f"Couldn't find key {asset_key}")
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
-        return (
-            asset_key in self.source_assets_by_key
-            and self.source_assets_by_key[asset_key].is_observable
-        )
+        asset = self.assets_defs_by_key.get(asset_key) or self.source_assets_by_key.get(asset_key)
+        return False if asset is None else asset.is_observable
 
     def is_materializable_for_asset(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.assets_defs_by_key
+        return self.execution_type_for_asset(asset_key) == AssetExecutionType.MATERIALIZATION
 
     def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
         assets_def = self.assets_defs_by_key.get(asset_key)
@@ -894,23 +892,21 @@ def build_asset_selection_job(
                 f"{partitions_def}.",
             )
 
-    if len(included_assets) or len(included_checks_defs) > 0:
-        # Job materializes assets and/or executes checks
-        final_assets = included_assets
-        final_asset_checks = included_checks_defs
-        final_source_assets = [*source_assets, *excluded_assets]
-    else:
-        # Job only observes source assets
-        final_assets = []
-        final_asset_checks = []
-        final_source_assets = included_source_assets
+    all_included_assets = [*included_assets, *included_source_assets]
+    executable_assets = [asset for asset in all_included_assets if asset.is_executable]
+    loadable_assets = [
+        *(asset for asset in all_included_assets if not asset.is_executable),
+        *(asset for asset in source_assets if asset not in included_source_assets),
+        *excluded_assets,
+    ]
+    final_asset_checks = included_checks_defs
 
     return build_assets_job(
         name=name,
-        assets=final_assets,
+        executable_assets=executable_assets,
         asset_checks=final_asset_checks,
         config=config,
-        source_assets=final_source_assets,
+        loadable_assets=loadable_assets,
         resource_defs=resource_defs,
         executor_def=executor_def,
         partitions_def=partitions_def,
@@ -937,7 +933,8 @@ def _subset_assets_defs(
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 
-    for asset in set(assets):
+    # Do not match any assets with no keys
+    for asset in set(a for a in assets if a.has_keys):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
 

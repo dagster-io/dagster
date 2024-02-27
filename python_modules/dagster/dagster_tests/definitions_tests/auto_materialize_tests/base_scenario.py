@@ -65,6 +65,7 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
@@ -193,7 +194,7 @@ class AssetReconciliationScenario(
             or isinstance(a, SourceAsset)
             for a in assets
         ):
-            asset_graph = AssetGraph.from_assets(assets, asset_checks=asset_checks)
+            asset_graph = InternalAssetGraph.from_assets(assets, asset_checks=asset_checks)
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
                 if asset_selection is not None
@@ -357,7 +358,7 @@ class AssetReconciliationScenario(
                 if run.is_observation:
                     observe(
                         instance=instance,
-                        source_assets=[
+                        assets=[
                             a
                             for a in self.assets
                             if isinstance(a, SourceAsset) and a.key in run.asset_keys
@@ -408,7 +409,7 @@ class AssetReconciliationScenario(
                 cursor=cursor,
                 auto_observe_asset_keys={
                     key
-                    for key in asset_graph.source_asset_keys
+                    for key in asset_graph.observable_asset_keys
                     if asset_graph.get_auto_observe_interval_minutes(key) is not None
                 },
                 respect_materialization_data_versions=respect_materialization_data_versions,
@@ -505,7 +506,10 @@ class AssetReconciliationScenario(
 
                 try:
                     list(
-                        AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                        AssetDaemon(  # noqa: SLF001
+                            settings=instance.get_auto_materialize_settings(),
+                            pre_sensor_interval_seconds=42,
+                        )._run_iteration_impl(
                             workspace_context,
                             threadpool_executor=None,
                             amp_tick_futures={},

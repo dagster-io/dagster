@@ -88,6 +88,12 @@ export const SensorDetails = ({
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
 
+  const assetSelectionResult = selectionQueryResult.data?.sensorOrError;
+
+  const assetSelectionData =
+    assetSelectionResult?.__typename === 'Sensor' ? assetSelectionResult : null;
+  const selectedAssets = assetSelectionData?.assetSelection;
+
   return (
     <>
       <PageHeader
@@ -157,7 +163,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           )}
-          {sensor.targets && sensor.targets.length ? (
+          {(sensor.targets && sensor.targets.length) || selectedAssets ? (
             <tr>
               <td>Target</td>
               <td>

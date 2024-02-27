@@ -13,7 +13,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsCatalogRoot = () => {
@@ -40,7 +40,7 @@ export const AssetsCatalogRoot = () => {
       : 'Assets',
   );
 
-  const trace = useStartTrace(
+  const trace = usePageLoadTrace(
     currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
   );
 

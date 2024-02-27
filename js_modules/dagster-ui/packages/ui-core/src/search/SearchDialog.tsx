@@ -12,6 +12,7 @@ import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';
+import {Trace, createTrace} from '../performance';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -83,11 +84,29 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
+  const isFirstSearch = React.useRef(true);
+  const firstSearchTrace = React.useRef<null | Trace>(null);
+
   const openSearch = React.useCallback(() => {
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
   }, [initialize, trackEvent]);
+
+  React.useEffect(() => {
+    if (!loading && primaryResults && secondaryResults) {
+      firstSearchTrace.current?.endTrace();
+    }
+  }, [loading, primaryResults, secondaryResults]);
+
+  React.useEffect(() => {
+    if (!shown && firstSearchTrace.current) {
+      // When the dialog closes:
+      // Either the trace finished and we logged it, or it didn't and so we throw it away
+      // Either way we don't need the trace object anymore
+      firstSearchTrace.current = null;
+    }
+  }, [shown]);
 
   const searchAndHandlePrimary = React.useCallback(
     async (queryString: string) => {
@@ -106,10 +125,19 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   );
 
   const debouncedSearch = React.useMemo(() => {
-    return debounce(async (queryString: string) => {
+    const debouncedSearch = debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
       searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
+    return (queryString: string) => {
+      if (!firstSearchTrace.current && isFirstSearch.current) {
+        isFirstSearch.current = false;
+        const trace = createTrace('SearchDialog:FirstSearch');
+        firstSearchTrace.current = trace;
+        trace.startTrace();
+      }
+      return debouncedSearch(queryString);
+    };
   }, [searchAndHandlePrimary, searchAndHandleSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

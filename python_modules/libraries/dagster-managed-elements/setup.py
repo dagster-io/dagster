@@ -33,6 +33,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_managed_elements_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[f"dagster{pin}", "requests", "click_spinner"],
     zip_safe=False,
     entry_points={

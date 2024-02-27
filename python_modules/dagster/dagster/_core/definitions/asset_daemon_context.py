@@ -34,8 +34,8 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
-from .asset_condition_evaluation_context import (
+from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
+from .asset_condition.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
 from .asset_daemon_cursor import AssetDaemonCursor
@@ -150,7 +150,7 @@ class AssetDaemonContext:
         return [
             key
             for key in self.auto_materialize_asset_keys_and_parents
-            if not self.asset_graph.is_source(key)
+            if (self.asset_graph.has_asset(key) and self.asset_graph.is_materializable(key))
         ]
 
     @property
@@ -193,7 +193,7 @@ class AssetDaemonContext:
         """
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
-            self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
+            self.asset_graph.get_auto_materialize_policy(asset_key)
         ).to_asset_condition()
 
         asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
@@ -502,6 +502,7 @@ def _build_run_requests_with_backfill_policy(
                         backfill_policy.max_partitions_per_run, "max_partitions_per_run"
                     ),
                     run_tags=tags,
+                    dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
     return run_requests
@@ -513,11 +514,14 @@ def _build_run_requests_for_partition_key_range(
     partition_key_range: PartitionKeyRange,
     max_partitions_per_run: int,
     run_tags: Dict[str, str],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.
     """
-    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
+    partition_keys = partitions_def.get_partition_keys_in_range(
+        partition_key_range, dynamic_partitions_store=dynamic_partitions_store
+    )
     partition_range_start_index = partition_keys.index(partition_key_range.start)
     partition_range_end_index = partition_keys.index(partition_key_range.end)
 

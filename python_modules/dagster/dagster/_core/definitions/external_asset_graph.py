@@ -1,18 +1,20 @@
+import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    DefaultDict,
     Dict,
     Iterable,
     List,
     Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -20,6 +22,7 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
+from dagster._utils.cached_method import cached_method
 
 from .asset_graph import AssetGraph, AssetKeyOrCheckKey
 from .backfill_policy import BackfillPolicy
@@ -38,44 +41,13 @@ if TYPE_CHECKING:
 class ExternalAssetGraph(AssetGraph):
     def __init__(
         self,
-        asset_dep_graph: DependencyGraph[AssetKey],
-        source_asset_keys: AbstractSet[AssetKey],
-        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
-        partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
-        group_names_by_key: Mapping[AssetKey, Optional[str]],
-        freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
-        backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
+        asset_nodes_by_key: Mapping[AssetKey, "ExternalAssetNode"],
+        asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
-        job_names_by_key: Mapping[AssetKey, Sequence[str]],
-        code_versions_by_key: Mapping[AssetKey, Optional[str]],
-        is_observable_by_key: Mapping[AssetKey, bool],
-        auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
-        required_assets_and_checks_by_key: Mapping[
-            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
-        ],
     ):
-        super().__init__(
-            asset_dep_graph=asset_dep_graph,
-            source_asset_keys=source_asset_keys,
-            partitions_defs_by_key=partitions_defs_by_key,
-            partition_mappings_by_key=partition_mappings_by_key,
-            group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            backfill_policies_by_key=backfill_policies_by_key,
-            code_versions_by_key=code_versions_by_key,
-            is_observable_by_key=is_observable_by_key,
-            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
-            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
-        )
+        self._asset_nodes_by_key = asset_nodes_by_key
+        self._asset_checks_by_key = asset_checks_by_key
         self._repo_handles_by_key = repo_handles_by_key
-        self._materialization_job_names_by_key = job_names_by_key
-
-        self._asset_keys_by_job_name: Mapping[str, List[AssetKey]] = defaultdict(list)
-        for asset_key, job_names in self._materialization_job_names_by_key.items():
-            for job_name in job_names:
-                self._asset_keys_by_job_name[job_name].append(asset_key)
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
@@ -123,108 +95,213 @@ class ExternalAssetGraph(AssetGraph):
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         external_asset_checks: Sequence["ExternalAssetCheck"],
     ) -> "ExternalAssetGraph":
-        upstream: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        source_asset_keys: Set[AssetKey] = set()
-        partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
-        partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
-            defaultdict
-        )
-        group_names_by_key = {}
-        freshness_policies_by_key = {}
-        auto_materialize_policies_by_key = {}
-        backfill_policies_by_key = {}
-        keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes
-            if not node.is_source or node.is_observable
-        }
-        job_names_by_key = {
-            node.asset_key: node.job_names
-            for _, node in repo_handle_external_asset_nodes
-            if not node.is_source or node.is_observable
-        }
-        code_versions_by_key = {
-            node.asset_key: node.code_version
-            for _, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            if node.is_executable
         }
 
-        all_non_source_keys = {
-            node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
-        }
-
-        is_observable_by_key = {}
-        auto_observe_interval_minutes_by_key = {}
-
+        # Split the nodes into materializable, observable, and unexecutable nodes. Observable and
+        # unexecutable `ExternalAssetNode` represent both source and external assets-- the
+        # "External" in "ExternalAssetNode" is unrelated to the "external" in "external asset", this
+        # is just an unfortunate naming collision. `ExternalAssetNode` will be renamed eventually.
+        materializable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
+        observable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
+        unexecutable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
         for repo_handle, node in repo_handle_external_asset_nodes:
-            is_observable_by_key[node.asset_key] = (
-                node.execution_type == AssetExecutionType.OBSERVATION
-            )
-            auto_observe_interval_minutes_by_key[
-                node.asset_key
-            ] = node.auto_observe_interval_minutes
-            if node.is_source:
-                if node.asset_key in all_non_source_keys:
-                    # one location's source is another location's non-source
-                    continue
+            if node.is_source and node.is_observable:
+                observable_node_pairs.append((repo_handle, node))
+            elif node.is_source:
+                unexecutable_node_pairs.append((repo_handle, node))
+            else:
+                materializable_node_pairs.append((repo_handle, node))
 
-                source_asset_keys.add(node.asset_key)
+        asset_nodes_by_key = {}
 
-            upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
-            for dep in node.dependencies:
-                if dep.partition_mapping is not None:
-                    partition_mappings_by_key[node.asset_key][
-                        dep.upstream_asset_key
-                    ] = dep.partition_mapping
-            partitions_defs_by_key[node.asset_key] = (
-                node.partitions_def_data.get_partitions_definition()
-                if node.partitions_def_data
-                else None
-            )
-            group_names_by_key[node.asset_key] = node.group_name
-            freshness_policies_by_key[node.asset_key] = node.freshness_policy
-            auto_materialize_policies_by_key[node.asset_key] = node.auto_materialize_policy
-            backfill_policies_by_key[node.asset_key] = node.backfill_policy
+        _warn_on_duplicate_nodes(materializable_node_pairs, AssetExecutionType.MATERIALIZATION)
+        _warn_on_duplicate_nodes(observable_node_pairs, AssetExecutionType.OBSERVATION)
 
-            if node.atomic_execution_unit_id is not None:
-                keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(node.asset_key)
+        # It is possible for multiple nodes to exist that share the same key. This is invalid if
+        # more than one node is materializable or if more than one node is observable. It is valid
+        # if there is at most one materializable node and at most one observable node, with all
+        # other nodes unexecutable. The asset graph will receive only a single `ExternalAssetNode`
+        # representing the asset. This will always be the materializable node if one exists; then
+        # the observable node if it exists; then finally the first-encountered unexecutable node.
+        for repo_handle, node in materializable_node_pairs:
+            asset_nodes_by_key[node.asset_key] = node
 
+        for repo_handle, node in observable_node_pairs:
+            if node.asset_key in asset_nodes_by_key:
+                current_node = asset_nodes_by_key[node.asset_key]
+                asset_nodes_by_key[node.asset_key] = current_node._replace(is_observable=True)
+            else:
+                asset_nodes_by_key[node.asset_key] = node
+
+        for repo_handle, node in unexecutable_node_pairs:
+            if node.asset_key in asset_nodes_by_key:
+                continue
+            asset_nodes_by_key[node.asset_key] = node
+
+        asset_checks_by_key: Dict[AssetCheckKey, "ExternalAssetCheck"] = {}
         for asset_check in external_asset_checks:
-            if asset_check.atomic_execution_unit_id is not None:
-                keys_by_atomic_execution_unit_id[asset_check.atomic_execution_unit_id].add(
-                    asset_check.key
-                )
-
-        downstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
-        for asset_key, upstream_keys in upstream.items():
-            for upstream_key in upstream_keys:
-                downstream[upstream_key].add(asset_key)
-
-        required_assets_and_checks_by_key: Dict[
-            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
-        ] = {}
-        for keys in keys_by_atomic_execution_unit_id.values():
-            if len(keys) > 1:
-                for key in keys:
-                    required_assets_and_checks_by_key[key] = keys
+            asset_checks_by_key[asset_check.key] = asset_check
 
         return cls(
-            asset_dep_graph={"upstream": upstream, "downstream": downstream},
-            source_asset_keys=source_asset_keys,
-            partitions_defs_by_key=partitions_defs_by_key,
-            partition_mappings_by_key=partition_mappings_by_key,
-            group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            backfill_policies_by_key=backfill_policies_by_key,
+            asset_nodes_by_key,
+            asset_checks_by_key,
             repo_handles_by_key=repo_handles_by_key,
-            job_names_by_key=job_names_by_key,
-            code_versions_by_key=code_versions_by_key,
-            is_observable_by_key=is_observable_by_key,
-            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
-            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
+
+    @property
+    def asset_nodes(self) -> Sequence["ExternalAssetNode"]:
+        return list(self._asset_nodes_by_key.values())
+
+    def get_asset_node(self, asset_key: AssetKey) -> "ExternalAssetNode":
+        return self._asset_nodes_by_key[asset_key]
+
+    def has_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._asset_nodes_by_key
+
+    @property
+    def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
+        return list(self._asset_checks_by_key.values())
+
+    def get_asset_check(self, asset_check_key: AssetCheckKey) -> "ExternalAssetCheck":
+        return self._asset_checks_by_key[asset_check_key]
+
+    @property
+    @cached_method
+    def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
+        upstream = {node.asset_key: set() for node in self.asset_nodes}
+        downstream = {node.asset_key: set() for node in self.asset_nodes}
+        for node in self.asset_nodes:
+            for dep in node.dependencies:
+                upstream[node.asset_key].add(dep.upstream_asset_key)
+                downstream[dep.upstream_asset_key].add(node.asset_key)
+        return {"upstream": upstream, "downstream": downstream}
+
+    @property
+    @cached_method
+    def all_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {node.asset_key for node in self.asset_nodes}
+
+    @property
+    @cached_method
+    def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {
+            node.asset_key
+            for node in self.asset_nodes
+            if node.execution_type == AssetExecutionType.MATERIALIZATION
+        }
+
+    def is_materializable(self, asset_key: AssetKey) -> bool:
+        return self.get_asset_node(asset_key).execution_type == AssetExecutionType.MATERIALIZATION
+
+    @property
+    @cached_method
+    def observable_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {
+            node.asset_key
+            for node in self.asset_nodes
+            # check the separate `is_observable` field because `execution_type` will be
+            # `MATERIALIZATION` if there exists a materializable version of the asset
+            if node.is_observable
+        }
+
+    def is_observable(self, asset_key: AssetKey) -> bool:
+        return self.get_asset_node(asset_key).is_observable
+
+    @property
+    @cached_method
+    def external_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {
+            node.asset_key
+            for node in self.asset_nodes
+            if node.execution_type != AssetExecutionType.MATERIALIZATION
+        }
+
+    def is_external(self, asset_key: AssetKey) -> bool:
+        return self.get_asset_node(asset_key).execution_type != AssetExecutionType.MATERIALIZATION
+
+    @property
+    @cached_method
+    def executable_asset_keys(self) -> AbstractSet[AssetKey]:
+        return {node.asset_key for node in self.asset_nodes if node.is_executable}
+
+    def is_executable(self, asset_key: AssetKey) -> bool:
+        return self.get_asset_node(asset_key).execution_type != AssetExecutionType.UNEXECUTABLE
+
+    def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
+        return {node.asset_key for node in self.asset_nodes if node.group_name == group_name}
+
+    def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
+        return {node.asset_key for node in self.asset_nodes if job_name in node.job_names}
+
+    def get_required_asset_and_check_keys(
+        self, asset_or_check_key: AssetKeyOrCheckKey
+    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        if isinstance(asset_or_check_key, AssetKey):
+            atomic_execution_unit_id = self.get_asset_node(
+                asset_or_check_key
+            ).atomic_execution_unit_id
+        else:  # AssetCheckKey
+            atomic_execution_unit_id = self.get_asset_check(
+                asset_or_check_key
+            ).atomic_execution_unit_id
+        if atomic_execution_unit_id is None:
+            return set()
+        else:
+            return {
+                *(
+                    node.asset_key
+                    for node in self.asset_nodes
+                    if node.atomic_execution_unit_id == atomic_execution_unit_id
+                ),
+                *(
+                    node.key
+                    for node in self.asset_checks
+                    if node.atomic_execution_unit_id == atomic_execution_unit_id
+                ),
+            }
+
+    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        return {
+            key
+            for key in self.get_required_asset_and_check_keys(asset_key)
+            if isinstance(key, AssetKey)
+        }
+
+    @property
+    def all_jobs(self) -> AbstractSet[str]:
+        return {job_name for node in self.asset_nodes for job_name in node.job_names}
+
+    def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
+        external_def = self.get_asset_node(asset_key).partitions_def_data
+        return external_def.get_partitions_definition() if external_def else None
+
+    def get_partition_mappings(
+        self, asset_key: AssetKey
+    ) -> Optional[Mapping[AssetKey, PartitionMapping]]:
+        return {
+            dep.upstream_asset_key: dep.partition_mapping
+            for dep in self.get_asset_node(asset_key).dependencies
+            if dep.partition_mapping is not None
+        }
+
+    def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
+        return self.get_asset_node(asset_key).freshness_policy
+
+    def get_auto_materialize_policy(self, asset_key: AssetKey) -> Optional[AutoMaterializePolicy]:
+        return self.get_asset_node(asset_key).auto_materialize_policy
+
+    def get_auto_observe_interval_minutes(self, asset_key: AssetKey) -> Optional[float]:
+        return self.get_asset_node(asset_key).auto_observe_interval_minutes
+
+    def get_backfill_policy(self, asset_key: AssetKey) -> Optional[BackfillPolicy]:
+        return self.get_asset_node(asset_key).backfill_policy
+
+    def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
+        return self.get_asset_node(asset_key).code_version
 
     @property
     def repository_handles_by_key(self) -> Mapping[AssetKey, RepositoryHandle]:
@@ -233,9 +310,9 @@ class ExternalAssetGraph(AssetGraph):
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self._repo_handles_by_key[asset_key]
 
-    def get_materialization_job_names(self, asset_key: AssetKey) -> Iterable[str]:
+    def get_materialization_job_names(self, asset_key: AssetKey) -> Sequence[str]:
         """Returns the names of jobs that materialize this asset."""
-        return self._materialization_job_names_by_key[asset_key]
+        return self.get_asset_node(asset_key).job_names
 
     def get_materialization_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
         """Returns asset keys that are targeted for materialization in the given job."""
@@ -244,9 +321,6 @@ class ExternalAssetGraph(AssetGraph):
             for k in self.materializable_asset_keys
             if job_name in self.get_materialization_job_names(k)
         ]
-
-    def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
-        return self._asset_keys_by_job_name[job_name]
 
     def get_implicit_job_name_for_assets(
         self,
@@ -263,7 +337,7 @@ class ExternalAssetGraph(AssetGraph):
                 check.failed(
                     "external_repo must be passed in when getting job names for observable assets"
                 )
-            # for observable source assets, we need to select the job based on the partitions def
+            # for observable assets, we need to select the job based on the partitions def
             target_partitions_defs = {
                 self.get_partitions_def(asset_key) for asset_key in asset_keys
             }
@@ -287,23 +361,21 @@ class ExternalAssetGraph(AssetGraph):
                     partitions_def_by_job_name[job_name] = None
             # find the job that matches the expected partitions definition
             for job_name, external_partitions_def in partitions_def_by_job_name.items():
+                asset_keys_for_job = self.asset_keys_for_job(job_name)
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
                 if (
-                    # unpartitioned observable source assets may be materialized in any job
+                    # unpartitioned observable assets may be materialized in any job
                     target_partitions_def is None
                     or external_partitions_def == target_partitions_def
-                ) and all(
-                    asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
-                ):
+                ) and all(asset_key in asset_keys_for_job for asset_key in asset_keys):
                     return job_name
         else:
-            for job_name in sorted(self._asset_keys_by_job_name.keys()):
+            for job_name in self.all_jobs:
+                asset_keys_for_job = self.asset_keys_for_job(job_name)
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue
-                if all(
-                    asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys
-                ):
+                if all(asset_key in self.asset_keys_for_job(job_name) for asset_key in asset_keys):
                     return job_name
         return None
 
@@ -317,3 +389,24 @@ class ExternalAssetGraph(AssetGraph):
                 asset_key
             )
         return list(asset_keys_by_repo.values())
+
+
+def _warn_on_duplicate_nodes(
+    node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+    execution_type: AssetExecutionType,
+) -> None:
+    repo_handles_by_asset_key: DefaultDict[AssetKey, List[RepositoryHandle]] = defaultdict(list)
+    for repo_handle, node in node_pairs:
+        repo_handles_by_asset_key[node.asset_key].append(repo_handle)
+
+    duplicates = {k: v for k, v in repo_handles_by_asset_key.items() if len(v) > 1}
+    duplicate_lines = []
+    for asset_key, repo_handles in duplicates.items():
+        locations = [repo_handle.code_location_origin.location_name for repo_handle in repo_handles]
+        duplicate_lines.append(f"  {asset_key.to_string()}: {locations}")
+    duplicate_str = "\n".join(duplicate_lines)
+    if duplicates:
+        warnings.warn(
+            f"Found {execution_type.value} nodes for some asset keys in multiple code locations."
+            f" Only one {execution_type.value} node is allowed per asset key. Duplicates:\n {duplicate_str}"
+        )

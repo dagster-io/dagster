@@ -172,6 +172,7 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     sensor as sensor,
 )
 from dagster._core.definitions.decorators.source_asset_decorator import (
+    multi_observable_source_asset as multi_observable_source_asset,
     observable_source_asset as observable_source_asset,
 )
 from dagster._core.definitions.definitions_class import (

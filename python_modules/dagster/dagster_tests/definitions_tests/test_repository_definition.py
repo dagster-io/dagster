@@ -650,10 +650,9 @@ def test_source_assets():
     def my_repo():
         return [foo, bar]
 
-    assert my_repo.source_assets_by_key == {
-        AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
-        AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
-    }
+    all_assets = list(my_repo.assets_defs_by_key.values())
+    assert len(all_assets) == 2
+    assert {key.to_user_string() for a in all_assets for key in a.keys} == {"foo", "bar"}
 
 
 def test_direct_assets():

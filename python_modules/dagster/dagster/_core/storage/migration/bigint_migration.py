@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 import sqlalchemy as db
 
@@ -103,7 +103,7 @@ def _migrate_storage(conn, tables_to_migrate, print_fn):
             _restore_asset_event_tags_foreign_key(conn, print_fn)
 
 
-def run_bigint_migration(instance: DagsterInstance, print_fn: Callable = print):
+def run_bigint_migration(instance: DagsterInstance, print_fn: Callable[..., Any] = print):
     if isinstance(instance.event_log_storage, SqliteEventLogStorage):
         print_fn("Sqlite does not support bigint types, no need to migrate event log storage.")
     elif isinstance(instance.event_log_storage, SqlEventLogStorage):

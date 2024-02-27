@@ -451,7 +451,7 @@ SensorEvaluationFunction: TypeAlias = Callable[
 ]
 
 
-def get_context_param_name(fn: Callable) -> Optional[str]:
+def get_context_param_name(fn: Callable[..., Any]) -> Optional[str]:
     """Determines the sensor's context parameter name by excluding all resource parameters."""
     resource_params = {param.name for param in get_resource_args(fn)}
 
@@ -976,10 +976,11 @@ class SensorDefinition(IHasInternalInit):
     @property
     def job_name(self) -> Optional[str]:
         """Optional[str]: The name of the job that is targeted by this sensor."""
-        if len(self._targets) > 1:
-            raise DagsterInvalidInvocationError(
-                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
-                " jobs."
+        if len(self._targets) == 0:
+            raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        elif len(self._targets) > 1:
+            raise DagsterInvalidDefinitionError(
+                "job_name property not available when SensorDefinition has multiple jobs."
             )
         return self._targets[0].job_name
 
@@ -1188,7 +1189,7 @@ T = TypeVar("T")
 
 
 def get_sensor_context_from_args_or_kwargs(
-    fn: Callable,
+    fn: Callable[..., Any],
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
@@ -1232,7 +1233,7 @@ def get_sensor_context_from_args_or_kwargs(
 
 
 def get_or_create_sensor_context(
-    fn: Callable,
+    fn: Callable[..., Any],
     *args: Any,
     context_type: Type = SensorEvaluationContext,
     **kwargs: Any,

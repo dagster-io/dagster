@@ -7,19 +7,14 @@ from dagster_dbt.cloud.resources import DbtCloudClientResource, dbt_cloud_resour
 from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN
 
 
-@pytest.fixture(
-    params=[
-        pytest.param("legacy", marks=pytest.mark.legacy),
-        pytest.param("pythonic"),
-    ],
-)
+@pytest.fixture(params=["dbt_cloud_resource", "DbtCloudClientResource"])
 def resource_type(request):
     return request.param
 
 
 @pytest.fixture(name="dbt_cloud")
 def dbt_cloud_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
+    if resource_type == "DbtCloudClientResource":
         yield DbtCloudClientResource(
             auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
         )
@@ -34,7 +29,7 @@ def dbt_cloud_fixture(resource_type) -> Any:
 
 @pytest.fixture(name="get_dbt_cloud_resource")
 def get_dbt_cloud_resource_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
+    if resource_type == "DbtCloudClientResource":
         return (
             lambda **kwargs: DbtCloudClientResource(
                 auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID, **kwargs

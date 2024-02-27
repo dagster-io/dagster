@@ -5,7 +5,7 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.asset_condition import (
+from dagster._core.definitions.asset_condition.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,

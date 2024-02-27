@@ -74,7 +74,7 @@ Currently, Slack and email notifications are supported.
    - **Events** - Select whether the alert should trigger on job success, failure, or both
    - **Notification service** - Select the service for the alert policy:
 
-     - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
+     - **Slack** - If you haven't connected Slack, click the **Connect to Slack** button to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
 
        You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
 
@@ -84,6 +84,8 @@ Currently, Slack and email notifications are supported.
        width={1580}
        height={511}
        />
+
+     **To disconnect Dagster Cloud from Slack**, remove the Dagster Cloud app from your Slack workspace. Refer to [Slack's documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app) for more info and instructions. Once the app is removed, refresh the **Alerts** page in Dagster Cloud and the **Connect to Slack** option will be displayed.
 
      - **Email** - Email alerts can be sent to one or more recipients. For example:
 

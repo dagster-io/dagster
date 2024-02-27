@@ -83,6 +83,7 @@ const TestComponent = () => {
 
   const timeRangeFilter = useTimeRangeFilter({
     name: 'Timestamp',
+    activeFilterTerm: 'Timestamp',
     icon: 'date',
   });
 

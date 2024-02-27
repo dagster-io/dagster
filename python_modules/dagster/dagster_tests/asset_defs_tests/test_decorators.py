@@ -39,7 +39,6 @@ from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
     asset,
-    build_assets_job,
     multi_asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -545,8 +544,7 @@ def test_invoking_asset_with_deps():
         return upstream + [2, 3]
 
     # check that the asset dependencies are in place
-    job = build_assets_job("foo", [upstream, downstream])
-    assert job.execute_in_process().success
+    assert materialize([upstream, downstream]).success
 
     out = downstream([3])
     assert out == [3, 2, 3]

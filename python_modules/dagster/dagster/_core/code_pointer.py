@@ -127,7 +127,6 @@ def load_python_module(
         list(remove_from_path_fn()) if remove_from_path_fn else []
     )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
-
     with alter_sys_path(
         to_add=([working_directory] if working_directory else []), to_remove=remove_paths
     ):

@@ -15,10 +15,12 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster_gcp.gcs import GCSComputeLogManager
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 from google.cloud import storage
+
+ensure_dagster_tests_import()
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

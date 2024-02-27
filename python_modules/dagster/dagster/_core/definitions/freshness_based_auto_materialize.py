@@ -19,8 +19,8 @@ from dagster._seven.compat.pendulum import (
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetSubsetWithMetadata
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
 
@@ -129,7 +129,7 @@ def get_expected_data_time_for_asset_key(
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
-    elif asset_graph.has_non_source_parents(asset_key):
+    elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then
@@ -162,7 +162,7 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time
@@ -207,7 +207,7 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.freshness_policies_by_key.get(asset_key),
+        local_policy=context.asset_graph.get_freshness_policy(asset_key),
         policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,

@@ -4,177 +4,16 @@ import {
   Box,
   Button,
   Colors,
-  CursorHistoryControls,
   Dialog,
   DialogBody,
   DialogFooter,
   Mono,
   NonIdealState,
-  Spinner,
-  Table,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
-import {Link} from 'react-router-dom';
 
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {
-  AssetCheckDetailsQuery,
-  AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {useTrackPageView} from '../../app/analytics';
-import {AssetKeyInput} from '../../graphql/types';
-import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
-import {linkToRunEvent} from '../../runs/RunUtils';
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-
-export const AssetCheckDetailModal = ({
-  assetKey,
-  checkName,
-  onClose,
-}: {
-  assetKey: AssetKeyInput;
-  checkName: string | undefined | null;
-  onClose: () => void;
-}) => {
-  return (
-    <Dialog
-      isOpen={!!checkName}
-      canOutsideClickClose
-      canEscapeKeyClose
-      onClose={onClose}
-      icon="asset_check"
-      title={`${checkName} run history`}
-      style={{width: '80%', minWidth: '800px'}}
-    >
-      {checkName ? <AssetCheckDetailModalImpl checkName={checkName} assetKey={assetKey} /> : null}
-    </Dialog>
-  );
-};
-
-const PAGE_SIZE = 5;
-
-const AssetCheckDetailModalImpl = ({
-  assetKey,
-  checkName,
-}: {
-  assetKey: AssetKeyInput;
-  checkName: string;
-}) => {
-  useTrackPageView();
-  useDocumentTitle(`Asset Check | ${checkName}`);
-
-  const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    AssetCheckDetailsQuery,
-    AssetCheckDetailsQueryVariables
-  >({
-    query: ASSET_CHECK_DETAILS_QUERY,
-    variables: {
-      assetKey,
-      checkName,
-    },
-    nextCursorForResult: (data) => {
-      if (!data) {
-        return undefined;
-      }
-      return data.assetCheckExecutions[PAGE_SIZE - 1]?.id.toString();
-    },
-    getResultArray: (data) => {
-      if (!data) {
-        return [];
-      }
-      return data.assetCheckExecutions || [];
-    },
-    pageSize: PAGE_SIZE,
-  });
-
-  // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-
-  const executions = queryResult.data?.assetCheckExecutions;
-
-  const runHistory = () => {
-    if (!executions) {
-      return (
-        <Box padding={48}>
-          <Spinner purpose="section" />
-        </Box>
-      );
-    }
-
-    if (!executions.length) {
-      return <NoExecutions />;
-    }
-    return (
-      <div>
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: '200px'}}>Timestamp</th>
-              <th style={{width: '200px'}}>Target materialization</th>
-              <th style={{width: '160px'}}>Result</th>
-              <th>Evaluation metadata</th>
-            </tr>
-          </thead>
-          <tbody>
-            {executions.map((execution) => {
-              return (
-                <tr key={execution.id}>
-                  <td>
-                    {execution.evaluation?.timestamp ? (
-                      <Link
-                        to={linkToRunEvent(
-                          {id: execution.runId},
-                          {stepKey: execution.stepKey, timestamp: execution.timestamp},
-                        )}
-                      >
-                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
-                      </Link>
-                    ) : (
-                      <TimestampDisplay timestamp={execution.timestamp} />
-                    )}
-                  </td>
-                  <td>
-                    {execution.evaluation?.targetMaterialization ? (
-                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay
-                          timestamp={execution.evaluation.targetMaterialization.timestamp}
-                        />
-                      </Link>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                  <td>
-                    <AssetCheckStatusTag execution={execution} />
-                  </td>
-                  <td>
-                    <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-        <div style={{paddingBottom: '16px'}}>
-          <CursorHistoryControls {...paginationProps} />
-        </div>
-      </div>
-    );
-  };
-
-  if (!executions) {
-    return (
-      <Box flex={{direction: 'column'}} padding={24}>
-        <Spinner purpose="section" />
-      </Box>
-    );
-  }
-  return <Box flex={{direction: 'column'}}>{runHistory()}</Box>;
-};
 
 export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
   const [showMetadata, setShowMetadata] = useState(false);
@@ -319,33 +158,6 @@ export function NoChecks() {
             <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
-            </Body2>
-            {/* <Box
-              as="a"
-              href="https://docs.dagster.io/concepts/assets/asset-checks"
-              target="_blank"
-              flex={{direction: 'row', alignItems: 'end', gap: 4}}
-            >
-              Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.linkDefault()} />
-            </Box> */}
-          </Box>
-        }
-      />
-    </Box>
-  );
-}
-
-function NoExecutions() {
-  return (
-    <Box padding={24}>
-      <NonIdealState
-        icon="asset_check"
-        title="No executions found for this check"
-        description={
-          <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
-              No executions found. Materialize this asset and the check will run automatically.
             </Body2>
             {/* <Box
               as="a"
