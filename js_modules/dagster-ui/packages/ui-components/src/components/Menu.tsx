@@ -45,7 +45,7 @@ const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintMenuItem
       return Colors.accentYellow();
     case 'none':
     default:
-      return Colors.accentGray();
+      return Colors.textDefault();
   }
 };
 

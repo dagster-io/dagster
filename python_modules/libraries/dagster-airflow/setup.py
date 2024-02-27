@@ -30,6 +30,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         "docker>=5.0.3,<6.0.0",

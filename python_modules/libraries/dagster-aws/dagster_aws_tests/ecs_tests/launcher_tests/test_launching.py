@@ -323,7 +323,7 @@ def test_task_definition_registration(
 
 
 @pytest.mark.skip(
-    "This remains occassionally flaky on older versions of Python. See"
+    "This remains occasionally flaky on older versions of Python. See"
     " https://github.com/dagster-io/dagster/pull/11290 "
     "https://linear.app/elementl/issue/CLOUD-2093/re-enable-flaky-ecs-task-registration-race-condition-tests"
 )

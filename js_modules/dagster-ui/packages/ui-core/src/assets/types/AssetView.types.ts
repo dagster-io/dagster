@@ -22,7 +22,6 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string | null;
-          hasAssetChecks: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -15844,7 +15843,6 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string | null;
-  hasAssetChecks: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;

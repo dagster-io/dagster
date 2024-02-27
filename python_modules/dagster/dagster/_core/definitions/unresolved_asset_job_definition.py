@@ -24,8 +24,8 @@ if TYPE_CHECKING:
         PartitionsDefinition,
         ResourceDefinition,
     )
-    from dagster._core.definitions.asset_graph import InternalAssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -181,10 +181,9 @@ class UnresolvedAssetJobDefinition(
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
-        assets = asset_graph.assets
-        source_assets = asset_graph.source_assets
+        assets = asset_graph.assets_defs
         selected_asset_keys = self.selection.resolve(asset_graph)
-        if asset_graph.includes_materializable_and_source_assets(selected_asset_keys):
+        if asset_graph.includes_materializable_and_external_assets(selected_asset_keys):
             raise DagsterInvalidDefinitionError(
                 f"Asset selection for job '{self.name}' specified both regular assets and source "
                 "assets. This is not currently supported. Selections must be all regular "
@@ -229,9 +228,9 @@ class UnresolvedAssetJobDefinition(
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
-            asset_checks=asset_graph.asset_checks,
+            asset_checks=asset_graph.asset_checks_defs,
             config=self.config,
-            source_assets=source_assets,
+            source_assets=[],
             description=self.description,
             tags=self.tags,
             metadata=self.metadata,

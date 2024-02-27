@@ -32,11 +32,11 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
@@ -323,7 +323,7 @@ def define_asset_check_job():
         yield AssetCheckResult(passed=True)
 
     return define_asset_job(name="asset_check_job", selection=[asset1]).resolve(
-        asset_graph=AssetGraph.from_assets([asset1])
+        asset_graph=InternalAssetGraph.from_assets([asset1])
     )
 
 

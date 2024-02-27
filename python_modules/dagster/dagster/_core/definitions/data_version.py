@@ -429,7 +429,7 @@ class CachingStaleStatusResolver:
             current_version = self._get_current_data_version(key=key)
             if current_version == NULL_DATA_VERSION:
                 return StaleStatus.MISSING
-            elif self.asset_graph.is_source(key.asset_key):
+            elif self.asset_graph.is_external(key.asset_key):
                 return StaleStatus.FRESH
             else:
                 causes = self._get_stale_causes(key=key)
@@ -442,7 +442,7 @@ class CachingStaleStatusResolver:
         # is inferred) for backcompat.
         if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
             return []
-        elif self.asset_graph.is_source(key.asset_key):
+        elif self.asset_graph.is_external(key.asset_key):
             return []
         else:
             current_version = self._get_current_data_version(key=key)
@@ -461,14 +461,14 @@ class CachingStaleStatusResolver:
             cursor = provenance.input_storage_ids[dep_key.asset_key]
             updated_record = self._instance.get_latest_data_version_record(
                 dep_key.asset_key,
-                self.asset_graph.is_source(dep_key.asset_key),
+                self.asset_graph.is_external(dep_key.asset_key),
                 dep_key.partition_key,
                 after_cursor=cursor,
             )
             if updated_record:
                 previous_record = self._instance.get_latest_data_version_record(
                     dep_key.asset_key,
-                    self.asset_graph.is_source(dep_key.asset_key),
+                    self.asset_graph.is_external(dep_key.asset_key),
                     dep_key.partition_key,
                     before_cursor=cursor + 1 if cursor else None,
                 )
@@ -563,7 +563,7 @@ class CachingStaleStatusResolver:
             # timestamps instead of versions this should be removable eventually since
             # provenance is on all newer materializations. If dep is a source, then we'll never
             # provide a stale reason here.
-            elif not self.asset_graph.is_source(dep_key.asset_key):
+            elif not self.asset_graph.is_external(dep_key.asset_key):
                 dep_materialization = self._get_latest_data_version_record(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
@@ -622,7 +622,7 @@ class CachingStaleStatusResolver:
         # Currently we can only use asset records, which are fetched in one shot, for non-source
         # assets. This is because the most recent AssetObservation is not stored on the AssetRecord.
         record = self._get_latest_data_version_record(key=key)
-        if self.asset_graph.is_source(key.asset_key) and record is None:
+        if self.asset_graph.is_external(key.asset_key) and record is None:
             return DEFAULT_DATA_VERSION
         elif record is None:
             return NULL_DATA_VERSION
@@ -632,7 +632,7 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _is_current_data_version_user_provided(self, *, key: "AssetKeyPartitionKey") -> bool:
-        if self.asset_graph.is_source(key.asset_key):
+        if self.asset_graph.is_external(key.asset_key):
             return True
         else:
             provenance = self._get_current_data_provenance(key=key)
@@ -654,7 +654,7 @@ class CachingStaleStatusResolver:
     # are at the root of the graph (have no dependencies) or are downstream of a volatile asset.
     @cached_method
     def _is_volatile(self, *, key: "AssetKey") -> bool:
-        if self.asset_graph.is_source(key):
+        if self.asset_graph.is_external(key):
             return self.asset_graph.is_observable(key)
         else:
             deps = self.asset_graph.get_parents(key)
@@ -678,7 +678,7 @@ class CachingStaleStatusResolver:
         # If an asset record is cached, all of its ancestors have already been cached.
         if (
             key.partition_key is None
-            and not self.asset_graph.is_source(key.asset_key)
+            and not self.asset_graph.is_external(key.asset_key)
             and not self.instance_queryer.has_cached_asset_record(key.asset_key)
         ):
             ancestors = self.asset_graph.get_ancestors(key.asset_key, include_self=True)

@@ -443,7 +443,11 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:
@@ -490,7 +494,11 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:

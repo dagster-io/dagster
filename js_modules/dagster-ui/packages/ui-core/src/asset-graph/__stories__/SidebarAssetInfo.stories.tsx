@@ -75,7 +75,7 @@ const buildSidebarQueryMock = (
         backfillPolicy: null,
         configField: null,
         metadataEntries: [],
-        assetChecksOrError: buildAssetChecks({checks: []}),
+        assetChecksOrError: buildAssetChecks(),
         jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,

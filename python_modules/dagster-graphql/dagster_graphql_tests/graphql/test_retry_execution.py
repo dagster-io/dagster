@@ -1,9 +1,13 @@
 import os
 from time import sleep
 
+from dagster._core.events import RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import (
+    RESUME_RETRY_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -539,6 +543,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run and run.status == DagsterRunStatus.FAILURE
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.STEP_FAILURE.value
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,

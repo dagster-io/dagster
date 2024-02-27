@@ -72,38 +72,38 @@ def _make_workspace_context(
 
 def get_asset_graph_differ(
     instance,
-    parent_code_locations: List[str],
+    base_code_locations: List[str],
     branch_code_location_to_definitions: Mapping[str, str],
     code_location_to_diff: str,
-):
-    """Returns a ParentAssetClassDiffer to compare a particular repository in a branch deployment to
-    the corresponding repository in the parent deployment.
+) -> AssetGraphDiffer:
+    """Returns a, AssetGraphDiffer to compare a particular repository in a branch deployment to
+    the corresponding repository in the base deployment.
 
-    For each deployment (parent and branch) we need to create a workspace context with a set of code locations in it.
+    For each deployment (base and branch) we need to create a workspace context with a set of code locations in it.
     The folders in asset_graph_scenarios define various code locations. Each folder contains a base_asset_graph.py file, which
-    contains the Definitions object for the parent deployment. The remaining files in the folder (prefixed branch_deployment_*)
+    contains the Definitions object for the base deployment. The remaining files in the folder (prefixed branch_deployment_*)
     are various modifications to the base_asset_graph.py file, to represent branch deployments that may be opened against
-    the parent deployment. To make the workspace for each deployment, we need a list of code locations to load in the parent deployment
+    the base deployment. To make the workspace for each deployment, we need a list of code locations to load in the base deployment
     and a mapping of code location names to definitions file names to load the correct changes in the branch deployment. Finally, we
-    need the name of the code location to compare between the branch deployment and parent deployment.
+    need the name of the code location to compare between the branch deployment and base deployment.
 
     Args:
         instance: A DagsterInstance
-        parent_code_locations: List of code locations to load in the parent deployment
+        base_code_locations: List of code locations to load in the base deployment
         branch_code_location_to_definitions: Mapping of code location to definitions file to load in the branch deployment
-        code_location_to_diff: Name of the code location to compute differences between parent and branch deployments
+        code_location_to_diff: Name of the code location to compute differences between base and branch deployments
     """
     branch_worksapce_ctx = _make_workspace_context(instance, branch_code_location_to_definitions)
 
-    parent_worksapce_ctx = _make_workspace_context(
-        instance, {code_location: "base_asset_graph" for code_location in parent_code_locations}
+    base_worksapce_ctx = _make_workspace_context(
+        instance, {code_location: "base_asset_graph" for code_location in base_code_locations}
     )
 
     return AssetGraphDiffer.from_external_repositories(
         code_location_name=code_location_to_diff,
         repository_name=SINGLETON_REPOSITORY_NAME,
         branch_workspace=branch_worksapce_ctx,
-        parent_workspace=parent_worksapce_ctx,
+        base_workspace=base_worksapce_ctx,
     )
 
 
@@ -111,7 +111,7 @@ def test_new_asset(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
-        parent_code_locations=["basic_asset_graph"],
+        base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
 
@@ -123,7 +123,7 @@ def test_new_asset_connected(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
-        parent_code_locations=["basic_asset_graph"],
+        base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_new_asset_connected"
         },
@@ -138,7 +138,7 @@ def test_update_code_version(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
-        parent_code_locations=["code_versions_asset_graph"],
+        base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_update_code_version"
         },
@@ -152,7 +152,7 @@ def test_change_inputs(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
-        parent_code_locations=["basic_asset_graph"],
+        base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_change_inputs"
         },
@@ -166,7 +166,7 @@ def test_multiple_changes_for_one_asset(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
-        parent_code_locations=["code_versions_asset_graph"],
+        base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_multiple_changes"
         },
@@ -183,7 +183,7 @@ def test_change_then_revert(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
-        parent_code_locations=["code_versions_asset_graph"],
+        base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_update_code_version"
         },
@@ -195,7 +195,7 @@ def test_change_then_revert(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
-        parent_code_locations=["code_versions_asset_graph"],
+        base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={"code_versions_asset_graph": "base_asset_graph"},
     )
 
@@ -207,7 +207,7 @@ def test_large_asset_graph(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="huge_asset_graph",
-        parent_code_locations=["huge_asset_graph"],
+        base_code_locations=["huge_asset_graph"],
         branch_code_location_to_definitions={
             "huge_asset_graph": "branch_deployment_restructure_graph"
         },
@@ -224,12 +224,12 @@ def test_large_asset_graph(instance):
 
 def test_multiple_code_locations(instance):
     # There are duplicate asset keys in the asset graphs of basic_asset_graph and code_versions_asset_graph
-    # this test ensures that the ParentAssetGraph differ constructs AssetGraphs of the intended code location and does not
+    # this test ensures that the AssetGraphDiffer constructs AssetGraphs of the intended code location and does not
     # include assets from other code locations
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
-        parent_code_locations=["basic_asset_graph", "code_versions_asset_graph"],
+        base_code_locations=["basic_asset_graph", "code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_new_asset_connected"
         },
@@ -245,9 +245,57 @@ def test_new_code_location(instance):
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
-        parent_code_locations=[],
+        base_code_locations=[],
         branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [ChangeReason.NEW]
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [ChangeReason.NEW]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.NEW]
+
+
+def test_change_partitions_definitions(instance):
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="partitioned_asset_graph",
+        base_code_locations=["partitioned_asset_graph"],
+        branch_code_location_to_definitions={
+            "partitioned_asset_graph": "branch_deployment_change_partitions_def"
+        },
+    )
+    assert differ.get_changes_for_asset(AssetKey("daily_upstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+    assert differ.get_changes_for_asset(AssetKey("daily_downstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+    assert differ.get_changes_for_asset(AssetKey("static_upstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+    assert differ.get_changes_for_asset(AssetKey("static_downstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+    assert differ.get_changes_for_asset(AssetKey("multi_partitioned_upstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+    assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
+        ChangeReason.PARTITIONS_DEFINITION
+    ]
+
+
+def test_change_partition_mapping(instance):
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="partitioned_asset_graph",
+        base_code_locations=["partitioned_asset_graph"],
+        branch_code_location_to_definitions={
+            "partitioned_asset_graph": "branch_deployment_change_partition_mappings"
+        },
+    )
+    assert len(differ.get_changes_for_asset(AssetKey("daily_upstream"))) == 0
+    assert differ.get_changes_for_asset(AssetKey("daily_downstream")) == [ChangeReason.INPUTS]
+    assert len(differ.get_changes_for_asset(AssetKey("static_upstream"))) == 0
+    assert differ.get_changes_for_asset(AssetKey("static_downstream")) == [ChangeReason.INPUTS]
+    assert len(differ.get_changes_for_asset(AssetKey("multi_partitioned_upstream"))) == 0
+    assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
+        ChangeReason.INPUTS
+    ]

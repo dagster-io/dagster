@@ -190,7 +190,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
                 viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
               }}
             >
-              <Icon size={24} name="zoom_in" />
+              <Icon name="zoom_in" />
             </IconButton>
           </Tooltip>
           <Box
@@ -228,7 +228,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
                 viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
               }}
             >
-              <Icon size={24} name="zoom_out" />
+              <Icon name="zoom_out" />
             </IconButton>
           </Tooltip>
         </Box>
@@ -237,7 +237,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           <Box>
             <Tooltip content="Download as SVG">
               <IconButton onClick={() => viewport.onExportToSVG()}>
-                <Icon size={24} name="download_for_offline" />
+                <Icon name="download_for_offline" />
               </IconButton>
             </Tooltip>
           </Box>
@@ -250,8 +250,12 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 const IconButton = styled.button`
   background: ${Colors.backgroundDefault()};
   border: 1px solid ${Colors.borderDefault()};
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 3px;
   position: relative;
   border-radius: 8px;
   transition: background 200ms ease-in-out;
@@ -637,7 +641,6 @@ const ZoomSliderContainer = styled.div`
   bottom: 12px;
   right: 12px;
   width: 30px;
-  background: ${Colors.backgroundLight()};
 `;
 
 const SVGExporter = ({

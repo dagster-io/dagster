@@ -23,9 +23,9 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
@@ -226,9 +226,11 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
     if expected_error:
         expected_class, expected_message = expected_error
         with pytest.raises(expected_class, match=expected_message):
-            job_def.resolve(asset_graph=AssetGraph.from_assets(_get_assets_defs(use_multi)))
+            job_def.resolve(asset_graph=InternalAssetGraph.from_assets(_get_assets_defs(use_multi)))
     else:
-        assert job_def.resolve(asset_graph=AssetGraph.from_assets(_get_assets_defs(use_multi)))
+        assert job_def.resolve(
+            asset_graph=InternalAssetGraph.from_assets(_get_assets_defs(use_multi))
+        )
 
 
 @pytest.mark.parametrize(
@@ -275,12 +277,12 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
 
     # run once so values exist to load from
     define_asset_job("initial").resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
+        asset_graph=InternalAssetGraph.from_assets(final_assets)
     ).execute_in_process()
 
     # now build the subset job
     job = define_asset_job("asset_job", selection=job_selection).resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
+        asset_graph=InternalAssetGraph.from_assets(final_assets)
     )
 
     result = job.execute_in_process()
@@ -369,12 +371,12 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
     # run once so values exist to load from
     define_asset_job("initial").resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
+        asset_graph=InternalAssetGraph.from_assets(final_assets)
     ).execute_in_process()
 
     # now build the subset job
     job = define_asset_job("asset_job", selection=job_selection).resolve(
-        asset_graph=AssetGraph.from_assets(final_assets)
+        asset_graph=InternalAssetGraph.from_assets(final_assets)
     )
 
     with instance_for_test() as instance:
@@ -461,7 +463,7 @@ def test_define_selection_job_assets_definition_selection():
     all_assets = [asset1, asset2, asset3]
 
     job1 = define_asset_job("job1", selection=[asset1, asset2]).resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
     asset_keys = list(job1.asset_layer.asset_keys)
     assert len(asset_keys) == 2
@@ -480,7 +482,7 @@ def test_root_asset_selection():
 
     # Source asset should not be included in the job
     assert define_asset_job("job", selection="*b").resolve(
-        asset_graph=AssetGraph.from_assets([a, b, SourceAsset("source")])
+        asset_graph=InternalAssetGraph.from_assets([a, b, SourceAsset("source")])
     )
 
 
@@ -494,7 +496,9 @@ def test_source_asset_selection_missing():
         return a + 1
 
     with pytest.raises(DagsterInvalidDefinitionError, match="sources"):
-        define_asset_job("job", selection="*b").resolve(asset_graph=AssetGraph.from_assets([a, b]))
+        define_asset_job("job", selection="*b").resolve(
+            asset_graph=InternalAssetGraph.from_assets([a, b])
+        )
 
 
 @asset
@@ -504,7 +508,7 @@ def foo():
 
 def test_executor_def():
     job = define_asset_job("with_exec", executor_def=in_process_executor).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
+        asset_graph=InternalAssetGraph.from_assets([foo])
     )
     assert job.executor_def == in_process_executor
 
@@ -512,7 +516,7 @@ def test_executor_def():
 def test_tags():
     my_tags = {"foo": "bar"}
     job = define_asset_job("with_tags", tags=my_tags).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
+        asset_graph=InternalAssetGraph.from_assets([foo])
     )
     assert job.tags == my_tags
 
@@ -520,7 +524,7 @@ def test_tags():
 def test_description():
     description = "Some very important description"
     job = define_asset_job("with_tags", description=description).resolve(
-        asset_graph=AssetGraph.from_assets([foo])
+        asset_graph=InternalAssetGraph.from_assets([foo])
     )
     assert job.description == description
 
@@ -562,7 +566,7 @@ def test_config():
                 "other_config_asset": {"config": {"val": 3}},
             }
         },
-    ).resolve(asset_graph=AssetGraph.from_assets([foo, config_asset, other_config_asset]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([foo, config_asset, other_config_asset]))
 
     result = job.execute_in_process()
 
@@ -607,7 +611,7 @@ def test_subselect_config(selection, config):
         resource_defs={"asset_io_manager": io_manager_def},
     )
     job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
 
     result = job.execute_in_process()
@@ -618,7 +622,7 @@ def test_subselect_config(selection, config):
 def test_simple_partitions():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def).resolve(
-        asset_graph=AssetGraph.from_assets(_get_partitioned_assets(partitions_def)),
+        asset_graph=InternalAssetGraph.from_assets(_get_partitioned_assets(partitions_def)),
     )
     assert job.partitions_def == partitions_def
 
@@ -641,7 +645,7 @@ def test_hooks():
         pass
 
     job = define_asset_job("with_hooks", hooks={foo, bar}).resolve(
-        asset_graph=AssetGraph.from_assets([a, b])
+        asset_graph=InternalAssetGraph.from_assets([a, b])
     )
     assert job.hook_defs == {foo, bar}
 
@@ -664,7 +668,7 @@ def test_hooks_with_resources():
         pass
 
     job = define_asset_job("with_hooks", hooks={foo, bar}).resolve(
-        asset_graph=AssetGraph.from_assets([a, b]), resource_defs={"a": 1, "b": 2, "c": 3}
+        asset_graph=InternalAssetGraph.from_assets([a, b]), resource_defs={"a": 1, "b": 2, "c": 3}
     )
     assert job.hook_defs == {foo, bar}
 
@@ -841,7 +845,7 @@ def test_op_retry_policy():
 
     job1 = define_asset_job("job", op_retry_policy=ops_retry_policy)
     assert job1.op_retry_policy == ops_retry_policy
-    job1_resolved = job1.resolve(asset_graph=AssetGraph.from_assets([a, b]))
+    job1_resolved = job1.resolve(asset_graph=InternalAssetGraph.from_assets([a, b]))
     job1_resolved.execute_in_process(raise_on_error=False)
 
     assert tries == {"a": 3, "b": 4}

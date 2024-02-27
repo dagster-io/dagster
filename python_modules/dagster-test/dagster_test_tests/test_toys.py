@@ -16,7 +16,7 @@ from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.temp_file import get_temp_dir
 from dagster_test.toys.branches import branch
@@ -39,6 +39,8 @@ from dagster_test.toys.schedules import longitudinal_schedule
 from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.software_defined_assets import software_defined_assets
+
+ensure_dagster_tests_import()
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )

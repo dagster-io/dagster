@@ -1,9 +1,9 @@
 import {useMemo} from 'react';
 
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 
 export const useRunRootTrace = () => {
-  const trace = useStartTrace('RunRoot');
+  const trace = usePageLoadTrace('RunRoot');
   return useMemo(() => {
     let logsLoaded = false;
     let runsLoaded = false;

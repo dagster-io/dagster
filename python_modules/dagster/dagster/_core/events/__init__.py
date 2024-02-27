@@ -52,7 +52,11 @@ from dagster._serdes import (
     NamedTupleSerializer,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_object
+from dagster._serdes.serdes import (
+    EnumSerializer,
+    UnpackContext,
+    is_whitelisted_for_serdes_object,
+)
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -248,6 +252,25 @@ ASSET_CHECK_EVENTS = {
     DagsterEventType.ASSET_CHECK_EVALUATION,
     DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
 }
+
+
+class RunFailureReasonSerializer(EnumSerializer):
+    def unpack(self, value: str):
+        try:
+            RunFailureReason(value)
+        except ValueError:
+            return RunFailureReason.UNKNOWN
+
+        return super().unpack(value)
+
+
+@whitelist_for_serdes(serializer=RunFailureReasonSerializer)
+class RunFailureReason(Enum):
+    UNEXPECTED_TERMINATION = "UNEXPECTED_TERMINATION"
+    RUN_EXCEPTION = "RUN_EXCEPTION"
+    STEP_FAILURE = "STEP_FAILURE"
+    JOB_INITIALIZATION_FAILURE = "JOB_INITIALIZATION_FAILURE"
+    UNKNOWN = "UNKNOWN"
 
 
 def _assert_type(
@@ -1048,6 +1071,7 @@ class DagsterEvent(
     def job_failure(
         job_context_or_name: Union[IPlanContext, str],
         context_msg: str,
+        failure_reason: RunFailureReason,
         error_info: Optional[SerializableErrorInfo] = None,
     ) -> "DagsterEvent":
         check.str_param(context_msg, "context_msg")
@@ -1058,7 +1082,7 @@ class DagsterEvent(
                 message=(
                     f'Execution of run for "{job_context_or_name.job_name}" failed. {context_msg}'
                 ),
-                event_specific_data=JobFailureData(error_info),
+                event_specific_data=JobFailureData(error_info, failure_reason=failure_reason),
             )
         else:
             # when the failure happens trying to bring up context, the job_context hasn't been
@@ -1067,7 +1091,7 @@ class DagsterEvent(
             event = DagsterEvent(
                 event_type_value=DagsterEventType.RUN_FAILURE.value,
                 job_name=job_context_or_name,
-                event_specific_data=JobFailureData(error_info),
+                event_specific_data=JobFailureData(error_info, failure_reason=failure_reason),
                 message=f'Execution of run for "{job_context_or_name}" failed. {context_msg}',
                 pid=os.getpid(),
             )
@@ -1702,12 +1726,19 @@ class JobFailureData(
         "_JobFailureData",
         [
             ("error", Optional[SerializableErrorInfo]),
+            ("failure_reason", Optional[RunFailureReason]),
         ],
     )
 ):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
+    def __new__(
+        cls,
+        error: Optional[SerializableErrorInfo],
+        failure_reason: Optional[RunFailureReason] = None,
+    ):
         return super(JobFailureData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            failure_reason=check.opt_inst_param(failure_reason, "failure_reason", RunFailureReason),
         )
 
 

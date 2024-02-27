@@ -36,6 +36,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_datahub_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         "acryl-datahub[datahub-rest, datahub-kafka]",
         f"dagster{pin}",

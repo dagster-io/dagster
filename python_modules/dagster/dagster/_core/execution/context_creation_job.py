@@ -28,7 +28,7 @@ from dagster._core.definitions.executor_definition import check_cross_process_co
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.memoization import validate_reexecution_memoization
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.resources_init import (
@@ -323,10 +323,11 @@ def orchestration_context_event_generator(
         event = DagsterEvent.job_failure(
             job_context_or_name=dagster_run.job_name,
             context_msg=(
-                "Pipeline failure during initialization for pipeline"
+                "Failure during initialization for job"
                 f' "{dagster_run.job_name}". This may be due to a failure in initializing the'
                 " executor or one of the loggers."
             ),
+            failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE,
             error_info=error_info,
         )
         log_manager.log_dagster_event(
@@ -441,7 +442,7 @@ def create_log_manager(
 ) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
-    pipeline_def, resolved_run_config, dagster_run = (
+    job_def, resolved_run_config, dagster_run = (
         context_creation_data.job_def,
         context_creation_data.resolved_run_config,
         context_creation_data.dagster_run,
@@ -453,14 +454,14 @@ def create_log_manager(
     # via ConfigurableDefinition (@configured) to incoming logger configs. See docstring for more details.
 
     loggers = []
-    for logger_key, logger_def in pipeline_def.loggers.items() or default_loggers().items():
+    for logger_key, logger_def in job_def.loggers.items() or default_loggers().items():
         if logger_key in resolved_run_config.loggers:
             loggers.append(
                 logger_def.logger_fn(
                     InitLoggerContext(
                         resolved_run_config.loggers.get(logger_key, {}).get("config"),
                         logger_def,
-                        job_def=pipeline_def,
+                        job_def=job_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -473,7 +474,7 @@ def create_log_manager(
                     InitLoggerContext(
                         logger_config,
                         logger_def,
-                        job_def=pipeline_def,
+                        job_def=job_def,
                         run_id=dagster_run.run_id,
                     )
                 )

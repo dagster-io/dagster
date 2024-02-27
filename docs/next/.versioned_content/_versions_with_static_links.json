@@ -426,5 +426,9 @@
   {
     "url": "https://release-1-6-5.dagster.dagster-docs.io/",
     "version": "1.6.5"
+  },
+  {
+    "url": "https://release-1-6-6.dagster.dagster-docs.io/",
+    "version": "1.6.6"
   }
 ]

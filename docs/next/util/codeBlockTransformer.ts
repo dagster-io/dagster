@@ -1,10 +1,10 @@
-import {promises as fs} from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 
-import {Node} from 'hast';
+import { Node } from 'hast';
 import visit from 'unist-util-visit';
 
-import {limitSnippetLines} from './limit';
+import { limitSnippetLines } from './limit';
 
 const DAGSTER_REPO = process.env.DAGSTER_REPO || path.join(__dirname, '../../../');
 
@@ -81,9 +81,14 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
         );
 
         // remove pragmas
-        contentWithLimit = contentWithLimit.replace(/^\s*# (type|ruff|isort|noqa):.*$/g, '');
-        contentWithLimit = contentWithLimit.replace(/  # (type|ruff|isort|noqa):.*$/g, '');
-
+        contentWithLimit = contentWithLimit.replace(
+          /^\s*# (type|ruff|isort|noqa|pyright):.*$/g,
+          '',
+        );
+        contentWithLimit = contentWithLimit.replace(
+          /(.*?)(# (type|ruff|isort|noqa|pyright):.*)$/gm,
+          '$1',
+        );
         if (metaOptions.trim) {
           contentWithLimit = contentWithLimit.trim();
         }
