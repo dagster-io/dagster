@@ -732,6 +732,7 @@ export enum ChangeReason {
   CODE_VERSION = 'CODE_VERSION',
   INPUTS = 'INPUTS',
   NEW = 'NEW',
+  PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
 }
 
 export type ClaimedConcurrencySlot = {

@@ -17,6 +17,7 @@ class ChangeReason(Enum):
     NEW = "NEW"
     CODE_VERSION = "CODE_VERSION"
     INPUTS = "INPUTS"
+    PARTITIONS_DEFINITION = "PARTITIONS_DEFINITION"
 
 
 def _get_external_repo_from_context(
@@ -130,6 +131,20 @@ class AssetGraphDiffer:
             asset_key
         ):
             changes.append(ChangeReason.INPUTS)
+        else:
+            # if the set of inputs is different, then we don't need to check if the partition mappings
+            # for inputs have changed since ChangeReason.INPUTS is already in the list of changes
+            for upstream_asset in self.branch_asset_graph.get_parents(asset_key):
+                if self.branch_asset_graph.get_partition_mapping(
+                    asset_key, upstream_asset
+                ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
+                    changes.append(ChangeReason.INPUTS)
+                    break
+
+        if self.branch_asset_graph.get_partitions_def(
+            asset_key
+        ) != self.base_asset_graph.get_partitions_def(asset_key):
+            changes.append(ChangeReason.PARTITIONS_DEFINITION)
 
         return changes
 

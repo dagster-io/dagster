@@ -717,6 +717,7 @@ enum ChangeReason {
   NEW
   CODE_VERSION
   INPUTS
+  PARTITIONS_DEFINITION
 }
 
 type AssetDependency {
