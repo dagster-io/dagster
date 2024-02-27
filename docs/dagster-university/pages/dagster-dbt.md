@@ -15,3 +15,12 @@ title: Dagster + dbt
   - [Set up the dbt project](/dagster-dbt/lesson-2/3-set-up-the-dbt-project)
   - [dbt project files](/dagster-dbt/lesson-2/4-dbt-project-files)
   - [Verify dbt installation](/dagster-dbt/lesson-2/5-verify-dbt-installation)
+- Lesson 3: Connecting dbt to Dagster
+  - [Overview](/dagster-dbt/lesson-3/1-overview)
+  - [Constructing the dbt project](/dagster-dbt/lesson-3/2-constructing-the-dbt-project)
+  - [Defining the dbt project location in Dagster](/dagster-dbt/lesson-3/3-defining-the-dbt-project-location-in-dagster)
+  - [Creating a dbt resource in Dagster](/dagster-dbt/lesson-3/4-creating-a-dbt-resource-in-dagster)
+  - [Loading dbt models into Dagster as assets](/dagster-dbt/lesson-3/5-loading-dbt-models-into-dagster-as-assets)
+  - [Updating the Definitions object](/dagster-dbt/lesson-3/6-updating-the-definitions-object)
+  - [Viewing dbt models in the Dagster UI](/dagster-dbt/lesson-3/7-viewing-dbt-models-in-the-dagster-ui)
+  - [Knowledge check](/dagster-dbt/lesson-3/knowledge-check)
