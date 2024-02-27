@@ -39,3 +39,9 @@ title: Dagster + dbt
   - [Creating an incremental model](/dagster-dbt/lesson-6/2-creating-a-simple-incremental-model)
   - [Creating a partitioned dbt asset](/dagster-dbt/lesson-6/3-creating-a-partitioned-dbt-asset)
   - [Lesson recap](/dagster-dbt/lesson-6/4-lesson-recap)
+- Lesson 7: Deploying to Dagster Cloud
+  - [Overview](/dagster-dbt/lesson-7/1-overview)
+  - [Pushing the project to GitHub](/dagster-dbt/lesson-7/2-pushing-the-project-to-github)
+  - [Setting up Dagster Cloud](/dagster-dbt/lesson-7/3-setting-up-dagster-cloud)
+  - [Creating the manifest with GitHub Actions](/dagster-dbt/lesson-7/4-creating-the-manifest-with-github-actions)
+  - [Preparing for a sucessful run](/dagster-dbt/lesson-7/5-preparing-for-a-successful-run)
