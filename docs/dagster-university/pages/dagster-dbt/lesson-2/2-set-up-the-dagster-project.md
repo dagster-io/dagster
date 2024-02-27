@@ -53,12 +53,13 @@ cp .env.example .env
 pip install -e ".[dev]"
 ```
 
-The `e` flag installs the project in editable mode, you can modify existing Dagster assets without having to reload the code location. This allows you to shorten the time it takes to test a change. However, you’ll need to reload the code location when adding new assets or installing additional dependencies.
+The `e` flag installs the project in editable mode, you can modify existing Dagster assets without having to reload the code location. This allows you to shorten the time it takes to test a change. However, you’ll need to reload the code location in the Dagster UI when adding new assets or installing additional dependencies.
 
-Confirm that everything works by:
+To confirm everything works:
 
-1. Running `dagster dev`  from the directory.
-2. Navigating to the Dagster UI ([`http://localhost:3000`](http://localhost:3000/)) in your browser.
-3. Materializing all the assets in the project. For partitioned assets, you can materialize just the most recent partition:
+1. Run `dagster dev`  from the directory.
+2. Navigate to the Dagster UI ([`http://localhost:3000`](http://localhost:3000/)) in your browser.
+3. Open the asset graph by clicking **Assets > View global asset lineage**.
+3. Click **Materialize all** to materialize all the assets in the project. **For partitioned assets**, you can materialize just the most recent partition:
 
-   TODO - ADD SCREENSHOT OF ASSET GRAPH
+   ![The Asset Graph in the Dagster UI](/images/dagster-dbt/lesson-2/asset-graph.png)
