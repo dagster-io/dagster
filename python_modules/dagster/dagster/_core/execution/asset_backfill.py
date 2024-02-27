@@ -1379,7 +1379,7 @@ def should_backfill_atomic_asset_partitions_unit(
                     (
                         # always allow runs to be grouped if there is a simple 1-1 partition mapping
                         parent.partition_key == candidate.partition_key
-                        or len(parent_partitions_by_key[parent.asset_key]) == 1
+                        and len(parent_partitions_by_key[parent.asset_key]) == 1
                     )
                     # candidate shares a partition key that is already being requested by the parent
                     # and both candidate and parent have backfill policies and max_partitions_per_run is
