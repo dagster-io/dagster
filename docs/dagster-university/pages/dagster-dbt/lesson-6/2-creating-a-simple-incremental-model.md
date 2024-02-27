@@ -34,8 +34,7 @@ with
             sum(duration) / count(*) as average_duration,
             sum(total_amount) as total_amount,
             sum(total_amount) / count(*) as average_amount,
-            sum(case when duration > 30 then 1 else 0 end) / count(*) as pct_over_30_min,
-            mode() within group (order by pickup_zone_id) as busiest_zone_id,
+            sum(case when duration > 30 then 1 else 0 end) / count(*) as pct_over_30_min
         from trips
         group by all
     )
