@@ -105,6 +105,7 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
+        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -114,6 +115,7 @@ class OutputContext:
         self._job_name = job_name
         self._run_id = run_id
         self._metadata = metadata or {}
+        self._output_metadata = output_metadata or {}
         self._mapping_key = mapping_key
         self._config = config
         self._op_def = op_def
@@ -215,6 +217,12 @@ class OutputContext:
         the output.
         """
         return self._metadata
+
+    @public
+    @property
+    def output_metadata(self) -> ArbitraryMetadataMapping:
+        """A dict of the metadata that is assigned to the output at execution time."""
+        return self._output_metadata
 
     @public
     @property
@@ -725,6 +733,7 @@ def get_output_context(
     resources: Optional["Resources"],
     version: Optional[str],
     warn_on_step_context_use: bool = False,
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Args:
     run_id (str): The run ID of the run that produced the output, not necessarily the run that
@@ -781,6 +790,7 @@ def get_output_context(
         resources=resources,
         asset_info=asset_info,
         warn_on_step_context_use=warn_on_step_context_use,
+        output_metadata=output_metadata,
     )
 
 
