@@ -145,6 +145,7 @@ Now we’re ready to create the asset!
        base64_data = base64.b64encode(image_data).decode('utf-8')
        md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
        
+       #TODO: Use `MaterializeResult` instead
        context.add_output_metadata({
            "preview": MetadataValue.md(md_content),
            "data": MetadataValue.json(airport_trips.to_dict(orient="records"))
