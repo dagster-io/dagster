@@ -23,7 +23,7 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -818,18 +818,21 @@ def job_execution_iterator(
                     job_context,
                     "Execution was interrupted unexpectedly. "
                     "No user initiated termination request was found, treating as failure.",
-                    job_canceled_info,
+                    failure_reason=RunFailureReason.UNEXPECTED_TERMINATION,
+                    error_info=job_canceled_info,
                 )
         elif job_exception_info:
             event = DagsterEvent.job_failure(
                 job_context,
                 "An exception was thrown during execution.",
-                job_exception_info,
+                failure_reason=RunFailureReason.RUN_EXCEPTION,
+                error_info=job_exception_info,
             )
         elif failed_steps:
             event = DagsterEvent.job_failure(
                 job_context,
                 f"Steps failed: {failed_steps}.",
+                failure_reason=RunFailureReason.STEP_FAILURE,
             )
         else:
             event = DagsterEvent.job_success(job_context)

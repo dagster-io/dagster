@@ -41,11 +41,11 @@ def test_get_asset_keys_by_output_name_for_source(my_dbt_assets: AssetsDefinitio
 
 
 def test_get_asset_keys_for_model(my_dbt_assets: AssetsDefinition) -> None:
+    assert get_asset_key_for_model([my_dbt_assets], "raw_customers") == AssetKey(["raw_customers"])
     assert get_asset_key_for_model([my_dbt_assets], "stg_customers") == AssetKey(
         ["customized", "staging", "customers"]
     )
-
     assert get_asset_key_for_model([my_dbt_assets], "customers") == AssetKey(["customers"])
 
-    with pytest.raises(KeyError, match="Could not find a dbt model with name"):
+    with pytest.raises(KeyError, match="Could not find a dbt model, seed, or snapshot with name"):
         get_asset_key_for_model([my_dbt_assets], "nonexistent")

@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
@@ -29,7 +29,7 @@ def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsD
 
 @pytest.fixture(name="asset_graph", scope="module")
 def asset_graph_fixture(my_dbt_assets: AssetsDefinition) -> InternalAssetGraph:
-    return AssetGraph.from_assets([my_dbt_assets])
+    return InternalAssetGraph.from_assets([my_dbt_assets])
 
 
 ALL_ASSET_KEYS = {

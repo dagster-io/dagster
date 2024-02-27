@@ -357,7 +357,10 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
 
         with patch(
-            "dagster._core.instance.DagsterInstance.auto_materialize_use_sensors",
+            graphql_context.instance.__class__.__module__
+            + "."
+            + graphql_context.instance.__class__.__name__
+            + ".auto_materialize_use_sensors",
             new_callable=PropertyMock,
         ) as mock_my_property:
             mock_my_property.return_value = True

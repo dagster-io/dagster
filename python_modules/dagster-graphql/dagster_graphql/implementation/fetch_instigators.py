@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.selector import InstigatorSelector
-from dagster._core.log_manager import DAGSTER_META_KEY
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -56,7 +56,7 @@ def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigat
     events = []
     for record_dict in records:
         exc_info = record_dict.get("exc_info")
-        message = record_dict[DAGSTER_META_KEY]["orig_message"]
+        message = record_dict[LOG_RECORD_METADATA_ATTR]["orig_message"]
         if exc_info:
             message = f"{message}\n\n{exc_info}"
 

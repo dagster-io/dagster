@@ -53,32 +53,32 @@ def test_kwargs_order_irrelevant_and_no_kwargs():
 
 
 def test_does_not_leak():
-    class KeyClass(NamedTuple):
+    class LeakTestKey(NamedTuple):
         attr: str
 
-    class ValueClass(NamedTuple):
+    class LeakTestValue(NamedTuple):
         attr: str
 
-    class MyClass:
+    class LeakTestObj:
         @cached_method
-        def my_method(self, _arg1: KeyClass) -> ValueClass:
-            return ValueClass("abc")
+        def my_method(self, _arg1: LeakTestKey) -> LeakTestValue:
+            return LeakTestValue("abc")
 
-    obj = MyClass()
-    assert objgraph.count("MyClass") == 1
-    assert objgraph.count("KeyClass") == 0
-    assert objgraph.count("ValueClass") == 0
+    obj = LeakTestObj()
+    assert objgraph.count("LeakTestObj") == 1
+    assert objgraph.count("LeakTestKey") == 0
+    assert objgraph.count("LeakTestValue") == 0
 
-    obj.my_method(_arg1=KeyClass("1234"))
-    assert objgraph.count("MyClass") == 1
-    assert objgraph.count("KeyClass") == 1
-    assert objgraph.count("ValueClass") == 1
+    obj.my_method(_arg1=LeakTestKey("1234"))
+    assert objgraph.count("LeakTestObj") == 1
+    assert objgraph.count("LeakTestKey") == 1
+    assert objgraph.count("LeakTestValue") == 1
 
     del obj
     gc.collect()
-    assert objgraph.count("MyClass") == 0
-    assert objgraph.count("KeyClass") == 0
-    assert objgraph.count("ValueClass") == 0
+    assert objgraph.count("LeakTestObj") == 0
+    assert objgraph.count("LeakTestKey") == 0
+    assert objgraph.count("LeakTestValue") == 0
 
 
 def test_collisions():

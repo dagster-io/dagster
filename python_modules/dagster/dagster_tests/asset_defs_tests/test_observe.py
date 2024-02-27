@@ -1,7 +1,12 @@
 from typing import Optional
 
 import pytest
-from dagster import DataVersionsByPartition, IOManager, StaticPartitionsDefinition
+from dagster import (
+    ConfigurableResource,
+    DataVersionsByPartition,
+    IOManager,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
@@ -18,6 +23,7 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance_for_test import instance_for_test
 
 
 def _get_current_data_version(
@@ -189,3 +195,34 @@ def test_observe_with_observe_result_no_data_version():
     assert len(observations) == 1
     assert _get_current_data_version(AssetKey("foo"), instance) is None
     assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def test_observe_pythonic_resource():
+    with instance_for_test() as instance:
+
+        class FooResource(ConfigurableResource):
+            foo: str
+
+        @observable_source_asset
+        def foo(foo: FooResource) -> DataVersion:
+            return DataVersion(f"{foo.foo}-alpha")
+
+        observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+        assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
+
+
+def test_observe_backcompat_pythonic_resource():
+    class FooResource(ConfigurableResource):
+        foo: str
+
+        def get_object_to_set_on_execution_context(self):
+            raise Exception("Shouldn't get here")
+
+    @observable_source_asset
+    def foo(foo: FooResource) -> DataVersion:
+        return DataVersion(f"{foo.foo}-alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")

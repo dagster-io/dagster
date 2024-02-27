@@ -89,7 +89,9 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
     def fn(context: OpExecutionContext) -> Output[None]:
         resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
-        resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
+        resource_kwargs = {
+            key: context.resources.original_resource_dict.get(key) for key in resource_kwarg_keys
+        }
         observe_fn_return_value = (
             observe_fn(context, **resource_kwargs)
             if observe_fn_has_context

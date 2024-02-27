@@ -98,6 +98,8 @@ const AssetSelectionLink = ({
     [sortedAssets],
   );
 
+  const assetSelectionString = assetSelection.assetSelectionString || '';
+
   return (
     <>
       <Dialog
@@ -142,7 +144,8 @@ const AssetSelectionLink = ({
           setShowAssetSelection(true);
         }}
       >
-        {assetSelection.assetSelectionString}
+        {assetSelectionString.slice(0, 1).toUpperCase()}
+        {assetSelectionString.slice(1)}
       </ButtonLink>
     </>
   );

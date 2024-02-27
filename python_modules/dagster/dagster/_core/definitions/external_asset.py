@@ -97,9 +97,6 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
         )
         check.invariant(spec.code_version is None, "code_version must be None since it is ignored")
         check.invariant(
-            spec.freshness_policy is None, "freshness_policy must be None since it is ignored"
-        )
-        check.invariant(
             spec.skippable is False,
             "skippable must be False since it is ignored and False is the default",
         )
@@ -111,6 +108,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
+                    freshness_policy=spec.freshness_policy,
                     metadata={
                         **(spec.metadata or {}),
                         **{
@@ -167,6 +165,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             # includes requirements for the io manager. Those requirements will be inferred again when
             # we create an AssetsDefinition.
             required_resource_keys=source_asset._required_resource_keys,  # noqa: SLF001
+            freshness_policy=source_asset.freshness_policy,
         )
         def _shim_assets_def(context: AssetExecutionContext):
             if not source_asset.observe_fn:

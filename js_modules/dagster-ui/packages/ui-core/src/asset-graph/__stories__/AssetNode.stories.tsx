@@ -52,14 +52,13 @@ export const LiveStates = () => {
           >
             <AssetNode definition={definitionCopy} selected={false} />
           </div>
-          <div style={{position: 'relative', width: dimensions.width, height: 82}}>
-            <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
+          <div style={{position: 'relative', width: dimensions.width, height: 104}}>
+            <div style={{position: 'absolute', width: dimensions.width}}>
               <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
             </div>
           </div>
           <code>
             <strong>{scenario.title}</strong>
-            <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
           </code>
         </Box>
       </>

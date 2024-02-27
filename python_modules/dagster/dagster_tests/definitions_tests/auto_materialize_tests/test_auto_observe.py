@@ -6,8 +6,8 @@ from dagster._core.definitions.asset_daemon_context import (
     get_auto_observe_run_requests,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from pytest import fixture
 
 
@@ -16,7 +16,7 @@ def test_single_observable_source_asset_no_auto_observe():
     def asset1():
         ...
 
-    asset_graph = AssetGraph.from_assets([asset1])
+    asset_graph = InternalAssetGraph.from_assets([asset1])
 
     assert (
         len(
@@ -25,7 +25,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={},
                 run_tags={},
-                auto_observe_asset_keys=asset_graph.source_asset_keys,
+                auto_observe_asset_keys=asset_graph.external_asset_keys,
             )
         )
         == 0
@@ -38,7 +38,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): 1},
                 run_tags={},
-                auto_observe_asset_keys=asset_graph.source_asset_keys,
+                auto_observe_asset_keys=asset_graph.external_asset_keys,
             )
         )
         == 0
@@ -52,7 +52,7 @@ def single_auto_observe_asset_graph(request):
         ...
 
     observable = create_external_asset_from_source_asset(asset1) if request.param else asset1
-    asset_graph = AssetGraph.from_assets([observable])
+    asset_graph = InternalAssetGraph.from_assets([observable])
     return asset_graph
 
 
@@ -64,7 +64,7 @@ def test_single_observable_source_asset_no_prior_observe_requests(
         current_timestamp=1000,
         last_observe_request_timestamp_by_asset_key={},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -81,7 +81,7 @@ def test_single_observable_source_asset_prior_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 + 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -98,7 +98,7 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 - 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
-        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_keys,
+        auto_observe_asset_keys=single_auto_observe_asset_graph.observable_asset_keys,
     )
     assert len(run_requests) == 0
 
@@ -108,7 +108,7 @@ def test_reconcile():
     def asset1():
         ...
 
-    asset_graph = AssetGraph.from_assets([asset1])
+    asset_graph = InternalAssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()
 
     run_requests, cursor, _ = AssetDaemonContext(

@@ -8,6 +8,7 @@ import {
   buildConfigTypeField,
   buildDimensionDefinitionType,
   buildPartitionDefinition,
+  buildQuery,
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
@@ -277,10 +278,10 @@ export const ReleasesWorkspace: MockedResponse<LaunchAssetLoaderQuery> = {
     },
   },
   result: {
-    data: {
-      __typename: 'Query' as const,
-      assetNodes: assetNodes as any[],
+    data: buildQuery({
+      assetNodes,
       assetNodeDefinitionCollisions: [],
-    },
+      assetNodeAdditionalRequiredKeys: [],
+    }),
   },
 };

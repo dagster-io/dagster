@@ -7,6 +7,7 @@ import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from pathlib import Path
 from signal import Signals
 from threading import Event
 from typing import (
@@ -32,6 +33,7 @@ from typing_extensions import Self
 from dagster import (
     Permissive,
     Shape,
+    __file__ as dagster_init_py,
     _check as check,
     fs_io_manager,
 )
@@ -697,6 +699,22 @@ def raise_exception_on_warnings():
     warnings.resetwarnings()
     warnings.filterwarnings("error")
 
+    # This resource warning can sometimes appear (nondeterministically) when ephemeral instances are
+    # used in tests. There seems to be an issue at the intersection of `DagsterInstance` weakrefs
+    # and guaranteeing timely cleanup of the LocalArtifactStorage for the instance
+    # LocalArtifactStorage.
+    warnings.filterwarnings(
+        "ignore", category=ResourceWarning, message=r".*Implicitly cleaning up.*"
+    )
+
     if sys.version_info >= (3, 12):
         # pendulum sometimes raises DeprecationWarning on python3.12
         warnings.filterwarnings("ignore", category=DeprecationWarning, module="pendulum")
+
+
+def ensure_dagster_tests_import() -> None:
+    dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_package_root / "dagster_tests"
+    ).exists(), "Could not find dagster_tests where expected"
+    sys.path.append(dagster_package_root.as_posix())

@@ -120,6 +120,10 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         return self._specs_by_output_name.values()
 
     @property
+    def keys(self) -> Iterable[AssetCheckKey]:
+        return self._specs_by_handle.keys()
+
+    @property
     def specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return self._specs_by_output_name
 

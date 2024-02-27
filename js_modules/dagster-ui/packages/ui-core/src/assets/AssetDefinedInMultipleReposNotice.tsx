@@ -13,6 +13,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
+export const ADDITIONAL_REQUIRED_KEYS_WARNING = 'Additional assets will be materialized';
 
 export const AssetDefinedInMultipleReposNotice = ({
   assetKey,

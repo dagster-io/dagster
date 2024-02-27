@@ -7,15 +7,13 @@ from dagster import (
     AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
-    AssetOut,
     AssetSpec,
     IOManager,
     StaticPartitionsDefinition,
     asset,
     build_op_context,
     instance_for_test,
-    materialize,
-    multi_asset,
+    multi_observable_source_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import (
@@ -23,16 +21,11 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-
-
-def _exec_asset(asset_def, selection=None, partition_key=None):
-    result = materialize([asset_def], selection=selection, partition_key=partition_key)
-    assert result.success
-    return result.asset_observations_for_node(asset_def.node_def.name)
 
 
 def _with_observe_metadata(kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -49,22 +42,6 @@ def _external_observable_asset(**kwargs) -> Callable[..., AssetsDefinition]:
     return _decorator
 
 
-def _external_observable_multi_asset(**kwargs) -> Callable[..., AssetsDefinition]:
-    def _decorator(fn: Callable[..., Any]) -> AssetsDefinition:
-        if "outs" in kwargs:
-            kwargs["outs"] = {
-                name: AssetOut(**_with_observe_metadata(out._asdict()))
-                for name, out in kwargs["outs"].items()
-            }
-        elif "specs" in kwargs:
-            kwargs["specs"] = [
-                AssetSpec(**_with_observe_metadata(spec._asdict())) for spec in kwargs["specs"]
-            ]
-        return multi_asset(**kwargs)(fn)
-
-    return _decorator
-
-
 def test_observe_result_asset():
     @_external_observable_asset()
     def ret_untyped(context: AssetExecutionContext):
@@ -72,7 +49,9 @@ def test_observe_result_asset():
             metadata={"one": 1},
         )
 
-    observations = _exec_asset(ret_untyped)
+    result = observe([ret_untyped])
+    assert result.success
+    observations = result.asset_observations_for_node(ret_untyped.node_def.name)
     assert len(observations) == 1, observations
     assert "one" in observations[0].metadata
 
@@ -89,7 +68,7 @@ def test_observe_result_asset():
         DagsterInvariantViolationError,
         match="Asset key random not found in AssetsDefinition",
     ):
-        materialize([ret_mismatch])
+        observe([ret_mismatch])
 
     # direct invocation
     with pytest.raises(
@@ -104,7 +83,7 @@ def test_observe_result_asset():
         return ObserveResult(metadata={"one": 1}), ObserveResult(metadata={"two": 2})
 
     # core execution
-    result = materialize([ret_two])
+    result = observe([ret_two])
     assert result.success
 
     # direct invocation
@@ -126,7 +105,7 @@ def test_return_observe_result_with_asset_checks():
             )
 
         # core execution
-        materialize([ret_checks], instance=instance)
+        observe([ret_checks], instance=instance)
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
             AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
@@ -141,19 +120,19 @@ def test_return_observe_result_with_asset_checks():
 
 
 def test_multi_asset_observe_result():
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def outs_multi_asset():
         return ObserveResult(asset_key="one", metadata=({"foo": "bar"})), ObserveResult(
             asset_key="two", metadata={"baz": "qux"}
         )
 
-    assert materialize([outs_multi_asset]).success
+    assert observe([outs_multi_asset]).success
 
     res = outs_multi_asset()
     assert res[0].metadata["foo"] == "bar"
     assert res[1].metadata["baz"] == "qux"
 
-    @_external_observable_multi_asset(
+    @multi_observable_source_asset(
         specs=[
             AssetSpec(["prefix", "one"]),
             AssetSpec(["prefix", "two"]),
@@ -164,7 +143,7 @@ def test_multi_asset_observe_result():
             asset_key=["prefix", "two"], metadata={"baz": "qux"}
         )
 
-    assert materialize([specs_multi_asset]).success
+    assert observe([specs_multi_asset]).success
 
     res = specs_multi_asset()
     assert res[0].metadata["foo"] == "bar"
@@ -175,7 +154,7 @@ def test_yield_materialization_multi_asset():
     #
     # yield successful
     #
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def multi():
         yield ObserveResult(
             asset_key="one",
@@ -186,11 +165,12 @@ def test_yield_materialization_multi_asset():
             metadata={"two": 2},
         )
 
-    mats = _exec_asset(multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert "two" in mats[1].metadata
+    result = observe([multi])
+    assert result.success
+    observations = result.asset_observations_for_node(multi.node_def.name)
+    assert len(observations) == 2
+    assert "one" in observations[0].metadata
+    assert "two" in observations[1].metadata
 
     direct_results = list(multi())
     assert len(direct_results) == 2
@@ -198,7 +178,7 @@ def test_yield_materialization_multi_asset():
     #
     # missing a non optional out
     #
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def missing():
         yield ObserveResult(
             asset_key="one",
@@ -212,7 +192,7 @@ def test_yield_materialization_multi_asset():
             'Core compute for op "missing" did not return an output for non-optional output "two"'
         ),
     ):
-        _exec_asset(missing)
+        observe([missing])
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -223,7 +203,7 @@ def test_yield_materialization_multi_asset():
     #
     # missing asset_key
     #
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def no_key():
         yield ObserveResult(
             metadata={"one": 1},
@@ -239,7 +219,7 @@ def test_yield_materialization_multi_asset():
             " asset_key, options are:"
         ),
     ):
-        _exec_asset(no_key)
+        observe([no_key])
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -253,7 +233,7 @@ def test_yield_materialization_multi_asset():
     #
     # return tuple success
     #
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def ret_multi():
         return (
             ObserveResult(
@@ -266,11 +246,12 @@ def test_yield_materialization_multi_asset():
             ),
         )
 
-    mats = _exec_asset(ret_multi)
-
-    assert len(mats) == 2, mats
-    assert "one" in mats[0].metadata
-    assert "two" in mats[1].metadata
+    result = observe([ret_multi])
+    assert result.success
+    observations = result.asset_observations_for_node(ret_multi.node_def.name)
+    assert len(observations) == 2
+    assert "one" in observations[0].metadata
+    assert "two" in observations[1].metadata
 
     res = ret_multi()
     assert len(res) == 2
@@ -278,7 +259,7 @@ def test_yield_materialization_multi_asset():
     #
     # return list error
     #
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def ret_list():
         return [
             ObserveResult(
@@ -299,7 +280,7 @@ def test_yield_materialization_multi_asset():
             " value for each output."
         ),
     ):
-        _exec_asset(ret_list)
+        observe([ret_list])
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -327,31 +308,31 @@ def test_observe_result_output_typing():
     def asset_with_type_annotation() -> ObserveResult:
         return ObserveResult(metadata={"foo": "bar"})
 
-    assert materialize(
+    assert observe(
         [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def multi_asset_with_outs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @_external_observable_multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def multi_asset_with_specs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @_external_observable_multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def multi_asset_with_specs_and_no_type_annotation():
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
-    assert materialize(
+    assert observe(
         [multi_asset_with_specs_and_no_type_annotation],
         resources={"io_manager": TestingIOManager()},
     ).success
@@ -376,12 +357,12 @@ def test_observe_result_output_typing():
             ]
         )
 
-    assert materialize(
+    assert observe(
         [with_checks],
         resources={"io_manager": TestingIOManager()},
     ).success
 
-    @_external_observable_multi_asset(
+    @multi_observable_source_asset(
         specs=[
             AssetSpec("asset_one"),
             AssetSpec("asset_two"),
@@ -412,7 +393,7 @@ def test_observe_result_output_typing():
             ],
         )
 
-    assert materialize(
+    assert observe(
         [multi_checks],
         resources={"io_manager": TestingIOManager()},
     ).success
@@ -435,7 +416,7 @@ def test_generator_return_type_annotation():
     def generator_asset() -> Generator[ObserveResult, None, None]:
         yield ObserveResult(metadata={"foo": "bar"})
 
-    materialize([generator_asset], resources={"io_manager": TestingIOManager()})
+    observe([generator_asset], resources={"io_manager": TestingIOManager()})
 
 
 def test_observe_result_generators():
@@ -443,69 +424,79 @@ def test_observe_result_generators():
     def generator_asset() -> Generator[ObserveResult, None, None]:
         yield ObserveResult(metadata={"foo": "bar"})
 
-    res = _exec_asset(generator_asset)
-    assert len(res) == 1
-    assert res[0].metadata["foo"].value == "bar"
+    result = observe([generator_asset])
+    assert result.success
+    observations = result.asset_observations_for_node(generator_asset.node_def.name)
+    assert len(observations) == 1
+    assert observations[0].metadata["foo"].value == "bar"
 
-    res = list(generator_asset())
-    assert len(res) == 1
-    assert res[0].metadata["foo"] == "bar"
+    result = list(generator_asset())
+    assert len(result) == 1
+    assert result[0].metadata["foo"] == "bar"
 
-    @_external_observable_multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def generator_specs_multi_asset():
         yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
         yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
-    res = _exec_asset(generator_specs_multi_asset)
-    assert len(res) == 2
-    assert res[0].metadata["foo"].value == "bar"
-    assert res[1].metadata["baz"].value == "qux"
+    result = observe([generator_specs_multi_asset])
+    assert result.success
+    observations = result.asset_observations_for_node(generator_specs_multi_asset.node_def.name)
+    assert len(observations) == 2
+    assert observations[0].metadata["foo"].value == "bar"
+    assert observations[1].metadata["baz"].value == "qux"
 
-    res = list(generator_specs_multi_asset())
-    assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    result = list(generator_specs_multi_asset())
+    assert len(result) == 2
+    assert result[0].metadata["foo"] == "bar"
+    assert result[1].metadata["baz"] == "qux"
 
-    @_external_observable_multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def generator_outs_multi_asset():
         yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
         yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
-    res = _exec_asset(generator_outs_multi_asset)
-    assert len(res) == 2
-    assert res[0].metadata["foo"].value == "bar"
-    assert res[1].metadata["baz"].value == "qux"
+    result = observe([generator_outs_multi_asset])
+    assert result.success
+    observations = result.asset_observations_for_node(generator_outs_multi_asset.node_def.name)
+    assert len(observations) == 2
+    assert observations[0].metadata["foo"].value == "bar"
+    assert observations[1].metadata["baz"].value == "qux"
 
-    res = list(generator_outs_multi_asset())
-    assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    result = list(generator_outs_multi_asset())
+    assert len(result) == 2
+    assert result[0].metadata["foo"] == "bar"
+    assert result[1].metadata["baz"] == "qux"
 
-    @_external_observable_multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     async def async_specs_multi_asset():
         return ObserveResult(asset_key="one", metadata={"foo": "bar"}), ObserveResult(
             asset_key="two", metadata={"baz": "qux"}
         )
 
-    res = _exec_asset(async_specs_multi_asset)
-    assert len(res) == 2
-    assert res[0].metadata["foo"].value == "bar"
-    assert res[1].metadata["baz"].value == "qux"
+    result = observe([async_specs_multi_asset])
+    assert result.success
+    observations = result.asset_observations_for_node(async_specs_multi_asset.node_def.name)
+    assert len(observations) == 2
+    assert observations[0].metadata["foo"].value == "bar"
+    assert observations[1].metadata["baz"].value == "qux"
 
-    res = asyncio.run(async_specs_multi_asset())
-    assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    result = asyncio.run(async_specs_multi_asset())
+    assert len(result) == 2
+    assert result[0].metadata["foo"] == "bar"
+    assert result[1].metadata["baz"] == "qux"
 
-    @_external_observable_multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     async def async_gen_specs_multi_asset():
         yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
         yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
-    res = _exec_asset(async_gen_specs_multi_asset)
-    assert len(res) == 2
-    assert res[0].metadata["foo"].value == "bar"
-    assert res[1].metadata["baz"].value == "qux"
+    result = observe([async_gen_specs_multi_asset])
+    assert result.success
+    observations = result.asset_observations_for_node(async_gen_specs_multi_asset.node_def.name)
+    assert len(observations) == 2
+    assert observations[0].metadata["foo"].value == "bar"
+    assert observations[1].metadata["baz"].value == "qux"
 
     async def _run_async_gen():
         results = []
@@ -513,10 +504,10 @@ def test_observe_result_generators():
             results.append(result)
         return results
 
-    res = asyncio.run(_run_async_gen())
-    assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    result = asyncio.run(_run_async_gen())
+    assert len(result) == 2
+    assert result[0].metadata["foo"] == "bar"
+    assert result[1].metadata["baz"] == "qux"
 
 
 def test_observe_result_with_partitions():
@@ -526,9 +517,11 @@ def test_observe_result_with_partitions():
     def partitioned_asset(context: AssetExecutionContext) -> ObserveResult:
         return ObserveResult(metadata={"key": context.partition_key})
 
-    mats = _exec_asset(partitioned_asset, partition_key="red")
-    assert len(mats) == 1, mats
-    assert mats[0].metadata["key"].text == "red"
+    result = observe([partitioned_asset], partition_key="red")
+    assert result.success
+    observations = result.asset_observations_for_node(partitioned_asset.node_def.name)
+    assert len(observations) == 1
+    assert observations[0].metadata["key"].text == "red"
 
 
 def test_observe_result_with_partitions_direct_invocation():

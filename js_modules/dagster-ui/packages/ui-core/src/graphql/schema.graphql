@@ -647,6 +647,7 @@ type AssetNode {
     limit: Int
   ): [ObservationEvent!]!
   backfillPolicy: BackfillPolicy
+  changedReasons: [ChangeReason!]!
   computeKind: String
   configField: ConfigTypeField
   dataVersion(partition: String): String
@@ -710,6 +711,13 @@ type BackfillPolicy {
 enum BackfillPolicyType {
   SINGLE_RUN
   MULTI_RUN
+}
+
+enum ChangeReason {
+  NEW
+  CODE_VERSION
+  INPUTS
+  PARTITIONS_DEFINITION
 }
 
 type AssetDependency {
@@ -2064,7 +2072,7 @@ type Repository {
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
-  sensors: [Sensor!]!
+  sensors(sensorType: SensorType): [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
@@ -2093,6 +2101,16 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+}
+
+enum SensorType {
+  STANDARD
+  RUN_STATUS
+  ASSET
+  MULTI_ASSET
+  FRESHNESS_POLICY
+  AUTO_MATERIALIZE
+  UNKNOWN
 }
 
 type AssetGroup {
@@ -2904,16 +2922,6 @@ type SensorMetadata {
   assetKeys: [AssetKey!]
 }
 
-enum SensorType {
-  STANDARD
-  RUN_STATUS
-  ASSET
-  MULTI_ASSET
-  FRESHNESS_POLICY
-  AUTO_MATERIALIZE
-  UNKNOWN
-}
-
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
@@ -3170,7 +3178,8 @@ type Query {
     loadMaterializations: Boolean = false
   ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
-  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]): [AssetNodeDefinitionCollision!]!
+  assetNodeAdditionalRequiredKeys(assetKeys: [AssetKeyInput!]!): [AssetKey!]!
+  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]!): [AssetNodeDefinitionCollision!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
   partitionBackfillsOrError(

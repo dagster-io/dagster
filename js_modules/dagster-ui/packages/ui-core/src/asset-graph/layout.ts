@@ -3,6 +3,8 @@ import * as dagre from 'dagre';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import {IBounds, IPoint} from '../graph/common';
 
+export type AssetLayoutDirection = 'vertical' | 'horizontal';
+
 export interface AssetLayout {
   id: GraphId;
   bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
@@ -33,7 +35,7 @@ export type AssetGraphLayout = {
 const MARGIN = 100;
 
 export type LayoutAssetGraphOptions = {
-  horizontalDAGs: boolean;
+  direction: AssetLayoutDirection;
 };
 
 export const layoutAssetGraph = (
@@ -45,7 +47,7 @@ export const layoutAssetGraph = (
   const ranker = 'tight-tree';
 
   g.setGraph(
-    opts.horizontalDAGs
+    opts.direction === 'horizontal'
       ? {
           rankdir: 'LR',
           marginx: MARGIN,
@@ -61,7 +63,7 @@ export const layoutAssetGraph = (
           marginy: MARGIN,
           nodesep: 40,
           edgesep: 10,
-          ranksep: 10,
+          ranksep: 20,
           ranker,
         },
   );
@@ -95,7 +97,7 @@ export const layoutAssetGraph = (
       if (expandedGroups.includes(groupId)) {
         g.setNode(groupId, {}); // sized based on it's children
       } else {
-        g.setNode(groupId, {width: 270, height: 110});
+        g.setNode(groupId, {width: 320, height: 110});
       }
     });
   }
@@ -202,7 +204,10 @@ export const layoutAssetGraph = (
     }
     for (const group of Object.values(groups)) {
       if (group.expanded) {
-        group.bounds = padBounds(group.bounds, {x: 15, top: 65, bottom: -15});
+        group.bounds =
+          opts.direction === 'horizontal'
+            ? padBounds(group.bounds, {x: 15, top: 65, bottom: -15})
+            : padBounds(group.bounds, {x: 15, top: 40, bottom: -20});
       }
     }
   }
@@ -220,7 +225,7 @@ export const layoutAssetGraph = (
 
     // Ignore the coordinates from dagre and use the top left + bottom left of the
     edges.push(
-      opts.horizontalDAGs
+      opts.direction === 'horizontal'
         ? {
             from: {x: v.x + v.width / 2, y: v.y},
             fromId: e.v,
@@ -245,12 +250,12 @@ export const layoutAssetGraph = (
   };
 };
 
-export const ASSET_LINK_NAME_MAX_LENGTH = 10;
+export const ASSET_LINK_NAME_MAX_LENGTH = 30;
 
 export const getAssetLinkDimensions = (label: string, opts: LayoutAssetGraphOptions) => {
-  return opts.horizontalDAGs
-    ? {width: 32 + 8 * Math.min(ASSET_LINK_NAME_MAX_LENGTH, label.length), height: 90}
-    : {width: 106, height: 90};
+  return opts.direction === 'horizontal'
+    ? {width: 32 + 7.1 * Math.min(ASSET_LINK_NAME_MAX_LENGTH, label.length), height: 50}
+    : {width: 106, height: 50};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
@@ -270,7 +275,7 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
   return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
-export const ASSET_NODE_NAME_MAX_LENGTH = 28;
+export const ASSET_NODE_NAME_MAX_LENGTH = 38;
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
@@ -282,14 +287,12 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const width = 265;
+  const width = 320;
 
   let height = 100; // top tags area + name + description
 
   if (def.isSource && def.isObservable) {
     height += 30; // status row
-  } else if (def.isSource) {
-    height += 0; // no status row
   } else {
     height += 26; // status row
     if (def.isPartitioned) {

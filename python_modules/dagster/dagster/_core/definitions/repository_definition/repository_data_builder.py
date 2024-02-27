@@ -23,7 +23,7 @@ from dagster._config.pythonic_config import (
     ResourceWithKeyMapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
@@ -32,7 +32,9 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partitioned_schedule import (
@@ -225,6 +227,7 @@ def build_caching_repository_data_from_list(
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
+            assets_defs.append(create_external_asset_from_source_asset(definition))
         elif isinstance(definition, AssetChecksDefinition):
             asset_checks_defs.append(definition)
         else:
@@ -233,7 +236,6 @@ def build_caching_repository_data_from_list(
     if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
             assets=assets_defs,
-            source_assets=source_assets,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
             asset_checks=asset_checks_defs,
@@ -261,9 +263,7 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets(
-        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
-    )
+    asset_graph = InternalAssetGraph.from_assets(assets_defs, asset_checks=asset_checks_defs)
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
 
     if unresolved_partitioned_asset_schedules:
@@ -362,7 +362,7 @@ def build_caching_repository_data_from_dict(
         elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
             repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
-                asset_graph=AssetGraph.from_assets([]),
+                asset_graph=InternalAssetGraph.from_assets([]),
                 default_executor_def=None,
             )
         elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):
