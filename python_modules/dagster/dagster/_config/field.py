@@ -33,7 +33,7 @@ VALID_CONFIG_DESC = """
    values in the dictionary get resolved by the same rules, recursively.
 
 4. A bare python list of length one which itself is config type.
-   Becomes Array with list element as an argument.
+   Becomes Array wtestith list element as an argument.
 """
 
 
