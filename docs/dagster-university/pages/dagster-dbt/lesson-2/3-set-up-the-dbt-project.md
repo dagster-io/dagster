@@ -6,7 +6,7 @@ lesson: '2'
 
 # Set up the dbt project
 
-Next, you’ll notice that there is a dbt project called `analytics` in the repository you cloned. During the course of this module, you’ll add new dbt models and see them reflected in Dagster.
+Next, you’ll notice that there is a dbt project called `analytics` in the repository you cloned. Throughout the duration of this module, you’ll add new dbt models and see them reflected in Dagster.
 
 
 1. Navigate into the directory by running:
