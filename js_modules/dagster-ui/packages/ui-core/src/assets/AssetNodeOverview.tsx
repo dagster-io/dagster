@@ -96,6 +96,7 @@ export const AssetNodeOverview = ({
     assetNodeLoadTimestamp,
     liveData,
   );
+  const {UserDisplay} = useLaunchPadHooks();
 
   if (loading) {
     return <AssetNodeOverviewLoading />;
@@ -176,7 +177,6 @@ export const AssetNodeOverview = ({
     </>
   );
 
-  const {UserDisplay} = useLaunchPadHooks();
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Key">
@@ -206,8 +206,8 @@ export const AssetNodeOverview = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {assetNode.owners && (
-          <Box flex={{gap: 4}}>
+        {assetNode.owners && assetNode.owners.length > 0 && (
+          <Box flex={{gap: 4, alignItems: 'center'}}>
             {assetNode.owners.map((owner, idx) =>
               owner.__typename === 'UserAssetOwner' ? (
                 <UserAssetOwnerWrapper key={idx}>
