@@ -1,4 +1,4 @@
-from typing import AbstractSet, Iterable, List, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -19,15 +19,9 @@ class InternalAssetGraph(AssetGraph):
     def __init__(
         self,
         assets_defs: Sequence[AssetsDefinition],
-        source_assets: Sequence[SourceAsset],
         asset_checks_defs: Sequence[AssetChecksDefinition],
     ):
-        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-
-        self._assets_defs = [
-            *assets_defs,
-            *(create_external_asset_from_source_asset(sa) for sa in source_assets),
-        ]
+        self._assets_defs = assets_defs
         self._assets_defs_by_key = {key: asset for asset in self._assets_defs for key in asset.keys}
         self._assets_defs_by_check_key = {
             **{check_key: asset for asset in assets_defs for check_key in asset.check_keys},
@@ -49,19 +43,15 @@ class InternalAssetGraph(AssetGraph):
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
-        from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
+        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
-        assets_defs: List[AssetsDefinition] = []
-        source_assets: List[SourceAsset] = []
-        for asset in all_assets:
-            if isinstance(asset, SourceAsset):
-                source_assets.append(asset)
-            else:  # AssetsDefinition
-                assets_defs.append(asset)
+        assets_defs = [
+            create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
+            for a in all_assets
+        ]
         return InternalAssetGraph(
             assets_defs=assets_defs,
             asset_checks_defs=asset_checks or [],
-            source_assets=source_assets,
         )
 
     @property

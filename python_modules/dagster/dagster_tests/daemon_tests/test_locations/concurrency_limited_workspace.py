@@ -6,7 +6,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 
 
@@ -33,7 +33,7 @@ concurrency_limited_asset_job = define_asset_job(
     "concurrency_limited_asset_job",
     [foo_limited_asset, bar_limited_asset, baz_limited_asset_depends_on_foo],
 ).resolve(
-    asset_graph=AssetGraph.from_assets(
+    asset_graph=InternalAssetGraph.from_assets(
         [foo_limited_asset, bar_limited_asset, baz_limited_asset_depends_on_foo]
     )
 )

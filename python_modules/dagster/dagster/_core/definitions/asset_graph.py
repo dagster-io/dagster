@@ -1,5 +1,5 @@
 import functools
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import deque
 from datetime import datetime
 from heapq import heapify, heappop, heappush
@@ -10,7 +10,6 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -23,11 +22,8 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import (
@@ -54,7 +50,6 @@ from .time_window_partitions import (
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-    from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 
 AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
 
@@ -72,29 +67,7 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-class AssetGraph:
-    @staticmethod
-    def from_assets(
-        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
-        asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
-    ) -> "InternalAssetGraph":
-        from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
-
-        assets_defs: List[AssetsDefinition] = []
-        source_assets: List[SourceAsset] = []
-
-        for asset in all_assets:
-            if isinstance(asset, SourceAsset):
-                source_assets.append(asset)
-            else:  # AssetsDefinition
-                assets_defs.append(asset)
-
-        return InternalAssetGraph(
-            assets_defs=assets_defs,
-            asset_checks_defs=asset_checks or [],
-            source_assets=source_assets,
-        )
-
+class AssetGraph(ABC):
     @property
     @abstractmethod
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -107,11 +80,6 @@ class AssetGraph:
     @property
     @abstractmethod
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        ...
-
-    @property
-    @abstractmethod
-    def source_asset_keys(self) -> AbstractSet[AssetKey]:
         ...
 
     @property
