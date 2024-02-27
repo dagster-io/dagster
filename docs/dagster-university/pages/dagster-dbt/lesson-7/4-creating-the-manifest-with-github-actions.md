@@ -6,7 +6,7 @@ lesson: '7'
 
 # Creating the manifest with GitHub Actions
 
-To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because, during local development, we built this file by running `dbt parse`., as you learned in Lesson 3 and improved in Lesson 4. However, Dagster Cloud’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
+To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, Dagster Cloud’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
 
 To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the dbt commands required to generate the `manifest.json`. Specifically, we need to run `dbt deps` and `dbt parse` in the dbt project, just like you did during local development.
 
