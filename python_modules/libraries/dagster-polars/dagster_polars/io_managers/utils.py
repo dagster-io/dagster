@@ -78,7 +78,7 @@ def get_table_metadata(
     fraction: Optional[float] = None,
 ) -> Optional[TableMetadataValue]:
     """Takes the polars DataFrame and takes a sample of the data and returns it as TableMetaDataValue.
-    A lazyframe this is not possible without doing possible a very costly operation.
+    With LazyFrame this is not possible without doing possible a very costly operation.
 
     Args:
         context (OutputContext): output context
@@ -90,7 +90,7 @@ def get_table_metadata(
     Returns:
         Tuple[TableSchema, Optional[TableMetadataValue]]: schema metadata, and optional sample metadata
     """
-    assert not fraction and n_rows, "only one of n_rows and frac should be set"
+    assert not fraction and n_rows, "only one of n_rows and frac can be set"
     n_rows = min(n_rows, len(df))
     df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
 
@@ -153,26 +153,31 @@ def get_polars_metadata(
     """
     assert context.metadata is not None
 
-    schema = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
+    schema_metadata = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
 
     metadata = {}
 
     if isinstance(df, pl.DataFrame):
-        table = get_table_metadata(
+        table_metadata = get_table_metadata(
             context=context,
             df=df,
-            schema=schema,
+            schema=schema_metadata,
             n_rows=context.metadata.get("n_rows", 5),
             fraction=context.metadata.get("fraction"),
         )
-        metadata["stats"] = MetadataValue.json(get_polars_df_stats(df))
+        df_stats = df.describe().fill_null(pl.lit("null"))
+        stats_metadata = get_table_metadata(
+            context=context,
+            df=df_stats,
+            schema=get_metadata_schema(df_stats),
+            n_rows=None,
+            fraction=None,
+        )
+
+        metadata["columns"] = table_metadata
+        metadata["stats"] = stats_metadata
         metadata["row_count"] = MetadataValue.int(df.shape[0])
     else:
-        table = None
-
-    if table is not None:
-        metadata["table"] = table
-    else:
-        metadata["schema"] = schema
+        metadata["columns"] = schema_metadata
 
     return metadata
