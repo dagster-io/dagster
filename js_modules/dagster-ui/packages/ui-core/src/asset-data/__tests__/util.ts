@@ -7,11 +7,11 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetLiveDataThread';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetLiveDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../types/AssetLiveDataThread.types';
+} from '../types/AssetLiveDataProvider.types';
 
 export function buildMockedAssetGraphLiveQuery(
   assetKeys: AssetKeyInput[],

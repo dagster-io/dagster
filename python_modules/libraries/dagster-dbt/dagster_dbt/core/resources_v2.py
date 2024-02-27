@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import os
 import shutil
 import signal
@@ -6,7 +7,7 @@ import subprocess
 import sys
 import uuid
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import (
     Any,
@@ -25,6 +26,7 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
@@ -44,8 +46,9 @@ from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import (
+    dagster_name_fn,
+    default_metadata_from_dbt_resource_props,
     get_manifest_and_translator_from_dbt_assets,
-    output_name_fn,
 )
 from ..dagster_dbt_translator import (
     DagsterDbtTranslator,
@@ -81,22 +84,23 @@ class DbtCliEventMessage:
         raw_event (Dict[str, Any]): The raw event dictionary.
             See https://docs.getdbt.com/reference/events-logging#structured-logging for more
             information.
+        event_history_metadata (Dict[str, Any]): A dictionary of metadata about the
+            current event, gathered from previous historical events.
     """
 
     raw_event: Dict[str, Any]
+    event_history_metadata: InitVar[Dict[str, Any]]
 
-    @classmethod
-    def from_log(cls, log: str) -> "DbtCliEventMessage":
-        """Parse an event according to https://docs.getdbt.com/reference/events-logging#structured-logging.
-
-        We assume that the log format is json.
-        """
-        raw_event: Dict[str, Any] = orjson.loads(log)
-
-        return cls(raw_event=raw_event)
+    def __post_init__(self, event_history_metadata: Dict[str, Any]):
+        self._event_history_metadata = event_history_metadata
 
     def __str__(self) -> str:
         return self.raw_event["info"]["msg"]
+
+    @property
+    def log_level(self) -> str:
+        """The log level of the event."""
+        return self.raw_event["info"]["level"]
 
     @public
     def to_default_asset_events(
@@ -126,9 +130,11 @@ class DbtCliEventMessage:
                 - AssetObservation for dbt test results.
 
         """
-        if self.raw_event["info"]["level"] == "debug":
+        if self.raw_event["info"]["name"] != "NodeFinished":
             return
 
+        adapter_response = self.raw_event["data"].get("run_result", {}).get("adapter_response", {})
+        adapter_response_metadata = self._process_adapter_response_metadata(adapter_response)
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
@@ -141,16 +147,28 @@ class DbtCliEventMessage:
                 "No dbt manifest was provided. Dagster events for dbt tests will not be created."
             )
 
+        unique_id: str = event_node_info["unique_id"]
+        invocation_id: str = self.raw_event["info"]["invocation_id"]
+        dbt_resource_props = manifest["nodes"][unique_id]
+        default_metadata = {
+            **default_metadata_from_dbt_resource_props(self._event_history_metadata),
+            "unique_id": unique_id,
+            "invocation_id": invocation_id,
+        }
         has_asset_def: bool = bool(context and context.has_assets_def)
 
-        invocation_id: str = self.raw_event["info"]["invocation_id"]
-        unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
+        node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
+        is_node_ephemeral = node_materialization == "ephemeral"
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
-        if node_resource_type in NodeType.refable() and is_node_successful:
+        if (
+            node_resource_type in NodeType.refable()
+            and is_node_successful
+            and not is_node_ephemeral
+        ):
             started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
@@ -158,11 +176,11 @@ class DbtCliEventMessage:
             if has_asset_def:
                 yield Output(
                     value=None,
-                    output_name=output_name_fn(event_node_info),
+                    output_name=dagster_name_fn(event_node_info),
                     metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
+                        **default_metadata,
                         "Execution Duration": duration_seconds,
+                        **adapter_response_metadata,
                     },
                 )
             else:
@@ -172,18 +190,18 @@ class DbtCliEventMessage:
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
+                        **default_metadata,
                         "Execution Duration": duration_seconds,
+                        **adapter_response_metadata,
                     },
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
             metadata = {
-                "unique_id": unique_id,
-                "invocation_id": invocation_id,
+                **default_metadata,
                 "status": node_status,
+                **adapter_response_metadata,
             }
 
             is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
@@ -226,6 +244,46 @@ class DbtCliEventMessage:
                         metadata=metadata,
                     )
 
+    def _process_adapter_response_metadata(
+        self, adapter_response: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process the adapter response metadata for a dbt CLI event.
+
+        The main interface for AdapterResponse is found at https://github.com/dbt-labs/dbt-adapters.
+
+        Currently, we pre-process the following dbt adapters, which have custom responses:
+
+        - https://github.com/dbt-labs/dbt-bigquery: BigQueryAdapterResponse
+        - https://github.com/databricks/dbt-databricks: DatabricksAdapterResponse
+        - https://github.com/dbt-labs/dbt-snowflake: SnowflakeAdapterResponse
+        - https://github.com/starburstdata/dbt-trino: TrinoAdapterResponse
+        """
+        allowlisted_adapter_response_keys = [
+            # AdapterResponse
+            *[
+                "rows_affected",
+            ],
+            # BigQueryAdapterResponse
+            *[
+                "bytes_processed",
+                "bytes_billed",
+                "job_id",
+                "slot_ms",
+            ],
+            # DatabricksAdapterResponse, SnowflakeAdapterResponse, TrinoAdapterResponse
+            *[
+                "query_id",
+            ],
+        ]
+
+        processed_adapter_response = {
+            key: value
+            for key, value in adapter_response.items()
+            if (key in allowlisted_adapter_response_keys and value)
+        }
+
+        return processed_adapter_response
+
 
 @dataclass
 class DbtCliInvocation:
@@ -245,10 +303,12 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
+    log_level: Literal["info", "debug"]
     context: Optional[OpExecutionContext] = field(default=None, repr=False)
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
+    _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
     @classmethod
@@ -261,6 +321,7 @@ class DbtCliInvocation:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
+        log_level: Literal["info", "debug"],
         context: Optional[OpExecutionContext],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
@@ -302,6 +363,7 @@ class DbtCliInvocation:
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
+            log_level=log_level,
             context=context,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
@@ -347,6 +409,8 @@ class DbtCliInvocation:
                 if dbt_cli_invocation.is_successful():
                     ...
         """
+        self._stdout = list(self._stream_stdout())
+
         return self.process.wait() == 0
 
     @public
@@ -399,37 +463,56 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        try:
-            with self.process.stdout or contextlib.nullcontext():
-                for raw_line in self.process.stdout or []:
-                    log: str = raw_line.decode().strip()
-                    try:
-                        event = DbtCliEventMessage.from_log(log=log)
+        event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
 
-                        # Parse the error message from the event, if it exists.
-                        is_error_message = event.raw_event["info"]["level"] == "error"
-                        if is_error_message:
-                            self._error_messages.append(str(event))
+        for log in self._stdout or self._stream_stdout():
+            try:
+                raw_event: Dict[str, Any] = orjson.loads(log)
+                unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
+                event_history_metadata: Dict[str, Any] = {}
+                if unique_id and raw_event["info"]["name"] == "NodeFinished":
+                    event_history_metadata = copy.deepcopy(
+                        event_history_metadata_by_unique_id.get(unique_id, {})
+                    )
 
-                        # Re-emit the logs from dbt CLI process into stdout.
-                        sys.stdout.write(str(event) + "\n")
-                        sys.stdout.flush()
+                event = DbtCliEventMessage(
+                    raw_event=raw_event, event_history_metadata=event_history_metadata
+                )
 
-                        yield event
-                    except:
-                        # If we can't parse the log, then just emit it as a raw log.
-                        sys.stdout.write(log + "\n")
-                        sys.stdout.flush()
+                is_error_message = event.log_level == "error"
+                is_debug_message = event.log_level == "debug"
+                is_debug_user_log_level = self.log_level == "debug"
 
-            # Ensure that the dbt CLI process has completed.
-            self._raise_on_error()
-        except DagsterExecutionInterruptedError:
-            logger.info(f"Forwarding interrupt signal to dbt command: `{self.dbt_command}`.")
+                # Parse the error message from the event, if it exists.
+                if is_error_message:
+                    self._error_messages.append(str(event))
 
-            self.process.send_signal(signal.SIGINT)
-            self.process.wait(timeout=self.termination_timeout_seconds)
+                # Attempt to parse the columns metadata from the event message.
+                # If it exists, save it as historical metadata to attach to the NodeFinished event.
+                if event.raw_event["info"]["name"] == "JinjaLogInfo":
+                    with contextlib.suppress(orjson.JSONDecodeError):
+                        columns = orjson.loads(event.raw_event["info"]["msg"])
+                        event_history_metadata_by_unique_id[cast(str, unique_id)] = {
+                            "columns": columns
+                        }
 
-            raise
+                        # Don't show this message in stdout
+                        continue
+
+                # Only write debug logs to stdout if the user explicitly set
+                # the log level to debug.
+                if not is_debug_message or is_debug_user_log_level:
+                    sys.stdout.write(str(event) + "\n")
+                    sys.stdout.flush()
+
+                yield event
+            except:
+                # If we can't parse the log, then just emit it as a raw log.
+                sys.stdout.write(log + "\n")
+                sys.stdout.flush()
+
+        # Ensure that the dbt CLI process has completed.
+        self._raise_on_error()
 
     @public
     def get_artifact(
@@ -471,6 +554,25 @@ class DbtCliInvocation:
     def dbt_command(self) -> str:
         """The dbt CLI command that was invoked."""
         return " ".join(cast(Sequence[str], self.process.args))
+
+    def _stream_stdout(self) -> Iterator[str]:
+        """Stream the stdout from the dbt CLI process."""
+        try:
+            if not self.process.stdout or self.process.stdout.closed:
+                return
+
+            with self.process.stdout:
+                for raw_line in self.process.stdout or []:
+                    log: str = raw_line.decode().strip()
+
+                    yield log
+        except DagsterExecutionInterruptedError:
+            logger.info(f"Forwarding interrupt signal to dbt command: `{self.dbt_command}`.")
+
+            self.process.send_signal(signal.SIGINT)
+            self.process.wait(timeout=self.termination_timeout_seconds)
+
+            raise
 
     def _format_error_messages(self) -> str:
         """Format the error messages from the dbt CLI process."""
@@ -726,7 +828,7 @@ class DbtCliResource(ConfigurableResource):
         unique_id = str(uuid.uuid4())[:7]
         path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
+            path = f"{context.op.name}-{context.run.run_id[:7]}-{unique_id}"
 
         current_target_path = _get_dbt_target_path()
 
@@ -740,7 +842,7 @@ class DbtCliResource(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
@@ -755,7 +857,8 @@ class DbtCliResource(ConfigurableResource):
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
                 `@dbt_assets` will be used.
-            context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context from within `@dbt_assets`.
+                If an AssetExecutionContext is passed, its underlying OpExecutionContext will be used.
             target_path (Optional[Path]): An explicit path to a target folder to use to store and
                 retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
                 target path will be generated.
@@ -868,6 +971,14 @@ class DbtCliResource(ConfigurableResource):
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else None
+
+        context = (
+            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
+        )
+
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
@@ -878,6 +989,9 @@ class DbtCliResource(ConfigurableResource):
             # The DBT_LOG_FORMAT environment variable must be set to `json`. We use this
             # environment variable to ensure that the dbt CLI outputs structured logs.
             "DBT_LOG_FORMAT": "json",
+            # The DBT_DEBUG environment variable must be set to `true`. We use this
+            # environment variable to ensure that the dbt CLI logs have enriched metadata.
+            "DBT_DEBUG": "true",
             # The DBT_TARGET_PATH environment variable is set to a unique value for each dbt
             # invocation so that artifact paths are separated.
             # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
@@ -893,9 +1007,13 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
         }
 
-        assets_def: Optional[AssetsDefinition] = None
-        with suppress(DagsterInvalidPropertyError):
-            assets_def = context.assets_def if context else None
+        # Although we always set the dbt log level to debug, we only write those logs to stdout if
+        # the user has explicitly set the log level to debug.
+        log_level = (
+            "debug"
+            if set(["--debug", "-d"]).intersection([*args, *self.global_config_flags])
+            else "info"
+        )
 
         selection_args: List[str] = []
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
@@ -907,10 +1025,7 @@ class DbtCliResource(ConfigurableResource):
             # When dbt is enabled with asset checks, we turn off any indirection with dbt selection.
             # This way, the Dagster context completely determines what is executed in a dbt
             # invocation.
-            if (
-                version.parse(dbt_version) >= version.parse("1.5.0")
-                and dagster_dbt_translator.settings.enable_asset_checks
-            ):
+            if dagster_dbt_translator.settings.enable_asset_checks:
                 logger.info(
                     "Setting environment variable `DBT_INDIRECT_SELECTION` to 'empty'. When dbt "
                     "tests are modeled as asset checks, they are executed through explicit selection."
@@ -956,6 +1071,7 @@ class DbtCliResource(ConfigurableResource):
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
+            log_level=log_level,
             context=context,
         )
 
@@ -1048,7 +1164,7 @@ def get_dbt_resource_props_by_output_name(
     node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
 
     return {
-        output_name_fn(node): node
+        dagster_name_fn(node): node
         for node in node_info_by_dbt_unique_id.values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }

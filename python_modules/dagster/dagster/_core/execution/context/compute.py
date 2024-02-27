@@ -1386,7 +1386,7 @@ USE_OP_CONTEXT = [
 ]
 
 
-def _get_deprecation_kwargs(attr: str):
+def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
     deprecation_kwargs = {"breaking_version": "1.8.0"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 

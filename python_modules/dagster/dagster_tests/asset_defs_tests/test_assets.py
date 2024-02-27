@@ -37,11 +37,12 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -1053,7 +1054,7 @@ def test_graph_backed_asset_subset():
         return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [
                 AssetsDefinition.from_graph(my_graph, can_subset=True),
             ]
@@ -1082,7 +1083,7 @@ def test_graph_backed_asset_partial_output_selection():
         return one, two
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [
                 AssetsDefinition.from_graph(graph_asset, can_subset=True),
             ]
@@ -1129,7 +1130,7 @@ def test_input_subsetting_graph_backed_asset():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            asset_graph=AssetGraph.from_assets(
+            asset_graph=InternalAssetGraph.from_assets(
                 with_resources(
                     [
                         upstream_1,
@@ -1247,7 +1248,7 @@ def test_graph_backed_asset_subset_context(
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(three, can_subset=True)],
         )
     )
@@ -1328,7 +1329,7 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
         }
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
         )
     )
@@ -1390,7 +1391,7 @@ def test_nested_graph_subset_context(
         return {"a": a, "b": b, "c": c, "d": d}
 
     asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
         )
     )
@@ -1427,7 +1428,7 @@ def test_graph_backed_asset_reused():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_job = define_asset_job("yay").resolve(
-            asset_graph=AssetGraph.from_assets(
+            asset_graph=InternalAssetGraph.from_assets(
                 with_resources(
                     [
                         upstream,
@@ -1542,7 +1543,7 @@ def test_context_assets_def():
         return 2
 
     asset_job = define_asset_job("yay", [a, b]).resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [a, b],
         )
     )
@@ -2054,3 +2055,93 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
             return my_op()
 
         assert _specified_elsewhere  # appease linter
+
+
+def test_asset_owners():
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset():
+        pass
+
+    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    assert my_asset.owners_by_key == {my_asset.key: owners}
+    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
+
+    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
+    def my_asset_2():
+        pass
+
+    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
+
+    @asset(owners=[])
+    def asset_3():
+        pass
+
+    assert asset_3.owners_by_key == {}
+
+    @asset(owners=None)
+    def asset_4():
+        pass
+
+    assert asset_4.owners_by_key == {}
+
+
+def test_invalid_asset_owners():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["arbitrary string"])
+        def my_asset():
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @asset(owners=["notanemail@com"])
+        def my_asset_2():
+            pass
+
+
+def test_multi_asset_owners():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(owners=["team:team1", "user@dagsterlabs.com"]),
+            "out2": AssetOut(owners=["user2@dagsterlabs.com"]),
+        }
+    )
+    def my_multi_asset():
+        pass
+
+    assert my_multi_asset.owners_by_key == {
+        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
+    }
+
+
+def test_asset_spec_with_code_versions():
+    @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
+    def multi_asset_with_versions():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_versions.code_versions_by_key == {
+        AssetKey(["a"]): "1",
+        AssetKey(["b"]): "2",
+    }
+
+
+def test_asset_spec_with_metadata():
+    @multi_asset(
+        specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
+    )
+    def multi_asset_with_metadata():
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
+
+    assert multi_asset_with_metadata.metadata_by_key == {
+        AssetKey(["a"]): {"foo": "1"},
+        AssetKey(["b"]): {"bar": "2"},
+    }

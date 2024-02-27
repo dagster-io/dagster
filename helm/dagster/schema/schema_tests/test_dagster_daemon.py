@@ -560,6 +560,14 @@ def test_init_container_resources(template: HelmTemplate):
     )
 
 
+def test_automount_svc_acct_token(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert daemon_deployment.spec.template.spec.automount_service_account_token
+
+
 def test_env(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
     [daemon_deployment] = template.render(helm_values)

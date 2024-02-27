@@ -25,7 +25,7 @@ export const AssetCheckStatusTag = ({
       <BaseTag
         textColor={Colors.textLight()}
         fillColor={Colors.backgroundLight()}
-        icon={<Icon name="dot" color={Colors.accentGray()} />}
+        icon={<Icon name="status" color={Colors.accentGray()} />}
         label="Not evaluated"
       />
     );
@@ -35,7 +35,6 @@ export const AssetCheckStatusTag = ({
   if (!status) {
     return null;
   }
-  console.log(status, evaluation);
 
   const renderTag = () => {
     const isWarn = evaluation?.severity === AssetCheckSeverity.WARN;

@@ -1,6 +1,7 @@
 import json
 import time
 import uuid
+from typing import Any, Optional
 
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -17,6 +18,7 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_subscription,
     infer_job_selector,
 )
+from typing_extensions import Dict
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -581,9 +583,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "RunSuccessEvent")
         assert not has_event_of_type(logs, "RunFailureEvent")
 
-        assert first_event_of_type(logs, "RunStartEvent")["level"] == "DEBUG"
+        run_start_event = first_event_of_type(logs, "RunStartEvent")
+        assert run_start_event and run_start_event["level"] == "DEBUG"
 
         sum_op_output = get_step_output_event(logs, "sum_op")
+        assert sum_op_output
         assert sum_op_output["stepKey"] == "sum_op"
         assert sum_op_output["outputName"] == "result"
 
@@ -775,7 +779,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
                 return message_data
 
 
-def first_event_of_type(logs, message_type):
+def first_event_of_type(logs, message_type) -> Optional[Dict[str, Any]]:
     for log in logs:
         if log["__typename"] == message_type:
             return log

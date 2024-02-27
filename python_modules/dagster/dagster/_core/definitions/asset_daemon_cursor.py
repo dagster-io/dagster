@@ -1,5 +1,7 @@
-import functools
+import dataclasses
 import json
+from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Mapping,
@@ -26,7 +28,7 @@ from dagster._serdes.serdes import (
 from .asset_graph import AssetGraph
 
 if TYPE_CHECKING:
-    from .asset_condition import (
+    from .asset_condition.asset_condition import (
         AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
@@ -66,7 +68,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
     }
 )
-class AssetDaemonCursor(NamedTuple):
+@dataclass(frozen=True)
+class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
     Attributes:
@@ -88,8 +91,7 @@ class AssetDaemonCursor(NamedTuple):
             last_observe_request_timestamp_by_asset_key={},
         )
 
-    @property
-    @functools.lru_cache(maxsize=1)
+    @cached_property
     def previous_evaluation_state_by_key(
         self,
     ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
@@ -119,7 +121,8 @@ class AssetDaemonCursor(NamedTuple):
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         evaluation_state: Sequence["AssetConditionEvaluationState"],
     ) -> "AssetDaemonCursor":
-        return self._replace(
+        return dataclasses.replace(
+            self,
             evaluation_id=evaluation_id,
             previous_evaluation_state=evaluation_state,
             last_observe_request_timestamp_by_asset_key={
@@ -145,7 +148,7 @@ def get_backcompat_asset_condition_evaluation_state(
     handled_root_subset: Optional[AssetSubset],
 ) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition import (
+    from dagster._core.definitions.asset_condition.asset_condition import (
         AssetConditionEvaluationState,
         RuleCondition,
     )
@@ -170,7 +173,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
-    from .asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
+    from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
     )
@@ -228,7 +231,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
 
     previous_evaluation_state = []
     cursor_keys = (
-        asset_graph.auto_materialize_policies_by_key.keys()
+        asset_graph.materializable_asset_keys
         if asset_graph
         else latest_evaluation_by_asset_key.keys()
     )

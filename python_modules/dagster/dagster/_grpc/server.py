@@ -184,7 +184,7 @@ def _set_request_count(api_name: str, value: Any) -> None:
 
 def retrieve_metrics():
     class _MetricsRetriever:
-        def __call__(self, fn: Callable) -> Callable:
+        def __call__(self, fn: Callable[..., Any]) -> Callable:
             api_call = fn.__name__
             METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
 

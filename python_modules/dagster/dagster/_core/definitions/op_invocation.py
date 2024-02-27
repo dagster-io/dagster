@@ -29,7 +29,7 @@ from .events import (
     Output,
 )
 from .output import DynamicOutputDefinition, OutputDefinition
-from .result import MaterializeResult
+from .result import AssetResult
 
 if TYPE_CHECKING:
     from ..execution.context.compute import OpExecutionContext
@@ -222,11 +222,11 @@ def direct_invocation_result(
         # try-except handles "vanilla" asset and op invocation (generators and async handled in
         # _type_check_output_wrapper)
 
-        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore (pyright bug)
 
         result = invoke_compute_fn(
             fn=compute_fn.decorated_fn,
-            context=bound_context,
+            context=bound_context,  # type: ignore (pyright bug)
             kwargs=input_dict,
             context_arg_provided=compute_fn.has_context_arg(),
             config_arg_cls=(
@@ -234,9 +234,9 @@ def direct_invocation_result(
             ),
             resource_args=resource_arg_mapping,
         )
-        return _type_check_output_wrapper(op_def, result, bound_context)
+        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore (pyright bug)
     except Exception:
-        bound_context.unbind()
+        bound_context.unbind()  # type: ignore (pyright bug)
         raise
 
 
@@ -344,7 +344,7 @@ def _resolve_inputs(
     return input_dict
 
 
-def _key_for_result(result: MaterializeResult, context: "BaseDirectExecutionContext") -> AssetKey:
+def _key_for_result(result: AssetResult, context: "BaseDirectExecutionContext") -> AssetKey:
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
             f"Op {context.per_invocation_properties.alias} does not have an assets definition."
@@ -359,13 +359,13 @@ def _key_for_result(result: MaterializeResult, context: "BaseDirectExecutionCont
         return next(iter(context.per_invocation_properties.assets_def.keys))
 
     raise DagsterInvariantViolationError(
-        "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+        f"{result.__class__.__name__} did not include asset_key and it can not be inferred. Specify which"
         f" asset_key, options are: {context.per_invocation_properties.assets_def.keys}"
     )
 
 
 def _output_name_for_result_obj(
-    event: MaterializeResult,
+    event: AssetResult,
     context: "BaseDirectExecutionContext",
 ):
     if not context.per_invocation_properties.assets_def:
@@ -388,7 +388,7 @@ def _handle_gen_event(
         (AssetMaterialization, AssetObservation, ExpectationResult),
     ):
         return event
-    elif isinstance(event, MaterializeResult):
+    elif isinstance(event, AssetResult):
         output_name = _output_name_for_result_obj(event, context)
         outputs_seen.add(output_name)
         return event
@@ -443,7 +443,11 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:
@@ -490,7 +494,11 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:
@@ -516,7 +524,7 @@ def _type_check_function_output(
     for event in validate_and_coerce_op_result_to_iterator(result, op_context, op_def.output_defs):
         if isinstance(event, (Output, DynamicOutput)):
             _type_check_output(output_defs_by_name[event.output_name], event, context)
-        elif isinstance(event, (MaterializeResult)):
+        elif isinstance(event, AssetResult):
             # ensure result objects are contextually valid
             _output_name_for_result_obj(event, context)
 

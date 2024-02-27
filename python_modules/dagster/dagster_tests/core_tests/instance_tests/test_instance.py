@@ -21,10 +21,11 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
-from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
@@ -260,7 +261,9 @@ def noop_asset():
     pass
 
 
-noop_asset_job = build_assets_job(assets=[noop_asset], name="noop_asset_job")
+noop_asset_job = Definitions(
+    assets=[noop_asset], jobs=[define_asset_job("noop_asset_job", [noop_asset])]
+).get_job_def("noop_asset_job")
 
 
 def test_create_job_snapshot():

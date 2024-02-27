@@ -1,7 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetLiveDataThread';
-import {AssetGraphLiveQuery} from '../../asset-data/types/AssetLiveDataThread.types';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetLiveDataProvider';
+import {AssetGraphLiveQuery} from '../../asset-data/types/AssetLiveDataProvider.types';
 import {MockStaleReasonData} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
   RunStatus,
@@ -93,7 +93,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<AssetGrap
               __typename: 'MaterializationEvent',
             },
           ],
-          assetChecksOrError: buildAssetChecks({checks: []}),
+          assetChecksOrError: buildAssetChecks(),
           freshnessInfo: null,
           assetObservations: [
             {
@@ -147,7 +147,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<AssetGraph
             path: ['late_asset'],
             __typename: 'AssetKey',
           },
-          assetChecksOrError: buildAssetChecks({checks: []}),
+          assetChecksOrError: buildAssetChecks(),
           assetMaterializations: [
             {
               timestamp: '1674603891025',
@@ -211,7 +211,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<AssetGraphLiveQuery> 
             path: ['run_failing_asset'],
             __typename: 'AssetKey',
           },
-          assetChecksOrError: buildAssetChecks({checks: []}),
+          assetChecksOrError: buildAssetChecks(),
           assetMaterializations: [
             {
               timestamp: '1666373060112',

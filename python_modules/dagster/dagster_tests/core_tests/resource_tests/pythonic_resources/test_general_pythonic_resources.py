@@ -30,7 +30,6 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResourceFactory
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
 )
@@ -162,15 +161,10 @@ def test_caching_within_resource():
         assert greeting.get_introduction(verbose=True) == "My name is Dagster"
         assert greeting.get_introduction(verbose=False) == "I'm Dagster"
 
-    assert (
-        build_assets_job(
-            "blah",
-            [hello_world_asset, another_asset],
-            resource_defs={"greeting": GreetingResource(name="Dagster")},
-        )
-        .execute_in_process()
-        .success
-    )
+    assert materialize(
+        [hello_world_asset, another_asset],
+        resources={"greeting": GreetingResource(name="Dagster")},
+    ).success
 
     assert called["greeting"] == 1
     assert called["get_introduction"] == 2
@@ -1102,6 +1096,6 @@ def test_partial_resource_checks() -> None:
 
     # this should fail but does not https://github.com/dagster-io/dagster/issues/18017
     MergeResource(
-        int_res=StrResource.configure_at_launch(),  # type: ignore # type checker catches it though
-        str_res=IntResource.configure_at_launch(),  # type: ignore
+        int_res=StrResource.configure_at_launch(),
+        str_res=IntResource.configure_at_launch(),
     )

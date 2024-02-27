@@ -7,7 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Dict, Optional, Sequence, Set, Type, cast
+from typing import Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
 
 import pendulum
 
@@ -40,6 +40,7 @@ from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.host_representation import (
     ExternalSensor,
 )
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -50,6 +51,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
@@ -71,6 +73,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
 _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
+_MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
+
 
 EVALUATIONS_TTL_DAYS = 30
 
@@ -84,6 +88,18 @@ _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID = "asset_daemon_selector"
 _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME = "asset_daemon"
 
 MIN_INTERVAL_LOOP_SECONDS = 5
+
+
+def get_has_migrated_to_sensors(instance: DagsterInstance) -> bool:
+    return bool(
+        instance.daemon_cursor_storage.get_cursor_values({_MIGRATED_CURSOR_TO_SENSORS_KEY}).get(
+            _MIGRATED_CURSOR_TO_SENSORS_KEY
+        )
+    )
+
+
+def set_has_migrated_to_sensors(instance: DagsterInstance):
+    instance.daemon_cursor_storage.set_cursor_values({_MIGRATED_CURSOR_TO_SENSORS_KEY: "1"})
 
 
 def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
@@ -102,7 +118,7 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
 
 
 def _get_pre_sensor_auto_materialize_cursor(
-    instance: DagsterInstance, asset_graph: Optional[AssetGraph]
+    instance: DagsterInstance, full_asset_graph: Optional[AssetGraph]
 ) -> AssetDaemonCursor:
     """Gets a deserialized cursor by either reading from the new cursor key and simply deserializing
     the value, or by reading from the old cursor key and converting the legacy cursor into the
@@ -118,7 +134,9 @@ def _get_pre_sensor_auto_materialize_cursor(
             {_LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
         ).get(_LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY)
         return (
-            backcompat_deserialize_asset_daemon_cursor_str(legacy_serialized_cursor, asset_graph, 0)
+            backcompat_deserialize_asset_daemon_cursor_str(
+                legacy_serialized_cursor, full_asset_graph, 0
+            )
             if legacy_serialized_cursor
             else AssetDaemonCursor.empty()
         )
@@ -296,13 +314,17 @@ class AutoMaterializeLaunchContext:
 
 
 class AssetDaemon(DagsterDaemon):
-    def __init__(self, pre_sensor_interval_seconds: int):
+    def __init__(self, settings: Mapping[str, Any], pre_sensor_interval_seconds: int):
         self._initialized_evaluation_id = False
         self._evaluation_id_lock = threading.Lock()
         self._next_evaluation_id = None
 
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
         self._last_pre_sensor_submit_time = None
+
+        self._checked_migration_to_sensors = False
+
+        self._settings = settings
 
         super().__init__()
 
@@ -326,7 +348,6 @@ class AssetDaemon(DagsterDaemon):
     def _initialize_evaluation_id(
         self,
         instance: DagsterInstance,
-        asset_graph: AssetGraph,
     ):
         # Find the largest stored evaluation ID across all auto-materialize cursor
         # to initialize the thread-safe evaluation ID counter
@@ -340,16 +361,16 @@ class AssetDaemon(DagsterDaemon):
                 if not auto_materialize_state.instigator_data:
                     continue
                 instigator_data = cast(SensorInstigatorData, auto_materialize_state.instigator_data)
-                if instigator_data.sensor_type != SensorType.AUTOMATION_POLICY:
+                if instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE:
                     continue
                 compressed_cursor = instigator_data.cursor
                 if compressed_cursor:
                     stored_evaluation_id = asset_daemon_cursor_from_instigator_serialized_cursor(
-                        compressed_cursor, asset_graph
+                        compressed_cursor, None
                     ).evaluation_id
                     self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
 
-            stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
+            stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
             self._next_evaluation_id = max(self._next_evaluation_id, stored_cursor.evaluation_id)
 
             self._initialized_evaluation_id = True
@@ -380,15 +401,13 @@ class AssetDaemon(DagsterDaemon):
                 " migrate` to enable."
             )
 
-        sensor_state_lock = threading.Lock()
         amp_tick_futures: Dict[Optional[str], Future] = {}
         threadpool_executor = None
         with ExitStack() as stack:
-            settings = instance.get_settings("auto_materialize")
-            if settings.get("use_threads"):
+            if self._settings.get("use_threads"):
                 threadpool_executor = stack.enter_context(
                     InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_workers"),
+                        max_workers=self._settings.get("num_workers"),
                         thread_name_prefix="asset_daemon_worker",
                     )
                 )
@@ -400,7 +419,6 @@ class AssetDaemon(DagsterDaemon):
                     threadpool_executor=threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
-                    sensor_state_lock=sensor_state_lock,
                 )
                 yield None
                 end_time = pendulum.now("UTC").timestamp()
@@ -415,12 +433,11 @@ class AssetDaemon(DagsterDaemon):
         threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: Dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        sensor_state_lock: threading.Lock,
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
-        use_automation_policy_sensors = instance.auto_materialize_use_automation_policy_sensors
-        if get_auto_materialize_paused(instance) and not use_automation_policy_sensors:
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if get_auto_materialize_paused(instance) and not use_auto_materialize_sensors:
             yield
             return
 
@@ -428,17 +445,29 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        asset_graph = ExternalAssetGraph.from_workspace(workspace)
-
         if not self._initialized_evaluation_id:
-            self._initialize_evaluation_id(instance, asset_graph)
-        sensors: Sequence[Optional[ExternalSensor]] = []
+            self._initialize_evaluation_id(instance)
+        sensors_and_repos: Sequence[
+            Tuple[Optional[ExternalSensor], Optional[ExternalRepository]]
+        ] = []
 
-        if use_automation_policy_sensors:
+        if use_auto_materialize_sensors:
             workspace_snapshot = {
                 location_entry.origin.location_name: location_entry
                 for location_entry in workspace.get_workspace_snapshot().values()
             }
+
+            eligible_sensors_and_repos = []
+            for location_entry in workspace_snapshot.values():
+                code_location = location_entry.code_location
+                if code_location:
+                    for repo in code_location.get_repositories().values():
+                        for sensor in repo.get_external_sensors():
+                            if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
+                                eligible_sensors_and_repos.append((sensor, repo))
+
+            if not eligible_sensors_and_repos:
+                return
 
             all_auto_materialize_states = {
                 sensor_state.selector_id: sensor_state
@@ -448,36 +477,58 @@ class AssetDaemon(DagsterDaemon):
                 if (
                     sensor_state.instigator_data
                     and cast(SensorInstigatorData, sensor_state.instigator_data).sensor_type
-                    == SensorType.AUTOMATION_POLICY
+                    == SensorType.AUTO_MATERIALIZE
                 )
             }
 
-            for location_entry in workspace_snapshot.values():
-                code_location = location_entry.code_location
-                if code_location:
-                    for repo in code_location.get_repositories().values():
-                        for sensor in repo.get_external_sensors():
-                            if sensor.sensor_type != SensorType.AUTOMATION_POLICY:
-                                continue
+            if not self._checked_migration_to_sensors:
+                if not get_has_migrated_to_sensors(instance):
+                    # Do a one-time migration to create the cursors for each sensor, based on the
+                    # existing cursor for the legacy AMP tick
+                    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+                    pre_sensor_cursor = _get_pre_sensor_auto_materialize_cursor(
+                        instance, asset_graph
+                    )
+                    if pre_sensor_cursor != AssetDaemonCursor.empty():
+                        self._logger.info(
+                            "Translating legacy cursor into a new cursor for each new automation policy sensor"
+                        )
+                        all_auto_materialize_states = (
+                            self._create_initial_sensor_cursors_from_raw_cursor(
+                                instance,
+                                eligible_sensors_and_repos,
+                                all_auto_materialize_states,
+                                pre_sensor_cursor,
+                            )
+                        )
 
-                            selector_id = sensor.selector_id
-                            if sensor.get_current_instigator_state(
-                                all_auto_materialize_states.get(selector_id)
-                            ).is_running:
-                                sensors.append(sensor)
+                    set_has_migrated_to_sensors(instance)
 
-            # TODO Adapt stored legacy cursor into per-evaluation-group cursors the first time AMP is run
-            # using evaluation groups
+                self._checked_migration_to_sensors = True
+
+            for sensor, repo in eligible_sensors_and_repos:
+                selector_id = sensor.selector_id
+                if sensor.get_current_instigator_state(
+                    all_auto_materialize_states.get(selector_id)
+                ).is_running:
+                    sensors_and_repos.append((sensor, repo))
+
         else:
-            sensors.append(
-                None  # Represents that there's a single set of ticks with no underlying sensor
+            sensors_and_repos.append(
+                (
+                    None,
+                    None,
+                )  # Represents that there's a single set of ticks with no underlying sensor
             )
             all_auto_materialize_states = {}
 
-        for sensor in sensors:
-            selector_id = sensor.selector.get_id() if sensor else None
-
-            auto_materialize_state = all_auto_materialize_states.get(selector_id)
+        for sensor, repo in sensors_and_repos:
+            if sensor:
+                selector_id = sensor.selector.get_id()
+                auto_materialize_state = all_auto_materialize_states.get(selector_id)
+            else:
+                selector_id = None
+                auto_materialize_state = None
 
             if not sensor:
                 # make sure we are only running every pre_sensor_interval_seconds
@@ -499,7 +550,7 @@ class AssetDaemon(DagsterDaemon):
                         min_interval=sensor.min_interval_seconds,
                         cursor=None,
                         last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                        sensor_type=SensorType.AUTOMATION_POLICY,
+                        sensor_type=SensorType.AUTO_MATERIALIZE,
                     ),
                 )
                 instance.add_instigator_state(auto_materialize_state)
@@ -514,8 +565,8 @@ class AssetDaemon(DagsterDaemon):
                 future = threadpool_executor.submit(
                     self._process_auto_materialize_tick,
                     workspace_process_context,
+                    repo,
                     sensor,
-                    sensor_state_lock,
                     debug_crash_flags,
                 )
                 amp_tick_futures[selector_id] = future
@@ -523,23 +574,64 @@ class AssetDaemon(DagsterDaemon):
             else:
                 yield from self._process_auto_materialize_tick_generator(
                     workspace_process_context,
+                    repo,
                     sensor,
-                    sensor_state_lock,
                     debug_crash_flags,
                 )
+
+    def _create_initial_sensor_cursors_from_raw_cursor(
+        self,
+        instance: DagsterInstance,
+        sensors_and_repos: Sequence[Tuple[ExternalSensor, ExternalRepository]],
+        all_auto_materialize_states: Mapping[str, InstigatorState],
+        pre_sensor_cursor: AssetDaemonCursor,
+    ) -> Mapping[str, InstigatorState]:
+        start_status = (
+            InstigatorStatus.STOPPED
+            if get_auto_materialize_paused(instance)
+            else InstigatorStatus.RUNNING
+        )
+
+        result = {}
+
+        for sensor, repo in sensors_and_repos:
+            new_auto_materialize_state = InstigatorState(
+                sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                (
+                    InstigatorStatus.DECLARED_IN_CODE
+                    if sensor.default_status == DefaultSensorStatus.RUNNING
+                    else start_status
+                ),
+                SensorInstigatorData(
+                    min_interval=sensor.min_interval_seconds,
+                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor),
+                    last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    sensor_type=SensorType.AUTO_MATERIALIZE,
+                ),
+            )
+
+            if all_auto_materialize_states.get(sensor.selector_id):
+                instance.update_instigator_state(new_auto_materialize_state)
+            else:
+                instance.add_instigator_state(new_auto_materialize_state)
+
+            result[sensor.selector_id] = new_auto_materialize_state
+
+        return result
 
     def _process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        repository: Optional[ExternalRepository],
         sensor: Optional[ExternalSensor],
-        sensor_state_lock: threading.Lock,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         return list(
             self._process_auto_materialize_tick_generator(
                 workspace_process_context,
+                repository,
                 sensor,
-                sensor_state_lock,
                 debug_crash_flags,
             )
         )
@@ -547,32 +639,33 @@ class AssetDaemon(DagsterDaemon):
     def _process_auto_materialize_tick_generator(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        repository: Optional[ExternalRepository],
         sensor: Optional[ExternalSensor],
-        sensor_state_lock: threading.Lock,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
         evaluation_time = pendulum.now("UTC")
 
         workspace = workspace_process_context.create_request_context()
-        asset_graph = ExternalAssetGraph.from_workspace(workspace)
+        asset_graph = (
+            ExternalAssetGraph.from_external_repository(check.not_none(repository))
+            if sensor
+            else ExternalAssetGraph.from_workspace(workspace)
+        )
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None
 
         if sensor:
-            with sensor_state_lock:
-                auto_materialize_instigator_state = check.not_none(
-                    instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
-                    )
+            auto_materialize_instigator_state = check.not_none(
+                instance.get_instigator_state(sensor.get_external_origin_id(), sensor.selector_id)
+            )
+            if is_under_min_interval(auto_materialize_instigator_state, sensor):
+                # check the since we might have been queued before processing
+                return
+            else:
+                mark_sensor_state_for_tick(
+                    instance, sensor, auto_materialize_instigator_state, evaluation_time
                 )
-                if is_under_min_interval(auto_materialize_instigator_state, sensor):
-                    # check the since we might have been queued before processing
-                    return
-                else:
-                    mark_sensor_state_for_tick(
-                        instance, sensor, auto_materialize_instigator_state, evaluation_time
-                    )
         else:
             auto_materialize_instigator_state = None
 
@@ -584,7 +677,7 @@ class AssetDaemon(DagsterDaemon):
             else:
                 eligible_keys = {
                     *asset_graph.materializable_asset_keys,
-                    *asset_graph.source_asset_keys,
+                    *asset_graph.external_asset_keys,
                 }
 
             auto_materialize_asset_keys = {
@@ -726,7 +819,6 @@ class AssetDaemon(DagsterDaemon):
                     stored_cursor,
                     auto_observe_asset_keys,
                     debug_crash_flags,
-                    sensor_state_lock,
                     is_retry=(retry_tick is not None),
                 )
         except Exception:
@@ -746,7 +838,6 @@ class AssetDaemon(DagsterDaemon):
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        sensor_state_lock: threading.Lock,
         is_retry: bool,
     ):
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
@@ -786,6 +877,9 @@ class AssetDaemon(DagsterDaemon):
                 cursor=stored_cursor,
                 materialize_run_tags={
                     **instance.auto_materialize_run_tags,
+                    **DagsterRun.tags_for_tick_id(
+                        str(tick.tick_id),
+                    ),
                     **sensor_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
@@ -823,22 +917,19 @@ class AssetDaemon(DagsterDaemon):
             # Write out the persistent cursor, which ensures that future ticks will move on once
             # they determine that nothing needs to be retried
             if sensor:
-                with sensor_state_lock:
-                    state = instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
-                    )
-                    instance.update_instigator_state(
-                        check.not_none(state).with_data(
-                            SensorInstigatorData(
-                                last_tick_timestamp=tick.timestamp,
-                                min_interval=sensor.min_interval_seconds,
-                                cursor=asset_daemon_cursor_to_instigator_serialized_cursor(
-                                    new_cursor
-                                ),
-                                sensor_type=SensorType.AUTOMATION_POLICY,
-                            )
+                state = instance.get_instigator_state(
+                    sensor.get_external_origin_id(), sensor.selector_id
+                )
+                instance.update_instigator_state(
+                    check.not_none(state).with_data(
+                        SensorInstigatorData(
+                            last_tick_timestamp=tick.timestamp,
+                            min_interval=sensor.min_interval_seconds,
+                            cursor=asset_daemon_cursor_to_instigator_serialized_cursor(new_cursor),
+                            sensor_type=SensorType.AUTO_MATERIALIZE,
                         )
                     )
+                )
             else:
                 instance.daemon_cursor_storage.set_cursor_values(
                     {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(new_cursor)}
@@ -913,4 +1004,4 @@ class AssetDaemon(DagsterDaemon):
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
             )
 
-        self._logger.info("Finished auto-materialization tick")
+        self._logger.info(f"Finished auto-materialization tick{print_group_name}")

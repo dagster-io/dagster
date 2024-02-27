@@ -10,6 +10,7 @@ import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLoca
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {AssetGroup} from '../AssetGraphExplorer';
 import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
@@ -26,6 +27,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     allAssetKeys,
     hideSidebar,
     isGlobalGraph,
+    onFilterToGroup,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -38,6 +40,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
     isGlobalGraph: boolean;
+    onFilterToGroup: (group: AssetGroup) => void;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -127,14 +130,16 @@ export const AssetGraphExplorerSidebar = React.memo(
             string,
             {
               groupName: string;
-              assets: string[];
+              assets: GraphNode[];
+              repositoryName: string;
+              repositoryLocationName: string;
             }
           >;
         }
       > = {};
 
       let groupsCount = 0;
-      Object.entries(graphData.nodes).forEach(([id, node]) => {
+      Object.values(graphData.nodes).forEach((node) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
         const groupName = node.definition.groupName || 'default';
@@ -152,22 +157,32 @@ export const AssetGraphExplorerSidebar = React.memo(
         ] || {
           groupName,
           assets: [],
+          repositoryName,
+          repositoryLocationName: locationName,
         };
-        codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(id);
+        codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
       });
       const codeLocationsCount = Object.keys(codeLocationNodes).length;
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
         if (openNodes.has(locationName) || codeLocationsCount === 1) {
           Object.entries(locationNode.groups).forEach(([id, groupNode]) => {
-            folderNodes.push({groupName: groupNode.groupName, id, level: 2});
+            folderNodes.push({
+              groupNode,
+              id,
+              level: 2,
+            });
             if (openNodes.has(id) || groupsCount === 1) {
               groupNode.assets
-                .sort((a, b) => COLLATOR.compare(a, b))
-                .forEach((assetKey) => {
+                .sort((a, b) => COLLATOR.compare(a.id, b.id))
+                .forEach((assetNode) => {
                   folderNodes.push({
-                    id: assetKey,
-                    path: locationName + ':' + groupNode.groupName + ':' + assetKey,
+                    id: assetNode.id,
+                    path: [
+                      locationName,
+                      groupNode.groupName,
+                      tokenForAssetKey(assetNode.assetKey),
+                    ].join(':'),
                     level: 3,
                   });
                 });
@@ -315,11 +330,11 @@ export const AssetGraphExplorerSidebar = React.memo(
                 selectNode(e, nextNode.id);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
                 const open = e.code === 'ArrowRight';
+                const node = renderedNodes[indexOfLastSelectedNode];
+                if (!node || 'path' in node) {
+                  return;
+                }
                 setOpenNodes((nodes) => {
-                  const node = renderedNodes[indexOfLastSelectedNode];
-                  if (!node) {
-                    return nodes;
-                  }
                   const openNodes = new Set(nodes);
                   if (open) {
                     openNodes.add(nodePathKey(node));
@@ -335,7 +350,7 @@ export const AssetGraphExplorerSidebar = React.memo(
               {items.map(({index, key, size, start}) => {
                 const node = renderedNodes[index]!;
                 const isCodelocationNode = 'locationName' in node;
-                const isGroupNode = 'groupName' in node;
+                const isGroupNode = 'groupNode' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                 const isSelected =
                   selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
@@ -369,6 +384,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                       }}
                       explorerPath={explorerPath}
                       onChangeExplorerPath={onChangeExplorerPath}
+                      onFilterToGroup={onFilterToGroup}
                     />
                   </Row>
                 );

@@ -1,4 +1,4 @@
-import {pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
@@ -13,7 +13,7 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from '../asset-data/types/AssetLiveDataThread.types';
+} from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
 /**
@@ -129,7 +129,13 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = pathHorizontalDiagonal({
+export const buildSVGPathHorizontal = pathHorizontalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
+export const buildSVGPathVertical = pathVerticalDiagonal({
   source: (s: any) => s.source,
   target: (s: any) => s.target,
   x: (s: any) => s.x,
@@ -234,6 +240,10 @@ export const buildLiveDataForNode = (
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
+}
+
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {

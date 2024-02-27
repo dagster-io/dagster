@@ -40,9 +40,16 @@ from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, va
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
+    dagster_name_fn,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    output_name_fn,
     select_unique_ids_from_manifest,
+)
+
+DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
+    "The following dbt resources are configured with identical Dagster asset keys."
+    " Please ensure that each dbt resource generates a unique Dagster asset key."
+    " See the reference for configuring Dagster asset keys for your dbt project:"
+    " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
 )
 
 
@@ -376,11 +383,15 @@ def get_dbt_multi_asset_args(
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
 
+    dbt_unique_ids_by_asset_key: Dict[AssetKey, Set[str]] = {}
+
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
+        output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+
+        dbt_unique_ids_by_asset_key.setdefault(asset_key, set()).add(unique_id)
 
         outs[output_name] = AssetOut(
             key=asset_key,
@@ -408,7 +419,7 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             check_spec = default_asset_check_fn(
-                manifest, dagster_dbt_translator, asset_key, unique_id, test_unique_id
+                manifest, dbt_nodes, dagster_dbt_translator, asset_key, unique_id, test_unique_id
             )
             if check_spec:
                 check_specs.append(check_spec)
@@ -422,6 +433,10 @@ def get_dbt_multi_asset_args(
                 parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                     dbt_resource_props,
                     dbt_parent_resource_props=dbt_parent_resource_props,
+                )
+
+                dbt_unique_ids_by_asset_key.setdefault(parent_asset_key, set()).add(
+                    parent_unique_id
                 )
 
                 if parent_partition_mapping:
@@ -453,5 +468,31 @@ def get_dbt_multi_asset_args(
                     )
                 )
                 output_internal_deps.add(asset_key)
+
+    dbt_unique_ids_by_duplicate_asset_key = {
+        asset_key: sorted(unique_ids)
+        for asset_key, unique_ids in dbt_unique_ids_by_asset_key.items()
+        if len(unique_ids) != 1
+    }
+    if dbt_unique_ids_by_duplicate_asset_key:
+        error_messages = []
+        for asset_key, unique_ids in dbt_unique_ids_by_duplicate_asset_key.items():
+            formatted_ids = []
+            for id in unique_ids:
+                unique_id_file_path = dbt_nodes[id]["original_file_path"]
+                formatted_ids.append(f"  - `{id}` ({unique_id_file_path})")
+
+            error_messages.append(
+                "\n".join(
+                    [
+                        f"The following dbt resources have the asset key `{asset_key.path}`:",
+                        *formatted_ids,
+                    ]
+                )
+            )
+
+        raise DagsterInvalidDefinitionError(
+            "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
+        )
 
     return list(deps), outs, internal_asset_deps, check_specs

@@ -14,7 +14,9 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster._core.definitions import AssetsDefinition, SourceAsset, asset
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -55,7 +57,7 @@ def test_assets_direct():
     # used in the resource def dictionary.
     assert transformed_asset.node_def.output_defs[0].io_manager_key == "io_manager"
 
-    assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
+    assert materialize([transformed_asset]).success
     assert next(iter(in_mem.values.values())) == 5
 
 
@@ -76,7 +78,7 @@ def test_asset_requires_io_manager_key():
     )[0]
     assert isinstance(transformed_asset, AssetsDefinition)
 
-    assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
+    assert materialize([transformed_asset]).success
     assert next(iter(in_mem.values.values())) == 5
 
 
@@ -107,7 +109,7 @@ def test_assets_direct_resource_conflicts():
             " reference equality for a given key."
         ),
     ):
-        build_assets_job("the_job", [transformed_asset, other_transformed_asset])
+        materialize([transformed_asset, other_transformed_asset])
 
 
 def test_source_assets_no_key_provided():
@@ -136,9 +138,7 @@ def test_source_assets_no_key_provided():
     # generic key is used as the io manager key for the source asset.
     assert transformed_source.get_io_manager_key() == "io_manager"
 
-    the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])
-
-    result = the_job.execute_in_process()
+    result = materialize([transformed_derived, transformed_source], selection=[transformed_derived])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
 
@@ -169,9 +169,7 @@ def test_source_assets_key_provided():
     # generic key is used as the io manager key for the source asset.
     assert transformed_source.get_io_manager_key() == "the_manager"
 
-    the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])
-
-    result = the_job.execute_in_process()
+    result = materialize([transformed_derived, transformed_source], selection=[transformed_derived])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
 
@@ -202,9 +200,7 @@ def test_source_assets_manager_def_provided():
     # override key.
     assert transformed_source.io_manager_def == the_manager
 
-    the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])
-
-    result = the_job.execute_in_process()
+    result = materialize([transformed_derived, transformed_source], selection=[transformed_derived])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
 
@@ -260,7 +256,7 @@ def test_asset_transitive_resource_deps():
         [the_asset], {"foo": ResourceDefinition.hardcoded_resource("bar")}
     )[0]
 
-    assert build_assets_job("blah", [transformed_asset]).execute_in_process().success
+    assert materialize([transformed_asset]).success
 
 
 def test_asset_io_manager_transitive_dependencies():
@@ -308,7 +304,7 @@ def test_asset_io_manager_transitive_dependencies():
             "foo": ResourceDefinition.hardcoded_resource("bar"),
         },
     )
-    assert build_assets_job("blah", transformed_assets).execute_in_process().success
+    assert materialize(transformed_assets).success
 
 
 def test_source_asset_partial_resources():
@@ -354,9 +350,7 @@ def test_source_asset_partial_resources():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    the_job = build_assets_job("the_job", [my_derived_asset], source_assets=[transformed_source])
-
-    result = the_job.execute_in_process()
+    result = materialize([my_derived_asset, transformed_source], selection=[my_derived_asset])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
 
@@ -413,13 +407,10 @@ def test_config_not_satisfied():
         resource_defs={"foo": the_resource, "bar": the_resource},
     )[0]
 
-    result = build_assets_job(
-        "test",
+    assert materialize(
         [transformed_asset],
-        config={"resources": {"foo": {"config": "blah"}, "bar": {"config": "baz"}}},
-    ).execute_in_process()
-
-    assert result.success
+        run_config={"resources": {"foo": {"config": "blah"}, "bar": {"config": "baz"}}},
+    ).success
 
 
 def test_bad_key_provided():
@@ -639,13 +630,13 @@ foo_io_manager_def = IOManagerDefinition(
 
 
 def create_asset_job():
-    # io_manager_test_asset = SourceAsset(key=AssetKey("my_source_asset"))
-
     @asset
     def my_derived_asset():
         return 4
 
-    return build_assets_job("the_job", with_resources([my_derived_asset], {}))
+    return Definitions(
+        assets=[my_derived_asset], jobs=[define_asset_job("the_job", [my_derived_asset])]
+    ).get_job_def("the_job")
 
 
 def test_source_asset_default_io_manager(instance):

@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, Set, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -521,6 +521,7 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time=None,
+        ignore_containers: Optional[Set] = None,
     ):
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
@@ -533,6 +534,9 @@ class DagsterKubernetesClient:
                 Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
+            start_time (numeric, optional): The start time of the wait, used for testing.
+            ignore_containers (set, optional): The container names that we should ignore
+                when waiting for the pod to be ready/terminate.
 
         Raises:
             DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered
@@ -546,6 +550,11 @@ class DagsterKubernetesClient:
         self.logger('Waiting for pod "%s"' % pod_name)
 
         start = start_time or self.timer()
+
+        # A set of container names that have exited.
+        exited_containers = set()
+        ignore_containers = ignore_containers or set()
+        error_logs = []
 
         while True:
             pods = self.core_api.list_namespaced_pod(
@@ -563,13 +572,28 @@ class DagsterKubernetesClient:
                 self.sleeper(wait_time_between_attempts)
                 continue
 
-            if not pod.status.container_statuses:
-                self.logger("Waiting for pod container status to be set by kubernetes...")
+            if not pod.status.init_container_statuses and not pod.status.container_statuses:
+                self.logger(
+                    "Waiting for pod init_container or container status to be set by kubernetes..."
+                )
                 self.sleeper(wait_time_between_attempts)
                 continue
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatus-v1-core
-            container_status = pod.status.container_statuses[0]
+            all_statuses = []
+            all_statuses.extend(pod.status.init_container_statuses or [])
+            all_statuses.extend(pod.status.container_statuses or [])
+
+            # Filter out ignored containers
+            all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
+
+            # Always get the first status from the list, which will first get the
+            # init container (if it exists), then will iterate through the loop
+            # of all containers if we are waiting for termination.
+            #
+            # In case we are waiting for the pod to be ready, we will exit after
+            # the first container in this list is ready.
+            container_status = next(s for s in all_statuses if s.name not in exited_containers)
 
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
@@ -626,15 +650,33 @@ class DagsterKubernetesClient:
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstateterminated-v1-core
             elif state.terminated is not None:
-                if not state.terminated.exit_code == 0:
-                    raw_logs = self.retrieve_pod_logs(pod_name, namespace)
+                container_name = container_status.name
+                if state.terminated.exit_code != 0:
+                    raw_logs = self.retrieve_pod_logs(
+                        pod_name, namespace, container_name=container_name
+                    )
                     message = state.terminated.message
-                    raise DagsterK8sError(
-                        f'Pod did not exit successfully. Failed with message: "{message}" '
+                    msg = (
+                        f'Container "{container_name}" failed with message: "{message}" '
                         f'and pod logs: "{raw_logs}"'
                     )
+
+                    self.logger(msg)
+                    error_logs.append(msg)
                 else:
-                    self.logger(f"Pod {pod_name} exitted successfully")
+                    self.logger(f"Container {container_name} in {pod_name} has exited successfully")
+
+                exited_containers.add(container_name)
+                if len(all_statuses) != len(exited_containers):
+                    continue
+
+                if error_logs:
+                    logs = "\n\n".join(error_logs)
+                    raise DagsterK8sError(
+                        f"Pod {pod_name} terminated but some containers exited with errors:\n{logs}"
+                    )
+                else:
+                    self.logger(f"Pod {pod_name} exited successfully")
                 break
 
             else:

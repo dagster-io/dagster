@@ -15,12 +15,14 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
     DataVersionsByPartition,
 )
-from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
@@ -37,6 +39,7 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
@@ -59,6 +62,12 @@ from dagster._utils.warnings import disable_dagster_warnings
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
+# This is a private key that is attached to the Output emitted from a source asset observation
+# function and used to prevent observations from being auto-generated from it. This is a workaround
+# because we cannot currently auto-convert the observation function to use `ObserveResult`. It can
+# be removed when that conversion is completed.
+SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION = "__source_asset_observation__"
+
 
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
@@ -78,28 +87,41 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
     observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
 
-    def fn(context: OpExecutionContext) -> None:
+    def fn(context: OpExecutionContext) -> Output[None]:
         resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
-        resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
+        resource_kwargs = {
+            key: context.resources.original_resource_dict.get(key) for key in resource_kwarg_keys
+        }
         observe_fn_return_value = (
             observe_fn(context, **resource_kwargs)
             if observe_fn_has_context
             else observe_fn(**resource_kwargs)
         )
 
-        if isinstance(observe_fn_return_value, DataVersion):
+        if isinstance(observe_fn_return_value, (DataVersion, ObserveResult)):
             if source_asset.partitions_def is not None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is partitioned, so its observe function should return a"
-                    " DataVersionsByPartition, not a DataVersion"
+                    f"{source_asset.key} is partitioned. Returning `{observe_fn_return_value.__class__}` not supported"
+                    " for partitioned assets. Return `DataVersionsByPartition` instead."
                 )
+
+            if isinstance(observe_fn_return_value, ObserveResult):
+                data_version = observe_fn_return_value.data_version
+                metadata = observe_fn_return_value.metadata
+            else:  # DataVersion
+                data_version = observe_fn_return_value
+                metadata = {}
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: observe_fn_return_value.value},
+                    tags={DATA_VERSION_TAG: data_version.value}
+                    if data_version is not None
+                    else None,
+                    metadata=metadata,
                 )
             )
+
         elif isinstance(observe_fn_return_value, DataVersionsByPartition):
             if source_asset.partitions_def is None:
                 raise DagsterInvalidObservationError(
@@ -124,12 +146,14 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
                 " DataVersionsByPartition, but returned a value of type"
                 f" {type(observe_fn_return_value)}"
             )
+        return Output(None, metadata={SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION: True})
 
     return DecoratedOpFunction(fn)
 
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
+@experimental_param(param="freshness_policy")
 class SourceAsset(ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
@@ -145,6 +169,9 @@ class SourceAsset(ResourceAddable):
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
+            of the observation function for this asset will be launched at this interval. `observe_fn`
+            must be provided.
     """
 
     key: PublicAttr[AssetKey]
@@ -159,6 +186,7 @@ class SourceAsset(ResourceAddable):
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
+    freshness_policy: Optional[FreshnessPolicy]
 
     def __init__(
         self,
@@ -173,6 +201,7 @@ class SourceAsset(ResourceAddable):
         observe_fn: Optional[SourceAssetObserveFunction] = None,
         *,
         auto_observe_interval_minutes: Optional[float] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
         # asset. If we were to make this public, then we would have a canonical public
@@ -222,6 +251,9 @@ class SourceAsset(ResourceAddable):
         self.auto_observe_interval_minutes = check.opt_numeric_param(
             auto_observe_interval_minutes, "auto_observe_interval_minutes"
         )
+        self.freshness_policy = check.opt_inst_param(
+            freshness_policy, "freshness_policy", FreshnessPolicy
+        )
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
@@ -247,6 +279,19 @@ class SourceAsset(ResourceAddable):
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
         return cast(OpDefinition, self.node_def)
+
+    @property
+    def execution_type(self) -> AssetExecutionType:
+        return (
+            AssetExecutionType.OBSERVATION
+            if self.is_observable
+            else AssetExecutionType.UNEXECUTABLE
+        )
+
+    @property
+    def is_executable(self) -> bool:
+        """bool: Whether the asset is observable."""
+        return self.is_observable
 
     @public
     @property
@@ -324,6 +369,7 @@ class SourceAsset(ResourceAddable):
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+                freshness_policy=self.freshness_policy,
                 _required_resource_keys=self._required_resource_keys,
             )
 

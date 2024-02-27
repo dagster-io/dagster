@@ -69,5 +69,5 @@ def taxi_trips(context, database: DuckDBResource):
     """
 
     with database.get_connection() as conn:
-      conn.execute(query)
+        conn.execute(query)
 ```

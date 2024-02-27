@@ -39,6 +39,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         CommandStepBuilder("docs apidoc build")
         .run(
             "cd docs",
+            "pip install -U uv",
             "make apidoc-build",
             # "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
             # "git diff --ignore-all-space --stat",

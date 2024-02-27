@@ -44,6 +44,10 @@ import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import datatype_array from '../icon-svgs/datatype_array.svg';
+import datatype_bool from '../icon-svgs/datatype_bool.svg';
+import datatype_number from '../icon-svgs/datatype_number.svg';
+import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
@@ -73,12 +77,16 @@ import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
 import gitlab from '../icon-svgs/gitlab.svg';
+import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
+import graph_vertical from '../icon-svgs/graph_vertical.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
+import hourglass from '../icon-svgs/hourglass.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
 import id from '../icon-svgs/id.svg';
 import infinity from '../icon-svgs/infinity.svg';
@@ -96,6 +104,8 @@ import materialization from '../icon-svgs/materialization.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
+import ms_teams from '../icon-svgs/ms_teams.svg';
+import multi_asset from '../icon-svgs/multi_asset.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import observation from '../icon-svgs/observation.svg';
@@ -130,6 +140,7 @@ import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
+import sticky_note from '../icon-svgs/sticky_note.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -144,6 +155,7 @@ import unfold_more from '../icon-svgs/unfold_more.svg';
 import vertical_align_bottom from '../icon-svgs/vertical_align_bottom.svg';
 import vertical_align_center from '../icon-svgs/vertical_align_center.svg';
 import vertical_align_top from '../icon-svgs/vertical_align_top.svg';
+import view_column from '../icon-svgs/view_column.svg';
 import view_list from '../icon-svgs/view_list.svg';
 import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
@@ -171,11 +183,16 @@ export const Icons = {
   backfill,
   badge,
   date,
+  datatype_array,
+  datatype_bool,
+  datatype_string,
+  datatype_number,
   expectation,
   execute,
   materialization,
   observation,
   job,
+  multi_asset,
   op,
   op_selector,
   op_dynamic: bolt,
@@ -213,11 +230,13 @@ export const Icons = {
   folder,
   tag,
   slack,
+  ms_teams,
   github,
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
   gitlab,
+  graduation_cap,
   youtube,
   arrow_indent,
   editor_role,
@@ -227,6 +246,8 @@ export const Icons = {
   graph_downstream,
   graph_upstream,
   graph_neighbors,
+  graph_horizontal,
+  graph_vertical,
 
   // Material icons
   add,
@@ -276,6 +297,7 @@ export const Icons = {
   info,
   history,
   history_toggle_off,
+  hourglass,
   hourglass_bottom,
   layers,
   line_style,
@@ -306,6 +328,7 @@ export const Icons = {
   star,
   star_outline,
   status,
+  sticky_note,
   sync_problem,
   table_view,
   timer,
@@ -315,6 +338,7 @@ export const Icons = {
   unfold_less,
   unfold_more,
   view_list,
+  view_column,
   visibility,
   visibility_off,
   warning,
@@ -329,7 +353,7 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([(slack as any).src]);
+const SVGS_WITH_COLORS = new Set([(slack as any).src, (ms_teams as any).src]);
 
 export type IconName = keyof typeof Icons;
 

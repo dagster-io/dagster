@@ -1,26 +1,24 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
+import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
-import {useAssetNodeMenu} from './AssetNodeMenu';
+import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
+import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -33,6 +31,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
+
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -67,9 +66,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
-          {isSource && !definition.isObservable ? null : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          )}
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
@@ -127,65 +124,9 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   );
 };
 
-type AssetCheckIconType =
-  | Exclude<
-      AssetCheckExecutionResolvedStatus,
-      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    >
-  | 'NOT_EVALUATED'
-  | 'WARN'
-  | 'ERROR';
-
-const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNode}[] = [
-  {
-    type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-    content: <Spinner purpose="caption-text" />,
-  },
-  {
-    type: 'NOT_EVALUATED',
-    content: <Icon name="dot" color={Colors.accentGray()} />,
-  },
-  {
-    type: 'ERROR',
-    content: <Icon name="cancel" color={Colors.accentRed()} />,
-  },
-  {
-    type: 'WARN',
-    content: <Icon name="warning_outline" color={Colors.accentYellow()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={Colors.accentGray()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={Colors.accentGreen()} />,
-  },
-];
-
 export const AssetNodeContextMenuWrapper = React.memo(
-  ({
-    children,
-    graphData,
-    explorerPath,
-    onChangeExplorerPath,
-    selectNode,
-    node,
-  }: {
-    children: React.ReactNode;
-    graphData: GraphData;
-    node: GraphNode;
-    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-    explorerPath?: ExplorerPath;
-    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  }) => {
-    const {dialog, menu} = useAssetNodeMenu({
-      graphData,
-      explorerPath,
-      onChangeExplorerPath,
-      selectNode,
-      node,
-    });
+  ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
+    const {dialog, menu} = useAssetNodeMenu(menuProps);
     return (
       <>
         <ContextMenuWrapper menu={menu} stopPropagation>
@@ -208,21 +149,6 @@ const AssetNodeChecksRow = ({
     return <span />;
   }
 
-  const byIconType = countBy(liveData.assetChecks, (c) => {
-    const status = c.executionForLatestMaterialization?.status;
-    const value: AssetCheckIconType =
-      status === undefined
-        ? 'NOT_EVALUATED'
-        : status === AssetCheckExecutionResolvedStatus.FAILED
-        ? c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-          ? 'WARN'
-          : 'ERROR'
-        : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-        ? 'ERROR'
-        : status;
-    return value;
-  });
-
   return (
     <AssetNodeRowBox
       padding={{horizontal: 8}}
@@ -235,14 +161,7 @@ const AssetNodeChecksRow = ({
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <Box flex={{gap: 6, alignItems: 'center'}}>
-          {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map((icon) => (
-            <Box flex={{gap: 2, alignItems: 'center'}} key={icon.type}>
-              {icon.content}
-              {byIconType[icon.type]}
-            </Box>
-          ))}
-        </Box>
+        <AssetChecksStatusSummary liveData={liveData} rendering="dag" />
       </Link>
     </AssetNodeRowBox>
   );
@@ -264,7 +183,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -280,8 +199,8 @@ export const AssetNodeMinimal = ({
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
-            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 14})}
+            <MinimalName style={{fontSize: 28}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
@@ -362,7 +281,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
-  padding: '3px 6px',
+  padding: '3px 0 3px 6px',
   color: Colors.textDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
@@ -383,7 +302,7 @@ export const NameTooltipStyle = JSON.stringify({
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.backgroundGray(),
+  background: Colors.backgroundLight(),
   border: `none`,
 });
 
@@ -420,7 +339,7 @@ const MinimalAssetNodeBox = styled.div<{
 
   border-radius: 16px;
   position: relative;
-  padding: 4px;
+  padding: 2px;
   height: 100%;
   min-height: 86px;
   &:hover {

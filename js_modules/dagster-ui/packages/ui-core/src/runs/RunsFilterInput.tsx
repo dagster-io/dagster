@@ -298,7 +298,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -319,7 +319,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     allValues: StatusFilterValues,
     renderLabel: ({value}) => <span>{capitalizeFirstLetter(value)}</span>,
     getStringValue: (x) => capitalizeFirstLetter(x),
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'status').map((x) => x.value)),
       [tokens],
     ),
@@ -346,7 +346,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       </Box>
     ),
     getStringValue: (x) => x,
-    initialState: useMemo(
+    state: useMemo(
       () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
       [tokens],
     ),
@@ -361,28 +361,27 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
-  const backfillsFilter = useStaticSetFilter({
+  const backfillsFilter = useSuggestionFilter({
     name: 'Backfill ID',
     icon: 'backfill',
-    allValues: backfillValues,
-    allowMultipleSelections: false,
-    initialState: useMemo(() => {
-      return new Set(
-        tokens
-          .filter(
-            ({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Backfill,
-          )
-          .map(({value}) => tagValueToFilterObject(value)),
-      );
+    initialSuggestions: backfillValues,
+    getNoSuggestionsPlaceholder: (query) => (query ? 'Invalid ID' : 'Type or paste a backfill ID'),
+
+    state: useMemo(() => {
+      return tokens
+        .filter(({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Backfill)
+        .map(({value}) => tagValueToFilterObject(value));
     }, [tokens]),
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value.value!} />
-      </Box>
-    ),
-    getStringValue: ({value}) => value!,
-    onStateChanged: (values) => {
+
+    freeformSearchResult: (query) => {
+      return /^([a-zA-Z0-9-]{6,12})$/.test(query.trim())
+        ? {
+            value: tagValueToFilterObject(`${DagsterTag.Backfill}=${query.trim()}`),
+            final: true,
+          }
+        : null;
+    },
+    setState: (values) => {
       onChange([
         ...tokens.filter(({token, value}) => {
           if (token !== 'tag') {
@@ -396,6 +395,26 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         })),
       ]);
     },
+    getStringValue: ({value}) => value,
+    getKey: ({value}) => value,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="id" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+      </Box>
+    ),
+    onSuggestionClicked: async (value) => {
+      return [{value}];
+    },
+    renderActiveStateLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="id" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+        {value.value!}
+      </Box>
+    ),
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
   });
 
   const partitionsFilter = useStaticSetFilter({
@@ -403,7 +422,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     icon: 'partition',
     allValues: partitionValues,
     allowMultipleSelections: false,
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -466,7 +485,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       }
       return x.value!;
     },
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       return new Set(
         tokens
           .filter(
@@ -494,8 +513,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdDateFilter = useTimeRangeFilter({
     name: 'Created date',
+    activeFilterTerm: 'Created',
     icon: 'date',
-    initialState: useMemo(() => {
+    state: useMemo(() => {
       const before = tokens.find((token) => token.token === 'created_date_before');
       const after = tokens.find((token) => token.token === 'created_date_after');
       return [
@@ -665,7 +685,7 @@ export function useTagDataFilterValues(tagKey?: DagsterTag) {
     return data.runTagsOrError.tags
       .map((x) => x.values)
       .flat()
-      .map((x) => tagToFilterValue(tagKey, x));
+      .map((x) => ({...tagToFilterValue(tagKey, x), final: true}));
   }, [data, tagKey]);
 
   return [fetch, values] as [typeof fetch, typeof values];
@@ -683,7 +703,7 @@ function tagToFilterValue(key: string, value: string) {
 export const tagValueToFilterObject = memoize((value: string) => ({
   key: value,
   type: value.split('=')[0] as DagsterTag,
-  value: value.split('=')[1],
+  value: value.split('=')[1]!,
 }));
 
 export const tagSuggestionValueObject = memoize(

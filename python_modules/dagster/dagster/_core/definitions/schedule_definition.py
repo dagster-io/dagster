@@ -60,7 +60,7 @@ RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest]
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
@@ -84,7 +84,7 @@ class DefaultScheduleStatus(Enum):
 
 
 def get_or_create_schedule_context(
-    fn: Callable, *args: Any, **kwargs: Any
+    fn: Callable[..., Any], *args: Any, **kwargs: Any
 ) -> "ScheduleEvaluationContext":
     """Based on the passed resource function and the arguments passed to it, returns the
     user-passed ScheduleEvaluationContext or creates one if it is not passed.

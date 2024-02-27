@@ -1,6 +1,5 @@
 import random
 import string
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -10,11 +9,14 @@ import pendulum
 import pytest
 from dagster import (
     Any,
+    AssetExecutionContext,
     AssetKey,
     DefaultScheduleStatus,
     Field,
     ScheduleDefinition,
+    StaticPartitionsDefinition,
     asset,
+    build_schedule_from_partitioned_job,
     define_asset_job,
     job,
     materialize,
@@ -470,6 +472,25 @@ def stale_asset_selection_schedule():
     return RunRequest(stale_assets_only=True)
 
 
+static_partition_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+
+@asset(partitions_def=static_partition_def)
+def static_partitioned_asset1(context: AssetExecutionContext):
+    return f"static_partitioned_asset1[{context.partition_key}]"
+
+
+static_partitioned_asset1_schedule = build_schedule_from_partitioned_job(
+    name="static_partitioned_asset1_schedule",
+    job=define_asset_job(
+        "static_paritioned_asset1_job",
+        selection=[static_partitioned_asset1],
+        partitions_def=static_partition_def,
+    ),
+    cron_schedule="* * * * *",
+)
+
+
 @observable_source_asset
 def source_asset():
     return DataVersion("foo")
@@ -518,6 +539,8 @@ def the_repo():
         asset_selection_schedule,
         stale_asset_selection_schedule,
         source_asset_observation_schedule,
+        static_partitioned_asset1,
+        static_partitioned_asset1_schedule,
     ]
 
 
@@ -793,7 +816,6 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                     get_default_daemon_logger("SchedulerDaemon"),
                     external_schedule,
                     schedule_state,
-                    threading.Lock(),
                     pendulum.now("UTC"),
                     max_catchup_runs=0,
                     max_tick_retries=0,
@@ -1993,6 +2015,35 @@ class TestSchedulerRun:
             )
 
             assert scheduler_instance.run_launcher.did_run_launch(run.run_id)  # type: ignore  # (unspecified scheduler_instance subclass)
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_static_partitioned_asset_schedule_run(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        external_schedule = external_repo.get_external_schedule(
+            "static_partitioned_asset1_schedule"
+        )
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        with pendulum_freeze_time(initial_datetime):
+            scheduler_instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert scheduler_instance.get_runs_count() == 3
+
+            wait_for_all_runs_to_start(scheduler_instance)
+
+            runs = scheduler_instance.get_runs()
+            assert len(runs) == 3
+
+            for key in static_partition_def.get_partition_keys():
+                assert any(r.tags[PARTITION_NAME_TAG] == key for r in runs)
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_bad_schedules_mixed_with_good_schedule(

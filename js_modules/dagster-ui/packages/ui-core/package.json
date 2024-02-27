@@ -69,7 +69,7 @@
     "strip-markdown": "^6.0.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
-    "yaml": "2.2.2"
+    "yaml": "2.4.0"
   },
   "devDependencies": {
     "@apollo/client": "3.7.13",

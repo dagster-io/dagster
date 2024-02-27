@@ -130,7 +130,10 @@ export const ScheduleDetails = (props: {
               </Box>
             </td>
             <td>
-              <Box flex={{direction: 'row', alignItems: 'center'}}>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
                 <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
                 {schedule.canReset && (
                   <ScheduleResetButton repoAddress={repoAddress} schedule={schedule} />

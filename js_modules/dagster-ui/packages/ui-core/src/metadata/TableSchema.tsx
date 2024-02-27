@@ -1,32 +1,68 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Colors,
+  Icon,
+  IconName,
+  Mono,
+  Tag,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import styled from 'styled-components';
+import {useState} from 'react';
 
-import {ConstraintsForTableColumnFragment, TableSchemaFragment} from './types/TableSchema.types';
+import {TableSchemaFragment} from './types/TableSchema.types';
+import {Timestamp} from '../app/time/Timestamp';
+import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
+import {MaterializationEvent, TableSchemaMetadataEntry} from '../graphql/types';
 
-// export type ITableSchemaMetadataEntry = TableSchemaForMetadataEntryFragment;
 type ITableSchema = TableSchemaFragment;
-type ColumnConstraints = ConstraintsForTableColumnFragment;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
 
 interface ITableSchemaProps {
   schema: ITableSchema;
+  schemaLoadTimestamp?: number | undefined;
   itemHorizontalPadding?: Spacing;
 }
 
-export const TableSchema = ({schema, itemHorizontalPadding}: ITableSchemaProps) => {
+export const isCanonicalTableSchemaEntry = (
+  m: Pick<MaterializationEvent['metadataEntries'][0], '__typename' | 'label'>,
+): m is TableSchemaMetadataEntry =>
+  m.__typename === 'TableSchemaMetadataEntry' && m.label === 'columns';
+
+export const TableSchema = ({
+  schema,
+  schemaLoadTimestamp,
+  itemHorizontalPadding,
+}: ITableSchemaProps) => {
   const multiColumnConstraints = schema.constraints?.other || [];
+  const [filter, setFilter] = useState('');
+  const rows = schema.columns.filter(
+    (s) => !filter || s.name.toLowerCase().includes(filter.toLowerCase()),
+  );
+
   return (
-    <div>
+    <Box padding={{horizontal: itemHorizontalPadding}}>
+      <Box padding={{bottom: 12}} flex={{alignItems: 'center', justifyContent: 'space-between'}}>
+        <TextInput
+          value={filter}
+          style={{minWidth: 250}}
+          icon="search"
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter columns"
+        />
+        {schemaLoadTimestamp && (
+          <Caption color={Colors.textLighter()}>
+            Updated <Timestamp timestamp={{ms: schemaLoadTimestamp}} />
+          </Caption>
+        )}
+      </Box>
       {multiColumnConstraints.length > 0 && (
         <Box
-          flex={{
-            wrap: 'wrap',
-            gap: 4,
-            alignItems: 'center',
-          }}
+          flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}
           padding={{horizontal: itemHorizontalPadding, vertical: 8}}
         >
           {multiColumnConstraints.map((constraint, i) => (
@@ -34,70 +70,79 @@ export const TableSchema = ({schema, itemHorizontalPadding}: ITableSchemaProps) 
           ))}
         </Box>
       )}
-      {schema.columns.map((column) => {
-        return (
-          <ColumnItem
-            key={column.name}
-            name={column.name}
-            type={column.type}
-            description={column.description || undefined}
-            constraints={column.constraints}
-            horizontalPadding={itemHorizontalPadding || 8}
-          />
-        );
-      })}
-    </div>
+      <StyledTableWithHeader>
+        <thead>
+          <tr>
+            <td>Column name</td>
+            <td style={{width: 200}}>Type</td>
+            <td>Description</td>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((column) => (
+            <tr key={column.name}>
+              <td>
+                <Mono>{column.name}</Mono>
+              </td>
+              <td>
+                <TypeTag type={column.type} icon={iconForType(column.type)} />
+                {!column.constraints.nullable && NonNullableTag}
+                {column.constraints.unique && UniqueTag}
+                {column.constraints.other.map((constraint, i) => (
+                  <ArbitraryConstraintTag key={i} constraint={constraint} />
+                ))}
+              </td>
+              <td>{column.description}</td>
+            </tr>
+          ))}
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={4}>
+                <Caption color={Colors.textLight()}>No table schema columns</Caption>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </StyledTableWithHeader>
+    </Box>
   );
 };
 
-const _ColumnItem = ({
-  name,
-  type,
-  description,
-  constraints,
-  className,
-}: {
-  name: string;
-  type: string;
-  description?: string;
-  constraints: ColumnConstraints;
-  horizontalPadding: number;
-  className?: string;
-}) => {
-  return (
-    <div className={className}>
-      <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
-        <ColumnName>{name}</ColumnName>
-        <TypeTag type={type} />
-        {!constraints.nullable && NonNullableTag}
-        {constraints.unique && UniqueTag}
-        {constraints.other.map((constraint, i) => (
-          <ArbitraryConstraintTag key={i} constraint={constraint} />
-        ))}
-      </Box>
-      {description && <Box>{description}</Box>}
-    </div>
-  );
-};
-
-const ColumnItem = styled(_ColumnItem)`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px ${(props) => props.horizontalPadding}px;
-  border-top: 1px solid ${Colors.keylineDefault()};
-  :first-child {
-    border-top: none;
+const iconForType = (type: string): IconName | null => {
+  const lower = type.toLowerCase();
+  if (lower.includes('bool')) {
+    return 'datatype_bool';
   }
-  font-size: 12px;
-`;
+  if (['char', 'str', 'text', 'uuid'].some((term) => lower.includes(term))) {
+    return 'datatype_string';
+  }
+  if (lower.includes('arr') || lower.includes('[]')) {
+    return 'datatype_array';
+  }
+  if (['int', 'float', 'double', 'num', 'decimal'].some((term) => lower.includes(term))) {
+    return 'datatype_number';
+  }
+  if (lower.includes('time') || lower.includes('date')) {
+    return 'schedule';
+  }
+  return null;
+};
 
-const ColumnName = styled.div`
-  font-weight: 600;
-  padding-right: 4px;
-`;
+const TypeTag = ({type = '', icon}: {type: string; icon: IconName | null}) => {
+  if (type.trim().replace(/\?/g, '').length === 0) {
+    // Do not render type '' or '?' or any other empty value.
+    return <span />;
+  }
 
-const TypeTag = ({type}: {type: string}) => <Tag intent="none">{type}</Tag>;
+  return (
+    <Tag intent="none">
+      <Box flex={{gap: 4}}>
+        {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
+        {type}
+      </Box>
+    </Tag>
+  );
+};
 
 const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
 

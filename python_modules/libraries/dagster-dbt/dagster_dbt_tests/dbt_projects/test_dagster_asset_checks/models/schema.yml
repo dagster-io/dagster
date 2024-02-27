@@ -51,6 +51,13 @@ models:
           - relationships:
               to: ref('customers')
               field: customer_id
+          - relationships:
+              to: source('jaffle_shop', 'raw_customers')
+              field: customer_id
+          - relationships_with_duplicate:
+              to: ref('customers')
+              another_to: ref('customers')
+              field: customer_id
 
       - name: order_date
         description: Date (UTC) that the order was placed
