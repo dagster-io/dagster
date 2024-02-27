@@ -135,7 +135,7 @@ def test_openai_resource_with_multi_asset(mock_client, mock_context, mock_wrappe
         mock_context.output_for_asset_key.return_value = "result"
 
         # Test success when asset_key is provided
-        with openai_resource.get_client(
+        with openai_resource.get_client_for_asset(
             context=mock_context, asset_key=AssetKey("result")
         ) as client:
             client.chat.completions.create(
@@ -375,7 +375,7 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
         mock_completion.usage = mock_usage
         mock_client.return_value.fine_tuning.jobs.create.return_value = mock_completion
 
-        with openai_resource.get_client(
+        with openai_resource.get_client_for_asset(
             context=mock_context, asset_key=AssetKey("result")
         ) as client:
             client.fine_tuning.jobs.create = with_usage_metadata(
