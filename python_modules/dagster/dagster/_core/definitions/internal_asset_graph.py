@@ -181,12 +181,22 @@ class InternalAssetGraph(AssetGraph):
         else:
             return {*asset.keys, *asset.check_keys}
 
+    @property
+    @cached_method
+    def all_group_names(self) -> AbstractSet[str]:
+        return {
+            group_name for ad in self._assets_defs for group_name in ad.group_names_by_key.values()
+        }
+
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         # Performing an existence check temporarily until we change callsites
         return self.get_assets_def(asset_key).partitions_def if self.has_asset(asset_key) else None
 
     def get_partition_mappings(self, asset_key: AssetKey) -> Mapping[AssetKey, PartitionMapping]:
         return self.get_assets_def(asset_key).partition_mappings
+
+    def get_group_name(self, asset_key: AssetKey) -> Optional[str]:
+        return self.get_assets_def(asset_key).group_names_by_key.get(asset_key)
 
     def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
         return self.get_assets_def(asset_key).freshness_policies_by_key.get(asset_key)
