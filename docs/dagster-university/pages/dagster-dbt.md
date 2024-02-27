@@ -29,3 +29,9 @@ title: Dagster + dbt
   - [Speeding up the development cycle](/dagster-dbt/lesson-4/2-speeding-up-the-development-cycle)
   - [Debugging failed runs](/dagster-dbt/lesson-4/3-debugging-failed-runs)
   - [Customizing your execution](/dagster-dbt/lesson-4/4-customizing-your-execution)
+- Lesson 7: Deploying to Dagster Cloud
+  - [Overview](/dagster-dbt/lesson-7/1-overview)
+  - [Pushing the project to GitHub](/dagster-dbt/lesson-7/2-pushing-the-project-to-github)
+  - [Setting up Dagster Cloud](/dagster-dbt/lesson-7/3-setting-up-dagster-cloud)
+  - [Creating the manifest with GitHub Actions](/dagster-dbt/lesson-7/4-creating-the-manifest-with-github-actions)
+  - [Preparing for a sucessful run](/dagster-dbt/lesson-7/5-preparing-for-a-successful-run)
