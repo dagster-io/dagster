@@ -34,6 +34,7 @@ title: Dagster + dbt
   - [Connecting dbt models to Dagster assets](/dagster-dbt/lesson-5/2-connecting-dbt-models-to-dagster-assets)
   - [Creating assets that depend on dbt models](/dagster-dbt/lesson-5/3-creating-assets-that-depend-on-dbt-models)
   - [Automating dbt models in Dagster](/dagster-dbt/lesson-5/4-automating-dbt-models-in-dagster)
+  - [Practice: Grouping dbt models by layer](/dagster-dbt/lesson-5/coding-practice-grouping-models)
 - Lesson 6: Using Dagster to partition dbt models
   - [Overview](/dagster-dbt/lesson-6/1-overview)
   - [Creating an incremental model](/dagster-dbt/lesson-6/2-creating-a-simple-incremental-model)
