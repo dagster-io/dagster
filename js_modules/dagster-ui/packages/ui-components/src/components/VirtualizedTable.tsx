@@ -52,7 +52,7 @@ export const Inner = styled.div.attrs<InnerProps>(({$totalHeight}) => ({
   width: 100%;
 `;
 
-type RowProps = {$height: number; $start: number};
+export type RowProps = {$height: number; $start: number};
 
 export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   style: {

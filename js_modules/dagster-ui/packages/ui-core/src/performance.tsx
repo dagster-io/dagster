@@ -6,12 +6,17 @@ type TraceData = {
   endTime: number | null;
 };
 
+export type Trace = {
+  startTrace: (ts?: number) => void;
+  endTrace: (ts?: number) => void;
+};
+
 // @ts-expect-error - exposing a global for cypress test to access traces
 window.__traceBuffer = [];
 class PointToPointInstrumentation {
   private traces: {[traceId: string]: TraceData} = {};
 
-  startTrace(traceId: string, name: string): void {
+  startTrace(traceId: string, name: string, startTime = performance.now()): void {
     if (!traceId) {
       console.error('Trace ID is required to start a trace.');
       return;
@@ -21,11 +26,10 @@ class PointToPointInstrumentation {
       return;
     }
 
-    const startTime = performance.now();
     this.traces[traceId] = {name, startTime, endTime: null};
   }
 
-  endTrace(traceId: string): void {
+  endTrace(traceId: string, endTime = performance.now()): void {
     if (!traceId) {
       return;
     }
@@ -40,11 +44,11 @@ class PointToPointInstrumentation {
       return;
     }
 
-    trace.endTime = performance.now();
+    trace.endTime = endTime;
     // @ts-expect-error - exposing global for cypress
     window.__traceBuffer.push(trace);
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Finished trace ${traceId}`);
+      console.log(`Finished trace ${traceId}`, trace);
     }
   }
 }
@@ -52,17 +56,27 @@ class PointToPointInstrumentation {
 const instrumentation = new PointToPointInstrumentation();
 
 let counter = 0;
-export function useStartTrace(name: string) {
-  const traceId = useMemo(() => `${counter++}:${name}`, [name]);
-
-  instrumentation.startTrace(traceId, name);
-
-  return useMemo(
-    () => ({
-      endTrace: instrumentation.endTrace.bind(instrumentation, traceId),
-    }),
-    [traceId],
-  );
+export function usePageLoadTrace(name: string) {
+  return useMemo(() => {
+    const trace = createTrace(name);
+    // Set startTimestamp to 0 to indicate this trace started when the page first started loading
+    // in the future this will be changed to be the timestamp of the last transition to capture
+    // transition page loads
+    trace.startTrace(0);
+    return {
+      endTrace: () => trace.endTrace(),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
-export type Trace = ReturnType<typeof useStartTrace>;
+export function createTrace(name: string): Trace {
+  const traceId = `${counter++}:${name}`;
+  return {
+    startTrace: (startTime = performance.now()) =>
+      instrumentation.startTrace(traceId, name, startTime),
+    endTrace: (endTime = performance.now()) => instrumentation.endTrace(traceId, endTime),
+  };
+}
+
+export type PageLoadTrace = ReturnType<typeof usePageLoadTrace>;

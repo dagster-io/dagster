@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
@@ -29,7 +29,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
         backcompat_serialized, None, 0
     ) == AssetDaemonCursor.empty(20)
 
-    asset_graph = AssetGraph.from_assets([my_asset])
+    asset_graph = InternalAssetGraph.from_assets([my_asset])
     c = backcompat_deserialize_asset_daemon_cursor_str(backcompat_serialized, asset_graph, 0)
 
     assert c == AssetDaemonCursor.empty(20)
@@ -76,6 +76,6 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat() -> None:
     )
 
     cursor = backcompat_deserialize_asset_daemon_cursor_str(
-        serialized, AssetGraph.from_assets([asset1, asset2]), 0
+        serialized, InternalAssetGraph.from_assets([asset1, asset2]), 0
     )
     assert cursor.evaluation_id == 25

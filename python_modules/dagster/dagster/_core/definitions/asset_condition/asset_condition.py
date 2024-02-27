@@ -307,7 +307,7 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
 
 
 class AssetCondition(ABC):
-    """An AutomationCondition represents some state of the world that can influence if an asset
+    """An AssetCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AutomationConditions can be combined together to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
     """
@@ -380,6 +380,54 @@ class AssetCondition(ABC):
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=self.unique_id,
+        )
+
+    @staticmethod
+    def parent_newer() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when at least one parent
+        asset partition is newer than it.
+        """
+        from ..auto_materialize_rule import AutoMaterializeRule
+
+        return RuleCondition(AutoMaterializeRule.materialize_on_parent_updated())
+
+    @staticmethod
+    def missing() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when it has never been
+        materialized.
+        """
+        from ..auto_materialize_rule import AutoMaterializeRule
+
+        return RuleCondition(AutoMaterializeRule.materialize_on_missing())
+
+    @staticmethod
+    def parent_missing() -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when at least one parent
+        asset partition has never been materialized or observed.
+        """
+        from ..auto_materialize_rule import AutoMaterializeRule
+
+        return RuleCondition(AutoMaterializeRule.skip_on_parent_missing())
+
+    @staticmethod
+    def updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when it has been updated
+        since the latest tick of the given cron schedule. For partitioned assets with a time
+        component, this can only be true for the the most recent partition.
+        """
+        from ..auto_materialize_rule import AutoMaterializeRule
+
+        return ~RuleCondition(AutoMaterializeRule.materialize_on_cron(cron_schedule, timezone))
+
+    @staticmethod
+    def parents_updated_since_cron(cron_schedule: str, timezone: str = "UTC") -> "AssetCondition":
+        """Returns an AssetCondition that is true for an asset partition when all parent asset
+        partitions have been updated more recently than the latest tick of the given cron schedule.
+        """
+        from ..auto_materialize_rule import AutoMaterializeRule
+
+        return ~RuleCondition(
+            AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(cron_schedule, timezone)
         )
 
 

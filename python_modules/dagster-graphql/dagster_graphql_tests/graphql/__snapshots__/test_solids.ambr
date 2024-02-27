@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_query_all_solids[0]
   dict({
     'repositoryOrError': dict({
@@ -4822,94 +4823,6 @@
               }),
               'solidHandle': dict({
                 'handleID': 'unconnected',
-              }),
-            }),
-          ]),
-        }),
-        dict({
-          '__typename': 'UsedSolid',
-          'definition': dict({
-            'name': 'unexecutable_asset',
-          }),
-          'invocations': list([
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_0',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_1',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_2',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_3',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_4',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_5',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_6',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_7',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_8',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
-                'name': '__ASSET_JOB_9',
-              }),
-              'solidHandle': dict({
-                'handleID': 'unexecutable_asset',
               }),
             }),
           ]),

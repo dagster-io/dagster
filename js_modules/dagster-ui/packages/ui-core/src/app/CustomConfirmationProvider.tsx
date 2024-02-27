@@ -1,6 +1,8 @@
 import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {testId} from '../testing/testId';
+
 interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
@@ -33,7 +35,7 @@ const ConfirmationDialog = ({
       <DialogBody>{description}</DialogBody>
       <DialogFooter topBorder>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onSubmit} intent={intent}>
+        <Button onClick={onSubmit} intent={intent} data-testid={testId('confirm-button-ok')}>
           {buttonText}
         </Button>
       </DialogFooter>

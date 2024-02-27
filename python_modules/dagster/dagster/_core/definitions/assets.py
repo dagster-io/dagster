@@ -861,6 +861,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """AbstractSet[AssetKey]: The asset keys associated with this AssetsDefinition."""
         return self._selected_asset_keys
 
+    @property
+    def has_keys(self) -> bool:
+        return len(self.keys) > 0
+
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
@@ -985,11 +989,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def execution_type(self) -> AssetExecutionType:
         value = self._get_external_asset_metadata_value(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         if value is None:
-            return (
-                AssetExecutionType.UNEXECUTABLE
-                if len(self.keys) == 0
-                else AssetExecutionType.MATERIALIZATION
-            )
+            return AssetExecutionType.MATERIALIZATION
         elif isinstance(value, str):
             return AssetExecutionType[value]
         else:

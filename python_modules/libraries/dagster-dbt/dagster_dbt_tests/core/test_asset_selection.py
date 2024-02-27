@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 import pytest
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 
@@ -147,7 +147,7 @@ def test_dbt_asset_selection(
     def my_dbt_assets():
         ...
 
-    asset_graph = AssetGraph.from_assets([my_dbt_assets])
+    asset_graph = InternalAssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
         dbt_select=select or "fqn:*",
@@ -185,7 +185,7 @@ def test_dbt_asset_selection_manifest_argument(
         def my_dbt_assets():
             ...
 
-        asset_graph = AssetGraph.from_assets([my_dbt_assets])
+        asset_graph = InternalAssetGraph.from_assets([my_dbt_assets])
         asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")
         selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
 
