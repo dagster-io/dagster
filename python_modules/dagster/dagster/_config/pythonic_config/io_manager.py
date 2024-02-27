@@ -112,9 +112,9 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
     ):
         ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
 
-        if isinstance(ResourceDefinition, IOManagerDefinition):
-            input_config_schema = cast(IOManagerDefinition, resource).input_config_schema
-            output_config_schema = cast(IOManagerDefinition, resource).output_config_schema
+        if isinstance(resource, IOManagerDefinition):
+            input_config_schema = resource.input_config_schema
+            output_config_schema = resource.output_config_schema
         else:
             input_config_schema = None
             output_config_schema = None
