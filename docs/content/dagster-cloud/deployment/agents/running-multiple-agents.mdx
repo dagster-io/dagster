@@ -199,4 +199,20 @@ dagsterCloud:
 ```
 
 </TabItem>
+<TabItem name="Amazon ECS">
+
+#### In Amazon ECS
+
+Modify your ECS Cloud Formation template to add the following configuration to the config.yaml passed to the agent:
+
+```yaml
+agent_queues:
+  # Continue to handle requests for code locations that aren't
+  # assigned to a specific agent queue
+  include_default_queue: true
+  additional_queues:
+    - special-queue
+```
+
+</TabItem>
 </TabGroup>
