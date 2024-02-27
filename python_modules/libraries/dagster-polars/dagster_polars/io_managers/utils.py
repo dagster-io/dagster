@@ -13,7 +13,6 @@ from dagster import (
     TableRecord,
     TableSchema,
 )
-from packaging.version import Version
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
     Any,
@@ -73,10 +72,9 @@ def get_metadata_schema(
 def get_table_metadata(
     context: OutputContext,
     df: pl.DataFrame,
-    schema: TableSchema,
+    schema: Optional[TableSchema] = None,
     n_rows: Optional[int] = 5,
     fraction: Optional[float] = None,
-    with_schema: bool = True,
 ) -> Optional[TableMetadataValue]:
     """Takes the polars DataFrame and takes a sample of the data and returns it as TableMetaDataValue.
     With LazyFrame this is not possible without doing possible a very costly operation.
@@ -84,9 +82,9 @@ def get_table_metadata(
     Args:
         context (OutputContext): output context
         df (pl.DataFrame): polars frame
-        schema (TableSchema): dataframe schema,
-        n_rows (Optional[int], optional): number of rows to sample from. Defaults to 5.
-        fraction (Optional[float], optional): fraction of rows to sample from. Defaults to None.
+        schema (Optional[TableSchema]): dataframe schema
+        n_rows (Optional[int]): number of rows to sample from. Defaults to 5.
+        fraction (Optional[float]): fraction of rows to sample from. Defaults to None.
         with_schema (bool): if to include the schema in the metadata
 
     Returns:
@@ -95,7 +93,7 @@ def get_table_metadata(
     if n_rows is not None:
         n_rows = min(n_rows, len(df))
 
-    if fraction is not None or n_rows is None:
+    if fraction is not None or n_rows is not None:
         df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
     else:
         df_sample = df
@@ -104,6 +102,7 @@ def get_table_metadata(
         # this can fail sometimes
         # because TableRecord doesn't support all python types
         df_sample_dict = df_sample.to_dicts()
+
         table = MetadataValue.table(
             records=[
                 TableRecord(
@@ -114,7 +113,7 @@ def get_table_metadata(
                 )
                 for i in range(len(df_sample))
             ],
-            schema=schema if with_schema else None,
+            schema=schema,
         )
     except TypeError as e:
         context.log.error(
@@ -126,21 +125,6 @@ def get_table_metadata(
         )
         return None
     return table
-
-
-def get_polars_df_stats(
-    df: pl.DataFrame,
-) -> Dict[str, Dict[str, Union[str, int, float]]]:
-    describe = df.describe().fill_null(pl.lit("null"))
-    # TODO(ion): replace once there is a index column selector
-    if Version(pl.__version__) >= Version("0.20.6"):
-        col_name = "statistic"
-    else:
-        col_name = "describe"
-    return {
-        col: {stat: describe[col][i] for i, stat in enumerate(describe[col_name].to_list())}
-        for col in describe.columns[1:]
-    }
 
 
 def get_polars_metadata(
@@ -172,15 +156,13 @@ def get_polars_metadata(
             fraction=context.metadata.get("fraction"),
         )
 
-        df_stats = df.describe().fill_null(pl.lit("null"))
+        df_stats = df.describe()
 
         stats_metadata = get_table_metadata(
             context=context,
             df=df_stats,
-            schema=get_metadata_schema(df_stats),
             n_rows=None,
             fraction=None,
-            with_schema=False,
         )
 
         metadata["columns"] = table_metadata
