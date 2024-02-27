@@ -198,7 +198,7 @@ def get_asset_node_definition_collisions(
 
 
 def get_asset_nodes_by_asset_key(
-    graphene_info: "ResolveInfo",
+    graphene_info: "ResolveInfo", asset_keys: Optional[Sequence[AssetKey]] = None
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
@@ -223,11 +223,12 @@ def get_asset_nodes_by_asset_key(
             external_asset_node.asset_key, (None, None, None)
         )
         if preexisting_asset_node is None or preexisting_asset_node.is_source:
-            asset_nodes_by_asset_key[external_asset_node.asset_key] = (
-                repo_loc,
-                repo,
-                external_asset_node,
-            )
+            if asset_keys is None or external_asset_node.asset_key in asset_keys:
+                asset_nodes_by_asset_key[external_asset_node.asset_key] = (
+                    repo_loc,
+                    repo,
+                    external_asset_node,
+                )
 
     asset_checks_loader = AssetChecksLoader(
         context=graphene_info.context,
@@ -268,7 +269,7 @@ def get_asset_node(
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
-    node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key, None)
+    node = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key]).get(asset_key, None)
     if not node:
         return GrapheneAssetNotFoundError(asset_key=asset_key)
     return node
@@ -283,7 +284,7 @@ def get_asset(
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
 
-    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info)
+    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key])
     asset_node = asset_nodes_by_asset_key.get(asset_key)
 
     if not asset_node and not instance.has_asset_key(asset_key):
