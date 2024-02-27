@@ -10,8 +10,6 @@ Did you realize that your dbt models have already been scheduled to run on a reg
 
 Check it out in the Dagster UI by clicking **Overview** in the top navigation bar, then the **Jobs** tab. Click `trip_update_job` to check out the job’s details. It looks like the dbt models are already attached to this job!
 
-![TODO]()
-
 Pretty cool, right? Let’s check out the code that made this happen. Open the `dagster_university/jobs/__init__.py` and look at the definition for `trip_update_job`:
 
 ```python
@@ -71,9 +69,7 @@ If you want to also exclude the new `airport_trips` asset from this job, modify 
 dbt_trips_selection = build_dbt_asset_selection([dbt_analytics], "stg_trips").downstream()
 ```
 
-Reload the code location and look at the `trip_update_job` once more to verify that everything looks right:
-
-![TODO]()
+Reload the code location and look at the `trip_update_job` once more to verify that everything looks right.
 
 {% callout %}
 > 💡 **Want an even more convenient utility to do this work for you?** Consider using the similar [`build_schedule_from_dbt_selection`](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.build_schedule_from_dbt_selection) function to quickly create a job and schedule for a given dbt selection.
