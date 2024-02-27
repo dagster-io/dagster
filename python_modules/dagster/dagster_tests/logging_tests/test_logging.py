@@ -153,7 +153,7 @@ def test_multiline_logging_complex():
 
     expected_results = [
         (
-            "error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "
+            "error_monster - 123 - start.materialization.output.result.0 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "
             "start.materialization.output.result.0"
         ),
         "",
