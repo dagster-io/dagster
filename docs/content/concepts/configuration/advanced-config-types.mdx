@@ -300,7 +300,7 @@ class ProcessUsersConfig(Config):
 def process_users(config: ProcessUsersConfig):
     for user, permission in config.users_list.items():
         if permission == UserPermissions.ADMIN:
-            print(f"{user} is an admin")  # noqa: T201
+            print(f"{user} is an admin")
 
 @job
 def process_users_job():
@@ -372,7 +372,7 @@ executed = {}
 
 @op
 def greet_user(config: UserConfig) -> None:
-    print(f"Hello {config.name}!")  # noqa: T201
+    print(f"Hello {config.name}!")
     executed["greet_user"] = True
 
 @job

@@ -2,10 +2,28 @@ import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {AssetKeyInput} from '../../graphql/types';
+import {
+  ASSETS_GRAPH_LIVE_QUERY,
+  AssetLiveDataProvider,
+} from '../../asset-data/AssetLiveDataProvider';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+} from '../../asset-data/types/AssetLiveDataProvider.types';
+import {
+  AssetGraphQuery,
+  AssetGraphQueryVariables,
+} from '../../asset-graph/types/useAssetGraphData.types';
+import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
+import {
+  AssetKeyInput,
+  buildAssetKey,
+  buildAssetLatestInfo,
+  buildAssetNode,
+} from '../../graphql/types';
+import {buildQueryMock} from '../../testing/mocking';
 import {AssetView} from '../AssetView';
 import {
-  AssetGraphEmpty,
   AssetViewDefinitionNonSDA,
   AssetViewDefinitionSDA,
   AssetViewDefinitionSourceAsset,
@@ -20,20 +38,45 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 jest.mock('../AssetPartitions', () => ({AssetPartitions: () => <div />}));
 jest.mock('../AssetEvents', () => ({AssetEvents: () => <div />}));
 
+function mockLiveData(key: string) {
+  const assetKey = {path: [key]};
+  return buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
+    query: ASSETS_GRAPH_LIVE_QUERY,
+    variables: {
+      assetKeys: [assetKey],
+    },
+    data: {
+      assetNodes: [buildAssetNode({assetKey: buildAssetKey(assetKey)})],
+      assetsLatestInfo: [buildAssetLatestInfo({assetKey: buildAssetKey(assetKey)})],
+    },
+  });
+}
+
 describe('AssetView', () => {
   const Test = ({path, assetKey}: {path: string; assetKey: AssetKeyInput}) => {
     return (
       <MockedProvider
         mocks={[
-          AssetGraphEmpty,
           AssetViewDefinitionSDA,
           AssetViewDefinitionNonSDA,
           AssetViewDefinitionSourceAsset,
+          mockLiveData('sda_asset'),
+          mockLiveData('observable_source_asset'),
+          mockLiveData('non_sda_asset'),
+          buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
+            query: ASSET_GRAPH_QUERY,
+            variables: {},
+            data: {
+              assetNodes: [buildAssetNode()],
+            },
+          }),
         ]}
       >
-        <MemoryRouter initialEntries={[path]}>
-          <AssetView assetKey={assetKey} />
-        </MemoryRouter>
+        <AssetLiveDataProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <AssetView assetKey={assetKey} />
+          </MemoryRouter>
+        </AssetLiveDataProvider>
       </MockedProvider>
     );
   };

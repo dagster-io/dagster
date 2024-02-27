@@ -258,7 +258,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             minutes_late_by_key: Dict[AssetKey, Optional[float]] = {}
             for asset_key in monitored_keys:
-                freshness_policy = asset_graph.freshness_policies_by_key.get(asset_key)
+                freshness_policy = asset_graph.get_freshness_policy(asset_key)
                 if freshness_policy is None:
                     continue
 

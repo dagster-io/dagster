@@ -154,7 +154,7 @@ def opt_callable_param(
     return default if obj is None else obj
 
 
-def is_callable(obj: object, additional_message: Optional[str] = None) -> Callable:
+def is_callable(obj: T_Callable, additional_message: Optional[str] = None) -> T_Callable:
     if not callable(obj):
         raise CheckError(
             "Must be callable. Got"

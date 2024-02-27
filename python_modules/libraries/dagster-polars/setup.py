@@ -34,6 +34,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_polars_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         "polars>=0.20.0",
@@ -45,7 +46,7 @@ setup(
         "deltalake": ["deltalake>=0.15.0"],
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
-            "pytest>=7.3.1",
+            "pytest>=7.3.1,<8.0.0",
             "hypothesis>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",

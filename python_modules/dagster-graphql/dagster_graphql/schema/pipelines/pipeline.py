@@ -904,7 +904,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         return GrapheneRepository(
-            graphene_info.context.instance,
+            graphene_info.context,
             location.get_repository(handle.repository_name),
             location,
         )

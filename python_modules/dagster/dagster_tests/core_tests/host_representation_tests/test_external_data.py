@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Sequence
 
 import pendulum
 import pytest
@@ -18,11 +19,16 @@ from dagster import (
     op,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+    AssetSpec,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
@@ -44,13 +50,24 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
+def _get_external_asset_nodes_from_definitions(
+    defs: Definitions,
+) -> Sequence[ExternalAssetNode]:
+    repo = defs.get_repository_def()
+    return external_asset_nodes_from_defs(repo.get_all_jobs(), repo.assets_defs_by_key)
+
+
 def test_single_asset_job():
     @asset(description="hullo")
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1],
+            jobs=[define_asset_job("assets_job", [asset1])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -63,7 +80,7 @@ def test_single_asset_job():
             op_names=["asset1"],
             op_description="hullo",
             node_definition_name="asset1",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         )
@@ -75,8 +92,12 @@ def test_asset_with_default_backfill_policy():
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1],
+            jobs=[define_asset_job("assets_job", [asset1])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -89,7 +110,7 @@ def test_asset_with_default_backfill_policy():
             op_names=["asset1"],
             op_description="hullo",
             node_definition_name="asset1",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
             backfill_policy=None,
@@ -102,8 +123,12 @@ def test_asset_with_single_run_backfill_policy():
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1],
+            jobs=[define_asset_job("assets_job", [asset1])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -116,7 +141,7 @@ def test_asset_with_single_run_backfill_policy():
             op_names=["asset1"],
             op_description="hullo_single_run",
             node_definition_name="asset1",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
             backfill_policy=BackfillPolicy.single_run(),
@@ -147,8 +172,12 @@ def test_asset_with_multi_run_backfill_policy():
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1],
+            jobs=[define_asset_job("assets_job", [asset1])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -161,7 +190,7 @@ def test_asset_with_multi_run_backfill_policy():
             op_names=["asset1"],
             op_description="hullo_ten_partitions_per_run",
             node_definition_name="asset1",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB_0", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
             partitions_def_data=partitions_def_data,
@@ -185,8 +214,7 @@ def test_asset_with_group_name():
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(Definitions(assets=[asset1]))
 
     assert external_asset_nodes[0].group_name == "group1"
 
@@ -196,8 +224,7 @@ def test_asset_missing_group_name():
     def asset1():
         return 1
 
-    assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(Definitions(assets=[asset1]))
 
     assert external_asset_nodes[0].group_name == DEFAULT_GROUP_NAME
 
@@ -225,8 +252,12 @@ def test_two_asset_job():
     def asset2(asset1):
         assert asset1 == 1
 
-    assets_job = build_assets_job("assets_job", [asset1, asset2])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1, asset2],
+            jobs=[define_asset_job("assets_job", [asset1, asset2])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -239,7 +270,7 @@ def test_two_asset_job():
             graph_name=None,
             op_names=["asset1"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -253,7 +284,7 @@ def test_two_asset_job():
             graph_name=None,
             op_names=["asset2"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -267,8 +298,15 @@ def test_input_name_matches_output_name():
     def something(result):
         pass
 
-    assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = sorted(
+        _get_external_asset_nodes_from_definitions(
+            Definitions(
+                assets=[not_result, something],
+                jobs=[define_asset_job("assets_job", [something])],
+            )
+        ),
+        key=lambda n: n.asset_key,
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -278,6 +316,9 @@ def test_input_name_matches_output_name():
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("something"),
@@ -289,7 +330,7 @@ def test_input_name_matches_output_name():
             graph_name=None,
             op_names=["something"],
             output_name="result",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]
@@ -315,13 +356,15 @@ def test_assets_excluded_from_subset_not_in_job():
 
     all_assets = [abc, a2, c2]
     as_job = define_asset_job("as_job", selection="a*").resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
     cs_job = define_asset_job("cs_job", selection="*c2").resolve(
-        asset_graph=AssetGraph.from_assets(all_assets)
+        asset_graph=InternalAssetGraph.from_assets(all_assets)
     )
 
-    external_asset_nodes = external_asset_nodes_from_defs([as_job, cs_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[abc, a2, c2], jobs=[as_job, cs_job])
+    )
 
     assert (
         ExternalAssetNode(
@@ -333,7 +376,7 @@ def test_assets_excluded_from_subset_not_in_job():
             node_definition_name="abc",
             graph_name=None,
             op_names=["abc"],
-            job_names=["as_job"],  # the important line
+            job_names=["__ASSET_JOB", "as_job"],  # the important line
             output_name="a",
             group_name=DEFAULT_GROUP_NAME,
             metadata=normalize_metadata(out_metadata, allow_invalid=True),
@@ -351,7 +394,7 @@ def test_assets_excluded_from_subset_not_in_job():
             node_definition_name="abc",
             graph_name=None,
             op_names=["abc"],
-            job_names=["cs_job"],  # the important line
+            job_names=["__ASSET_JOB", "cs_job"],  # the important line
             output_name="c",
             group_name=DEFAULT_GROUP_NAME,
         )
@@ -372,8 +415,12 @@ def test_two_downstream_assets_job():
     def asset2_b(asset1):
         assert asset1 == 1
 
-    assets_job = build_assets_job("assets_job", [asset1, asset2_a, asset2_b])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1, asset2_a, asset2_b],
+            jobs=[define_asset_job("assets_job", [asset1, asset2_a, asset2_b])],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -389,7 +436,7 @@ def test_two_downstream_assets_job():
             graph_name=None,
             op_names=["asset1"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -403,7 +450,7 @@ def test_two_downstream_assets_job():
             graph_name=None,
             op_names=["asset2_a"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -417,7 +464,7 @@ def test_two_downstream_assets_job():
             graph_name=None,
             op_names=["asset2_b"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -433,10 +480,10 @@ def test_cross_job_asset_dependency():
     def asset2(asset1):
         assert asset1 == 1
 
-    assets_job1 = build_assets_job("assets_job1", [asset1])
-    assets_job2 = build_assets_job("assets_job2", [asset2], source_assets=[asset1])
-    external_asset_nodes = external_asset_nodes_from_defs(
-        [assets_job1, assets_job2], source_assets_by_key={}
+    assets_job1 = define_asset_job("assets_job1", [asset1])
+    assets_job2 = define_asset_job("assets_job2", [asset2])
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[asset1, asset2], jobs=[assets_job1, assets_job2])
     )
 
     assert external_asset_nodes == [
@@ -450,7 +497,7 @@ def test_cross_job_asset_dependency():
             graph_name=None,
             op_names=["asset1"],
             op_description=None,
-            job_names=["assets_job1"],
+            job_names=["__ASSET_JOB", "assets_job1"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -464,7 +511,7 @@ def test_cross_job_asset_dependency():
             graph_name=None,
             op_names=["asset2"],
             op_description=None,
-            job_names=["assets_job2"],
+            job_names=["__ASSET_JOB", "assets_job2"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -476,10 +523,15 @@ def test_same_asset_in_multiple_jobs():
     def asset1():
         return 1
 
-    job1 = build_assets_job("job1", [asset1])
-    job2 = build_assets_job("job2", [asset1])
+    job1 = define_asset_job("job1", [asset1])
+    job2 = define_asset_job("job2", [asset1])
 
-    external_asset_nodes = external_asset_nodes_from_defs([job1, job2], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[asset1],
+            jobs=[job1, job2],
+        )
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -492,7 +544,7 @@ def test_same_asset_in_multiple_jobs():
             graph_name=None,
             op_names=["asset1"],
             op_description=None,
-            job_names=["job1", "job2"],
+            job_names=["__ASSET_JOB", "job1", "job2"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -510,9 +562,11 @@ def test_basic_multi_asset():
         """Some docstring for this operation."""
         pass
 
-    assets_job = build_assets_job("assets_job", [assets])
+    assets_job = define_asset_job("assets_job", [assets])
 
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[assets], jobs=[assets_job])
+    )
 
     atomic_execution_unit_id = assets.unique_id
 
@@ -527,7 +581,7 @@ def test_basic_multi_asset():
             graph_name=None,
             op_names=["assets"],
             op_description=f"foo: {i}",
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name=f"out{i}",
             group_name=DEFAULT_GROUP_NAME,
             atomic_execution_unit_id=atomic_execution_unit_id,
@@ -562,12 +616,16 @@ def test_inter_op_dependency():
         pass
 
     subset_job = define_asset_job("subset_job", selection="mixed").resolve(
-        asset_graph=AssetGraph.from_assets([in1, in2, assets, downstream]),
+        asset_graph=InternalAssetGraph.from_assets([in1, in2, assets, downstream]),
     )
-    all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
+    all_assets_job = define_asset_job("assets_job", [in1, in2, assets, downstream])
 
-    external_asset_nodes = external_asset_nodes_from_defs(
-        [subset_job, all_assets_job], source_assets_by_key={}
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(
+            assets=[in1, in2, assets, downstream],
+            jobs=[subset_job, all_assets_job],
+            # jobs=[all_assets_job, subset_job],
+        )
     )
     # sort so that test is deterministic
     sorted_nodes = sorted(
@@ -596,7 +654,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["downstream"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -614,7 +672,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["in1"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -629,7 +687,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["in2"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -650,7 +708,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["assets"],
             op_description=None,
-            job_names=["subset_job", "assets_job"],
+            job_names=["__ASSET_JOB", "assets_job", "subset_job"],
             output_name="mixed",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -671,7 +729,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["assets"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="only_in",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -691,7 +749,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["assets"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="only_out",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -705,19 +763,15 @@ def test_source_asset_with_op():
     def bar(foo):
         pass
 
-    assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
+    assets_job = define_asset_job("assets_job", [bar])
 
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
-    assert external_asset_nodes == [
-        ExternalAssetNode(
-            asset_key=AssetKey("foo"),
-            execution_type=AssetExecutionType.UNEXECUTABLE,
-            op_description=None,
-            dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
-            job_names=[],
-            group_name=DEFAULT_GROUP_NAME,
+    external_asset_nodes = sorted(
+        _get_external_asset_nodes_from_definitions(
+            Definitions(assets=[foo, bar], jobs=[assets_job])
         ),
+        key=lambda n: n.asset_key,
+    )
+    assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -728,9 +782,21 @@ def test_source_asset_with_op():
             op_description=None,
             dependencies=[ExternalAssetDependency(AssetKey("foo"))],
             depended_by=[],
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("foo"),
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            op_description=None,
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
+            job_names=[],
+            group_name=DEFAULT_GROUP_NAME,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
         ),
     ]
 
@@ -739,20 +805,11 @@ def test_unused_source_asset():
     foo = SourceAsset(key=AssetKey("foo"), description="abc")
     bar = SourceAsset(key=AssetKey("bar"), description="def")
 
-    external_asset_nodes = external_asset_nodes_from_defs(
-        [], source_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
+    external_asset_nodes = sorted(
+        _get_external_asset_nodes_from_definitions(Definitions(assets=[foo, bar])),
+        key=lambda n: n.asset_key,
     )
     assert external_asset_nodes == [
-        ExternalAssetNode(
-            asset_key=AssetKey("foo"),
-            op_description="abc",
-            dependencies=[],
-            depended_by=[],
-            execution_type=AssetExecutionType.UNEXECUTABLE,
-            job_names=[],
-            group_name=DEFAULT_GROUP_NAME,
-            is_source=True,
-        ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
             op_description="def",
@@ -762,6 +819,22 @@ def test_unused_source_asset():
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("foo"),
+            op_description="abc",
+            dependencies=[],
+            depended_by=[],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            job_names=[],
+            group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
         ),
     ]
 
@@ -773,10 +846,16 @@ def test_used_source_asset():
     def foo(bar):
         assert bar
 
-    job1 = build_assets_job("job1", [foo], source_assets=[bar])
+    job1 = define_asset_job("job1", [foo])
 
-    external_asset_nodes = external_asset_nodes_from_defs(
-        [job1], source_assets_by_key={AssetKey("bar"): bar}
+    external_asset_nodes = sorted(
+        _get_external_asset_nodes_from_definitions(
+            Definitions(
+                assets=[bar, foo],
+                jobs=[job1],
+            )
+        ),
+        key=lambda n: n.asset_key,
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -788,6 +867,9 @@ def test_used_source_asset():
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
+            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -799,7 +881,7 @@ def test_used_source_asset():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["bar"]))],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
-            job_names=["job1"],
+            job_names=["__ASSET_JOB", "job1"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -838,9 +920,11 @@ def test_graph_output_metadata_and_description():
         three, metadata_by_output_name={"result": asset_metadata}
     )
 
-    assets_job = build_assets_job("assets_job", [zero, three_asset])
+    assets_job = define_asset_job("assets_job", [zero, three_asset])
 
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[zero, three_asset], jobs=[assets_job])
+    )
 
     # sort so that test is deterministic
     sorted_nodes = sorted(
@@ -867,7 +951,7 @@ def test_graph_output_metadata_and_description():
             graph_name="three",
             op_names=["three.add_one", "three.add_one_2", "three.add_one_3"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata=(normalize_metadata({**asset_metadata, **out_metadata}, allow_invalid=True)),
             group_name=DEFAULT_GROUP_NAME,
@@ -882,7 +966,7 @@ def test_graph_output_metadata_and_description():
             graph_name=None,
             op_names=["zero"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -952,9 +1036,11 @@ def test_nasty_nested_graph_asset():
         can_subset=True,
     )
 
-    assets_job = build_assets_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
+    assets_job = define_asset_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
 
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[zero, eight_and_five, thirteen_and_six, twenty], jobs=[assets_job])
+    )
     # sort so that test is deterministic
     sorted_nodes = sorted(
         [
@@ -989,7 +1075,7 @@ def test_nasty_nested_graph_asset():
                 "create_thirteen_and_six.add_five.add_three.add_one_3",
             ],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -1007,7 +1093,7 @@ def test_nasty_nested_graph_asset():
             graph_name="create_twenty",
             op_names=["create_twenty.sum_plus_one.add_one", "create_twenty.sum_plus_one.get_sum"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -1027,7 +1113,7 @@ def test_nasty_nested_graph_asset():
             graph_name=None,
             op_names=["zero"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
             group_name=DEFAULT_GROUP_NAME,
@@ -1044,8 +1130,10 @@ def test_deps_resolve_group():
     def asset2(asset1):
         del asset1
 
-    assets_job = build_assets_job("assets_job", [asset1, asset2])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    assets_job = define_asset_job("assets_job", [asset1, asset2])
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[asset1, asset2], jobs=[assets_job])
+    )
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -1058,7 +1146,7 @@ def test_deps_resolve_group():
             graph_name=None,
             op_names=["abc__asset1"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -1072,7 +1160,7 @@ def test_deps_resolve_group():
             graph_name=None,
             op_names=["asset2"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -1175,9 +1263,11 @@ def test_graph_asset_description():
     def foo():
         return op1()
 
-    assets_job = build_assets_job("assets_job", [foo])
+    assets_job = define_asset_job("assets_job", [foo])
 
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[foo], jobs=[assets_job])
+    )
     assert external_asset_nodes[0].op_description == "bar"
 
 
@@ -1199,11 +1289,13 @@ def test_graph_multi_asset_description():
     def foo():
         return {"asset1": op1(), "asset2": op2()}
 
-    assets_job = build_assets_job("assets_job", [foo])
+    assets_job = define_asset_job("assets_job", [foo])
 
     external_asset_nodes = {
         asset_node.asset_key: asset_node
-        for asset_node in external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+        for asset_node in _get_external_asset_nodes_from_definitions(
+            Definitions(assets=[foo], jobs=[assets_job])
+        )
     }
     assert external_asset_nodes[AssetKey("asset1")].op_description == "bar"
     assert external_asset_nodes[AssetKey("asset2")].op_description == "baz"
@@ -1228,8 +1320,10 @@ def test_external_time_window_valid_partition_key():
 def test_external_assets_def_to_external_asset_graph() -> None:
     asset_one = next(iter(external_assets_from_specs([AssetSpec("asset_one")])))
 
-    assets_job = build_assets_job("assets_job", [asset_one])
-    external_asset_nodes = external_asset_nodes_from_defs([assets_job], source_assets_by_key={})
+    assets_job = define_asset_job("assets_job", [asset_one])
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[asset_one], jobs=[assets_job])
+    )
 
     assert len(external_asset_nodes) == 1
     assert next(iter(external_asset_nodes)).is_executable is False

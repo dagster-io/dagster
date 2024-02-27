@@ -78,7 +78,6 @@ def test_invalid_external_asset_creation() -> None:
     invalid_specs = [
         AssetSpec("invalid_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
         AssetSpec("invalid_asset2", code_version="ksjdfljs"),
-        AssetSpec("invalid_asset2", freshness_policy=FreshnessPolicy(maximum_lag_minutes=1)),
         AssetSpec("invalid_asset2", skippable=True),
     ]
 
@@ -209,13 +208,11 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
     assert result_one.output_for_node("an_asset") == "hardcoded-computed-2021-01-02"
 
     shimmed_source_asset = create_external_asset_from_source_asset(source_asset)
-    defs_with_shim = Definitions(
-        assets=[create_external_asset_from_source_asset(source_asset), an_asset]
-    )
+    defs_with_shim = Definitions(assets=[shimmed_source_asset, an_asset])
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
 
-    job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset, shimmed_source_asset)
+    job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset)
 
     result_two = job_def_with_shim.execute_in_process(
         instance=instance,
@@ -229,13 +226,16 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
 
 def test_observable_source_asset_decorator() -> None:
-    @observable_source_asset
+    freshness_policy = FreshnessPolicy(maximum_lag_minutes=30)
+
+    @observable_source_asset(freshness_policy=freshness_policy)
     def an_observable_source_asset() -> DataVersion:
         return DataVersion("foo")
 
     assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
     assert assets_def.is_executable
     assert assets_def.is_observable
+    assert assets_def.freshness_policies_by_key[an_observable_source_asset.key] == freshness_policy
     defs = Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()
@@ -284,9 +284,9 @@ def test_external_asset_multi_asset() -> None:
     defs = Definitions(assets=[_generated_asset_def])
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
-        AssetKey("downstream_asset")
-    ] == {AssetKey("upstream_asset")}
+    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+        upstream_asset.key
+    }
 
 
 def test_external_assets_with_dependencies() -> None:
@@ -296,6 +296,6 @@ def test_external_assets_with_dependencies() -> None:
     defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
-        AssetKey("downstream_asset")
-    ] == {AssetKey("upstream_asset")}
+    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+        upstream_asset.key
+    }

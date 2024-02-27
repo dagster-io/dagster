@@ -1,12 +1,56 @@
+import os
+import uuid
+from contextlib import contextmanager
+from typing import Iterator
 from unittest import mock
 
+import pendulum
 import pytest
-from dagster import DagsterResourceFunctionError, EnvVar, job, op
+from dagster import (
+    DagsterInstance,
+    DagsterResourceFunctionError,
+    DataVersion,
+    EnvVar,
+    ObserveResult,
+    build_resources,
+    job,
+    observable_source_asset,
+    op,
+)
 from dagster._check import CheckError
+from dagster._core.definitions.metadata import FloatMetadataValue
+from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import environ
-from dagster_snowflake import SnowflakeResource, snowflake_resource
+from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 
 from .utils import create_mock_connector
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+
+
+@contextmanager
+def temporary_snowflake_table() -> Iterator[str]:
+    with build_resources(
+        {
+            "snowflake": SnowflakeResource(
+                account=os.getenv("SNOWFLAKE_ACCOUNT"),
+                user=os.environ["SNOWFLAKE_USER"],
+                password=os.getenv("SNOWFLAKE_PASSWORD"),
+                database="TESTDB",
+                schema="TESTSCHEMA",
+            )
+        }
+    ) as resources:
+        table_name = f"TEST_TABLE_{str(uuid.uuid4()).replace('-', '_').upper()}"  # Snowflake table names are expected to be capitalized.
+        snowflake: SnowflakeResource = resources.snowflake
+        with snowflake.get_connection() as conn:
+            try:
+                conn.cursor().execute(f"create table {table_name} (foo string)")
+                # Insert one row
+                conn.cursor().execute(f"insert into {table_name} values ('bar')")
+                yield table_name
+            finally:
+                conn.cursor().execute(f"drop table {table_name}")
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
@@ -239,3 +283,51 @@ def test_pydantic_snowflake_resource_duplicate_auth():
             warehouse="TINY_WAREHOUSE",
             private_key="TESTKEY",
         )
+
+
+def test_fetch_last_updated_timestamps_empty():
+    with pytest.raises(CheckError):
+        fetch_last_updated_timestamps(snowflake_connection={}, schema="TESTSCHEMA", tables=[])
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.integration
+def test_fetch_last_updated_timestamps():
+    start_time = pendulum.now("UTC").timestamp()
+    table_name = "the_table"
+    with temporary_snowflake_table() as table_name:
+
+        @observable_source_asset
+        def freshness_observe(snowflake: SnowflakeResource) -> ObserveResult:
+            with snowflake.get_connection() as conn:
+                freshness_for_table = fetch_last_updated_timestamps(
+                    snowflake_connection=conn, schema="TESTSCHEMA", tables=[table_name]
+                )[table_name].timestamp()
+                return ObserveResult(
+                    data_version=DataVersion("foo"),
+                    metadata={"freshness": FloatMetadataValue(freshness_for_table)},
+                )
+
+        instance = DagsterInstance.ephemeral()
+        result = observe(
+            [freshness_observe],
+            instance=instance,
+            resources={
+                "snowflake": SnowflakeResource(
+                    account=os.getenv("SNOWFLAKE_ACCOUNT"),
+                    user=os.environ["SNOWFLAKE_USER"],
+                    password=os.getenv("SNOWFLAKE_PASSWORD"),
+                    database="TESTDB",
+                    schema="TESTSCHEMA",
+                )
+            },
+        )
+        observations = result.asset_observations_for_node(freshness_observe.op.name)
+        assert len(observations) == 1
+        observation = observations[0]
+        assert observation.tags["dagster/data_version"] is not None
+        assert observation.metadata["freshness"] is not None
+        freshness_val = observation.metadata["freshness"]
+        assert isinstance(freshness_val, FloatMetadataValue)
+        assert freshness_val.value
+        assert freshness_val.value > start_time

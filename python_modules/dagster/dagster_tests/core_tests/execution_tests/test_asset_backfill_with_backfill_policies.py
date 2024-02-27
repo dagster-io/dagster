@@ -494,7 +494,50 @@ def test_backfill_run_contains_more_than_one_asset():
     assert counts[3].num_targeted_partitions == downstream_num_of_partitions
 
 
-def test_dynamic_partitions():
+def test_dynamic_partitions_multi_run_backfill_policy():
+    @asset(
+        backfill_policy=BackfillPolicy.multi_run(),
+        partitions_def=DynamicPartitionsDefinition(name="apple"),
+    )
+    def asset1() -> None:
+        ...
+
+    assets_by_repo_name = {"repo": [asset1]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("apple", ["foo", "bar"])
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        asset_selection=[asset1.key],
+        dynamic_partitions_store=instance,
+        partition_names=["foo", "bar"],
+        backfill_start_time=pendulum.now("UTC"),
+        all_partitions=False,
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert result.backfill_data != backfill_data
+    assert len(result.run_requests) == 2
+    assert any(
+        run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
+        and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "foo"
+        for run_request in result.run_requests
+    )
+    assert any(
+        run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "bar"
+        and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
+        for run_request in result.run_requests
+    )
+
+
+def test_dynamic_partitions_single_run_backfill_policy():
     @asset(
         backfill_policy=BackfillPolicy.single_run(),
         partitions_def=DynamicPartitionsDefinition(name="apple"),

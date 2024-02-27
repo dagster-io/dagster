@@ -16,7 +16,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
@@ -146,6 +146,7 @@ def host_mode_execution_context_event_generator(
                     f' "{pipeline_run.job_name}". This may be due to a failure in initializing'
                     " the executor or one of the loggers."
                 ),
+                failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE,
                 error_info=error_info,
             )
             log_manager.log_dagster_event(

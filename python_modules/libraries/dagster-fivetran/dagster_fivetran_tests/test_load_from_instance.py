@@ -13,7 +13,7 @@ from dagster import (
     asset,
     io_manager,
 )
-from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
@@ -103,7 +103,7 @@ def test_load_from_instance(
                 rsps.add(
                     rsps.GET,
                     f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas",
-                    json=get_complex_sample_connector_schema_config(),
+                    json=get_complex_sample_connector_schema_config("_xyz1", "_abc"),
                     match=[matchers.header_matcher(expected_auth_header)],
                 )
 
@@ -130,7 +130,6 @@ def test_load_from_instance(
                 ft_cacheable_assets.compute_cacheable_data()
             )
             ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
-
         if filter_connector:
             assert len(ft_assets) == 0
             return
@@ -197,25 +196,24 @@ def test_load_from_instance(
 
         # Kick off a run to materialize all assets
         final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
-        fivetran_sync_job = build_assets_job(
-            name="fivetran_assets_job",
-            assets=all_assets,
-        )
 
         with responses.RequestsMock() as rsps:
-            api_prefixes = [
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
-            ]
+            api_prefixes = [(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}", tuple())]
             if multiple_connectors:
-                api_prefixes.append(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}")
-            for api_prefix in api_prefixes:
+                api_prefixes.append(
+                    (f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}", ("_xyz1", "_abc"))
+                )
+            # for api_prefix in api_prefixes:
+            for api_prefix, schema_args in api_prefixes:
                 rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
                 rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
+
                 # connector schema
                 rsps.add(
                     rsps.GET,
                     f"{api_prefix}/schemas",
-                    json=get_complex_sample_connector_schema_config(),
+                    # json=get_complex_sample_connector_schema_config(),
+                    json=get_complex_sample_connector_schema_config(*schema_args),
                 )
                 # initial state
                 rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
@@ -225,7 +223,7 @@ def test_load_from_instance(
                 # final state will be updated
                 rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
-            result = fivetran_sync_job.execute_in_process()
+            result = materialize(all_assets)
             asset_materializations = [
                 event
                 for event in result.events_for_node("fivetran_sync_some_connector")

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 
 import pytest
 from dagster_dbt import DbtCliResource
@@ -19,7 +19,8 @@ from .dbt_projects import (
 )
 
 
-def pytest_collection_modifyitems(items: List[pytest.Item]):
+@pytest.hookimpl(hookwrapper=True)
+def pytest_collection_modifyitems(items: List[pytest.Item]) -> Iterator[None]:
     """Mark tests in the `cloud` and `legacy` directories. Mark other tests as `core`."""
     for item in items:
         if "cloud" in item.path.parts:
@@ -28,6 +29,25 @@ def pytest_collection_modifyitems(items: List[pytest.Item]):
             item.add_marker(pytest.mark.legacy)
         else:
             item.add_marker(pytest.mark.core)
+
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_duckdb_dbfile_path_fixture(worker_id: str) -> None:
+    """Set `DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH` to generate a unique duckdb dbfile path
+    for each pytest-xdist worker.
+    """
+    jaffle_shop_duckdb_dbfile_path = f"target/{worker_id}_jaffle_shop.duckdb"
+
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"] = jaffle_shop_duckdb_dbfile_path
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_openblas_threading_affinity_fixture() -> None:
+    """Disable OpenBLAS and GotoBLAS threading affinity to prevent test failures."""
+    os.environ["OPENBLAS_MAIN_FREE"] = "1"
+    os.environ["GOTOBLAS_MAIN_FREE"] = "1"
 
 
 def _create_dbt_invocation(project_dir: Path) -> DbtCliInvocation:
@@ -58,6 +78,15 @@ def test_jaffle_shop_manifest_fixture(
 
 @pytest.fixture(name="test_asset_checks_manifest", scope="session")
 def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
+    # Prepopulate duckdb with jaffle shop data to support testing individual asset checks.
+    (
+        DbtCliResource(
+            project_dir=os.fspath(test_asset_checks_path), global_config_flags=["--quiet"]
+        )
+        .cli(["build"], raise_on_error=False)
+        .wait()
+    )
+
     return _create_dbt_invocation(test_asset_checks_path).get_artifact("manifest.json")
 
 

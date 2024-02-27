@@ -501,6 +501,7 @@ def other_container_context_config(other_configured_secret):
             "server_resources": {
                 "cpu": "2048",
                 "memory": "4096",
+                "replica_count": 2,
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",

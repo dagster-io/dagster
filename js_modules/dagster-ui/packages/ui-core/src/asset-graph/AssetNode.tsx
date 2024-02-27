@@ -5,11 +5,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
-import {useAssetNodeMenu} from './AssetNodeMenu';
+import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
@@ -19,7 +19,6 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -32,6 +31,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
+
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -66,9 +66,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
-          {isSource && !definition.isObservable ? null : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          )}
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
@@ -127,28 +125,8 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
 };
 
 export const AssetNodeContextMenuWrapper = React.memo(
-  ({
-    children,
-    graphData,
-    explorerPath,
-    onChangeExplorerPath,
-    selectNode,
-    node,
-  }: {
-    children: React.ReactNode;
-    graphData: GraphData;
-    node: GraphNode;
-    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-    explorerPath?: ExplorerPath;
-    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  }) => {
-    const {dialog, menu} = useAssetNodeMenu({
-      graphData,
-      explorerPath,
-      onChangeExplorerPath,
-      selectNode,
-      node,
-    });
+  ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
+    const {dialog, menu} = useAssetNodeMenu(menuProps);
     return (
       <>
         <ContextMenuWrapper menu={menu} stopPropagation>
@@ -205,7 +183,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -221,8 +199,8 @@ export const AssetNodeMinimal = ({
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
-            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 14})}
+            <MinimalName style={{fontSize: 28}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 20})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
@@ -303,7 +281,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
-  padding: '3px 6px',
+  padding: '3px 0 3px 6px',
   color: Colors.textDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
@@ -324,7 +302,7 @@ export const NameTooltipStyle = JSON.stringify({
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.backgroundGray(),
+  background: Colors.backgroundLight(),
   border: `none`,
 });
 
@@ -361,7 +339,7 @@ const MinimalAssetNodeBox = styled.div<{
 
   border-radius: 16px;
   position: relative;
-  padding: 4px;
+  padding: 2px;
   height: 100%;
   min-height: 86px;
   &:hover {
