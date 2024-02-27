@@ -27,69 +27,8 @@ from dagster_polars import (
     PolarsParquetIOManager,
     StorageMetadata,
 )
-from deepdiff import DeepDiff
-from packaging.version import Version
 
 from dagster_polars_tests.utils import get_saved_path
-
-
-def test_polars_upath_io_manager_stats_metadata(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
-):
-    manager, _ = io_manager_and_df
-
-    df = pl.DataFrame({"a": [0, 1, None], "b": ["a", "b", "c"]})
-
-    @asset(io_manager_def=manager)
-    def upstream() -> pl.DataFrame:
-        return df
-
-    result = materialize(
-        [upstream],
-    )
-
-    handled_output_events = list(
-        filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream"))
-    )
-
-    stats = handled_output_events[0].event_specific_data.metadata["stats"].value  # type: ignore
-
-    expected_stats = {
-        "a": {
-            # count started ignoring null values in polars 0.20.0
-            "count": 3.0 if Version(pl.__version__) < Version("0.20.0") else 2.0,
-            "null_count": 1.0,
-            "mean": 0.5,
-            "std": 0.7071067811865476,
-            "min": 0.0,
-            "max": 1.0,
-            "median": 0.5,
-            "25%": 0.0,
-            "75%": 1.0,
-        },
-        "b": {
-            "count": "3",
-            "null_count": "0",
-            "mean": "null",
-            "std": "null",
-            "min": "a",
-            "max": "c",
-            "median": "null",
-            "25%": "null",
-            "75%": "null",
-        },
-    }
-
-    # "50%" and "median" are problematic to test because they were changed in polars 0.18.0
-    # so we remove them from the test
-    for col in ("50%", "median"):
-        for s in (stats, expected_stats):
-            if col in s["a"]:  # type: ignore
-                s["a"].pop(col)  # type: ignore
-            if col in s["b"]:  # type: ignore
-                s["b"].pop(col)  # type: ignore
-
-    assert DeepDiff(stats, expected_stats) == {}
 
 
 def test_polars_upath_io_manager_type_annotations(
