@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import (
-    MaterializeResult,
-    TableRecord,
-    UrlMetadataValue,
-    asset,
-)
+from dagster import MaterializeResult, TableRecord, UrlMetadataValue, asset
 from pydantic import BaseModel
 
 
-class Metadata(BaseModel, ABC):
+class NamespacedMetadata(BaseModel, ABC):
     """Extend this class to define a set of metadata fields in the same namespace.
 
     Supports syntactic sugar for converting to a dictionary that can be placed inside a metadata
@@ -61,7 +56,7 @@ class Metadata(BaseModel, ABC):
 ####################################################################################################
 
 
-class AssetMetadata(Metadata):
+class AssetMetadata(NamespacedMetadata):
     """Metadata fields that apply to definitions, observations, or materializations of any asset."""
 
     storage_kind: Optional[str]
@@ -87,7 +82,7 @@ class TableColumn(BaseModel):
     data_type: str
 
 
-class TableMetadata(Metadata):
+class TableMetadata(NamespacedMetadata):
     """Metadata fields that apply to definitions, observations, or materializations of assets that
     are tables.
     """
@@ -132,7 +127,7 @@ class SnowflakeTableAddress(BaseModel):
     table_name: Optional[str]
 
 
-class SnowflakeTableMetadata(Metadata):
+class SnowflakeTableMetadata(NamespacedMetadata):
     """Metadata fields that apply to assets that are tables in Snowflake."""
 
     snowflake_address: Optional[SnowflakeTableAddress]
@@ -211,8 +206,38 @@ def asset2():
     )
 
 
+####################################################################################################
+# The Dagster asset UI displays a table of metadata fields. Below is a rough approximation of the
+# logic that would be used to populate the rows of that table.
+####################################################################################################
+
+
+class UIMetadataTableRow(BaseModel):
+    namespace: Optional[str]
+    key: str
+    value: Any
+
+
+def get_ui_metadata_table_rows(metadata: Mapping[str, Any]) -> Sequence[UIMetadataTableRow]:
+    result = []
+    for key, value in metadata.items():
+        if "/" in key:
+            namespace, field_key = key.split("/", 1)
+            result.append(UIMetadataTableRow(namespace=namespace, key=field_key, value=value))
+        else:
+            result.append(UIMetadataTableRow(namespace=None, key=key, value=value))
+
+    return result
+
+
+####################################################################################################
+# Test
+####################################################################################################
+
+
 def test():
     asset1_result = asset1()
     asset2_result = asset2()
     assert TableObservationMetadata.from_metadata_dict(asset1_result.metadata).num_rows_total == 500
     assert asset1_result.metadata == asset2_result.metadata
+    assert len(get_ui_metadata_table_rows(asset1_result.metadata)) == 11

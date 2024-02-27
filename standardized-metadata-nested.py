@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import (
-    MaterializeResult,
-    TableRecord,
-    UrlMetadataValue,
-    asset,
-)
+from dagster import MaterializeResult, TableRecord, UrlMetadataValue, asset
 from pydantic import BaseModel
 
 
-class Metadata(BaseModel, ABC):
+class NamespacedMetadata(BaseModel, ABC):
     """Extend this class to define a set of metadata fields in the same namespace.
 
     Supports syntactic sugar for converting to a dictionary that can be placed inside a metadata
@@ -33,21 +28,9 @@ class Metadata(BaseModel, ABC):
         """Versions are expected to be SemVer strings."""
         raise NotImplementedError()
 
-    def keys(self):
-        return {self.namespace()}
-
-    def __getitem__(self, key):
-        assert key == self.namespace()
-        result = {"_version": self.version()}
-        for key, value in self.dict().items():
-            if value is not None:
-                result[key] = value
-
-        return result
-
     @classmethod
     def from_metadata_dict(cls, metadata_dict: Mapping[str, Any]):
-        return cls.parse_obj(metadata_dict[cls.namespace()])
+        return cls.parse_obj(metadata_dict["__namespaced_metadata"][cls.namespace()])
 
 
 ####################################################################################################
@@ -55,7 +38,7 @@ class Metadata(BaseModel, ABC):
 ####################################################################################################
 
 
-class AssetMetadata(Metadata):
+class AssetMetadata(NamespacedMetadata):
     """Metadata fields that apply to definitions, observations, or materializations of any asset."""
 
     storage_kind: Optional[str]
@@ -81,7 +64,7 @@ class TableColumn(BaseModel):
     data_type: str
 
 
-class TableMetadata(Metadata):
+class TableMetadata(NamespacedMetadata):
     """Metadata fields that apply to definitions, observations, or materializations of assets that
     are tables.
     """
@@ -127,7 +110,7 @@ class SnowflakeTableAddress(BaseModel):
     table_name: Optional[str]
 
 
-class SnowflakeTableMetadata(Metadata):
+class SnowflakeTableMetadata(NamespacedMetadata):
     """Metadata fields that apply to assets that are tables in Snowflake."""
 
     snowflake_address: Optional[SnowflakeTableAddress]
@@ -147,29 +130,47 @@ class SnowflakeTableMetadata(Metadata):
 ####################################################################################################
 
 
+def build_metadata_dict(
+    namespaced_metadatas: Sequence[NamespacedMetadata], metadata: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    namespaced_metadata_dict = {}
+    for namespaced_metadata in namespaced_metadatas:
+        namespaced_metadata_dict[namespaced_metadata.namespace()] = {
+            "_version": namespaced_metadata.version()
+        }
+        for key, value in namespaced_metadata.dict().items():
+            if value is not None:
+                namespaced_metadata_dict[namespaced_metadata.namespace()][key] = value
+
+    return {**metadata, "__namespaced_metadata": namespaced_metadata_dict}
+
+
 @asset
 def asset1():
     return MaterializeResult(
-        metadata={
-            **AssetMetadata(
-                storage_kind="snowflake", storage_address_string="my_db.my_schema.asset1"
-            ),
-            **TableMaterializationMetadata(
-                num_rows_total=500,
-                num_rows_inserted=5,
-                columns=[TableColumn(name="user_id", data_type="str")],
-            ),
-            **SnowflakeTableMetadata(
-                snowflake_address=SnowflakeTableAddress(
-                    database="my_db", db_schema="my_schema", table_name="asset1"
-                )
-            ),
-            # non-structured metadata
-            "my_unschematized_piece_of_metadata": 5,
-            "staging_address": SnowflakeTableAddress(
-                database="my_staging_db", db_schema="my_schema", table_name="asset1"
-            ).dict(),
-        }
+        metadata=build_metadata_dict(
+            namespaced_metadatas=[
+                AssetMetadata(
+                    storage_kind="snowflake", storage_address_string="my_db.my_schema.asset1"
+                ),
+                TableMaterializationMetadata(
+                    num_rows_total=500,
+                    num_rows_inserted=5,
+                    columns=[TableColumn(name="user_id", data_type="str")],
+                ),
+                SnowflakeTableMetadata(
+                    snowflake_address=SnowflakeTableAddress(
+                        database="my_db", db_schema="my_schema", table_name="asset1"
+                    )
+                ),
+            ],
+            metadata={
+                "my_unschematized_piece_of_metadata": 5,
+                "staging_address": SnowflakeTableAddress(
+                    database="my_staging_db", db_schema="my_schema", table_name="asset1"
+                ).dict(),
+            },
+        )
     )
 
 
@@ -183,26 +184,27 @@ def asset1():
 def asset2():
     return MaterializeResult(
         metadata={
-            "dagster.table": {
-                "_version": "1.0.0",
-                "num_rows_inserted": 5,
-                "columns": [{"name": "user_id", "data_type": "str"}],
-                "num_rows_total": 500,
-            },
-            "dagster": {
-                "_version": "1.0.0",
-                "storage_kind": "snowflake",
-                "storage_address_string": "my_db.my_schema.asset1",
-            },
-            "dagster_snowflake": {
-                "_version": "1.0.0",
-                "snowflake_address": {
-                    "database": "my_db",
-                    "db_schema": "my_schema",
-                    "table_name": "asset1",
+            "__namespaced_metadata": {
+                "dagster.table": {
+                    "_version": "1.0.0",
+                    "num_rows_inserted": 5,
+                    "columns": [{"name": "user_id", "data_type": "str"}],
+                    "num_rows_total": 500,
+                },
+                "dagster": {
+                    "_version": "1.0.0",
+                    "storage_kind": "snowflake",
+                    "storage_address_string": "my_db.my_schema.asset1",
+                },
+                "dagster_snowflake": {
+                    "_version": "1.0.0",
+                    "snowflake_address": {
+                        "database": "my_db",
+                        "db_schema": "my_schema",
+                        "table_name": "asset1",
+                    },
                 },
             },
-            # non-structured metadata
             "my_unschematized_piece_of_metadata": 5,
             "staging_address": {
                 "database": "my_staging_db",
@@ -211,6 +213,37 @@ def asset2():
             },
         }
     )
+
+
+####################################################################################################
+# The Dagster asset UI displays a table of metadata fields. Below is a rough approximation of the
+# logic that would be used to populate the rows of that table.
+####################################################################################################
+
+
+class UIMetadataTableRow(BaseModel):
+    namespace: Optional[str]
+    key: str
+    value: Any
+
+
+def get_ui_metadata_table_rows(metadata: Mapping[str, Any]) -> Sequence[UIMetadataTableRow]:
+    result = []
+    for key, value in metadata.items():
+        if key == "__namespaced_metadata":
+            for namespace, namespace_fields in metadata[key].items():
+                for namespaced_field_key, namespaced_field_value in namespace_fields.items():
+                    result.append(
+                        UIMetadataTableRow(
+                            namespace=namespace,
+                            key=namespaced_field_key,
+                            value=namespaced_field_value,
+                        )
+                    )
+        else:
+            result.append(UIMetadataTableRow(namespace=None, key=key, value=value))
+
+    return result
 
 
 ####################################################################################################
@@ -223,3 +256,4 @@ def test():
     asset2_result = asset2()
     assert TableObservationMetadata.from_metadata_dict(asset1_result.metadata).num_rows_total == 500
     assert asset1_result.metadata == asset2_result.metadata
+    assert len(get_ui_metadata_table_rows(asset1_result.metadata)) == 11
