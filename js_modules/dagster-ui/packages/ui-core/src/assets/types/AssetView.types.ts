@@ -69,6 +69,10 @@ export type AssetViewDefinitionQuery = {
                 };
               }
           >;
+          owners: Array<
+            | {__typename: 'TeamAssetOwner'; team: string}
+            | {__typename: 'UserAssetOwner'; email: string}
+          >;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
@@ -15889,6 +15893,9 @@ export type AssetViewDefinitionNodeFragment = {
           status: Types.InstigationStatus;
         };
       }
+  >;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
