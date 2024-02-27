@@ -529,7 +529,7 @@ def test_upath_io_manager_collect_dynamic_outputs(
     @op(out=DynamicOut(io_manager_key="polars_io_manager"))
     def load_batches():
         for i in range(num_repeat):
-            yield DynamicOutput(df)
+            yield DynamicOutput(df, mapping_key=str(i))
 
     @op(out=Out(io_manager_key="polars_io_manager"))
     def no_op(df: pl.DataFrame) -> pl.DataFrame:
@@ -541,7 +541,7 @@ def test_upath_io_manager_collect_dynamic_outputs(
 
     @graph
     def my_graph():
-        return concat_dfs(load_batches().map(no_op))
+        return concat_dfs(load_batches().map(no_op).collect())
 
     my_job = my_graph.to_job()
 
