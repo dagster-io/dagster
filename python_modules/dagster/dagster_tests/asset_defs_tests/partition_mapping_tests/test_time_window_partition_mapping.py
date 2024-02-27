@@ -803,3 +803,30 @@ def test_nov_2023_dst_transition_with_hourly_partitions():
             subset, partitions_def, partitions_def, current_time=current_time
         )
         assert downstream.get_partition_keys() == [downstream_key]
+
+
+def test_partition_mapping_output_has_no_overlap_ranges():
+    partitions_def = DailyPartitionsDefinition("2023-01-01")
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-29, end_offset=0)
+    current_time = datetime(2024, 12, 1, 9)
+
+    partitions_subset = subset_with_keys(
+        partitions_def,
+        [
+            *partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2023-09-27", "2023-12-04")
+            ),
+            *partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2023-12-21", "2024-02-05")
+            ),
+        ],
+    )
+    downstream_partitions = partition_mapping.get_downstream_partitions_for_partitions(
+        partitions_subset,
+        partitions_def,
+        partitions_def,
+        current_time=current_time,
+    )
+    assert downstream_partitions.get_partition_key_ranges(partitions_def) == [
+        PartitionKeyRange(start='2023-09-27', end='2024-03-05')
+    ]

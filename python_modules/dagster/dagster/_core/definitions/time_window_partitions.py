@@ -1614,6 +1614,58 @@ def weekly_partitioned_config(
     return inner
 
 
+def merge_time_windows(
+    initial_windows: Sequence[TimeWindow],
+    time_windows_to_add: Sequence[TimeWindow],
+) -> Tuple[Sequence[TimeWindow], int]:
+    result_windows = [*initial_windows]
+    time_windows = time_windows_to_add
+    num_added_partitions = 0
+    for window in sorted(time_windows, key=lambda tw: tw.start.timestamp()):
+        window_start_timestamp = window.start.timestamp()
+        # go in reverse order because it's more common to add partitions at the end than the
+        # beginning
+        for i in reversed(range(len(result_windows))):
+            included_window = result_windows[i]
+            lt_end_of_range = window_start_timestamp < included_window.end.timestamp()
+            gte_start_of_range = window_start_timestamp >= included_window.start.timestamp()
+
+            if lt_end_of_range and gte_start_of_range:
+                break
+
+            if not lt_end_of_range:
+                merge_with_range = included_window.end.timestamp() == window_start_timestamp
+                merge_with_later_range = i + 1 < len(result_windows) and (
+                    window.end.timestamp() == result_windows[i + 1].start.timestamp()
+                )
+
+                if merge_with_range and merge_with_later_range:
+                    result_windows[i] = TimeWindow(
+                        included_window.start, result_windows[i + 1].end
+                    )
+                    del result_windows[i + 1]
+                elif merge_with_range:
+                    result_windows[i] = TimeWindow(included_window.start, window.end)
+                elif merge_with_later_range:
+                    result_windows[i + 1] = TimeWindow(window.start, result_windows[i + 1].end)
+                else:
+                    result_windows.insert(i + 1, window)
+
+                num_added_partitions += 1
+                break
+        else:
+            if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
+                result_windows[0] = TimeWindow(window.start, included_window.end)
+            elif result_windows and window.end == result_windows[0].start:
+                result_windows[0] = TimeWindow(window.start, included_window.end)
+            else:
+                result_windows.insert(0, window)
+
+            num_added_partitions += 1
+
+    return result_windows, num_added_partitions
+
+
 class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     """A base class that represents PartitionSubsets for TimeWindowPartitionsDefinitions.
     Contains shared logic for time window partitions subsets, such as building time windows
@@ -1743,54 +1795,11 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         """Merges a set of partition keys into an existing set of time windows, returning the
         minimized set of time windows and the number of partitions added.
         """
-        result_windows = [*initial_windows]
         time_windows = cast(
             TimeWindowPartitionsDefinition, self.partitions_def
         ).time_windows_for_partition_keys(frozenset(partition_keys), validate=validate)
-        num_added_partitions = 0
-        for window in sorted(time_windows, key=lambda tw: tw.start.timestamp()):
-            window_start_timestamp = window.start.timestamp()
-            # go in reverse order because it's more common to add partitions at the end than the
-            # beginning
-            for i in reversed(range(len(result_windows))):
-                included_window = result_windows[i]
-                lt_end_of_range = window_start_timestamp < included_window.end.timestamp()
-                gte_start_of_range = window_start_timestamp >= included_window.start.timestamp()
 
-                if lt_end_of_range and gte_start_of_range:
-                    break
-
-                if not lt_end_of_range:
-                    merge_with_range = included_window.end.timestamp() == window_start_timestamp
-                    merge_with_later_range = i + 1 < len(result_windows) and (
-                        window.end.timestamp() == result_windows[i + 1].start.timestamp()
-                    )
-
-                    if merge_with_range and merge_with_later_range:
-                        result_windows[i] = TimeWindow(
-                            included_window.start, result_windows[i + 1].end
-                        )
-                        del result_windows[i + 1]
-                    elif merge_with_range:
-                        result_windows[i] = TimeWindow(included_window.start, window.end)
-                    elif merge_with_later_range:
-                        result_windows[i + 1] = TimeWindow(window.start, result_windows[i + 1].end)
-                    else:
-                        result_windows.insert(i + 1, window)
-
-                    num_added_partitions += 1
-                    break
-            else:
-                if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
-                elif result_windows and window.end == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
-                else:
-                    result_windows.insert(0, window)
-
-                num_added_partitions += 1
-
-        return result_windows, num_added_partitions
+        return merge_time_windows(initial_windows, time_windows)
 
     def serialize(self) -> str:
         return json.dumps(
@@ -1899,6 +1908,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        print("__OR__", self, other)
         if self is other:
             return self
         return self.with_partition_keys(other.get_partition_keys())

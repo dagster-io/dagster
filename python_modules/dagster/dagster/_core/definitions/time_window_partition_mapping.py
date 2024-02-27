@@ -10,6 +10,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+    merge_time_windows,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
@@ -324,6 +325,8 @@ class TimeWindowPartitionMapping(
                         )
                     )
 
+        print("filtered time windows", filtered_time_windows)
+        # filtered_time_windows, _ = merge_time_windows([], filtered_time_windows)
         return UpstreamPartitionsResult(
             TimeWindowPartitionsSubset(
                 to_partitions_def, num_partitions=None, included_time_windows=filtered_time_windows
