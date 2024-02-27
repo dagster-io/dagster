@@ -241,6 +241,14 @@ class OutputContext:
     @property
     def output_metadata(self) -> ArbitraryMetadataMapping:
         """A dict of the metadata that is assigned to the output at execution time."""
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.output_metadata."
+                "Output metadata is not available when accessed from the InputContext."
+                "https://github.com/dagster-io/dagster/issues/20094"
+            )
+            return {}
+
         return self._output_metadata
 
     @public
