@@ -6,3 +6,11 @@ repos:
       args: [--fix, --exit-non-zero-on-fix]
       types_or: [python, pyi, jupyter]
     - id: ruff-format
+- repo: local
+  hooks:
+    - id: docs-mdx-format
+      name: Format Docs
+      language: system
+      entry: bash -c "cd docs && make mdx-format"
+      pass_filenames: false
+      files: ^docs/content

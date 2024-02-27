@@ -24,3 +24,8 @@ title: Dagster + dbt
   - [Updating the Definitions object](/dagster-dbt/lesson-3/6-updating-the-definitions-object)
   - [Viewing dbt models in the Dagster UI](/dagster-dbt/lesson-3/7-viewing-dbt-models-in-the-dagster-ui)
   - [Knowledge check](/dagster-dbt/lesson-3/knowledge-check)
+- Lesson 4: Improving development
+  - [Overview](/dagster-dbt/lesson-4/1-overview)
+  - [Speeding up the development cycle](/dagster-dbt/lesson-4/2-speeding-up-the-development-cycle)
+  - [Debugging failed runs](/dagster-dbt/lesson-4/3-debugging-failed-runs)
+  - [Customizing your execution](/dagster-dbt/lesson-4/4-customizing-your-execution)
