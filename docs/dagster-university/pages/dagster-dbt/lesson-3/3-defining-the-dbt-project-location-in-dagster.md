@@ -21,6 +21,8 @@ The `Path` class from the `pathlib` standard library will help us create an accu
 DBT_DIRECTORY = Path(__file__).joinpath("..", "..", "..", "analytics").resolve()
 ```
 
+TODO: Tim to update as these instructions as the old instructions use `os.path.join`
+
 This line creates a new constant called `DBT_DIRECTORY`. This line might look a little complicated, so let’s break it down:
 
 - It uses `constants.py`'s file location (via `__file__`) as a point of reference for finding the dbt project

@@ -121,6 +121,11 @@ The following table contains the environment variables we need to create in Dags
 - `AWS_REGION`
 - The region the S3 bucket is located in.
 
+---
+
+- `S3_BUCKET_NAME`
+- The name of the S3 bucket, by default `"s3://dagster-university/"`
+
 {% /table %}
 
 ### Creating environment variables
