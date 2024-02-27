@@ -1512,7 +1512,7 @@ def external_asset_checks_from_defs(
             for spec in asset_check_def.specs:
                 nodes_by_check_key.setdefault(spec.key, []).append(asset_check_def)
                 job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
-        for asset_def in asset_layer.assets_defs_by_key.values():
+        for asset_def in asset_layer.assets_defs_by_node_handle.values():
             for spec in asset_def.check_specs:
                 nodes_by_check_key.setdefault(spec.key, []).append(asset_def)
                 job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
