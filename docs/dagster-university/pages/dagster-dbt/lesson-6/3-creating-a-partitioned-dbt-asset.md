@@ -154,11 +154,13 @@ Finally, we’ll modify the `daily_metrics.sql` file to reflect that dbt knows w
 
 In `analytics/models/marts/daily_metrics.sql`, update the model's incremental logic to the following:
 
+`{% if is_incremental() %}`
 ```python
-{% if is_incremental() %}
     where date_of_business >= strptime('{{ var('min_date') }}', '%c') and date_of_business < strptime('{{ var('max_date') }}', '%c')
-{% endif %}
 ```
+`{% endif %}`
+
+**TODO: AWARE THIS IS BROKEN - NEEDS A MARKDOC FIX**
 
 Here, we’ve changed the logic to say that we only want to select rows between the `min_date` and the `max_date`. Note that we are turning the variables into timestamps using `strptime` because they’re loaded as strings.
 
