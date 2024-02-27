@@ -7,5 +7,7 @@
         {%- set _ = table_schema.update(serializable_column) -%}
     {% endfor %}
 
-    {% do log(tojson(table_schema), info=true) %}
+    {% if table_schema %}
+        {% do log(tojson(table_schema), info=true) %}
+    {% endif %}
 {% endmacro %}
