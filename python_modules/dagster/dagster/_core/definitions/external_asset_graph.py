@@ -272,8 +272,14 @@ class ExternalAssetGraph(AssetGraph):
         }
 
     @property
-    def all_jobs(self) -> AbstractSet[str]:
+    @cached_method
+    def all_job_names(self) -> AbstractSet[str]:
         return {job_name for node in self.asset_nodes for job_name in node.job_names}
+
+    @property
+    @cached_method
+    def all_group_names(self) -> AbstractSet[str]:
+        return {node.group_name for node in self.asset_nodes if node.group_name}
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         external_def = self.get_asset_node(asset_key).partitions_def_data
@@ -287,6 +293,9 @@ class ExternalAssetGraph(AssetGraph):
             for dep in self.get_asset_node(asset_key).dependencies
             if dep.partition_mapping is not None
         }
+
+    def get_group_name(self, asset_key: AssetKey) -> Optional[str]:
+        return self.get_asset_node(asset_key).group_name
 
     def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
         return self.get_asset_node(asset_key).freshness_policy
@@ -371,7 +380,7 @@ class ExternalAssetGraph(AssetGraph):
                 ) and all(asset_key in asset_keys_for_job for asset_key in asset_keys):
                     return job_name
         else:
-            for job_name in self.all_jobs:
+            for job_name in self.all_job_names:
                 asset_keys_for_job = self.asset_keys_for_job(job_name)
                 if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
                     continue

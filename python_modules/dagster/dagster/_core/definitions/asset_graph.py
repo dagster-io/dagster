@@ -168,6 +168,11 @@ class AssetGraph:
             self.asset_dep_graph, self.observable_asset_keys | self.materializable_asset_keys
         )
 
+    @property
+    @abstractmethod
+    def all_group_names(self) -> AbstractSet[str]:
+        ...
+
     @abstractmethod
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         ...
@@ -205,6 +210,10 @@ class AssetGraph:
         # Temporarily performing an existence check here for backcompat. Callsites need to be
         # changed to verify this first.
         return asset_key in self.all_asset_keys and self.get_partitions_def(asset_key) is not None
+
+    @abstractmethod
+    def get_group_name(self, asset_key: AssetKey) -> Optional[str]:
+        ...
 
     @abstractmethod
     def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
