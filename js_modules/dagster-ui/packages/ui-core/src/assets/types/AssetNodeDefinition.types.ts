@@ -17,6 +17,9 @@ export type AssetNodeDefinitionFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;

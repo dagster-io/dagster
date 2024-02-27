@@ -3,6 +3,7 @@ import {BaseTag, Box, SubwayDot} from '@dagster-io/ui-components';
 type Props = {
   email: string;
   isFilter?: boolean;
+  size?: 'very-small' | 'small' | 'normal';
 };
 /**
  * This exists mainly for cloud to be able to override this component and show user profiles in the Dagster UI..

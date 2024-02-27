@@ -22,6 +22,7 @@ import {
 import dayjs from 'dayjs';
 import React, {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
@@ -53,6 +54,7 @@ import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraph
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TableSchema, isCanonicalTableSchemaEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -94,6 +96,7 @@ export const AssetNodeOverview = ({
     assetNodeLoadTimestamp,
     liveData,
   );
+  const {UserDisplay} = useLaunchPadHooks();
 
   if (loading) {
     return <AssetNodeOverviewLoading />;
@@ -201,6 +204,23 @@ export const AssetNodeOverview = ({
             </Caption>
           )}
         </Box>
+      </AttributeAndValue>
+      <AttributeAndValue label="Owners">
+        {assetNode.owners && assetNode.owners.length > 0 && (
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            {assetNode.owners.map((owner, idx) =>
+              owner.__typename === 'UserAssetOwner' ? (
+                <UserAssetOwnerWrapper key={idx}>
+                  <UserDisplay key={idx} email={owner.email} size="very-small" />
+                </UserAssetOwnerWrapper>
+              ) : (
+                <Tag icon="people" key={idx}>
+                  {owner.team}
+                </Tag>
+              ),
+            )}
+          </Box>
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
@@ -629,3 +649,9 @@ const AssetLinksWithStatus = ({
     </Box>
   );
 };
+
+const UserAssetOwnerWrapper = styled.div`
+  > div {
+    background-color: ${Colors.backgroundGray()};
+  }
+`;
