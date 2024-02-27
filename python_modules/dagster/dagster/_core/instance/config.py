@@ -363,7 +363,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         ),
         "run_retries": Field(
             {
-                "enabled": Field(bool, is_required=False, default_value=False),
+                "enabled": Field(bool, is_required=False, default_value=True),
                 "max_retries": Field(int, is_required=False, default_value=0),
                 "retry_on_asset_or_op_failure": Field(
                     bool,
