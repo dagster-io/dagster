@@ -206,18 +206,21 @@ export const AssetNodeOverview = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {assetNode.owners &&
-          assetNode.owners.map((owner, idx) =>
-            owner.__typename === 'UserAssetOwner' ? (
-              <UserAssetOwnerWrapper key={idx}>
-                <UserDisplay key={idx} email={owner.email} size="very-small" />
-              </UserAssetOwnerWrapper>
-            ) : (
-              <Tag icon="people" key={idx}>
-                {owner.team}
-              </Tag>
-            ),
-          )}
+        {assetNode.owners && (
+          <Box flex={{gap: 4}}>
+            {assetNode.owners.map((owner, idx) =>
+              owner.__typename === 'UserAssetOwner' ? (
+                <UserAssetOwnerWrapper key={idx}>
+                  <UserDisplay key={idx} email={owner.email} size="very-small" />
+                </UserAssetOwnerWrapper>
+              ) : (
+                <Tag icon="people" key={idx}>
+                  {owner.team}
+                </Tag>
+              ),
+            )}
+          </Box>
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
