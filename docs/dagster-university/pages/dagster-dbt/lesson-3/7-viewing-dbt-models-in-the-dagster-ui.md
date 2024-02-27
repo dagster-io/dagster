@@ -12,7 +12,7 @@ Once all the work above has been done, you’re ready to see your dbt models rep
 2. Expand the `default` group in the asset graph.
 3. You should see your two dbt models, `stg_trips` and `stg_zones`, converted as assets within your Dagster project!
 
-   ![todo]()
+   ![dbt assets with description metadata in the Dagster UI](/images/dagster-dbt/lesson-3/asset-description-metadata.png)
 
 If you’re familiar with the Dagster metadata system, you’ll notice that the descriptions you defined for the dbt models in `staging.yml` are carried over as those for your dbt models. In this case, your `stg_zones`'s description would say _“The taxi zones, with enriched records and additional flags”._
 
@@ -20,7 +20,17 @@ And, of course, the orange dbt logo attached to the assets indicates that they a
 
 Click the `stg_trips` node on the asset graph and look at the right sidebar. You’ll get some metadata out-of-the-box, such as the dbt code used for the model, how long the model takes to materialize over time, and the schema of the model.
 
-![TODO]()
+{% table %}
+
+- dbt model code
+- Model schema
+
+---
+
+- ![dbt model code as asset metadata in the Dagster UI](/images/dagster-dbt/lesson-3/dbt-asset-code.png)
+- ![model schema as asset metadata in the Dagster UI](/images/dagster-dbt/lesson-3/dbt-asset-table-schema.png)
+
+{% /table %}
 
 ---
 
@@ -32,43 +42,31 @@ After clicking around a bit and seeing the dbt models within Dagster, the next s
 2. Hold **Command** (or **Control** on Windows/Linux) and click the `stg_trips` asset.
 3. Click the **Materialize selected** button toward the top-right section of the asset graph.
 4. Click the toast notification at the top of the page (or the hash that appears at the bottom right of a dbt asset’s node) to navigate to the run.
+5. Under the run ID - in this case, `35b467ce` - change the toggle from a **timed view (stopwatch)** to the **flat view (blocks).**
 
-After doing so, the run’s page should look similar to this:
+The run’s page should look similar to this:
 
-![TODO]()
+![TODO](/images/dagster-dbt/lesson-3/dbt-run-details-page.png)
 
 Notice that there is only one “block,” or step, in this chart. That’s because Dagster runs dbt as it’s intended to be run: in a single execution of a `dbt` CLI command. This step will be named after the `@dbt_assets` -decorated asset, which we called `dbt_analytics` in the `assets/dbt.py` file.
 
-Scrolling through the logs, you’ll see the dbt commands Dagster executes, along with each model materialization. We want to point out two note-worthy logs:
+Scrolling through the logs, you’ll see the dbt commands Dagster executes, along with each model materialization. We want to point out two note-worthy logs.
 
-{% table %}
+### dbt commands
 
-- Identifying dbt commands
+![Highlighted dbt command in Dagster's run logs](/images/dagster-dbt/lesson-3/dbt-logs-dbt-command.png)
 
----
-
-- {% width="60%" %}
-  The log statement that indicates what dbt command is being run. Note that this executed the dbt run that specified in the `dbt_analytics` asset.
-
-- ![TODO - update image](/images/dagster-essentials/lesson-3/assets-overview.png) {% rowspan=2 %}
-
-{% /table %}
-
-{% table %}
-
-- Materialization events
-
----
-
-- {% width="60%" %}
-  The asset materialization events indicating that `stg_zones` and `stg_trips` were successfully materialized during the dbt execution.
-
-- ![TODO - update image](/images/dagster-essentials/lesson-3/assets-overview.png) {% rowspan=2 %}
-
-{% /table %}
+The log statement that indicates what dbt command is being run. Note that this executed the dbt run specified in the `dbt_analytics` asset.
 
 {% callout %}
+
 > 💡 **What’s `--select fqn:*`?** As mentioned earlier, Dagster tries to run dbt in as few executions as possible. `fqn` is a [dbt selection method](https://docs.getdbt.com/reference/node-selection/methods#the-fqn-method) that is as explicit as it gets and matches the node names in a `manifest.json`. The `*` means it will run all dbt models.
-{% /callout %}
+> {% /callout %}
+
+### Materialization events
+
+![Highlighted asset materialization events for dbt assets in Dagster's run logs](/images/dagster-dbt/lesson-3/dbt-logs-materialization-events.png)
+
+The asset materialization events indicating that `stg_zones` and `stg_trips` were successfully materialized during the dbt execution.
 
 Try running just one of the dbt models and see what happens! Dagster will dynamically generate the `--select` argument based on the assets selected to run.
