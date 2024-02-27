@@ -47,6 +47,7 @@ export * from './components/Tooltip';
 export * from './components/Trace';
 export * from './components/Warning';
 export * from './components/styles';
+export * from './components/Skeleton';
 export * from './components/useSuggestionsForString';
 export * from './components/ErrorBoundary';
 export * from './components/useViewport';

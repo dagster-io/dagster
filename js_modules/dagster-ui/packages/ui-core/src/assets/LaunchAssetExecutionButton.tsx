@@ -267,7 +267,7 @@ export const LaunchAssetExecutionButton = ({
               ) : null}
               <MenuItem
                 text="Open launchpad"
-                icon={<Icon name="open_in_new" />}
+                icon="open_in_new"
                 onClick={(e: React.MouseEvent<any>) => {
                   onClick(firstOption.assetKeys, e, true);
                 }}

@@ -221,6 +221,22 @@ class CaptureHandler(logging.Handler):
         self.captured.append(record)
 
 
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        record.msg = "I was formatted"
+        return super().format(record)
+
+
+class CustomLevelFilter(logging.Filter):
+    def __init__(self, filter_level):
+        super().__init__()
+        self.filter_level = filter_level
+
+    def filter(self, record):
+        record.msg = f"{record.msg} default logger is {DAGSTER_DEFAULT_LOGGER}"
+        return record.levelno == self.filter_level
+
+
 def test_capture_handler_log_records():
     capture_handler = CaptureHandler()
 
@@ -464,6 +480,128 @@ def test_error_when_logger_defined_yaml():
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(overrides=config_settings) as instance:
             log_job.execute_in_process(instance=instance)
+
+
+def test_conf_log_formatter(capsys):
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stdout",
+                        "formatter": "myFormatter",
+                    },
+                },
+                "formatters": {
+                    "myFormatter": {
+                        "format": "My formatted message: %(message)s",
+                    }
+                },
+            }
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        log_job.execute_in_process(instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    # currently the format of dict-inputted handlers is undetermined, so
+    # we only check for the expected message
+    assert re.search(r"My formatted message: ", out)
+
+
+def test_conf_log_formatter_custom(capsys):
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stdout",
+                        "formatter": "myFormatter",
+                    },
+                },
+                "formatters": {
+                    "myFormatter": {
+                        "()": "dagster_tests.logging_tests.test_logging.CustomFormatter",
+                    }
+                },
+            }
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        log_job.execute_in_process(instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    assert re.search(r"I was formatted", out)
+
+
+def test_conf_log_filter(capsys):
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stderr",
+                        "formatter": "myFormatter",
+                        "filters": ["myFilter"],
+                    },
+                },
+                "formatters": {
+                    "myFormatter": {
+                        "format": "Filter me out: %(message)s",
+                    }
+                },
+                "filters": {"myFilter": {"name": "none"}},
+            }
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        log_job.execute_in_process(instance=instance)
+
+    _, err = capsys.readouterr()
+
+    assert not re.search(r"Filter me out", err)
+
+
+def test_conf_log_filter_custom_with_context(capsys):
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stdout",
+                        "filters": ["myFilter"],
+                    },
+                },
+                "filters": {
+                    "myFilter": {
+                        "()": "dagster_tests.logging_tests.test_logging.CustomLevelFilter",
+                        "filter_level": logging.ERROR,
+                    }
+                },
+            }
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        log_job.execute_in_process(instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    assert not re.search(r"Hello world", out)
+    assert re.search(rf"My test error default logger is {DAGSTER_DEFAULT_LOGGER}", out)
 
 
 def test_python_multithread_context_logging():

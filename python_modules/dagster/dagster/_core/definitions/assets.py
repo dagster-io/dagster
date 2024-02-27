@@ -985,11 +985,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def execution_type(self) -> AssetExecutionType:
         value = self._get_external_asset_metadata_value(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         if value is None:
-            return (
-                AssetExecutionType.UNEXECUTABLE
-                if len(self.keys) == 0
-                else AssetExecutionType.MATERIALIZATION
-            )
+            return AssetExecutionType.MATERIALIZATION
         elif isinstance(value, str):
             return AssetExecutionType[value]
         else:

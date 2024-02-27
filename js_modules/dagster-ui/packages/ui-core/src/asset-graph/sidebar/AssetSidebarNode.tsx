@@ -13,7 +13,7 @@ import {StatusDot} from './StatusDot';
 import {FolderNodeNonAssetType, getDisplayName} from './util';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
-import {useAssetNodeMenu} from '../AssetNodeMenu';
+import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
 import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
 import {GraphData, GraphNode} from '../Utils';
 
@@ -184,7 +184,7 @@ const AssetGroupPopoverMenu = (props: Parameters<typeof useGroupNodeContextMenu>
   );
 };
 
-const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => {
+const AssetNodePopoverMenu = (props: AssetNodeMenuProps) => {
   const {menu, dialog} = useAssetNodeMenu(props);
   return (
     <>

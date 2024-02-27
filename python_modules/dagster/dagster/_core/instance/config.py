@@ -183,6 +183,7 @@ def python_logs_config_schema() -> Field:
                 {
                     "handlers": Field(dict, is_required=False),
                     "formatters": Field(dict, is_required=False),
+                    "filters": Field(dict, is_required=False),
                 },
                 is_required=False,
             ),

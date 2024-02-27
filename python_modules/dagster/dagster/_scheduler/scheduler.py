@@ -143,7 +143,6 @@ def execute_scheduler_iteration_loop(
     max_tick_retries: int,
     shutdown_event: threading.Event,
 ) -> "DaemonIterator":
-    schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
 
     submit_threadpool_executor = None
@@ -183,7 +182,6 @@ def execute_scheduler_iteration_loop(
                 threadpool_executor=threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 scheduler_run_futures=scheduler_run_futures,
-                schedule_state_lock=schedule_state_lock,
                 max_catchup_runs=max_catchup_runs,
                 max_tick_retries=max_tick_retries,
                 log_verbose_checks=verbose_logs_iteration,
@@ -210,16 +208,12 @@ def launch_scheduled_runs(
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     scheduler_run_futures: Optional[Dict[str, Future]] = None,
-    schedule_state_lock: Optional[threading.Lock] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
     log_verbose_checks: bool = True,
 ) -> "DaemonIterator":
     instance = workspace_process_context.instance
-
-    if not schedule_state_lock:
-        schedule_state_lock = threading.Lock()
 
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
@@ -363,7 +357,6 @@ def launch_scheduled_runs(
                     logger,
                     external_schedule,
                     schedule_state,
-                    schedule_state_lock,
                     end_datetime_utc,
                     max_catchup_runs,
                     max_tick_retries,
@@ -383,7 +376,6 @@ def launch_scheduled_runs(
                     logger,
                     external_schedule,
                     schedule_state,
-                    schedule_state_lock,
                     end_datetime_utc,
                     max_catchup_runs,
                     max_tick_retries,
@@ -403,7 +395,6 @@ def launch_scheduled_runs_for_schedule(
     logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
-    schedule_state_lock: threading.Lock,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
@@ -420,7 +411,6 @@ def launch_scheduled_runs_for_schedule(
             logger,
             external_schedule,
             schedule_state,
-            schedule_state_lock,
             end_datetime_utc,
             max_catchup_runs,
             max_tick_retries,
@@ -437,7 +427,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
-    schedule_state_lock: threading.Lock,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
@@ -450,10 +439,9 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
 
-    with schedule_state_lock:
-        instigator_origin_id = external_schedule.get_external_origin_id()
-        ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
-        latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
+    instigator_origin_id = external_schedule.get_external_origin_id()
+    ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
+    latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
     start_timestamp_utc: float = instigator_data.start_timestamp or 0
@@ -506,7 +494,6 @@ def launch_scheduled_runs_for_schedule_iterator(
         _log_iteration_timestamp(
             instance,
             schedule_state,
-            schedule_state_lock,
             instigator_data,
             end_datetime_utc.timestamp(),
         )
@@ -606,7 +593,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     _log_iteration_timestamp(
         instance,
         schedule_state,
-        schedule_state_lock,
         instigator_data,
         end_datetime_utc.timestamp(),
     )
@@ -911,7 +897,6 @@ def _create_scheduler_run(
 def _log_iteration_timestamp(
     instance: DagsterInstance,
     schedule_state: InstigatorState,
-    schedule_state_lock: threading.Lock,
     instigator_data: ScheduleInstigatorData,
     iteration_timestamp: float,
 ):
@@ -929,13 +914,12 @@ def _log_iteration_timestamp(
         or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL_SECONDS
         < iteration_timestamp
     ):
-        with schedule_state_lock:
-            instance.update_instigator_state(
-                schedule_state.with_data(
-                    ScheduleInstigatorData(
-                        cron_schedule=instigator_data.cron_schedule,
-                        start_timestamp=instigator_data.start_timestamp,
-                        last_iteration_timestamp=iteration_timestamp,
-                    )
+        instance.update_instigator_state(
+            schedule_state.with_data(
+                ScheduleInstigatorData(
+                    cron_schedule=instigator_data.cron_schedule,
+                    start_timestamp=instigator_data.start_timestamp,
+                    last_iteration_timestamp=iteration_timestamp,
                 )
             )
+        )

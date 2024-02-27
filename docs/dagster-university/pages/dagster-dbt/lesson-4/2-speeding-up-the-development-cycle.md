@@ -14,7 +14,7 @@ Before we move on, we’ll reduce the number of steps in the feedback loop by au
 
 ## Automating running dbt parse in development
 
-The first feature is that resources don’t need to be part of an asset to be executed. This means that once a `dbt_resource` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_resource` to run the command for us.
+The first feature is that resources don’t need to be part of an asset to be executed. This means that once a `dbt_resource` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_resource` to run the command for us. 
 
 In `dbt.py`, above the `dbt_manifest_path` declaration, add this snippet to run `dbt parse`:
 
@@ -42,31 +42,30 @@ Reload your code location in the Dagster UI, and you’ll see that everything sh
 This is great, however, it might feel a bit greedy and intensive to be constantly building a new manifest file. This is especially the case in production where a dbt project is stable. Therefore, let’s lock this computation behind an environment variable and defer to a single copy of our manifest in production.
 
 1. In the `.env` file, define an environment variable named `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` and set it to `1`:
+    
+    ```python
+    DUCKDB_DATABASE=data/staging/data.duckdb
+    DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 # New env var defined here
+    ```
+    
+2. Next, import the `os` module at the top of the `dbt.py` file so the environment variable is accessible: 
+    
+    ```python
+    import os
+    ```
+    
+3. Finally, let’s check to see if the variable is set: 
+    - **If it is**, we’ll use our new logic to generate a new manifest file every time the code location is built
+    - **If it isn’t**, then we’ll use our old logic of depending on a specific `manifest.json` in the `target` directory.
+    
+    Copy and paste the code to finalize the definition of `dbt_manifest_path`:
 
-   ```python
-   DUCKDB_DATABASE=data/staging/data.duckdb
-   DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 # New env var defined here
-   ```
-
-2. Next, import the `os` module at the top of the `dbt.py` file so the environment variable is accessible:
-
-   ```python
-   import os
-   ```
-
-3. Finally, let’s check to see if the variable is set:
-
-   - **If it is**, we’ll use our new logic to generate a new manifest file every time the code location is built
-   - **If it isn’t**, then we’ll use our old logic of depending on a specific `manifest.json` in the `target` directory.
-
-   Copy and paste the code to finalize the definition of `dbt_manifest_path`:
-
-   ```python
-   if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-       dbt_manifest_path = (
-           dbt_resource.cli(["--quiet", "parse"]).wait()
-           .target_path.joinpath("manifest.json")
-       )
-   else:
-       dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
-   ```
+    ```python
+    if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+        dbt_manifest_path = (
+            dbt_resource.cli(["--quiet", "parse"]).wait()
+            .target_path.joinpath("manifest.json")
+        )
+    else:
+        dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+    ```

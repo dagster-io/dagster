@@ -10,8 +10,8 @@ import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {
   AssetNodeOverview,
-  AssetNodeOverviewEmpty,
   AssetNodeOverviewLoading,
+  AssetNodeOverviewNonSDA,
 } from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
@@ -110,7 +110,9 @@ export const AssetView = ({assetKey, trace}: Props) => {
       return <AssetNodeOverviewLoading />;
     }
     if (!definition) {
-      return <AssetNodeOverviewEmpty />;
+      return (
+        <AssetNodeOverviewNonSDA assetKey={assetKey} lastMaterialization={lastMaterialization} />
+      );
     }
     return (
       <AssetNodeOverview
@@ -417,7 +419,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   return {
     definitionQueryResult: result,
     definition: asset.definition,
-    lastMaterialization: asset.assetMaterializations[0],
+    lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
   };
 };
 
