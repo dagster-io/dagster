@@ -6,7 +6,7 @@ lesson: '4'
 
 # Debugging failed runs
 
-Data engineers spend more time debugging failures than writing new pipelines, so it’s important to know how to debug a failing dbt execution step. 
+Data engineers spend more time debugging failures than writing new pipelines, so it’s important to know how to debug a failing dbt execution step.
 
 To demonstrate, we’re going to intentionally make a bug in our dbt model code, see it fail in Dagster, troubleshoot the failure, and then re-run the pipeline. Here, you’ll learn how to debug your dbt assets similarly to how you would troubleshoot dbt on its own.
 
@@ -25,9 +25,9 @@ To demonstrate, we’re going to intentionally make a bug in our dbt model code,
        zone_population ## new column
    from raw_zones
    ```
-    
+
 2. Open a separate terminal instance and run:
-    
+
    ```bash
    cd analytics
    dbt parse
