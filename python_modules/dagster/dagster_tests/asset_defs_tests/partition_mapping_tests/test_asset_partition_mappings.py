@@ -33,10 +33,10 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
@@ -438,7 +438,7 @@ def test_multipartitions_def_partition_mapping_infer_identity():
         assert context.asset_partition_keys_for_input("upstream") == context.partition_keys
         return 1
 
-    asset_graph = AssetGraph.from_assets([upstream, downstream])
+    asset_graph = InternalAssetGraph.from_assets([upstream, downstream])
     assets_job = define_asset_job("foo", [upstream, downstream]).resolve(asset_graph=asset_graph)
 
     assert (
@@ -471,7 +471,7 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
         assert context.partition_keys == [MultiPartitionKey({"abc": "a", "123": "1"})]
         return 1
 
-    asset_graph = AssetGraph.from_assets([upstream, downstream])
+    asset_graph = InternalAssetGraph.from_assets([upstream, downstream])
 
     assert (
         asset_graph.get_partition_mapping(upstream.key, downstream.key)
@@ -526,7 +526,7 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
         assert context.partition_keys == ["a"]
         return 1
 
-    asset_graph = AssetGraph.from_assets([upstream, downstream])
+    asset_graph = InternalAssetGraph.from_assets([upstream, downstream])
 
     assert (
         asset_graph.get_partition_mapping(upstream.key, downstream.key)

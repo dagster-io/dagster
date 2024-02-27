@@ -15,7 +15,7 @@ import visit from 'unist-util-visit';
 import FeedbackModal from '../components/FeedbackModal';
 import {PagePagination} from '../components/PagePagination';
 import MDXComponents from '../components/mdx/MDXComponents';
-import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
+import MDXRenderer, {MDXData} from '../components/mdx/MDXRenderer';
 import {getPaginatedChangeLog} from '../util/paginatedChangelog';
 
 const PAGINATION_VERSION_COUNT_PER_PAGE = 5;
@@ -60,17 +60,8 @@ export default function MdxPage(props: Props) {
 
   return (
     <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      <UnversionedMDXRenderer
-        data={props.data}
-        toggleFeedback={toggleFeedback}
-        bottomContent={
-          <PagePagination
-            currentPageIndex={currentPageIndex}
-            totalPageCount={props.totalPageCount}
-          />
-        }
-      />
+      <MDXRenderer data={props.data} />
+      <PagePagination currentPageIndex={currentPageIndex} totalPageCount={props.totalPageCount} />
     </>
   );
 }

@@ -53,7 +53,7 @@ import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {useStartTrace} from '../performance';
+import {PageLoadTrace} from '../performance';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -88,7 +88,7 @@ type Props = {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
   isGlobalGraph?: boolean;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 } & OptionalFilters;
 
 export const MINIMAL_SCALE = 0.6;
@@ -193,7 +193,7 @@ type WithDataProps = Props & {
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
   isGlobalGraph?: boolean;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 };
 
 const AssetGraphExplorerWithData = ({

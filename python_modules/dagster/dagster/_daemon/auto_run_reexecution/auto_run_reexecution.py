@@ -3,11 +3,16 @@ from typing import Iterator, Optional, Sequence, Tuple, cast
 
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.events import EngineEventData
+from dagster._core.events import EngineEventData, RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
-from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
+from dagster._core.storage.tags import (
+    MAX_RETRIES_TAG,
+    RETRY_NUMBER_TAG,
+    RETRY_STRATEGY_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -56,10 +61,24 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
+    retry_on_asset_or_op_failure = instance.get_settings("run_retries").get(
+        "retry_on_asset_or_op_failure", True
+    )
+
     for run in runs:
         retry_number = get_retry_number(run)
         if retry_number is not None:
-            yield (run, retry_number)
+            if (
+                run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
+                and not retry_on_asset_or_op_failure
+            ):
+                instance.report_engine_event(
+                    "Not retrying run since it failed due to a step failure and run retries "
+                    "are configured with retry_on_asset_or_op_failure set to false.",
+                    run,
+                )
+            else:
+                yield (run, retry_number)
 
 
 def get_reexecution_strategy(

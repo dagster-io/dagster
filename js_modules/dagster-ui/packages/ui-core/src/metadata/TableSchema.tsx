@@ -128,14 +128,21 @@ const iconForType = (type: string): IconName | null => {
   return null;
 };
 
-const TypeTag = ({type, icon}: {type: string; icon: IconName | null}) => (
-  <Tag intent="none">
-    <Box flex={{gap: 4}}>
-      {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
-      {type}
-    </Box>
-  </Tag>
-);
+const TypeTag = ({type = '', icon}: {type: string; icon: IconName | null}) => {
+  if (type.trim().replace(/\?/g, '').length === 0) {
+    // Do not render type '' or '?' or any other empty value.
+    return <span />;
+  }
+
+  return (
+    <Tag intent="none">
+      <Box flex={{gap: 4}}>
+        {icon ? <Icon name={icon} /> : <span style={{width: 16}} />}
+        {type}
+      </Box>
+    </Tag>
+  );
+};
 
 const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
 

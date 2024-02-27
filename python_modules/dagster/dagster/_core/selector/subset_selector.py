@@ -465,7 +465,6 @@ def parse_step_selection(
 
 def parse_asset_selection(
     assets_defs: Sequence["AssetsDefinition"],
-    source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
     raise_on_clause_has_no_matches: bool = True,
 ) -> AbstractSet[AssetKey]:
@@ -486,7 +485,7 @@ def parse_asset_selection(
     if len(asset_selection) == 1 and asset_selection[0] == "*":
         return {key for ad in assets_defs for key in ad.keys}
 
-    graph = generate_asset_dep_graph(assets_defs, source_assets)
+    graph = generate_asset_dep_graph(assets_defs, [])
     assets_set: Set[AssetKey] = set()
 
     # loop over clauses

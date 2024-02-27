@@ -624,7 +624,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """
         from .asset_condition.asset_condition import AssetConditionResult
 
-        if context.asset_key in context.asset_graph.root_materializable_or_observable_asset_keys:
+        if context.asset_key in context.asset_graph.root_executable_asset_keys:
             handled_subset = self.get_handled_subset(context)
             unhandled_candidates = (
                 context.candidate_subset
@@ -756,10 +756,12 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
-                # ignore non-observable sources, which will never have a materialization or observation
-                if context.asset_graph.is_source(
-                    parent.asset_key
-                ) and not context.asset_graph.is_observable(parent.asset_key):
+                # ignore missing or unexecutable assets, which will never have a materialization or
+                # observation
+                if not (
+                    context.asset_graph.has_asset(parent.asset_key)
+                    and context.asset_graph.is_executable(parent.asset_key)
+                ):
                     continue
                 if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                     parent

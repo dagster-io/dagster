@@ -49,13 +49,13 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useStartTrace} from '../performance';
+import {PageLoadTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   assetKey: AssetKey;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 }
 
 export const AssetView = ({assetKey, trace}: Props) => {
@@ -460,7 +460,6 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         name
       }
     }
-    hasAssetChecks
 
     ...AssetNodeInstigatorsFragment
     ...AssetNodeDefinitionFragment

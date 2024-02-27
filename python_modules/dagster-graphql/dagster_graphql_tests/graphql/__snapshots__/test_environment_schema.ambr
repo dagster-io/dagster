@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[0]
   dict({
     'runConfigSchemaOrError': dict({

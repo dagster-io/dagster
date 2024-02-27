@@ -861,6 +861,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """AbstractSet[AssetKey]: The asset keys associated with this AssetsDefinition."""
         return self._selected_asset_keys
 
+    @property
+    def has_keys(self) -> bool:
+        return len(self.keys) > 0
+
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:

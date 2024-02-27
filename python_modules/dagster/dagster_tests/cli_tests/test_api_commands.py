@@ -9,9 +9,15 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.host_representation import JobHandle
-from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import (
+    create_run_for_test,
+    ensure_dagster_tests_import,
+    environ,
+    instance_for_test,
+)
 from dagster._serdes import serialize_value
 
+ensure_dagster_tests_import()
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
 
 

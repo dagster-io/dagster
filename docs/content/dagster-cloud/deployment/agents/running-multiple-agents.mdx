@@ -9,8 +9,6 @@ platform_type: "cloud"
 
 Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
-It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents).
-
 ---
 
 ## Running multiple agents in the same environment
@@ -191,7 +189,7 @@ helm upgrade \
 Or if you're using a `values.yaml` file:
 
 ```yaml
-dagsterCloued
+dagsterCloud:
   agentQueues:
     # Continue to handle requests for code locations that aren't
     # assigned to a specific agent queue
