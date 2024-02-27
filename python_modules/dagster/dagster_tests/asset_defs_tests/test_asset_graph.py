@@ -30,6 +30,7 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
@@ -52,7 +53,7 @@ def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
         return assets + (asset_checks or [])
 
     external_asset_nodes = external_asset_nodes_from_defs(
-        repo.get_all_jobs(), repo.assets_defs_by_key, source_assets_by_key={}
+        repo.get_all_jobs(), repo.assets_defs_by_key
     )
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
         [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
@@ -61,7 +62,7 @@ def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
+    name="asset_graph_from_assets", params=[InternalAssetGraph.from_assets, to_external_asset_graph]
 )
 def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], AssetGraph]:
     return request.param
@@ -336,7 +337,7 @@ def test_custom_unsupported_partition_mapping():
         def child(parent):
             ...
 
-    internal_asset_graph = AssetGraph.from_assets([parent, child])
+    internal_asset_graph = InternalAssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:
@@ -435,7 +436,7 @@ def test_get_non_source_roots_missing_source(asset_graph_from_assets: Callable[.
     source_asset = SourceAsset("source_asset")
 
     asset_graph = asset_graph_from_assets([foo, bar, source_asset])
-    assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
+    assert asset_graph.get_materializable_roots(AssetKey("bar")) == {AssetKey("foo")}
 
 
 def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., AssetGraph]):

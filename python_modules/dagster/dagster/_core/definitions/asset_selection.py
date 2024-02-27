@@ -11,6 +11,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -21,7 +22,7 @@ from dagster._core.selector.subset_selector import (
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_check_spec import AssetCheckKey
-from .asset_graph import AssetGraph, InternalAssetGraph
+from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
 from .events import (
     AssetKey,
@@ -214,8 +215,9 @@ class AssetSelection(ABC, BaseModel, frozen=True):
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
         """Returns a selection that includes all materializable assets that are upstream of any of
-        the assets in this selection, selecting the assets in this selection by default. Includes the asset checks targeting the returned assets. Iterates
-        through each asset in this selection and returns the union of all upstream assets.
+        the assets in this selection, selecting the assets in this selection by default. Includes
+        the asset checks targeting the returned assets. Iterates through each asset in this
+        selection and returns the union of all upstream assets.
 
         Because mixed selections of source and materializable assets are currently not supported,
         keys corresponding to `SourceAssets` will not be included as upstream of regular assets.
@@ -331,7 +333,7 @@ class AssetSelection(ABC, BaseModel, frozen=True):
             asset_graph = all_assets
         else:
             check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-            asset_graph = AssetGraph.from_assets(all_assets)
+            asset_graph = InternalAssetGraph.from_assets(all_assets)
 
         return self.resolve_inner(asset_graph)
 
@@ -685,9 +687,10 @@ class GroupsAssetSelection(AssetSelection, frozen=True):
             else asset_graph.materializable_asset_keys
         )
         return {
-            asset_key
-            for asset_key, group in asset_graph.group_names_by_key.items()
-            if group in self.selected_groups and asset_key in base_set
+            key
+            for group in self.selected_groups
+            for key in asset_graph.asset_keys_for_group(group)
+            if key in base_set
         }
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
@@ -722,7 +725,10 @@ class KeysAssetSelection(AssetSelection, frozen=True):
         return len(self.selected_keys) > 1
 
     def __str__(self) -> str:
-        return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
+        if len(self.selected_keys) <= 3:
+            return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
+        else:
+            return f"{len(self.selected_keys)} assets"
 
 
 @whitelist_for_serdes
@@ -793,7 +799,7 @@ class UpstreamAssetSelection(
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
-        return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
+        return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
@@ -825,7 +831,7 @@ class ParentSourcesAssetSelection(
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)
-        return {key for key in all_upstream if key in asset_graph.source_asset_keys}
+        return {key for key in all_upstream if key in asset_graph.external_asset_keys}
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))

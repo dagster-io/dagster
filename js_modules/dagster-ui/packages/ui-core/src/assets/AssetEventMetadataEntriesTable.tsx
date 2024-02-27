@@ -38,6 +38,7 @@ export const AssetEventMetadataEntriesTable = ({
   showFilter,
   hideTableSchema,
   displayedByDefault = 100,
+  emptyState,
 }: {
   event: TableEvent | null;
   observations?: TableEvent[] | null;
@@ -49,6 +50,7 @@ export const AssetEventMetadataEntriesTable = ({
   showFilter?: boolean;
   hideTableSchema?: boolean;
   displayedByDefault?: number;
+  emptyState?: React.ReactNode;
 }) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -92,6 +94,10 @@ export const AssetEventMetadataEntriesTable = ({
         .filter((row) => !(hideTableSchema && isCanonicalTableSchemaEntry(row.entry))),
     [allRows, filter, hideTableSchema],
   );
+
+  if (emptyState && allRows.length === 0) {
+    return emptyState;
+  }
 
   return (
     <>

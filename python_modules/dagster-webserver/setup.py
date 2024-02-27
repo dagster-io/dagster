@@ -42,6 +42,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_webserver_tests*"]),
     include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         # cli
         "click>=7.0,<9.0",

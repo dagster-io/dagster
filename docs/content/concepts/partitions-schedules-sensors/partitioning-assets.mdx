@@ -280,7 +280,7 @@ def yesterday_event_stats():
 
 #### Managed-loading dependencies
 
-To override partition dependency rules for [managed-loading asset dependencies](/concepts/assets/software-defined-assets#defining-explicit-managed-loading-dependencies), you can use a `PartitionMapping` to specify that each partition of an asset should depend on a partition in an upstream asset.
+To override partition dependency rules for managed-loading asset dependencies, you can use a `PartitionMapping` to specify that each partition of an asset should depend on a partition in an upstream asset.
 
 In the following code snippet, we used a <PyObject object="TimeWindowPartitionMapping" /> to specify that each partition of a daily-partitioned asset should depend on the prior day's partition in an upstream asset:
 

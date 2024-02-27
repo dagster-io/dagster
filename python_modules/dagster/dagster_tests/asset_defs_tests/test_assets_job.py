@@ -36,11 +36,12 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -283,7 +284,7 @@ def test_source_asset():
             assert context.resources.subresource == 9
             assert context.upstream_output.resources.subresource == 9
             assert context.upstream_output.asset_key == AssetKey("source1")
-            assert context.upstream_output.metadata == {"a": "b"}
+            assert context.upstream_output.metadata["a"] == "b"
             assert context.upstream_output.resource_config["a"] == 7
             assert context.upstream_output.log is not None
             context.upstream_output.log.info("hullo")
@@ -1379,7 +1380,7 @@ dbt_asset_def = AssetsDefinition(
 )
 
 my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
-    asset_graph=AssetGraph.from_assets(
+    asset_graph=InternalAssetGraph.from_assets(
         with_resources(
             [dbt_asset_def, fivetran_asset],
             resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
@@ -1444,7 +1445,7 @@ def test_job_preserved_with_asset_subset():
         },
         description="my cool job",
         tags={"yay": 1},
-    ).resolve(asset_graph=AssetGraph.from_assets([asset_one, two, three]))
+    ).resolve(asset_graph=InternalAssetGraph.from_assets([asset_one, two, three]))
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1469,7 +1470,7 @@ def test_job_default_config_preserved_with_asset_subset():
         assert context.op_execution_context.op_config["baz"] == 3
 
     foo_job = define_asset_job("foo_job").resolve(
-        asset_graph=AssetGraph.from_assets([asset_one, two, three])
+        asset_graph=InternalAssetGraph.from_assets([asset_one, two, three])
     )
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
@@ -1489,7 +1490,7 @@ def test_empty_asset_job():
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
-        asset_graph=AssetGraph.from_assets([a, b])
+        asset_graph=InternalAssetGraph.from_assets([a, b])
     )
     assert empty_job.all_node_defs == []
 
@@ -1978,7 +1979,6 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
             hourly_asset,
             unpartitioned_asset,
         ],
-        source_assets=[],
         executor_def=None,
         resource_defs={},
         asset_checks=[],
@@ -2022,10 +2022,8 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     jobs = get_base_asset_jobs(
         assets=[
             asset_x,
-        ],
-        source_assets=[
-            asset_a,
-            asset_b,
+            create_external_asset_from_source_asset(asset_a),
+            create_external_asset_from_source_asset(asset_b),
         ],
         executor_def=None,
         resource_defs={},
@@ -2887,3 +2885,21 @@ def test_subset_cycle_dependencies():
     result = job.execute_in_process()
     assert result.success
     assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("b")}
+
+
+def test_exclude_assets_without_keys():
+    @asset
+    def foo():
+        pass
+
+    # This is a valid AssetsDefinition but has no keys. It should not be executed.
+    @multi_asset()
+    def ghost():
+        assert False
+
+    foo_job = Definitions(
+        assets=[foo, ghost],
+        jobs=[define_asset_job("foo_job", [foo])],
+    ).get_job_def("foo_job")
+
+    assert foo_job.execute_in_process().success

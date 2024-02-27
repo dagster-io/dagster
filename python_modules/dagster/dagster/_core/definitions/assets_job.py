@@ -63,16 +63,15 @@ def is_base_asset_job_name(name: str) -> bool:
 
 def get_base_asset_jobs(
     assets: Sequence[AssetsDefinition],
-    source_assets: Sequence[SourceAsset],
     asset_checks: Sequence[AssetChecksDefinition],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    executable_assets = [a for a in (*assets, *source_assets) if a.is_executable]
-    unexecutable_assets = [a for a in (*assets, *source_assets) if not a.is_executable]
+    executable_assets = [a for a in assets if a.is_executable]
+    unexecutable_assets = [a for a in assets if not a.is_executable]
 
     executable_assets_by_partitions_def: Dict[
-        Optional[PartitionsDefinition], List[Union[AssetsDefinition, SourceAsset]]
+        Optional[PartitionsDefinition], List[AssetsDefinition]
     ] = defaultdict(list)
     for asset in executable_assets:
         executable_assets_by_partitions_def[asset.partitions_def].append(asset)

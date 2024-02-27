@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, c
 
 from typing_extensions import Literal
 
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
@@ -12,6 +11,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.source_asset import SourceAsset
@@ -216,5 +216,5 @@ def get_stale_status_resolver(
 ) -> CachingStaleStatusResolver:
     return CachingStaleStatusResolver(
         instance=instance,
-        asset_graph=AssetGraph.from_assets(assets),
+        asset_graph=InternalAssetGraph.from_assets(assets),
     )

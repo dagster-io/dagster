@@ -25,7 +25,7 @@ export const AssetCheckStatusTag = ({
       <BaseTag
         textColor={Colors.textLight()}
         fillColor={Colors.backgroundLight()}
-        icon={<Icon name="dot" color={Colors.accentGray()} />}
+        icon={<Icon name="status" color={Colors.accentGray()} />}
         label="Not evaluated"
       />
     );

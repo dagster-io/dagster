@@ -1,9 +1,18 @@
 import datetime
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Mapping,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+    cast,
+)
 
-from typing_extensions import Protocol
+from typing_extensions import Final
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
@@ -14,189 +23,141 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
     from dagster._core.storage.dagster_run import DagsterRun
 
-DAGSTER_META_KEY = "dagster_meta"
+# Python's logging system allows you to attach arbitrary values to a log message/record by passing a
+# dictionary as `extra` to a logging method. The keys of extra are "splatted" directly into the
+# `logging.LogRecord` created by this call-- i.e. `foo` will be set as an attribute on the
+# `LogRecord`, not `extra`. The lack of an intervening abstraction between attached data and the
+# `LogRecord` necessitates providing our own. There are only types of data that we attach: (1) a
+# `DagsterEvent`; (2) a dictionary of assorted metadata about the context of the log message. The
+# below APIs should be used for get/set/has operations on these types of data.
+
+LOG_RECORD_EVENT_ATTR: Final = "dagster_event"
 
 
-class IDagsterMeta(Protocol):
-    @property
-    def dagster_meta(self) -> "DagsterLoggingMetadata":
-        ...
+def get_log_record_event(record: logging.LogRecord) -> "DagsterEvent":
+    return cast("DagsterEvent", getattr(record, LOG_RECORD_EVENT_ATTR))
 
 
-# The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`
-# property of `IDagsterMeta`. We ignore this error because we don't need to implement this method--
-# `DagsterLogRecord` is a stub class that is never instantiated. We only ever cast
-# `logging.LogRecord` objects to `DagsterLogRecord`, because it gives us typed access to the
-# `dagster_meta` property. `dagster_meta` itself is set on these `logging.LogRecord` objects via the
-# `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
-# `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
-# defined via `extra`.
-class DagsterLogRecord(logging.LogRecord, IDagsterMeta):
-    pass
+def set_log_record_event(record: logging.LogRecord, event: "DagsterEvent") -> None:
+    setattr(record, LOG_RECORD_EVENT_ATTR, event)
 
 
-class DagsterMessageProps(
-    NamedTuple(
-        "_DagsterMessageProps",
-        [
-            ("orig_message", Optional[str]),
-            ("log_message_id", Optional[str]),
-            ("log_timestamp", Optional[str]),
-            ("dagster_event", Optional[Any]),
-        ],
-    )
-):
-    """Internal class used to represent specific attributes about a logged message."""
-
-    def __new__(
-        cls,
-        orig_message: str,
-        log_message_id: Optional[str] = None,
-        log_timestamp: Optional[str] = None,
-        dagster_event: Optional["DagsterEvent"] = None,
-    ):
-        return super().__new__(
-            cls,
-            orig_message=check.str_param(orig_message, "orig_message"),
-            log_message_id=check.opt_str_param(
-                log_message_id, "log_message_id", default=make_new_run_id()
-            ),
-            log_timestamp=check.opt_str_param(
-                log_timestamp,
-                "log_timestamp",
-                default=(
-                    datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
-                ),
-            ),
-            dagster_event=dagster_event,
-        )
-
-    @property
-    def error_str(self) -> Optional[str]:
-        if self.dagster_event is None:
-            return None
-
-        event_specific_data = self.dagster_event.event_specific_data
-        if not event_specific_data:
-            return None
-
-        error = getattr(event_specific_data, "error", None)
-        if error:
-            return f'\n\n{getattr(event_specific_data, "error_display_string", error.to_string())}'
-        return None
-
-    @property
-    def pid(self) -> Optional[str]:
-        if self.dagster_event is None or self.dagster_event.pid is None:
-            return None
-        return str(self.dagster_event.pid)
-
-    @property
-    def step_key(self) -> Optional[str]:
-        if self.dagster_event is None:
-            return None
-        return self.dagster_event.step_key
-
-    @property
-    def event_type_value(self) -> Optional[str]:
-        if self.dagster_event is None:
-            return None
-        return self.dagster_event.event_type_value
+def has_log_record_event(record: logging.LogRecord) -> bool:
+    return hasattr(record, LOG_RECORD_EVENT_ATTR)
 
 
-class DagsterLoggingMetadata(
-    NamedTuple(
-        "_DagsterLoggingMetadata",
-        [
-            ("run_id", Optional[str]),
-            ("job_name", Optional[str]),
-            ("job_tags", Mapping[str, str]),
-            ("step_key", Optional[str]),
-            ("op_name", Optional[str]),
-            ("resource_name", Optional[str]),
-            ("resource_fn_name", Optional[str]),
-        ],
-    )
-):
+LOG_RECORD_METADATA_ATTR: Final = "dagster_meta"
+
+
+def get_log_record_metadata(record: logging.LogRecord) -> "DagsterLogRecordMetadata":
+    return getattr(record, LOG_RECORD_METADATA_ATTR)
+
+
+def set_log_record_metadata(
+    record: logging.LogRecord, metadata: "DagsterLogRecordMetadata"
+) -> None:
+    setattr(record, LOG_RECORD_METADATA_ATTR, metadata)
+
+
+def has_log_record_metadata(record: logging.LogRecord) -> bool:
+    return hasattr(record, LOG_RECORD_METADATA_ATTR)
+
+
+class DagsterLogHandlerMetadata(TypedDict):
     """Internal class used to represent the context in which a given message was logged (i.e. the
-    step, pipeline run, resource, etc.).
+    step, run, resource, etc.). This is stored on the `DagsterLogHandler` (and `DagsterLogManager`) and
+    merged into the specific metadata for each log event to form a `DagsterLogRecordMetadata`
+    instance.
     """
 
-    def __new__(
-        cls,
-        run_id: Optional[str] = None,
-        job_name: Optional[str] = None,
-        job_tags: Optional[Mapping[str, str]] = None,
-        step_key: Optional[str] = None,
-        op_name: Optional[str] = None,
-        resource_name: Optional[str] = None,
-        resource_fn_name: Optional[str] = None,
-    ):
-        return super().__new__(
-            cls,
-            run_id=run_id,
-            job_name=job_name,
-            job_tags=job_tags or {},
-            step_key=step_key,
-            op_name=op_name,
-            resource_name=resource_name,
-            resource_fn_name=resource_fn_name,
-        )
-
-    @property
-    def log_source(self) -> str:
-        if self.resource_name is None:
-            return self.job_name or "system"
-        return f"resource:{self.resource_name}"
-
-    def all_tags(self) -> Mapping[str, str]:
-        # converts all values into strings
-        return {k: str(v) for k, v in self._asdict().items()}
-
-    def event_tags(self) -> Mapping[str, str]:
-        # Exclude pipeline_tags since it can be quite large and can be found on the run
-        return {k: str(v) for k, v in self._asdict().items() if k != "job_tags"}
+    run_id: Optional[str]
+    job_name: Optional[str]
+    job_tags: Mapping[str, str]
+    step_key: Optional[str]
+    op_name: Optional[str]
+    resource_name: Optional[str]
+    resource_fn_name: Optional[str]
 
 
-def construct_log_string(
-    logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
-) -> str:
-    from dagster._core.events import EVENT_TYPE_VALUE_TO_DISPLAY_STRING
+class DagsterLogRecordMetadata(TypedDict):
+    """Internal class representing the full metadata on a log record after it has been modified by
+    the `DagsterLogHandler`. It contains all the fields on `DagsterLogHandlerMetadata`, an optional
+    `DagsterEvent`, and some fields concerning the individual log message.
+    """
 
-    event_type_str = (
-        EVENT_TYPE_VALUE_TO_DISPLAY_STRING[message_props.event_type_value]
-        if message_props.event_type_value in EVENT_TYPE_VALUE_TO_DISPLAY_STRING
-        else message_props.event_type_value
+    run_id: Optional[str]
+    job_name: Optional[str]
+    job_tags: Mapping[str, str]
+    step_key: Optional[str]
+    op_name: Optional[str]
+    resource_name: Optional[str]
+    resource_fn_name: Optional[str]
+    dagster_event: Optional["DagsterEvent"]
+    orig_message: str
+    log_message_id: str
+    log_timestamp: str
+
+
+def construct_log_record_message(metadata: DagsterLogRecordMetadata) -> str:
+    from dagster._core.events import EVENT_TYPE_TO_DISPLAY_STRING
+
+    if metadata["resource_name"] is not None:
+        log_source = f'resource:{metadata["resource_name"]}'
+    else:
+        log_source = metadata["job_name"] or "system"
+
+    if metadata["dagster_event"] is not None:
+        event = metadata["dagster_event"]
+        event_type_str = EVENT_TYPE_TO_DISPLAY_STRING.get(event.event_type, event.event_type.value)
+        pid_str = str(event.pid) if event.pid else None
+        error_str = _error_str_for_event(event)
+    else:
+        event_type_str = None
+        pid_str = None
+        error_str = None
+
+    message_parts = filter(
+        None,
+        [
+            log_source,
+            metadata["run_id"],
+            pid_str,
+            metadata["step_key"],
+            event_type_str,
+            metadata["orig_message"],
+        ],
     )
-    return " - ".join(
-        filter(
-            None,
-            (
-                logging_metadata.log_source,
-                logging_metadata.run_id,
-                message_props.pid,
-                logging_metadata.step_key,
-                event_type_str,
-                message_props.orig_message,
-            ),
-        )
-    ) + (message_props.error_str or "")
+    return " - ".join(message_parts) + (error_str or "")
 
 
-def get_dagster_meta_dict(
-    logging_metadata: DagsterLoggingMetadata, dagster_message_props: DagsterMessageProps
-) -> Mapping[str, object]:
-    # combine all dagster meta information into a single dictionary
-    meta_dict = {
-        **logging_metadata._asdict(),
-        **dagster_message_props._asdict(),
-    }
-    # step-level events can be logged from a pipeline context. for these cases, pull the step
-    # key from the underlying DagsterEvent
-    if meta_dict["step_key"] is None:
-        meta_dict["step_key"] = dagster_message_props.step_key
+def _error_str_for_event(event: "DagsterEvent") -> Optional[str]:
+    data = event.event_specific_data
+    if data:
+        error = getattr(data, "error", None)
+        if error:
+            error_display_string = getattr(data, "error_display_string", error.to_string())
+            return f"\n\n{error_display_string}"
+    return None
 
-    return meta_dict
+
+def construct_log_record_metadata(
+    handler_metadata: DagsterLogHandlerMetadata, orig_message: str, event: Optional["DagsterEvent"]
+) -> DagsterLogRecordMetadata:
+    step_key = handler_metadata["step_key"] or (event.step_key if event else None)
+    timestamp = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
+    return DagsterLogRecordMetadata(
+        run_id=handler_metadata["run_id"],
+        job_name=handler_metadata["job_name"],
+        job_tags=handler_metadata["job_tags"],
+        op_name=handler_metadata["op_name"],
+        resource_name=handler_metadata["resource_name"],
+        resource_fn_name=handler_metadata["resource_fn_name"],
+        orig_message=orig_message,
+        log_message_id=make_new_run_id(),
+        log_timestamp=timestamp,
+        dagster_event=event,
+        step_key=step_key,
+    )
 
 
 class DagsterLogHandler(logging.Handler):
@@ -211,11 +172,11 @@ class DagsterLogHandler(logging.Handler):
 
     def __init__(
         self,
-        logging_metadata: DagsterLoggingMetadata,
+        metadata: DagsterLogHandlerMetadata,
         loggers: Sequence[logging.Logger],
         handlers: Sequence[logging.Handler],
     ):
-        self._logging_metadata = logging_metadata
+        self._metadata = metadata
         self._loggers = loggers
         self._handlers = handlers
         # Setting up a local thread context here to allow the DagsterLogHandler
@@ -226,12 +187,12 @@ class DagsterLogHandler(logging.Handler):
         super().__init__()
 
     @property
-    def logging_metadata(self) -> DagsterLoggingMetadata:
-        return self._logging_metadata
+    def metadata(self) -> DagsterLogHandlerMetadata:
+        return self._metadata
 
     def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
-            logging_metadata=self.logging_metadata._replace(**new_tags),
+            metadata={**self._metadata, **cast(DagsterLogHandlerMetadata, new_tags)},
             loggers=self._loggers,
             handlers=self._handlers,
         )
@@ -248,28 +209,17 @@ class DagsterLogHandler(logging.Handler):
         ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
-    def _convert_record(self, record: logging.LogRecord) -> DagsterLogRecord:
-        # we store the originating DagsterEvent in the DAGSTER_META_KEY field, if applicable
-        dagster_meta = getattr(record, DAGSTER_META_KEY, None)
-
-        # generate some properties for this specific record
-        dagster_message_props = DagsterMessageProps(
-            orig_message=record.getMessage(), dagster_event=dagster_meta
-        )
-
-        # set the dagster meta info for the record
-        setattr(
-            record,
-            DAGSTER_META_KEY,
-            get_dagster_meta_dict(self._logging_metadata, dagster_message_props),
-        )
+    def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
+        # If this was a logged DagsterEvent, the event will be stored on the record
+        event = get_log_record_event(record) if has_log_record_event(record) else None
+        metadata = construct_log_record_metadata(self._metadata, record.getMessage(), event)
+        message = construct_log_record_message(metadata)
 
         # update the message to be formatted like other dagster logs
-        record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
+        set_log_record_metadata(record, metadata)
+        record.msg = message
         record.args = ()
-
-        # DagsterLogRecord is a LogRecord with a `dagster_meta` field
-        return cast(DagsterLogRecord, record)
+        return record
 
     def filter(self, record: logging.LogRecord) -> bool:
         """If you list multiple levels of a python logging hierarchy as managed loggers, and do not
@@ -283,9 +233,7 @@ class DagsterLogHandler(logging.Handler):
             # we need to set a default value for all other threads here.
             self._local_thread_context.should_capture = True
 
-        return self._local_thread_context.should_capture and not isinstance(
-            getattr(record, DAGSTER_META_KEY, None), dict
-        )
+        return self._local_thread_context.should_capture and not has_log_record_metadata(record)
 
     def emit(self, record: logging.LogRecord) -> None:
         """For any received record, add Dagster metadata, and have handlers handle it."""
@@ -374,18 +322,20 @@ class DagsterLogManager(logging.Logger):
                 for logger in managed_loggers:
                     logger.setLevel(python_log_level)
 
-        if dagster_run:
-            logging_metadata = DagsterLoggingMetadata(
-                run_id=dagster_run.run_id,
-                job_name=dagster_run.job_name,
-                job_tags=dagster_run.tags,
-            )
-        else:
-            logging_metadata = DagsterLoggingMetadata()
+        handler_metadata = DagsterLogHandlerMetadata(
+            run_id=dagster_run.run_id if dagster_run else None,
+            job_name=dagster_run.job_name if dagster_run else None,
+            job_tags=dagster_run.tags if dagster_run else {},
+            # These will be set on handlers for individual steps
+            step_key=None,
+            op_name=None,
+            resource_name=None,
+            resource_fn_name=None,
+        )
 
         return cls(
             dagster_handler=DagsterLogHandler(
-                logging_metadata=logging_metadata,
+                metadata=handler_metadata,
                 loggers=loggers,
                 handlers=handlers,
             ),
@@ -394,8 +344,8 @@ class DagsterLogManager(logging.Logger):
         )
 
     @property
-    def logging_metadata(self) -> DagsterLoggingMetadata:
-        return self._dagster_handler.logging_metadata
+    def metadata(self) -> DagsterLogHandlerMetadata:
+        return self._dagster_handler.metadata
 
     def begin_python_log_capture(self) -> None:
         for logger in self._managed_loggers:
@@ -409,7 +359,7 @@ class DagsterLogManager(logging.Logger):
         self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
     ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
-        (such as the solid name or pipeline name) will be automatically attached to the created record.
+        (such as the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),
@@ -417,11 +367,11 @@ class DagsterLogManager(logging.Logger):
             msg (str): message describing the event
             dagster_event (DagsterEvent): DagsterEvent that will be logged
         """
-        self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
+        self.log(level=level, msg=msg, extra={LOG_RECORD_EVENT_ATTR: dagster_event})
 
     def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
-        the solid name or pipeline name) will be automatically attached to the created record.
+        the asset or job name) will be automatically attached to the created record.
 
         Args:
             level (str, int): either a string representing the desired log level ("INFO", "WARN"),
@@ -431,7 +381,9 @@ class DagsterLogManager(logging.Logger):
         """
         level = coerce_valid_log_level(level)
         # log DagsterEvents regardless of level
-        if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
+        if self.isEnabledFor(level) or (
+            "extra" in kwargs and LOG_RECORD_EVENT_ATTR in kwargs["extra"]
+        ):
             self._log(level, msg, args, **kwargs)
 
     def with_tags(self, **new_tags: str) -> "DagsterLogManager":

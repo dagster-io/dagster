@@ -16,6 +16,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_test_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         "dagster",
         "pyspark",

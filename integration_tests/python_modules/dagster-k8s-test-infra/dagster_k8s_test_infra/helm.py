@@ -13,10 +13,13 @@ import requests
 import yaml
 from dagster._utils import find_free_port, git_repository_root
 from dagster._utils.merger import merge_dicts
-from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
+from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_k8s.client import DagsterKubernetesClient
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
+
+ensure_dagster_aws_tests_import()
+from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"

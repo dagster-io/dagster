@@ -4,7 +4,6 @@ from dagster import (
     ScheduleDefinition,
     asset,
     define_asset_job,
-    fs_io_manager,
 )
 
 from .resources import DataGeneratorResource
@@ -26,9 +25,6 @@ hackernews_schedule = ScheduleDefinition(
     job=job,
 )
 
-io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
-database_io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
-
 # start_add_resource
 from .resources import DataGeneratorResource
 
@@ -40,8 +36,6 @@ defs = Definitions(
     assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
-        "io_manager": io_manager,
-        "database_io_manager": database_io_manager,
         "hackernews_api": datagen,  # Add the newly-made resource here
     },
 )

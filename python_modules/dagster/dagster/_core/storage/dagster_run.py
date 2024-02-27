@@ -148,6 +148,36 @@ class DagsterRunStatsSnapshot(
         )
 
 
+@whitelist_for_serdes
+class RunOpConcurrency(
+    NamedTuple(
+        "_RunOpConcurrency",
+        [
+            ("root_key_counts", Mapping[str, int]),
+            ("has_unconstrained_root_nodes", bool),
+        ],
+    )
+):
+    """Utility class to help calculate the immediate impact of launching a run on the op concurrency
+    slots that will be available for other runs.
+    """
+
+    def __new__(
+        cls,
+        root_key_counts: Mapping[str, int],
+        has_unconstrained_root_nodes: bool,
+    ):
+        return super(RunOpConcurrency, cls).__new__(
+            cls,
+            root_key_counts=check.dict_param(
+                root_key_counts, "root_key_counts", key_type=str, value_type=int
+            ),
+            has_unconstrained_root_nodes=check.bool_param(
+                has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
+            ),
+        )
+
+
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
@@ -251,6 +281,7 @@ class DagsterRun(
             ("external_job_origin", Optional["ExternalJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
+            ("run_op_concurrency", Optional[RunOpConcurrency]),
         ],
     )
 ):
@@ -277,6 +308,7 @@ class DagsterRun(
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
+        run_op_concurrency: Optional[RunOpConcurrency] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -343,6 +375,9 @@ class DagsterRun(
             ),
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
+            ),
+            run_op_concurrency=check.opt_inst_param(
+                run_op_concurrency, "run_op_concurrency", RunOpConcurrency
             ),
         )
 

@@ -204,7 +204,7 @@ def test_resource_coercion():
 def test_source_asset():
     defs = Definitions(assets=[SourceAsset("a-source-asset")])
     repo = resolve_pending_repo_if_required(defs)
-    all_assets = list(repo.source_assets_by_key.values())
+    all_assets = list(repo.assets_defs_by_key.values())
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "a-source-asset"
 
