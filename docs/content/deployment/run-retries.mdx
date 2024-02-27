@@ -5,19 +5,24 @@ description: Automatically retry Dagster runs
 
 # Run Retries
 
-If you configure retries at the [Job](/\_apidocs/jobs#jobs) level, a new run will be kicked off when a run for that job fails. Compared to [Op retries](/concepts/ops-jobs-graphs/op-retries), the max retry limit for run retries applies to the whole run instead of each individual Op. Run retries also handle the cases where a run worker crashed.
+If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [Op retries](/concepts/ops-jobs-graphs/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual Op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration
 
-To enable run retries, add the following to your `dagster.yaml`. This will start a new daemon which polls to the event log for run failure events.
+How to configure run retries depends on whether you're using Dagster Cloud or Dagster Open Source:
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_retries endbefore=end_run_retries
+- **Dagster Cloud**: Use the [Dagster Cloud UI or the dagster-cloud CLI](/dagster-cloud/managing-deployments/managing-deployments#configuring-deployment-settings) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
+- **Dagster Open Source**: Use your instance's `dagster.yaml` to enable run retries.
+
+For example, the following will set a default maximum number of retries of 3 for all runs:
+
+```yaml
 run_retries:
-  enabled: true
-  max_retries: 3 # Sets a default for all jobs. 0 if not set
+  enabled: true # Omit this key if using Dagster Cloud, since run retries are enabled by default
+  max_retries: 3
 ```
 
-You can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/concepts/webserver/ui#launchpad-tab).
+In both Dagster Cloud and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/concepts/webserver/ui#launchpad-tab).
 
 ```python file=/deploying/job_retries.py
 from dagster import job
@@ -39,4 +44,21 @@ The `dagster/retry_strategy` tag controls which Ops the retry will run.
 
 By default, retries will re-execute from failure (tag value `FROM_FAILURE`). This means that any successful Ops will be skipped, but their output will be used for downstream Ops. If the `dagster/retry_strategy` tag is set to `ALL_STEPS`, all the Ops will run again.
 
-NOTE: `FROM_FAILURE` requires an IOManager that can access outputs from other runs. For example, on Kubernetes the [s3\_pickle_io_manager](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager) would work but the [`FilesytemIOManager`](https://docs.dagster.io/\_apidocs/io-managers#dagster.FilesytemIOManager) would not, since the new run is in a new Kubernetes Job with a separate filesystem.
+**Note:** `FROM_FAILURE` requires an IOManager that can access outputs from other runs. For example, on Kubernetes the [s3\_pickle_io_manager](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager) would work but the [`FilesytemIOManager`](https://docs.dagster.io/\_apidocs/io-managers#dagster.FilesytemIOManager) would not, since the new run is in a new Kubernetes Job with a separate filesystem.
+
+### Combining op retries and run retries
+
+By default, if a run fails due to an op failure and both op retries and run retries are enabled, the overlapping retries might cause the op to be retried more times than desired, since the op retry count will reset for each retried run.
+
+To prevent this from happening, you can configure run retries to only retry when the failure is due to a reason other than an op failure (for example, a crash or an unexpected termination of the run worker). This is controlled by the `run_retries.retry_on_asset_or_op_failure` setting, which defaults to true but can be overridden to false.
+
+For example, the following configures run retries so that they ignore runs that failed due to a step failure:
+
+```yaml
+run_retries:
+  enabled: true # Omit this key if using Dagster Cloud, since run retries are enabled by default
+  max_retries: 3
+  retry_on_asset_or_op_failure: false
+```
+
+**Note:** Setting `retry_on_asset_or_op_failure` for false will only change retry behavior for runs on dagster version 1.6.7 or greater.
