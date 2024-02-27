@@ -28,3 +28,4 @@ title: Dagster + dbt
   - [Overview](/dagster-dbt/lesson-4/1-overview)
   - [Speeding up the development cycle](/dagster-dbt/lesson-4/2-speeding-up-the-development-cycle)
   - [Debugging failed runs](/dagster-dbt/lesson-4/3-debugging-failed-runs)
+  - [Customizing your execution](/dagster-dbt/lesson-4/4-customizing-your-execution)
