@@ -10,6 +10,5 @@ A good place to start with `dagster_openai` is `the guide </integrations/openai>
 .. autofunction:: with_usage_metadata
 
 .. autoclass:: OpenAIResource
-   :members: get_client
-   :members: get_client_for_asset
+   :members: get_client, get_client_for_asset
 
