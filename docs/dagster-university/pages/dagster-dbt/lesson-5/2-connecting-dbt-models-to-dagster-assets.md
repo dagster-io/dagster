@@ -89,7 +89,7 @@ Open the `assets/dbt.py` file and do the following:
       You’ve successfully written your first translator! 
       
       {% callout %}
-      > 💡 **Important!** dbt models and Dagster asset keys must be unique. If you're receiving a `DuplicateKeyError` , verify that the logic in `get_asset_key`  doesn't return two of the same key!
+      > 💡 **Important!** dbt models and Dagster asset keys must be unique. If you're receiving a `DuplicateKeyError` , add some logging to verify that the logic in `get_asset_key` doesn't return two of the same key for different values!
       {% /callout %}
 
 5. Now, update the definition that uses `@dbt_assets` to be configured with an instance of the `CustomizedDagsterDbtTranslator`. The `@dbt_assets` decorator has a `dagster_dbt_translator` argument that you can pass this instance into. **Don’t forget to instantiate the class!** 
