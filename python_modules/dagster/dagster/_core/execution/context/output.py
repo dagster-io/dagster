@@ -111,6 +111,7 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
+        output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         # deprecated
         metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
@@ -125,6 +126,7 @@ class OutputContext:
             definition_metadata, "definition_metadata", metadata, "metadata"
         )
         self._definition_metadata = normalized_metadata or {}
+        self._output_metadata = output_metadata or {}
         self._mapping_key = mapping_key
         self._config = config
         self._op_def = op_def
@@ -234,6 +236,12 @@ class OutputContext:
         or in the @asset decorator.
         """
         return self._definition_metadata
+
+    @public
+    @property
+    def output_metadata(self) -> ArbitraryMetadataMapping:
+        """A dict of the metadata that is assigned to the output at execution time."""
+        return self._output_metadata
 
     @public
     @property
@@ -744,6 +752,7 @@ def get_output_context(
     resources: Optional["Resources"],
     version: Optional[str],
     warn_on_step_context_use: bool = False,
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Args:
     run_id (str): The run ID of the run that produced the output, not necessarily the run that
@@ -802,6 +811,7 @@ def get_output_context(
         resources=resources,
         asset_info=asset_info,
         warn_on_step_context_use=warn_on_step_context_use,
+        output_metadata=output_metadata,
     )
 
 
