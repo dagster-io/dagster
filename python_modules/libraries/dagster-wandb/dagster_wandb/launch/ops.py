@@ -1,5 +1,4 @@
 from dagster import OpExecutionContext, op
-
 from wandb.sdk.launch import launch, launch_add
 
 from .configs import launch_agent_config, launch_config

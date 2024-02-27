@@ -21,7 +21,6 @@ from dagster import (
     io_manager,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
-
 from wandb import Artifact
 from wandb.data_types import WBValue
 

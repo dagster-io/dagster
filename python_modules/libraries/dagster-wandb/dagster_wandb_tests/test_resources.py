@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from dagster import build_init_resource_context
+
 from dagster_wandb.resources import WANDB_CLOUD_HOST, wandb_resource
 
 API_KEY = "api_key"

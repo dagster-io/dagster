@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 from dagster import build_op_context
+
 from dagster_wandb import wandb_resource
 from dagster_wandb.launch.ops import raise_on_invalid_config, run_launch_agent, run_launch_job
 
