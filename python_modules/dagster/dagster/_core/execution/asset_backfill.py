@@ -34,8 +34,10 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     DatetimeFieldSerializer,
     TimeWindowPartitionsSubset,
@@ -1339,10 +1341,6 @@ def should_backfill_atomic_asset_partitions_unit(
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
         )
-        parent_partitions_by_key = defaultdict(set)
-        for parent in parent_partitions_result.parent_partitions:
-            parent_partitions_by_key[parent.asset_key].add(parent.partition_key)
-
         if parent_partitions_result.required_but_nonexistent_parents_partitions:
             raise DagsterInvariantViolationError(
                 f"Asset partition {candidate}"
@@ -1358,6 +1356,24 @@ def should_backfill_atomic_asset_partitions_unit(
         candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
         for parent in parent_partitions_result.parent_partitions:
             parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
+
+            partition_mapping = asset_graph.get_partition_mapping(
+                candidate.asset_key, in_asset_key=parent.asset_key
+            )
+            # checks if there is a simple partition mapping between the parent and the child
+            has_one_to_one_partition_mapping = (
+                # both unpartitioned
+                (
+                    not asset_graph.is_partitioned(candidate.asset_key)
+                    and not asset_graph.is_partitioned(parent.asset_key)
+                )
+                or isinstance(partition_mapping, IdentityPartitionMapping)
+                or (
+                    isinstance(partition_mapping, TimeWindowPartitionMapping)
+                    and partition_mapping.start_offset == 0
+                    and partition_mapping.end_offset == 0
+                )
+            )
             # checks if this parent with partitions mapped has a backfill policy which would allow
             # partition mappings which are not one-one with the child to be executed in a way
             # that respects the dependencies
@@ -1376,11 +1392,9 @@ def should_backfill_atomic_asset_partitions_unit(
                 (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and (
-                    (
-                        # always allow runs to be grouped if there is a simple 1-1 partition mapping
-                        parent.partition_key == candidate.partition_key
-                        and len(parent_partitions_by_key[parent.asset_key]) == 1
-                    )
+                    # if there is a one to one mapping with the parent, then the child can be run
+                    # with the parent
+                    has_one_to_one_partition_mapping
                     # candidate shares a partition key that is already being requested by the parent
                     # and both candidate and parent have backfill policies and max_partitions_per_run is
                     # not greater than the number of partitions being requested
