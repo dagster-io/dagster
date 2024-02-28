@@ -44,7 +44,7 @@ The `dagster/retry_strategy` tag controls which Ops the retry will run.
 
 By default, retries will re-execute from failure (tag value `FROM_FAILURE`). This means that any successful Ops will be skipped, but their output will be used for downstream Ops. If the `dagster/retry_strategy` tag is set to `ALL_STEPS`, all the Ops will run again.
 
-**Note:** `FROM_FAILURE` requires an IOManager that can access outputs from other runs. For example, on Kubernetes the [s3\_pickle_io_manager](/\_apidocs/libraries/dagster-aws#dagster_aws.s3.s3\_pickle_io_manager) would work but the [`FilesytemIOManager`](https://docs.dagster.io/\_apidocs/io-managers#dagster.FilesytemIOManager) would not, since the new run is in a new Kubernetes Job with a separate filesystem.
+**Note:** `FROM_FAILURE` requires an I/O manager that can access outputs from other runs. For example, on Kubernetes the <PyObject object="s3_pickle_io_manager" module="dagster_aws.s3.s3" /> would work but the <PyObject object="FilesytemIOManager" module="dagster" /> would not, since the new run is in a new Kubernetes Job with a separate filesystem.
 
 ### Combining op retries and run retries
 
