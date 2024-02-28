@@ -48,7 +48,7 @@ By default, retries will re-execute from failure (tag value `FROM_FAILURE`). Thi
 
 ### Combining op retries and run retries
 
-By default, if a run fails due to an op failure and both op retries and run retries are enabled, the overlapping retries might cause the op to be retried more times than desired, since the op retry count will reset for each retried run.
+By default, if a run fails due to an op failure and both op and run retries are enabled, the overlapping retries might cause the op to be retried more times than desired. This is because the op retry count will reset for each retried run.
 
 To prevent this from happening, you can configure run retries to only retry when the failure is due to a reason other than an op failure (for example, a crash or an unexpected termination of the run worker). This is controlled by the `run_retries.retry_on_asset_or_op_failure` setting, which defaults to true but can be overridden to false.
 
