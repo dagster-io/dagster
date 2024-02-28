@@ -1,12 +1,14 @@
 ---
-title: "Lesson 7: Creating the manifest with GitHub Actions"
+title: "Lesson 7: Creating the manifest during deployment"
 module: 'dbt_dagster'
 lesson: '7'
 ---
 
-# Creating the manifest with GitHub Actions
+# Creating the manifest during deployment
 
-To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, Dagster Cloud’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
+To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, you'll also need to build your dbt manifest file during deployment. We recommend adopting CI/CD to automate this process.
+
+In this case, Dagster Cloud’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
 
 To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the dbt commands required to generate the `manifest.json`. Specifically, we need to run `dbt deps` and `dbt parse` in the dbt project, just like you did during local development.
 
@@ -15,7 +17,7 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
 3. Locate the `Checkout for Python Executable Deploy` step, which should be on or near line 38.
 4. After this step, add the following:
     
-    ```bash
+    ```yaml
     - name: Parse dbt project and package with Dagster project
       if: steps.prerun.outputs.result == 'pex-deploy'
       run: |

@@ -30,5 +30,5 @@ Even if you’ve already completed the Dagster Essentials course, you should sti
 Run the following to clone the project:
 
 ```bash
-git clone https://github.com/dagster-io/project-dagster-university -b module/dagster-and-dbt-starter
+git clone https://github.com/dagster-io/project-dagster-university -b module/dagster-and-dbt-starter dagster-and-dbt
 ```

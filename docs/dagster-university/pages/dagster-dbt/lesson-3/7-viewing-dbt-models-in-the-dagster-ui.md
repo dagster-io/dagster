@@ -8,7 +8,7 @@ lesson: '3'
 
 Once all the work above has been done, you’re ready to see your dbt models represented as assets! Here’s how you can find your models:
 
-1. Run `dagster dev` and navigate to the asset graph.
+1. If you haven't yet, run `dagster dev` in your command line, and then navigate to the asset graph.
 2. Expand the `default` group in the asset graph.
 3. You should see your two dbt models, `stg_trips` and `stg_zones`, converted as assets within your Dagster project!
 

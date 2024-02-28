@@ -8,15 +8,21 @@ lesson: '4'
 
 By now, you’ve had to run `dbt parse` and reload your code location quite frequently, which doesn’t feel like the cleanest developer experience.
 
-Before we move on, we’ll reduce the number of steps in the feedback loop by automating the `dbt parse` command. We’ll also take advantage of a few other aspects of the `DbtCliResource` that we wrote earlier.
+Before we move on, we’ll reduce the number of steps in the feedback loop. We'll automate the `dbt parse` command by taking advantage of the `DbtCliResource` that we wrote earlier.
 
 ---
 
 ## Automating running dbt parse in development
 
-The first feature is that resources don’t need to be part of an asset to be executed. This means that once a `dbt_resource` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_resource` to run the command for us.
+The first detail is that resources don’t need to be part of an asset to be executed. This means that once a `dbt_resource` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_resource` to run the command for us.
 
-In `dbt.py`, above the `dbt_manifest_path` declaration, add this snippet to run `dbt parse`:
+In `dbt.py`, import your `dbt_resource` like so:
+
+```python
+from ..resources import dbt_resource
+```
+
+Afterward, above your `dbt_manifest_path` declaration, add this snippet to run `dbt parse`:
 
 ```python
 dbt_resource.cli(["--quiet", "parse"]).wait()
@@ -68,5 +74,5 @@ This is great, however, it might feel a bit greedy and intensive to be constantl
            .target_path.joinpath("manifest.json")
        )
    else:
-       dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+       dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
    ```
