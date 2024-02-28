@@ -125,7 +125,7 @@ height={1754}
 The Quickstart project defines two **Assets** using the <PyObject object="asset" decorator /> decorator:
 
 - `hackernews_top_story_ids` retrieves the top stories from the Hacker News API and saves them as a JSON file.
-- `hackernews_top_stories` builds upon the first asset, retrieving data for each story and saving it as a CSV file.
+- `hackernews_top_stories` asset builds upon the first asset, retrieving data for each story as a CSV file, and returns a `MaterializeResult` with a markdown preview of the top stories.
 
 ```python file=/getting-started/quickstart/assets.py
 import json
@@ -176,8 +176,6 @@ def hackernews_top_stories(config: HNStoriesConfig) -> MaterializeResult:
         }
     )
 ```
-
-The `hackernews_top_stories` asset returns a `MaterializeResult` with metadata, which is displayed in the Dagster UI, providing a markdown preview of the top stories.
 
 ---
 
