@@ -15,7 +15,7 @@ We plan on adding additional embedded ELT tool integrations in the future.
 
 ## Overview
 
-To get started with `dagster-embedded-elt` and Sling, first, familiarize yourself with <a href="https://docs.slingdata.io/sling-cli/run/configuration/replication">Sling's replication</a> configuration. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagser-embedded-elt` integration uses this configuration to build the assets for both sources and destinations.
+To get started with `dagster-embedded-elt` and Sling, first, familiarize yourself with <a href="https://docs.slingdata.io/sling-cli/run/configuration/replication">Sling's replication</a> configuration. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagtser-embedded-elt` integration uses this configuration to build the assets for both sources and destinations.
 
 The typical pattern for building an ELT pipeline with Sling has three steps:
 
@@ -29,7 +29,7 @@ Each step is explained in detail below:
 
 ---
 
-## Step 1: Setting up a Sling replication configuration
+## Step 1: Set up a Sling replication configuration
 
 Dagster's Sling integration is built around Sling's replication configuration. You may provide either a path to an existing `replication.yaml` file, or construct a dictionary that represents the configuration in Python.
 
@@ -67,7 +67,9 @@ replication_config = {
 }
 ```
 
-## Step 2: Creating a Sling resource
+---
+
+## Step 2: Create a Sling resource
 
 Next, you will need to create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration.
 
@@ -111,9 +113,11 @@ sling_resource = SlingResource(
 )
 ```
 
+---
+
 ## Step 3: Define the Sling assets
 
-Now you can define a Sling asset using the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" /> decorator. Dagster will read the replication configuration to produce Assets.
+Now you can define a Sling asset using the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
 
 Each stream will render two assets, one for the source stream and one for the target destination. You may override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
 
@@ -151,7 +155,9 @@ defs = Definitions(
 )
 ```
 
-That's it! You should now be able to view your assets in Dagster and run the replication job.
+That's it! You should now be able to view your assets in the Dagster UI and run the replication job.
+
+---
 
 ## Examples
 
@@ -247,11 +253,13 @@ def my_assets(context, sling: SlingResource):
     )
 ```
 
+---
+
 ## Relevant APIs
 
 | Name                                                                              | Description                                                                    |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| <PyObject module="dagster_embedded_elt.sling" object="sling_assets" />            | The core Sling asset factory for building syncs                                |
-| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />           | The Sling Resource used for handing credentials to databases and object stores |
+| <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator />            | The core Sling asset factory for building syncs                                |
+| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores |
 | <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types         |
 | <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying the connection details              |
