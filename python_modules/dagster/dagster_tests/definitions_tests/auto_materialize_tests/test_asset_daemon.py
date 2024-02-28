@@ -114,7 +114,31 @@ extra_repo = create_repository_using_definitions_args(
     executor=in_process_executor,
 )
 
+first_asset_in_other_repo = [
+    asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
+]
+
+other_repo = create_repository_using_definitions_args(
+    name="extra_repository",
+    assets=first_asset_in_other_repo,
+    executor=in_process_executor,
+)
+
+second_asset_in_our_repo = AssetDaemonScenarioState(
+    asset_specs=[AssetSpec("asset2", deps=["asset1"])],
+    additional_repositories=[other_repo],
+)
+
+cross_repo_sensor_scenario = AssetDaemonScenario(
+    id="two_cross_repo_assets",
+    initial_state=second_asset_in_our_repo.with_all_eager(),
+    # No runs since the first asset is not yet materialized and is not being considered by this sensor
+    execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(),
+)
+
+
 auto_materialize_sensor_scenarios = [
+    cross_repo_sensor_scenario,
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_state=one_asset.with_asset_properties(
