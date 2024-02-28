@@ -45,7 +45,7 @@ replication_config = {
 }
 
 
-@sling_assets
+@sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
     yield from sling.replicate(
         replication_config=replication_config,
