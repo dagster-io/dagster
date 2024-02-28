@@ -1,7 +1,6 @@
 import json
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -58,6 +57,7 @@ from dagster._utils.warnings import (
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -69,9 +69,6 @@ from .partition_mapping import (
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_group_name
-
-if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
@@ -1057,6 +1054,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         is_subset: bool = False,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
+        op_tags: Optional[Mapping[str, str]] = None,
+        graph_op_tags: Optional[Dict[str, Mapping[str, str]]] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -1165,6 +1164,26 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, metadata in metadata_by_key.items()
         }
 
+        # If it's an op then op_tags have to be used
+        if op_tags is not None and isinstance(self.node_def, OpDefinition):
+            current_op = self.node_def
+            replaced_node_definition = current_op.with_replaced_properties(
+                name=current_op.name, tags=op_tags
+            )
+        # If it's an graph then graph_op_tags have to be used where it's a dictionary of the tags per op name
+        elif graph_op_tags is not None and isinstance(self.node_def, GraphDefinition):
+            current_graph = self.node_def
+            new_graph_node_defs = []
+            for node_def in current_graph.iterate_op_defs():
+                new_graph_node_defs.append(
+                    node_def.with_replaced_properties(
+                        name=node_def.name, tags=graph_op_tags.get(node_def.name)
+                    )
+                )
+            replaced_node_definition = current_graph.copy(node_defs=new_graph_node_defs)
+        else:
+            replaced_node_definition = self.node_def
+
         replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -1202,6 +1221,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             descriptions_by_key=replaced_descriptions_by_key,
             is_subset=is_subset,
+            node_def=replaced_node_definition,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
             else self.check_specs_by_output_name,

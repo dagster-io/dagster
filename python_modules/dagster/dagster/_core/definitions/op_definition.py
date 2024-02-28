@@ -368,6 +368,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         outs: Optional[Mapping[str, Out]] = None,
         config_schema: Optional[IDefinitionConfigSchema] = None,
         description: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> "OpDefinition":
         return OpDefinition.dagster_internal_init(
             name=name,
@@ -380,7 +381,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             compute_fn=self.compute_fn,
             config_schema=config_schema or self.config_schema,
             description=description or self.description,
-            tags=self.tags,
+            tags=tags or self.tags,
             required_resource_keys=self.required_resource_keys,
             code_version=self._version,
             retry_policy=self.retry_policy,
