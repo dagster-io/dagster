@@ -16,7 +16,7 @@ Before we move on, we’ll reduce the number of steps in the feedback loop. We'l
 
 The first detail is that resources don’t need to be part of an asset to be executed. This means that once a `dbt_resource` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_resource` to run the command for us.
 
-In `dbt.py`, import your `dbt_resource` like so:
+In `dbt.py`, import the `dbt_resource` with:
 
 ```python
 from ..resources import dbt_resource

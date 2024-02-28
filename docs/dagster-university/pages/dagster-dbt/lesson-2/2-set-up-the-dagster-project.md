@@ -63,4 +63,7 @@ To confirm everything works:
 
    ![The Asset Graph in the Dagster UI](/images/dagster-dbt/lesson-2/asset-graph.png)
 
-4. Let's confirm that you can materialize these assets by navigating **Overview > Jobs**, clicking on the `trip_update_job` and pressing **Materialize all...**. When prompted to select a partition, you can materialize the most recent one (`2023-03-01`). It will start a run/backfill and your assets should materialize successfully
+4. Let's confirm that you can materialize these assets by:
+   1. Navigating to **Overview > Jobs**
+   2. Clicking on the `trip_update_job` job and then **Materialize all...**. 
+   3. When prompted to select a partition, materialize the most recent one (`2023-03-01`). It will start a run/backfill and your assets should materialize successfully.

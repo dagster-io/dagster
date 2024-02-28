@@ -78,7 +78,7 @@ In the `assets/constants.py` file, add the following to the end of the file:
 AIRPORT_TRIPS_FILE_PATH = get_path_for_env(os.path.join("data", "outputs", "airport_trips.png"))
 ``` 
 
-This creates a path to where we want to save the chart. The`get_path_for_env` utilty function is not specific to Dagster, but rather is a utility function we've defined in this file to help with Lesson 7 (Deploying your Dagster and dbt project).
+This creates a path to where we want to save the chart. The `get_path_for_env` utilty function is not specific to Dagster, but rather is a utility function we've defined in this file to help with Lesson 7 (Deploying your Dagster and dbt project).
 
 ### Creating the airport_trips asset
 
