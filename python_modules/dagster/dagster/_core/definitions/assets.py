@@ -1245,7 +1245,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for dep_node_handle in dep_node_handles:
                 op_selection.append(".".join(dep_node_handle.path[1:]))
         for asset_check_key in selected_asset_check_keys:
-            dep_node_handles = dep_node_handles_by_asset_key[asset_check_key.asset_key]
+            dep_node_handles = dep_node_handles_by_asset_key[asset_check_key]
             for dep_node_handle in dep_node_handles:
                 op_selection.append(".".join(dep_node_handle.path[1:]))
 
@@ -1324,6 +1324,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 node_def=subsetted_node,
                 asset_deps=subsetted_asset_deps,
                 selected_asset_keys=selected_asset_keys & self.keys,
+                selected_asset_check_keys=asset_check_subselection,
                 is_subset=True,
             )
 

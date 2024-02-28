@@ -321,7 +321,6 @@ def asset_or_check_key_to_dep_node_handles(
                 dep_nodes_by_asset_or_check_key[asset_or_check_key].extend([node_handle])
             else:  # is graph
                 # node output handle for the given asset key
-                print(outputs_by_graph_handle[node_handle])
                 node_output_handle = outputs_by_graph_handle[node_handle][output_name]
 
                 dep_node_output_handles = _get_dependency_node_output_handles(
@@ -361,8 +360,8 @@ def asset_or_check_key_to_dep_node_handles(
     # For graph-backed assets, we've resolved the upstream node output handles dependencies for each
     # node output handle in dep_node_outputs_by_asset_or_check_key. We use this to find the upstream
     # node handle dependencies.
-    for asset_key, dep_node_outputs in dep_node_outputs_by_asset_or_check_key.items():
-        dep_nodes_by_asset_or_check_key[asset_key].extend(
+    for key, dep_node_outputs in dep_node_outputs_by_asset_or_check_key.items():
+        dep_nodes_by_asset_or_check_key[key].extend(
             [node_output.node_handle for node_output in dep_node_outputs]
         )
 
