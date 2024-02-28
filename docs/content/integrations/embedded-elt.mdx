@@ -167,7 +167,7 @@ from dagster_embedded_elt.sling import (
 
 from dagster import EnvVar
 
-source = SlingConnectionResource()(
+source = SlingConnectionResource(
     name="MY_PG",
     type="postgres",
     host="localhost",
@@ -216,7 +216,7 @@ def my_assets(context, sling: SlingResource):
 Similarily, you can define file/storage connections:
 
 ```python startafter=start_storage_config endbefore=end_storage_config file=/integrations/embedded_elt/s3_snowflake.py
-source = SlingConnectionResource()(
+source = SlingConnectionResource(
     name="MY_S3",
     type="s3",
     bucket="sling-bucket",
