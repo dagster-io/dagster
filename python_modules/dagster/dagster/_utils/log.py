@@ -251,13 +251,16 @@ def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
 def configure_loggers(
     handler: str = "default", formatter: str = "colored", log_level: Union[str, int] = "INFO"
 ):
-    structlog.configure(
-        processors=[
-            *get_structlog_shared_processors(),
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-        ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
-    )
+    # It's possible that structlog has already been configured by either the user or a controlling
+    # process. If so, we don't want to override that configuration.
+    if not structlog.is_configured():
+        structlog.configure(
+            processors=[
+                *get_structlog_shared_processors(),
+                structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+            ],
+            logger_factory=structlog.stdlib.LoggerFactory(),
+        )
     json_formatter = get_structlog_json_formatter()
 
     LOGGING_CONFIG: Dict[str, Any] = {
