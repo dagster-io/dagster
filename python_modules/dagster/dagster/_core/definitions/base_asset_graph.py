@@ -1,7 +1,8 @@
-import functools
 from abc import ABC, abstractmethod
 from collections import deque
 from datetime import datetime
+from functools import cached_property, total_ordering
+from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -12,7 +13,6 @@ from typing import (
     Iterator,
     Mapping,
     NamedTuple,
-    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -35,7 +35,10 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
+from dagster._core.selector.subset_selector import (
+    DependencyGraph,
+    fetch_sources,
+)
 from dagster._utils.cached_method import cached_method
 
 from .events import AssetKeyPartitionKey
@@ -69,50 +72,10 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-class IAssetNode(ABC):
+class BaseAssetNode(ABC):
     key: AssetKey
-    _children: Optional[AbstractSet[Self]]
-    _parents: Optional[AbstractSet[Self]]
-
-    # Since both parent and child asset nodes contain refereneces to each other, it is impossible to
-    # construct a graph of all asset nodes with single-step construction. The nodes must first be
-    # constructed and then `set_neighbors` must be called to bind the references.
-
-    @property
-    def children(self) -> AbstractSet[Self]:
-        if self._children is None:
-            self._neighbors_unbound_error("child", "children")
-        return self._children
-
-    @property
-    def child_keys(self) -> AbstractSet[AssetKey]:
-        if self._children is None:
-            self._neighbors_unbound_error("child", "children")
-        return {child.key for child in self._children}
-
-    def set_children(self, children: AbstractSet[Self]) -> None:
-        self._children = children
-
-    @property
-    def parents(self) -> AbstractSet[Self]:
-        if self._parents is None:
-            self._neighbors_unbound_error("parent", "parents")
-        return self._parents
-
-    @property
-    def parent_keys(self) -> AbstractSet[AssetKey]:
-        if self._parents is None:
-            self._neighbors_unbound_error("parent", "parents")
-        return {parent.key for parent in self._parents}
-
-    def set_parents(self, parents: AbstractSet[Self]) -> None:
-        self._parents = parents
-
-    def _neighbors_unbound_error(self, subject: str, plural: str) -> NoReturn:
-        check.failed(
-            f"Attempted to access {subject} nodes of {self} before they were set. {subject.title()}"
-            f" nodes must be bound after construction using `set_{plural}`."
-        )
+    parent_keys: AbstractSet[AssetKey]
+    child_keys: AbstractSet[AssetKey]
 
     @property
     @abstractmethod
@@ -179,11 +142,11 @@ class IAssetNode(ABC):
 
     @property
     @abstractmethod
-    def execution_unit_asset_keys(self) -> AbstractSet[AssetKey]: ...
+    def execution_set_asset_keys(self) -> AbstractSet[AssetKey]: ...
 
     @property
     @abstractmethod
-    def execution_unit_asset_and_check_keys(
+    def execution_set_asset_and_check_keys(
         self,
     ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
 
@@ -191,122 +154,109 @@ class IAssetNode(ABC):
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
 
 
-T_AssetNode = TypeVar("T_AssetNode", bound=IAssetNode)
+T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
-    asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
-    asset_nodes_by_check_key: Mapping[AssetCheckKey, T_AssetNode]
+    _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
+    _asset_nodes_by_check_key: Mapping[AssetCheckKey, T_AssetNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
-        return self.asset_nodes_by_key.values()
+        return self._asset_nodes_by_key.values()
 
     def has(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.asset_nodes_by_key
+        return asset_key in self._asset_nodes_by_key
 
     # To be removed in upstack PR and callsites replaced with `has`
     def has_asset(self, asset_key: AssetKey) -> bool:
         return self.has(asset_key)
 
     def get(self, asset_key: AssetKey) -> T_AssetNode:
-        return self.asset_nodes_by_key[asset_key]
+        return self._asset_nodes_by_key[asset_key]
 
     def get_for_check(self, asset_key: AssetCheckKey) -> T_AssetNode:
-        return self.asset_nodes_by_check_key[asset_key]
+        return self._asset_nodes_by_check_key[asset_key]
 
-    @property
+    @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return {
-            "upstream": {node.key: {p.key for p in node.parents} for node in self.asset_nodes},
-            "downstream": {node.key: {c.key for c in node.children} for node in self.asset_nodes},
+            "upstream": {node.key: node.parent_keys for node in self.asset_nodes},
+            "downstream": {node.key: node.child_keys for node in self.asset_nodes},
         }
 
-    @property
-    @cached_method
+    @cached_property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes}
 
-    @property
-    @cached_method
+    @cached_property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_materializable}
 
     def is_materializable(self, key: AssetKey) -> bool:
         return self.get(key).is_materializable
 
-    @property
-    @cached_method
+    @cached_property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_observable}
 
     def is_observable(self, key: AssetKey) -> bool:
         return self.get(key).is_observable
 
-    @property
-    @cached_method
+    @cached_property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_external}
 
     def is_external(self, key: AssetKey) -> bool:
         return self.get(key).is_external
 
-    @property
-    @cached_method
+    @cached_property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.is_executable}
 
     def is_executable(self, key: AssetKey) -> bool:
         return self.get(key).is_executable
 
-    @property
-    @cached_method
+    @cached_property
     def toposorted_asset_keys(self) -> Sequence[AssetKey]:
         """Return topologically sorted asset keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
         return [
-            key
-            for keys_in_level in self.toposorted_asset_keys_by_level
-            for key in sorted(keys_in_level)
+            item
+            for items_in_level in toposort.toposort(self.asset_dep_graph["upstream"])
+            for item in sorted(items_in_level)
         ]
 
-    @property
-    @cached_method
+    @cached_property
     def toposorted_asset_keys_by_level(self) -> Sequence[AbstractSet[AssetKey]]:
         """Return topologically sorted asset keys grouped into sets containing keys of the same
         topological level.
         """
-        return [
-            {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
-        ]
+        return [set(level) for level in toposort.toposort(self.asset_dep_graph["upstream"])]
 
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.group_name == group_name}
 
-    @property
-    @cached_method
+    @cached_property
     def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable asset keys that have no materializable parents."""
         from .asset_selection import AssetSelection
 
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
-    @property
-    @cached_method
+    @cached_property
     def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Executable asset keys that have no executable parents."""
         return fetch_sources(
             self.asset_dep_graph, self.observable_asset_keys | self.materializable_asset_keys
         )
 
-    @property
-    @cached_method
+    @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for asset in self.asset_nodes for key in asset.check_keys}
 
-    @property
-    @cached_method
+    @cached_property
     def all_group_names(self) -> AbstractSet[str]:
         return {a.group_name for a in self.asset_nodes if a.group_name is not None}
 
@@ -370,12 +320,20 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             partitions_defs[i] == partitions_defs[0] for i in range(1, len(partitions_defs))
         )
 
+    def get_child_nodes(self, node: T_AssetNode) -> AbstractSet[T_AssetNode]:
+        """Returns all asset nodes that directly depend on the given asset node."""
+        return {self._asset_nodes_by_key[key] for key in self.get(node.key).child_keys}
+
     def get_children(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all assets that depend on the given asset."""
+        """Returns all asset keys that directly depend on the given asset key."""
         return self.get(asset_key).child_keys
 
+    def get_parent_nodes(self, node: T_AssetNode) -> AbstractSet[T_AssetNode]:
+        """Returns all asset nodes that are direct dependencies on the given asset node."""
+        return {self._asset_nodes_by_key[key] for key in self.get(node.key).parent_keys}
+
     def get_parents(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all first-order dependencies of an asset."""
+        """Returns all asset keys that are direct dependencies on the given asset key."""
         return self.get(asset_key).parent_keys
 
     def get_ancestors(
@@ -474,7 +432,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         partition of that asset.
         """
         result: Set[AssetKeyPartitionKey] = set()
-        for child in self.get(asset_key).children:
+        for child in self.get_child_nodes(self.get(asset_key)):
             if child.is_partitioned:
                 for child_partition_key in self.get_child_partition_keys_of_parent(
                     dynamic_partitions_store,
@@ -666,7 +624,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """For a given asset_key, return the set of asset keys that must be
         materialized at the same time.
         """
-        return self.get(asset_key).execution_unit_asset_keys
+        return self.get(asset_key).execution_set_asset_keys
 
     @abstractmethod
     def get_execution_set_asset_and_check_keys(
@@ -870,7 +828,7 @@ def sort_key_for_asset_partition(
 class ToposortedPriorityQueue:
     """Queue that returns parents before their children."""
 
-    @functools.total_ordering
+    @total_ordering
     class QueueItem(NamedTuple):
         level: int
         partition_sort_key: Optional[float]

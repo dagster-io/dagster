@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from collections import defaultdict
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -20,10 +21,10 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._utils.cached_method import cached_method
 
 from .backfill_policy import BackfillPolicy
 from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
@@ -37,17 +38,22 @@ if TYPE_CHECKING:
         ExternalAssetCheck,
         ExternalAssetNode,
     )
+    from dagster._core.selector.subset_selector import DependencyGraph
 
 
-class RemoteAssetGraph(BaseAssetGraph):
+class RemoteAssetNode(BaseAssetNode):
     def __init__(
         self,
         key: AssetKey,
+        parent_keys: AbstractSet[AssetKey],
+        child_keys: AbstractSet[AssetKey],
+        execution_set_keys: AbstractSet[AssetKeyOrCheckKey],
         repo_node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         check_keys: AbstractSet[AssetCheckKey],
-        execution_set_keys: AbstractSet[AssetKeyOrCheckKey],
     ):
         self.key = key
+        self.parent_keys = parent_keys
+        self.child_keys = child_keys
         self._repo_node_pairs = repo_node_pairs
         self._external_asset_nodes = [node for _, node in repo_node_pairs]
         self._check_keys = check_keys
@@ -56,36 +62,34 @@ class RemoteAssetGraph(BaseAssetGraph):
     ##### COMMON ASSET NODE INTERFACE
 
     @property
-    @cached_method
     def group_name(self) -> Optional[str]:
         return self._priority_node.group_name
 
-    @property
-    @cached_method
+    @cached_property
     def is_materializable(self) -> bool:
         return any(node.is_materializable for node in self._external_asset_nodes)
 
-    @property
-    @cached_method
+    @cached_property
     def is_observable(self) -> bool:
         return any(node.is_observable for node in self._external_asset_nodes)
 
-    @property
-    @cached_method
+    @cached_property
     def is_external(self) -> bool:
         return all(node.is_external for node in self._external_asset_nodes)
 
-    @property
-    @cached_method
+    @cached_property
     def is_executable(self) -> bool:
         return any(node.is_executable for node in self._external_asset_nodes)
+
+    @property
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self._priority_node.metadata
 
     @property
     def is_partitioned(self) -> bool:
         return self._priority_node.partitions_def_data is not None
 
-    @property
-    @cached_method
+    @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         external_def = self._priority_node.partitions_def_data
         return external_def.get_partitions_definition() if external_def else None
@@ -137,7 +141,7 @@ class RemoteAssetGraph(BaseAssetGraph):
     def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
         return self._execution_set_keys
 
-    ##### GLOBAL-SPECIFIC INTERFACE
+    ##### REMOTE-SPECIFIC INTERFACE
 
     @property
     def job_names(self) -> Sequence[str]:
@@ -163,8 +167,7 @@ class RemoteAssetGraph(BaseAssetGraph):
 
     ##### HELPERS
 
-    @property
-    @cached_method
+    @cached_property
     def _priority_node(self) -> "ExternalAssetNode":
         # Return a materialization node if it exists, otherwise return an observable node if it
         # exists, otherwise return any node. This exists to preserve implicit behavior, where the
@@ -179,29 +182,31 @@ class RemoteAssetGraph(BaseAssetGraph):
             )
         )
 
-    @property
-    @cached_method
+    @cached_property
     def _materializable_node(self) -> "ExternalAssetNode":
-        return next(node for node in self._external_asset_nodes if node.is_materializable)
+        try:
+            return next(node for node in self._external_asset_nodes if node.is_materializable)
+        except StopIteration:
+            check.failed("No materializable node found")
 
-    @property
-    @cached_method
+    @cached_property
     def _observable_node(self) -> "ExternalAssetNode":
-        return next((node for node in self._external_asset_nodes if node.is_observable))
+        try:
+            return next((node for node in self._external_asset_nodes if node.is_observable))
+        except StopIteration:
+            check.failed("No observable node found")
 
 
-class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
+class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def __init__(
         self,
-        asset_nodes_by_key: Mapping[AssetKey, HostAssetNode],
+        asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
         asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
         asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[AssetKeyOrCheckKey]],
-        repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
     ):
-        self.asset_nodes_by_key = asset_nodes_by_key
+        self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
-        self._repo_handles_by_key = repo_handles_by_key
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "RemoteAssetGraph":
@@ -249,23 +254,19 @@ class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         external_asset_checks: Sequence["ExternalAssetCheck"],
     ) -> "RemoteAssetGraph":
-        repo_handles_by_key = {
-            node.asset_key: repo_handle
-            for repo_handle, node in repo_handle_external_asset_nodes
-            if node.is_executable
-        }
+        _warn_on_duplicate_nodes(repo_handle_external_asset_nodes)
 
-        # Build an index of execution units by key. An execution unit is a set of assets and checks
+        # Build an index of execution sets by key. An execution set is a set of assets and checks
         # that must be executed together. ExternalAssetNodes and ExternalAssetChecks already have an
-        # optional execution_set_id set. A null execution_set_id indicates that the node or check
-        # can be executed independently.
+        # optional execution_set_identifier set. A null execution_set_identifier indicates that the
+        # node or check can be executed independently.
         execution_sets_by_key = _build_execution_set_index(
             (node for _, node in repo_handle_external_asset_nodes),
             external_asset_checks,
         )
 
         # Index all (RepositoryHandle, ExternalAssetNode) pairs by their asset key, then use this to
-        # build the set of HostAssetNodes (indexed by key). Each HostAssetNode wraps the set of
+        # build the set of RemoteAssetNodes (indexed by key). Each RemoteAssetNode wraps the set of
         # pairs for an asset key.
         repo_node_pairs_by_key: Dict[
             AssetKey, List[Tuple[RepositoryHandle, "ExternalAssetNode"]]
@@ -273,28 +274,29 @@ class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
         for repo_handle, node in repo_handle_external_asset_nodes:
             repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
 
-        global_nodes_by_key = {
-            key: HostAssetNode(
-                key=key,
-                repo_node_pairs=repo_node_pairs,
-                check_keys={check.key for check in external_asset_checks if check.asset_key == key},
-                execution_set_keys=execution_sets_by_key[key],
-            )
-            for key, repo_node_pairs in repo_node_pairs_by_key.items()
-        }
-
-        # Build the dependency graph of asset keys, then use it to set the children and parents of
-        # the above-constructed HostAssetNodes.
+        # Build the dependency graph of asset keys.
         all_keys = {node.asset_key for _, node in repo_handle_external_asset_nodes}
-        upstream = {key: set() for key in all_keys}
-        downstream = {key: set() for key in all_keys}
+        upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
+        downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
         for _, node in repo_handle_external_asset_nodes:
             for dep in node.dependencies:
                 upstream[node.asset_key].add(dep.upstream_asset_key)
                 downstream[dep.upstream_asset_key].add(node.asset_key)
-        for key, node in global_nodes_by_key.items():
-            node.set_children({global_nodes_by_key[k] for k in downstream[key]})
-            node.set_parents({global_nodes_by_key[k] for k in upstream[key]})
+        dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
+
+        # Build the set of RemoteAssetNodes in topological order so that each node can hold
+        # references to its parents.
+        asset_nodes_by_key = {
+            key: RemoteAssetNode(
+                key=key,
+                parent_keys=dep_graph["upstream"][key],
+                child_keys=dep_graph["downstream"][key],
+                execution_set_keys=execution_sets_by_key[key],
+                repo_node_pairs=repo_node_pairs,
+                check_keys={check.key for check in external_asset_checks if check.asset_key == key},
+            )
+            for key, repo_node_pairs in repo_node_pairs_by_key.items()
+        }
 
         # Build the set of ExternalAssetChecks, indexed by key. Also the index of execution units for
         # each asset check key.
@@ -306,10 +308,9 @@ class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
         }
 
         return cls(
-            global_nodes_by_key,
+            asset_nodes_by_key,
             asset_checks_by_key,
             asset_check_execution_sets_by_key,
-            repo_handles_by_key=repo_handles_by_key,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE
@@ -322,12 +323,14 @@ class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
         else:  # AssetCheckKey
             return self._asset_check_execution_sets_by_key[asset_or_check_key]
 
-    ##### GLOBAL-SPECIFIC METHODS
+    ##### REMOTE-SPECIFIC METHODS
 
     @property
     def external_asset_nodes_by_key(self) -> Mapping[AssetKey, "ExternalAssetNode"]:
-        # This exists to support existing callsites but it should be removed ASAP.
-        return {k: node._priority_node for k, node in self.asset_nodes_by_key.items()}  # noqa: SLF001
+        # This exists to support existing callsites but it should be removed ASAP, since it exposes
+        # `ExternalAssetNode` instances directly. All sites using this should use RemoteAssetNode
+        # instead.
+        return {k: node._priority_node for k, node in self._asset_nodes_by_key.items()}  # noqa: SLF001
 
     @property
     def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
@@ -336,15 +339,13 @@ class HostAssetGraph(BaseAssetGraph[HostAssetNode]):
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if job_name in node.job_names}
 
-    @property
-    @cached_method
+    @cached_property
     def all_job_names(self) -> AbstractSet[str]:
         return {job_name for node in self.asset_nodes for job_name in node.job_names}
 
-    @property
-    @cached_method
-    def repository_handles_by_key(self) -> Mapping[AssetKey, Sequence[RepositoryHandle]]:
-        return {k: node.priority_repository_handle for k, node in self.asset_nodes_by_key.items()}
+    @cached_property
+    def repository_handles_by_key(self) -> Mapping[AssetKey, RepositoryHandle]:
+        return {k: node.priority_repository_handle for k, node in self._asset_nodes_by_key.items()}
 
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self.get(asset_key).priority_repository_handle
@@ -489,14 +490,14 @@ def _build_execution_set_index(
 
     execution_sets_by_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
     for item in all_items:
-        id = item.execution_set_id
+        id = item.execution_set_identifier
         key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
         if id is not None:
             execution_sets_by_id[id].add(key)
 
     execution_sets_by_key: Dict[AssetKeyOrCheckKey, Set[AssetKeyOrCheckKey]] = {}
     for item in all_items:
-        id = item.execution_set_id
+        id = item.execution_set_identifier
         key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
         execution_sets_by_key[key] = execution_sets_by_id[id] if id is not None else {key}
 
