@@ -1,10 +1,11 @@
 import {Box, ButtonGroup, Spinner, Subheading} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {useGroupedEvents} from './groupByPartition';
 import {AssetKey, AssetViewParams} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {useTrackEvent} from '../app/analytics';
 
 interface Props {
   assetKey: AssetKey;
@@ -14,6 +15,11 @@ interface Props {
 }
 
 export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setParams}: Props) => {
+  // Track the event explicitly because the tab is based on a querystring, so the typical
+  // pageview event would not be matched to the Plots tab.
+  const trackEvent = useTrackEvent();
+  useEffect(() => trackEvent('viewAssetPlots'), [trackEvent]);
+
   const {materializations, observations, loadedPartitionKeys, loading, xAxis} =
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 
