@@ -118,6 +118,28 @@ class AssetGraph(ABC):
     def is_executable(self, asset_key: AssetKey) -> bool:
         ...
 
+    @property
+    @cached_method
+    def toposorted_asset_keys(self) -> Sequence[AssetKey]:
+        """Return topologically sorted asset keys in graph. Keys with the same topological level are
+        sorted alphabetically to provide stability.
+        """
+        return [
+            key
+            for keys_in_level in self.toposorted_asset_keys_by_level
+            for key in sorted(keys_in_level)
+        ]
+
+    @property
+    @cached_method
+    def toposorted_asset_keys_by_level(self) -> Sequence[AbstractSet[AssetKey]]:
+        """Return topologically sorted asset keys grouped into sets containing keys of the same
+        topological level.
+        """
+        return [
+            {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
+        ]
+
     @abstractmethod
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         ...
@@ -520,12 +542,6 @@ class AssetGraph(ABC):
         ...
 
     @cached_method
-    def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
-        return [
-            {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
-        ]
-
-    @cached_method
     def get_downstream_freshness_policies(
         self, *, asset_key: AssetKey
     ) -> AbstractSet[FreshnessPolicy]:
@@ -751,10 +767,9 @@ class ToposortedPriorityQueue:
         self._asset_graph = asset_graph
         self._include_required_multi_assets = include_required_multi_assets
 
-        toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
-            for i, asset_keys in enumerate(toposorted_asset_keys)
+            for i, asset_keys in enumerate(asset_graph.toposorted_asset_keys_by_level)
             for asset_key in asset_keys
         }
         self._heap = [self._queue_item(asset_partition) for asset_partition in items]

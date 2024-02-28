@@ -308,15 +308,7 @@ class AssetBackfillData(NamedTuple):
 
         Orders keys in the same topological level alphabetically.
         """
-        toposorted_keys = asset_graph.toposort_asset_keys()
-
-        targeted_toposorted_keys = []
-        for level_keys in toposorted_keys:
-            for key in sorted(level_keys):
-                if key in self.target_subset.asset_keys:
-                    targeted_toposorted_keys.append(key)
-
-        return targeted_toposorted_keys
+        return [k for k in asset_graph.toposorted_asset_keys if k in self.target_subset.asset_keys]
 
     def get_backfill_status_per_asset_key(
         self, asset_graph: AssetGraph

@@ -1493,7 +1493,7 @@ def test_invalid_asset_selection():
     Definitions(assets=[source_asset, asset1], sensors=[sensor1])
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="specified both regular assets and source"
+        DagsterInvalidDefinitionError, match="specified both regular assets and external"
     ):
         Definitions(
             assets=[source_asset, asset1],
