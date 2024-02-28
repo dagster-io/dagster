@@ -1392,7 +1392,7 @@ def should_backfill_atomic_asset_partitions_unit(
                 (parent in asset_partitions_to_request or parent in candidates_unit)
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and (
-                    # if there is a one to one mapping with the parent, then the child can be run
+                    # if there is a simple mapping between the parent and the child, then
                     # with the parent
                     has_one_to_one_partition_mapping
                     # candidate shares a partition key that is already being requested by the parent
