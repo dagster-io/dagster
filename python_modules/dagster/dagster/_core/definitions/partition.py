@@ -647,6 +647,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         """Optional[Callable[[str], Mapping[str, Any]]]: A function that accepts a partition key
         and returns a dictionary representing the config to attach to runs for that partition.
         """
+        return self._run_config_for_partition_key_fn
 
     @deprecated(
         breaking_version="2.0", additional_warn_text="Use `tags_for_partition_key_fn` instead."
