@@ -23,6 +23,7 @@ import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
+import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
@@ -210,7 +211,7 @@ export const useGroupNodeContextMenu = ({
     <Menu>
       <MenuItem
         icon="materialization"
-        text={`Materialize assets (${assets.length})`}
+        text={`Materialize assets (${numberFormatter.format(assets.length)})`}
         onClick={(e) => {
           onClick(
             assets.map((asset) => asset.assetKey),
