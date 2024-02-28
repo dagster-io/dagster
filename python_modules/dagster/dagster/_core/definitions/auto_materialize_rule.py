@@ -769,8 +769,8 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 # ignore missing or unexecutable assets, which will never have a materialization or
                 # observation
                 if not (
-                    context.asset_graph.has_asset(parent.asset_key)
-                    and context.asset_graph.is_executable(parent.asset_key)
+                    context.asset_graph.has(parent.asset_key)
+                    and context.asset_graph.get(parent.asset_key).is_executable
                 ):
                     continue
                 if not context.instance_queryer.asset_partition_has_materialization_or_observation(

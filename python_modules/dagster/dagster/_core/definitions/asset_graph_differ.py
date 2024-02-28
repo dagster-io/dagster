@@ -122,9 +122,10 @@ class AssetGraphDiffer:
             return [ChangeReason.NEW]
 
         changes = []
-        if self.branch_asset_graph.get_code_version(
-            asset_key
-        ) != self.base_asset_graph.get_code_version(asset_key):
+        if (
+            self.branch_asset_graph.get(asset_key).code_version
+            != self.base_asset_graph.get(asset_key).code_version
+        ):
             changes.append(ChangeReason.CODE_VERSION)
 
         if self.branch_asset_graph.get_parents(asset_key) != self.base_asset_graph.get_parents(
