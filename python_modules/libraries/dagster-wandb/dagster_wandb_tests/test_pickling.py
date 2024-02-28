@@ -2,7 +2,6 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from dagster import build_output_context
-
 from dagster_wandb.utils.pickling import pickle_artifact_content
 
 
