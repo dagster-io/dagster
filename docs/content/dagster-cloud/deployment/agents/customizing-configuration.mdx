@@ -99,11 +99,11 @@ compute_logs:
 
 ## Writing compute logs to AWS S3
 
-You can write compute logs to an AWS S3 bucket without requiring your S3 credentials by configuring the [dagster_aws.s3.compute_log_manager](https://docs.dagster.io/\_apidocs/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager) module.
+You can write compute logs to an AWS S3 bucket by configuring the [dagster_aws.s3.compute_log_manager](https://docs.dagster.io/\_apidocs/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager) module.
 
 You are also able to stream partial compute log files by configuring the log upload interval (in seconds) using the `upload_interval` parameter.
 
-To show the URL to the compute log files in the Dagster Cloud UI, set the `show_url_only` parameter to `true`.
+Note: Dagster Labs will neither have nor use your AWS credentials. The Dagster Cloud UI will be able to show the URLs linking to the compute log files in your S3 bucket when you set the `show_url_only` parameter to `true`.
 
 ```yaml
 # dagster.yaml
