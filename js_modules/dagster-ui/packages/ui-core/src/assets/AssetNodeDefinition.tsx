@@ -18,6 +18,7 @@ import {
   AssetMetadataTable,
   metadataForAssetNode,
 } from './AssetMetadata';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeList} from './AssetNodeList';
 import {
   AutomaterializePolicyTag,
@@ -161,7 +162,11 @@ export const AssetNodeDefinition = ({
               </Box>
             </Link>
           </Box>
-          {dependsOnSelf && <DependsOnSelfBanner />}
+          {dependsOnSelf && (
+            <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+              <DependsOnSelfBanner />
+            </Box>
+          )}
           <AssetNodeList items={upstream} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -171,12 +176,6 @@ export const AssetNodeDefinition = ({
             <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
-            <Link to="?view=lineage&lineageScope=downstream">
-              <Box flex={{gap: 4, alignItems: 'center'}}>
-                View downstream graph
-                <Icon name="open_in_new" color={Colors.linkDefault()} />
-              </Box>
-            </Link>
           </Box>
           <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
@@ -329,12 +328,22 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
+    groupName
     graphName
     opNames
     opVersion
     jobNames
     isSource
     isExecutable
+    owners {
+      __typename
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     autoMaterializePolicy {
       policyType
       rules {
@@ -369,9 +378,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
+    ...AssetNodeInstigatorsFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
 `;

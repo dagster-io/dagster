@@ -22,6 +22,8 @@ from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
+    AllAssetCheckSelection,
+    AllSelection,
     AndAssetSelection,
     AssetCheckKeysSelection,
     AssetChecksForAssetKeysSelection,
@@ -39,6 +41,8 @@ from dagster._core.definitions.asset_selection import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
+from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
 from typing_extensions import TypeAlias
@@ -131,6 +135,9 @@ def test_asset_selection_all(all_assets: _AssetList):
     sel = AssetSelection.all()
     assert sel.resolve(all_assets) == _asset_keys_of(all_assets) - {earth.key}
 
+    sel_include_sources = AssetSelection.all(include_sources=True)
+    assert sel_include_sources.resolve(all_assets) == _asset_keys_of(all_assets)
+
 
 def test_asset_selection_and(all_assets: _AssetList):
     sel = AssetSelection.keys("alice", "bob") & AssetSelection.keys("bob", "candace")
@@ -160,9 +167,13 @@ def test_asset_selection_groups(all_assets: _AssetList):
 def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+    assert str(sel) == "alice or bob"
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+    sel = AssetSelection.keys("alice", "bob", "carol", "dave")
+    assert str(sel) == "4 assets"
 
 
 def test_asset_selection_key_prefixes(all_assets: _AssetList):
@@ -542,7 +553,7 @@ def test_to_serializable_asset_selection():
     def check1():
         ...
 
-    asset_graph = AssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
+    asset_graph = InternalAssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
 
     def assert_serializable_same(asset_selection: AssetSelection) -> None:
         assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection
@@ -629,6 +640,10 @@ def test_to_string_basic():
     assert str(AssetSelection.keys(AssetKey(["foo", "bar"]), AssetKey("baz"))) == "foo/bar or baz"
 
     assert str(AssetSelection.all()) == "all materializable assets"
+    assert (
+        str(AssetSelection.all(include_sources=True))
+        == "all materializable assets and source assets"
+    )
     assert str(AssetSelection.all_asset_checks()) == "all asset checks"
 
     assert str(AssetSelection.groups("marketing")) == "group:marketing"
@@ -642,6 +657,58 @@ def test_to_string_basic():
     )
 
 
+def test_to_string_binary_operators():
+    foo_bar = AssetSelection.keys(AssetKey(["foo", "bar"]))
+    baz = AssetSelection.keys("baz")
+    bork = AssetSelection.keys("bork")
+    assert str(foo_bar | baz) == "foo/bar or baz"
+    assert str(foo_bar & baz) == "foo/bar and baz"
+    assert str(foo_bar - baz) == "foo/bar - baz"
+
+    assert str(foo_bar | baz | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar & baz & bork) == "foo/bar and baz and bork"
+
+    assert str((foo_bar | baz) | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar | (baz | bork)) == "foo/bar or baz or bork"
+    assert str((foo_bar & baz) & bork) == "foo/bar and baz and bork"
+    assert str(foo_bar & (baz & bork)) == "foo/bar and baz and bork"
+
+    assert str(foo_bar | (baz & bork)) == "foo/bar or (baz and bork)"
+    assert str(foo_bar & (baz | bork)) == "foo/bar and (baz or bork)"
+
+    assert str(foo_bar - baz - bork) == "(foo/bar - baz) - bork"
+    assert str((foo_bar - baz) - bork) == "(foo/bar - baz) - bork"
+    assert str(foo_bar - (baz - bork)) == "foo/bar - (baz - bork)"
+
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") & AssetSelection.keys("bork"))
+        == "(foo/bar or baz) and bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") & AssetSelection.keys("foo/bar", "baz"))
+        == "bork and (foo/bar or baz)"
+    )
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") | AssetSelection.keys("bork"))
+        == "(foo/bar or baz) or bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") | AssetSelection.keys("foo/bar", "baz"))
+        == "bork or (foo/bar or baz)"
+    )
+
+    assert (
+        str(AssetSelection.groups("foo", "bar") & AssetSelection.groups("baz", "bork"))
+        == "group:(foo or bar) and group:(baz or bork)"
+    )
+
+
 def test_empty_namedtuple_truthy():
     # namedtuples with no fields are still truthy
-    assert bool(AssetSelection.all())
+    assert bool(AllAssetCheckSelection.all())
+
+
+def test_deserialize_old_all_asset_selection():
+    old_serialized_value = '{"__class__": "AllSelection"}'
+    new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
+    assert not new_unserialized_value.include_sources

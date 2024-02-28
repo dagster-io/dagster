@@ -20,9 +20,10 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import build_assets_job
 from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
@@ -183,15 +184,17 @@ def define_assets_job(bucket):
     def partitioned():
         return 8
 
-    return build_assets_job(
-        name="assets",
-        assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
-        source_assets=[source1],
-        resource_defs={
+    graph_asset_def = AssetsDefinition.from_graph(graph_asset)
+    target_assets = [asset1, asset2, graph_asset_def, partitioned]
+
+    return Definitions(
+        assets=[*target_assets, source1],
+        jobs=[define_asset_job("assets", target_assets)],
+        resources={
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
-    )
+    ).get_job_def("assets")
 
 
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):

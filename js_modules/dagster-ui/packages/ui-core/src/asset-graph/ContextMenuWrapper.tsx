@@ -97,3 +97,9 @@ export const ContextMenuWrapper = ({
     </div>
   );
 };
+
+export const triggerContextMenu = (e: React.MouseEvent) => {
+  const evt = new MouseEvent('contextmenu', e.nativeEvent);
+  e.target.dispatchEvent(evt);
+  e.stopPropagation();
+};

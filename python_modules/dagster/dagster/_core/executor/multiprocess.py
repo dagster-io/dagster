@@ -186,8 +186,9 @@ class MultiprocessExecutor(Executor):
         timer_result: Optional[TimerResult] = None
         with ExitStack() as stack:
             timer_result = stack.enter_context(time_execution_scope())
+
             instance_concurrency_context = stack.enter_context(
-                InstanceConcurrencyContext(plan_context.instance, plan_context.run_id)
+                InstanceConcurrencyContext(plan_context.instance, plan_context.dagster_run)
             )
             active_execution = stack.enter_context(
                 ActiveExecution(

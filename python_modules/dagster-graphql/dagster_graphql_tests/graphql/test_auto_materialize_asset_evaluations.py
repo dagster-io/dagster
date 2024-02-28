@@ -18,7 +18,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
-AUTOMATION_POLICY_SENSORS_QUERY = """
+AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
         ... on AssetNode {
@@ -284,7 +284,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
+                "currentAutoMaterializeEvaluationId": 0,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -338,7 +338,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
-            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": 0},
         }
 
         check.not_none(
@@ -365,7 +365,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
+                "currentAutoMaterializeEvaluationId": 0,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -388,7 +388,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
+                "currentAutoMaterializeEvaluationId": 0,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -497,7 +497,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": None,
+                "currentAutoMaterializeEvaluationId": 0,
             },
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }

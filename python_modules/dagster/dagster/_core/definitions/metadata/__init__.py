@@ -309,7 +309,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
+    def python_artifact(python_artifact: Callable[..., Any]) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
         :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
         `metadata` parameter for supported events.
@@ -920,6 +920,19 @@ class TableMetadataValue(
     Args:
         records (TableRecord): The data as a list of records (i.e. rows).
         schema (Optional[TableSchema]): A schema for the table.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import TableMetadataValue, TableRecord
+
+            TableMetadataValue(
+                schema=None,
+                records=[
+                    TableRecord({"column1": 5, "column2": "x"}),
+                    TableRecord({"column1": 7, "column2": "y"}),
+                ]
+            )
     """
 
     @public

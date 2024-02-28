@@ -5,9 +5,20 @@ import styled, {keyframes} from 'styled-components';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
 
-export type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
-  | {locationName: string; id: string; level: number};
+export type FolderNodeGroupType = {
+  id: string;
+  level: number;
+  groupNode: {
+    groupName: string;
+    assets: GraphNode[];
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+};
+
+export type FolderNodeCodeLocationType = {locationName: string; id: string; level: number};
+
+export type FolderNodeNonAssetType = FolderNodeGroupType | FolderNodeCodeLocationType;
 
 export type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
 

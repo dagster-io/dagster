@@ -36,6 +36,7 @@ from .asset_daemon_scenario_states import (
     time_multipartitions_def,
     time_partitions_start_datetime,
     time_partitions_start_str,
+    two_assets_depend_on_one,
     two_assets_in_sequence,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
@@ -706,5 +707,44 @@ partition_scenarios = [
         )
         .evaluate_tick()
         .assert_requested_runs(run_request("C")),
+    ),
+    AssetDaemonScenario(
+        id="partition_pops_into_existence_after_parent_update",
+        initial_state=two_assets_depend_on_one.with_asset_properties(
+            "A",
+            # new partitions come into being one day early
+            partitions_def=daily_partitions_def._replace(end_offset=1),
+        )
+        .with_asset_properties("B", partitions_def=daily_partitions_def)
+        .with_asset_properties("C", partitions_def=hourly_partitions_def)
+        .with_all_eager()
+        .with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(days=9, minutes=5),
+        execution_fn=lambda state: state.with_runs()
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key=day_partition_key(state.current_time, delta=1))
+        )
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(days=1)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key=day_partition_key(state.current_time, delta=2)),
+            run_request("B", partition_key=day_partition_key(state.current_time, delta=1)),
+            run_request("C", partition_key=hour_partition_key(state.current_time, delta=24)),
+        )
+        .with_not_started_runs()
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=3)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("C", partition_key=hour_partition_key(state.current_time, delta=27))
+        )
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
     ),
 ]

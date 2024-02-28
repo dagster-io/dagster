@@ -28,7 +28,7 @@ from ..partitions import weekly_partition
 )
 def trips_by_week(context, database: DuckDBResource):
     """
-        The number of trips per week, aggregated by week.
+      The number of trips per week, aggregated by week.
     """
 
     period_to_fetch = context.asset_partition_key_for_output()
@@ -79,8 +79,8 @@ from ..partitions import weekly_partition
 trips_by_week = AssetSelection.keys("trips_by_week")
 
 weekly_update_job = define_asset_job(
-  name="weekly_update_job",
-  partitions_def=weekly_partition,
-  selection=trips_by_week,
+    name="weekly_update_job",
+    partitions_def=weekly_partition,
+    selection=trips_by_week,
 )
 ```

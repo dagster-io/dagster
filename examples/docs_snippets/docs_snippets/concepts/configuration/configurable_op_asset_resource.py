@@ -23,8 +23,8 @@ def op_using_config(context: OpExecutionContext):
 
 @asset(config_schema={"person_name": str})
 def asset_using_config(context: AssetExecutionContext):
-    # Note how asset config is also accessed with context.op_config
-    return f'hello {context.op_config["person_name"]}'
+    # Note how asset config is accessed with context.op_execution_context.op_config
+    return f'hello {context.op_execution_context.op_config["person_name"]}'
 
 
 @resource(config_schema={"url": str})

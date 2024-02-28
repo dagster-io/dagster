@@ -28,13 +28,15 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "snowflake-connector-python>=2.1.0,<3.5.0",
+        "snowflake-connector-python>=3.4.0",
     ],
     extras_require={
         "snowflake.sqlalchemy": [
@@ -43,7 +45,7 @@ setup(
         ],
         "pandas": [
             "pandas",
-            "snowflake-connector-python[pandas]>=2.1.0,<3.5.0",
+            "snowflake-connector-python[pandas]>=3.4.0",
         ],
     },
     zip_safe=False,

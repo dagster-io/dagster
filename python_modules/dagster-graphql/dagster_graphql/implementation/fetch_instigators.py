@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.selector import InstigatorSelector
-from dagster._core.log_manager import DAGSTER_META_KEY
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -52,15 +52,24 @@ def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigat
         return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
     records = get_instigation_log_records(graphene_info.context.instance, tick.log_key)
+
+    events = []
+    for record_dict in records:
+        exc_info = record_dict.get("exc_info")
+        message = record_dict[LOG_RECORD_METADATA_ATTR]["orig_message"]
+        if exc_info:
+            message = f"{message}\n\n{exc_info}"
+
+        event = GrapheneInstigationEvent(
+            message=message,
+            level=GrapheneLogLevel.from_level(record_dict["levelno"]),
+            timestamp=int(record_dict["created"] * 1000),
+        )
+
+        events.append(event)
+
     return GrapheneInstigationEventConnection(
-        events=[
-            GrapheneInstigationEvent(
-                message=record_dict[DAGSTER_META_KEY]["orig_message"],
-                level=GrapheneLogLevel.from_level(record_dict["levelno"]),
-                timestamp=int(record_dict["created"] * 1000),
-            )
-            for record_dict in records
-        ],
+        events=events,
         cursor=None,
         hasMore=False,
     )

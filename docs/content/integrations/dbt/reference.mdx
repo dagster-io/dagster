@@ -364,7 +364,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Customizing metadata
 
-For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's table schema.
+For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's declared column schema.
 
 To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
 
@@ -532,6 +532,39 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
+## Emit column schema as materialization metadata <Experimental />
+
+Dagster allows you to emit column schema [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata), which includes the column names and data types of your materialized dbt models, seeds, and snapshots.
+
+With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
+
+To collect this metadata for your dbt project, specify the `dagster` dbt package in your `packages.yml` or `dependencies.yml`, and then run `dbt deps`.
+
+```yaml
+packages:
+  - git: "https://github.com/dagster-io/dagster.git"
+    subdirectory: "python_modules/libraries/dagster-dbt/dbt_packages/dagster"
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
+
+Then, enable the `dagster.log_columns_in_relation()` macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) for the dbt resources that should emit column schema metadata. For example, adding the following snippet in `dbt_project.yml` enables this macro for all dbt models, seeds, and snapshots:
+
+```yaml
+models:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
+
+snapshots:
+  +post-hook:
+    - "{{ dagster.log_columns_in_relation() }}"
+```
+
+---
+
 ## Defining dependencies
 
 - [Upstream dependencies](#upstream-dependencies)
@@ -636,7 +669,7 @@ from dagster_dbt import get_asset_keys_by_output_name_for_source
     }
 )
 def jaffle_shop(context: AssetExecutionContext):
-    output_names = list(context.selected_output_names)
+    output_names = list(context.op_execution_context.selected_output_names)
     yield Output(value=..., output_name=output_names[0])
     yield Output(value=..., output_name=output_names[1])
 ```
@@ -681,7 +714,7 @@ You can define a Dagster <PyObject module="dagster" object="PartitionDefinition"
 
 Partitioned assets will be able to access the <PyObject module="dagster" object="TimeWindow"/>'s start and end dates, and these can be passed to dbt's CLI as variables which can be used to filter incremental models.
 
-When a partition definition to passed to the <PyObject module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject module="dagster" object="asset_partitions_time_window_for_output"/> method in order to get the current start and end partitions.
+When a partition definition to passed to the <PyObject module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject module="dagster"  object="AssetExecutionContext" method="partition_time_window"/> property in order to get the current start and end partitions.
 
 ```python
 import json

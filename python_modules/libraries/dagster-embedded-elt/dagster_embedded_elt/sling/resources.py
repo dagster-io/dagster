@@ -1,33 +1,55 @@
 import contextlib
 import json
+import os
 import re
-from abc import abstractmethod
+import sys
+import tempfile
+import time
+import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
-from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
-from dagster._annotations import experimental
-from dagster._config.field_utils import EnvVar
+import sling
+from dagster import (
+    ConfigurableResource,
+    EnvVar,
+    MaterializeResult,
+    PermissiveConfig,
+    get_dagster_logger,
+)
+from dagster._annotations import deprecated, experimental
 from dagster._utils.env import environ
-from pydantic import ConfigDict, Extra, Field
-from sling import Sling
+from dagster._utils.warnings import deprecation_warning
+from pydantic import Field
+
+from dagster_embedded_elt.sling.asset_decorator import get_streams_from_replication
+from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
+
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+DEPRECATION_WARNING_TEXT = "{name} has been deprecated, use `SlingConnectionResource` for both source and target connections."
 
 
 class SlingMode(str, Enum):
     """The mode to use when syncing.
 
-    See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
+    See the Sling docs for more information: https://docs.slingdata.io/sling-cli/run/configuration#modes
     """
 
     INCREMENTAL = "incremental"
     TRUNCATE = "truncate"
     FULL_REFRESH = "full-refresh"
     SNAPSHOT = "snapshot"
+    BACKFILL = "backfill"
 
 
+@deprecated(
+    breaking_version="0.23.0",
+    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingSourceConnection"),
+)
 class SlingSourceConnection(PermissiveConfig):
     """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
@@ -61,6 +83,10 @@ class SlingSourceConnection(PermissiveConfig):
     )
 
 
+@deprecated(
+    breaking_version="0.23.0",
+    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingTargetConnection"),
+)
 class SlingTargetConnection(PermissiveConfig):
     """A Sling Target Connection defines the target connection used by :py:class:`~dagster_elt.sling.SlingResource`.
 
@@ -97,219 +123,7 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
-class _SlingSyncBase:
-    """Base class for Sling syncs. Handles the execution of the Sling CLI and processing of the output. Classes that inherit from this class must implement how to sync themselves ,but can use the `_exec_sling_cmd` and `process_stdout` methods to handle the execution and processing of the output."""
-
-    def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
-        """Process stdout from the Sling CLI."""
-        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-        for line in stdout:
-            assert isinstance(line, bytes)
-            fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
-            clean_line: str = ansi_escape.sub("", fmt_line).replace("INF", "")
-            yield clean_line
-
-    def _exec_sling_cmd(
-        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
-    ) -> Generator[str, None, None]:
-        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
-            if proc.stdout:
-                for line in self.process_stdout(proc.stdout, encoding=encoding):
-                    yield line
-
-            proc.wait()
-            if proc.returncode != 0:
-                raise Exception("Sling command failed with error code %s", proc.returncode)
-
-    def sync(
-        self,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-    ) -> Generator[str, None, None]:
-        """Initiate a Sling Sync between a source stream and a target object.
-
-        Args:
-            source_stream (str):  The source stream to read from. For database sources, the source stream can be either
-                a table name, a SQL statement or a path to a SQL file e.g. `TABLE1` or `SCHEMA1.TABLE2` or
-                `SELECT * FROM TABLE`. For file sources, the source stream is a path or an url to a file.
-                For file targets, the target object is a path or a url to a file, e.g. file:///tmp/file.csv or
-                s3://my_bucket/my_folder/file.csv
-            target_object (str): The target object to write into. For database targets, the target object is a table
-                name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
-            mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
-                See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
-            primary_key (List[str]): For incremental syncs, a primary key is used during merge statements to update
-                existing rows.
-            update_key (str): For incremental syncs, an update key is used to stream records after max(update_key)
-            source_options (Dict[str, Any]): Other source options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#source-options-src-options-flag-source.options-key
-                for details
-            target_options (Dict[str, Any[): Other target options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#target-options-tgt-options-flag-target.options-key
-                for details
-
-        Examples:
-            Sync from a source file to a sqlite database:
-
-            .. code-block:: python
-
-                sqllite_path = "/path/to/sqlite.db"
-                csv_path = "/path/to/file.csv"
-
-                @asset
-                def run_sync(context, sling: SlingResource):
-                    res = sling.sync(
-                        source_stream=csv_path,
-                        target_object="events",
-                        mode=SlingMode.FULL_REFRESH,
-                    )
-                    for stdout in res:
-                        context.log.debug(stdout)
-                    counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
-                    assert counts[0] == 3
-
-                source = SlingSourceConnection(
-                    type="file",
-                )
-                target = SlingTargetConnection(type="sqlite", instance=sqllitepath)
-
-                materialize(
-                    [run_sync],
-                    resources={
-                        "sling": SlingResource(
-                            source_connection=source,
-                            target_connection=target,
-                            mode=SlingMode.TRUNCATE,
-                        )
-                    },
-                )
-
-        """
-        yield from self._sync(
-            source_stream=source_stream,
-            target_object=target_object,
-            mode=mode,
-            primary_key=primary_key,
-            update_key=update_key,
-            source_options=source_options,
-            target_options=target_options,
-        )
-
-    @abstractmethod
-    def _sync(
-        self,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode = SlingMode.FULL_REFRESH,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-        encoding: str = "utf8",
-    ) -> Generator[str, None, None]:
-        """Runs a Sling sync from the given source table to the given destination table. Generates
-        output lines from the Sling CLI.
-        """
-        raise NotImplementedError()
-
-
-@experimental
-class SlingResource(ConfigurableResource, _SlingSyncBase):
-    """Resource for interacting with the Sling package.
-
-    Examples:
-        .. code-block:: python
-
-            from dagster_etl.sling import SlingResource
-            sling_resource = SlingResource(
-                source_connection=SlingSourceConnection(
-                    type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING")
-                ),
-                target_connection=SlingTargetConnection(
-                    type="snowflake",
-                    host="host",
-                    user="user",
-                    database="database",
-                    password="password",
-                    role="role",
-                ),
-            )
-
-    """
-
-    source_connection: SlingSourceConnection
-    target_connection: SlingTargetConnection
-
-    @contextlib.contextmanager
-    def _setup_config(self) -> Generator[None, None, None]:
-        """Uses environment variables to set the Sling source and target connections."""
-        sling_source = _process_env_vars(dict(self.source_connection))
-        sling_target = _process_env_vars(dict(self.target_connection))
-
-        if self.source_connection.connection_string:
-            sling_source["url"] = self.source_connection.connection_string
-        if self.target_connection.connection_string:
-            sling_target["url"] = self.target_connection.connection_string
-        with environ(
-            {
-                "SLING_SOURCE": json.dumps(sling_source),
-                "SLING_TARGET": json.dumps(sling_target),
-            }
-        ):
-            yield
-
-    def _sync(
-        self,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode = SlingMode.FULL_REFRESH,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-        encoding: str = "utf8",
-    ) -> Generator[str, None, None]:
-        """Runs a Sling sync from the given source table to the given destination table. Generates
-        output lines from the Sling CLI.
-        """
-        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
-            source_stream = "file://" + source_stream
-
-        if self.target_connection.type == "file" and not target_object.startswith("file://"):
-            target_object = "file://" + target_object
-
-        with self._setup_config():
-            config = {
-                "mode": mode,
-                "source": {
-                    "conn": "SLING_SOURCE",
-                    "stream": source_stream,
-                    "primary_key": primary_key,
-                    "update_key": update_key,
-                    "options": source_options,
-                },
-                "target": {
-                    "conn": "SLING_TARGET",
-                    "object": target_object,
-                    "options": target_options,
-                },
-            }
-            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
-
-            sling_cli = Sling(**config)
-            logger.info("Starting Sling sync with mode: %s", mode)
-            cmd = sling_cli._prep_cmd()  # noqa: SLF001
-
-            yield from self._exec_sling_cmd(cmd, encoding=encoding)
-
-
-class SlingConnectionResource(ConfigurableResource):
+class SlingConnectionResource(PermissiveConfig):
     """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
 
     This resource is responsible for the managing how Sling connects to a resource. To manage how Sling uses this connection (as a source or target), see the specific source_options or target_options in the `build_assets_from_sling_stream` function.
@@ -337,8 +151,7 @@ class SlingConnectionResource(ConfigurableResource):
             source = SlingConnectionResource(type="snowflake", host=EnvVar("SNOWFLAKE_HOST"), user=EnvVar("SNOWFLAKE_USER"), database=EnvVar("SNOWFLAKE_DATABASE"), password=EnvVar("SNOWFLAKE_PASSWORD"), role=EnvVar("SNOWFLAKE_ROLE"))
     """
 
-    model_config = ConfigDict(extra=Extra.allow)
-
+    name: str = Field(description="The name of the connection.")
     type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
     connection_string: Optional[str] = Field(
         description="The connection string for the source database.",
@@ -346,31 +159,113 @@ class SlingConnectionResource(ConfigurableResource):
     )
 
 
-def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
-    out = {}
-    for key, value in config.items():
-        if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
-            out[key] = EnvVar(next(iter(value.values()))).get_value()
-        else:
-            out[key] = value
-    return out
+@experimental
+class SlingResource(ConfigurableResource):
+    """Resource for interacting with the Sling package.
 
+    Examples:
+        .. code-block:: python
 
-class SlingStreamReplicator(_SlingSyncBase):
-    """A utility class for running a Sling sync from outside of a Dagster resource to enable parity between the SlingResource and SlingStreamSync.
+            from dagster_etl.sling import SlingResource
+            sling_resource = SlingResource(
+                source_connection=SlingSourceConnection(
+                    type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING")
+                ),
+                target_connection=SlingTargetConnection(
+                    type="snowflake",
+                    host="host",
+                    user="user",
+                    database="database",
+                    password="password",
+                    role="role",
+                ),
+            )
 
-    Inherits from :py:class:`~dagster_elt.sling._SlingSyncBase` and implements `_sync` to run a sync using 2 SlingConnectionResources and no SlingResource.
     """
 
-    def __init__(
-        self,
-        source_connection: SlingConnectionResource,
-        target_connection: SlingConnectionResource,
-    ):
-        self.source_connection = source_connection
-        self.target_connection = target_connection
+    source_connection: Optional[SlingSourceConnection] = None
+    target_connection: Optional[SlingTargetConnection] = None
+    connections: List[SlingConnectionResource] = []
+    _stdout: List[str] = []
 
-    def _sync(
+    @contextlib.contextmanager
+    def _setup_config(self) -> Generator[None, None, None]:
+        """Uses environment variables to set the Sling source and target connections."""
+        if self.source_connection:
+            deprecation_warning(
+                "source_connection",
+                "0.23",
+                "source_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
+                stacklevel=4,
+            )
+
+        if self.target_connection:
+            deprecation_warning(
+                "target_connection",
+                "0.23",
+                "target_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
+                stacklevel=4,
+            )
+
+        sling_source = None
+        sling_target = None
+        if self.source_connection:
+            sling_source = _process_env_vars(dict(self.source_connection))
+            if self.source_connection.connection_string:
+                sling_source["url"] = self.source_connection.connection_string
+        if self.target_connection:
+            sling_target = _process_env_vars(dict(self.target_connection))
+            if self.target_connection.connection_string:
+                sling_target["url"] = self.target_connection.connection_string
+
+        sling_connections: dict[str, Dict[str, Any]] = {
+            conn.name: {
+                "url" if k == "connection_string" else k: v
+                for k, v in _process_env_vars(dict(conn)).items()
+            }
+            for conn in self.connections
+        }
+
+        with environ(
+            {
+                "SLING_SOURCE": json.dumps(sling_source),
+                "SLING_TARGET": json.dumps(sling_target),
+                **{
+                    f"{conn.name}": json.dumps(sling_connections[conn.name])
+                    for conn in self.connections
+                },
+            }
+        ):
+            yield
+
+    def _clean_line(self, line: str) -> str:
+        """Removes ANSI escape sequences from a line of output."""
+        return ANSI_ESCAPE.sub("", line).replace("INF", "")
+
+    def _process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
+        """Process stdout from the Sling CLI."""
+        for line in stdout:
+            assert isinstance(line, bytes)
+            fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
+            yield self._clean_line(fmt_line)
+
+    def _exec_sling_cmd(
+        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
+    ) -> Generator[str, None, None]:
+        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
+            if proc.stdout:
+                for line in self._process_stdout(proc.stdout, encoding=encoding):
+                    yield line
+
+            proc.wait()
+            if proc.returncode != 0:
+                raise Exception("Sling command failed with error code %s", proc.returncode)
+
+    @deprecated(
+        breaking_version="0.23.0",
+        additional_warn_text="sync has been deprecated, use `replicate` instead.",
+    )
+    def sync(
         self,
         source_stream: str,
         target_object: str,
@@ -384,28 +279,21 @@ class SlingStreamReplicator(_SlingSyncBase):
         """Runs a Sling sync from the given source table to the given destination table. Generates
         output lines from the Sling CLI.
         """
-        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
+        if (
+            self.source_connection
+            and self.source_connection.type == "file"
+            and not source_stream.startswith("file://")
+        ):
             source_stream = "file://" + source_stream
 
-        if self.target_connection.type == "file" and not target_object.startswith("file://"):
+        if (
+            self.target_connection
+            and self.target_connection.type == "file"
+            and not target_object.startswith("file://")
+        ):
             target_object = "file://" + target_object
 
-        sling_source = self.source_connection.dict()
-        sling_target = self.target_connection.dict()
-
-        sling_source = _process_env_vars(sling_source)
-        sling_target = _process_env_vars(sling_target)
-
-        if self.source_connection.connection_string:
-            sling_source["url"] = self.source_connection.connection_string
-        if self.target_connection.connection_string:
-            sling_target["url"] = self.target_connection.connection_string
-        with environ(
-            {
-                "SLING_SOURCE": json.dumps(sling_source),
-                "SLING_TARGET": json.dumps(sling_target),
-            }
-        ):
+        with self._setup_config():
             config = {
                 "mode": mode,
                 "source": {
@@ -424,13 +312,70 @@ class SlingStreamReplicator(_SlingSyncBase):
             config["source"] = {k: v for k, v in config["source"].items() if v is not None}
             config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-            sling_cli = Sling(**config)
+            sling_cli = sling.Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
-            # `_prep_cmd` only works with the Single Task command, so we need to replace it with the Replication command
-            # TODO: Unfortunately, _prep_cmd doesn't expose a way to add streams, so we'll need to override it ourselves
-            # We'll also need to parse the logs differently, since the output is different
-            # cmd = cmd.replace(" -c ", " -r ")
-
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
+
+    def replicate(
+        self,
+        *,
+        replication_config: SlingReplicationParam,
+        dagster_sling_translator: DagsterSlingTranslator,
+        debug: bool = False,
+    ):
+        replication_config = validate_replication(replication_config)
+        stream_definition = get_streams_from_replication(replication_config)
+
+        with self._setup_config():
+            uid = uuid.uuid4()
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
+            env = os.environ.copy()
+
+            with open(temp_file, "w") as file:
+                json.dump(replication_config, file, cls=sling.JsonEncoder)
+
+            logger.debug(f"Replication config: {replication_config}")
+
+            debug_str = "-d" if debug else ""
+
+            cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+
+            logger.debug(f"Running Sling replication with command: {cmd}")
+
+            # Get start time from wall clock
+            start_time = time.time()
+            results = sling._run(  # noqa
+                cmd=cmd,
+                temp_file=temp_file,
+                return_output=True,
+                env=env,
+            )
+        for row in results.split("\n"):
+            clean_line = self._clean_line(row)
+            sys.stdout.write(clean_line + "\n")
+            self._stdout.append(clean_line)
+
+        end_time = time.time()
+
+        for stream in stream_definition:
+            output_name = dagster_sling_translator.get_asset_key(stream)
+            yield MaterializeResult(
+                asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+            )
+
+    def stream_raw_logs(self) -> Generator[str, None, None]:
+        """Returns the logs from the Sling CLI."""
+        yield from self._stdout
+
+
+def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
+    out = {}
+    for key, value in config.items():
+        if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
+            out[key] = EnvVar(next(iter(value.values()))).get_value()
+        else:
+            out[key] = value
+    return out

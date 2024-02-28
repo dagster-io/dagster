@@ -11,6 +11,8 @@ from typing import (
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import PRIORITY_TAG
 
 INITIAL_INTERVAL_VALUE = 1
 STEP_UP_BASE = 1.1
@@ -31,14 +33,18 @@ class InstanceConcurrencyContext:
     `free_concurrency_slots_by_run_id`
     """
 
-    def __init__(self, instance: DagsterInstance, run_id: str):
+    def __init__(self, instance: DagsterInstance, dagster_run: DagsterRun):
         self._instance = instance
-        self._run_id = run_id
+        self._run_id = dagster_run.run_id
         self._global_concurrency_keys = None
         self._pending_timeouts = defaultdict(float)
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
         self._claims = set()
+        try:
+            self._run_priority = int(dagster_run.tags.get(PRIORITY_TAG, "0"))
+        except ValueError:
+            self._run_priority = 0
 
     def __enter__(self) -> Self:
         self._context_guard = True
@@ -79,7 +85,7 @@ class InstanceConcurrencyContext:
     def _sync_global_concurrency_keys(self) -> None:
         self._global_concurrency_keys = self._instance.event_log_storage.get_concurrency_keys()
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(self, concurrency_key: str, step_key: str, step_priority: int = 0):
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
@@ -103,6 +109,7 @@ class InstanceConcurrencyContext:
         else:
             self._pending_claims.add(step_key)
 
+        priority = self._run_priority + step_priority
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
             concurrency_key, self._run_id, step_key, priority
         )

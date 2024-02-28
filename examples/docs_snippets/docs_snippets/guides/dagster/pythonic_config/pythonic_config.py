@@ -167,12 +167,12 @@ def nested_schema_config() -> None:
                         "Alice": UserData(
                             age=10,
                             email="alice@gmail.com",
-                            profile_picture_url=...,  # type: ignore
+                            profile_picture_url=...,
                         ),
                         "Bob": UserData(
                             age=20,
                             email="bob@gmail.com",
-                            profile_picture_url=...,  # type: ignore
+                            profile_picture_url=...,
                         ),
                     }
                 )
@@ -403,7 +403,7 @@ def required_config() -> None:
     class MyAssetConfig(Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
-        person_first_name: Optional[str] = ...  # type: ignore
+        person_first_name: Optional[str] = ...
 
         # ellipsis can also be used with pydantic.Field to attach metadata
         person_last_name: Optional[Callable] = Field(

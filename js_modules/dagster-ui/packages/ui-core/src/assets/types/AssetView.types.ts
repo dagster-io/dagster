@@ -22,7 +22,6 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string | null;
-          hasAssetChecks: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -69,6 +68,10 @@ export type AssetViewDefinitionQuery = {
                   status: Types.InstigationStatus;
                 };
               }
+          >;
+          owners: Array<
+            | {__typename: 'TeamAssetOwner'; team: string}
+            | {__typename: 'UserAssetOwner'; email: string}
           >;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
@@ -15844,7 +15847,6 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string | null;
-  hasAssetChecks: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
@@ -15891,6 +15893,9 @@ export type AssetViewDefinitionNodeFragment = {
           status: Types.InstigationStatus;
         };
       }
+  >;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';

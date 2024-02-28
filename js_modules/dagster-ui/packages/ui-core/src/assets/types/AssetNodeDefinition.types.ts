@@ -6,6 +6,7 @@ export type AssetNodeDefinitionFragment = {
   __typename: 'AssetNode';
   id: string;
   description: string | null;
+  groupName: string | null;
   graphName: string | null;
   opNames: Array<string>;
   opVersion: string | null;
@@ -16,6 +17,9 @@ export type AssetNodeDefinitionFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
@@ -15650,4 +15654,32 @@ export type AssetNodeDefinitionFragment = {
           | null;
       }
     | null;
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        jobOriginId: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+  >;
 };

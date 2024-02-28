@@ -10,16 +10,17 @@
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-import pendulum
-
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._seven.compat.pendulum import (
+    PendulumInterval,
+)
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetSubsetWithMetadata
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
 
@@ -27,7 +28,7 @@ def get_execution_period_for_policy(
     freshness_policy: FreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> pendulum.Period:
+) -> PendulumInterval:
     if freshness_policy.cron_schedule:
         tick_iterator = cron_string_iterator(
             start_timestamp=current_time.timestamp(),
@@ -41,18 +42,18 @@ def get_execution_period_for_policy(
             tick = next(tick_iterator)
             required_data_time = tick - freshness_policy.maximum_lag_delta
             if effective_data_time is None or effective_data_time < required_data_time:
-                return pendulum.Period(start=required_data_time, end=tick)
+                return PendulumInterval(start=required_data_time, end=tick)
 
     else:
         # occurs when asset is missing
         if effective_data_time is None:
-            return pendulum.Period(
+            return PendulumInterval(
                 # require data from at most maximum_lag_delta ago
                 start=current_time - freshness_policy.maximum_lag_delta,
                 # this data should be available as soon as possible
                 end=current_time,
             )
-        return pendulum.Period(
+        return PendulumInterval(
             # we don't want to execute this too frequently
             start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
             end=max(effective_data_time + freshness_policy.maximum_lag_delta, current_time),
@@ -64,7 +65,7 @@ def get_execution_period_and_evaluation_data_for_policies(
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], Optional["TextRuleEvaluationData"]]:
+) -> Tuple[Optional[PendulumInterval], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -84,7 +85,7 @@ def get_execution_period_and_evaluation_data_for_policies(
         if merged_period is None:
             merged_period = period
         elif period.start <= merged_period.end:
-            merged_period = pendulum.Period(
+            merged_period = PendulumInterval(
                 start=max(period.start, merged_period.start),
                 end=period.end,
             )
@@ -128,7 +129,7 @@ def get_expected_data_time_for_asset_key(
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
-    elif asset_graph.has_non_source_parents(asset_key):
+    elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then
@@ -161,7 +162,7 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition import AssetSubsetWithMetadata
+    from .asset_condition.asset_condition import AssetSubsetWithMetadata
 
     asset_key = context.asset_key
     current_time = context.evaluation_time
@@ -206,7 +207,7 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.freshness_policies_by_key.get(asset_key),
+        local_policy=context.asset_graph.get_freshness_policy(asset_key),
         policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,

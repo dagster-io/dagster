@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 import shutil
@@ -13,7 +14,7 @@ from dagster._core.definitions.reconstruct import ReconstructableJob, Reconstruc
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
-from dagster._core.events import DagsterEvent
+from dagster._core.events import AssetCheckEvaluationPlanned, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import StepExecutionContext
@@ -252,6 +253,27 @@ def run_step_from_ref(
             step_context.instance.add_dynamic_partitions(
                 partitions_def_name=partitions_def.name, partition_keys=[step_context.partition_key]
             )
+
+    # Note: this patches ASSET_CHECK_EVALUATION_PLANNED events into the mini event log present
+    # on external steps. This is necessary because we test that ASSET_CHECK_EVALUATION events
+    # have corresponding ASSET_CHECK_EVALUATION_PLANNED events.
+    for output in step_context.step.step_outputs:
+        asset_check_key = check.not_none(output.properties).asset_check_key
+        if asset_check_key:
+            event = DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                job_name=step_context.job_name,
+                message=(
+                    f"{step_context.job_name} intends to execute asset check {asset_check_key.name} on"
+                    f" asset {asset_check_key.asset_key.to_string()}"
+                ),
+                event_specific_data=AssetCheckEvaluationPlanned(
+                    asset_check_key.asset_key,
+                    check_name=asset_check_key.name,
+                ),
+                step_key=step_context.step.key,
+            )
+            instance.report_dagster_event(event, step_run_ref.run_id, logging.DEBUG)
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in

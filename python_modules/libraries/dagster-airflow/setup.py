@@ -30,11 +30,12 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         "docker>=5.0.3,<6.0.0",
+        "urllib3<2",  # docker version pinned above requires this but has no pin
         "lazy_object_proxy",
-        "pendulum<3",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI

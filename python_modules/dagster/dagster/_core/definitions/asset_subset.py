@@ -3,6 +3,7 @@ import operator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     NamedTuple,
     Optional,
@@ -17,7 +18,13 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+)
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    whitelist_for_serdes,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
@@ -25,6 +32,10 @@ if TYPE_CHECKING:
 
 class AssetSubsetSerializer(NamedTupleSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
+
+    def get_storage_name(self) -> str:
+        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
+        return "AssetSubset"
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
         if value.is_partitioned:
@@ -74,42 +85,72 @@ class AssetSubset(NamedTuple):
         else:
             return len(self.subset_value)
 
+    def _is_compatible_with_partitions_def(
+        self, partitions_def: Optional[PartitionsDefinition]
+    ) -> bool:
+        if self.is_partitioned:
+            # for some PartitionSubset types, we have access to the underlying partitions
+            # definitions, so we can ensure those are identical
+            if isinstance(self.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
+                return self.value.partitions_def == partitions_def
+            else:
+                return partitions_def is not None
+        else:
+            return partitions_def is None
+
+    def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
+        if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
+            return self._is_compatible_with_partitions_def(other.value.partitions_def)
+        else:
+            return self.is_partitioned == other.is_partitioned
+
+    def as_valid(self, partitions_def: Optional[PartitionsDefinition]) -> "ValidAssetSubset":
+        """Converts this AssetSubset to a ValidAssetSubset by returning a copy of this AssetSubset
+        if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
+        """
+        if self._is_compatible_with_partitions_def(partitions_def):
+            return ValidAssetSubset(*self)
+        else:
+            return ValidAssetSubset.empty(self.asset_key, partitions_def)
+
     @staticmethod
     def all(
         asset_key: AssetKey,
         partitions_def: Optional[PartitionsDefinition],
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
         current_time: Optional[datetime.datetime] = None,
-    ) -> "AssetSubset":
+    ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return AssetSubset(asset_key=asset_key, value=True)
+            return ValidAssetSubset(asset_key=asset_key, value=True)
         else:
             if dynamic_partitions_store is None or current_time is None:
                 check.failed(
                     "Must provide dynamic_partitions_store and current_time for partitioned assets."
                 )
-            return AssetSubset(
+            return ValidAssetSubset(
                 asset_key=asset_key,
                 value=AllPartitionsSubset(partitions_def, dynamic_partitions_store, current_time),
             )
 
     @staticmethod
-    def empty(asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]) -> "AssetSubset":
+    def empty(
+        asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
+    ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return AssetSubset(asset_key=asset_key, value=False)
+            return ValidAssetSubset(asset_key=asset_key, value=False)
         else:
-            return AssetSubset(asset_key=asset_key, value=partitions_def.empty_subset())
+            return ValidAssetSubset(asset_key=asset_key, value=partitions_def.empty_subset())
 
     @staticmethod
     def from_asset_partitions_set(
         asset_key: AssetKey,
         partitions_def: Optional[PartitionsDefinition],
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
-    ) -> "AssetSubset":
+    ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return AssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
+            return ValidAssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
         else:
-            return AssetSubset(
+            return ValidAssetSubset(
                 asset_key=asset_key,
                 value=partitions_def.subset_with_partition_keys(
                     {
@@ -120,12 +161,34 @@ class AssetSubset(NamedTuple):
                 ),
             )
 
+    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
+        if not self.is_partitioned:
+            return (
+                item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
+            )
+        else:
+            return item.asset_key == self.asset_key and item.partition_key in self.subset_value
+
+
+@whitelist_for_serdes(serializer=AssetSubsetSerializer)
+class ValidAssetSubset(AssetSubset):
+    """Represents an AssetSubset which is known to be compatible with the current PartitionsDefinition
+    of the asset represents.
+
+    This class serializes to a regular AssetSubset, as it is unknown if this value will still be
+    valid in the process that deserializes it.
+
+    All operations act over the set of AssetKeyPartitionKeys that the operands represent if the
+    subsets are both ValidAssetSubsets. If the other operand cannot be coerced to a ValidAssetSubset,
+    it is treated as an empty subset.
+    """
+
     def inverse(
         self,
         partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime.datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> "AssetSubset":
+    ) -> "ValidAssetSubset":
         """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
             return self._replace(value=not self.bool_value)
@@ -139,25 +202,34 @@ class AssetSubset(NamedTuple):
             )
             return self._replace(value=value)
 
-    def _oper(self, other: "AssetSubset", oper: Callable) -> "AssetSubset":
+    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
         return self._replace(value=value)
 
-    def __sub__(self, other: "AssetSubset") -> "AssetSubset":
+    def __sub__(self, other: AssetSubset) -> "ValidAssetSubset":
+        """Returns an AssetSubset representing self.asset_partitions - other.asset_partitions."""
+        valid_other = self.get_valid(other)
         if not self.is_partitioned:
-            return self._replace(value=self.bool_value and not other.bool_value)
-        return self._oper(other, operator.sub)
+            return self._replace(value=self.bool_value and not valid_other.bool_value)
+        return self._oper(valid_other, operator.sub)
 
-    def __and__(self, other: "AssetSubset") -> "AssetSubset":
-        return self._oper(other, operator.and_)
+    def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
+        """Returns an AssetSubset representing self.asset_partitions & other.asset_partitions."""
+        return self._oper(self.get_valid(other), operator.and_)
 
-    def __or__(self, other: "AssetSubset") -> "AssetSubset":
-        return self._oper(other, operator.or_)
+    def __or__(self, other: AssetSubset) -> "ValidAssetSubset":
+        """Returns an AssetSubset representing self.asset_partitions | other.asset_partitions."""
+        return self._oper(self.get_valid(other), operator.or_)
 
-    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
-        if not self.is_partitioned:
-            return (
-                item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
-            )
+    def get_valid(self, other: AssetSubset) -> "ValidAssetSubset":
+        """Creates a ValidAssetSubset from the given AssetSubset by returning a copy of the given
+        AssetSubset if it is compatible with this AssetSubset, otherwise returns an empty subset.
+        """
+        if self._is_compatible_with_subset(other):
+            return ValidAssetSubset(*other)
         else:
-            return item.asset_key == self.asset_key and item.partition_key in self.subset_value
+            return self._replace(
+                # unfortunately, this is the best way to get an empty partitions subset of an unknown
+                # type if you don't have access to the partitions definition
+                value=(self.subset_value - self.subset_value) if self.is_partitioned else False
+            )

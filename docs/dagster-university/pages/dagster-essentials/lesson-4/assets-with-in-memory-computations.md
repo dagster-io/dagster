@@ -35,7 +35,7 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
 
    ```python
    @asset(
-     deps=["taxi_trips", "taxi_zones"]
+       deps=["taxi_trips", "taxi_zones"]
    )
    def manhattan_stats():
    ```
@@ -44,7 +44,7 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
 
    ```python
    @asset(
-     deps=["taxi_trips", "taxi_zones"]
+       deps=["taxi_trips", "taxi_zones"]
    )
    def manhattan_stats():
        query = """
@@ -94,7 +94,7 @@ In this section, you’ll create an asset that depends on `manhattan_stats`, loa
 
    ```python
    @asset(
-    deps=["manhattan_stats"],
+       deps=["manhattan_stats"],
    )
    def manhattan_map():
        trips_by_zone = gpd.read_file(constants.MANHATTAN_STATS_FILE_PATH)

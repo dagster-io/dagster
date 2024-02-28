@@ -964,7 +964,7 @@ def composite_mapping_from_output(
 def do_composition(
     decorator_name: str,
     graph_name: str,
-    fn: Callable,
+    fn: Callable[..., Any],
     provided_input_defs: Sequence[InputDefinition],
     provided_output_defs: Optional[Sequence[OutputDefinition]],
     config_mapping: Optional[ConfigMapping],

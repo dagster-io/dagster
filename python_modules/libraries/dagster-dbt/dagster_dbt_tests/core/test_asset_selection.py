@@ -1,119 +1,153 @@
-import json
 import os
 from pathlib import Path
-from typing import Optional, Set
+from typing import Any, Dict, Optional, Set
 
 import pytest
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.dbt_manifest import DbtManifestParam
-
-manifest_path = Path(__file__).joinpath("..", "..", "sample_manifest.json").resolve()
-
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
 
 
 @pytest.mark.parametrize(
-    ["select", "exclude", "expected_asset_names"],
+    ["select", "exclude", "expected_dbt_resource_names"],
     [
         (
-            "fqn:*",
+            None,
             None,
             {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
             },
         ),
         (
-            "+least_caloric",
-            None,
-            {"sort_by_calories", "subdir_schema/least_caloric", "cereals"},
-        ),
-        (
-            "sort_by_calories least_caloric",
-            None,
-            {"sort_by_calories", "subdir_schema/least_caloric"},
-        ),
-        (
-            "tag:bar+",
+            "raw_customers stg_customers",
             None,
             {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
+                "raw_customers",
+                "stg_customers",
             },
         ),
         (
-            "tag:foo",
+            "raw_customers+",
             None,
-            {"sort_by_calories", "cold_schema/sort_cold_cereals_by_calories"},
-        ),
-        (
-            "tag:foo,tag:bar",
-            None,
-            {"sort_by_calories"},
-        ),
-        (
-            None,
-            "sort_hot_cereals_by_calories",
             {
-                "sort_by_calories",
-                "cold_schema/sort_cold_cereals_by_calories",
-                "subdir_schema/least_caloric",
-                "cereals",
-                "orders_snapshot",
+                "raw_customers",
+                "stg_customers",
+                "customers",
+            },
+        ),
+        (
+            "resource_type:model",
+            None,
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "raw_customers+,resource_type:model",
+            None,
+            {
+                "stg_customers",
+                "customers",
             },
         ),
         (
             None,
-            "+least_caloric",
+            "orders",
             {
-                "cold_schema/sort_cold_cereals_by_calories",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
             },
         ),
         (
             None,
-            "sort_by_calories least_caloric",
+            "raw_customers+",
             {
-                "cold_schema/sort_cold_cereals_by_calories",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
+                "raw_orders",
+                "raw_payments",
+                "stg_orders",
+                "stg_payments",
+                "orders",
             },
         ),
         (
             None,
-            "tag:foo",
+            "raw_customers stg_customers",
             {
-                "subdir_schema/least_caloric",
-                "sort_hot_cereals_by_calories",
-                "orders_snapshot",
-                "cereals",
+                "raw_orders",
+                "raw_payments",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            None,
+            "resource_type:model",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+            },
+        ),
+        (
+            None,
+            "tag:does-not-exist",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
             },
         ),
     ],
+    ids=[
+        "--select fqn:*",
+        "--select raw_customers stg_customers",
+        "--select raw_customers+",
+        "--select resource_type:model",
+        "--select raw_customers+,resource_type:model",
+        "--exclude orders",
+        "--exclude raw_customers+",
+        "--exclude raw_customers stg_customers",
+        "--exclude resource_type:model",
+        "--exclude tag:does-not-exist",
+    ],
 )
 def test_dbt_asset_selection(
-    select: Optional[str], exclude: Optional[str], expected_asset_names: Set[str]
+    test_jaffle_shop_manifest: Dict[str, Any],
+    select: Optional[str],
+    exclude: Optional[str],
+    expected_dbt_resource_names: Set[str],
 ) -> None:
-    expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
+    expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets():
         ...
 
-    asset_graph = AssetGraph.from_assets([my_dbt_assets])
+    asset_graph = InternalAssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
         dbt_select=select or "fqn:*",
@@ -124,26 +158,35 @@ def test_dbt_asset_selection(
     assert selected_asset_keys == expected_asset_keys
 
 
-@pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
-def test_dbt_asset_selection_manifest_argument(manifest: DbtManifestParam) -> None:
+def test_dbt_asset_selection_manifest_argument(
+    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
+) -> None:
     expected_asset_keys = {
-        AssetKey(key.split("/"))
+        AssetKey(key)
         for key in {
-            "sort_by_calories",
-            "cold_schema/sort_cold_cereals_by_calories",
-            "subdir_schema/least_caloric",
-            "sort_hot_cereals_by_calories",
-            "orders_snapshot",
-            "cereals",
+            "raw_customers",
+            "raw_orders",
+            "raw_payments",
+            "stg_customers",
+            "stg_orders",
+            "stg_payments",
+            "customers",
+            "orders",
         }
     }
 
-    @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
+    for manifest_param in [
+        test_jaffle_shop_manifest,
+        test_jaffle_shop_manifest_path,
+        os.fspath(test_jaffle_shop_manifest_path),
+    ]:
 
-    asset_graph = AssetGraph.from_assets([my_dbt_assets])
-    asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")
-    selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
+        @dbt_assets(manifest=manifest_param)
+        def my_dbt_assets():
+            ...
 
-    assert selected_asset_keys == expected_asset_keys
+        asset_graph = InternalAssetGraph.from_assets([my_dbt_assets])
+        asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="fqn:*")
+        selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
+
+        assert selected_asset_keys == expected_asset_keys

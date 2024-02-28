@@ -152,11 +152,11 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.all_tags()
+        return {k: str(v) for k, v in self.log.metadata.items()}
 
     @property
     def event_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.event_tags()
+        return {k: str(v) for k, v in self.log.metadata.items() if k != "job_tags"}
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
@@ -931,9 +931,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def is_asset_check_step(self) -> bool:
         """Whether this step corresponds to an asset check."""
-        node_handle = self.node_handle
         return (
-            self.job_def.asset_layer.asset_checks_defs_by_node_handle.get(node_handle) is not None
+            self.job_def.asset_layer.asset_checks_defs_by_node_handle.get(self.node_handle)
+            is not None
         )
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:

@@ -33,7 +33,12 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
+from dagster._core.events import (
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    DagsterEvent,
+    DagsterEventType,
+    RunFailureReason,
+)
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation.origin import ExternalJobOrigin
 from dagster._core.snap import (
@@ -54,6 +59,7 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
@@ -161,6 +167,8 @@ class SqlRunStorage(RunStorage):
         return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+        from dagster._core.events import JobFailureData
+
         check.str_param(run_id, "run_id")
         check.inst_param(event, "event", DagsterEvent)
 
@@ -203,6 +211,14 @@ class SqlRunStorage(RunStorage):
                     **kwargs,
                 )
             )
+
+        if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
+            event.event_specific_data, JobFailureData
+        ):
+            failure_reason = event.event_specific_data.failure_reason
+
+            if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
+                self.add_run_tags(run_id, {RUN_FAILURE_REASON_TAG: failure_reason.value})
 
     def _row_to_run(self, row: Dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)

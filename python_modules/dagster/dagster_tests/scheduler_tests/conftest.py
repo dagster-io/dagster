@@ -56,7 +56,7 @@ def workspace_load_target(
     return ModuleTarget(
         module_name=f"dagster_tests.scheduler_tests.{module}",
         attribute=attribute,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 

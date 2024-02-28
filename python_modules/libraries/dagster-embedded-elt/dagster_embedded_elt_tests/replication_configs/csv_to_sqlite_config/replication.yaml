@@ -1,0 +1,8 @@
+source: SLING_FILE
+target: SLING_SQLITE
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams: {}

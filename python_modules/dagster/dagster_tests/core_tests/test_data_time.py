@@ -17,17 +17,17 @@ from dagster import (
     multi_asset,
     repository,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -93,7 +93,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         },
     )
     def bcd(context):
-        for output_name in sorted(context.selected_output_names):
+        for output_name in sorted(context.op_execution_context.selected_output_names):
             yield Output(output_name, output_name)
 
     @asset(deps=[AssetKey("c")])
@@ -106,7 +106,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
     all_assets = [a, bcd, e, f]
 
-    asset_graph = AssetGraph.from_assets(all_assets)
+    asset_graph = InternalAssetGraph.from_assets(all_assets)
 
     with DagsterInstance.ephemeral() as instance:
         # mapping from asset key to a mapping of materialization timestamp to run index
@@ -276,7 +276,9 @@ scenarios = {
 
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_partitioned_data_time(scenario):
-    with DagsterInstance.ephemeral() as instance, pendulum.test(create_pendulum_time(2023, 1, 7)):
+    with DagsterInstance.ephemeral() as instance, pendulum_freeze_time(
+        create_pendulum_time(2023, 1, 7)
+    ):
         _materialize_partitions(instance, scenario.before_partitions)
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
@@ -331,7 +333,7 @@ def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
             key = AssetKey(arg)
-            observe(source_assets=[versioned_repo.source_assets_by_key[key]], instance=instance)
+            observe(assets=[versioned_repo.external_assets_defs_by_key[key]], instance=instance)
             latest_record = instance.get_latest_data_version_record(key, is_source=True)
             latest_timestamp = latest_record.timestamp
             times_by_key[key].append(

@@ -622,6 +622,7 @@ def test_validated_partitions():
         assert run_request.run_config == {}
         assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
         assert run_request.tags.get("yay") == "yay!"
+        assert run_request.tags.get("dagster/sensor_name") == "valid_req_sensor"
 
 
 def test_partitioned_config_run_request():

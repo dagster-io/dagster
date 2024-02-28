@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from enum import Enum
+from importlib.metadata import version
 from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
@@ -609,6 +610,11 @@ class DatabricksJobRunner:
                         {"pypi": {"package": f"{library_name}=={library.__version__}"}}
                     )
 
+            if "databricks-sdk" not in python_libraries:
+                libraries.append(
+                    {"pypi": {"package": f"databricks-sdk=={version('databricks-sdk')}"}}
+                )
+
         # Only one task should be able to be chosen really; make sure of that here.
         check.invariant(
             sum(
@@ -634,7 +640,6 @@ class DatabricksJobRunner:
                     {
                         "new_cluster": new_cluster,
                         "existing_cluster_id": existing_cluster_id,
-                        # "libraries": [compute.Library.from_dict(lib) for lib in libraries],
                         "libraries": libraries,
                         **task,
                         "task_key": "dagster-task",

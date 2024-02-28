@@ -6,7 +6,7 @@ import {
 } from '@dagster-io/ui-components/src/components/types';
 import {Link} from 'react-router-dom';
 
-import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetLiveDataThread.types';
+import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetLiveDataProvider.types';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 

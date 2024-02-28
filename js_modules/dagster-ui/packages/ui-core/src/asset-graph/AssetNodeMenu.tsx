@@ -13,20 +13,21 @@ import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
-type Props = {
+export type AssetNodeMenuProps = {
   graphData: GraphData;
   node: GraphNode;
   explorerPath?: ExplorerPath;
   onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
 };
+
 export const useAssetNodeMenu = ({
   node,
   selectNode,
   graphData,
   explorerPath,
   onChangeExplorerPath,
-}: Props) => {
+}: AssetNodeMenuProps) => {
   const upstream = Object.keys(graphData.upstream[node.id] ?? {});
   const downstream = Object.keys(graphData.downstream[node.id] ?? {});
 
@@ -34,40 +35,14 @@ export const useAssetNodeMenu = ({
 
   const [showParents, setShowParents] = React.useState(false);
 
-  function showDownstreamGraph() {
+  function showGraph(newQuery: string) {
     if (!explorerPath || !onChangeExplorerPath) {
       return;
     }
-    const path = JSON.parse(node.id);
-    const newQuery = `\"${tokenForAssetKey({path})}\"*`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
-  }
-
-  function showUpstreamGraph() {
-    if (!explorerPath || !onChangeExplorerPath) {
-      return;
-    }
-    const path = JSON.parse(node.id);
-    const newQuery = `*\"${tokenForAssetKey({path})}\"`;
-    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
-      ? explorerPath.opsQuery
-      : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
+    onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
   return {
@@ -101,13 +76,17 @@ export const useAssetNodeMenu = ({
           />
         ) : null}
         {upstream.length ? (
-          <MenuItem text="Show upstream graph" icon="arrow_back" onClick={showUpstreamGraph} />
+          <MenuItem
+            text="Show upstream graph"
+            icon="arrow_back"
+            onClick={() => showGraph(`*\"${tokenForAssetKey(node.assetKey)}\"`)}
+          />
         ) : null}
         {downstream.length ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
-            onClick={showDownstreamGraph}
+            onClick={() => showGraph(`\"${tokenForAssetKey(node.assetKey)}\"*`)}
           />
         ) : null}
       </Menu>

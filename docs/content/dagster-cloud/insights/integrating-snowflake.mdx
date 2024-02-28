@@ -21,7 +21,7 @@ If you use the [Snowflake Resource](/\_apidocs/libraries/dagster-snowflake) to q
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster Cloud account on the Enterprise plan
+- A Dagster Cloud account on the Pro plan
 - Access to the [Dagster Cloud Insights feature](/dagster-cloud/insights)
 - Snowflake credentials which have access to the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
 - To install the following libraries:
@@ -57,6 +57,8 @@ defs = Definitions(
 ## Step 2: Create a metrics ingestion pipeline in Dagster
 
 The second step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API. Snowflake usage information is available at a delay, so this pipeline will run on a schedule to ingest Snowflake usage information from the previous hour.
+
+Note that you only need to create this pipeline in a single code location per deployment, even if you have instrumented dbt assets in multiple code locations.
 
 To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="InsightsSnowflakeResource" />) that can query the `snowflake.account_usage.query_history` table. You can set up the ingestion pipeline like the following:
 

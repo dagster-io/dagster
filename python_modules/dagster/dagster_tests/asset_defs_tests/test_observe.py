@@ -1,21 +1,29 @@
 from typing import Optional
 
 import pytest
-from dagster import DataVersionsByPartition, IOManager, StaticPartitionsDefinition
+from dagster import (
+    ConfigurableResource,
+    DataVersionsByPartition,
+    IOManager,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.data_version import (
     DataVersion,
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.resource_definition import ResourceDefinition, resource
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidObservationError,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance_for_test import instance_for_test
 
 
 def _get_current_data_version(
@@ -159,3 +167,62 @@ def test_observe_handle_output():
     instance = DagsterInstance.ephemeral()
 
     assert observe([foo], instance=instance, resources={"io_manager": MyIOManager()}).success
+
+
+def test_observe_with_observe_result():
+    @observable_source_asset
+    def foo() -> ObserveResult:
+        return ObserveResult(data_version=DataVersion("alpha"), metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = observe([foo], instance=instance)
+    assert result.success
+    observations = result.asset_observations_for_node("foo")
+    assert len(observations) == 1
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
+    assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def test_observe_with_observe_result_no_data_version():
+    @observable_source_asset
+    def foo() -> ObserveResult:
+        return ObserveResult(metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = observe([foo], instance=instance)
+    assert result.success
+    observations = result.asset_observations_for_node("foo")
+    assert len(observations) == 1
+    assert _get_current_data_version(AssetKey("foo"), instance) is None
+    assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def test_observe_pythonic_resource():
+    with instance_for_test() as instance:
+
+        class FooResource(ConfigurableResource):
+            foo: str
+
+        @observable_source_asset
+        def foo(foo: FooResource) -> DataVersion:
+            return DataVersion(f"{foo.foo}-alpha")
+
+        observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+        assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")
+
+
+def test_observe_backcompat_pythonic_resource():
+    class FooResource(ConfigurableResource):
+        foo: str
+
+        def get_object_to_set_on_execution_context(self):
+            raise Exception("Shouldn't get here")
+
+    @observable_source_asset
+    def foo(foo: FooResource) -> DataVersion:
+        return DataVersion(f"{foo.foo}-alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    observe([foo], instance=instance, resources={"foo": FooResource(foo="bar")})
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("bar-alpha")

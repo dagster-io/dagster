@@ -488,6 +488,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     method_name, _args, kwargs = mock_method_calls[0]
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
+    assert kwargs["body"].spec.template.spec.automount_service_account_token
 
     # appropriate labels applied
     labels = kwargs["body"].spec.template.metadata.labels

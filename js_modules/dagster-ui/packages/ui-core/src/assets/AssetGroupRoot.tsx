@@ -5,8 +5,8 @@ import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   AssetGroupMetadataQuery,
@@ -141,7 +141,7 @@ export const AssetGroupTags = ({
   groupSelector: AssetGroupSelector;
   repoAddress: RepoAddress;
 }) => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},

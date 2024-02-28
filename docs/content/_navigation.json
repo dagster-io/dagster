@@ -54,11 +54,7 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Using Dagster to save your data",
-        "path": "/tutorial/saving-your-data"
-      },
-      {
-        "title": "Part 7: Connecting to external services",
+        "title": "Part 6: Connecting to external services",
         "path": "/tutorial/connecting-to-external-services"
       },
       {
@@ -638,6 +634,20 @@
                     "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
+              },
+              {
+                "title": "Compute logs & error messages",
+                "path": "/dagster-cloud/managing-deployments/controlling-logs"
+              }
+            ]
+          },
+          {
+            "title":  "Best practices",
+            "path": "/dagster-cloud/best-practices",
+            "children": [
+              {
+                "title": "Managing multiple projects & teams",
+                "path": "/dagster-cloud/best-practices/managing-multiple-projects-and-teams"
               }
             ]
           },
@@ -645,6 +655,10 @@
             "title": "Insights",
             "path": "/dagster-cloud/insights",
             "children": [
+              {
+                "title": "Integrating asset metadata",
+                "path": "/dagster-cloud/insights/asset-metadata"
+              },
               {
                 "title": "Integrating external metrics",
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
@@ -1301,6 +1315,10 @@
           {
             "title": "Papertrail (dagster-papertrail)",
             "path": "/_apidocs/libraries/dagster-papertrail"
+          },
+          {
+            "title": "Polars (dagster-polars)",
+            "path": "/_apidocs/libraries/dagster-polars"
           },
           {
             "title": "PostgreSQL (dagster-postgres)",

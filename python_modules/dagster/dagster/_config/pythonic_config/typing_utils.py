@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
 
 from pydantic import Field
-from typing_extensions import Annotated, dataclass_transform, get_origin
+from typing_extensions import Annotated, Self, dataclass_transform, get_origin
 
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
@@ -138,9 +138,6 @@ class BaseResourceMeta(BaseConfigMeta):
         return super().__new__(cls, name, bases, namespaces, **kwargs)
 
 
-T_Self = TypeVar("T_Self", bound="TypecheckAllowPartialResourceInitParams")
-
-
 class TypecheckAllowPartialResourceInitParams:
     """Implementation of the Python descriptor protocol (https://docs.python.org/3/howto/descriptor.html)
     to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
@@ -176,12 +173,21 @@ class TypecheckAllowPartialResourceInitParams:
     def __set_name__(self, _owner, name):
         self._assigned_name = name
 
-    def __get__(self: "T_Self", obj: Any, __owner: Any) -> "T_Self":
+    def __get__(self: Self, obj: Any, __owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
-        return cast(T_Self, getattr(obj, self._assigned_name))
+        return cast(Self, getattr(obj, self._assigned_name))
 
-    def __set__(
-        self: "T_Self", obj: Optional[object], value: Union["T_Self", "PartialResource[T_Self]"]
-    ) -> None:
+    # The annotation her has been temporarily changed from:
+    #     value: Union[Self, "PartialResource[Self]"]
+    # to:
+    #     value: Union[Any, "PartialResource[Any]"]
+    # This is because of a bug in mypy that is incorrectly interpreting the
+    # signature and can cause a false positive type error for users. This only
+    # started being detected in our test_type_signatures.py tests on 2024-02-02
+    # when some annotations elsewhere were added, likely causing mypy to
+    # analyze code it was previously skipping. The annotation should be
+    # reverted when the bug is fixed or another solution that surface as type
+    # errors for mypy users is found.
+    def __set__(self, obj: Optional[object], value: Union[Any, "PartialResource[Any]"]) -> None:
         # no-op implementation (only used to affect type signature)
         setattr(obj, self._assigned_name, value)

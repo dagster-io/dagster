@@ -14,7 +14,7 @@ import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/Launchpad
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
-import {useStartTrace} from '../performance';
+import {usePageLoadTrace} from '../performance';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -48,7 +48,7 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
-  const trace = useStartTrace('LaunchpadAllowedRoot');
+  const trace = usePageLoadTrace('LaunchpadAllowedRoot');
 
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);

@@ -16,7 +16,7 @@ import visit from 'unist-util-visit';
 
 import FeedbackModal from '../components/FeedbackModal';
 import MDXComponents from '../components/mdx/MDXComponents';
-import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
+import MDXRenderer, {MDXData} from '../components/mdx/MDXRenderer';
 
 // The next-mdx-remote types are outdated.
 const components: MdxRemote.Components = MDXComponents as any;
@@ -49,12 +49,7 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  return (
-    <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      <UnversionedMDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
-    </>
-  );
+  return <MDXRenderer data={props.data} />;
 }
 
 // Travel the tree to get the headings

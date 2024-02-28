@@ -48,7 +48,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.log_manager import DagsterLogRecord
+from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -68,6 +68,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
@@ -219,7 +220,7 @@ class _EventListenerLogHandler(logging.Handler):
         self._instance = instance
         super(_EventListenerLogHandler, self).__init__()
 
-    def emit(self, record: DagsterLogRecord) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         from dagster._core.events import EngineEventData
         from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
 
@@ -228,7 +229,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,  # type: ignore
+                meta=get_log_record_metadata(record),
                 record=record,
             )
         )
@@ -816,6 +817,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_sensor_settings(self) -> Mapping[str, Any]:
         return self.get_settings("sensors")
 
+    def get_auto_materialize_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("auto_materialize")
+
     @property
     def telemetry_enabled(self) -> bool:
         if self.is_ephemeral:
@@ -907,7 +911,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_retries_max_retries(self) -> int:
-        return self.get_settings("run_retries").get("max_retries")
+        return self.get_settings("run_retries").get("max_retries", 0)
 
     @property
     def auto_materialize_enabled(self) -> bool:
@@ -932,8 +936,8 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("max_tick_retries", 3)
 
     @property
-    def auto_materialize_use_automation_policy_sensors(self) -> int:
-        return self.get_settings("auto_materialize").get("use_automation_policy_sensors", False)
+    def auto_materialize_use_sensors(self) -> int:
+        return self.get_settings("auto_materialize").get("use_sensors", False)
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
@@ -1231,6 +1235,17 @@ class DagsterInstance(DynamicPartitionsStore):
             else None
         )
 
+        if execution_plan_snapshot:
+            from ..op_concurrency_limits_counter import (
+                compute_run_op_concurrency_info_for_snapshot,
+            )
+
+            run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
+                execution_plan_snapshot
+            )
+        else:
+            run_op_concurrency = None
+
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -1250,6 +1265,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
+            run_op_concurrency=run_op_concurrency,
         )
 
     def _ensure_persisted_job_snapshot(
@@ -1373,7 +1389,8 @@ class DagsterInstance(DynamicPartitionsStore):
             if check.not_none(output.properties).is_asset_partitioned:
                 partitions_subset = job_partitions_def.subset_with_partition_keys(
                     job_partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end)
+                        PartitionKeyRange(partition_range_start, partition_range_end),
+                        dynamic_partitions_store=self,
                     )
                 ).to_serializable_subset()
 
@@ -1619,12 +1636,16 @@ class DagsterInstance(DynamicPartitionsStore):
         root_run_id = parent_run.root_run_id or parent_run.run_id
         parent_run_id = parent_run.run_id
 
+        # these can differ from external_job.tags if tags were added at launch time
+        parent_run_tags = (
+            {key: val for key, val in parent_run.tags.items() if key != RUN_FAILURE_REASON_TAG}
+            if use_parent_run_tags
+            else {}
+        )
+
         tags = merge_dicts(
             external_job.tags,
-            (
-                # these can differ from external_job.tags if tags were added at launch time
-                parent_run.tags if use_parent_run_tags else {}
-            ),
+            parent_run_tags,
             extra_tags or {},
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
@@ -2685,7 +2706,7 @@ class DagsterInstance(DynamicPartitionsStore):
             schedule_info: Mapping[str, Mapping[str, object]] = {
                 schedule_state.instigator_name: {
                     "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.instigator_data.cron_schedule,
+                    "cron_schedule": schedule_state.instigator_data.cron_schedule,  # type: ignore
                     "schedule_origin_id": schedule_state.instigator_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }
@@ -2963,7 +2984,7 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled or self.auto_materialize_use_automation_policy_sensors:
+        if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
         return daemons
 

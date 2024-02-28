@@ -168,7 +168,7 @@ pythonenv*/
 *.duckdb
 
 # PyRight config
-pyrightconfig.json
+pyrightconfig*
 
 # Scripts working directory
 scripts/.build

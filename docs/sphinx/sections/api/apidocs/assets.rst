@@ -11,11 +11,17 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autoclass:: AssetSpec
 
+.. autofunction:: external_assets_from_specs
+
 .. autoclass:: AssetDep
 
 .. autoclass:: AssetIn
 
 .. autoclass:: SourceAsset
+
+.. autodecorator:: observable_source_asset
+
+.. autoclass:: ObserveResult
 
 .. autofunction:: define_asset_job
 
@@ -38,6 +44,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 .. autoclass:: AssetsDefinition
 
 .. autodecorator:: multi_asset
+
+.. autodecorator:: multi_observable_source_asset
 
 .. autodecorator:: graph_asset
 

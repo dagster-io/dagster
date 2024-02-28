@@ -19,7 +19,7 @@ const ADMONITION_STYLES = {
 const Admonition = ({style, children}) => {
   const {colors, icon} = ADMONITION_STYLES[style];
   return (
-    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
+    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} p-4 my-4`}>
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <svg

@@ -2,6 +2,7 @@ import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
+from datetime import datetime
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
@@ -713,3 +714,49 @@ def snowflake_resource(context) -> SnowflakeConnection:
     return SnowflakeConnection(
         config=context, log=context.log, snowflake_connection_resource=snowflake_resource
     )
+
+
+def fetch_last_updated_timestamps(
+    *,
+    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
+    schema: str,
+    tables: Sequence[str],
+) -> Mapping[str, datetime]:
+    """Fetch the last updated times of a list of tables in Snowflake.
+
+    If the underlying query to fetch the last updated time returns no results, a ValueError will be raised.
+
+    Args:
+        snowflake_connection (Union[SqlDbConnection, SnowflakeConnection]): A connection to Snowflake.
+            Accepts either a SnowflakeConnection or a sqlalchemy connection object,
+            which are the two types of connections emittable from the snowflake resource.
+        schema (str): The schema of the table.
+        tables (Sequence[str]): A list of table names to fetch the last updated time for.
+
+    Returns:
+        Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
+    """
+    check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
+    tables_str = ", ".join([f"'{table_name}'" for table_name in tables])
+    query = f"""
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    FROM information_schema.tables
+    WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
+    """
+    result = snowflake_connection.cursor().execute(query)
+    if not result:
+        raise ValueError("No results returned from Snowflake update time query.")
+
+    last_updated_times = {}
+    for table_name, last_altered in result:
+        check.invariant(
+            isinstance(last_altered, datetime),
+            "Expected last_altered to be a datetime, but it was not.",
+        )
+        last_updated_times[table_name] = last_altered
+
+    for table_name in tables:
+        if table_name not in last_updated_times:
+            raise ValueError(f"Table {table_name} does not exist in Snowflake.")
+
+    return last_updated_times

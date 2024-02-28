@@ -154,7 +154,7 @@ def opt_callable_param(
     return default if obj is None else obj
 
 
-def is_callable(obj: object, additional_message: Optional[str] = None) -> Callable:
+def is_callable(obj: T_Callable, additional_message: Optional[str] = None) -> T_Callable:
     if not callable(obj):
         raise CheckError(
             "Must be callable. Got"
@@ -1781,8 +1781,8 @@ def _check_mapping_entries(
     obj: W,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    key_check: Callable = isinstance,
-    value_check: Callable = isinstance,
+    key_check: Callable[..., Any] = isinstance,
+    value_check: Callable[..., Any] = isinstance,
     mapping_type: Type = collections.abc.Mapping,
 ) -> W:
     """Enforces that the keys/values conform to the types specified by key_type, value_type."""

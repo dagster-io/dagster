@@ -476,6 +476,14 @@ def test_bigint_migration(conn_string):
                 integer_tables.add(table)
         return integer_tables
 
+    def _assert_autoincrement_id(conn):
+        inspector = db.inspect(conn)
+        for table in inspector.get_table_names():
+            id_cols = [col for col in inspector.get_columns(table) if col["name"] == "id"]
+            if id_cols:
+                id_col = id_cols[0]
+                assert id_col["autoincrement"]
+
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
@@ -487,16 +495,22 @@ def test_bigint_migration(conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             with instance.run_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
             with instance.event_log_storage.index_connection() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
 
             run_bigint_migration(instance)
 
             with instance.run_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
             with instance.event_log_storage.index_connection() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)

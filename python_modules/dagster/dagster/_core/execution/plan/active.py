@@ -354,12 +354,12 @@ class ActiveExecution:
             step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
             if step_concurrency_key and self._instance_concurrency_context:
                 try:
-                    priority = int(step.tags.get(PRIORITY_TAG, 0))
+                    step_priority = int(step.tags.get(PRIORITY_TAG, 0))
                 except ValueError:
-                    priority = 0
+                    step_priority = 0
 
                 if not self._instance_concurrency_context.claim(
-                    step_concurrency_key, step.key, priority
+                    step_concurrency_key, step.key, step_priority
                 ):
                     continue
 
@@ -585,6 +585,10 @@ class ActiveExecution:
     @property
     def retry_state(self) -> RetryState:
         return self._retry_state
+
+    @property
+    def has_in_flight_steps(self) -> bool:
+        return len(self._in_flight) > 0
 
     def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(

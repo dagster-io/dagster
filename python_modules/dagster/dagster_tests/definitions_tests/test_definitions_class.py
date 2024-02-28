@@ -31,6 +31,7 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.repository_definition import (
@@ -203,7 +204,7 @@ def test_resource_coercion():
 def test_source_asset():
     defs = Definitions(assets=[SourceAsset("a-source-asset")])
     repo = resolve_pending_repo_if_required(defs)
-    all_assets = list(repo.source_assets_by_key.values())
+    all_assets = list(repo.assets_defs_by_key.values())
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "a-source-asset"
 
@@ -623,6 +624,15 @@ def test_asset_missing_resources():
         ),
     ):
         Definitions(assets=[source_asset_io_req])
+
+    external_asset_io_req = create_external_asset_from_source_asset(source_asset_io_req)
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            "io manager with key 'foo' required by external asset with key [\"foo\"] was not provided"
+        ),
+    ):
+        Definitions(assets=[external_asset_io_req])
 
 
 def test_assets_with_executor():

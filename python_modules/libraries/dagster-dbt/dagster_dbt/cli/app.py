@@ -6,9 +6,7 @@ from typing import Any, Dict
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
-from dbt.version import __version__ as dbt_version
 from jinja2 import Environment, FileSystemLoader
-from packaging import version
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
@@ -138,10 +136,7 @@ def copy_scaffold(
     dbt_project_dir_relative_path_parts = [
         f'"{part}"' for part in dbt_project_dir_relative_path.parts
     ]
-
     dbt_parse_command = ['"--quiet", "parse"']
-    if version.parse(dbt_version) < version.parse("1.5.0"):
-        dbt_parse_command += ['"--write-manifest"']
 
     env = Environment(loader=FileSystemLoader(dagster_project_dir))
 
