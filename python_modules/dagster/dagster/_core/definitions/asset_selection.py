@@ -620,7 +620,7 @@ class RequiredNeighborsAssetSelection(
         selection = self.child.resolve_inner(asset_graph)
         output = set(selection)
         for asset_key in selection:
-            output.update(asset_graph.get_required_multi_asset_keys(asset_key))
+            output.update(asset_graph.get_execution_set_asset_keys(asset_key))
         return output
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":

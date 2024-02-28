@@ -269,8 +269,9 @@ class AssetDaemonContext:
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
             # materialize all of them
-            if num_requested > 0:
-                for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
+            execution_unit_keys = self.asset_graph.get_execution_set_asset_keys(asset_key)
+            if len(execution_unit_keys) > 1 and num_requested > 0:
+                for neighbor_key in execution_unit_keys:
                     expected_data_time_mapping[neighbor_key] = expected_data_time
 
                     # make sure that the true_subset of the neighbor is accurate -- when it was

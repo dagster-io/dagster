@@ -145,16 +145,17 @@ def get_additional_required_keys(
     asset_nodes_by_key = get_asset_nodes_by_asset_key(graphene_info)
 
     # the set of atomic execution ids that any of the input asset keys are a part of
-    required_atomic_execution_ids = {
-        asset_nodes_by_key[asset_key].external_asset_node.atomic_execution_unit_id
+    required_execution_set_identifiers = {
+        asset_nodes_by_key[asset_key].external_asset_node.execution_set_identifier
         for asset_key in asset_keys
     } - {None}
 
-    # the set of all asset keys that are part of the required atomic execution units
+    # the set of all asset keys that are part of the required execution sets
     required_asset_keys = {
         asset_node.external_asset_node.asset_key
         for asset_node in asset_nodes_by_key.values()
-        if asset_node.external_asset_node.atomic_execution_unit_id in required_atomic_execution_ids
+        if asset_node.external_asset_node.execution_set_identifier
+        in required_execution_set_identifiers
     }
 
     return list(required_asset_keys - asset_keys)

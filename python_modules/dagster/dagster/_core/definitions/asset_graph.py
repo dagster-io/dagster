@@ -514,14 +514,20 @@ class AssetGraph(ABC):
                     visited.add(parent_key)
 
     @abstractmethod
-    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+    def get_execution_set_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """For a given asset_key, return the set of asset keys that must be
+        materialized at the same time.
+        """
         ...
 
     @abstractmethod
-    def get_required_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(
         self, asset_key_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]: ...
+    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        """For a given asset/check key, return the set of asset/check keys that must be
+        materialized/computed at the same time.
+        """
+        ...
 
     @cached_method
     def get_downstream_freshness_policies(
@@ -643,13 +649,13 @@ class AssetGraph(ABC):
 
         Visits parents before children.
 
-        When asset partitions are part of the same non-subsettable multi-asset, they're provided all
-        at once to the condition_fn.
+        When asset partitions are part of the same execution set (non-subsettable multi-asset),
+        they're provided all at once to the condition_fn.
         """
         all_nodes = set(initial_asset_partitions)
 
         # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes, include_required_multi_assets=True)
+        queue = ToposortedPriorityQueue(self, all_nodes, include_full_execution_set=True)
 
         result: Set[AssetKeyPartitionKey] = set()
 
@@ -744,10 +750,10 @@ class ToposortedPriorityQueue:
         self,
         asset_graph: AssetGraph,
         items: Iterable[AssetKeyPartitionKey],
-        include_required_multi_assets: bool,
+        include_full_execution_set: bool,
     ):
         self._asset_graph = asset_graph
-        self._include_required_multi_assets = include_required_multi_assets
+        self._include_full_execution_set = include_full_execution_set
 
         self._toposort_level_by_asset_key = {
             asset_key: i
@@ -761,8 +767,9 @@ class ToposortedPriorityQueue:
         heappush(self._heap, self._queue_item(asset_partition))
 
     def dequeue(self) -> Iterable[AssetKeyPartitionKey]:
-        # For multi-assets, will include all required multi-asset keys if include_required_multi_assets is set to
-        # True, or a list of size 1 with just the passed in asset key if it was not
+        # For multi-assets, will include all required multi-asset keys if
+        # include_full_execution_set is set to True, or a list of size 1 with just the passed in
+        # asset key if it was not.
         return heappop(self._heap).asset_partitions
 
     def _queue_item(
@@ -770,25 +777,19 @@ class ToposortedPriorityQueue:
     ) -> "ToposortedPriorityQueue.QueueItem":
         asset_key = asset_partition.asset_key
 
-        if self._include_required_multi_assets:
-            required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(
-                asset_key
-            ) | {asset_key}
+        if self._include_full_execution_set:
+            execution_set_keys = self._asset_graph.get_execution_set_asset_keys(asset_key)
         else:
-            required_multi_asset_keys = {asset_key}
+            execution_set_keys = {asset_key}
 
         level = max(
-            self._toposort_level_by_asset_key[required_asset_key]
-            for required_asset_key in required_multi_asset_keys
+            self._toposort_level_by_asset_key[asset_key] for asset_key in execution_set_keys
         )
 
         return ToposortedPriorityQueue.QueueItem(
             level,
             sort_key_for_asset_partition(self._asset_graph, asset_partition),
-            [
-                AssetKeyPartitionKey(ak, asset_partition.partition_key)
-                for ak in required_multi_asset_keys
-            ],
+            [AssetKeyPartitionKey(ak, asset_partition.partition_key) for ak in execution_set_keys],
         )
 
     def __len__(self) -> int:

@@ -1127,7 +1127,7 @@ class ExternalResourceData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"})
 class ExternalAssetCheck(
     NamedTuple(
         "_ExternalAssetCheck",
@@ -1135,7 +1135,7 @@ class ExternalAssetCheck(
             ("name", str),
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("atomic_execution_unit_id", Optional[str]),
+            ("execution_set_identifier", Optional[str]),
             ("job_names", Sequence[str]),
         ],
     )
@@ -1147,7 +1147,7 @@ class ExternalAssetCheck(
         name: str,
         asset_key: AssetKey,
         description: Optional[str],
-        atomic_execution_unit_id: Optional[str] = None,
+        execution_set_identifier: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
     ):
         return super(ExternalAssetCheck, cls).__new__(
@@ -1155,8 +1155,8 @@ class ExternalAssetCheck(
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             description=check.opt_str_param(description, "description"),
-            atomic_execution_unit_id=check.opt_str_param(
-                atomic_execution_unit_id, "automic_execution_unit_id"
+            execution_set_identifier=check.opt_str_param(
+                execution_set_identifier, "execution_set_identifier"
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
         )
@@ -1167,7 +1167,10 @@ class ExternalAssetCheck(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"metadata": "metadata_entries"},
+    storage_field_names={
+        "metadata": "metadata_entries",
+        "execution_set_identifier": "atomic_execution_unit_id",
+    },
     field_serializers={"metadata": MetadataFieldSerializer},
 )
 class ExternalAssetNode(
@@ -1197,9 +1200,9 @@ class ExternalAssetNode(
             ("is_source", bool),
             ("is_observable", bool),
             # If a set of assets can't be materialized independently from each other, they will all
-            # have the same atomic_execution_unit_id. This ID should be stable across reloads and
+            # have the same execution_set_identifier. This ID should be stable across reloads and
             # unique deployment-wide.
-            ("atomic_execution_unit_id", Optional[str]),
+            ("execution_set_identifier", Optional[str]),
             ("required_top_level_resources", Optional[Sequence[str]]),
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
             ("backfill_policy", Optional[BackfillPolicy]),
@@ -1235,7 +1238,7 @@ class ExternalAssetNode(
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
         is_observable: bool = False,
-        atomic_execution_unit_id: Optional[str] = None,
+        execution_set_identifier: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
@@ -1316,8 +1319,8 @@ class ExternalAssetNode(
             ),
             is_source=check.bool_param(is_source, "is_source"),
             is_observable=check.bool_param(is_observable, "is_observable"),
-            atomic_execution_unit_id=check.opt_str_param(
-                atomic_execution_unit_id, "atomic_execution_unit_id"
+            execution_set_identifier=check.opt_str_param(
+                execution_set_identifier, "execution_set_identifier"
             ),
             required_top_level_resources=check.opt_sequence_param(
                 required_top_level_resources, "required_top_level_resources", of_type=str
@@ -1529,7 +1532,7 @@ def external_asset_checks_from_defs(
                 of_type=AssetChecksDefinition,
                 additional_message=f"Check {check_key} is redefined in an AssetsDefinition and an AssetChecksDefinition",
             )
-            atomic_execution_unit_id = None
+            execution_set_identifier = None
         elif isinstance(first_node, AssetsDefinition):
             check.is_list(
                 nodes,
@@ -1539,9 +1542,9 @@ def external_asset_checks_from_defs(
 
             # Executing individual checks isn't supported in graph assets
             if isinstance(first_node.node_def, GraphDefinition):
-                atomic_execution_unit_id = first_node.unique_id
+                execution_set_identifier = first_node.unique_id
             else:
-                atomic_execution_unit_id = (
+                execution_set_identifier = (
                     first_node.unique_id if not first_node.can_subset else None
                 )
         else:
@@ -1553,7 +1556,7 @@ def external_asset_checks_from_defs(
                 name=check_key.name,
                 asset_key=check_key.asset_key,
                 description=spec.description,
-                atomic_execution_unit_id=atomic_execution_unit_id,
+                execution_set_identifier=execution_set_identifier,
                 job_names=job_names_by_check_key[check_key],
             )
         )
@@ -1581,7 +1584,7 @@ def external_asset_nodes_from_defs(
     code_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
-    atomic_execution_unit_ids_by_key: Dict[Union[AssetKey, AssetCheckKey], str] = {}
+    execution_set_identifiers: Dict[Union[AssetKey, AssetCheckKey], str] = {}
     owners_by_asset_key: Dict[AssetKey, Sequence[AssetOwner]] = {}
     execution_types_by_asset_key: Dict[AssetKey, AssetExecutionType] = {}
     is_observable_by_key: Dict[AssetKey, bool] = {}
@@ -1642,12 +1645,12 @@ def external_asset_nodes_from_defs(
                 {key: assets_def.auto_observe_interval_minutes for key in assets_def.keys}
             )
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
-                atomic_execution_unit_id = assets_def.unique_id
+                execution_set_identifier = assets_def.unique_id
 
                 for asset_key in assets_def.keys:
-                    atomic_execution_unit_ids_by_key[asset_key] = atomic_execution_unit_id
+                    execution_set_identifiers[asset_key] = execution_set_identifier
             if len(assets_def.keys) == 1 and assets_def.check_keys and not assets_def.can_subset:
-                atomic_execution_unit_ids_by_key[assets_def.key] = assets_def.unique_id
+                execution_set_identifiers[assets_def.key] = assets_def.unique_id
 
         group_name_by_asset_key.update(asset_layer.group_names_by_assets())
 
@@ -1720,7 +1723,7 @@ def external_asset_nodes_from_defs(
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 auto_materialize_policy=auto_materialize_policy_by_asset_key.get(asset_key),
                 backfill_policy=backfill_policy_by_asset_key.get(asset_key),
-                atomic_execution_unit_id=atomic_execution_unit_ids_by_key.get(asset_key),
+                execution_set_identifier=execution_set_identifiers.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
                 owners=[
                     owner.email if isinstance(owner, UserAssetOwner) else owner.team
