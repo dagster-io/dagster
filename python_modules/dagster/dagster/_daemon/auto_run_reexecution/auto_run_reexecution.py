@@ -73,7 +73,7 @@ def filter_runs_to_should_retry(
                 and not retry_on_asset_or_op_failure
             ):
                 instance.report_engine_event(
-                    "Not retrying run since it failed due to a step failure and run retries "
+                    "Not retrying run since it failed due to an asset or op failure and run retries "
                     "are configured with retry_on_asset_or_op_failure set to false.",
                     run,
                 )

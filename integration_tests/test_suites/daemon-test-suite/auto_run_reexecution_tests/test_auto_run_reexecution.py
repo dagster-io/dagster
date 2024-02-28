@@ -108,7 +108,7 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
     )
 
     assert any(
-        "Not retrying run since it failed due to a step failure and run retries are configured with retry_on_asset_or_op_failure set to false."
+        "Not retrying run since it failed due to an asset or op failure and run retries are configured with retry_on_asset_or_op_failure set to false."
         in str(event)
         for event in instance.all_logs(run.run_id)
     )
