@@ -646,11 +646,8 @@ class AssetDaemon(DagsterDaemon):
         evaluation_time = pendulum.now("UTC")
 
         workspace = workspace_process_context.create_request_context()
-        asset_graph = (
-            ExternalAssetGraph.from_external_repository(check.not_none(repository))
-            if sensor
-            else ExternalAssetGraph.from_workspace(workspace)
-        )
+
+        asset_graph = ExternalAssetGraph.from_workspace(workspace)
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None
@@ -673,7 +670,9 @@ class AssetDaemon(DagsterDaemon):
             print_group_name = self._get_print_sensor_name(sensor)
 
             if sensor:
-                eligible_keys = check.not_none(sensor.asset_selection).resolve(asset_graph)
+                eligible_keys = check.not_none(sensor.asset_selection).resolve(
+                    ExternalAssetGraph.from_external_repository(check.not_none(repository))
+                )
             else:
                 eligible_keys = {
                     *asset_graph.materializable_asset_keys,
