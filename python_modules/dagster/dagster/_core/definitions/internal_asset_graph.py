@@ -112,8 +112,7 @@ class InternalAssetGraph(AssetGraph):
         return {key for ad in self._assets_defs if ad.is_materializable for key in ad.keys}
 
     def is_materializable(self, asset_key: AssetKey) -> bool:
-        # Performing an existence check temporarily until we change callsites
-        return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_materializable
+        return self.get_assets_def(asset_key).is_materializable
 
     @property
     @cached_method
@@ -137,8 +136,7 @@ class InternalAssetGraph(AssetGraph):
         return {key for ad in self._assets_defs if ad.is_executable for key in ad.keys}
 
     def is_executable(self, asset_key: AssetKey) -> bool:
-        # Performing an existence check temporarily until we change callsites
-        return self.has_asset(asset_key) and self.get_assets_def(asset_key).is_executable
+        return self.get_assets_def(asset_key).is_executable
 
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         return {
@@ -179,8 +177,7 @@ class InternalAssetGraph(AssetGraph):
         }
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
-        # Performing an existence check temporarily until we change callsites
-        return self.get_assets_def(asset_key).partitions_def if self.has_asset(asset_key) else None
+        return self.get_assets_def(asset_key).partitions_def
 
     def get_partition_mappings(self, asset_key: AssetKey) -> Mapping[AssetKey, PartitionMapping]:
         return self.get_assets_def(asset_key).partition_mappings

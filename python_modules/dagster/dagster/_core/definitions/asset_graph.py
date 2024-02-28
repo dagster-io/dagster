@@ -175,9 +175,7 @@ class AssetGraph(ABC):
         ]
 
     def is_partitioned(self, asset_key: AssetKey) -> bool:
-        # Temporarily performing an existence check here for backcompat. Callsites need to be
-        # changed to verify this first.
-        return asset_key in self.all_asset_keys and self.get_partitions_def(asset_key) is not None
+        return self.get_partitions_def(asset_key) is not None
 
     @abstractmethod
     def get_group_name(self, asset_key: AssetKey) -> Optional[str]:
@@ -400,7 +398,7 @@ class AssetGraph(ABC):
         valid_parent_partitions: Set[AssetKeyPartitionKey] = set()
         required_but_nonexistent_parent_partitions: Set[AssetKeyPartitionKey] = set()
         for parent_asset_key in self.get_parents(asset_key):
-            if self.is_partitioned(parent_asset_key):
+            if self.has_asset(parent_asset_key) and self.is_partitioned(parent_asset_key):
                 mapped_partitions_result = self.get_parent_partition_keys_for_child(
                     partition_key,
                     parent_asset_key,
