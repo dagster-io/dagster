@@ -29,7 +29,7 @@ setup(
         "dbt-duckdb",
         "geopandas",
         "kaleido",
-        "pandas",
+        "pandas[parquet]",
         "plotly",
         "shapely",
         "smart_open[s3]",
@@ -48,7 +48,7 @@ setup(
 Then, run the following in the command line to rename the `.env.example`  file and install the dependencies:
 
 ```bash
-cd project_dagster_university
+cd dagster-and-dbt
 cp .env.example .env
 pip install -e ".[dev]"
 ```
@@ -59,7 +59,11 @@ To confirm everything works:
 
 1. Run `dagster dev`  from the directory.
 2. Navigate to the Dagster UI ([`http://localhost:3000`](http://localhost:3000/)) in your browser.
-3. Open the asset graph by clicking **Assets > View global asset lineage**.
-3. Click **Materialize all** to materialize all the assets in the project. **For partitioned assets**, you can materialize just the most recent partition:
+3. Open the asset graph by clicking **Assets > View global asset lineage** and confirm the asset graph you see matches the graph below.
 
    ![The Asset Graph in the Dagster UI](/images/dagster-dbt/lesson-2/asset-graph.png)
+
+4. Let's confirm that you can materialize these assets by:
+   1. Navigating to **Overview > Jobs**
+   2. Clicking on the `trip_update_job` job and then **Materialize all...**. 
+   3. When prompted to select a partition, materialize the most recent one (`2023-03-01`). It will start a run/backfill and your assets should materialize successfully.

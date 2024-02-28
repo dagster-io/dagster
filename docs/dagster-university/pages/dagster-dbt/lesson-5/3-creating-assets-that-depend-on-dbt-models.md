@@ -75,18 +75,20 @@ Let's start by adding a new string constant to reference when building the new a
 In the `assets/constants.py` file, add the following to the end of the file:
 
 ```python
-AIRPORT_TRIPS_FILE_PATH = Path(__file__).joinpath("..", "..", "outputs", "airport_trips.png").resolve()
+AIRPORT_TRIPS_FILE_PATH = get_path_for_env(os.path.join("data", "outputs", "airport_trips.png"))
 ``` 
-   
+
+This creates a path to where we want to save the chart. The `get_path_for_env` utilty function is not specific to Dagster, but rather is a utility function we've defined in this file to help with Lesson 7 (Deploying your Dagster and dbt project).
+
 ### Creating the airport_trips asset
 
 Now we’re ready to create the asset!
 
 1. Open the `assets/metrics.py` file.
-2. At the end of the file, define a new asset called `airport_trips` with the context argument and the existing `DuckDBResource` named `database`:
+2. At the end of the file, define a new asset called `airport_trips` with the the existing `DuckDBResource` named `database` and it will return a `MaterializeResult`, indicating that we'll be returning some metadata:
     
     ```python
-    def airport_trips(context, database: DuckDBResource):
+    def airport_trips(database: DuckDBResource) -> MaterializeResult:
     ```
     
 3. Add the asset decorator to the `airport_trips` function and specify the `location_metrics` model as a dependency:
@@ -95,7 +97,7 @@ Now we’re ready to create the asset!
     @asset(
         deps=["location_metrics"],
     )
-    def airport_trips(context, database: DuckDBResource):
+    def airport_trips(database: DuckDBResource) -> MaterializeResult:
     ```
     
     **Note:** Because Dagster doesn’t discriminate and treats all dbt models as assets, you’ll add this dependency just like you would with any other asset.
@@ -103,53 +105,53 @@ Now we’re ready to create the asset!
 4. Fill in the body of the function with the following code to follow a similar pattern to your project’s existing pipelines: query for the data, use a library to generate a chart, save the chart as a file, and embed the chart:
     
    ```python
-   @asset(
-       deps=["location_metrics"],
-   )
-   def airport_trips(context, database: DuckDBResource):
-       """
-           A chart of where trips from the airport go
-       """
-   
-       query = """
-           select
-               zone,
-               destination_borough,
-               trips
-           from location_metrics
-           where from_airport
-       """
-   
-       with database.get_connection() as conn:
-           airport_trips = conn.execute(query).fetch_df()
-   
-       fig = px.bar(
-           airport_trips,
-           x="zone",
-           y="trips",
-           color="destination_borough",
-           barmode="relative",
-           labels={
-               "zone": "Zone",
-               "trips": "Number of Trips",
-               "destination_borough": "Destination Borough"
-           },
-       )
-   
-       pio.write_image(fig, constants.AIRPORT_TRIPS_FILE_PATH)
-   
-       with open(constants.AIRPORT_TRIPS_FILE_PATH, 'rb') as file:
-           image_data = file.read()
-   
-       # Convert the image data to base64
-       base64_data = base64.b64encode(image_data).decode('utf-8')
-       md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
-       
-       #TODO: Use `MaterializeResult` instead
-       context.add_output_metadata({
-           "preview": MetadataValue.md(md_content),
-           "data": MetadataValue.json(airport_trips.to_dict(orient="records"))
-       })
+    @asset(
+        deps=["location_metrics"],
+    )
+    def airport_trips(database: DuckDBResource) -> MaterializeResult:
+    """
+        A chart of where trips from the airport go
+    """
+
+    query = """
+        select
+            zone,
+            destination_borough,
+            trips
+        from location_metrics
+        where from_airport
+    """
+
+    with database.get_connection() as conn:
+        airport_trips = conn.execute(query).fetch_df()
+
+    fig = px.bar(
+        airport_trips,
+        x="zone",
+        y="trips",
+        color="destination_borough",
+        barmode="relative",
+        labels={
+            "zone": "Zone",
+            "trips": "Number of Trips",
+            "destination_borough": "Destination Borough"
+        },
+    )
+
+    pio.write_image(fig, constants.AIRPORT_TRIPS_FILE_PATH)
+
+    with open(constants.AIRPORT_TRIPS_FILE_PATH, 'rb') as file:
+        image_data = file.read()
+
+    # Convert the image data to base64
+    base64_data = base64.b64encode(image_data).decode('utf-8')
+    md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
+
+    return MaterializeResult(
+        metadata={
+            "preview": MetadataValue.md(md_content)
+        }
+    )
    ```
-    
+
 5. Reload your code location to see the new `airport_trips` asset within the `metrics` group. Notice how the asset graph links the dependency between the `location_metrics` dbt asset and the new `airport_trips` chart asset.

@@ -23,7 +23,3 @@ lesson: '3'
 4. Navigate to the details page for the run you just started, then look at the logs.
 
 When finished, proceed to the next page.
-
-{% callout %}
-> **Important!** Before continuing, change `dbt_analytics` back to use `dbt run`.
-{% /callout %}

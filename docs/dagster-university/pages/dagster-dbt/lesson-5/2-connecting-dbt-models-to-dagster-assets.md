@@ -136,7 +136,7 @@ if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
         .target_path.joinpath("manifest.json")
     )
 else:
-    dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+    dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
 
 
 @dbt_assets(

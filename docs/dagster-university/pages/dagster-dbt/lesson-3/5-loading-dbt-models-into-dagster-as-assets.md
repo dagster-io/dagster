@@ -36,13 +36,15 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
    from dagster import AssetExecutionContext
    from dagster_dbt import dbt_assets, DbtCliResource
 
+   import os
+
    from .constants import DBT_DIRECTORY
    ```
 
 3. The `@dbt_assets` decorator requires a path to the project’s manifest file, which is within our `DBT_DIRECTORY`. Use that constant to create a path to the `manifest.json` by copying and pasting the code below:
 
    ```python
-   dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+   dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
    ```
 
    Similar to how we used `joinpath` earlier to point to the dbt project’s directory, we’re using it once again to reference `target/manifest.json` more precisely.
