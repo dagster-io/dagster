@@ -35,7 +35,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "wandb>=0.13.5,<1.0",
+        "wandb>=0.15.11,<1.0",
     ],
     extras_require={"dev": ["cloudpickle", "joblib", "callee", "dill"]},
     zip_safe=False,
