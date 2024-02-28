@@ -190,9 +190,10 @@ class HookContext:
     def op_output_values(self):
         """Computed output values in an op."""
         return self.solid_output_values
-
+    
+    @public
     @property
-    def solid_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
         """The applied output metadata.
 
         Returns a dictionary where keys are output names and the values are:
@@ -220,12 +221,6 @@ class HookContext:
                 results[step_output_handle.output_name] = metadata
 
         return results
-
-    @public
-    @property
-    def op_output_metadata(self):
-        """Computed output values in an op."""
-        return self.solid_output_metadata
 
 
 class UnboundHookContext(HookContext):
@@ -343,6 +338,16 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("solid_output_values", "method"))
 
     @property
+    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+        """The applied output metadata.
+
+        Returns a dictionary where keys are output names and the values are:
+            * the applied output metadata in the normal case
+            * a dictionary from mapping key to corresponding metadata in the mapped case
+        """
+        raise DagsterInvalidPropertyError(_property_msg("op_output_metadata", "method"))
+
+    @property
     def instance(self) -> "DagsterInstance":
         if not self._instance:
             raise DagsterInvariantViolationError(
@@ -433,6 +438,16 @@ class BoundHookContext(HookContext):
             * a dictionary from mapping key to corresponding value in the mapped case
         """
         raise DagsterInvalidPropertyError(_property_msg("solid_output_values", "method"))
+
+    @property
+    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+        """The applied output metadata.
+
+        Returns a dictionary where keys are output names and the values are:
+            * the applied output metadata in the normal case
+            * a dictionary from mapping key to corresponding metadata in the mapped case
+        """
+        raise DagsterInvalidPropertyError(_property_msg("op_output_metadata", "method"))
 
     @property
     def instance(self) -> "DagsterInstance":
