@@ -8,12 +8,16 @@ from dagster import (
     MaterializeResult,
     multi_asset,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated
+from dagster._utils.warnings import deprecation_warning
 
 from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
 
 
-@experimental
+@deprecated(
+    breaking_version="0.23.0",
+    additional_warn_text="Use `@sling_assets` instead.",
+)
 def build_sling_asset(
     asset_spec: AssetSpec,
     source_stream: str,
@@ -76,6 +80,12 @@ def build_sling_asset(
         required_resource_keys={sling_resource_key},
     )
     def sync(context: AssetExecutionContext) -> MaterializeResult:
+        deprecation_warning(
+            "build_sling_asset",
+            breaking_version="0.23.0",
+            additional_warn_text="Use `@sling_assets` property instead.",
+        )
+
         sling: SlingResource = getattr(context.resources, sling_resource_key)
         last_row_count_observed = None
         for stdout_line in sling.sync(
