@@ -7,6 +7,7 @@ description: Install Dagster
 
 ## Requirements
 
+
 {% partial file="DagsterVersion.md" /%}
 
 To check that Python and the pip package manager are already installed in your environment, you can run:
