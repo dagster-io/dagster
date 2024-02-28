@@ -11,8 +11,6 @@ description: Run dagster for the first time
   guide!
 </Note>
 
-## Introduction
-
 Welcome to Dagster! This guide will help you quickly run the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project, showcasing Dagster's capabilities and serving as a foundation for exploring its features.
 
 The [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project can be used without installing anything on your machine by using the pre-configured [GitHub Codespace](https://github.com/features/codespaces). If you prefer to run things on your own machine, however, we've got you covered.
@@ -124,7 +122,7 @@ height={1754}
 
 ## Understanding the Code
 
-The quickstart project defines two **Assets** using the <PyObject object="asset" decorator /> decorator:
+The Quickstart project defines two **Assets** using the <PyObject object="asset" decorator /> decorator:
 
 - `hackernews_top_story_ids` retrieves the top stories from the Hacker News API and saves them as a JSON file.
 - `hackernews_top_stories` builds upon the first asset, retrieving data for each story and saving it as a CSV file.
