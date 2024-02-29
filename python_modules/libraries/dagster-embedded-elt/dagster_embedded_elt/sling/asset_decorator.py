@@ -39,7 +39,7 @@ def sling_assets(
 
     Args:
         replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary
-        of a replication config.
+            of a replication config.
         dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster
           AssetKey.
         partitions_def: Optional[PartitionsDefinition]: The partitions definition for this asset.
