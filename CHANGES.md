@@ -19,7 +19,7 @@
 - [ui] On the asset graph, nodes are slightly wider allowing more text to be displayed, and group names are no longer truncated.
 - [ui] Fixed an issue where the groups in the asset graph would not update after an asset was switched between groups.
 - [dagster-k8s] Fixed an issue where setting the `security_context` field on the `k8s_job_executor` didn't correctly set the security context on the launched step pods. Thanks @krgn!
-- AssetSpec previously dropped the metadata and code_version fields, resulting in them not being attached to the corresponding asset. This has been fixed. 
+
 ### Experimental
 
 - Observable source assets can now yield `ObserveResult`s with no `data_version`.
