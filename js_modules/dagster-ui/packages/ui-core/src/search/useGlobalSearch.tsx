@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import React, {useCallback, useRef} from 'react';
+import {useCallback, useRef} from 'react';
 
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
@@ -218,7 +218,7 @@ export const useGlobalSearch = () => {
   const [performPrimaryLazyQuery, primaryResult] = primary;
   const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
-  const consumeBufferEffect = React.useCallback(
+  const consumeBufferEffect = useCallback(
     async (
       buffer: typeof primarySearchBuffer | typeof secondarySearchBuffer,
       search: WorkerSearchResult,
