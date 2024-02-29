@@ -146,10 +146,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     debouncedSearch(newValue);
   };
 
-  React.useEffect(() => {
-    dispatch({type: 'hide-dialog'});
-  }, [location.pathname]);
-
   const onClickResult = React.useCallback(
     (result: Fuse.FuseResult<SearchResult>) => {
       dispatch({type: 'hide-dialog'});
