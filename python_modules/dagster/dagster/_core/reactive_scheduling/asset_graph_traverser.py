@@ -22,6 +22,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.reactive_scheduling.scheduling_policy import AssetPartition
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
@@ -45,6 +46,12 @@ def graph_subset_from_valid_subset(asset_subset: ValidAssetSubset) -> AssetGraph
 
 
 class AssetSubsetFactory:
+    @classmethod
+    def empty(cls, asset_graph: InternalAssetGraph, asset_key: AssetKey) -> ValidAssetSubset:
+        return ValidAssetSubset.empty(
+            asset_key, asset_graph.get_assets_def(asset_key).partitions_def
+        )
+
     @classmethod
     def unpartitioned(
         cls, asset_graph: InternalAssetGraph, asset_key: AssetKey
@@ -145,6 +152,40 @@ class AssetGraphTraverser:
             current_time=self.current_dt,
         )
 
+    def get_updated_parent_partition_space(
+        self, asset_subset: ValidAssetSubset
+    ) -> "PartitionSpace":
+        # TODO: This seems like it should be implemented in terms of ranges
+        # Right now this ends up calling get_parent_partition_keys_for_child
+        # N times which ends up calling partition_mapping.get_upstream_mapped_partitions_result_for_partitions
+        # N times with a set of one asset partition
+
+        for asset_partition in asset_subset.asset_partitions:
+            parent_asset_partitions = self.asset_graph.get_parents_partitions(
+                dynamic_partitions_store=self.queryer,
+                current_time=self.queryer.evaluation_time,
+                asset_key=asset_partition.asset_key,
+                partition_key=asset_partition.partition_key,
+            ).parent_partitions
+
+            updated_parent_asset_partitions = self.queryer.get_parent_asset_partitions_updated_after_child(
+                asset_partition,
+                parent_asset_partitions,
+                # do a precise check for updated parents, factoring in data versions, as long as
+                # we're within reasonable limits on the number of partitions to check
+                respect_materialization_data_versions=True,
+                # respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
+                # and len(parent_asset_partitions) + subset_to_evaluate.size < 100,
+                # ignore self-dependencies when checking for updated parents, to avoid historical
+                # rematerializations from causing a chain of materializations to be kicked off
+                # Question: do I understand this?
+                ignored_parent_keys={asset_subset.asset_key},
+            )
+
+        return PartitionSpace.from_asset_partitions(
+            self.asset_graph, updated_parent_asset_partitions
+        )
+
     def create_upstream_asset_graph_subset(
         self, starting_subset: ValidAssetSubset
     ) -> AssetGraphSubset:
@@ -181,10 +222,27 @@ class PartitionSpace:
     def empty(asset_graph: "InternalAssetGraph") -> "PartitionSpace":
         return PartitionSpace(asset_graph, AssetGraphSubset())
 
+    @staticmethod
+    # Something has probably gone wrong if you are calling this as you have gone from subset-native to asset-partition-based and back
+    def from_asset_partitions(
+        asset_graph: "InternalAssetGraph", asset_partitions: AbstractSet[AssetPartition]
+    ) -> "PartitionSpace":
+        return PartitionSpace(
+            asset_graph, AssetGraphSubset.from_asset_partition_set(asset_partitions, asset_graph)
+        )
+
     def for_keys(self, asset_keys: AbstractSet[AssetKey]) -> "PartitionSpace":
         return PartitionSpace(
             self.asset_graph, self.asset_graph_subset.filter_asset_keys(asset_keys)
         )
+
+    @property
+    def is_empty(self) -> bool:
+        n = self.asset_graph_subset.num_partitions_and_non_partitioned_assets
+        return n == 0
+        # return bool(
+        #     self.asset_graph_subset.num_partitions_and_non_partitioned_assets
+        #     )
 
     @cached_property
     def asset_keys(self) -> Set[AssetKey]:
@@ -238,3 +296,6 @@ class PartitionSpace:
                     asset_key, assets_def.partitions_def.empty_subset()
                 ),
             ).as_valid(assets_def.partitions_def)
+
+    def __repr__(self) -> str:
+        return "PartitionSpace(" f"asset_graph_subset={self.asset_graph_subset}" ")"
