@@ -3,31 +3,36 @@
 ## 1.6.7 (core) / 0.22.7 (libraries)
 
 ### New
+
 - Added a new `run_retries.retry_on_op_or_asset_failures` setting that can be set to false to make run retries only occur when there is an unexpected failure that crashes the run, allowing run-level retries to co-exist more naturally with op or asset retries. See [the docs](https://docs.dagster.io/deployment/run-retries#combining-op-and-run-retries) for more information.
 - `dagster dev` now sets the environment variable `DAGSTER_IS_DEV_CLI` allowing subprocesses to know that they were launched in a development context.
 - [ui] The Asset Checks page has been updated to show more information on the page itself rather than in a dialog.
 
 ### Bugfixes
+
 - [ui] Fixed an issue where the UI disallowed creating a dynamic partition if its name contained the “|” pipe character.
 - AssetSpec previously dropped the metadata and code_version fields, resulting in them not being attached to the corresponding asset. This has been fixed.
 
 ### Experimental
+
 - The new `@multi_observable_source_asset` decorator enables defining a set of assets that can be observed together with the same function.
 - [dagster-embedded-elt] New Asset Decorator `@sling_assets` and Resource `SlingConnectionResource` have been added for the `[dagster-embedded-elt.sling](http://dagster-embedded-elt.sling)` package. Deprecated `build_sling_asset`, `SlingSourceConnection` and `SlingTargetConnection`.
 - Added support for op-concurrency aware run dequeuing for the `QueuedRunCoordinator`.
 
 ### Documentation
+
 - Fixed reference documentation for isolated agents in ECS.
 - Corrected an example in the Airbyte Cloud documentation.
 - Added API links to OSS Helm deployment guide.
 - Fixed in-line pragmas showing up in the documentation.
 
 ### Dagster Cloud
+
 - Alerts now support Microsoft Teams.
 - [ECS] Fixed an issue where code locations could be left undeleted.
 - [ECS] ECS agents now support setting multiple replicas per code server.
 - [Insights] You can now toggle the visibility of a row in the chart by clicking on the dot for the row in the table.
-- [Users] Added a new column “Licensed role”  that shows the user's most permissive role.
+- [Users] Added a new column “Licensed role” that shows the user's most permissive role.
 
 ## 1.6.6 (core) / 0.22.6 (libraries)
 
