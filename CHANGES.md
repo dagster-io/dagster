@@ -9,6 +9,7 @@
 
 ### Bugfixes
 - [ui] Fixed an issue where the UI disallowed creating a dynamic partition if its name contained the “|” pipe character.
+- AssetSpec previously dropped the metadata and code_version fields, resulting in them not being attached to the corresponding asset. This has been fixed.
 
 ### Experimental
 - The new `@multi_observable_source_asset` decorator enables defining a set of assets that can be observed together with the same function.
