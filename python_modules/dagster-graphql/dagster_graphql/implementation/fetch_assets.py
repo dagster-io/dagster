@@ -21,6 +21,7 @@ from dagster import (
     MultiPartitionsDefinition,
     _check as check,
 )
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import (
@@ -233,6 +234,7 @@ def get_asset_nodes_by_asset_key(
         context=graphene_info.context,
         asset_keys=asset_nodes_by_asset_key.keys(),
     )
+    base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return {
         external_asset_node.asset_key: GrapheneAssetNode(
@@ -243,6 +245,15 @@ def get_asset_nodes_by_asset_key(
             depended_by_loader=depended_by_loader,
             stale_status_loader=stale_status_loader,
             dynamic_partitions_loader=dynamic_partitions_loader,
+            # base_deployment_context will be None if we are not in a branch deployment
+            asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                code_location_name=repo_loc.name,
+                repository_name=repo.name,
+                branch_workspace=graphene_info.context,
+                base_workspace=base_deployment_context,
+            )
+            if base_deployment_context is not None
+            else None,
         )
         for repo_loc, repo, external_asset_node in asset_nodes_by_asset_key.values()
     }

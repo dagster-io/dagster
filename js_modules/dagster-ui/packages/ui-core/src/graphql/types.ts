@@ -410,6 +410,7 @@ export type AssetNode = {
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   backfillPolicy: Maybe<BackfillPolicy>;
+  changedReasons: Array<ChangeReason>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']>;
@@ -726,6 +727,13 @@ export type CapturedLogsMetadata = {
   stdoutDownloadUrl: Maybe<Scalars['String']>;
   stdoutLocation: Maybe<Scalars['String']>;
 };
+
+export enum ChangeReason {
+  CODE_VERSION = 'CODE_VERSION',
+  INPUTS = 'INPUTS',
+  NEW = 'NEW',
+  PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+}
 
 export type ClaimedConcurrencySlot = {
   __typename: 'ClaimedConcurrencySlot';
@@ -6153,6 +6161,8 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('BackfillPolicy')
         ? ({} as BackfillPolicy)
         : buildBackfillPolicy({}, relationshipsToOmit),
+    changedReasons:
+      overrides && overrides.hasOwnProperty('changedReasons') ? overrides.changedReasons! : [],
     computeKind:
       overrides && overrides.hasOwnProperty('computeKind') ? overrides.computeKind! : 'quasi',
     configField:
