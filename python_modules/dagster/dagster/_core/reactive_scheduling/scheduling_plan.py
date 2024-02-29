@@ -78,7 +78,7 @@ def create_upstream_partition_space(
 
     for starting_subset in starting_subsets:
         upstream_of_starting_space = upstream_of_starting_space.with_partition_space(
-            context.traverser.create_upstream_partition_space(starting_subset)
+            context.traverser.create_partition_space_upstream_of_subsets(starting_subset)
         )
 
     return upstream_of_starting_space

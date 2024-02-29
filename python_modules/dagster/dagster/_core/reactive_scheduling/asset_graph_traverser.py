@@ -161,7 +161,7 @@ class AssetGraphTraverser:
         _ascend(starting_subset)
         return ag_subset
 
-    def create_upstream_partition_space(
+    def create_partition_space_upstream_of_subsets(
         self, starting_subset: ValidAssetSubset
     ) -> "PartitionSpace":
         return PartitionSpace(
