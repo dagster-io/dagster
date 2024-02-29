@@ -20,6 +20,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
@@ -574,7 +575,8 @@ def test_dynamic_partitions_single_run_backfill_policy():
 
 def test_assets_backfill_with_partition_mapping():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    # time at which there will be an identical set of partitions for the downstream asset
+    test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
 
     @asset(
         name="upstream_a",
@@ -613,16 +615,17 @@ def test_assets_backfill_with_partition_mapping():
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_time=test_time,
         all_partitions=False,
     )
     assert backfill_data
-    result = execute_asset_backfill_iteration_consume_generator(
-        backfill_id="test_backfill_id",
-        asset_backfill_data=backfill_data,
-        asset_graph=asset_graph,
-        instance=instance,
-    )
+    with pendulum_freeze_time(test_time):
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill_id",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
     assert len(result.run_requests) == 1
     assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
@@ -877,7 +880,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    test_time = pendulum.parse("2023-03-10T00:00:00", tz="UTC")
 
     @asset(
         name="upstream_a",
@@ -921,16 +924,17 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_time=test_time,
         all_partitions=False,
     )
     assert backfill_data
-    result = execute_asset_backfill_iteration_consume_generator(
-        backfill_id="test_backfill_id",
-        asset_backfill_data=backfill_data,
-        asset_graph=asset_graph,
-        instance=instance,
-    )
+    with pendulum_freeze_time(test_time):
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill_id",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
 
     assert len(result.run_requests) == 1
     assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
