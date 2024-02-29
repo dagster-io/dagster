@@ -323,5 +323,3 @@ def test_time_windowing_partition() -> None:
             context.asset_graph, down_daily.key, TimeWindow(start, end)
         ).asset_partitions
     )
-
-

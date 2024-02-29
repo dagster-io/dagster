@@ -23,7 +23,9 @@ def build_reactive_scheduling_plan(
 ) -> ReactiveSchedulingPlan:
     backfill_id = make_new_backfill_id()
 
-    upstream_of_starting_space = create_upstream_partition_space(context, starting_subsets)
+    upstream_of_starting_space = create_partition_space_upstream_of_subsets(
+        context, starting_subsets
+    )
 
     # now that we have the partition space we descend downward to filter
 
@@ -71,7 +73,7 @@ def build_reactive_scheduling_plan(
     )
 
 
-def create_upstream_partition_space(
+def create_partition_space_upstream_of_subsets(
     context: SchedulingExecutionContext, starting_subsets: Sequence[ValidAssetSubset]
 ) -> PartitionSpace:
     upstream_of_starting_space = PartitionSpace.empty(context.asset_graph)
