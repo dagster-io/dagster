@@ -12,7 +12,7 @@ from dagster import (
     InitResourceContext,
     OpExecutionContext,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
@@ -49,6 +49,7 @@ def _add_to_asset_metadata(
     context.add_output_metadata(dict(counters), output_name)
 
 
+@public
 @experimental
 def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[str], func):
     """This wrapper can be used on any endpoint of the
@@ -141,6 +142,7 @@ def with_usage_metadata(context: AssetExecutionContext, output_name: Optional[st
     return wrapper
 
 
+@public
 @experimental
 class OpenAIResource(ConfigurableResource):
     """This resource is wrapper over the
@@ -212,6 +214,7 @@ class OpenAIResource(ConfigurableResource):
         # Set up an OpenAI client based on the API key.
         self._client = Client(api_key=self.api_key)
 
+    @public
     @contextmanager
     def get_client(
         self, context: Union[AssetExecutionContext, OpExecutionContext]
@@ -274,6 +277,7 @@ class OpenAIResource(ConfigurableResource):
         """
         yield from self._get_client(context=context, asset_key=None)
 
+    @public
     @contextmanager
     def get_client_for_asset(
         self, context: AssetExecutionContext, asset_key: AssetKey
@@ -288,7 +292,7 @@ class OpenAIResource(ConfigurableResource):
         allowing to log the API usage metadata in the asset metadata.
 
         This method can only be called when working with assets,
-        i.e. the provided ``context`` must be of type ``AssetExecutionContext.
+        i.e. the provided ``context`` must be of type ``AssetExecutionContext``.
 
         :param context: The ``context`` object for computing the asset in which ``get_client`` is called.
         :param asset_key: the ``asset_key`` of the asset for which a materialization should include the metadata.
