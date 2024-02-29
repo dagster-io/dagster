@@ -22,7 +22,6 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -77,9 +76,15 @@ class AssetSlice:
     def unsynced_parent_partition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.unsynced_parent_partition_space(self)
 
-    @cached_method
-    def parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
-        return self._asset_graph_view.parent_asset_slice(parent_asset_key, self)
+    def _parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
+        return self._asset_graph_view.get_parent_asset_slice(parent_asset_key, self)
+
+    @cached_property
+    def parent_slices(self) -> List["AssetSlice"]:
+        return [
+            self._parent_asset_slice(parent_key)
+            for parent_key in self._asset_graph_view.asset_graph.get_parents(self.asset_key)
+        ]
 
     def __repr__(self) -> str:
         return f"AssetSlice({self._valid_asset_subset})"
@@ -163,7 +168,9 @@ class AssetGraphView:
     def _to_asset_slice(self, asset_subset: ValidAssetSubset) -> AssetSlice:
         return AssetSlice(self, asset_subset)
 
-    def parent_asset_slice(self, parent_asset_key: AssetKey, asset_slice: AssetSlice) -> AssetSlice:
+    def get_parent_asset_slice(
+        self, parent_asset_key: AssetKey, asset_slice: AssetSlice
+    ) -> AssetSlice:
         return self._to_asset_slice(
             self.asset_graph.get_parent_asset_subset(
                 dynamic_partitions_store=self.queryer,
@@ -185,9 +192,8 @@ class AssetGraphView:
 
     def parent_partition_space(self, asset_slice: AssetSlice) -> "PartitionSpace":
         parent_parition_space = PartitionSpace.empty(self)
-        for parent_key in self.asset_graph.get_parents(asset_slice.asset_key):
-            parent_subset = self.parent_asset_slice(parent_key, asset_slice)
-            parent_parition_space = parent_parition_space.with_asset_slice(parent_subset)
+        for parent_slice in asset_slice.parent_slices:
+            parent_parition_space = parent_parition_space.with_asset_slice(parent_slice)
         return parent_parition_space
 
     def updated_parent_partition_space(self, asset_slice: AssetSlice) -> "PartitionSpace":
@@ -231,9 +237,9 @@ class AssetGraphView:
         # * This is going to be very slow
         # * get_status does not respect storage_id and will always be volatile
         unsynced_parent_asset_partitions: Set[AssetPartition] = set()
-        for parent_asset_key in self.asset_graph.get_parents(asset_slice.asset_key):
-            parent_slice = self.parent_asset_slice(parent_asset_key, asset_slice)
-            for ap in parent_slice.to_valid_asset_subset().asset_partitions:
+        for parent_slice in asset_slice.parent_slices:
+            # materialize call is the indication that we are doing something wrong
+            for ap in parent_slice.materialize_asset_partitions():
                 stale_status = self.stale_resolver.get_status(ap.asset_key, ap.partition_key)
                 if stale_status != StaleStatus.FRESH:
                     unsynced_parent_asset_partitions.add(ap)
@@ -242,21 +248,23 @@ class AssetGraphView:
     def _create_upstream_asset_graph_subset(
         self, starting_asset_slice: AssetSlice
     ) -> "AssetGraphSubset":
-        ag_subset = _graph_subset_from_valid_subset(starting_asset_slice)
+        ag_subset = _graph_subset_from_slice(starting_asset_slice)
 
         def _ascend(current_slice: AssetSlice) -> None:
             nonlocal ag_subset
-            for parent_key in self.asset_graph.get_parents(current_slice.asset_key):
-                parent_asset_slice = self.parent_asset_slice(parent_key, starting_asset_slice)
+            for parent_slice in current_slice.parent_slices:
                 # TODO can check to see if parent is already in subset and early return
-                ag_subset |= _graph_subset_from_valid_subset(parent_asset_slice)
-                _ascend(parent_asset_slice)
+                ag_subset |= _graph_subset_from_slice(parent_slice)
+                _ascend(parent_slice)
 
         _ascend(starting_asset_slice)
         return ag_subset
 
     def create_upstream_partition_space(self, asset_slice: AssetSlice) -> "PartitionSpace":
         return PartitionSpace(self, self._create_upstream_asset_graph_subset(asset_slice))
+
+    def get_parent_slices(self, asset_key) -> Sequence[AssetSlice]:
+        return [self.get_parent_asset_slice(asset_key, child_slice) for child_slice in asset_key]
 
     @cached_property
     def slice_factory(self) -> "AssetSliceFactory":
@@ -339,7 +347,7 @@ class PartitionSpace:
     def with_asset_slice(self, asset_slice: AssetSlice) -> "PartitionSpace":
         return PartitionSpace(
             self.asset_graph_view,
-            self.asset_graph_subset | _graph_subset_from_valid_subset(asset_slice),
+            self.asset_graph_subset | _graph_subset_from_slice(asset_slice),
         )
 
     def get_asset_slice(self, asset_key: AssetKey) -> AssetSlice:
@@ -364,7 +372,7 @@ class PartitionSpace:
         return "PartitionSpace(" f"asset_graph_subset={self.asset_graph_subset}" ")"
 
 
-def _graph_subset_from_valid_subset(asset_slice: AssetSlice) -> "AssetGraphSubset":
+def _graph_subset_from_slice(asset_slice: AssetSlice) -> "AssetGraphSubset":
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
     asset_subset = asset_slice.to_valid_asset_subset()
