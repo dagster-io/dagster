@@ -1615,6 +1615,45 @@ def test_multi_asset_internal_deps_asset_backfill():
     assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
 
 
+def test_multi_asset_internal_and_external_deps_asset_backfill() -> None:
+    pd = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @asset(partitions_def=pd)
+    def upstream():
+        pass
+
+    @multi_asset(
+        deps={upstream},
+        outs={"a": AssetOut(key="a"), "b": AssetOut(key="b"), "c": AssetOut(key="c")},
+        internal_asset_deps={
+            "c": {AssetKey("a"), AssetKey("upstream")},
+            "b": {AssetKey("a")},
+            "a": set(),
+        },
+        partitions_def=pd,
+    )
+    def my_multi_asset():
+        pass
+
+    instance = DagsterInstance.ephemeral()
+    repo_with_unpartitioned_root = {"repo": [my_multi_asset, upstream]}
+    asset_graph = get_asset_graph(repo_with_unpartitioned_root)
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["1"],
+        asset_selection=[AssetKey("a"), AssetKey("b"), AssetKey("c")],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2024, 1, 9, 0, 0, 0),
+    )
+    backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, repo_with_unpartitioned_root
+    )
+    assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+
+
 def test_run_request_partition_order():
     @asset(partitions_def=DailyPartitionsDefinition("2023-10-01"))
     def foo():
