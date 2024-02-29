@@ -4,7 +4,7 @@ import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components'
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import {useHistory, useLocation} from 'react-router-dom';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
@@ -72,7 +72,6 @@ const initialState: State = {
 const DEBOUNCE_MSEC = 100;
 
 export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
-  const location = useLocation();
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
   const trackEvent = useTrackEvent();
