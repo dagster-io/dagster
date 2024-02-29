@@ -369,10 +369,10 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                     bool,
                     is_required=False,
                     default_value=True,
-                    description="Whether to retry runs that failed due to steps in the run failing. "
+                    description="Whether to retry runs that failed due to assets or ops in the run failing. "
                     "Set this to false if you only want to retry failures that occur "
                     "due to the run worker crashing or unexpectedly terminating, and instead "
-                    "rely on op or asset-level retry policies to retry step failures. Setting this "
+                    "rely on op or asset-level retry policies to retry asset or op failures. Setting this "
                     "field to false will only change retry behavior for runs on dagster "
                     "version 1.6.7 or greater.",
                 ),
