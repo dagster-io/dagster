@@ -37,10 +37,8 @@ type Action =
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
     case 'show-dialog':
-      console.log('showing dialog');
       return {...state, shown: true, loaded: true};
     case 'hide-dialog':
-      console.log('hiding dialog');
       return {...state, shown: false, queryString: '', primaryResults: [], secondaryResults: []};
     case 'highlight':
       return {...state, highlight: action.highlight};
@@ -62,7 +60,7 @@ const reducer = (state: State, action: Action) => {
 };
 
 const initialState: State = {
-  shown: true,
+  shown: false,
   queryString: '',
   searching: false,
   primaryResults: [],
