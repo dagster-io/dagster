@@ -171,9 +171,11 @@ class TimeWindowPartitionMapping(
 
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
-            # window starts before the end of the pr
+            # window starts before the end of the previous one
             if window.start.timestamp() <= last_window.end.timestamp():
-                merged_time_windows[-1] = TimeWindow(last_window.start, window.end)
+                merged_time_windows[-1] = TimeWindow(
+                    last_window.start, max(last_window.end, window.end, key=lambda d: d.timestamp())
+                )
             else:
                 merged_time_windows.append(window)
 
