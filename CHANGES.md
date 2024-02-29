@@ -8,7 +8,7 @@
 - [ui] The Asset Checks page has been updated to show more information on the page itself rather than in a dialog.
 
 ### Bugfixes
-- [ui] Fixed an issue the UI disallowed creating a dynamic partition if its name contained the “|” pipe character.
+- [ui] Fixed an issue where the UI disallowed creating a dynamic partition if its name contained the “|” pipe character.
 
 ### Experimental
 - The new `@multi_observable_source_asset` decorator enables defining a set of assets that can be observed together with the same function.
