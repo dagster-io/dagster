@@ -155,7 +155,7 @@ class AssetGraphTraverser:
     def get_updated_parent_partition_space(
         self, asset_subset: ValidAssetSubset
     ) -> "PartitionSpace":
-        # TODO: This seems like it should be implemented in terms of ranges
+        # TODO: This seems like it should be implemented in terms of subsets
         # Right now this ends up calling get_parent_partition_keys_for_child
         # N times which ends up calling partition_mapping.get_upstream_mapped_partitions_result_for_partitions
         # N times with a set of one asset partition
@@ -171,11 +171,17 @@ class AssetGraphTraverser:
             updated_parent_asset_partitions = self.queryer.get_parent_asset_partitions_updated_after_child(
                 asset_partition,
                 parent_asset_partitions,
+                respect_materialization_data_versions=True,
+                # In equilvalent code path in AMP there is the following comment:
+                # ********
                 # do a precise check for updated parents, factoring in data versions, as long as
                 # we're within reasonable limits on the number of partitions to check
-                respect_materialization_data_versions=True,
                 # respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
                 # and len(parent_asset_partitions) + subset_to_evaluate.size < 100,
+                # ********
+                # I think we can get away with not doing this if we impose constraints about the number
+                # of partitions to consider in any particular tick (Unless user opts into it)
+                #
                 # ignore self-dependencies when checking for updated parents, to avoid historical
                 # rematerializations from causing a chain of materializations to be kicked off
                 # Question: do I understand this?
