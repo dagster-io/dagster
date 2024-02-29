@@ -14,6 +14,7 @@
 ### Experimental
 - The new `@multi_observable_source_asset` decorator enables defining a set of assets that can be observed together with the same function.
 - [dagster-embedded-elt] New Asset Decorator `@sling_assets` and Resource `SlingConnectionResource` have been added for the `[dagster-embedded-elt.sling](http://dagster-embedded-elt.sling)` package. Deprecated `build_sling_asset`, `SlingSourceConnection` and `SlingTargetConnection`.
+- Added support for op-concurrency aware run dequeuing for the `QueuedRunCoordinator`.
 
 ### Documentation
 - Fixed reference documentation for isolated agents in ECS.
