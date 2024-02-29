@@ -163,12 +163,15 @@ class TimeWindowPartitionMapping(
 
     def _merge_time_windows(self, time_windows: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
         """Takes a list of potentially-overlapping TimeWindows and merges any overlapping windows."""
-        sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
-        if not sorted_time_windows:
+        if not time_windows:
             return []
+
+        sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
         merged_time_windows: List[TimeWindow] = [sorted_time_windows[0]]
+
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
+            # window starts before the end of the pr
             if window.start.timestamp() <= last_window.end.timestamp():
                 merged_time_windows[-1] = TimeWindow(last_window.start, window.end)
             else:
