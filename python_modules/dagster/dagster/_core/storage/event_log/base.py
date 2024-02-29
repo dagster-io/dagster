@@ -107,8 +107,7 @@ class AssetRecord(NamedTuple):
 
 
 class PlannedMaterializationInfo(NamedTuple):
-    """Internal representation of an planned materialization event, containing l
-    torage_id / run_id.
+    """Internal representation of an planned materialization event, containing storage_id / run_id.
 
     Users should not invoke this class directly.
     """
