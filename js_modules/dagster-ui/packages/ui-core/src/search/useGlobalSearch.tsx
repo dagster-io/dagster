@@ -234,19 +234,21 @@ export const useGlobalSearch = () => {
   );
 
   // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
-  const initialize = useCallback(async () => {
-    setTimeout(() => {
-      if (!primarySearch.current) {
-        performPrimaryLazyQuery();
-      }
-      if (!secondarySearch.current) {
-        performSecondaryLazyQuery();
-      }
-    }, 5000);
+  const initialize = useCallback(() => {
+    if (!primarySearch.current) {
+      performPrimaryLazyQuery();
+    }
+    if (!secondarySearch.current) {
+      performSecondaryLazyQuery();
+    }
   }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
 
   const searchIndex = useCallback(
-    (index: typeof primarySearch, indexBuffer: typeof primarySearchBuffer, query: string) => {
+    (
+      index: typeof primarySearch,
+      indexBuffer: typeof primarySearchBuffer,
+      query: string,
+    ): Promise<QueryResponse> => {
       return new Promise(async (res) => {
         if (index.current) {
           const result = await index.current.search(query);
@@ -264,7 +266,7 @@ export const useGlobalSearch = () => {
           }
           indexBuffer.current = {
             query,
-            resolve(response: typeof primaryResult) {
+            resolve(response: QueryResponse) {
               res(response);
             },
             cancel() {
