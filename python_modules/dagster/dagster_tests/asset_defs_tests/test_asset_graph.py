@@ -405,21 +405,6 @@ def test_required_multi_asset_sets_same_op_in_different_assets(
         assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
 
 
-def test_get_non_source_roots_missing_source(asset_graph_from_assets: Callable[..., AssetGraph]):
-    @asset
-    def foo():
-        pass
-
-    @asset(deps=["this_source_is_fake", "source_asset"])
-    def bar(foo):
-        pass
-
-    source_asset = SourceAsset("source_asset")
-
-    asset_graph = asset_graph_from_assets([foo, bar, source_asset])
-    assert asset_graph.get_materializable_roots(AssetKey("bar")) == {AssetKey("foo")}
-
-
 def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., AssetGraph]):
     partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 

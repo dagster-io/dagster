@@ -24,6 +24,10 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetSpec,
+)
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
@@ -32,7 +36,10 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
 from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.external_asset import (
+    create_external_asset_from_source_asset,
+    external_asset_from_spec,
+)
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
@@ -229,6 +236,7 @@ def build_caching_repository_data_from_list(
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
             assets_defs.append(create_external_asset_from_source_asset(definition))
+            asset_keys.add(definition.key)
         elif isinstance(definition, AssetChecksDefinition):
             asset_checks_defs.append(definition)
         else:
@@ -246,6 +254,20 @@ def build_caching_repository_data_from_list(
         )
         for ad in assets_defs
     ]
+
+    # Create unexecutable external assets definitions for any referenced keys for which no
+    # definition was provided.
+    all_referenced_asset_keys = {
+        *(key for asset_def in assets_defs for key in asset_def.dependency_keys),
+        *(checks_def.asset_key for checks_def in asset_checks_defs),
+    }
+    for key in all_referenced_asset_keys.difference(asset_keys):
+        assets_defs.append(
+            external_asset_from_spec(
+                AssetSpec(key=key, metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+            )
+        )
+        asset_keys.add(key)
 
     if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
