@@ -185,7 +185,10 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "-n",
     "--expose",
     "use_ngrok",
-    help="Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set.",
+    help=(
+        "Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set."
+        "If you've configured a static ngrok domain, set NGROK_DAGSTER_DOMAIN to use that domain."
+    ),
     is_flag=True,
     show_default=True,
     default=False,
@@ -303,13 +306,19 @@ def host_dagster_ui_with_workspace_process_context(
                 "The --ngrok/--expose flag requires the NGROK_AUTHTOKEN environment variable to be set."
                 " You can find your auth token at https://https://dashboard.ngrok.com/get-started/your-authtoken"
             )
+        ngrok_domain = os.environ.get("NGROK_DAGSTER_DOMAIN", None)
         listener = ngrok.forward(
             f"{host}:{port}",
             authtoken_from_env=True,
+            domain=ngrok_domain,
         )
         logger.info(
             f"Serving dagster-webserver on {listener.url()} in process {os.getpid()} with ngrok"
         )
+        if not ngrok_domain:
+            logger.info(
+                "To use a static domain you've configured in your ngrok dashboard, set the NGROK_DAGSTER_DOMAIN environment variable."
+            )
     else:
         logger.info(
             f"Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {os.getpid()}"

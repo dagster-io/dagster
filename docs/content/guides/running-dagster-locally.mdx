@@ -78,7 +78,18 @@ pip3 install ngrok # if necessary
 dagster dev --ngrok
 ```
 
-This will output your temporary ngrok URL on your console. You can share this link, which will stay valid until you shut down the dev server. To use permanent domains, limit access to the domain via OAuth, and to use other features, please see the [ngrok documentation](https://ngrok.com/docs/).
+This will output your temporary ngrok URL on your console. You can share this link, which will stay valid until you shut down the dev server.
+
+To use a static domain, you can set `NGROK_DAGSTER_DOMAIN`:
+
+```bash
+export NGROK_DAGSTER_DOMAIN=mydomain.ngrok.dev
+dagster dev --ngrok
+```
+
+Make sure you've registered your domain on your ngrok dashboard beforehand.
+
+For advanced features, such as limiting the access to the domain via OAuth, and to use other features, please see the [ngrok documentation](https://ngrok.com/docs/).
 
 ---
 

@@ -101,7 +101,10 @@ def dev_command_options(f):
     "-n",
     "--expose",
     "use_ngrok",
-    help="Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set.",
+    help=(
+        "Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set."
+        "If you've configured a static ngrok domain, set NGROK_DAGSTER_DOMAIN to use that domain."
+    ),
     is_flag=True,
     show_default=True,
     default=False,
