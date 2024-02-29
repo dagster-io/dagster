@@ -263,6 +263,7 @@ class GrapheneRepository(graphene.ObjectType):
         repository: ExternalRepository,
         repository_location: CodeLocation,
     ):
+        # TODO - add comment warning that Repository is instantiated for each asset node too
         instance = workspace_context.instance
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
