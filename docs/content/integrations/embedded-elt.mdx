@@ -23,7 +23,7 @@ The typical pattern for building an ELT pipeline with Sling has three steps:
 
 2. Next, create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> and pass a list of <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> for each connection to the `connection` parameter, ensuring you name the resource using the same name given to the connection in the Sling configuration.
 
-3. Use the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" /> decorator to define an asset that will run the Sling replication job and yield from the <PyObject module="dagster_embedded_elt.sling" object="SlingResource" method="replicate" /> method to run the sync.
+3. Use the <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator /> decorator to define an asset that will run the Sling replication job and yield from the <PyObject module="dagster_embedded_elt.sling" object="SlingResource" method="replicate" /> method to run the sync.
 
 Each step is explained in detail below:
 
@@ -161,7 +161,9 @@ That's it! You should now be able to view your assets in the Dagster UI and run 
 
 ## Examples
 
-This is an example of how to setup a Sling sync between Postgres and Snowflake:
+### Example 1: Databse to Datbase
+
+This is an example of how to setup a Sling sync between two databases such as Postgres and Snowflake:
 
 ```python file=/integrations/embedded_elt/postgres_snowflake.py
 from dagster_embedded_elt.sling import (
@@ -219,7 +221,9 @@ def my_assets(context, sling: SlingResource):
     )
 ```
 
-Similarily, you can define file/storage connections:
+## Example 2: File to Database
+
+This is an example of how to setup a Sling sync between a file in an object store and a database such as S3 and Snowflake:
 
 ```python startafter=start_storage_config endbefore=end_storage_config file=/integrations/embedded_elt/s3_snowflake.py
 source = SlingConnectionResource(
@@ -257,9 +261,9 @@ def my_assets(context, sling: SlingResource):
 
 ## Relevant APIs
 
-| Name                                                                              | Description                                                                    |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator />            | The core Sling asset factory for building syncs                                |
-| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores |
-| <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types         |
-| <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying the connection details              |
+| Name                                                                              | Description                                                                            |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| <PyObject module="dagster_embedded_elt.sling" object="sling_assets" decorator />  | The core Sling asset factory for building syncs                                        |
+| <PyObject module="dagster_embedded_elt.sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores         |
+| <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |
+| <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying database and storage connection credentials |
