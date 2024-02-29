@@ -118,10 +118,10 @@ def test_partition_space() -> None:
 
     ag_view = context.asset_graph_view
 
-    starting_subset = context.slice_factory.from_partition_keys(down_numbers.key, {"1"})
-    upward = ag_view.parent_asset_slice(up_letters.key, starting_subset)
-    assert upward.asset_key == up_letters.key
-    assert upward.materialize_partition_keys() == {"A"}
+    starting_slice = context.slice_factory.from_partition_keys(down_numbers.key, {"1"})
+    up_letters_slice = starting_slice.parent_asset_slice(up_letters.key)
+    assert up_letters_slice.asset_key == up_letters.key
+    assert up_letters_slice.materialize_partition_keys() == {"A"}
 
     slice_factory = context.asset_graph_view.slice_factory
 

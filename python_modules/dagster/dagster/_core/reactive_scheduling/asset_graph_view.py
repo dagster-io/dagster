@@ -22,6 +22,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -64,17 +65,21 @@ class AssetSlice:
     def nonempty(self) -> bool:
         return not self.empty
 
-    @property
+    @cached_property
     def parent_parition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.parent_partition_space(self)
 
-    @property
+    @cached_property
     def updated_parent_partition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.updated_parent_partition_space(self)
 
-    @property
+    @cached_property
     def unsynced_parent_partition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.unsynced_parent_partition_space(self)
+
+    @cached_method
+    def parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
+        return self._asset_graph_view.parent_asset_slice(parent_asset_key, self)
 
     def __repr__(self) -> str:
         return f"AssetSlice({self._valid_asset_subset})"
