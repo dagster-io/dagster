@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, Set
+from uuid import uuid4
 
 import pendulum
 from dagster import (
@@ -7,9 +8,12 @@ from dagster import (
 )
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
@@ -423,3 +427,48 @@ def test_on_any_parent_updated() -> None:
     assert plan_two.launch_partition_space.get_asset_subset(down.key).bool_value
     assert plan_two.launch_partition_space.get_asset_subset(up.key).bool_value
     assert not plan_two.launch_partition_space.get_asset_subset(upup.key).bool_value
+
+
+def test_any_all_parent_out_of_sync() -> None:
+    @observable_source_asset
+    def observable_one() -> DataVersion:
+        return DataVersion(str(uuid4()))
+        ...
+
+    @observable_source_asset
+    def observable_two() -> DataVersion:
+        return DataVersion(str(uuid4()))
+        ...
+
+    @asset(deps=[observable_one])
+    def asset_one() -> None:
+        ...
+
+    @asset(deps=[observable_two])
+    def asset_two() -> None:
+        ...
+
+    @asset(deps=[asset_one, asset_two], scheduling_policy=AlwaysIncludeSchedulingPolicy())
+    def downstream() -> None:
+        ...
+
+    defs = Definitions([observable_one, observable_two, asset_one, asset_two, downstream])
+
+    instance = DagsterInstance.ephemeral()
+
+    assert observe([observable_one, observable_two], instance=instance).success
+    assert materialize([asset_one, asset_two, downstream], instance=instance).success
+    # all observed, then materialized. Should be synced
+
+    context_t0 = build_test_context(defs, instance)
+
+    downstream_subset = AssetSubsetFactory.unpartitioned(context_t0.asset_graph, downstream.key)
+    assert not Rules.any_parent_out_of_sync(context_t0, downstream_subset).bool_value
+    assert not Rules.all_parents_out_of_sync(context_t0, downstream_subset).bool_value
+
+    assert observe([observable_one], instance=instance).success
+
+    # # one observed. asset_one out of sync. any but not all out of sync
+    context_t1 = build_test_context(defs, instance)
+    assert Rules.any_parent_out_of_sync(context_t1, downstream_subset).bool_value
+    assert not Rules.all_parents_out_of_sync(context_t1, downstream_subset).bool_value
