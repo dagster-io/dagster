@@ -51,7 +51,6 @@ import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult'
 import {AssetKey} from '../types';
 
 export const AssetChecks = ({
-  lastMaterializationTimestamp,
   assetKey,
 }: {
   assetKey: AssetKey;
