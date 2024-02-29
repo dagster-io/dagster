@@ -1438,7 +1438,7 @@ def _get_failed_asset_partitions(
                 )
                 for asset_key in failed_asset_keys:
                     result.extend(
-                        asset_graph.get_asset_partitions_in_range(
+                        asset_graph.get_partitions_in_range(
                             asset_key, partition_range, instance_queryer
                         )
                     )

@@ -9,13 +9,16 @@ from dagster import (
     AssetSpec,
     AutoMaterializeRule,
     DagsterInstance,
+    create_repository_using_definitions_args,
     instance_for_test,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
+from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.scheduler.instigation import (
     InstigatorStatus,
@@ -48,7 +51,10 @@ from .asset_daemon_scenario import (
     AssetDaemonScenarioState,
     AssetRuleEvaluationSpec,
 )
-from .base_scenario import run_request
+from .base_scenario import (
+    asset_def,
+    run_request,
+)
 from .updated_scenarios.asset_daemon_scenario_states import (
     one_asset,
     two_assets_in_sequence,
@@ -94,13 +100,52 @@ def _get_threadpool_executor(instance: DagsterInstance):
 # just run over a subset of the total scenarios
 daemon_scenarios = [*basic_scenarios, *partition_scenarios]
 
+extra_repo_assets = [
+    asset_def("extra_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
+    asset_def(
+        "extra_asset2", ["extra_asset1"], auto_materialize_policy=AutoMaterializePolicy.eager()
+    ),
+]
+
+# Additional repo with assets that should be not be included in the evaluation
+extra_repo = create_repository_using_definitions_args(
+    name="extra_repository",
+    assets=extra_repo_assets,
+    executor=in_process_executor,
+)
+
+first_asset_in_other_repo = [
+    asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
+]
+
+other_repo = create_repository_using_definitions_args(
+    name="extra_repository",
+    assets=first_asset_in_other_repo,
+    executor=in_process_executor,
+)
+
+second_asset_in_our_repo = AssetDaemonScenarioState(
+    asset_specs=[AssetSpec("asset2", deps=["asset1"])],
+    additional_repositories=[other_repo],
+)
+
+cross_repo_sensor_scenario = AssetDaemonScenario(
+    id="two_cross_repo_assets",
+    initial_state=second_asset_in_our_repo.with_all_eager(),
+    # No runs since the first asset is not yet materialized and is not being considered by this sensor
+    execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(),
+)
+
 
 auto_materialize_sensor_scenarios = [
+    cross_repo_sensor_scenario,
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_state=one_asset.with_asset_properties(
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
-        ).with_current_time("2020-01-01T00:05"),
+        )
+        .with_current_time("2020-01-01T00:05")
+        .with_additional_repositories([extra_repo]),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
         .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
@@ -120,7 +165,9 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="sensor_interval_respected",
-        initial_state=two_assets_in_sequence.with_all_eager(),
+        initial_state=two_assets_in_sequence.with_all_eager().with_additional_repositories(
+            [extra_repo]
+        ),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .evaluate_tick()
         .assert_requested_runs()  # No runs initially
@@ -136,7 +183,7 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_never_materialized",
-        initial_state=one_asset.with_all_eager(),
+        initial_state=one_asset.with_all_eager().with_additional_repositories([extra_repo]),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .assert_evaluation(
@@ -145,7 +192,7 @@ auto_materialize_sensor_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_already_launched",
-        initial_state=one_asset.with_all_eager(),
+        initial_state=one_asset.with_all_eager().with_additional_repositories([extra_repo]),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"]))
         .with_current_time_advanced(seconds=30)

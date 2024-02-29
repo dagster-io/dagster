@@ -35,5 +35,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pipes_tests*"]),
+    python_requires=">=3.8,<3.13",
     zip_safe=False,
 )

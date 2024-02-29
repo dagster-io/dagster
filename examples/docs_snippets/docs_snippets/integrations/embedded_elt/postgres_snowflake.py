@@ -1,42 +1,56 @@
 # pyright: reportCallIssue=none
 # pyright: reportOptionalMemberAccess=none
 
-import os
-
 from dagster_embedded_elt.sling import (
-    SlingMode,
+    DagsterSlingTranslator,
+    SlingConnectionResource,
     SlingResource,
-    SlingSourceConnection,
-    SlingTargetConnection,
-    build_sling_asset,
+    sling_assets,
 )
 
-from dagster import AssetSpec
+from dagster import EnvVar
 
-source = SlingSourceConnection(
+source = SlingConnectionResource(
+    name="MY_PG",
     type="postgres",
     host="localhost",
     port=5432,
     database="my_database",
     user="my_user",
-    password=os.getenv("PG_PASS"),
+    password=EnvVar("PG_PASS"),
 )
 
-target = SlingTargetConnection(
+target = SlingConnectionResource(
+    name="MY_SF",
     type="snowflake",
     host="hostname.snowflake",
     user="username",
     database="database",
-    password=os.getenv("SF_PASSWORD"),
+    password=EnvVar("SF_PASSWORD"),
     role="role",
 )
 
-sling = SlingResource(source_connection=source, target_connection=target)
-
-asset_def = build_sling_asset(
-    asset_spec=AssetSpec("my_asset_name"),
-    source_stream="public.my_table",
-    target_object="marts.my_table",
-    mode=SlingMode.INCREMENTAL,
-    primary_key="id",
+sling = SlingResource(
+    connections=[
+        source,
+        target,
+    ]
 )
+replication_config = {
+    "SOURCE": "MY_PG",
+    "TARGET": "MY_SF",
+    "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
+    "streams": {
+        "public.accounts": None,
+        "public.users": None,
+        "public.finance_departments": {"object": "departments"},
+    },
+}
+
+
+@sling_assets(replication_config=replication_config)
+def my_assets(context, sling: SlingResource):
+    yield from sling.replicate(
+        replication_config=replication_config,
+        dagster_sling_translator=DagsterSlingTranslator(),
+    )

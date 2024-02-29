@@ -352,13 +352,14 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
 """
 
 REPOSITORY_SENSORS_QUERY = """
-query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
+query RepositorySensorsQuery($repositorySelector: RepositorySelector!, $sensorType: SensorType) {
     repositoryOrError(repositorySelector: $repositorySelector) {
         ... on Repository {
             id
-            sensors {
+            sensors(sensorType: $sensorType) {
                 id
                 name
+                sensorType
                 sensorState {
                     id
                     runs(limit: 1) {
@@ -375,6 +376,7 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
     }
 }
 """
+
 
 GET_TICKS_QUERY = """
 query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: Int!) {
@@ -1141,6 +1143,21 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 2
+
+
+def test_sensor_type_query(graphql_context: WorkspaceRequestContext):
+    instance = graphql_context.instance
+    if not instance.supports_batch_tick_queries:
+        pytest.skip("storage cannot batch fetch")
+
+    selector = infer_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context,
+        REPOSITORY_SENSORS_QUERY,
+        variables={"repositorySelector": selector, "sensorType": SensorType.AUTO_MATERIALIZE.value},
+    )
+    assert len(result.data["repositoryOrError"]["sensors"]) == 1
+    assert result.data["repositoryOrError"]["sensors"][0]["name"] == "my_auto_materialize_sensor"
 
 
 def test_repository_batching(graphql_context: WorkspaceRequestContext):

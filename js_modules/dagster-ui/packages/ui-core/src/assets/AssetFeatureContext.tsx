@@ -14,7 +14,7 @@ export type AssetViewFeatureInput = {
 type AssetFeatureContextType = {
   tabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
-  AssetChecksBanner: React.ComponentType<Record<string, never>>;
+  AssetChecksBanner: React.ComponentType<{onClose: () => void}>;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({

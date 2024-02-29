@@ -1,7 +1,6 @@
-from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 from dagster import (
     ConfigurableResource,

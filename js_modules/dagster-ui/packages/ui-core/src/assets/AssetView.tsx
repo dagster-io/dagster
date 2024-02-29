@@ -10,8 +10,8 @@ import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {
   AssetNodeOverview,
-  AssetNodeOverviewEmpty,
   AssetNodeOverviewLoading,
+  AssetNodeOverviewNonSDA,
 } from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
@@ -49,13 +49,13 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useStartTrace} from '../performance';
+import {PageLoadTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   assetKey: AssetKey;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 }
 
 export const AssetView = ({assetKey, trace}: Props) => {
@@ -110,7 +110,9 @@ export const AssetView = ({assetKey, trace}: Props) => {
       return <AssetNodeOverviewLoading />;
     }
     if (!definition) {
-      return <AssetNodeOverviewEmpty />;
+      return (
+        <AssetNodeOverviewNonSDA assetKey={assetKey} lastMaterialization={lastMaterialization} />
+      );
     }
     return (
       <AssetNodeOverview
@@ -417,7 +419,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   return {
     definitionQueryResult: result,
     definition: asset.definition,
-    lastMaterialization: asset.assetMaterializations[0],
+    lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
   };
 };
 
@@ -458,7 +460,6 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         name
       }
     }
-    hasAssetChecks
 
     ...AssetNodeInstigatorsFragment
     ...AssetNodeDefinitionFragment

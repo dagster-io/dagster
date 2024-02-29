@@ -80,8 +80,10 @@ import gitlab from '../icon-svgs/gitlab.svg';
 import graduation_cap from '../icon-svgs/graduation_cap.svg';
 import graph from '../icon-svgs/graph.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_horizontal from '../icon-svgs/graph_horizontal.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
+import graph_vertical from '../icon-svgs/graph_vertical.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
@@ -102,6 +104,7 @@ import materialization from '../icon-svgs/materialization.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
+import ms_teams from '../icon-svgs/ms_teams.svg';
 import multi_asset from '../icon-svgs/multi_asset.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
@@ -227,6 +230,7 @@ export const Icons = {
   folder,
   tag,
   slack,
+  ms_teams,
   github,
   github_pr_open,
   github_pr_closed,
@@ -242,6 +246,8 @@ export const Icons = {
   graph_downstream,
   graph_upstream,
   graph_neighbors,
+  graph_horizontal,
+  graph_vertical,
 
   // Material icons
   add,
@@ -347,7 +353,7 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([(slack as any).src]);
+const SVGS_WITH_COLORS = new Set([(slack as any).src, (ms_teams as any).src]);
 
 export type IconName = keyof typeof Icons;
 

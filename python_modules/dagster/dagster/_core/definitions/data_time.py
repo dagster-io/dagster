@@ -176,10 +176,7 @@ class CachingDataTimeResolver:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
         for parent_key in self.asset_graph.get_parents(asset_key):
-            if (
-                parent_key in self.asset_graph.source_asset_keys
-                and not self.asset_graph.is_observable(parent_key)
-            ):
+            if not self.asset_graph.is_executable(parent_key):
                 continue
 
             input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
@@ -220,7 +217,7 @@ class CachingDataTimeResolver:
             asset_key, record_id, record_tags_dict
         )
         if not upstream_records_by_key:
-            if not self.asset_graph.has_non_source_parents(asset_key):
+            if not self.asset_graph.has_materializable_parents(asset_key):
                 return {
                     asset_key: datetime.datetime.fromtimestamp(
                         record_timestamp, tz=datetime.timezone.utc
@@ -309,7 +306,7 @@ class CachingDataTimeResolver:
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
-            return {key: None for key in self.asset_graph.get_non_source_roots(asset_key)}
+            return {key: None for key in self.asset_graph.get_materializable_roots(asset_key)}
         record_timestamp = check.not_none(record_timestamp)
 
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
@@ -374,7 +371,7 @@ class CachingDataTimeResolver:
 
         # if you're here, then this asset is planned, but not materialized. in the worst case, this
         # asset's data time will be equal to the current time once it finishes materializing
-        if not self.asset_graph.has_non_source_parents(asset_key):
+        if not self.asset_graph.has_materializable_parents(asset_key):
             return current_time
 
         data_time = current_time
@@ -533,13 +530,13 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
-        freshness_policy = self.asset_graph.freshness_policies_by_key.get(asset_key)
+        freshness_policy = self.asset_graph.get_freshness_policy(asset_key)
         if freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
 
-        if self.asset_graph.is_source(asset_key):
+        if self.asset_graph.is_external(asset_key):
             current_data_time = self._get_source_data_time(asset_key, current_time=evaluation_time)
         else:
             current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)

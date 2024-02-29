@@ -17,9 +17,9 @@ from dagster import (
     op,
     reconstructable,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.instance import DagsterInstance
@@ -574,7 +574,7 @@ def asset_job():
         ),
         executor_def=in_process_executor,
     ).resolve(
-        asset_graph=AssetGraph.from_assets(
+        asset_graph=InternalAssetGraph.from_assets(
             [
                 branching_asset,
                 echo_branching,

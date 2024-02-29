@@ -27,7 +27,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStartTrace} from '../performance';
+import {PageLoadTrace} from '../performance';
 import {LoadingSpinner} from '../ui/Loading';
 
 type Asset = AssetTableFragment;
@@ -76,7 +76,7 @@ interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace?: ReturnType<typeof useStartTrace>;
+  trace?: PageLoadTrace;
 }
 
 export const AssetsCatalogTable = ({

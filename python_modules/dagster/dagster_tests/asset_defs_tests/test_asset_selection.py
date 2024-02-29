@@ -41,6 +41,7 @@ from dagster._core.definitions.asset_selection import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
@@ -166,9 +167,13 @@ def test_asset_selection_groups(all_assets: _AssetList):
 def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+    assert str(sel) == "alice or bob"
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+    sel = AssetSelection.keys("alice", "bob", "carol", "dave")
+    assert str(sel) == "4 assets"
 
 
 def test_asset_selection_key_prefixes(all_assets: _AssetList):
@@ -548,7 +553,7 @@ def test_to_serializable_asset_selection():
     def check1():
         ...
 
-    asset_graph = AssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
+    asset_graph = InternalAssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
 
     def assert_serializable_same(asset_selection: AssetSelection) -> None:
         assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection

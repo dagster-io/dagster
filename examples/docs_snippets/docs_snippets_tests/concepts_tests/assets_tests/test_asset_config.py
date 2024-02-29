@@ -11,12 +11,6 @@ def test_my_configurable_asset() -> None:
         mock_get.return_value = mock.Mock()
         mock_get.return_value.json.return_value = {"value": 10}
 
-        assert (
-            my_downstream_asset(MyDownstreamAssetConfig(api_endpoint="bar"), 5)
-        ) == 15
+        my_downstream_asset(MyDownstreamAssetConfig(api_endpoint="bar"))
 
         assert mock_get.call_args[0][0] == "bar/data"
-
-        assert (
-            my_downstream_asset(MyDownstreamAssetConfig(api_endpoint="bar"), 2)
-        ) == 12

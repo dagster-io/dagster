@@ -6,7 +6,7 @@ setenv =
   !windows: COVERAGE_ARGS = --cov=dagster --cov-append --cov-report term:skip-covered --cov-report html --cov-report xml
   windows: COVERAGE_ARGS =
 passenv = CI_* COVERALLS_REPO_TOKEN BUILDKITE* # TODO add additional env var requirements and add them to .buildkite/dagster-buildkite/dagster_buildkite/steps/packages.py
-install_command = python -m pip install {opts} {packages} --config-settings editable_mode=compat
+install_command = uv pip install {opts} {packages}
 deps =
   -e ../../dagster[test]
   -e .

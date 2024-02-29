@@ -12,8 +12,10 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import ensure_dagster_tests_import, environ
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 HELLO_WORLD = "Hello World"

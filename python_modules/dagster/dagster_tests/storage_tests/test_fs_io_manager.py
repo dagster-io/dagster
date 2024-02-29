@@ -30,8 +30,8 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions import AssetIn, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.version_strategy import VersionStrategy
@@ -530,7 +530,7 @@ def test_multipartitions_fs_io_manager():
             return asset1
 
         my_job = define_asset_job("my_job", [asset1, asset2]).resolve(
-            asset_graph=AssetGraph.from_assets([asset1, asset2])
+            asset_graph=InternalAssetGraph.from_assets([asset1, asset2])
         )
 
         result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
@@ -578,7 +578,7 @@ def test_backcompat_multipartitions_fs_io_manager():
             my_job = define_asset_job(
                 "my_job", [multipartitioned, downstream_of_multipartitioned]
             ).resolve(
-                asset_graph=AssetGraph.from_assets(
+                asset_graph=InternalAssetGraph.from_assets(
                     [multipartitioned, downstream_of_multipartitioned]
                 )
             )
@@ -590,7 +590,9 @@ def test_backcompat_multipartitions_fs_io_manager():
         my_job = define_asset_job(
             "my_job", [multipartitioned, downstream_of_multipartitioned]
         ).resolve(
-            asset_graph=AssetGraph.from_assets([multipartitioned, downstream_of_multipartitioned])
+            asset_graph=InternalAssetGraph.from_assets(
+                [multipartitioned, downstream_of_multipartitioned]
+            )
         )
         result = my_job.execute_in_process(
             partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
