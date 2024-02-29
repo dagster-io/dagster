@@ -36,7 +36,7 @@ coloredlogs==14.0
 comm==0.2.1
 contourpy==1.2.0
 coverage==7.4.3
-croniter==2.0.1
+croniter==2.0.2
 cryptography==42.0.5
 cycler==0.12.1
 -e python_modules/dagster
@@ -60,7 +60,7 @@ cycler==0.12.1
 -e python_modules/libraries/dagster-spark
 -e python_modules/dagster-webserver
 db-dtypes==1.2.0
-dbt-core==1.7.8
+dbt-core==1.7.9
 dbt-duckdb==1.7.2
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.4.4
@@ -109,7 +109,7 @@ httplib2==0.22.0
 httptools==0.6.1
 httpx==0.27.0
 humanfriendly==10.0
-hypothesis==6.98.13
+hypothesis==6.98.15
 idna==3.6
 importlib-metadata==6.11.0
 iniconfig==2.0.0
@@ -187,7 +187,7 @@ pexpect==4.9.0
 pillow==10.2.0
 platformdirs==3.11.0
 pluggy==1.4.0
-polars==0.20.11
+polars==0.20.13
 -e examples/project_fully_featured
 prometheus_client==0.20.0
 prompt-toolkit==3.0.43
