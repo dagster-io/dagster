@@ -34,8 +34,10 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     DatetimeFieldSerializer,
     TimeWindowPartitionsSubset,
@@ -1312,6 +1314,79 @@ def execute_asset_backfill_iteration_inner(
     yield AssetBackfillIterationResult(run_requests, updated_asset_backfill_data)
 
 
+def can_run_with_parent(
+    parent: AssetKeyPartitionKey,
+    candidate: AssetKeyPartitionKey,
+    candidates_unit: Iterable[AssetKeyPartitionKey],
+    asset_graph: ExternalAssetGraph,
+    target_subset: AssetGraphSubset,
+    asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
+) -> bool:
+    """Returns if a given candidate can be materialized in the same run as a given parent on
+    this tick.
+    """
+    parent_target_subset = target_subset.get_asset_subset(parent.asset_key, asset_graph)
+    parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
+    candidate_target_subset = target_subset.get_asset_subset(candidate.asset_key, asset_graph)
+    candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
+    partition_mapping = asset_graph.get_partition_mapping(
+        candidate.asset_key, in_asset_key=parent.asset_key
+    )
+
+    # checks if there is a simple partition mapping between the parent and the child
+    has_identity_partition_mapping = (
+        # both unpartitioned
+        (
+            not asset_graph.is_partitioned(candidate.asset_key)
+            and not asset_graph.is_partitioned(parent.asset_key)
+        )
+        # normal identity partition mapping
+        or isinstance(partition_mapping, IdentityPartitionMapping)
+        # for assets with the same time partitions definition, a non-offset partition
+        # mapping functions as an identity partition mapping
+        or (
+            isinstance(partition_mapping, TimeWindowPartitionMapping)
+            and partition_mapping.start_offset == 0
+            and partition_mapping.end_offset == 0
+        )
+    )
+    return (
+        parent_backfill_policy == candidate_backfill_policy
+        and asset_graph.get_repository_handle(candidate.asset_key)
+        is asset_graph.get_repository_handle(parent.asset_key)
+        and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+        and (
+            parent.partition_key in asset_partitions_to_request_map[parent.asset_key]
+            or parent in candidates_unit
+        )
+        and (
+            # if there is a simple mapping between the parent and the child, then
+            # with the parent
+            has_identity_partition_mapping
+            # if there is not a simple mapping, we can only materialize this asset with its
+            # parent if...
+            or (
+                # there is a backfill policy for the parent
+                parent_backfill_policy is not None
+                # the same subset of parents is targeted as the child
+                and parent_target_subset.value == candidate_target_subset.value
+                and (
+                    # there is no limit on the size of a single run or...
+                    parent_backfill_policy.max_partitions_per_run is None
+                    # a single run can materialize all requested parent partitions
+                    or parent_backfill_policy.max_partitions_per_run
+                    > len(asset_partitions_to_request_map[parent.asset_key])
+                )
+                # all targeted parents are being requested this tick
+                and len(asset_partitions_to_request_map[parent.asset_key])
+                == parent_target_subset.size
+            )
+            # if all the above are true, then a single run can be launched this tick which
+            # will materialize all requested partitions
+        )
+    )
+
+
 def should_backfill_atomic_asset_partitions_unit(
     asset_graph: ExternalAssetGraph,
     candidates_unit: Iterable[AssetKeyPartitionKey],
@@ -1339,7 +1414,6 @@ def should_backfill_atomic_asset_partitions_unit(
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
         )
-
         if parent_partitions_result.required_but_nonexistent_parents_partitions:
             raise DagsterInvariantViolationError(
                 f"Asset partition {candidate}"
@@ -1352,46 +1426,19 @@ def should_backfill_atomic_asset_partitions_unit(
             asset_partitions_to_request_map[asset_partition.asset_key].add(
                 asset_partition.partition_key
             )
-        candidate_backfill_policy = asset_graph.get_backfill_policy(candidate.asset_key)
-        for parent in parent_partitions_result.parent_partitions:
-            parent_backfill_policy = asset_graph.get_backfill_policy(parent.asset_key)
-            # checks if this parent with partitions mapped has a backfill policy which would allow
-            # partition mappings which are not one-one with the child to be executed in a way
-            # that respects the dependencies
-            has_partition_mapping_safe_backfill_policy = (
-                parent_backfill_policy
-                and (
-                    # single run backfill policy can incorporate all partitions in one run
-                    parent_backfill_policy.max_partitions_per_run is None
-                    # multi-run backfill policy
-                    or parent_backfill_policy.max_partitions_per_run
-                    >= len(asset_partitions_to_request_map[parent.asset_key])
-                )
-                and candidate.partition_key in asset_partitions_to_request_map[parent.asset_key]
-            )
-            can_run_with_parent = (
-                (parent in asset_partitions_to_request or parent in candidates_unit)
-                and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
-                and (
-                    (
-                        # always allow runs to be grouped if there is a simple 1-1 partition mapping
-                        parent.partition_key == candidate.partition_key
-                        and len(parent_partitions_result.parent_partitions) == 1
-                    )
-                    # candidate shares a partition key that is already being requested by the parent
-                    # and both candidate and parent have backfill policies and max_partitions_per_run is
-                    # not greater than the number of partitions being requested
-                    or has_partition_mapping_safe_backfill_policy
-                )
-                and asset_graph.get_repository_handle(candidate.asset_key)
-                is asset_graph.get_repository_handle(parent.asset_key)
-                and parent_backfill_policy == candidate_backfill_policy
-            )
 
+        for parent in parent_partitions_result.parent_partitions:
             if (
                 parent in target_subset
-                and not can_run_with_parent
                 and parent not in materialized_subset
+                and not can_run_with_parent(
+                    parent,
+                    candidate,
+                    candidates_unit,
+                    asset_graph,
+                    target_subset,
+                    asset_partitions_to_request_map,
+                )
             ):
                 return False
 
