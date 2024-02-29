@@ -76,13 +76,17 @@ class AssetSlice:
     def unsynced_parent_partition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.unsynced_parent_partition_space(self)
 
-    def _parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
-        return self._asset_graph_view.get_parent_asset_slice(parent_asset_key, self)
+    def parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
+        for asset_slice in self.parent_slices:
+            if asset_slice.asset_key == parent_asset_key:
+                return asset_slice
+
+        check.failed(f"Parent asset {parent_asset_key} not found in {self}")
 
     @cached_property
     def parent_slices(self) -> List["AssetSlice"]:
         return [
-            self._parent_asset_slice(parent_key)
+            self._asset_graph_view.get_parent_asset_slice(parent_key, self)
             for parent_key in self._asset_graph_view.asset_graph.get_parents(self.asset_key)
         ]
 
@@ -170,6 +174,12 @@ class AssetGraphView:
 
     def _to_asset_slice(self, asset_subset: ValidAssetSubset) -> AssetSlice:
         return AssetSlice(self, asset_subset)
+
+    # def get_complete_asset_slice(self, asset_key: AssetKey) -> AssetSlice:
+    #     assets_def = self.asset_graph.get_assets_def(asset_key)
+    #     return AssetSubset.all()
+    #     return
+    #     return self.asset_graph.get_asset_sub
 
     def get_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
@@ -429,6 +439,19 @@ class AssetSliceFactory:
                 num_partitions=None,
                 included_time_windows=[time_window],
             ),
+        )
+
+    def complete_asset_slice(self, asset_key: AssetKey) -> AssetSlice:
+        partitions_def = self.asset_graph.get_assets_def(asset_key).partitions_def
+        valid_asset_subset = AssetSubset.all(
+            asset_key=asset_key,
+            partitions_def=partitions_def,
+            dynamic_partitions_store=self.asset_graph_view.queryer,
+            current_time=self.asset_graph_view.current_dt,
+        ).as_valid(partitions_def)
+        return AssetSlice(
+            asset_graph_view=self.asset_graph_view,
+            valid_asset_subset=valid_asset_subset,
         )
 
     def _to_asset_slice(

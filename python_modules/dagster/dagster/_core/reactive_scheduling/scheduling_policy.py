@@ -19,15 +19,12 @@ if TYPE_CHECKING:
     )
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+    # tick settings in its own file?
+    from .scheduling_sensor import SensorSpec
+
 
 class SchedulingResult(NamedTuple):
     launch: bool = True
-
-
-class TickSettings(NamedTuple):
-    tick_cron: str = "* * * * *"
-    sensor_name: Optional[str] = None
-    sensor_description: Optional[str] = None
 
 
 class EvaluationResult(NamedTuple):
@@ -35,6 +32,8 @@ class EvaluationResult(NamedTuple):
 
 
 class SchedulingPolicy:
+    sensor_spec: Optional["SensorSpec"] = None
+
     # TODO: what about multi asset case?
     def tick(self, context: "SchedulingExecutionContext") -> SchedulingResult:
         ...
@@ -82,8 +81,10 @@ class SchedulingExecutionContext(NamedTuple):
             last_storage_id=last_storage_id,
         )
 
+    # TODO can eliminate. Just get from asset_graph_view
     tick_dt: datetime
     asset_graph_view: "AssetGraphView"
+    # TODO can eliminate. Just get from asset_graph_view
     last_storage_id: Optional[int] = None
 
     def empty_slice(self, asset_key: AssetKey) -> "AssetSlice":
