@@ -175,6 +175,11 @@ user_code_launcher:
 
 isolated_agents:
   enabled: <true|false>
+agent_queues:
+  include_default_queue: <true|false>
+  queues:
+    - <queue name>
+    - <additional queue name>
 ```
 
 ### dagster_cloud_api properties
@@ -307,4 +312,30 @@ isolated_agents:
   Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html.
   </ReferenceTableItem>
 
+</ReferenceTable>
+
+### isolated_agents properties
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="isolated_agents.enabled">
+    When enabled, agents are isolated and will not be able to access each
+    others' resources. See the
+    <a href="/dagster-cloud/deployment/agents/running-multiple-agents#running-multiple-agents-in-different-environments">
+      Running multiple agents guide
+    </a>
+    for more information.
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### agent_queues properties
+
+These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/dagster-cloud/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents).
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="agent_queues.include_default_queue">
+    This agent process requests from the default queue if set to true.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="agent_queues.queues">
+    A list of additional queues to include in the agent's processing.
+  </ReferenceTableItem>
 </ReferenceTable>
