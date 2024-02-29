@@ -8,6 +8,7 @@ const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
 const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
+const AssetsOverview = lazy(() => import('../assets/AssetsOverview'));
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
@@ -35,6 +36,13 @@ export const ContentRoot = memo(() => {
           <Route path="/asset-groups(/?.*)">
             <Suspense fallback={<div />}>
               <AssetsGroupsGlobalGraphRoot />
+            </Suspense>
+          </Route>
+          <Route path="/assets-overview(/?.*)">
+            <Suspense fallback={<div />}>
+              <AssetFeatureProvider>
+                <AssetsOverview />
+              </AssetFeatureProvider>
             </Suspense>
           </Route>
           <Route path="/assets(/?.*)">

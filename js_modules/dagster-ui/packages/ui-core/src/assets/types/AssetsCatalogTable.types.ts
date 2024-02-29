@@ -25,6 +25,10 @@ export type AssetCatalogTableQuery = {
             hasMaterializePermission: boolean;
             description: string | null;
             partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -65,6 +69,9 @@ export type AssetCatalogGroupTableQuery = {
     description: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -87,6 +94,9 @@ export type AssetCatalogGroupTableNodeFragment = {
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   repository: {
     __typename: 'Repository';
     id: string;

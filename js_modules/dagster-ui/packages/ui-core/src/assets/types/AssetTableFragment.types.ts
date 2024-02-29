@@ -14,6 +14,9 @@ export type AssetTableDefinitionFragment = {
   hasMaterializePermission: boolean;
   description: string | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -38,6 +41,9 @@ export type AssetTableFragment = {
     hasMaterializePermission: boolean;
     description: string | null;
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
     repository: {
       __typename: 'Repository';
       id: string;

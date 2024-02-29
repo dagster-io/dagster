@@ -8,6 +8,7 @@ import {
   IconWrapper,
   PageHeader,
   Tooltip,
+  Button,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -113,6 +114,14 @@ export const AssetGlobalLineageLink = () => (
       <Icon color={Colors.linkDefault()} name="schema" />
       View global asset lineage
     </Box>
+  </Link>
+);
+
+export const AssetGlobalLineageButton = () => (
+  <Link to="/asset-groups">
+    <Button intent="primary" icon={<Icon name="schema" />}>
+      View global asset lineage
+    </Button>
   </Link>
 );
 

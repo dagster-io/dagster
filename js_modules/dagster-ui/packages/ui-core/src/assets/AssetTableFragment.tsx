@@ -14,6 +14,14 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       description
     }
     description
+    owners {
+      ... on UserAssetOwner {
+        email
+      }
+      ... on TeamAssetOwner {
+        team
+      }
+    }
     repository {
       id
       name
