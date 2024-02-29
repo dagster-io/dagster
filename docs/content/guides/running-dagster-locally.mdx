@@ -54,6 +54,32 @@ If the `DAGSTER_HOME` environment variable is set, `dagster dev` will look for a
 
 For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/deployment/dagster-instance).
 
+### Exposing the dev server
+
+You can use [ngrok](https://ngrok.com/) to expose the `dagster dev` server to the internet. ngrok is a globally distributed gateway that provides secure connectivity for applications and services running in any environment.
+
+This can be useful for sharing your work with others or for testing integrations with external systems.
+
+You will need a free authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page](https://dashboard.ngrok.com/get-started/your-authtoken) in your ngrok dashboard.
+
+Set `NGROK_AUTHTOKEN` on your shell:
+
+```bash
+export NGROK_AUTHTOKEN=your_token_here
+echo 'export NGROK_AUTHTOKEN=your_token_here' >> ~/.bashrc # or ~/.zshrc / ...
+```
+
+This token is your personal access token, so keep it secret and don't add it to your repository.
+
+Make sure the `ngrok` [Python package](https://pypi.org/project/ngrok/) is installed in the same environment where the `dagster` and `dagster-webserver` packages are installed and use the `--ngrok` flag.
+
+```bash
+pip3 install ngrok # if necessary
+dagster dev --ngrok
+```
+
+This will output your temporary ngrok URL on your console. You can share this link, which will stay valid until you shut down the dev server. To use permanent domains, limit access to the domain via OAuth, and to use other features, please see the [ngrok documentation](https://ngrok.com/docs/).
+
 ---
 
 ## Moving to production

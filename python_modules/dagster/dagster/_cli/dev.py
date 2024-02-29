@@ -96,6 +96,17 @@ def dev_command_options(f):
     show_default=True,
     required=False,
 )
+@click.option(
+    "--ngrok",
+    "-n",
+    "--expose",
+    "use_ngrok",
+    help="Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set.",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    required=False,
+)
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
@@ -106,6 +117,7 @@ def dev_command(
     port: Optional[str],
     host: Optional[str],
     live_data_poll_rate: Optional[str],
+    use_ngrok: bool,
     **kwargs: ClickArgValue,
 ) -> None:
     # check if dagster-webserver installed, crash if not
@@ -117,7 +129,6 @@ def dev_command(
             " command. If you're using pip, you can install the dagster-webserver package by"
             ' running "pip install dagster-webserver" in your Python environment.'
         )
-
     os.environ["DAGSTER_IS_DEV_CLI"] = "1"
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
@@ -184,6 +195,7 @@ def dev_command(
             + (["--dagster-log-level", log_level])
             + (["--log-format", log_format])
             + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
+            + (["--ngrok"] if use_ngrok else [])
             + args
         )
         daemon_process = open_ipc_subprocess(

@@ -180,6 +180,17 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     default=2000,
     show_default=True,
 )
+@click.option(
+    "--ngrok",
+    "-n",
+    "--expose",
+    "use_ngrok",
+    help="Exposes the dagster webserver to the internet using ngrok. Requires NGROK_AUTHTOKEN to be set.",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    required=False,
+)
 @click.version_option(version=__version__, prog_name="dagster-webserver")
 def dagster_webserver(
     host: str,
@@ -195,6 +206,7 @@ def dagster_webserver(
     code_server_log_level: str,
     instance_ref: Optional[str],
     live_data_poll_rate: int,
+    use_ngrok: bool,
     **kwargs: ClickArgValue,
 ):
     if suppress_warnings:
@@ -231,6 +243,7 @@ def dagster_webserver(
                 path_prefix,
                 uvicorn_log_level,
                 live_data_poll_rate,
+                use_ngrok,
             )
 
 
@@ -253,6 +266,7 @@ def host_dagster_ui_with_workspace_process_context(
     path_prefix: str,
     log_level: str,
     live_data_poll_rate: Optional[int] = None,
+    use_ngrok: bool = False,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
@@ -275,17 +289,35 @@ def host_dagster_ui_with_workspace_process_context(
         else:
             port = DEFAULT_WEBSERVER_PORT
 
-    logger.info(
-        f"Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {os.getpid()}"
-    )
+    if use_ngrok:
+        try:
+            import ngrok  #  # noqa: F401
+        except ImportError:
+            raise click.UsageError(
+                "The ngrok Python package must be installed in order to use the --ngrok/--expose flag."
+                " If you're using pip, you can install the ngrok package by"
+                ' running "pip install ngrok" in your Python environment.'
+            )
+        if os.environ.get("NGROK_AUTHTOKEN") is None:
+            raise click.UsageError(
+                "The --ngrok/--expose flag requires the NGROK_AUTHTOKEN environment variable to be set."
+                " You can find your auth token at https://https://dashboard.ngrok.com/get-started/your-authtoken"
+            )
+        listener = ngrok.forward(
+            f"{host}:{port}",
+            authtoken_from_env=True,
+        )
+        logger.info(
+            f"Serving dagster-webserver on {listener.url()} in process {os.getpid()} with ngrok"
+        )
+    else:
+        logger.info(
+            f"Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {os.getpid()}"
+        )
+
     log_action(workspace_process_context.instance, START_DAGSTER_WEBSERVER)
     with uploading_logging_thread():
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            log_level=log_level,
-        )
+        uvicorn.run(app, host=host, port=port, log_level=log_level)
 
 
 cli = create_dagster_webserver_cli()
