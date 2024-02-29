@@ -187,8 +187,8 @@ export const useGlobalSearch = () => {
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
   const primary = useLazyQuery<SearchPrimaryQuery>(SEARCH_PRIMARY_QUERY, {
-    // Try to make aggressive use of workspace values from the Apollo cache.
-    fetchPolicy: 'cache-first',
+    // Don't use the cache because it is slow and we only make this request once so we don't need the cache
+    fetchPolicy: 'no-cache',
     onCompleted: (data: SearchPrimaryQuery) => {
       const results = primaryDataToSearchResults({data});
       if (!primarySearch.current) {
@@ -200,8 +200,8 @@ export const useGlobalSearch = () => {
   });
 
   const secondary = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
-    // As above, try to aggressively use asset information from Apollo cache if possible.
-    fetchPolicy: 'cache-first',
+    // Don't use the cache because it is slow and we only make this request once so we don't need the cache
+    fetchPolicy: 'no-cache',
     onCompleted: (data: SearchSecondaryQuery) => {
       const results = secondaryDataToSearchResults({data});
       if (!secondarySearch.current) {
