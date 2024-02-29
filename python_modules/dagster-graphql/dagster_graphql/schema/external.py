@@ -263,7 +263,9 @@ class GrapheneRepository(graphene.ObjectType):
         repository: ExternalRepository,
         repository_location: CodeLocation,
     ):
-        # TODO - add comment warning that Repository is instantiated for each asset node too
+        # Warning! GrapheneAssetNode contains a GrapheneRepository. Any computation in this
+        # __init__ will be done **once per asset**. Ensure that any expensive work is done
+        # elsewhere or cached.
         instance = workspace_context.instance
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
@@ -278,6 +280,7 @@ class GrapheneRepository(graphene.ObjectType):
         self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
 
         self._asset_graph_differ = None
+        # get_base_deployment_context is cached so there will only be one context per query
         base_deployment_context = workspace_context.get_base_deployment_context()
         if base_deployment_context is not None:
             # then we are in a branch deployment
