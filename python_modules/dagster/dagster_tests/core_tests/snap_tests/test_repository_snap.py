@@ -2,11 +2,13 @@ from typing import Dict, List, cast
 
 from dagster import (
     AssetCheckSpec,
+    AssetOut,
     Definitions,
     asset,
     asset_check,
     graph,
     job,
+    multi_asset,
     op,
     repository,
     resource,
@@ -685,6 +687,27 @@ def test_asset_check_multiple_jobs():
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
     assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB", "my_job"]
     assert external_repo_data.external_asset_checks[1].job_names == ["__ASSET_JOB", "my_job"]
+
+
+def test_asset_check_multi_asset():
+    @multi_asset(
+        outs={
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+        },
+        check_specs=[AssetCheckSpec(name="check_1", asset="a")],
+    )
+    def my_multi_asset():
+        pass
+
+    defs = Definitions(assets=[my_multi_asset])
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_asset_checks
+    assert len(external_repo_data.external_asset_checks) == 1
+    assert external_repo_data.external_asset_checks[0].name == "check_1"
+    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB"]
 
 
 def test_repository_snap_definitions_resources_schedule_sensor_usage():
