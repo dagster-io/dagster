@@ -37,8 +37,10 @@ type Action =
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
     case 'show-dialog':
+      console.log('showing dialog');
       return {...state, shown: true, loaded: true};
     case 'hide-dialog':
+      console.log('hiding dialog');
       return {...state, shown: false, queryString: '', primaryResults: [], secondaryResults: []};
     case 'highlight':
       return {...state, highlight: action.highlight};
@@ -60,7 +62,7 @@ const reducer = (state: State, action: Action) => {
 };
 
 const initialState: State = {
-  shown: false,
+  shown: true,
   queryString: '',
   searching: false,
   primaryResults: [],
@@ -145,10 +147,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     dispatch({type: 'change-query', queryString: newValue});
     debouncedSearch(newValue);
   };
-
-  React.useEffect(() => {
-    dispatch({type: 'hide-dialog'});
-  }, [location.pathname]);
 
   const onClickResult = React.useCallback(
     (result: Fuse.FuseResult<SearchResult>) => {
