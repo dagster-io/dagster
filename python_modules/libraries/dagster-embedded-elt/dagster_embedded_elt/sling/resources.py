@@ -18,7 +18,7 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import deprecated, experimental, public
 from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
@@ -33,6 +33,7 @@ ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 DEPRECATION_WARNING_TEXT = "{name} has been deprecated, use `SlingConnectionResource` for both source and target connections."
 
 
+@public
 class SlingMode(str, Enum):
     """The mode to use when syncing.
 
@@ -123,6 +124,7 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
+@public
 class SlingConnectionResource(PermissiveConfig):
     """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
 
@@ -318,6 +320,7 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    @public
     def replicate(
         self,
         *,
@@ -325,6 +328,7 @@ class SlingResource(ConfigurableResource):
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool = False,
     ):
+        """Docs go here."""
         replication_config = validate_replication(replication_config)
         stream_definition = get_streams_from_replication(replication_config)
 
