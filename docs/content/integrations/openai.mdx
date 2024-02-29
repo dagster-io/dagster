@@ -1,39 +1,27 @@
 ---
-title: "Dagster OpenAI"
-description: The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights, through helpful resources.
+title: "OpenAI + Dagster"
+description: The `dagster-openai` library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights.
 ---
 
-# Dagster OpenAI
+# OpenAI + Dagster
 
-The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights, through helpful resources.
+The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-cloud/insights).
 
-This library includes a resource, <PyObject module="dagster_openai" object="OpenAIResource" />, using the [OpenAI Python API Library](https://github.com/openai/openai-python), which provides a simple way to interact with OpenAI API.
+Using this library's <PyObject module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
 
-When used with Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets), the resource automatically logs OpenAI usage metadata in the asset metadata. More details can be found in [relevant APIs](#relevant-apis).
-
-
----
-
-## Relevant APIs
-
-| Name                                                                        | Description                                                                           |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| <PyObject module="dagster_openai" object="OpenAIResource" />                | The OpenAI Resource used for handing the client                                       |
-| <PyObject module="dagster_openai" object="with_usage_metadata" />           | The function wrapper used on OpenAI API Endpoint methods to log OpenAI usage metadata |
+When used with Dagster's [Software-defined Assets](/concepts/assets/software-defined-assets), the resource automatically logs OpenAI usage metadata in asset metadata. See the [Relevant APIs](#relevant-apis) section for more information.
 
 ---
 
 ## Getting started
 
-To get started with `dagster-openai` and OpenAI, familiarize yourself with the [OpenAI Python API Library](https://github.com/openai/openai-python) by reading their docs which describe how to interact with the OpenAI API using Python.
-
-More information is also available the [OpenAI API documentation website](https://platform.openai.com/docs/introduction).
+Before you get started with the `dagster-openai`library, we recommend familiarizing yourself with the [OpenAI Python API library](https://github.com/openai/openai-python), which this integration uses to interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction).
 
 ---
 
 ## Prerequisites
 
-To get started, you will need to install the `dagster` and `dagster-openai` Python packages:
+To get started, install the `dagster` and `dagster-openai` Python packages:
 
 ```bash
 pip install dagster dagster-openai
@@ -45,7 +33,7 @@ Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys
 
 ## Connecting to OpenAI
 
-The first step in using OpenAI with Dagster is to tell Dagster how to connect to an OpenAI Client using an OpenAI [resource](/concepts/resources). This resource contains the credentials needed to interact with OpenAI API.
+The first step in using OpenAI with Dagster is to tell Dagster how to connect to an OpenAI client using an OpenAI [resource](/concepts/resources). This resource contains the credentials needed to interact with OpenAI API.
 
 We will supply our credentials as environment variables by adding them to a `.env` file. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
 
@@ -69,9 +57,9 @@ openai = OpenAIResource(
 
 ---
 
-## Using OpenAI resource with assets
+## Using the OpenAI resource with assets
 
-The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the `Definitions` objects.
+The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject object="Definitions" /> object.
 
 ```python dedent=4
 from dagster import (
@@ -108,11 +96,9 @@ TODO: add images.
 
 ---
 
-## Using OpenAI resource with ops
+## Using the OpenAI resource with ops
 
-The OpenAI resource can also be used in ops in order to interact with the OpenAI API.
-
-Note that, currently, the OpenAI resource can be used in ops to interact with OpenAI API, but cannot log OpenAI Usage metadata.
+The OpenAI resource can also be used in ops. **Note**: Currently, the OpenAI resource cannot log OpenAI usage metadata when used in ops.
 
 ```python dedent=4
 from dagster import (
@@ -144,3 +130,10 @@ defs = Definitions(
 ```
 
 ---
+
+## Relevant APIs
+
+| Name                                                                        | Description                                                                           |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| <PyObject module="dagster_openai" object="OpenAIResource" />                | The OpenAI resource used for handing the client                                       |
+| <PyObject module="dagster_openai" object="with_usage_metadata" />           | The function wrapper used on OpenAI API endpoint methods to log OpenAI usage metadata |
