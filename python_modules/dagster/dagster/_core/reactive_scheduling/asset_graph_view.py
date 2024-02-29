@@ -112,6 +112,9 @@ class AssetGraphView:
     """The AssetGraphView is a partition-native view of the asset graph at a particular point in time. It caches
     results. If a mutation occurs to the asset graph or an advance in time that you want to reflect within the process
     via a AssetGraphView, you need to create a new AssetGraphView with a new TemporalContext.
+
+    Theorectically, this should allow for complete time-travel allowing the user to explore the completely
+    partition space of an asset graph at any given point in time and state of the underlying instance.
     """
 
     def __init__(
