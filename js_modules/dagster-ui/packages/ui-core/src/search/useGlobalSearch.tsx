@@ -1,7 +1,7 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import React, {useCallback, useRef} from 'react';
 
-import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
+import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
 import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -164,7 +164,7 @@ const EMPTY_RESPONSE = {queryString: '', results: []};
 
 type IndexBuffer = {
   query: string;
-  resolve: (value: any) => void;
+  resolve: (value: QueryResponse) => void;
   cancel: () => void;
 };
 
@@ -235,12 +235,14 @@ export const useGlobalSearch = () => {
 
   // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
   const initialize = useCallback(async () => {
-    if (!primarySearch.current) {
-      performPrimaryLazyQuery();
-    }
-    if (!secondarySearch.current) {
-      performSecondaryLazyQuery();
-    }
+    setTimeout(() => {
+      if (!primarySearch.current) {
+        performPrimaryLazyQuery();
+      }
+      if (!secondarySearch.current) {
+        performSecondaryLazyQuery();
+      }
+    }, 5000);
   }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
 
   const searchIndex = useCallback(
@@ -301,7 +303,7 @@ export const useGlobalSearch = () => {
 
   return {
     initialize,
-    loading: primaryResult.loading || secondaryResult.loading,
+    loading: !primaryResult.data || !secondaryResult.data,
     searchPrimary,
     searchSecondary,
     terminate,
