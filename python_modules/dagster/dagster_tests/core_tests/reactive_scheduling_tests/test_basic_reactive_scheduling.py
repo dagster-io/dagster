@@ -123,7 +123,7 @@ def test_partition_space() -> None:
     assert upward.asset_key == up_letters.key
     assert set(upward.subset_value.get_partition_keys()) == {"A"}
 
-    upward_from_down_1 = traverser.create_partition_space_upstream_of_subsets(
+    upward_from_down_1 = traverser.create_upstream_partition_space(
         AssetSubsetFactory.from_partition_keys(context.asset_graph, down_numbers.key, {"1"})
     )
     assert set(
@@ -140,7 +140,7 @@ def test_partition_space() -> None:
     assert upward_from_down_1.toposort_asset_levels == [{up_letters.key}, {down_numbers.key}]
     assert upward_from_down_1.toposort_asset_keys == [up_letters.key, down_numbers.key]
 
-    upward_from_up_a = traverser.create_partition_space_upstream_of_subsets(
+    upward_from_up_a = traverser.create_upstream_partition_space(
         AssetSubsetFactory.from_partition_keys(context.asset_graph, up_letters.key, {"A"})
     )
 
@@ -323,3 +323,5 @@ def test_time_windowing_partition() -> None:
             context.asset_graph, down_daily.key, TimeWindow(start, end)
         ).asset_partitions
     )
+
+
