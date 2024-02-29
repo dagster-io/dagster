@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
     python_requires=">=3.8,<3.13",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.6.7",
         "snowflake-connector-python>=2.1.0",
     ],
     extras_require={
