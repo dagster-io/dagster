@@ -197,6 +197,21 @@ def test_result_missing_check_name():
         materialize(assets=[asset1])
 
 
+def test_unexpected_result():
+    @asset
+    def my_asset():
+        yield AssetCheckResult(passed=True)
+
+    result = materialize(assets=[my_asset], raise_on_error=False)
+    assert not result.success
+    assert (
+        "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
+        "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
+        "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
+        in result.get_step_failure_events()[0].step_failure_data.error.message
+    )
+
+
 def test_asset_check_fails_downstream_still_executes():
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
     def asset1():
