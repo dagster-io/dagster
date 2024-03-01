@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.8 (core) / 0.22.8 (libraries
+
+### Bugfixes
+
+- [dagster-embedded-elt] Fixed a bug in the `SlingConnectionResource` that raised an error when connecting to a database.
+
+### Experimental
+
+- [asset checks] `graph_multi_assets` with `check_specs` now support subsetting.
+
 ## 1.6.7 (core) / 0.22.7 (libraries)
 
 ### New
