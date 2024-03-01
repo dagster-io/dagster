@@ -1,7 +1,7 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {useCallback, useRef} from 'react';
 
-import {WorkerSearchResult, createSearchWorker} from './createSearchWorker';
+import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
 import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -162,6 +162,12 @@ const fuseOptions = {
 
 const EMPTY_RESPONSE = {queryString: '', results: []};
 
+type IndexBuffer = {
+  query: string;
+  resolve: (value: QueryResponse) => void;
+  cancel: () => void;
+};
+
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
  * interaction with the search input. Each query result list is packaged and sent to a worker
@@ -189,6 +195,7 @@ export const useGlobalSearch = () => {
         primarySearch.current = createSearchWorker('primary', fuseOptions);
       }
       primarySearch.current.update(results);
+      consumeBufferEffect(primarySearchBuffer, primarySearch.current);
     },
   });
 
@@ -201,14 +208,30 @@ export const useGlobalSearch = () => {
         secondarySearch.current = createSearchWorker('secondary', fuseOptions);
       }
       secondarySearch.current.update(results);
+      consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
     },
   });
+
+  const primarySearchBuffer = useRef<IndexBuffer | null>(null);
+  const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
 
   const [performPrimaryLazyQuery, primaryResult] = primary;
   const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
+  const consumeBufferEffect = useCallback(
+    async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
+      const bufferValue = buffer.current;
+      if (bufferValue) {
+        buffer.current = null;
+        const result = await search.search(bufferValue.query);
+        bufferValue.resolve(result);
+      }
+    },
+    [],
+  );
+
   // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
-  const initialize = useCallback(async () => {
+  const initialize = useCallback(() => {
     if (!primarySearch.current) {
       performPrimaryLazyQuery();
     }
@@ -217,13 +240,55 @@ export const useGlobalSearch = () => {
     }
   }, [performPrimaryLazyQuery, performSecondaryLazyQuery]);
 
-  const searchPrimary = useCallback(async (queryString: string) => {
-    return primarySearch.current ? primarySearch.current.search(queryString) : EMPTY_RESPONSE;
-  }, []);
+  const searchIndex = useCallback(
+    (
+      index: React.MutableRefObject<WorkerSearchResult | null>,
+      indexBuffer: React.MutableRefObject<IndexBuffer | null>,
+      query: string,
+    ): Promise<QueryResponse> => {
+      return new Promise(async (res) => {
+        if (index.current) {
+          const result = await index.current.search(query);
+          res(result);
+        } else {
+          // The user made a query before data is available
+          // let's store the query in a buffer and once the data is available
+          // we will consume the buffer
+          if (indexBuffer.current) {
+            // If the user changes the query before the data is available
+            // lets "cancel" the last buffer (resolve its awaitable with
+            // an empty response so it doesn't wait for all eternity) and
+            // only store the most recent query
+            indexBuffer.current.cancel();
+          }
+          indexBuffer.current = {
+            query,
+            resolve(response: QueryResponse) {
+              res(response);
+            },
+            cancel() {
+              res(EMPTY_RESPONSE);
+            },
+          };
+        }
+      });
+    },
+    [],
+  );
 
-  const searchSecondary = useCallback(async (queryString: string) => {
-    return secondarySearch.current ? secondarySearch.current.search(queryString) : EMPTY_RESPONSE;
-  }, []);
+  const searchPrimary = useCallback(
+    async (queryString: string) => {
+      return searchIndex(primarySearch, primarySearchBuffer, queryString);
+    },
+    [searchIndex],
+  );
+
+  const searchSecondary = useCallback(
+    async (queryString: string) => {
+      return searchIndex(secondarySearch, secondarySearchBuffer, queryString);
+    },
+    [searchIndex],
+  );
 
   // Terminate the workers. Be careful with this: for users with very large workspaces, we should
   // avoid constantly re-querying and restarting the threads. It should only be used when we know
@@ -237,7 +302,7 @@ export const useGlobalSearch = () => {
 
   return {
     initialize,
-    loading: primaryResult.loading || secondaryResult.loading,
+    loading: !primaryResult.data || !secondaryResult.data,
     searchPrimary,
     searchSecondary,
     terminate,
