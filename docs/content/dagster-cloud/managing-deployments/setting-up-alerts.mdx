@@ -8,6 +8,12 @@ title: "Setting up alerts in Dagster Cloud | Dagster Docs"
 
 In this guide, we'll walk you through configuring alerts in Dagster Cloud.
 
+Dagster Cloud can send alerts to:
+
+- Email
+- Slack
+- Microsoft Teams
+
 ---
 
 ## Understanding alert policies
@@ -21,8 +27,6 @@ Alert policies define which events will trigger an alert, the conditions under w
 - **Agent downtime alert policies** will trigger when a Hybrid agent hasn't heartbeated within the last 5 minutes.
 
 Alert policies are configured on a per-deployment basis. For example, asset alerts configured in a `prod` deployment are only applicable to assets in that deployment.
-
-Currently, Slack and email notifications are supported.
 
 ---
 
@@ -92,6 +96,17 @@ Currently, Slack and email notifications are supported.
        <Image
        alt="Email alert configured to alert two recipients"
        src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
+       width={1571}
+       height={514}
+       />
+
+     - **Microsoft Teams** - Send alerts to Teams incoming webhooks.
+
+       First, follow the instructions in the [Microsoft Teams documentation](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) to create an incoming webhook. Then, paste the url into the alert form.
+
+       <Image
+       alt="Microsoft Teams alert configured with a webhook url"
+       src="/images/dagster-cloud/alerts/cloud-ms-teams-alert-creation.png"
        width={1571}
        height={514}
        />
@@ -215,6 +230,26 @@ alert_policies:
           - "richard.hendricks@hooli.com"
           - "nelson.bighetti@hooli.com"
 ```
+
+### Configuring a Microsoft Teams alert policy
+
+In this example, we'll configure a Teams alert for when a Hybrid Agent goes down.
+
+```yaml
+alert_policies:
+  - name: "email-alert-policy"
+    description: "An alert policy to email company executives during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      microsoft_teams:
+        webhook_url: "https://yourdomain.webhook.office.com/..."
+```
+
+If the agent stops heartbeating, a message will be sent via the [incoming webhook URL](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
 
 ---
 
