@@ -107,10 +107,8 @@ class AssetValueLoader:
             io_manager_def = resource_defs[io_manager_key]
             name = assets_def.get_output_name_for_asset_key(asset_key)
             output_definition_metadata = assets_def.metadata_by_key[asset_key]
+            definition_metadata = assets_def.metadata_by_key[asset_key]
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
-            asset_partitions_def = assets_def.partitions_def
-        else:
-            check.failed(f"Asset key {asset_key} not found")
 
         required_resource_keys = get_transitive_required_resource_keys(
             io_manager_def.required_resource_keys, resource_defs
