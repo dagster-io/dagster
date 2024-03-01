@@ -1,5 +1,5 @@
 import itertools
-from typing import NamedTuple, Sequence
+from typing import NamedTuple, Sequence, Tuple
 
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.reactive_scheduling.scheduling_policy import (
@@ -30,32 +30,13 @@ def build_reactive_scheduling_plan(
     upstream_of_starting_space = create_partition_space_upstream_of_slices(context, starting_slices)
 
     # candidates start at the root
-    candidate_partition_space = upstream_of_starting_space.for_keys(
+    initial_candidate_partition_space = upstream_of_starting_space.for_keys(
         upstream_of_starting_space.root_asset_keys
     )
 
-    launch_partition_space = PartitionSpace.empty(context.asset_graph_view)
-
-    # now that we have the partition space we descend downward to filter
-
-    for asset_key in itertools.chain(*context.asset_graph.toposort_asset_keys()):
-        candidate_slice = candidate_partition_space.get_asset_slice(asset_key)
-        asset_info = context.get_scheduling_info(asset_key)
-        evaluation_result = (
-            asset_info.scheduling_policy.evaluate(context, candidate_slice)
-            if asset_info.scheduling_policy
-            else EvaluationResult(asset_slice=context.slice_factory.empty(asset_key))
-        )
-
-        launch_partition_space = launch_partition_space.with_asset_slice(
-            evaluation_result.asset_slice
-        )
-
-        # explore one level downward in the candidate partition space
-        for child_asset_key in context.asset_graph.get_children(asset_key):
-            candidate_partition_space = candidate_partition_space.with_asset_slice(
-                context.asset_graph_view.child_asset_slice(child_asset_key, candidate_slice)
-            )
+    launch_partition_space, total_candidate_space = build_launch_partition_space(
+        context, initial_candidate_partition_space
+    )
 
     tags = {}
 
@@ -70,8 +51,40 @@ def build_reactive_scheduling_plan(
     return ReactiveSchedulingPlan(
         partition_backfill=partition_backfill,
         launch_partition_space=launch_partition_space,
-        candidate_partition_space=candidate_partition_space,
+        candidate_partition_space=total_candidate_space,
     )
+
+
+def build_launch_partition_space(
+    context: SchedulingExecutionContext, initial_candidate_partition_space: PartitionSpace
+) -> Tuple[PartitionSpace, PartitionSpace]:
+    launch_partition_space = PartitionSpace.empty(context.asset_graph_view)
+
+    total_candidate_space = initial_candidate_partition_space
+
+    # now that we have the partition space we descend downward to filter
+
+    for asset_key in itertools.chain(*context.asset_graph.toposort_asset_keys()):
+        candidate_slice = total_candidate_space.get_asset_slice(asset_key)
+        asset_info = context.get_scheduling_info(asset_key)
+        evaluation_result = (
+            asset_info.scheduling_policy.evaluate(context, candidate_slice)
+            if asset_info.scheduling_policy
+            else EvaluationResult(asset_slice=context.slice_factory.empty(asset_key))
+        )
+
+        launch_partition_space = launch_partition_space.with_asset_slice(
+            evaluation_result.asset_slice
+        )
+
+        # explore one level downward in the candidate partition space
+        for child_asset_key in context.asset_graph.get_children(asset_key):
+            child_asset_slice = context.asset_graph_view.child_asset_slice(
+                child_asset_key=child_asset_key, asset_slice=candidate_slice
+            )
+            total_candidate_space = total_candidate_space.with_asset_slice(child_asset_slice)
+
+    return launch_partition_space, total_candidate_space
 
 
 def create_partition_space_upstream_of_slices(
@@ -107,35 +120,36 @@ class OnAnyNewParentUpdated(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=Rules.any_parent_updated(context, current_slice))
+        return EvaluationResult(asset_slice=RulesLogic.any_parent_updated(context, current_slice))
 
 
-class AnyParentOutOfSync(SchedulingPolicy):
+class Unsynced(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=Rules.any_parent_out_of_sync(context, current_slice))
-
-
-class AllParentsOutOfSync(SchedulingPolicy):
-    def evaluate(
-        self, context: SchedulingExecutionContext, current_slice: AssetSlice
-    ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=Rules.all_parents_out_of_sync(context, current_slice))
+        return EvaluationResult(asset_slice=RulesLogic.unsynced(context, current_slice))
 
 
 class DefaultSchedulingPolicy(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(
-            asset_slice=Rules.any_parent_updated(
-                context, Rules.latest_time_window(context, current_slice)
-            )
+        from .expr import Expr
+
+        result_slice = (Expr.latest_time_window() & Expr.unsynced()).evaluate(
+            context, current_slice
         )
+        return EvaluationResult(asset_slice=result_slice)
 
 
-class Rules:
+class TargetedByBackfill(SchedulingPolicy):
+    def evaluate(
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> EvaluationResult:
+        return EvaluationResult(asset_slice=current_slice.backfill_targeted_slice.inverse)
+
+
+class RulesLogic:
     @staticmethod
     def latest_time_window(
         context: SchedulingExecutionContext, asset_slice: AssetSlice
@@ -146,38 +160,31 @@ class Rules:
     def any_parent_updated(
         context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> AssetSlice:
-        return (
-            context.empty_slice(current_slice.asset_key)
-            if current_slice.updated_parent_partition_space.is_empty
-            else current_slice
-        )
+        pks = set()
+        updated_parent_space = current_slice.updated_parent_partition_space
+        for (
+            pk,
+            updated_parent_slice,
+        ) in updated_parent_space.parent_slices_by_partition_key.items():
+            if updated_parent_slice.nonempty:
+                pks.add(pk)
+
+        return context.slice_factory.from_partition_keys(current_slice.asset_key, pks)
 
     @staticmethod
     def all_parents_updated(
         context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> AssetSlice:
-        return (
-            current_slice
-            if current_slice.updated_parent_partition_space == current_slice.parent_parition_space
-            else context.empty_slice(current_slice.asset_key)
-        )
+        pks = set()
+        updated_parent_space = current_slice.updated_parent_partition_space
+        for pk, updated_parent_slice in updated_parent_space.parent_slices_by_partition_key.items():
+            parent_slice = current_slice.parent_slice_of_partition_key(
+                updated_parent_slice.asset_key, pk
+            )
+            if updated_parent_slice.equals(parent_slice):
+                pks.add(pk)
+        return context.slice_factory.from_partition_keys(current_slice.asset_key, pks)
 
     @staticmethod
-    def any_parent_out_of_sync(
-        context: SchedulingExecutionContext, current_slice: AssetSlice
-    ) -> AssetSlice:
-        return (
-            context.empty_slice(current_slice.asset_key)
-            if current_slice.unsynced_parent_partition_space.is_empty
-            else current_slice
-        )
-
-    @staticmethod
-    def all_parents_out_of_sync(
-        context: SchedulingExecutionContext, current_slice: AssetSlice
-    ) -> AssetSlice:
-        return (
-            current_slice
-            if current_slice.unsynced_parent_partition_space == current_slice.parent_parition_space
-            else context.empty_slice(current_slice.asset_key)
-        )
+    def unsynced(context: SchedulingExecutionContext, current_slice: AssetSlice) -> AssetSlice:
+        return current_slice.unsynced

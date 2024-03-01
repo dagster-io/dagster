@@ -10,7 +10,7 @@ from dagster._core.reactive_scheduling.asset_graph_view import (
     AssetPartition,
     AssetSlice,
 )
-from dagster._core.reactive_scheduling.scheduling_plan import Rules
+from dagster._core.reactive_scheduling.scheduling_plan import RulesLogic
 from dagster._core.reactive_scheduling.scheduling_policy import (
     EvaluationResult,
     SchedulingExecutionContext,
@@ -59,7 +59,7 @@ class AlwaysLaunchLatestTimeWindowSchedulingPolicy(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=Rules.latest_time_window(context, current_slice))
+        return EvaluationResult(asset_slice=RulesLogic.latest_time_window(context, current_slice))
 
 
 class LatestRequiredRunTags(SchedulingPolicy):

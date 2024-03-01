@@ -21,14 +21,16 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindow,
 )
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.asset_graph_view import (
     AssetPartition,
 )
 from dagster._core.reactive_scheduling.scheduling_plan import (
+    DefaultSchedulingPolicy,
     OnAnyNewParentUpdated,
     ReactiveSchedulingPlan,
-    Rules,
+    RulesLogic,
     build_reactive_scheduling_plan,
 )
 from dagster._core.reactive_scheduling.scheduling_policy import (
@@ -108,7 +110,7 @@ def test_partition_space() -> None:
     ag_view = context.asset_graph_view
 
     starting_slice = context.slice_factory.from_partition_keys(down_numbers.key, {"1"})
-    up_letters_slice = starting_slice.parent_asset_slice(up_letters.key)
+    up_letters_slice = starting_slice.total_parent_asset_slice(up_letters.key)
     assert up_letters_slice.asset_key == up_letters.key
     assert up_letters_slice.materialize_partition_keys() == {"A"}
 
@@ -333,9 +335,9 @@ def test_on_any_parent_updated() -> None:
 
     assert materialize([up], instance=instance).success
 
-    assert Rules.any_parent_updated(context_one, down_subset).nonempty
-    assert Rules.any_parent_updated(context_one, up_subset).empty
-    assert Rules.any_parent_updated(context_one, upup_subset).empty
+    assert RulesLogic.any_parent_updated(context_one, down_subset).nonempty
+    assert RulesLogic.any_parent_updated(context_one, up_subset).empty
+    assert RulesLogic.any_parent_updated(context_one, upup_subset).empty
 
     assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_one, down_subset).asset_slice, down_subset
@@ -368,9 +370,9 @@ def test_on_any_parent_updated() -> None:
     up_subset = context_two.slice_factory.unpartitioned(up.key)
     upup_subset = context_two.slice_factory.unpartitioned(upup.key)
 
-    assert Rules.any_parent_updated(context_two, down_subset).nonempty
-    assert Rules.any_parent_updated(context_two, up_subset).nonempty
-    assert Rules.any_parent_updated(context_two, upup_subset).empty
+    assert RulesLogic.any_parent_updated(context_two, down_subset).nonempty
+    assert RulesLogic.any_parent_updated(context_two, up_subset).nonempty
+    assert RulesLogic.any_parent_updated(context_two, upup_subset).empty
 
     assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_two, down_subset).asset_slice, down_subset
@@ -393,7 +395,7 @@ def test_on_any_parent_updated() -> None:
     assert plan_two.launch_partition_space.get_asset_slice(upup.key).empty
 
 
-def test_any_all_parent_out_of_sync() -> None:
+def test_unsynced() -> None:
     @observable_source_asset
     def observable_one() -> DataVersion:
         return DataVersion(str(uuid4()))
@@ -427,13 +429,190 @@ def test_any_all_parent_out_of_sync() -> None:
     context_t0 = build_test_context(defs, instance)
 
     downstream_subset = context_t0.slice_factory.unpartitioned(downstream.key)
-    assert Rules.any_parent_out_of_sync(context_t0, downstream_subset).empty
-    assert Rules.all_parents_out_of_sync(context_t0, downstream_subset).empty
+    assert RulesLogic.unsynced(context_t0, downstream_subset).empty
 
     assert observe([observable_one], instance=instance).success
 
     # # one observed. asset_one out of sync. any but not all out of sync
     context_t1 = build_test_context(defs, instance)
     downstream_subset = context_t1.slice_factory.unpartitioned(downstream.key)
-    assert Rules.any_parent_out_of_sync(context_t1, downstream_subset).nonempty
-    assert Rules.all_parents_out_of_sync(context_t1, downstream_subset).empty
+    assert RulesLogic.unsynced(context_t1, downstream_subset).nonempty
+
+
+def test_any_all_parents_updated_partitioned() -> None:
+    down_static_partitions_def = StaticPartitionsDefinition(["A", "B"])
+    up_static_partitions_def = StaticPartitionsDefinition(["A1", "A2", "B1", "B2"])
+    static_partitions_mapping = StaticPartitionMapping({"A1": "A", "A2": "A", "B1": "B", "B2": "B"})
+
+    # down --> up
+    # A --> A1, A2
+    # B --> B1, B2
+
+    @asset(partitions_def=up_static_partitions_def)
+    def up() -> None:
+        ...
+
+    @asset(
+        partitions_def=down_static_partitions_def,
+        deps=[AssetDep(up, partition_mapping=static_partitions_mapping)],
+    )
+    def down() -> None:
+        ...
+
+    @asset(deps=[down], partitions_def=down_static_partitions_def)
+    def downdown() -> None:
+        ...
+
+    defs = Definitions([up, down, downdown])
+
+    instance = DagsterInstance.ephemeral()
+
+    # init with 1 materialization each
+    assert materialize([up], instance=instance, partition_key="A1").success
+    assert materialize([up], instance=instance, partition_key="A2").success
+    assert materialize([up], instance=instance, partition_key="B1").success
+    assert materialize([up], instance=instance, partition_key="B2").success
+    assert materialize([down], instance=instance, partition_key="A").success
+    assert materialize([down], instance=instance, partition_key="B").success
+    assert materialize([downdown], instance=instance, partition_key="A").success
+    assert materialize([downdown], instance=instance, partition_key="B").success
+
+    context_t0 = build_test_context(defs, instance)
+
+    assert (
+        RulesLogic.all_parents_updated(
+            context_t0, context_t0.slice_factory.from_partition_keys(down.key, {"A", "B"})
+        ).materialize_partition_keys()
+        == set()
+    )
+
+    assert (
+        RulesLogic.any_parent_updated(
+            context_t0, context_t0.slice_factory.from_partition_keys(down.key, {"A", "B"})
+        ).materialize_partition_keys()
+        == set()
+    )
+
+    # now only touch up.A1
+    assert materialize([up], instance=instance, partition_key="A1").success
+
+    context_t1 = build_test_context(defs, instance)
+    # only A1 (not A2) updated so this empty
+    assert (
+        RulesLogic.all_parents_updated(
+            context_t1, context_t1.slice_factory.from_partition_keys(down.key, {"A", "B"})
+        ).materialize_partition_keys()
+        == set()
+    )
+
+    # only A1 means that A has at least one parent updated but B does not
+    assert RulesLogic.any_parent_updated(
+        context_t1, context_t1.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == {"A"}
+
+    # up is totally in sync
+    assert (
+        RulesLogic.unsynced(
+            context_t1, context_t1.slice_factory.complete_asset_slice(up.key)
+        ).materialize_partition_keys()
+        == set()
+    )
+
+    # down.A unsynced
+    assert RulesLogic.unsynced(
+        context_t1, context_t1.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == set("A")
+
+    # downdown.A unsynced trasitively
+    assert RulesLogic.unsynced(
+        context_t1, context_t1.slice_factory.from_partition_keys(downdown.key, {"A", "B"})
+    ).materialize_partition_keys() == set("A")
+
+    # now touch up.A2
+    assert materialize([up], instance=instance, partition_key="A2").success
+
+    context_t2 = build_test_context(defs, instance)
+
+    # A1 and A2 updated so A has all parents updated
+    assert RulesLogic.all_parents_updated(
+        context_t2, context_t2.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == {"A"}
+
+    # A1 and A2 updated so A has any parents updated
+    assert RulesLogic.any_parent_updated(
+        context_t2, context_t2.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == {"A"}
+
+    # now touch up.B1
+    assert materialize([up], instance=instance, partition_key="B1").success
+
+    context_t3 = build_test_context(defs, instance)
+
+    # A1 and A2 updated so A has all parents updated. Only B1 so B not included
+    assert RulesLogic.all_parents_updated(
+        context_t3, context_t3.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == {"A"}
+
+    # A1 and A2 updated so A has all parents updated. Only B1 but B included because any
+    assert RulesLogic.any_parent_updated(
+        context_t3, context_t3.slice_factory.from_partition_keys(down.key, {"A", "B"})
+    ).materialize_partition_keys() == {"A", "B"}
+
+
+def test_default_scheduling_policy() -> None:
+    # year's worth of daily partitions
+    start = pendulum.datetime(2021, 1, 1)
+    end = pendulum.datetime(2022, 1, 1)
+    daily_partitions_def = DailyPartitionsDefinition(start_date=start, end_date=end)
+
+    @asset(partitions_def=daily_partitions_def, scheduling_policy=DefaultSchedulingPolicy())
+    def root() -> None:
+        ...
+
+    @asset(
+        deps=[root],
+        scheduling_policy=DefaultSchedulingPolicy(),
+        partitions_def=daily_partitions_def,
+    )
+    def up(context) -> None:
+        ...
+
+    @asset(
+        deps=[up],
+        scheduling_policy=DefaultSchedulingPolicy(),
+        partitions_def=daily_partitions_def,
+    )
+    def an_asset(context: AssetExecutionContext) -> None:
+        ...
+
+    defs = Definitions([root, up, an_asset])
+
+    instance = DagsterInstance.ephemeral()
+
+    # init graph. materialize last partitionn on all. then make root updated.
+    minute_before_end = end - pendulum.duration(minutes=1)
+    partition_key = daily_partitions_def.partition_key_for_dt(minute_before_end)
+    assert materialize([root, up, an_asset], instance=instance, partition_key=partition_key).success
+    assert materialize([root], instance=instance, partition_key=partition_key).success
+
+    context_t0 = build_test_context(defs, instance)
+
+    last_100_days = TimeWindow(end - pendulum.duration(days=100), end)
+    an_asset_last_100 = context_t0.slice_factory.from_time_window(
+        asset_key=an_asset.key,
+        time_window=last_100_days,
+    )
+
+    plan_t0 = build_reactive_scheduling_plan(context_t0, starting_slices=[an_asset_last_100])
+    # root is in sync so no launch
+    assert (
+        plan_t0.launch_partition_space.get_asset_slice(root.key).materialize_partition_keys()
+        == set()
+    )
+    # rest are filtered to latest time window
+    assert plan_t0.launch_partition_space.get_asset_slice(up.key).materialize_partition_keys() == {
+        partition_key
+    }
+    assert plan_t0.launch_partition_space.get_asset_slice(
+        an_asset.key
+    ).materialize_partition_keys() == {partition_key}
