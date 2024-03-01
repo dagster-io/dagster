@@ -176,7 +176,10 @@ class CachingDataTimeResolver:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
         for parent_key in self.asset_graph.get_parents(asset_key):
-            if not self.asset_graph.is_executable(parent_key):
+            if not (
+                self.asset_graph.has_asset(parent_key)
+                and self.asset_graph.is_executable(parent_key)
+            ):
                 continue
 
             input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
