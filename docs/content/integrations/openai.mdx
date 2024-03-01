@@ -47,6 +47,7 @@ Then, we can instruct Dagster to authorize the OpenAI resource using the environ
 
 ```python startafter=start_example endbefore=end_example file=/integrations/openai/resource.py dedent=4
 dagster_openai import OpenAIResource
+
  dagster import EnvVar
 
 ll API key from environment variables
@@ -61,21 +62,23 @@ api_key=EnvVar("OPENAI_API_KEY"),
 The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject object="Definitions" /> object.
 
 ```python startafter=start_example endbefore=end_example file=/integrations/openai/assets.py dedent=4
-dagster import (
+dagster_openai import OpenAIResource
+
+ dagster import (
 AssetExecutionContext,
 Definitions,
 EnvVar,
 asset,
 define_asset_job,
 
- dagster_openai import OpenAIResource
 
 
 et(compute_kind="OpenAI")
 openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
 with openai.get_client(context) as client:
     client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test."}]
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Say this is a test."}],
     )
 
 
@@ -98,21 +101,23 @@ After materializing your asset, your OpenAI API usage metadata will be available
 The OpenAI resource can also be used in ops. **Note**: Currently, the OpenAI resource cannot log OpenAI usage metadata when used in ops.
 
 ```python startafter=start_example endbefore=end_example file=/integrations/openai/ops.py dedent=4
-dagster import (
+dagster_openai import OpenAIResource
+
+ dagster import (
 Definitions,
 EnvVar,
 GraphDefinition,
 OpExecutionContext,
 op,
 
- dagster_openai import OpenAIResource
 
 
 
 openai_op(context: OpExecutionContext, openai: OpenAIResource):
 with openai.get_client(context) as client:
     client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Say this is a test"}],
     )
 
 
