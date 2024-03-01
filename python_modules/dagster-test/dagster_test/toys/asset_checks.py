@@ -372,6 +372,7 @@ def graph_multi_asset_2_check_1(staged_asset):
             description="A always passes.",
         ),
     ],
+    can_subset=True,
 )
 def many_tests_graph_multi_asset():
     staged_asset = create_staged_asset()
