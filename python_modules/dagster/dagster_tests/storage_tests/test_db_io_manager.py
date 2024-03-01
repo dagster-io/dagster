@@ -336,7 +336,7 @@ def test_non_asset_out():
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
-        name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
+        name="table1", definition_metadata={"schema": "schema1"}, resource_config=resource_config
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -382,7 +382,9 @@ def test_asset_schema_defaults():
 
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(
-        asset_key=asset_key, metadata={"schema": "schema2"}, resource_config=resource_config
+        asset_key=asset_key,
+        definition_metadata={"schema": "schema2"},
+        resource_config=resource_config,
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -390,7 +392,9 @@ def test_asset_schema_defaults():
 
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(
-        asset_key=asset_key, metadata={"schema": "schema1"}, resource_config=resource_config
+        asset_key=asset_key,
+        definition_metadata={"schema": "schema1"},
+        resource_config=resource_config,
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -429,7 +433,7 @@ def test_asset_schema_defaults():
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(
         asset_key=asset_key,
-        metadata={"schema": "schema1"},
+        definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
     )
 
@@ -442,7 +446,7 @@ def test_output_schema_defaults():
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
-        name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
+        name="table1", definition_metadata={"schema": "schema1"}, resource_config=resource_config
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -474,7 +478,9 @@ def test_output_schema_defaults():
     assert table_slice.schema == "my_schema"
 
     output_context = build_output_context(
-        name="table1", metadata={"schema": "schema1"}, resource_config=resource_config_w_schema
+        name="table1",
+        definition_metadata={"schema": "schema1"},
+        resource_config=resource_config_w_schema,
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
     assert table_slice.schema == "schema1"

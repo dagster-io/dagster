@@ -178,7 +178,7 @@ class FromSourceAsset(
                 ),
                 name=input_asset_key.path[-1],
                 step_key="none",
-                metadata=asset_layer.metadata_for_asset(input_asset_key),
+                definition_metadata=asset_layer.metadata_for_asset(input_asset_key),
                 resource_config=resource_config,
                 log_manager=step_context.log,
             ),
