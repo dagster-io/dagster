@@ -1207,11 +1207,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
-            metadata_by_key=replaced_metadata_by_key,
+            metadata_by_key={
+                **self._metadata_by_key,
+                **replaced_metadata_by_key,
+            },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
-            descriptions_by_key=replaced_descriptions_by_key,
+            descriptions_by_key={
+                **self._descriptions_by_key,
+                **replaced_descriptions_by_key,
+            },
             is_subset=is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
@@ -1221,7 +1227,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             else self._selected_asset_check_keys,
         )
 
-        return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
+        merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
+        return self.__class__.dagster_internal_init(**merged_attrs)
 
     def _subset_graph_backed_asset(
         self,

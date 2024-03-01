@@ -27,6 +27,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -172,6 +173,37 @@ def test_with_replaced_description() -> None:
         AssetKey("foo"): "foo",
         AssetKey("bar"): "bar_prime",
         AssetKey("baz"): "baz",
+    }
+
+    @op
+    def op1():
+        ...
+
+    @op
+    def op2():
+        ...
+
+    @graph_multi_asset(
+        outs={"foo": AssetOut(description="foo"), "bar": AssetOut(description="bar")}
+    )
+    def abc_graph():
+        return {"foo": op1(), "bar": op2()}
+
+    assert abc_graph.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+    }
+
+    replaced = abc_graph.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
     }
 
 
