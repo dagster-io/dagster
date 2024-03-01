@@ -1,6 +1,6 @@
-# ruff: isort: skip_file
-
 # start_example
+from dagster_openai import OpenAIResource
+
 from dagster import (
     AssetExecutionContext,
     Definitions,
@@ -8,14 +8,14 @@ from dagster import (
     asset,
     define_asset_job,
 )
-from dagster_openai import OpenAIResource
 
 
 @asset(compute_kind="OpenAI")
 def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
     with openai.get_client(context) as client:
         client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test."}]
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Say this is a test."}],
         )
 
 
@@ -29,4 +29,3 @@ defs = Definitions(
     },
 )
 # end_example
-

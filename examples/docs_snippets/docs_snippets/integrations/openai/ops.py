@@ -1,6 +1,6 @@
-# ruff: isort: skip_file
-
 # start_example
+from dagster_openai import OpenAIResource
+
 from dagster import (
     Definitions,
     EnvVar,
@@ -8,14 +8,14 @@ from dagster import (
     OpExecutionContext,
     op,
 )
-from dagster_openai import OpenAIResource
 
 
 @op
 def openai_op(context: OpExecutionContext, openai: OpenAIResource):
     with openai.get_client(context) as client:
         client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Say this is a test"}]
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Say this is a test"}],
         )
 
 
