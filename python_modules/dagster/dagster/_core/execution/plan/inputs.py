@@ -168,7 +168,7 @@ class FromLoadableAsset(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=resource_config,
             resources=resources,
@@ -305,7 +305,7 @@ class FromInputManager(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
             resources=build_resources_for_manager(input_manager_key, step_context),

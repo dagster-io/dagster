@@ -12,7 +12,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -25,6 +25,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
@@ -38,6 +39,11 @@ if TYPE_CHECKING:
     from .output import OutputContext
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 class InputContext:
     """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
@@ -62,7 +68,7 @@ class InputContext:
         job_name: Optional[str] = None,
         op_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
+        definition_metadata: Optional[ArbitraryMetadataMapping] = None,
         upstream_output: Optional["OutputContext"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
@@ -74,6 +80,8 @@ class InputContext:
         asset_partitions_subset: Optional[PartitionsSubset] = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
+        # deprecated
+        metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -82,7 +90,12 @@ class InputContext:
         self._job_name = job_name
         self._op_def = op_def
         self._config = config
-        self._metadata = metadata or {}
+        self._definition_metadata = (
+            normalize_renamed_param(
+                definition_metadata, "definition_metadata", metadata, "metadata"
+            )
+            or {}
+        )
         self._upstream_output = upstream_output
         self._dagster_type = dagster_type
         self._log = log_manager
@@ -181,15 +194,22 @@ class InputContext:
         """The config attached to the input that we're loading."""
         return self._config
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
-        """A dict of metadata that is assigned to the InputDefinition that we're loading for.
+        """Deprecated: Use definitiion_metadata instead."""
+        return self._definition_metadata
+
+    @public
+    @property
+    def definition_metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of metadata that is assigned to the InputDefinition that we're loading.
         This property only contains metadata passed in explicitly with :py:class:`AssetIn`
         or :py:class:`In`. To access metadata of an upstream asset or operation definition,
         use the metadata in :py:attr:`.InputContext.upstream_output`.
         """
-        return self._metadata
+        return self._definition_metadata
 
     @public
     @property
@@ -519,10 +539,15 @@ class InputContext:
         return result
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 def build_input_context(
     name: Optional[str] = None,
     config: Optional[Any] = None,
-    metadata: Optional[ArbitraryMetadataMapping] = None,
+    definition_metadata: Optional[ArbitraryMetadataMapping] = None,
     upstream_output: Optional["OutputContext"] = None,
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
@@ -534,6 +559,8 @@ def build_input_context(
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
+    # deprecated
+    metadata: Optional[ArbitraryMetadataMapping] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -544,7 +571,7 @@ def build_input_context(
     Args:
         name (Optional[str]): The name of the input that we're loading.
         config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
+        definition_metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
@@ -579,7 +606,14 @@ def build_input_context(
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
-    metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+    check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str)
+    check.opt_mapping_param(metadata, "metadata", key_type=str)
+    definition_metadata = normalize_renamed_param(
+        definition_metadata,
+        "definition_metadata",
+        metadata,
+        "metadata",
+    )
     upstream_output = check.opt_inst_param(upstream_output, "upstream_output", OutputContext)
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
@@ -607,7 +641,7 @@ def build_input_context(
         name=name,
         job_name=None,
         config=config,
-        metadata=metadata,
+        definition_metadata=definition_metadata,
         upstream_output=upstream_output,
         dagster_type=dagster_type,
         log_manager=initialize_console_manager(None),

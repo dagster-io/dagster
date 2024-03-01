@@ -267,7 +267,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         context: InputContext,
         with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
 
         version = self.get_delta_version_to_load(path, context)
 
@@ -353,7 +353,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         return metadata
 
     def get_delta_version_to_load(self, path: "UPath", context: InputContext) -> int:
-        context_metadata = context.metadata or {}
+        context_metadata = context.definition_metadata or {}
         version_from_metadata = context_metadata.get("version")
 
         version_from_config = self.version
