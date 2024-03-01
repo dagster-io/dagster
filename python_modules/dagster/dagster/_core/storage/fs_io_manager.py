@@ -308,7 +308,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         Asset Catalog.
         """
         check.inst_param(context, "context", OutputContext)
-        metadata = context.metadata
+        metadata = context.definition_metadata
         path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
 
         filepath = self._get_path(path)

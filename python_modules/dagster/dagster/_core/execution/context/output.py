@@ -885,8 +885,8 @@ def build_output_context(
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")
-    (check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str),)
-    (check.opt_mapping_param(metadata, "metadata", key_type=str),)
+    check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str)
+    check.opt_mapping_param(metadata, "metadata", key_type=str)
     definition_metadata = normalize_renamed_param(
         definition_metadata,
         "definition_metadata",

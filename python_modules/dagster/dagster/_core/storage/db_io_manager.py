@@ -172,7 +172,7 @@ class DbIOManager(IOManager):
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
     ) -> TableSlice:
-        output_context_metadata = output_context.metadata or {}
+        output_context_metadata = output_context.definition_metadata or {}
 
         schema: str
         table: str
