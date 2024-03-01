@@ -71,8 +71,9 @@ export function useQueryRefreshAtInterval(
       return;
     }
     if (
-      (documentVisible && documentVisiblityDidInterrupt.current) ||
-      (documentVisible && !searchVisible && searchVisibilityDidInterrupt.current)
+      documentVisible &&
+      !searchVisible &&
+      (searchVisibilityDidInterrupt.current || documentVisiblityDidInterrupt.current)
     ) {
       customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
       documentVisiblityDidInterrupt.current = false;
