@@ -195,6 +195,7 @@ def test_pyspark_databricks(
         DatabricksRunLifeCycleState.TERMINATED, DatabricksRunResultState.SUCCESS, ""
     )
     mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
+    mock_get_run.return_value.as_dict = mock.Mock(return_value={})
 
     with instance_for_test() as instance:
         result = do_nothing_local_job.execute_in_process(instance=instance)
@@ -231,7 +232,7 @@ def test_pyspark_databricks(
         )
         assert result.success
         assert mock_perform_query.call_count == 2
-        assert mock_get_run.call_count == 1
+        assert mock_get_run.call_count == 2
         assert mock_get_run_state.call_count == 6
         assert mock_get_step_events.call_count == 6
         assert mock_put_file.call_count == 4
