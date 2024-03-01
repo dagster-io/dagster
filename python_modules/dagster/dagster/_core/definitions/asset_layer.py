@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition_mapping import PartitionMapping
-    from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
 
     from .partition import PartitionedConfig, PartitionsDefinition
@@ -411,7 +410,6 @@ class AssetLayer(NamedTuple):
         asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"],
         observable_source_assets_by_node_handle: Mapping[NodeHandle, "SourceAsset"],
         source_assets: Sequence["SourceAsset"],
-        resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
         """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
@@ -452,25 +450,20 @@ class AssetLayer(NamedTuple):
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             for key in assets_def.keys:
-                asset_deps[key] = resolved_asset_deps.get_resolved_upstream_asset_keys(
-                    assets_def, key
-                )
+                asset_deps[key] = assets_def.asset_deps[key]
 
-            for input_name in assets_def.node_keys_by_input_name.keys():
-                resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
-                    assets_def, input_name
-                )
+            for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle, input_name)
-                asset_key_by_input[input_handle] = resolved_asset_key
+                asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
-                    asset_key_by_input[node_input_handle] = resolved_asset_key
+                    asset_key_by_input[node_input_handle] = input_asset_key
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
                     partition_mappings_by_asset_dep[
-                        (node_handle, resolved_asset_key)
+                        (node_handle, input_asset_key)
                     ] = partition_mapping
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():

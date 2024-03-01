@@ -38,10 +38,16 @@ from dagster import (
     fs_io_manager,
 )
 from dagster._config import Array, Field
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.host_representation.origin import (
@@ -718,3 +724,21 @@ def ensure_dagster_tests_import() -> None:
         dagster_package_root / "dagster_tests"
     ).exists(), "Could not find dagster_tests where expected"
     sys.path.append(dagster_package_root.as_posix())
+
+
+def create_test_asset_job(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    *,
+    selection: Optional[CoercibleToAssetSelection] = None,
+    name: str = "asset_job",
+    resources: Mapping[str, object] = {},
+    **kwargs: Any,
+) -> JobDefinition:
+    assets_defs = [a for a in assets if isinstance(a, AssetsDefinition)]
+    source_assets = [a for a in assets if isinstance(a, SourceAsset)]
+    selection = selection or assets_defs
+    return Definitions(
+        assets=[*assets_defs, *source_assets],
+        jobs=[define_asset_job(name, selection, **kwargs)],
+        resources=resources,
+    ).get_job_def(name)

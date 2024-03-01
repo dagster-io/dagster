@@ -42,7 +42,6 @@ from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition, default_job_io_manager
 from .metadata import RawMetadataValue
 from .partition import PartitionedConfig, PartitionsDefinition
-from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
 from .source_asset import SourceAsset
@@ -210,18 +209,17 @@ def build_assets_job(
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
-    resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
     deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
-        assets, asset_checks, resolved_asset_deps
+        assets, asset_checks
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         assets = _attempt_resolve_cycles(assets, resolved_source_assets)
-        resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
 
         deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
-            assets, asset_checks, resolved_asset_deps
+            assets,
+            asset_checks,
         )
 
     if len(assets) > 0 or len(asset_checks) > 0:
@@ -257,7 +255,6 @@ def build_assets_job(
         graph_def=graph,
         asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
         source_assets=resolved_source_assets,
-        resolved_asset_deps=resolved_asset_deps,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
         observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
@@ -363,7 +360,6 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
     asset_checks_defs: Sequence[AssetChecksDefinition],
-    resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
     DependencyMapping[NodeInvocation],
     Mapping[NodeHandle, AssetsDefinition],
@@ -413,11 +409,7 @@ def build_node_deps(
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name in assets_def.input_names:
-            upstream_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
-                assets_def, input_name
-            )
-
+        for input_name, upstream_asset_key in assets_def.keys_by_input_name.items():
             # ignore self-deps
             if upstream_asset_key in assets_def.keys:
                 continue

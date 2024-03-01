@@ -119,10 +119,6 @@ class AssetSelectionData(
 def generate_asset_dep_graph(
     assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
 ) -> DependencyGraph[AssetKey]:
-    from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
-
-    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
-
     upstream: Dict[AssetKey, Set[AssetKey]] = {}
     downstream: Dict[AssetKey, Set[AssetKey]] = {}
     for assets_def in assets_defs:
@@ -130,10 +126,7 @@ def generate_asset_dep_graph(
             upstream[asset_key] = set()
             downstream[asset_key] = downstream.get(asset_key, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            upstream_asset_keys = resolved_asset_deps.get_resolved_upstream_asset_keys(
-                assets_def, asset_key
-            )
-            for upstream_key in upstream_asset_keys:
+            for upstream_key in assets_def.asset_deps[asset_key]:
                 upstream[asset_key].add(upstream_key)
                 downstream[upstream_key] = downstream.get(upstream_key, set()) | {asset_key}
     return {"upstream": upstream, "downstream": downstream}
