@@ -3,6 +3,7 @@ import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
+import {isSearchVisible, useSearchVisibility} from '../search/useSearchVisibility';
 
 export const FIFTEEN_SECONDS = 15 * 1000;
 export const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
@@ -62,15 +63,23 @@ export function useQueryRefreshAtInterval(
   const documentVisiblityDidInterrupt = useRef(false);
   const documentVisible = useDocumentVisibility();
 
+  const searchVisibilityDidInterrupt = useRef(false);
+  const searchVisible = useSearchVisibility();
+
   useEffect(() => {
     if (!enabled) {
       return;
     }
-    if (documentVisible && documentVisiblityDidInterrupt.current) {
+    if (
+      documentVisible &&
+      !searchVisible &&
+      (searchVisibilityDidInterrupt.current || documentVisiblityDidInterrupt.current)
+    ) {
       customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
       documentVisiblityDidInterrupt.current = false;
+      searchVisibilityDidInterrupt.current = false;
     }
-  }, [documentVisible, enabled]);
+  }, [documentVisible, enabled, searchVisible]);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -103,6 +112,10 @@ export function useQueryRefreshAtInterval(
         // If the document is no longer visible, mark that we have skipped an update rather
         // then updating in the background. We'll refresh when we return to the foreground.
         documentVisiblityDidInterrupt.current = true;
+        return;
+      }
+      if (isSearchVisible()) {
+        searchVisibilityDidInterrupt.current = true;
         return;
       }
       customRefetchRef.current ? customRefetchRef.current() : queryResultRef.current?.refetch();
