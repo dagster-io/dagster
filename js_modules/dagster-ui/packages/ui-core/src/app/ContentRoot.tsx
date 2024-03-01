@@ -38,13 +38,6 @@ export const ContentRoot = memo(() => {
               <AssetsGroupsGlobalGraphRoot />
             </Suspense>
           </Route>
-          <Route path="/assets-overview(/?.*)">
-            <Suspense fallback={<div />}>
-              <AssetFeatureProvider>
-                <AssetsOverview />
-              </AssetFeatureProvider>
-            </Suspense>
-          </Route>
           <Route path="/assets(/?.*)">
             <Suspense fallback={<div />}>
               <AssetFeatureProvider>
