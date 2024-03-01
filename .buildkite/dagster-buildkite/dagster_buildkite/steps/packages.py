@@ -355,17 +355,6 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
     if tox_factor == "general_tests_old_protobuf":
         return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
 
-    if (
-        tox_factor
-        in {
-            "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
-        }
-    ):
-        return [AvailablePythonVersion.V3_11]
-
-    if tox_factor in {"scheduler_tests", "definitions_tests"}:
-        return [AvailablePythonVersion.V3_11]
-
     if tox_factor in {
         "definitions_tests_pendulum_1",
         "definitions_tests_pendulum_2",
