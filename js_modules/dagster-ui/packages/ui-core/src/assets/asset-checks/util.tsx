@@ -13,7 +13,6 @@ export function assetCheckStatusDescription(
     return 'Not evaluated';
   }
   const status = lastExecution.status;
-  const date = lastExecution.timestamp;
   switch (status) {
     case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
       return 'Execution failed';
