@@ -53,7 +53,7 @@ class AssetGraphDiffer:
     ):
         if base_asset_graph is None:
             # if base_asset_graph is None, then the asset graph in the branch deployment does not exist
-            # in the parent deployment
+            # in the base deployment
             self._base_asset_graph = None
             self._base_asset_graph_load_fn = None
         elif isinstance(base_asset_graph, ExternalAssetGraph):
@@ -76,10 +76,10 @@ class AssetGraphDiffer:
         code_location_name: str,
         repository_name: str,
         branch_workspace: BaseWorkspaceRequestContext,
-        parent_workspace: BaseWorkspaceRequestContext,
+        base_workspace: BaseWorkspaceRequestContext,
     ) -> "AssetGraphDiffer":
-        """Constructs a ParentAssetGraphDiffer for a particular repository in a code location for two
-        deployment workspaces, the parent deployment and the branch deployment.
+        """Constructs an AssetGraphDiffer for a particular repository in a code location for two
+        deployment workspaces, the base deployment and the branch deployment.
 
         We cannot make ExternalAssetGraphs directly from the workspaces because if multiple code locations
         use the same asset key, those asset keys will override each other in the dictionaries the ExternalAssetGraph
@@ -89,7 +89,7 @@ class AssetGraphDiffer:
         that could override each other.
         """
         check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
-        check.inst_param(parent_workspace, "parent_workspace", BaseWorkspaceRequestContext)
+        check.inst_param(base_workspace, "base_workspace", BaseWorkspaceRequestContext)
 
         branch_repo = _get_external_repo_from_context(
             branch_workspace, code_location_name, repository_name
@@ -98,23 +98,23 @@ class AssetGraphDiffer:
             raise DagsterInvariantViolationError(
                 f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
             )
-        parent_repo = _get_external_repo_from_context(
-            parent_workspace, code_location_name, repository_name
+        base_repo = _get_external_repo_from_context(
+            base_workspace, code_location_name, repository_name
         )
         return AssetGraphDiffer(
             branch_asset_graph=lambda: ExternalAssetGraph.from_external_repository(branch_repo),
-            base_asset_graph=(lambda: ExternalAssetGraph.from_external_repository(parent_repo))
-            if parent_repo is not None
+            base_asset_graph=(lambda: ExternalAssetGraph.from_external_repository(base_repo))
+            if base_repo is not None
             else None,
         )
 
-    def _compare_parent_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
+    def _compare_base_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
         """Computes the diff between a branch deployment asset and the
-        corresponding parent deployment asset.
+        corresponding base deployment asset.
         """
         if self.base_asset_graph is None:
-            # if the parent asset graph is None, it is because the the asset graph in the branch deployment
-            # is new and doesn't exist in the parent deployment. Thus all assets are new.
+            # if the base asset graph is None, it is because the the asset graph in the branch deployment
+            # is new and doesn't exist in the base deployment. Thus all assets are new.
             return [ChangeReason.NEW]
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
@@ -134,8 +134,8 @@ class AssetGraphDiffer:
         return changes
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
-        """Returns list of ChangeReasons for asset_key as compared to the parent deployment."""
-        return self._compare_parent_and_branch_assets(asset_key)
+        """Returns list of ChangeReasons for asset_key as compared to the base deployment."""
+        return self._compare_base_and_branch_assets(asset_key)
 
     @property
     def branch_asset_graph(self) -> "ExternalAssetGraph":
