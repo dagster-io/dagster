@@ -190,6 +190,37 @@ class SlingResource(ConfigurableResource):
     connections: List[SlingConnectionResource] = []
     _stdout: List[str] = []
 
+    def _clean_connection_dict(self, d: Dict[str, Any]) -> Dict[str, Any]:
+        d = _process_env_vars(d)
+        if d["connection_string"]:
+            d["url"] = d["connection_string"]
+        if "connection_string" in d:
+            del d["connection_string"]
+        return d
+
+    def prepare_environment(self) -> Dict[str, Any]:
+        sling_source = None
+        sling_target = None
+
+        if self.source_connection:
+            sling_source = self._clean_connection_dict(dict(self.source_connection))
+        if self.target_connection:
+            sling_target = self._clean_connection_dict(dict(self.target_connection))
+
+        env = {}
+
+        if sling_source:
+            env["SLING_SOURCE"] = json.dumps(sling_source)
+
+        if sling_target:
+            env["SLING_TARGET"] = json.dumps(sling_target)
+
+        for conn in self.connections:
+            d = self._clean_connection_dict(dict(conn))
+            env[conn.name] = json.dumps(d)
+
+        return env
+
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
@@ -209,35 +240,8 @@ class SlingResource(ConfigurableResource):
                 stacklevel=4,
             )
 
-        sling_source = None
-        sling_target = None
-        if self.source_connection:
-            sling_source = _process_env_vars(dict(self.source_connection))
-            if self.source_connection.connection_string:
-                sling_source["url"] = self.source_connection.connection_string
-        if self.target_connection:
-            sling_target = _process_env_vars(dict(self.target_connection))
-            if self.target_connection.connection_string:
-                sling_target["url"] = self.target_connection.connection_string
-
-        sling_connections: dict[str, Dict[str, Any]] = {
-            conn.name: {
-                "url" if k == "connection_string" else k: v
-                for k, v in _process_env_vars(dict(conn)).items()
-            }
-            for conn in self.connections
-        }
-
-        with environ(
-            {
-                "SLING_SOURCE": json.dumps(sling_source),
-                "SLING_TARGET": json.dumps(sling_target),
-                **{
-                    f"{conn.name}": json.dumps(sling_connections[conn.name])
-                    for conn in self.connections
-                },
-            }
-        ):
+        prepared_environment = self.prepare_environment()
+        with environ(prepared_environment):
             yield
 
     def _clean_line(self, line: str) -> str:
@@ -337,6 +341,7 @@ class SlingResource(ConfigurableResource):
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
             env = os.environ.copy()
+            logger.info(f"env: {env}")
 
             with open(temp_file, "w") as file:
                 json.dump(replication_config, file, cls=sling.JsonEncoder)
