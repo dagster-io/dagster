@@ -1143,11 +1143,11 @@ def test_metadata_in_io_manager():
 
     class MyDefinitionMetadataIOManager(IOManager):
         def handle_output(self, context: OutputContext, obj):
-            assert context.metadata == expected_metadata
+            assert context.definition_metadata == expected_metadata
 
         def load_input(self, context: InputContext):
             assert context.upstream_output
-            assert context.upstream_output.metadata == expected_metadata
+            assert context.upstream_output.definition_metadata == expected_metadata
 
     class MyOutputMetadataIOManager(IOManager):
         def handle_output(self, context: OutputContext, obj):
@@ -1177,12 +1177,12 @@ def test_metadata_in_io_manager():
             )
             assert normalized_metadata == expected_metadata
 
-            assert context.metadata == expected_metadata
+            assert context.definition_metadata == expected_metadata
 
         def load_input(self, context: InputContext):
             assert context.upstream_output
             assert context.upstream_output.output_metadata == {}
-            assert context.upstream_output.metadata == expected_metadata
+            assert context.upstream_output.definition_metadata == expected_metadata
 
     @asset(metadata=expected_metadata)
     def metadata_on_def():

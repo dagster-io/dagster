@@ -74,6 +74,7 @@ class OutputContext:
     _job_name: Optional[str]
     _run_id: Optional[str]
     _definition_metadata: ArbitraryMetadataMapping
+    _output_metadata: ArbitraryMetadataMapping
     _user_generated_metadata: Mapping[str, MetadataValue]
     _mapping_key: Optional[str]
     _config: object
