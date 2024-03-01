@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import logging
 import os
 import time
@@ -230,7 +229,7 @@ class AssetDaemonContext:
         num_checked_assets = 0
         num_auto_materialize_asset_keys = len(self.auto_materialize_asset_keys)
 
-        for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
+        for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.auto_materialize_asset_keys:
                 continue

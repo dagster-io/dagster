@@ -102,7 +102,7 @@ def test_mixed_source_asset_observation_job():
         return 1
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=r"specified both regular assets and source assets"
+        DagsterInvalidDefinitionError, match=r"specified both regular assets and external assets"
     ):
         Definitions(
             assets=[foo, bar],
