@@ -506,6 +506,7 @@ class GraphDefinition(NodeDefinition):
 
     def copy(
         self,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
@@ -515,7 +516,7 @@ class GraphDefinition(NodeDefinition):
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
     ) -> Self:
         return self.__class__(
-            node_defs=self.node_defs,
+            node_defs=node_defs or self.node_defs,
             dependencies=self.dependencies,
             name=name or self.name,
             description=description or self.description,

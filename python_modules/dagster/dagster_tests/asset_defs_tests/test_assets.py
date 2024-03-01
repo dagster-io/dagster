@@ -2145,3 +2145,42 @@ def test_asset_spec_with_metadata():
         AssetKey(["a"]): {"foo": "1"},
         AssetKey(["b"]): {"bar": "2"},
     }
+
+
+def test_update_op_tags_graph_asset():
+    @asset
+    def upstream_asset():
+        return 1
+
+    @op(tags={"foo": "old_value"})
+    def add_one(input_num):
+        return input_num + 1
+
+    @op(tags={"bar": "old_value"})
+    def multiply_by_two(input_num):
+        return input_num * 2
+
+    @graph_asset()
+    def middle_asset(upstream_asset):
+        return multiply_by_two(add_one(upstream_asset))
+
+    graph_op_tags = {"multiply_by_two": {"bar": "new_value"}, "add_one": {"foo": "new_value"}}
+    updated_middle_asset = middle_asset.with_attributes(graph_op_tags=graph_op_tags)
+
+    for node_def in updated_middle_asset.node_def.iterate_op_defs():
+        assert graph_op_tags.get(node_def.name) == node_def.tags
+
+    assert multiply_by_two.tags == {"bar": "old_value"}
+
+
+def test_update_op_tags_asset():
+    @asset
+    def upstream_asset():
+        return 10
+
+    op_tags = {"new_tag": "hello world"}
+    updated_upstream_asset = upstream_asset.with_attributes(op_tags=op_tags)
+
+    assert updated_upstream_asset.op.tags == op_tags
+
+    assert upstream_asset.op.tags == {}
