@@ -242,7 +242,7 @@ export const useGlobalSearch = () => {
 
   const searchIndex = useCallback(
     (
-      index: React.MutableRefObject<WorkerSearchResult>,
+      index: React.MutableRefObject<WorkerSearchResult | null>,
       indexBuffer: React.MutableRefObject<IndexBuffer | null>,
       query: string,
     ): Promise<QueryResponse> => {
