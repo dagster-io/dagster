@@ -125,13 +125,6 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     [searchSecondary],
   );
 
-  React.useEffect(() => {
-    console.log('SearchDialog intial render');
-    return () => {
-      console.log('SearchDialog unrender');
-    };
-  }, []);
-
   const debouncedSearch = React.useMemo(() => {
     const debouncedSearch = debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
