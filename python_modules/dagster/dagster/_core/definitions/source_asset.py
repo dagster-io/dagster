@@ -169,9 +169,15 @@ class SourceAsset(ResourceAddable):
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
         auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
             of the observation function for this asset will be launched at this interval. `observe_fn`
             must be provided.
+        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
+            with respect to its root data.
     """
 
     key: PublicAttr[AssetKey]
@@ -184,6 +190,7 @@ class SourceAsset(ResourceAddable):
     group_name: PublicAttr[str]
     resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
+    op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
     freshness_policy: Optional[FreshnessPolicy]
@@ -199,6 +206,7 @@ class SourceAsset(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, object]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
+        op_tags: Optional[Mapping[str, Any]] = None,
         *,
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
@@ -244,6 +252,7 @@ class SourceAsset(ResourceAddable):
         self.group_name = validate_group_name(group_name)
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
+        self.op_tags = check.opt_mapping_param(op_tags, "op_tags")
         self._required_resource_keys = check.opt_set_param(
             _required_resource_keys, "_required_resource_keys", of_type=str
         )
@@ -315,6 +324,7 @@ class SourceAsset(ResourceAddable):
                 name=self.key.to_python_identifier(),
                 description=self.description,
                 required_resource_keys=self._required_resource_keys,
+                tags=self.op_tags,
             )
         return self._node_def
 

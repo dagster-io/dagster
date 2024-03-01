@@ -1,4 +1,4 @@
-from typing import AbstractSet, Mapping, Optional, Sequence, Set, Union, overload
+from typing import AbstractSet, Any, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -23,7 +23,10 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
+from dagster._core.definitions.source_asset import (
+    SourceAsset,
+    SourceAssetObserveFunction,
+)
 
 
 @overload
@@ -47,6 +50,7 @@ def observable_source_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> "_ObservableSourceAsset":
     ...
 
@@ -68,6 +72,7 @@ def observable_source_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -100,6 +105,12 @@ def observable_source_asset(
             compose the asset.
         auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
             of the observation function for this asset will be launched at this interval.
+        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
+            with respect to its root data.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
     """
     if observe_fn is not None:
@@ -119,6 +130,7 @@ def observable_source_asset(
         partitions_def,
         auto_observe_interval_minutes,
         freshness_policy,
+        op_tags,
     )
 
 
@@ -138,6 +150,7 @@ class _ObservableSourceAsset:
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        op_tags: Optional[Mapping[str, Any]] = None,
     ):
         self.key = key
         self.name = name
@@ -156,6 +169,7 @@ class _ObservableSourceAsset:
         self.partitions_def = partitions_def
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
         self.freshness_policy = freshness_policy
+        self.op_tags = op_tags
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
@@ -185,6 +199,7 @@ class _ObservableSourceAsset:
             _required_resource_keys=resolved_resource_keys,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
+            op_tags=self.op_tags,
             partitions_def=self.partitions_def,
             auto_observe_interval_minutes=self.auto_observe_interval_minutes,
             freshness_policy=self.freshness_policy,

@@ -98,3 +98,13 @@ def test_key_and_name_args():
         @observable_source_asset(name=["peach"], key=["peach", "nectarine"])
         def name_and_key_specified():
             ...
+
+
+def test_op_tags():
+    tags = {"foo": "bar"}
+
+    @observable_source_asset(op_tags=tags)
+    def op_tags_specified():
+        ...
+
+    assert op_tags_specified.op.tags == tags
