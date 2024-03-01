@@ -219,10 +219,7 @@ export const useGlobalSearch = () => {
   const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
   const consumeBufferEffect = useCallback(
-    async (
-      buffer: typeof primarySearchBuffer | typeof secondarySearchBuffer,
-      search: WorkerSearchResult,
-    ) => {
+    async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
       const bufferValue = buffer.current;
       if (bufferValue) {
         buffer.current = null;
@@ -245,8 +242,8 @@ export const useGlobalSearch = () => {
 
   const searchIndex = useCallback(
     (
-      index: typeof primarySearch,
-      indexBuffer: typeof primarySearchBuffer,
+      index: React.MutableRefObject<WorkerSearchResult>,
+      indexBuffer: React.MutableRefObject<IndexBuffer | null>,
       query: string,
     ): Promise<QueryResponse> => {
       return new Promise(async (res) => {
