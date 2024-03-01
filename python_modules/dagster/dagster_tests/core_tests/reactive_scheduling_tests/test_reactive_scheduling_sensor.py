@@ -1,11 +1,16 @@
+from typing import Set
+
 import pendulum
 from dagster import (
     Definitions,
     asset,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.instance import DagsterInstance
+from dagster._core.reactive_scheduling.scheduling_policy import SchedulingExecutionContext
 from dagster._core.reactive_scheduling.scheduling_sensor import (
     ReactiveSensorCursor,
     SensorSpec,
@@ -15,6 +20,17 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from .test_policies import AlwaysLaunchSchedulingPolicy, build_test_context
+
+
+def graph_subset_from_keys(
+    context: SchedulingExecutionContext, asset_keys: Set[AssetKey]
+) -> AssetGraphSubset:
+    return AssetGraphSubset.from_asset_keys(
+        asset_keys=asset_keys,
+        asset_graph=context.asset_graph,
+        dynamic_partitions_store=context.queryer,
+        current_time=context.tick_dt,
+    )
 
 
 def test_shared_sensor_spec() -> None:
@@ -65,4 +81,9 @@ def test_shared_sensor_spec() -> None:
 
     assert plan12.launch_partition_space.asset_keys == {launchy_asset_1.key, launchy_asset_2.key}
 
-    assert len(result.backfill_requests or []) == 1
+    brs = list(result.backfill_requests or [])
+    assert len(brs) == 1
+    br = brs[0]
+    assert br.asset_partitions == graph_subset_from_keys(
+        context, {launchy_asset_1.key, launchy_asset_2.key}
+    )
