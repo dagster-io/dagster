@@ -81,11 +81,16 @@ def pulse_reactive_scheduling(
     for asset_key in asset_keys:
         scheduling_info = context.get_scheduling_info(asset_key)
         assert scheduling_info.scheduling_policy
-        result = scheduling_info.scheduling_policy.tick(context)
+        result = scheduling_info.scheduling_policy.tick(
+            context,
+            asset_slice=context.asset_graph_view.slice_factory.complete_asset_slice(asset_key),
+        )
         if result.launch:
-            # filter to most recent?
+            # TODO: filter to most recent by default?
             starting_slices.append(
-                context.asset_graph_view.slice_factory.complete_asset_slice(asset_key)
+                result.asset_slice
+                if result.asset_slice
+                else context.asset_graph_view.slice_factory.complete_asset_slice(asset_key)
             )
 
     return build_reactive_scheduling_plan(
