@@ -341,7 +341,6 @@ class SlingResource(ConfigurableResource):
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
             env = os.environ.copy()
-            logger.info(f"env: {env}")
 
             with open(temp_file, "w") as file:
                 json.dump(replication_config, file, cls=sling.JsonEncoder)
