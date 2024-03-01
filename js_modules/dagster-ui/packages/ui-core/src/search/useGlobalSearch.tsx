@@ -230,14 +230,8 @@ export const useGlobalSearch = () => {
     [],
   );
 
-<<<<<<< HEAD
   const initialize = useCallback(() => {
     if (!primaryResult.data && !primaryResult.loading) {
-=======
-  // If we already have WebWorkers set up, initialization is complete and this will be a no-op.
-  const initialize = useCallback(() => {
-    if (!primarySearch.current) {
->>>>>>> e57f45fca9dfe37fd8dc75db0abd2a7218620315
       performPrimaryLazyQuery();
     }
     if (!secondaryResult.data && !secondaryResult.loading) {
