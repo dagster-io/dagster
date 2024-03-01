@@ -14,7 +14,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
+import {AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
 import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
@@ -22,9 +22,13 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
+import {AssetKeyInput, RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface Props {
@@ -41,6 +45,11 @@ interface Props {
 
   repository?: RepositorySelector;
   opName?: string | null;
+  assetEventDetailBuilder: (input: {
+    assetKey: AssetKeyInput;
+    event: AssetMaterializationFragment | AssetObservationFragment;
+    groupName?: string | null;
+  }) => React.ReactNode;
 }
 
 export const AssetEvents = ({
@@ -50,6 +59,7 @@ export const AssetEvents = ({
   setParams,
   liveData,
   dataRefreshHint,
+  assetEventDetailBuilder,
 }: Props) => {
   const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
@@ -212,7 +222,7 @@ export const AssetEvents = ({
                 <AssetPartitionDetailEmpty />
               )
             ) : focused?.latest ? (
-              <AssetEventDetail assetKey={assetKey} event={focused.latest} />
+              assetEventDetailBuilder({assetKey, event: focused.latest, groupName: assetNode?.groupName})
             ) : (
               <AssetEventDetailEmpty />
             )}

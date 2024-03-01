@@ -60,7 +60,7 @@ interface Props {
 
 export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {tabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
+  const {tabBuilder, renderFeatureView, assetEventDetailBuilder} = useContext(AssetFeatureContext);
   const {flagUseNewOverviewPage, flagUseNewAutomationPage} = useFeatureFlags();
 
   // Load the asset definition
@@ -191,6 +191,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
         paramsTimeWindowOnly={!!params.asOf}
         setParams={setParams}
         liveData={definition ? liveData : undefined}
+        assetEventDetailBuilder={assetEventDetailBuilder} 
       />
     );
   };

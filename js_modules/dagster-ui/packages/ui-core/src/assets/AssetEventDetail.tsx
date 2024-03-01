@@ -24,10 +24,14 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const AssetEventDetail = ({
   event,
   assetKey,
+  additionalSections,
 }: {
   assetKey: AssetKeyInput;
   event: AssetMaterializationFragment | AssetObservationFragment;
+  additionalSections?: React.ReactNode;
 }) => {
+  console.log("GOT TO AssetEventDetail");
+  console.log("additionalSections: ", additionalSections);
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -136,6 +140,10 @@ export const AssetEventDetail = ({
           <AssetLineageElements elements={assetLineage} timestamp={event.timestamp} />
         </Box>
       )}
+      {
+      additionalSections 
+        ? additionalSections
+        : null}
     </Box>
   );
 };
