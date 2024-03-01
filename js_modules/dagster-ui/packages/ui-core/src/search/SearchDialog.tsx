@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
+import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';
 import {Trace, createTrace} from '../performance';
@@ -99,6 +100,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
   }, [loading, primaryResults, secondaryResults]);
 
   React.useEffect(() => {
+    __updateSearchVisibility(shown);
     if (!shown && firstSearchTrace.current) {
       // When the dialog closes:
       // Either the trace finished and we logged it, or it didn't and so we throw it away
@@ -122,6 +124,13 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
     },
     [searchSecondary],
   );
+
+  React.useEffect(() => {
+    console.log('SearchDialog intial render');
+    return () => {
+      console.log('SearchDialog unrender');
+    };
+  }, []);
 
   const debouncedSearch = React.useMemo(() => {
     const debouncedSearch = debounce(async (queryString: string) => {
