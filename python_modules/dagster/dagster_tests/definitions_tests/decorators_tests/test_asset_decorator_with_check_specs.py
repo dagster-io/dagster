@@ -722,3 +722,137 @@ def test_can_subset_select_only_check() -> None:
 
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
+
+
+@op
+def create_asset():
+    return None
+
+
+@op
+def validate_asset(word):
+    return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def my_asset():
+    asset_one = create_asset()
+    return {
+        "asset_one": asset_one,
+        "asset_one_check1": validate_asset(asset_one),
+        "asset_two": create_asset(),
+    }
+
+
+def test_graph_asset_all():
+    result = materialize(assets=[my_asset])
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 2
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+def test_graph_asset_subset_no_checks():
+    result = materialize(
+        assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")).without_checks()
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert not result.get_asset_check_evaluations()
+
+
+def test_graph_asset_subset_with_checks():
+    result = materialize(assets=[my_asset], selection=AssetSelection.keys(AssetKey("asset_one")))
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+@op
+def validate_asset_1(word):
+    return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
+
+
+@op
+def validate_asset_2(word):
+    return word
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def nested_check_graph_asset():
+    asset_one = create_asset()
+    return {
+        "asset_one": asset_one,
+        "asset_one_check1": validate_asset_2(validate_asset_1(asset_one)),
+        "asset_two": create_asset(),
+    }
+
+
+def test_nested_graph_asset_all():
+    result = materialize(assets=[nested_check_graph_asset])
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 2
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+def test_nested_graph_asset_subset_no_checks():
+    result = materialize(
+        assets=[nested_check_graph_asset],
+        selection=AssetSelection.keys(AssetKey("asset_one")).without_checks(),
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert not result.get_asset_check_evaluations()
+
+
+def test_nested_graph_asset_subset_with_checks():
+    result = materialize(
+        assets=[nested_check_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
+
+
+@op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
+def promote_asset():
+    return None
+
+
+@graph_multi_asset(
+    outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
+    check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
+    can_subset=True,
+)
+def validate_promote_graph_asset():
+    staging_asset = create_asset()
+    check_result = validate_asset(staging_asset)
+    promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
+    return {
+        "asset_one": promoted_asset,
+        "asset_one_check1": check_result,
+        "asset_two": create_asset(),
+    }
+
+
+def test_validate_promote_graph_asset_subset_checks_and_asset():
+    result = materialize(
+        assets=[validate_promote_graph_asset], selection=AssetSelection.keys(AssetKey("asset_one"))
+    )
+    assert result.success
+
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
