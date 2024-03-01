@@ -27,8 +27,6 @@ def build_reactive_scheduling_plan(
 
     starting_slices = [asset_slice for asset_slice in starting_slices]
 
-    print(f"starting_slices: {starting_slices}")
-
     upstream_of_starting_space = create_partition_space_upstream_of_slices(context, starting_slices)
 
     # candidates start at the root

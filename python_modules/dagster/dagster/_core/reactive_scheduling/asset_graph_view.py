@@ -1,7 +1,17 @@
 import itertools
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import pendulum
 from typing_extensions import TypeAlias
@@ -29,9 +39,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import CachingStaleStatusResolver
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.instance import DagsterInstance
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
 AssetPartition: TypeAlias = AssetKeyPartitionKey
 
 
@@ -51,9 +61,11 @@ class AssetSlice:
     def to_valid_asset_subset(self) -> ValidAssetSubset:
         return self._valid_asset_subset
 
+    # This is very expensive and should not be done during plan build. Likely need to hide
     def materialize_partition_keys(self) -> Set[str]:
         return set(self._valid_asset_subset.subset_value.get_partition_keys())
 
+    # This is very expensive and should not be done during plan build. Likely need to hide
     def materialize_asset_partitions(self) -> AbstractSet[AssetPartition]:
         return self._valid_asset_subset.asset_partitions
 
@@ -95,6 +107,20 @@ class AssetSlice:
     def unsynced_parent_partition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.unsynced_parent_partition_space(self)
 
+    # TODO: should event log record be public
+    # TODO: prefetch this. ends up calling _get_latest_materialization_or_observation_record on
+    # a single asset partition in CachingInstanceQueryer
+    @cached_property
+    def records_by_asset_partition(self) -> Dict[AssetPartition, Optional["EventLogRecord"]]:
+        records_by_asset_partition = {}
+        for asset_partition in self.materialize_asset_partitions():
+            records_by_asset_partition[
+                asset_partition
+            ] = self._asset_graph_view.queryer.get_latest_materialization_or_observation_record(
+                asset_partition, before_cursor=self._asset_graph_view.temporal_context.storage_id
+            )
+        return records_by_asset_partition
+
     def parent_asset_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
         for asset_slice in self.parent_slices:
             if asset_slice.asset_key == parent_asset_key:
@@ -128,8 +154,8 @@ class AssetSlice:
                 else self._asset_graph_view.slice_factory.empty(self.asset_key)
             )
 
+        # Need to handle dynamic and multi-dimensional partitioning
         check.failed(f"Unsupported partitions_def: {partitions_def}")
-        return
 
     def __repr__(self) -> str:
         return f"AssetSlice({self._valid_asset_subset})"
@@ -404,6 +430,7 @@ class PartitionSpace:
             self.asset_graph_subset | _graph_subset_from_slice(asset_slice),
         )
 
+    # TODO: probably should cache but cached_method only supports kwargs, which is annoying
     def get_asset_slice(self, asset_key: AssetKey) -> AssetSlice:
         return self.asset_graph_view._to_asset_slice(self._get_asset_subset(asset_key))  # noqa
 
@@ -460,6 +487,15 @@ class AssetSliceFactory:
 
     def unpartitioned(self, asset_key: AssetKey) -> AssetSlice:
         return self._to_asset_slice(asset_key=asset_key, value=True)
+
+    # unclear if this should even be a method. Should get down to single asset key abstraction
+    # before getting here
+    def from_asset_partitions(self, asset_partitions: AbstractSet[AssetPartition]) -> AssetSlice:
+        partition_space = PartitionSpace.from_asset_partitions(
+            self.asset_graph_view, asset_partitions
+        )
+        check.invariant(len(partition_space.asset_keys) == 1)
+        return partition_space.get_asset_slice(next(iter(partition_space.asset_keys)))
 
     def from_partition_keys(
         self, asset_key: AssetKey, partition_keys: AbstractSet[str]

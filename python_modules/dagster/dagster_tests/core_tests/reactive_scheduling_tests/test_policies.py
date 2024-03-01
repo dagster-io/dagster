@@ -1,11 +1,13 @@
+from collections import defaultdict
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional, Set
 
 import pendulum
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.asset_graph_view import (
+    AssetPartition,
     AssetSlice,
 )
 from dagster._core.reactive_scheduling.scheduling_plan import Rules
@@ -16,6 +18,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
     SchedulingResult,
 )
 from dagster._core.reactive_scheduling.scheduling_sensor import SensorSpec
+from dagster._core.storage.dagster_run import RunsFilter
 
 
 class AlwaysIncludeSchedulingPolicy(SchedulingPolicy):
@@ -57,6 +60,45 @@ class AlwaysLaunchLatestTimeWindowSchedulingPolicy(SchedulingPolicy):
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
         return EvaluationResult(asset_slice=Rules.latest_time_window(context, current_slice))
+
+
+class LatestRequiredRunTags(SchedulingPolicy):
+    def __init__(self, latest_run_required_tags: Dict[str, str]):
+        self.latest_run_required_tags = latest_run_required_tags
+
+    def evaluate(
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> EvaluationResult:
+        if not all(record for record in current_slice.records_by_asset_partition.values()):
+            return EvaluationResult(asset_slice=context.empty_slice(current_slice.asset_key))
+
+        asset_partitions_by_latest_run_id: Dict[str, Set[AssetPartition]] = defaultdict(set)
+
+        for asset_partition, record in current_slice.records_by_asset_partition.items():
+            asset_partitions_by_latest_run_id[check.not_none(record).run_id].add(asset_partition)
+
+        if not asset_partitions_by_latest_run_id:
+            return EvaluationResult(asset_slice=context.empty_slice(current_slice.asset_key))
+
+        run_ids_with_required_tags = context.instance.get_run_ids(
+            filters=RunsFilter(
+                run_ids=list(asset_partitions_by_latest_run_id.keys()),
+                tags=self.latest_run_required_tags,
+            )
+        )
+
+        updated_partitions_with_required_tags = {
+            asset_partition
+            for run_id, run_id_asset_partitions in asset_partitions_by_latest_run_id.items()
+            if run_id in run_ids_with_required_tags
+            for asset_partition in run_id_asset_partitions
+        }
+
+        return EvaluationResult(
+            context.slice_factory.from_asset_partitions(updated_partitions_with_required_tags)
+            if updated_partitions_with_required_tags
+            else context.slice_factory.empty(current_slice.asset_key)
+        )
 
 
 def build_test_context(
