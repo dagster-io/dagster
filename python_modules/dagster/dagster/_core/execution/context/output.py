@@ -13,7 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.events import (
     AssetKey,
@@ -30,6 +30,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
@@ -46,6 +47,11 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 class OutputContext:
     """The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
@@ -67,7 +73,7 @@ class OutputContext:
     _name: Optional[str]
     _job_name: Optional[str]
     _run_id: Optional[str]
-    _metadata: ArbitraryMetadataMapping
+    _definition_metadata: ArbitraryMetadataMapping
     _user_generated_metadata: Mapping[str, MetadataValue]
     _mapping_key: Optional[str]
     _config: object
@@ -92,7 +98,7 @@ class OutputContext:
         name: Optional[str] = None,
         job_name: Optional[str] = None,
         run_id: Optional[str] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
+        definition_metadata: Optional[ArbitraryMetadataMapping] = None,
         mapping_key: Optional[str] = None,
         config: object = None,
         dagster_type: Optional["DagsterType"] = None,
@@ -105,6 +111,8 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
+        # deprecated
+        metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -113,7 +121,12 @@ class OutputContext:
         self._name = name
         self._job_name = job_name
         self._run_id = run_id
-        self._metadata = metadata or {}
+        self._definition_metadata = (
+            normalize_renamed_param(
+                definition_metadata, "definition_metadata", metadata, "metadata"
+            )
+            or {}
+        )
         self._mapping_key = mapping_key
         self._config = config
         self._op_def = op_def
@@ -208,13 +221,20 @@ class OutputContext:
 
         return self._run_id
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """Deprecated: used definition_metadata instead."""
+        return self._definition_metadata
+
+    @public
+    @property
+    def definition_metadata(self) -> Optional[ArbitraryMetadataMapping]:
         """A dict of the metadata that is assigned to the OutputDefinition that produced
         the output.
         """
-        return self._metadata
+        return self._definition_metadata
 
     @public
     @property
@@ -751,9 +771,9 @@ def get_output_context(
         node_handle=node_handle, output_name=step_output.name
     )
     if asset_info is not None:
-        metadata = job_def.asset_layer.get(asset_info.key).metadata or output_def.metadata
+        definition_metadata = job_def.asset_layer.get(asset_info.key).metadata or output_def.metadata
     else:
-        metadata = output_def.metadata
+        definition_metadata = output_def.metadata
 
     if step_context:
         check.invariant(
@@ -769,7 +789,7 @@ def get_output_context(
         name=step_output_handle.output_name,
         job_name=job_def.name,
         run_id=run_id,
-        metadata=metadata,
+        definition_metadata=definition_metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
         op_def=job_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
@@ -802,10 +822,15 @@ def step_output_version(
     )
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 def build_output_context(
     step_key: Optional[str] = None,
     name: Optional[str] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    definition_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
     config: Optional[Any] = None,
@@ -816,6 +841,8 @@ def build_output_context(
     op_def: Optional["OpDefinition"] = None,
     asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
+    # deprecated
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -858,7 +885,12 @@ def build_output_context(
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")
-    metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+    definition_metadata = normalize_renamed_param(
+        check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str),
+        "definition_metadata",
+        check.opt_mapping_param(metadata, "metadata", key_type=str),
+        "metadata",
+    )
     run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
@@ -874,7 +906,7 @@ def build_output_context(
         name=name,
         job_name=None,
         run_id=run_id,
-        metadata=metadata,
+        definition_metadata=definition_metadata,
         mapping_key=mapping_key,
         config=config,
         dagster_type=dagster_type,
