@@ -57,5 +57,7 @@ def test_get_s3_keys():
         # keys are sorted by LastModified time, with a resolution of 1 second, so the key at index 999 will vary.
         # The test would be flaky if sorted was not guaranteed to be stable, which it is
         # according to: https://wiki.python.org/moin/HowTo/Sorting/.
-        keys = get_s3_keys(bucket=bucket_name, prefix=prefix, since_key=thousand_and_one_hundred_keys[1090])
+        keys = get_s3_keys(
+            bucket=bucket_name, prefix=prefix, since_key=thousand_and_one_hundred_keys[1090]
+        )
         assert len(keys) == 9, "9 keys should be returned"

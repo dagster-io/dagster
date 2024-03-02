@@ -1,10 +1,10 @@
 import time
 from datetime import datetime
+from typing import List, Optional
 from unittest import mock
 
 import pytest
-
-from dagster_gcp.gcs.sensor import MAX_KEYS, get_gcs_keys
+from dagster_gcp.gcs.sensor import get_gcs_keys
 
 
 @pytest.mark.parametrize(
@@ -15,11 +15,23 @@ from dagster_gcp.gcs.sensor import MAX_KEYS, get_gcs_keys
         ("two keys in bucket with one key offset", "foo-1", "", 2, ["foo-2"]),
         ("three keys in bucket with wrong prefix", None, "bar", 3, []),
         ("three keys in bucket with correct prefix", None, "foo", 3, ["foo-1", "foo-2", "foo-3"]),
-        ("a thousand keys in bucket with offset of -4", "foo-999", "", 1003, ["foo-1000", "foo-1001", "foo-1002", "foo-1003"]),
+        (
+            "a thousand keys in bucket with offset of -4",
+            "foo-999",
+            "",
+            1003,
+            ["foo-1000", "foo-1001", "foo-1002", "foo-1003"],
+        ),
         ("two thousand keys in bucket with offset of -1", "foo-1199", "", 1200, ["foo-1200"]),
     ],
 )
-def test_get_gcs_keys(test_name: str, since_key: str | None, blob_prefix: str, nb_bucket_keys: int, expected_keys: list[str]):
+def test_get_gcs_keys(
+    test_name: str,
+    since_key: Optional[str],
+    blob_prefix: str,
+    nb_bucket_keys: int,
+    expected_keys: List[str],
+):
     bucket_name = "test-bucket"
 
     class Blob:
@@ -29,12 +41,13 @@ def test_get_gcs_keys(test_name: str, since_key: str | None, blob_prefix: str, n
 
     now = time.time()
     bucket_keys = [
-        Blob(name=f"foo-{i + 1}",updated=datetime.fromtimestamp(now - nb_bucket_keys + i))
+        Blob(name=f"foo-{i + 1}", updated=datetime.fromtimestamp(now - nb_bucket_keys + i))
         for i in range(nb_bucket_keys)
     ]
 
     class MockBlobIterator:
         """Mock the page iterator returned by google.cloud.storage.client.list_blobs."""
+
         def __init__(self, collection):
             self.collection = collection
             self.num_results = 0
@@ -64,8 +77,12 @@ def test_get_gcs_keys(test_name: str, since_key: str | None, blob_prefix: str, n
     gcs_client = mock.MagicMock
     gcs_client.list_blobs = mock.Mock(side_effect=mock_list_blobs)
 
-    keys = get_gcs_keys(bucket=bucket_name, prefix=blob_prefix, since_key=since_key, gcs_session=gcs_client)
+    keys = get_gcs_keys(
+        bucket=bucket_name, prefix=blob_prefix, since_key=since_key, gcs_session=gcs_client
+    )
 
-    assert len(keys) == len(expected_keys), f"{test_name}: {len(expected_keys)} key(s) should be returned"
+    assert len(keys) == len(
+        expected_keys
+    ), f"{test_name}: {len(expected_keys)} key(s) should be returned"
     assert keys == expected_keys
     assert gcs_client.list_blobs.call_count == 1
