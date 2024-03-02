@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
@@ -83,6 +84,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_3,
@@ -1559,6 +1561,25 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
 
         expected_datetime = create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=1)
         validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
+
+
+def test_sensor_spans(workspace_context):
+    loop = execute_sensor_iteration_loop(
+        workspace_context,
+        get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+        shutdown_event=threading.Event(),
+    )
+
+    assert next(loop) == SpanMarker.START_SPAN
+
+    for _i in range(10):
+        next_span = next(loop)
+        assert (
+            next_span != SpanMarker.START_SPAN
+        ), "Started another span before finishing the previous one"
+
+        if next_span == SpanMarker.END_SPAN:
+            break
 
 
 @pytest.mark.skipif(_IS_PENDULUM_3, reason="pendulum.set_test_now not supported in pendulum 3")
