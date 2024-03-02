@@ -335,10 +335,6 @@ def test_op_metadata_access():
     def my_success_hook(context):
         called[context.step_key] = context.op_output_metadata
 
-    @failure_hook
-    def my_failure_hook(context):
-        called[context.step_key] = context.op_output_metadata
-
     @op(out={"one": Out(), "two": Out(), "three": Out()})
     def output_metadata_op(_):
         yield Output(1, "one", metadata={"foo": "bar"})
@@ -351,7 +347,6 @@ def test_op_metadata_access():
         yield Output(value=1)
 
     @my_success_hook
-    @my_failure_hook
     @job
     def metadata_job():
         output_metadata_op()
