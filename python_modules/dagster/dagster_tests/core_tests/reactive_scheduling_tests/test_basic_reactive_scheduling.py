@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Optional, Set
+from typing import Set
 from uuid import uuid4
 
 import pendulum
@@ -38,25 +37,15 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
     SchedulingPolicy,
 )
 
-from .test_policies import AlwaysIncludeSchedulingPolicy, NeverIncludeSchedulingPolicy
+from .test_policies import (
+    AlwaysIncludeSchedulingPolicy,
+    NeverIncludeSchedulingPolicy,
+    build_test_context,
+)
 
 
 def test_include_scheduling_policy() -> None:
     assert SchedulingPolicy
-
-
-def build_test_context(
-    defs: Definitions,
-    instance: Optional[DagsterInstance] = None,
-    tick_dt: Optional[datetime] = None,
-    last_storage_id: Optional[int] = None,
-) -> SchedulingExecutionContext:
-    return SchedulingExecutionContext.create(
-        instance=instance or DagsterInstance.ephemeral(),
-        repository_def=defs.get_repository_def(),
-        tick_dt=tick_dt or pendulum.now(),
-        last_storage_id=last_storage_id,
-    )
 
 
 def test_scheduling_policy_parameter() -> None:
@@ -463,5 +452,6 @@ def test_any_all_parent_out_of_sync() -> None:
 
     # # one observed. asset_one out of sync. any but not all out of sync
     context_t1 = build_test_context(defs, instance)
+    downstream_subset = context_t1.slice_factory.unpartitioned(downstream.key)
     assert Rules.any_parent_out_of_sync(context_t1, downstream_subset).nonempty
     assert Rules.all_parents_out_of_sync(context_t1, downstream_subset).empty

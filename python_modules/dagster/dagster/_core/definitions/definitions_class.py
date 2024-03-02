@@ -238,6 +238,15 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
+def _attach_reactive_sensors(
+    assets: List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]],
+    sensors: List[SensorDefinition],
+) -> List[SensorDefinition]:
+    from dagster._core.reactive_scheduling.scheduling_sensor import build_reactive_sensors
+
+    return build_reactive_sensors([a for a in assets if isinstance(a, AssetsDefinition)]) + sensors
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -253,10 +262,10 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ):
-    check.opt_iterable_param(
+    assets = check.opt_iterable_param(
         assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
     )
-    check.opt_iterable_param(
+    schedules = check.opt_iterable_param(
         schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
     )
     check.opt_iterable_param(sensors, "sensors", SensorDefinition)
@@ -286,6 +295,8 @@ def _create_repository_using_definitions_args(
     resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+
+    sensors = _attach_reactive_sensors(list(assets or []), list(sensors or []))
 
     # Binds top-level resources to jobs and any jobs attached to schedules or sensors
     (
