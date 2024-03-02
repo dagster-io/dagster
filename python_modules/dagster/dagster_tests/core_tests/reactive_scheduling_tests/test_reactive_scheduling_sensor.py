@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.definitions.time_window_partitions import (
@@ -15,6 +16,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.reactive_scheduling.scheduling_plan import build_reactive_scheduling_plan
 from dagster._core.reactive_scheduling.scheduling_policy import SchedulingExecutionContext
 from dagster._core.reactive_scheduling.scheduling_sensor import (
     ReactiveSensorCursor,
@@ -28,6 +30,7 @@ from .test_policies import (
     AlwaysIncludeSchedulingPolicy,
     AlwaysLaunchLatestTimeWindowSchedulingPolicy,
     AlwaysLaunchSchedulingPolicy,
+    LatestRequiredRunTags,
     build_test_context,
     slices_equal,
 )
@@ -148,3 +151,46 @@ def test_daily_to_hourly_upstream() -> None:
             ),
         ),
     )
+
+
+def test_latest_run_tags() -> None:
+    @asset(scheduling_policy=LatestRequiredRunTags({"foo": "bar"}))
+    def up() -> None:
+        ...
+
+    @asset(deps=[up], scheduling_policy=AlwaysIncludeSchedulingPolicy())
+    def down() -> None:
+        ...
+
+    defs = Definitions([up, down])
+
+    instance = DagsterInstance.ephemeral()
+
+    context_t0 = build_test_context(defs, instance)
+
+    # why didn't pulse work?
+    plan_t0 = build_reactive_scheduling_plan(
+        context_t0, starting_slices=[context_t0.slice_factory.complete_asset_slice(down.key)]
+    )
+
+    assert plan_t0.launch_partition_space.asset_keys == {down.key}
+
+    assert materialize([up], instance=instance, tags={"foo": "bar"}).success
+
+    context_t1 = build_test_context(defs, instance)
+
+    plan_t1 = build_reactive_scheduling_plan(
+        context_t1, starting_slices=[context_t1.slice_factory.complete_asset_slice(down.key)]
+    )
+
+    assert plan_t1.launch_partition_space.asset_keys == {down.key, up.key}
+
+    assert materialize([up], instance=instance, tags={"foo": "different_value"}).success
+
+    context_t1 = build_test_context(defs, instance)
+
+    plan_t1 = build_reactive_scheduling_plan(
+        context_t1, starting_slices=[context_t1.slice_factory.complete_asset_slice(down.key)]
+    )
+
+    assert plan_t1.launch_partition_space.asset_keys == {down.key}

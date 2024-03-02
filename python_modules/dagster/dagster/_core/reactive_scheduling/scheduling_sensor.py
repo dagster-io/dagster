@@ -85,6 +85,12 @@ def pulse_reactive_scheduling(
             context,
             asset_slice=context.asset_graph_view.slice_factory.complete_asset_slice(asset_key),
         )
+
+        check.invariant(
+            result,
+            f"scheduling_info.scheduling_policy {scheduling_info.scheduling_policy} did not return a result",
+        )
+
         if result.launch:
             # TODO: filter to most recent by default?
             starting_slices.append(
