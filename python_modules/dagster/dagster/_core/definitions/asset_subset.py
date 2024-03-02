@@ -85,6 +85,10 @@ class AssetSubset(NamedTuple):
         else:
             return len(self.subset_value)
 
+    @property
+    def is_empty(self) -> bool:
+        return bool(self.size)
+
     def _is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
     ) -> bool:

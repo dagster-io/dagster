@@ -57,6 +57,9 @@ class AssetSchedulingInfo(NamedTuple):
     scheduling_policy: Optional[SchedulingPolicy]
     partitions_def: Optional[PartitionsDefinition]
 
+    def __repr__(self) -> str:
+        return f"AssetSchedulingInfo(asset_key={self.asset_key}, scheduling_policy={self.scheduling_policy}, partitions_def={self.partitions_def})"
+
 
 class SchedulingExecutionContext(NamedTuple):
     @staticmethod
@@ -82,6 +85,11 @@ class SchedulingExecutionContext(NamedTuple):
     tick_dt: datetime
     traverser: "AssetGraphTraverser"
     last_storage_id: Optional[int] = None
+
+    def empty_subset(self, asset_key: AssetKey) -> ValidAssetSubset:
+        return ValidAssetSubset.empty(
+            asset_key, self.asset_graph.get_assets_def(asset_key).partitions_def
+        )
 
     @property
     def queryer(self) -> "CachingInstanceQueryer":

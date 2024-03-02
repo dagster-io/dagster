@@ -6,6 +6,7 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
@@ -21,7 +22,9 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.asset_graph_traverser import AssetSubsetFactory
 from dagster._core.reactive_scheduling.scheduling_plan import (
+    OnAnyNewParentUpdated,
     ReactiveSchedulingPlan,
+    Rules,
     build_reactive_scheduling_plan,
 )
 from dagster._core.reactive_scheduling.scheduling_policy import (
@@ -323,3 +326,100 @@ def test_time_windowing_partition() -> None:
             context.asset_graph, down_daily.key, TimeWindow(start, end)
         ).asset_partitions
     )
+
+
+from dagster import _check as check
+
+
+def subsets_equal(left: ValidAssetSubset, right: ValidAssetSubset) -> bool:
+    if left.asset_key != right.asset_key:
+        return False
+    if left.is_partitioned and right.is_partitioned:
+        return set(left.subset_value.get_partition_keys()) == set(
+            right.subset_value.get_partition_keys()
+        )
+    elif not left.is_partitioned and not right.is_partitioned:
+        return left.bool_value == right.bool_value
+    else:
+        check.failed("should not get here with valid subsets")
+
+
+def test_on_any_parent_updated() -> None:
+    @asset
+    def upup() -> None:
+        ...
+
+    @asset(deps=[upup], scheduling_policy=OnAnyNewParentUpdated())
+    def up() -> None:
+        ...
+
+    @asset(deps=[up], scheduling_policy=AlwaysIncludeSchedulingPolicy())
+    def down() -> None:
+        ...
+
+    defs = Definitions([upup, up, down])
+
+    instance = DagsterInstance.ephemeral()
+
+    context_one = build_test_context(defs, instance)
+
+    down_subset = AssetSubsetFactory.unpartitioned(context_one.asset_graph, down.key)
+    up_subset = AssetSubsetFactory.unpartitioned(context_one.asset_graph, up.key)
+    upup_subset = AssetSubsetFactory.unpartitioned(context_one.asset_graph, upup.key)
+
+    assert materialize([up], instance=instance).success
+
+    assert Rules.any_parent_updated(context_one, down_subset).bool_value
+    assert not Rules.any_parent_updated(context_one, up_subset).bool_value
+    assert not Rules.any_parent_updated(context_one, upup_subset).bool_value
+
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_one, down_subset).asset_subset, down_subset
+    )
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_one, up_subset).asset_subset,
+        context_one.empty_subset(up.key),
+    )
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_one, upup_subset).asset_subset,
+        context_one.empty_subset(upup.key),
+    )
+
+    plan_one = build_reactive_scheduling_plan(
+        context=context_one,
+        starting_subsets=[down_subset],
+    )
+
+    assert plan_one.launch_partition_space.get_asset_subset(down.key).bool_value
+    assert not plan_one.launch_partition_space.get_asset_subset(up.key).bool_value
+    assert not plan_one.launch_partition_space.get_asset_subset(upup.key).bool_value
+
+    assert materialize([upup], instance=instance).success
+
+    # with upup updated, up should be return true for any parent updated and should be included in launch plan
+
+    context_two = build_test_context(defs, instance)
+
+    assert Rules.any_parent_updated(context_two, down_subset).bool_value
+    assert Rules.any_parent_updated(context_two, up_subset).bool_value
+    assert not Rules.any_parent_updated(context_two, upup_subset).bool_value
+
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_two, down_subset).asset_subset, down_subset
+    )
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_two, up_subset).asset_subset, up_subset
+    )
+    assert subsets_equal(
+        OnAnyNewParentUpdated().evaluate(context_two, upup_subset).asset_subset,
+        context_two.empty_subset(upup.key),
+    )
+
+    plan_two = build_reactive_scheduling_plan(
+        context=context_two,
+        starting_subsets=[down_subset],
+    )
+
+    assert plan_two.launch_partition_space.get_asset_subset(down.key).bool_value
+    assert plan_two.launch_partition_space.get_asset_subset(up.key).bool_value
+    assert not plan_two.launch_partition_space.get_asset_subset(upup.key).bool_value
