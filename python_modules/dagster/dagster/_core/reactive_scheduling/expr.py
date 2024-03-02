@@ -9,8 +9,8 @@ from .scheduling_plan import RulesLogic
 
 class Expr:
     @staticmethod
-    def latest_time_window() -> "ExprNode":
-        return LeafExpr(RulesLogic.latest_time_window)
+    def latest_complete_time_window() -> "ExprNode":
+        return LeafExpr(RulesLogic.latest_complete_time_window)
 
     @staticmethod
     def any_parent_updated() -> "ExprNode":

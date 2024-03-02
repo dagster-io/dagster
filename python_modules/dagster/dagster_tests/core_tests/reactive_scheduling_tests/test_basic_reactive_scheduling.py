@@ -2,9 +2,7 @@ from typing import Set
 from uuid import uuid4
 
 import pendulum
-from dagster import (
-    asset,
-)
+from dagster import asset
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -25,6 +23,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.asset_graph_view import (
     AssetPartition,
+    PartitionKey,
 )
 from dagster._core.reactive_scheduling.scheduling_plan import (
     DefaultSchedulingPolicy,
@@ -226,7 +225,7 @@ def test_three_assets_one_root_one_excludes_diamond() -> None:
     assert plan.launch_partition_space.get_asset_slice(up.key).nonempty
 
 
-def partition_keys(plan: ReactiveSchedulingPlan, asset_key: AssetKey) -> Set[str]:
+def partition_keys(plan: ReactiveSchedulingPlan, asset_key: AssetKey) -> Set[PartitionKey]:
     return set(plan.launch_partition_space.get_asset_slice(asset_key).materialize_partition_keys())
 
 

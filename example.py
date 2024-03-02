@@ -9,6 +9,8 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
 )
 from dagster._core.reactive_scheduling.scheduling_sensor import SensorSpec
 
+sensor_spec = SensorSpec(name="test_sensor", description="test_description")
+
 
 class AlwaysLaunchSchedulingPolicy(SchedulingPolicy):
     def __init__(self, sensor_spec: SensorSpec):
@@ -27,9 +29,7 @@ class AlwaysLaunchSchedulingPolicy(SchedulingPolicy):
 
 @asset(
     partitions_def=StaticPartitionsDefinition(["A"]),
-    scheduling_policy=AlwaysLaunchSchedulingPolicy(
-        SensorSpec(name="test_sensor", description="test_description")
-    ),
+    scheduling_policy=AlwaysLaunchSchedulingPolicy(sensor_spec),
 )
 def launchy_asset_2() -> None:
     pass

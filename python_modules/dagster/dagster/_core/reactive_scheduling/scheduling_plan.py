@@ -111,9 +111,10 @@ def create_partition_space_upstream_of_slices(
 
 
 # Language
-# * Out of sync: Assets are out of sync if they have a new code version or new upstream data version, or
-# if their parents within zone # of control are out of sync
-# * Updated: Asset has a new materialization with a new data version relative to current materialized data version
+# * Unsynced: Assets are out of sync if they have a new code version, a new upstream data version, or
+# the materialiation is missing. An asset is also unsynced if their parents within zone of control are unsynced.
+# * Parent Updated: Parent asset has a new materialization with a new data version relative to current
+# materialized data version
 
 
 class OnAnyNewParentUpdated(SchedulingPolicy):
@@ -136,9 +137,8 @@ class DefaultSchedulingPolicy(SchedulingPolicy):
     ) -> EvaluationResult:
         from .expr import Expr
 
-        result_slice = (Expr.latest_time_window() & Expr.unsynced()).evaluate(
-            context, current_slice
-        )
+        default_expr = Expr.latest_complete_time_window() & Expr.unsynced()
+        result_slice = default_expr.evaluate(context, current_slice)
         return EvaluationResult(asset_slice=result_slice)
 
 
@@ -146,12 +146,13 @@ class TargetedByBackfill(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=current_slice.backfill_targeted_slice.inverse)
+        raise NotImplementedError()
+        # return EvaluationResult(asset_slice=current_slice.backfill_targeted_slice.inverse)
 
 
 class RulesLogic:
     @staticmethod
-    def latest_time_window(
+    def latest_complete_time_window(
         context: SchedulingExecutionContext, asset_slice: AssetSlice
     ) -> AssetSlice:
         return asset_slice.latest_complete_time_window
@@ -161,7 +162,7 @@ class RulesLogic:
         context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> AssetSlice:
         pks = set()
-        updated_parent_space = current_slice.updated_parent_partition_space
+        updated_parent_space = current_slice.updated_upstream_slices
         for (
             pk,
             updated_parent_slice,
@@ -176,7 +177,7 @@ class RulesLogic:
         context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> AssetSlice:
         pks = set()
-        updated_parent_space = current_slice.updated_parent_partition_space
+        updated_parent_space = current_slice.updated_upstream_slices
         for pk, updated_parent_slice in updated_parent_space.parent_slices_by_partition_key.items():
             parent_slice = current_slice.parent_slice_of_partition_key(
                 updated_parent_slice.asset_key, pk

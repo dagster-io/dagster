@@ -5,7 +5,6 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Callable,
     Dict,
     List,
     NamedTuple,
@@ -43,8 +42,8 @@ if TYPE_CHECKING:
     from dagster._core.event_api import EventLogRecord
     from dagster._core.instance import DagsterInstance
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-AssetPartition: TypeAlias = AssetKeyPartitionKey
 
+AssetPartition: TypeAlias = AssetKeyPartitionKey
 PartitionKey: TypeAlias = Optional[str]
 
 
@@ -105,18 +104,12 @@ class AssetSlice:
         return self._asset_graph_view.parent_partition_space(self)
 
     @cached_property
-    # could alteratively be an updated property on partition space itself
-    # e.g. parent_partition_space.updated
-    def updated_parent_partition_space(self) -> "UpstreamPartitionSpace":
-        return self._asset_graph_view.updated_upstream_partition_space(self)
+    def updated_upstream_slices(self) -> "MappedParentAssetSlices":
+        return self._asset_graph_view.updated_parent_slices(self)
 
     @cached_property
     def unsynced(self) -> "AssetSlice":
         return self._asset_graph_view.unsynced_slice(self)
-
-    # @cached_property
-    # def unsynced_parent_partition_space(self) -> "PartitionSpace":
-    #     return self._asset_graph_view.unsynced_slice(self)
 
     # TODO: should event log record be public
     # TODO: prefetch this. ends up calling _get_latest_materialization_or_observation_record on
@@ -183,7 +176,7 @@ class AssetSlice:
         # Need to handle dynamic and multi-dimensional partitioning
         check.failed(f"Unsupported partitions_def: {partitions_def}")
 
-    ## operators
+    ## convert to operators?
 
     def intersection(self, other: "AssetSlice") -> "AssetSlice":
         return AssetSlice(
@@ -192,8 +185,10 @@ class AssetSlice:
         )
 
     def equals(self, other: "AssetSlice") -> bool:
-        # TODO: check asset_graph_view object identity?
-        return self._valid_asset_subset == other._valid_asset_subset  # noqa
+        return (
+            self._asset_graph_view is other._asset_graph_view  # noqa
+            and self._valid_asset_subset == other._valid_asset_subset  # noqa
+        )
 
     def __repr__(self) -> str:
         return f"AssetSlice({self._valid_asset_subset})"
@@ -308,10 +303,8 @@ class AssetGraphView:
             parent_parition_space = parent_parition_space.with_asset_slice(parent_slice)
         return parent_parition_space
 
-    def updated_upstream_partition_space(
-        self, current_slice: AssetSlice
-    ) -> "UpstreamPartitionSpace":
-        upstream_space_builder = UpstreamPartitionSpaceBuilder(self, current_slice)
+    def updated_parent_slices(self, current_slice: AssetSlice) -> "MappedParentAssetSlices":
+        mapped_upstream_slices_builder = MappedParentAssetSlicesBuilder(self, current_slice)
 
         for child_asset_partition in current_slice.materialize_asset_partitions():
             parents_asset_partitions = self.asset_graph.get_parents_partitions(
@@ -341,11 +334,11 @@ class AssetGraphView:
                 ignored_parent_keys={current_slice.asset_key},
             )
 
-            upstream_space_builder.add_mappings(
+            mapped_upstream_slices_builder.add_mappings(
                 child_asset_partition.partition_key, updated_parent_asset_partitions
             )
 
-        return upstream_space_builder.build()
+        return mapped_upstream_slices_builder.build()
 
     def unsynced_slice(self, asset_slice: AssetSlice) -> "AssetSlice":
         unsynced_pks = set()
@@ -355,27 +348,6 @@ class AssetGraphView:
                 unsynced_pks.add(partition_key)
 
         return self.slice_factory.from_partition_keys(asset_slice.asset_key, unsynced_pks)
-
-    # broken
-    def unsynced_parent_partition_space(self, asset_slice: AssetSlice) -> "PartitionSpace":
-        upstream_space_builder = UpstreamPartitionSpaceBuilder(self, asset_slice)
-
-        # Issues:
-        # * This is going to be very slow
-        # * get_status does not respect storage_id and will always be volatile
-        unsynced_parent_asset_partitions: Set[AssetPartition] = set()
-        for parent_slice in asset_slice.total_parent_slices:
-            # materialize call is the indication that we are doing something wrong
-            for parent_asset_partition in parent_slice.materialize_asset_partitions():
-                stale_status = self.stale_resolver.get_status(
-                    parent_asset_partition.asset_key, parent_asset_partition.partition_key
-                )
-                if stale_status != StaleStatus.FRESH:
-                    upstream_space_builder.add_mapping(
-                        parent_asset_partition.partition_key, parent_asset_partition
-                    )
-                    unsynced_parent_asset_partitions.add(parent_asset_partition)
-        return PartitionSpace.from_asset_partitions(self, unsynced_parent_asset_partitions)
 
     def _create_upstream_asset_graph_subset(
         self, starting_asset_slice: AssetSlice
@@ -403,7 +375,7 @@ class AssetGraphView:
         return AssetSliceFactory(self)
 
 
-class UpstreamPartitionSpace:
+class MappedParentAssetSlices:
     def __init__(
         self,
         asset_graph_view: "AssetGraphView",
@@ -414,20 +386,8 @@ class UpstreamPartitionSpace:
         self.child_slice = child_slice
         self.parent_slices_by_partition_key = parent_slices_by_partition_key
 
-    def compute_filtered_slice(
-        self, slice_predicate: Callable[[AssetPartition, AssetSlice], bool]
-    ) -> AssetSlice:
-        pks: Set[PartitionKey] = set()
-        for pk, parent_slice in self.parent_slices_by_partition_key.items():
-            if slice_predicate(AssetPartition(self.child_slice.asset_key, pk), parent_slice):
-                pks.add(pk)
 
-        return self.asset_graph_view.slice_factory.from_partition_keys(
-            self.child_slice.asset_key, pks
-        )
-
-
-class UpstreamPartitionSpaceBuilder:
+class MappedParentAssetSlicesBuilder:
     child_pk_to_parent_ak_to_parent_pk_set: Dict[PartitionKey, Dict[AssetKey, Set[PartitionKey]]]
 
     def __init__(self, asset_graph_view: AssetGraphView, child_slice: AssetSlice) -> None:
@@ -446,7 +406,7 @@ class UpstreamPartitionSpaceBuilder:
             parent_ap.partition_key
         )
 
-    def build(self) -> "UpstreamPartitionSpace":
+    def build(self) -> "MappedParentAssetSlices":
         parent_slices = {}
         for (
             child_pk,
@@ -457,7 +417,7 @@ class UpstreamPartitionSpaceBuilder:
                     parent_asset_key, parent_partition_keys
                 )
 
-        return UpstreamPartitionSpace(self.asset_graph_view, self.child_slice, parent_slices)
+        return MappedParentAssetSlices(self.asset_graph_view, self.child_slice, parent_slices)
 
 
 # TODO: make thie space-efficient with __slots__ or something

@@ -39,12 +39,14 @@ class SchedulingPolicy:
     def tick(
         self, context: "SchedulingExecutionContext", asset_slice: "AssetSlice"
     ) -> SchedulingResult:
+        """If there is a sensor spec, this gets evaluated on every tick."""
         ...
 
     # defaults to empty
     def evaluate(
         self, context: "SchedulingExecutionContext", current_slice: "AssetSlice"
     ) -> EvaluationResult:
+        """Evaluate gets called as the scheduling algorithm traverses over the partition space in context."""
         return EvaluationResult(asset_slice=context.slice_factory.empty(current_slice.asset_key))
 
 

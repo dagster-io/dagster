@@ -59,7 +59,9 @@ class AlwaysLaunchLatestTimeWindowSchedulingPolicy(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_slice=RulesLogic.latest_time_window(context, current_slice))
+        return EvaluationResult(
+            asset_slice=RulesLogic.latest_complete_time_window(context, current_slice)
+        )
 
 
 class LatestRequiredRunTags(SchedulingPolicy):
