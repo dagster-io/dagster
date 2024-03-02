@@ -212,7 +212,9 @@ class TimeWindowPartitionMapping(
         that did not exist in to_partitions_def.
         """
         if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
+            check.failed(
+                f"from_partitions_subset must be a BaseTimeWindowPartitionsSubset. Got {from_partitions_subset}"
+            )
 
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
