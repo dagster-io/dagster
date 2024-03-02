@@ -109,7 +109,7 @@ class _HashedSeq(list):
 
 
 def _make_key(
-    original_kwargs: Mapping[str, object],
+    canonical_kwargs: Mapping[str, object],
     fasttypes: AbstractSet[Type[object]] = {int, str},
 ) -> Hashable:
     """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
@@ -122,13 +122,13 @@ def _make_key(
     saves space and improves lookup speed.
     """
     # if no args return a shared value
-    if not original_kwargs:
+    if not canonical_kwargs:
         return NO_ARGS_HASH_VALUE
 
     # if single fast (str/int) arg, use that value for hash
-    if len(original_kwargs) == 1:
-        k, v = next(iter(original_kwargs.items()))
+    if len(canonical_kwargs) == 1:
+        k, v = next(iter(canonical_kwargs.items()))
         if type(v) in fasttypes:
             return f"{k}.{v}"
 
-    return _HashedSeq(tuple(sorted(original_kwargs.items())))
+    return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
