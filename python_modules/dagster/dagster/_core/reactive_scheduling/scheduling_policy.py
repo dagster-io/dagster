@@ -1,12 +1,9 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from typing_extensions import TypeAlias
-
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 
 if TYPE_CHECKING:
@@ -15,10 +12,12 @@ if TYPE_CHECKING:
         RepositoryDefinition,
     )
     from dagster._core.instance import DagsterInstance
-    from dagster._core.reactive_scheduling.asset_graph_traverser import AssetGraphTraverser
+    from dagster._core.reactive_scheduling.asset_graph_view import (
+        AssetGraphView,
+        AssetSlice,
+        AssetSliceFactory,
+    )
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
-AssetPartition: TypeAlias = AssetKeyPartitionKey
 
 
 class SchedulingResult(NamedTuple):
@@ -32,7 +31,7 @@ class TickSettings(NamedTuple):
 
 
 class EvaluationResult(NamedTuple):
-    asset_subset: ValidAssetSubset
+    asset_slice: "AssetSlice"
 
 
 class SchedulingPolicy:
@@ -42,14 +41,9 @@ class SchedulingPolicy:
 
     # defaults to empty
     def evaluate(
-        self, context: "SchedulingExecutionContext", current_subset: ValidAssetSubset
+        self, context: "SchedulingExecutionContext", current_slice: "AssetSlice"
     ) -> EvaluationResult:
-        return EvaluationResult(
-            asset_subset=AssetSubset.empty(
-                current_subset.asset_key,
-                context.asset_graph.get_assets_def(current_subset.asset_key).partitions_def,
-            )
-        )
+        return EvaluationResult(asset_slice=context.slice_factory.empty(current_slice.asset_key))
 
 
 class AssetSchedulingInfo(NamedTuple):
@@ -70,7 +64,10 @@ class SchedulingExecutionContext(NamedTuple):
         last_storage_id: Optional[int],
     ) -> "SchedulingExecutionContext":
         from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
-        from dagster._core.reactive_scheduling.asset_graph_traverser import AssetGraphTraverser
+        from dagster._core.reactive_scheduling.asset_graph_view import (
+            AssetGraphView,
+            TemporalContext,
+        )
 
         stale_status_resolver = CachingStaleStatusResolver(instance, repository_def.asset_graph)
         # create these on demand rather than the lazy BS
@@ -78,22 +75,27 @@ class SchedulingExecutionContext(NamedTuple):
         check.inst(stale_status_resolver.asset_graph, InternalAssetGraph)
         return SchedulingExecutionContext(
             tick_dt=tick_dt,
-            traverser=AssetGraphTraverser(stale_status_resolver, current_dt=tick_dt),
+            asset_graph_view=AssetGraphView(
+                temporal_context=TemporalContext(current_dt=tick_dt, storage_id=last_storage_id),
+                stale_resolver=stale_status_resolver,
+            ),
             last_storage_id=last_storage_id,
         )
 
     tick_dt: datetime
-    traverser: "AssetGraphTraverser"
+    asset_graph_view: "AssetGraphView"
     last_storage_id: Optional[int] = None
 
-    def empty_subset(self, asset_key: AssetKey) -> ValidAssetSubset:
-        return ValidAssetSubset.empty(
-            asset_key, self.asset_graph.get_assets_def(asset_key).partitions_def
-        )
+    def empty_slice(self, asset_key: AssetKey) -> "AssetSlice":
+        return self.slice_factory.empty(asset_key)
+
+    @property
+    def slice_factory(self) -> "AssetSliceFactory":
+        return self.asset_graph_view.slice_factory
 
     @property
     def queryer(self) -> "CachingInstanceQueryer":
-        return self.traverser.stale_resolver.instance_queryer
+        return self.asset_graph_view.stale_resolver.instance_queryer
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -103,8 +105,8 @@ class SchedulingExecutionContext(NamedTuple):
     def asset_graph(self) -> "InternalAssetGraph":
         from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 
-        assert isinstance(self.traverser.stale_resolver.asset_graph, InternalAssetGraph)
-        return self.traverser.stale_resolver.asset_graph
+        assert isinstance(self.asset_graph_view.stale_resolver.asset_graph, InternalAssetGraph)
+        return self.asset_graph_view.stale_resolver.asset_graph
 
     def get_scheduling_info(self, asset_key: AssetKey) -> AssetSchedulingInfo:
         assets_def = self.asset_graph.get_assets_def(asset_key)

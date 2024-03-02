@@ -1,4 +1,4 @@
-from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.reactive_scheduling.asset_graph_view import AssetSlice
 from dagster._core.reactive_scheduling.scheduling_policy import (
     EvaluationResult,
     SchedulingExecutionContext,
@@ -9,9 +9,9 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
 
 class AlwaysIncludeSchedulingPolicy(SchedulingPolicy):
     def evaluate(
-        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_subset=current_subset)
+        return EvaluationResult(asset_slice=current_slice)
 
 
 class NeverIncludeSchedulingPolicy(SchedulingPolicy):

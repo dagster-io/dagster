@@ -2,7 +2,6 @@ import itertools
 from typing import NamedTuple, Sequence
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
@@ -15,7 +14,7 @@ from dagster._core.reactive_scheduling.scheduling_policy import (
 )
 from dagster._core.utils import make_new_backfill_id
 
-from .asset_graph_traverser import AssetSubsetFactory, PartitionSpace
+from .asset_graph_view import AssetSlice, PartitionSpace
 
 
 class ReactiveSchedulingPlan(NamedTuple):
@@ -25,44 +24,42 @@ class ReactiveSchedulingPlan(NamedTuple):
 
 
 def build_reactive_scheduling_plan(
-    context: SchedulingExecutionContext, starting_subsets: Sequence[ValidAssetSubset]
+    context: SchedulingExecutionContext, starting_slices: Sequence[AssetSlice]
 ) -> ReactiveSchedulingPlan:
     # todos/questions:
     # * should the starting subset always be unconditionally included? or should it respect evaluation?
     backfill_id = make_new_backfill_id()
 
-    upstream_of_starting_space = create_partition_space_upstream_of_subsets(
-        context, starting_subsets
-    )
+    starting_slices = [asset_slice for asset_slice in starting_slices]
+
+    upstream_of_starting_space = create_partition_space_upstream_of_slices(context, starting_slices)
 
     # candidates start at the root
     candidate_partition_space = upstream_of_starting_space.for_keys(
         upstream_of_starting_space.root_asset_keys
     )
 
-    launch_partition_space = PartitionSpace.empty(context.asset_graph)
+    launch_partition_space = PartitionSpace.empty(context.asset_graph_view)
 
     # now that we have the partition space we descend downward to filter
 
     for asset_key in itertools.chain(*context.asset_graph.toposort_asset_keys()):
-        candidate_subset = candidate_partition_space.get_asset_subset(asset_key)
+        candidate_slice = candidate_partition_space.get_asset_slice(asset_key)
         asset_info = context.get_scheduling_info(asset_key)
         evaluation_result = (
-            asset_info.scheduling_policy.evaluate(context, candidate_subset)
+            asset_info.scheduling_policy.evaluate(context, candidate_slice)
             if asset_info.scheduling_policy
-            else EvaluationResult(
-                asset_subset=ValidAssetSubset.empty(asset_key, asset_info.partitions_def)
-            )
+            else EvaluationResult(asset_slice=context.slice_factory.empty(asset_key))
         )
 
-        launch_partition_space = launch_partition_space.with_asset_subset(
-            evaluation_result.asset_subset
+        launch_partition_space = launch_partition_space.with_asset_slice(
+            evaluation_result.asset_slice
         )
 
         # explore one level downward in the candidate partition space
         for child_asset_key in context.asset_graph.get_children(asset_key):
-            candidate_partition_space = candidate_partition_space.with_asset_subset(
-                context.traverser.child_asset_subset(child_asset_key, candidate_subset)
+            candidate_partition_space = candidate_partition_space.with_asset_slice(
+                context.asset_graph_view.child_asset_slice(child_asset_key, candidate_slice)
             )
 
     tags = {}
@@ -82,14 +79,14 @@ def build_reactive_scheduling_plan(
     )
 
 
-def create_partition_space_upstream_of_subsets(
-    context: SchedulingExecutionContext, starting_subsets: Sequence[ValidAssetSubset]
+def create_partition_space_upstream_of_slices(
+    context: SchedulingExecutionContext, starting_slices: Sequence[AssetSlice]
 ) -> PartitionSpace:
-    upstream_of_starting_space = PartitionSpace.empty(context.asset_graph)
+    upstream_of_starting_space = PartitionSpace.empty(context.asset_graph_view)
 
-    for starting_subset in starting_subsets:
+    for starting_slice in starting_slices:
         upstream_of_starting_space = upstream_of_starting_space.with_partition_space(
-            context.traverser.create_upstream_partition_space(starting_subset)
+            context.asset_graph_view.create_upstream_partition_space(starting_slice)
         )
 
     return upstream_of_starting_space
@@ -113,32 +110,32 @@ def create_partition_space_upstream_of_subsets(
 
 class OnAnyNewParentUpdated(SchedulingPolicy):
     def evaluate(
-        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_subset=Rules.any_parent_updated(context, current_subset))
+        return EvaluationResult(asset_slice=Rules.any_parent_updated(context, current_slice))
 
 
 class AnyParentOutOfSync(SchedulingPolicy):
     def evaluate(
-        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_subset=Rules.any_parent_out_of_sync(context, current_subset))
+        return EvaluationResult(asset_slice=Rules.any_parent_out_of_sync(context, current_slice))
 
 
 class AllParentsOutOfSync(SchedulingPolicy):
     def evaluate(
-        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
-        return EvaluationResult(asset_subset=Rules.all_parents_out_of_sync(context, current_subset))
+        return EvaluationResult(asset_slice=Rules.all_parents_out_of_sync(context, current_slice))
 
 
 class DefaultSchedulingPolicy(SchedulingPolicy):
     def evaluate(
-        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+        self, context: SchedulingExecutionContext, current_slice: AssetSlice
     ) -> EvaluationResult:
         return EvaluationResult(
-            asset_subset=Rules.any_parent_updated(
-                context, Rules.latest_time_window(context, current_subset)
+            asset_slice=Rules.any_parent_updated(
+                context, Rules.latest_time_window(context, current_slice)
             )
         )
 
@@ -146,75 +143,61 @@ class DefaultSchedulingPolicy(SchedulingPolicy):
 class Rules:
     @staticmethod
     def latest_time_window(
-        context: SchedulingExecutionContext, asset_subset: ValidAssetSubset
-    ) -> ValidAssetSubset:
-        partitions_def = context.asset_graph.get_assets_def(asset_subset.asset_key).partitions_def
+        context: SchedulingExecutionContext, asset_slice: AssetSlice
+    ) -> AssetSlice:
+        partitions_def = context.asset_graph.get_assets_def(asset_slice.asset_key).partitions_def
         if partitions_def is None:
-            return asset_subset
+            return asset_slice
 
         if isinstance(partitions_def, StaticPartitionsDefinition):
-            return asset_subset
+            return asset_slice
 
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             time_window = partitions_def.get_last_partition_window(context.tick_dt)
             return (
-                AssetSubsetFactory.from_time_window(
-                    context.asset_graph, asset_subset.asset_key, time_window
-                )
+                context.slice_factory.from_time_window(asset_slice.asset_key, time_window)
                 if time_window
-                else context.empty_subset(asset_subset.asset_key)
+                else context.empty_slice(asset_slice.asset_key)
             )
 
         check.failed(f"Unsupported partitions_def: {partitions_def}")
 
     @staticmethod
     def any_parent_updated(
-        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
-    ) -> ValidAssetSubset:
-        updated_parent_partition_space = context.traverser.get_updated_parent_partition_space(
-            current_subset
-        )
+        context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> AssetSlice:
         return (
-            context.empty_subset(current_subset.asset_key)
-            if updated_parent_partition_space.is_empty
-            else current_subset
+            context.empty_slice(current_slice.asset_key)
+            if current_slice.updated_parent_partition_space.is_empty
+            else current_slice
         )
 
     @staticmethod
     def all_parents_updated(
-        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
-    ) -> ValidAssetSubset:
-        updated_parent_space = context.traverser.get_updated_parent_partition_space(current_subset)
-        parent_space = context.traverser.get_parent_partition_space(current_subset)
+        context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> AssetSlice:
         return (
-            current_subset
-            if updated_parent_space == parent_space
-            else context.empty_subset(current_subset.asset_key)
+            current_slice
+            if current_slice.updated_parent_partition_space == current_slice.parent_parition_space
+            else context.empty_slice(current_slice.asset_key)
         )
 
     @staticmethod
     def any_parent_out_of_sync(
-        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
-    ) -> ValidAssetSubset:
-        unsynced_parent_space = context.traverser.get_unsynced_parent_partition_space(
-            current_subset
-        )
+        context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> AssetSlice:
         return (
-            context.empty_subset(current_subset.asset_key)
-            if unsynced_parent_space.is_empty
-            else current_subset
+            context.empty_slice(current_slice.asset_key)
+            if current_slice.unsynced_parent_partition_space.is_empty
+            else current_slice
         )
 
     @staticmethod
     def all_parents_out_of_sync(
-        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
-    ) -> ValidAssetSubset:
-        unsynced_parent_space = context.traverser.get_unsynced_parent_partition_space(
-            current_subset
-        )
-        parent_space = context.traverser.get_parent_partition_space(current_subset)
+        context: SchedulingExecutionContext, current_slice: AssetSlice
+    ) -> AssetSlice:
         return (
-            current_subset
-            if unsynced_parent_space == parent_space
-            else context.empty_subset(current_subset.asset_key)
+            current_slice
+            if current_slice.unsynced_parent_partition_space == current_slice.parent_parition_space
+            else context.empty_slice(current_slice.asset_key)
         )
