@@ -190,7 +190,7 @@ class HookContext:
     def op_output_values(self):
         """Computed output values in an op."""
         return self.solid_output_values
-    
+
     @public
     @property
     def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
