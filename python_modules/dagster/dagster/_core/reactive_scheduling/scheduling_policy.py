@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class SchedulingResult(NamedTuple):
     launch: bool = True
+    asset_slice: Optional["AssetSlice"] = None
 
 
 class EvaluationResult(NamedTuple):
@@ -35,7 +36,9 @@ class SchedulingPolicy:
     sensor_spec: Optional["SensorSpec"] = None
 
     # TODO: what about multi asset case?
-    def tick(self, context: "SchedulingExecutionContext") -> SchedulingResult:
+    def tick(
+        self, context: "SchedulingExecutionContext", asset_slice: "AssetSlice"
+    ) -> SchedulingResult:
         ...
 
     # defaults to empty

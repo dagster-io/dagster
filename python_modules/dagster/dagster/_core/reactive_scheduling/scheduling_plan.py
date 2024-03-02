@@ -1,11 +1,6 @@
 import itertools
 from typing import NamedTuple, Sequence
 
-from dagster import _check as check
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-)
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.reactive_scheduling.scheduling_policy import (
     EvaluationResult,
@@ -31,6 +26,8 @@ def build_reactive_scheduling_plan(
     backfill_id = make_new_backfill_id()
 
     starting_slices = [asset_slice for asset_slice in starting_slices]
+
+    print(f"starting_slices: {starting_slices}")
 
     upstream_of_starting_space = create_partition_space_upstream_of_slices(context, starting_slices)
 
@@ -145,22 +142,7 @@ class Rules:
     def latest_time_window(
         context: SchedulingExecutionContext, asset_slice: AssetSlice
     ) -> AssetSlice:
-        partitions_def = context.asset_graph.get_assets_def(asset_slice.asset_key).partitions_def
-        if partitions_def is None:
-            return asset_slice
-
-        if isinstance(partitions_def, StaticPartitionsDefinition):
-            return asset_slice
-
-        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            time_window = partitions_def.get_last_partition_window(context.tick_dt)
-            return (
-                context.slice_factory.from_time_window(asset_slice.asset_key, time_window)
-                if time_window
-                else context.empty_slice(asset_slice.asset_key)
-            )
-
-        check.failed(f"Unsupported partitions_def: {partitions_def}")
+        return asset_slice.latest_complete_time_window
 
     @staticmethod
     def any_parent_updated(

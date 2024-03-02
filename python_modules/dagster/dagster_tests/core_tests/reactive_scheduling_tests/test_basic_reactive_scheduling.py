@@ -24,7 +24,6 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.reactive_scheduling.asset_graph_view import (
     AssetPartition,
-    AssetSlice,
 )
 from dagster._core.reactive_scheduling.scheduling_plan import (
     OnAnyNewParentUpdated,
@@ -41,6 +40,7 @@ from .test_policies import (
     AlwaysIncludeSchedulingPolicy,
     NeverIncludeSchedulingPolicy,
     build_test_context,
+    slices_equal,
 )
 
 
@@ -309,24 +309,6 @@ def test_time_windowing_partition() -> None:
     )
 
 
-from dagster import _check as check
-
-
-def subsets_equal(left_slice: AssetSlice, right_slice: AssetSlice) -> bool:
-    left = left_slice.to_valid_asset_subset()
-    right = right_slice.to_valid_asset_subset()
-    if left.asset_key != right.asset_key:
-        return False
-    if left.is_partitioned and right.is_partitioned:
-        return set(left.subset_value.get_partition_keys()) == set(
-            right.subset_value.get_partition_keys()
-        )
-    elif not left.is_partitioned and not right.is_partitioned:
-        return left.bool_value == right.bool_value
-    else:
-        check.failed("should not get here with valid subsets")
-
-
 def test_on_any_parent_updated() -> None:
     @asset
     def upup() -> None:
@@ -355,14 +337,14 @@ def test_on_any_parent_updated() -> None:
     assert Rules.any_parent_updated(context_one, up_subset).empty
     assert Rules.any_parent_updated(context_one, upup_subset).empty
 
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_one, down_subset).asset_slice, down_subset
     )
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_one, up_subset).asset_slice,
         context_one.empty_slice(up.key),
     )
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_one, upup_subset).asset_slice,
         context_one.empty_slice(upup.key),
     )
@@ -390,13 +372,13 @@ def test_on_any_parent_updated() -> None:
     assert Rules.any_parent_updated(context_two, up_subset).nonempty
     assert Rules.any_parent_updated(context_two, upup_subset).empty
 
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_two, down_subset).asset_slice, down_subset
     )
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_two, up_subset).asset_slice, up_subset
     )
-    assert subsets_equal(
+    assert slices_equal(
         OnAnyNewParentUpdated().evaluate(context_two, upup_subset).asset_slice,
         context_two.empty_slice(upup.key),
     )

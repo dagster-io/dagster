@@ -16,6 +16,7 @@ from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -64,6 +65,24 @@ class AssetSlice:
     def nonempty(self) -> bool:
         return not self.empty
 
+    @property
+    def has_single_time_window(self) -> bool:
+        assert isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+        assert isinstance(self._valid_asset_subset.subset_value, TimeWindowPartitionsSubset)
+        return len(self._valid_asset_subset.subset_value.included_time_windows) == 1
+
+    @property
+    def time_window(self) -> TimeWindow:
+        # not guaranteed to work but extraordinarily convenient
+        assert self.has_single_time_window
+        assert isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+        assert isinstance(self._valid_asset_subset.subset_value, TimeWindowPartitionsSubset)
+        return self._valid_asset_subset.subset_value.included_time_windows[0]
+
+    @cached_property
+    def _partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self._asset_graph_view.asset_graph.get_assets_def(self.asset_key).partitions_def
+
     @cached_property
     def parent_parition_space(self) -> "PartitionSpace":
         return self._asset_graph_view.parent_partition_space(self)
@@ -89,6 +108,28 @@ class AssetSlice:
             self._asset_graph_view.get_parent_asset_slice(parent_key, self)
             for parent_key in self._asset_graph_view.asset_graph.get_parents(self.asset_key)
         ]
+
+    @cached_property
+    def latest_complete_time_window(self) -> "AssetSlice":
+        partitions_def = self._partitions_def
+        if self._partitions_def is None:
+            return self
+
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            return self
+
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            time_window = partitions_def.get_last_partition_window(
+                self._asset_graph_view.current_dt
+            )
+            return (
+                self._asset_graph_view.slice_factory.from_time_window(self.asset_key, time_window)
+                if time_window
+                else self._asset_graph_view.slice_factory.empty(self.asset_key)
+            )
+
+        check.failed(f"Unsupported partitions_def: {partitions_def}")
+        return
 
     def __repr__(self) -> str:
         return f"AssetSlice({self._valid_asset_subset})"
