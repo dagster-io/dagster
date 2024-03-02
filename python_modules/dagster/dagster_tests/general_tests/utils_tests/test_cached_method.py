@@ -1,11 +1,9 @@
 # mypy: disable-error-code=annotation-unchecked
 
 import gc
-from typing import NamedTuple
+from typing import Dict, NamedTuple
 
 import objgraph
-import pytest
-from dagster._check import CheckError
 from dagster._utils.cached_method import cached_method
 
 
@@ -47,9 +45,6 @@ def test_kwargs_order_irrelevant_and_no_kwargs():
     assert obj1.my_method(arg1="a", arg2=5) == ("a", 5)
     assert obj1.my_method(arg2=5, arg1="a") == ("a", 5)
     assert len(obj1.calls) == 1
-
-    with pytest.raises(CheckError, match="does not support non-keyword arguments"):
-        obj1.my_method("a", 5)
 
 
 def test_does_not_leak():
@@ -96,3 +91,35 @@ def test_collisions():
     assert a1 != b1
     assert a1 != a2
     assert b1 != b2
+
+
+def test_ordinal_args() -> None:
+    class MyClass:
+        @cached_method
+        def stuff(self, a, b) -> Dict:
+            return {"a": a, "b": b}
+
+    obj = MyClass()
+    a1 = obj.stuff(1, None)
+    b1 = obj.stuff(None, 1)
+    a2 = obj.stuff(2, None)
+    b2 = obj.stuff(None, 2)
+
+    assert a1 != b1
+    assert a1 != a2
+    assert b1 != b2
+
+
+def test_doc_string_scenario_canonicalized_cache_entry() -> None:
+    class MyClass:
+        @cached_method
+        def a_method(self, arg1: str, arg2: int) -> str:
+            return arg1 + str(arg2)
+
+    obj = MyClass()
+    assert obj.a_method(arg1="a", arg2=5) == "a5"
+    assert obj.a_method(arg2=5, arg1="a") == "a5"
+    assert obj.a_method("a", 5) == "a5"
+
+    # only one entry
+    assert len(obj.__dict__) == 1

@@ -3,7 +3,7 @@ from typing import AbstractSet, Callable, Dict, Hashable, Mapping, Tuple, Type, 
 
 from typing_extensions import Concatenate, ParamSpec
 
-from dagster import _check as check
+from dagster._seven import get_arg_names
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -48,10 +48,14 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             obj.a_method(arg2=5, arg1="a")
             obj.a_method("a", 5)
 
-    With this decorator, the first two would point to the same cache entry, and non-kwarg arguments
-    are not allowed.
+    With this decorator, keyword and non-keyword arg usage is canonicalized and the above
+    calls result in the same cache entry
     """
     cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
+
+    arg_names = get_arg_names(method)
+
+    arg_lookup = {arg_ordinal: arg_name for arg_ordinal, arg_name in enumerate(arg_names[1:])}
 
     @wraps(method)
     def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
@@ -61,7 +65,23 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
         else:
             cache = getattr(self, cache_attr_name)
 
-        key = _make_key(args, kwargs)
+        canonical_kwargs = None
+        if args:
+            translated_kwargs = {}
+            for arg_ordinal, arg_value in enumerate(args):
+                arg_name = arg_lookup[arg_ordinal]
+                translated_kwargs[arg_name] = arg_value
+            if kwargs:
+                # only copy if both args and kwargs were passed
+                canonical_kwargs = {**translated_kwargs, **kwargs}
+            else:
+                # no copy
+                canonical_kwargs = translated_kwargs
+        else:
+            # no copy
+            canonical_kwargs = kwargs
+
+        key = _make_key(canonical_kwargs)
         if key not in cache:
             result = method(self, *args, **kwargs)
             cache[key] = result
@@ -89,34 +109,26 @@ class _HashedSeq(list):
 
 
 def _make_key(
-    args: Tuple[object, ...],
-    kwds: Mapping[str, object],
+    original_kwargs: Mapping[str, object],
     fasttypes: AbstractSet[Type[object]] = {int, str},
 ) -> Hashable:
     """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than
-    as a nested structure that would take more memory.
+    s a nested structure that would take more memory.
     If there is only a single argument and its data type is known to cache
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
     """
-    if args:
-        check.failed(
-            "@cached_method does not support non-keyword arguments, because doing so would"
-            " enable functionally identical sets of arguments to correspond to different cache"
-            " keys.",
-        )
-
     # if no args return a shared value
-    if not kwds:
+    if not original_kwargs:
         return NO_ARGS_HASH_VALUE
 
     # if single fast (str/int) arg, use that value for hash
-    if len(kwds) == 1:
-        k, v = next(iter(kwds.items()))
+    if len(original_kwargs) == 1:
+        k, v = next(iter(original_kwargs.items()))
         if type(v) in fasttypes:
             return f"{k}.{v}"
 
-    return _HashedSeq(tuple(sorted(kwds.items())))
+    return _HashedSeq(tuple(sorted(original_kwargs.items())))
