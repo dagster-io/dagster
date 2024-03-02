@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.data_version import StaleStatus
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import (
@@ -152,6 +153,13 @@ class AssetGraphTraverser:
             current_time=self.current_dt,
         )
 
+    def get_parent_partition_space(self, asset_subset: ValidAssetSubset) -> "PartitionSpace":
+        parent_parition_space = PartitionSpace.empty(self.asset_graph)
+        for parent_key in self.asset_graph.get_parents(asset_subset.asset_key):
+            parent_subset = self.parent_asset_subset(parent_key, asset_subset)
+            parent_parition_space = parent_parition_space.with_asset_subset(parent_subset)
+        return parent_parition_space
+
     def get_updated_parent_partition_space(
         self, asset_subset: ValidAssetSubset
     ) -> "PartitionSpace":
@@ -190,6 +198,21 @@ class AssetGraphTraverser:
 
         return PartitionSpace.from_asset_partitions(
             self.asset_graph, updated_parent_asset_partitions
+        )
+
+    def get_unsynced_parent_partition_space(
+        self, asset_subset: ValidAssetSubset
+    ) -> "PartitionSpace":
+        # this is going to be very slow
+        unsynced_parent_asset_partitions: Set[AssetPartition] = set()
+        for parent_asset_key in self.asset_graph.get_parents(asset_subset.asset_key):
+            parent_subset = self.parent_asset_subset(parent_asset_key, asset_subset)
+            for ap in parent_subset.asset_partitions:
+                stale_status = self.stale_resolver.get_status(ap.asset_key, ap.partition_key)
+                if stale_status != StaleStatus.FRESH:
+                    unsynced_parent_asset_partitions.add(ap)
+        return PartitionSpace.from_asset_partitions(
+            self.asset_graph, unsynced_parent_asset_partitions
         )
 
     def create_upstream_asset_graph_subset(
@@ -241,6 +264,9 @@ class PartitionSpace:
         return PartitionSpace(
             self.asset_graph, self.asset_graph_subset.filter_asset_keys(asset_keys)
         )
+
+    def has_partitions_for_all_keys(self, asset_keys: AbstractSet[AssetKey]) -> bool:
+        return all(not self.get_asset_subset(ak).is_empty for ak in asset_keys)
 
     @property
     def is_empty(self) -> bool:

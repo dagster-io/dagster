@@ -118,6 +118,20 @@ class OnAnyNewParentUpdated(SchedulingPolicy):
         return EvaluationResult(asset_subset=Rules.any_parent_updated(context, current_subset))
 
 
+class AnyParentOutOfSync(SchedulingPolicy):
+    def evaluate(
+        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+    ) -> EvaluationResult:
+        return EvaluationResult(asset_subset=Rules.any_parent_out_of_sync(context, current_subset))
+
+
+class AllParentsOutOfSync(SchedulingPolicy):
+    def evaluate(
+        self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+    ) -> EvaluationResult:
+        return EvaluationResult(asset_subset=Rules.all_parents_out_of_sync(context, current_subset))
+
+
 class DefaultSchedulingPolicy(SchedulingPolicy):
     def evaluate(
         self, context: SchedulingExecutionContext, current_subset: ValidAssetSubset
@@ -170,11 +184,37 @@ class Rules:
     def all_parents_updated(
         context: SchedulingExecutionContext, current_subset: ValidAssetSubset
     ) -> ValidAssetSubset:
-        updated_parent_partition_space = context.traverser.get_updated_parent_partition_space(
+        updated_parent_space = context.traverser.get_updated_parent_partition_space(current_subset)
+        parent_space = context.traverser.get_parent_partition_space(current_subset)
+        return (
+            current_subset
+            if updated_parent_space == parent_space
+            else context.empty_subset(current_subset.asset_key)
+        )
+
+    @staticmethod
+    def any_parent_out_of_sync(
+        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+    ) -> ValidAssetSubset:
+        unsynced_parent_space = context.traverser.get_unsynced_parent_partition_space(
             current_subset
         )
-        for asset_key in context.asset_graph.get_parents(current_subset.asset_key):
-            if updated_parent_partition_space.get_asset_subset(asset_key).is_empty:
-                return context.empty_subset(current_subset.asset_key)
+        return (
+            context.empty_subset(current_subset.asset_key)
+            if unsynced_parent_space.is_empty
+            else current_subset
+        )
 
-        return current_subset
+    @staticmethod
+    def all_parents_out_of_sync(
+        context: SchedulingExecutionContext, current_subset: ValidAssetSubset
+    ) -> ValidAssetSubset:
+        unsynced_parent_space = context.traverser.get_unsynced_parent_partition_space(
+            current_subset
+        )
+        parent_space = context.traverser.get_parent_partition_space(current_subset)
+        return (
+            current_subset
+            if unsynced_parent_space == parent_space
+            else context.empty_subset(current_subset.asset_key)
+        )
