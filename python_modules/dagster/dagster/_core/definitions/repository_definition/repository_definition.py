@@ -240,12 +240,16 @@ class RepositoryDefinition:
         """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
+    @public
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        """Mapping[AssetKey, SourceAsset]: The source assets defined in the repository."""
         return self._repository_data.get_source_assets_by_key()
 
+    @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        """Mapping[AssetKey, AssetsDefinition]: The assets definitions defined in the repository."""
         return self._repository_data.get_assets_defs_by_key()
 
     @property
