@@ -280,9 +280,13 @@ def build_caching_repository_data_from_list(
 
         source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
         assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
+        asset_checks_defs_by_key = {
+            key: checks_def for checks_def in asset_checks_defs for key in checks_def.keys
+        }
     else:
         source_assets_by_key = {}
         assets_defs_by_key = {}
+        asset_checks_defs_by_key = {}
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
@@ -354,6 +358,7 @@ def build_caching_repository_data_from_list(
         sensors=sensors,
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
+        asset_checks_defs_by_key=asset_checks_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
@@ -416,6 +421,7 @@ def build_caching_repository_data_from_dict(
         **repository_definitions,
         source_assets_by_key={},
         assets_defs_by_key={},
+        asset_checks_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
         resource_key_mapping={},
