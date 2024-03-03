@@ -37,6 +37,7 @@ export type PartitionRunListQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          rootConcurrencyKeys: Array<string> | null;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;

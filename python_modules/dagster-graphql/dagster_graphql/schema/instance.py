@@ -174,6 +174,7 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
 class GrapheneRunQueueConfig(graphene.ObjectType):
     maxConcurrentRuns = graphene.NonNull(graphene.Int)
     tagConcurrencyLimitsYaml = graphene.String()
+    isOpConcurrencyAware = graphene.Boolean()
 
     class Meta:
         name = "RunQueueConfig"
@@ -195,6 +196,9 @@ class GrapheneRunQueueConfig(graphene.ObjectType):
             allow_unicode=True,
             sort_keys=True,
         )
+
+    def resolve_isOpConcurrencyAware(self, _graphene_info: ResolveInfo):
+        return self._run_queue_config.should_block_op_concurrency_limited_runs
 
 
 class GrapheneInstance(graphene.ObjectType):

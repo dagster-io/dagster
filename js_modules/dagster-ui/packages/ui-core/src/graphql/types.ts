@@ -4265,6 +4265,7 @@ export type Run = PipelineRun & {
   pipelineSnapshotId: Maybe<Scalars['String']['output']>;
   repositoryOrigin: Maybe<RepositoryOrigin>;
   resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
+  rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
   rootRunId: Maybe<Scalars['String']['output']>;
   runConfig: Scalars['RunConfigData']['output'];
   runConfigYaml: Scalars['String']['output'];
@@ -4463,6 +4464,7 @@ export type RunOrError = PythonError | Run | RunNotFoundError;
 
 export type RunQueueConfig = {
   __typename: 'RunQueueConfig';
+  isOpConcurrencyAware: Maybe<Scalars['Boolean']['output']>;
   maxConcurrentRuns: Scalars['Int']['output'];
   tagConcurrencyLimitsYaml: Maybe<Scalars['String']['output']>;
 };
@@ -12553,6 +12555,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('resolvedOpSelection')
         ? overrides.resolvedOpSelection!
         : [],
+    rootConcurrencyKeys:
+      overrides && overrides.hasOwnProperty('rootConcurrencyKeys')
+        ? overrides.rootConcurrencyKeys!
+        : [],
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'fugit',
     runConfig: overrides && overrides.hasOwnProperty('runConfig') ? overrides.runConfig! : 'quas',
     runConfigYaml:
@@ -12893,6 +12899,10 @@ export const buildRunQueueConfig = (
   relationshipsToOmit.add('RunQueueConfig');
   return {
     __typename: 'RunQueueConfig',
+    isOpConcurrencyAware:
+      overrides && overrides.hasOwnProperty('isOpConcurrencyAware')
+        ? overrides.isOpConcurrencyAware!
+        : false,
     maxConcurrentRuns:
       overrides && overrides.hasOwnProperty('maxConcurrentRuns')
         ? overrides.maxConcurrentRuns!

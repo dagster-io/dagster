@@ -216,6 +216,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
       ...RunTagsFragment
     }
     ...RunTimeFragment
+    rootConcurrencyKeys
   }
 
   ${RUN_TIME_FRAGMENT}

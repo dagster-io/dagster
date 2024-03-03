@@ -27,7 +27,9 @@ import {RunTableRunFragment} from './types/RunTable.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PipelineTag} from '../graphql/types';
+import {PipelineTag, RunStatus} from '../graphql/types';
+import {useCanSeeConfig} from '../instance/useCanSeeConfig';
+import {useIsRunCoordinatorConcurrencyAware} from '../instance/useIsRunCoordinatorConcurrencyAware';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -59,6 +61,8 @@ export const RunRow = ({
   const {pipelineName} = run;
   const repo = useRepositoryForRunWithoutSnapshot(run);
   const {isTagPinned, onToggleTagPin} = useTagPinning();
+  const canSeeConfig = useCanSeeConfig();
+  const isRunCoordinatorConcurrencyAware = useIsRunCoordinatorConcurrencyAware();
 
   const isJob = React.useMemo(() => {
     if (repo) {
@@ -99,6 +103,7 @@ export const RunRow = ({
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const [showRunTags, setShowRunTags] = React.useState(false);
+  const [showRootConcurrencyKeys, setShowRootConcurrencyKeys] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const tagsToShow = React.useMemo(() => {
@@ -190,6 +195,21 @@ export const RunRow = ({
                 </ButtonLink>
               </Caption>
             ) : null}
+            {isRunCoordinatorConcurrencyAware &&
+            run.status === RunStatus.QUEUED &&
+            run.rootConcurrencyKeys?.length ? (
+              <Caption>
+                <ButtonLink
+                  onClick={() => {
+                    setShowRootConcurrencyKeys(true);
+                  }}
+                  color={Colors.textLight()}
+                  style={{margin: '-4px', padding: '4px'}}
+                >
+                  View root concurrency keys
+                </ButtonLink>
+              </Caption>
+            ) : null}
           </Box>
         </Box>
         {isHovered && allTagsWithPinned.length ? (
@@ -245,6 +265,39 @@ export const RunRow = ({
             intent="primary"
             onClick={() => {
               setShowRunTags(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+      <Dialog
+        isOpen={showRootConcurrencyKeys}
+        title="Root op/asset concurrency keys"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={() => {
+          setShowRootConcurrencyKeys(false);
+        }}
+      >
+        <DialogBody>
+          {run.rootConcurrencyKeys?.map((key, i) =>
+            canSeeConfig ? (
+              <Tag interactive key={`rootConcurrency:${i}`}>
+                <Link to={`/concurrency?key=${key}`}>{key}</Link>
+              </Tag>
+            ) : (
+              <Tag interactive key={`rootConcurrency:${i}`}>
+                {key}
+              </Tag>
+            ),
+          )}
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button
+            intent="primary"
+            onClick={() => {
+              setShowRootConcurrencyKeys(false);
             }}
           >
             Close
