@@ -249,15 +249,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
-            repo_assets = self._repository_def.assets_defs_by_key.values()
+            repo_assets = self._repository_def.asset_graph.assets_defs
             self._monitored_asset_keys = list(monitored_assets.resolve(repo_assets))
         else:
             self._monitored_asset_keys = monitored_assets
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
         self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
+        asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
-            assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
+            assets_def = (
+                asset_graph.get_assets_def(asset_key) if asset_graph.has_asset(asset_key) else None
+            )
             self._assets_by_key[asset_key] = assets_def
 
             self._partitions_def_by_asset_key[asset_key] = (
@@ -670,7 +673,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         repo_def = cast(RepositoryDefinition, self._repository_def)
-        repository_assets = repo_def.assets_defs_by_key
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -681,8 +683,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             else:
                 return asset_def
-        elif asset_key in repository_assets:
-            return repository_assets[asset_key]
+        elif repo_def.asset_graph.has_asset(asset_key):
+            return repo_def.asset_graph.get_assets_def(asset_key)
         else:
             raise DagsterInvalidInvocationError(
                 f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"
@@ -1032,9 +1034,7 @@ def build_multi_asset_sensor_context(
         if isinstance(monitored_assets, AssetSelection):
             asset_keys = cast(
                 List[AssetKey],
-                list(
-                    monitored_assets.resolve(list(set(repository_def.assets_defs_by_key.values())))
-                ),
+                list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
             )
         else:
             asset_keys = monitored_assets

@@ -333,7 +333,7 @@ def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
             key = AssetKey(arg)
-            observe(assets=[versioned_repo.external_assets_defs_by_key[key]], instance=instance)
+            observe(assets=[versioned_repo.asset_graph.get_assets_def(key)], instance=instance)
             latest_record = instance.get_latest_data_version_record(key, is_source=True)
             latest_timestamp = latest_record.timestamp
             times_by_key[key].append(
@@ -345,7 +345,7 @@ def observe_sources(*args):
 
 def run_assets(*args):
     def run_assets_fn(*, instance, **kwargs):
-        assets = [versioned_repo.assets_defs_by_key[AssetKey(arg)] for arg in args]
+        assets = [versioned_repo.asset_graph.get_assets_def(AssetKey(arg)) for arg in args]
         materialize_to_memory(assets=assets, instance=instance)
 
     return run_assets_fn

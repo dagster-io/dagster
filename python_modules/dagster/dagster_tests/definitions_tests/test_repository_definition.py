@@ -651,7 +651,7 @@ def test_source_assets():
     def my_repo():
         return [foo, bar]
 
-    all_assets = list(my_repo.assets_defs_by_key.values())
+    all_assets = list(my_repo.asset_graph.assets_defs)
     assert len(all_assets) == 2
     assert {key.to_user_string() for a in all_assets for key in a.keys} == {"foo", "bar"}
 

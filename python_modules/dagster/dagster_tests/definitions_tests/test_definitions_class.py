@@ -53,7 +53,7 @@ from dagster._core.test_utils import instance_for_test
 def get_all_assets_from_defs(defs: Definitions):
     # could not find public method on repository to do this
     repo = resolve_pending_repo_if_required(defs)
-    return list(repo.assets_defs_by_key.values())
+    return list(repo.asset_graph.assets_defs)
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
@@ -204,7 +204,7 @@ def test_resource_coercion():
 def test_source_asset():
     defs = Definitions(assets=[SourceAsset("a-source-asset")])
     repo = resolve_pending_repo_if_required(defs)
-    all_assets = list(repo.assets_defs_by_key.values())
+    all_assets = list(repo.asset_graph.assets_defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "a-source-asset"
 

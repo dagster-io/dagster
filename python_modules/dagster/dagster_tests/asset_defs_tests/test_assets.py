@@ -1560,12 +1560,12 @@ def test_self_dependency():
 def test_context_assets_def():
     @asset
     def a(context):
-        assert context.assets_def == a
+        assert context.assets_def.keys == {a.key}
         return 1
 
     @asset
     def b(context, a):
-        assert context.assets_def == b
+        assert context.assets_def.keys == {b.key}
         return 2
 
     asset_job = define_asset_job("yay", [a, b]).resolve(
