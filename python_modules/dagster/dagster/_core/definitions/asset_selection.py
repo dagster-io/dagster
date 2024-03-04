@@ -710,11 +710,12 @@ class KeysAssetSelection(AssetSelection, frozen=True):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self.selected_keys)
-        invalid_keys = list(key for key in specified_keys if key not in asset_graph.all_asset_keys)
+        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
 
-        suggestions = ""
         # Arbitrary limit to avoid huge error messages
-        for invalid_key in invalid_keys[:4]:
+        keys_to_suggest = list(invalid_keys)[:4]
+        suggestions = ""
+        for invalid_key in keys_to_suggest:
             similar_names = resolve_similar_asset_names(invalid_key, asset_graph.all_asset_keys)
             if similar_names:
                 # Arbitrarily limit to 10 similar names to avoid a huge error message
