@@ -269,45 +269,6 @@ def launch_scheduled_runs(
             )
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-    if log_verbose_checks:
-        unloadable_schedule_states = {
-            selector_id: schedule_state
-            for selector_id, schedule_state in all_schedule_states.items()
-            if selector_id not in schedules and schedule_state.status == InstigatorStatus.RUNNING
-        }
-
-        for schedule_state in unloadable_schedule_states.values():
-            schedule_name = schedule_state.origin.instigator_name
-            code_location_origin = (
-                schedule_state.origin.external_repository_origin.code_location_origin
-            )
-
-            code_location_name = code_location_origin.location_name
-            repo_name = schedule_state.origin.external_repository_origin.repository_name
-            if (
-                code_location_origin.location_name not in workspace_snapshot
-                or not workspace_snapshot[code_location_origin.location_name].code_location
-            ):
-                logger.warning(
-                    f"Schedule {schedule_name} was started from a location "
-                    f"{code_location_name} that can no longer be found in the workspace. You can "
-                    "turn off this schedule in the Dagster UI from the Status tab."
-                )
-            elif not check.not_none(  # checked in case above
-                workspace_snapshot[code_location_origin.location_name].code_location
-            ).has_repository(repo_name):
-                logger.warning(
-                    f"Could not find repository {repo_name} in location {code_location_name} to "
-                    + f"run schedule {schedule_name}. If this repository no longer exists, you can "
-                    + "turn off the schedule in the Dagster UI from the Status tab.",
-                )
-            else:
-                logger.warning(
-                    f"Could not find schedule {schedule_name} in repository {repo_name}. If"
-                    " this schedule no longer exists, you can turn it off in the Dagster UI"
-                    " from the Status tab.",
-                )
-
     if not schedules:
         logger.debug("Not checking for any runs since no schedules have been started.")
         yield
