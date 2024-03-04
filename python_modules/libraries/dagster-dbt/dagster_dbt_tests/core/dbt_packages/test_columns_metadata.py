@@ -1,4 +1,6 @@
+import json
 import os
+import subprocess
 from typing import Any, Dict, cast
 
 from dagster import (
@@ -74,3 +76,29 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
     )
 
     assert result.success
+
+
+def test_dbt_cli_no_jinja_log_info() -> None:
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt_cli_parse_invocation = dbt.cli(["parse"])
+
+    assert dbt_cli_parse_invocation.is_successful()
+    assert not any(
+        event.raw_event["info"]["name"] == "JinjaLogInfo"
+        for event in dbt_cli_parse_invocation.stream_raw_events()
+    )
+
+
+def test_dbt_raw_cli_no_empty_jinja_log_info() -> None:
+    # Ensure `log_columns_in_relation.sql` does not produce empty `{}` statements when run outside of the context of `dagster-dbt`
+    result = subprocess.run(
+        ["dbt", "--log-format", "json", "--no-partial-parse", "parse"],
+        capture_output=True,
+        text=True,
+        cwd=test_metadata_path,
+        check=False,
+    )
+
+    assert not any(
+        [json.loads(line)["info"]["name"] == "JinjaLogInfo" for line in result.stdout.splitlines()]
+    )
