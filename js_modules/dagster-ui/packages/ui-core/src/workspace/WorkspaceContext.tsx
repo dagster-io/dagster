@@ -38,7 +38,6 @@ type SetVisibleOrHiddenFn = (repoAddresses: RepoAddress[]) => void;
 type WorkspaceState = {
   error: PythonErrorFragment | null;
   loading: boolean;
-  data: RootWorkspaceQuery | undefined;
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
@@ -227,7 +226,6 @@ const useWorkspaceState = (): WorkspaceState => {
 
   return {
     refetch,
-    data,
     loading: loading && !data, // Only "loading" on initial load.
     error,
     locationEntries,
