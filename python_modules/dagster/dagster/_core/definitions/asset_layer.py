@@ -972,7 +972,8 @@ def _subset_assets_defs(
                 f"attempted to select only {sorted(list(selected_subset))}. "
                 "This AssetsDefinition does not support subsetting. Please select all "
                 "asset keys produced by this asset.\n\nIf using an AssetSelection, you may "
-                "use required_multi_asset_neighbors() to select any remaining assets, for example:\nAssetSelection.keys('my_asset').required_multi_asset_neighbors()"
+                "use required_multi_asset_neighbors() to select any remaining assets, for "
+                "example:\nAssetSelection.keys('my_asset').required_multi_asset_neighbors()"
             )
 
     return (
