@@ -91,16 +91,18 @@ def pulse_reactive_scheduling(
         )
 
         if result.launch:
-            # TODO: filter to most recent by default?
             starting_slices.append(
                 result.explicit_launching_slice
                 if result.explicit_launching_slice
-                else context.asset_graph_view.slice_factory.complete_asset_slice(asset_key)
+                # TODO: we currently filter down to the latest time window
+                # However, we this is probably *too* strict. Consider the case where you turn
+                # off a reactive sensor for an hourly partitioned asset for over an hour.
+                else context.asset_graph_view.slice_factory.complete_asset_slice(
+                    asset_key
+                ).latest_complete_time_window
             )
 
-    return build_reactive_scheduling_plan(
-        context, starting_slices=starting_slices
-    )  # TODO actually get slices
+    return build_reactive_scheduling_plan(context, starting_slices=starting_slices)
 
 
 def build_scheduling_execution_context(
@@ -124,10 +126,10 @@ def build_sensor_from_sensor_info(reactive_sensor_info: ReactiveSensorInfo) -> S
 
     @sensor(
         name=reactive_sensor_info.sensor_spec.name,
-        minimum_interval_seconds=10,  # TODO respect tick cron schedule?
+        minimum_interval_seconds=10,
         default_status=reactive_sensor_info.sensor_spec.default_status,
         description=reactive_sensor_info.sensor_spec.description,
-        asset_selection="*",  # for now
+        asset_selection="*",  # for now until we formally support scheduling zones
     )
     def _a_sensor(context: SensorEvaluationContext) -> SensorResult:
         check.invariant(
