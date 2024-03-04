@@ -86,7 +86,7 @@ def test_asset_out():
         dagster_type=resolve_dagster_type(int),
         asset_key=asset_key,
         has_asset_partitions=False,
-        metadata=None,
+        definition_metadata=None,
     )
     assert manager.load_input(input_context) == 7
 
@@ -160,7 +160,6 @@ def test_asset_out_partitioned():
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -169,7 +168,7 @@ def test_asset_out_partitioned():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
-        metadata=None,
+        definition_metadata=None,
         asset_partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
@@ -210,7 +209,6 @@ def test_asset_out_static_partitioned():
         asset_partition_keys=["red"],
         definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -219,7 +217,7 @@ def test_asset_out_static_partitioned():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         asset_partition_keys=["red"],
-        metadata=None,
+        definition_metadata=None,
         asset_partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
@@ -260,7 +258,6 @@ def test_asset_out_multiple_static_partitions():
         asset_partition_keys=["red", "yellow"],
         definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -269,7 +266,7 @@ def test_asset_out_multiple_static_partitions():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         asset_partition_keys=["red", "yellow"],
-        metadata=None,
+        definition_metadata=None,
         asset_partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
@@ -322,7 +319,7 @@ def test_different_output_and_input_types():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(str),
         has_asset_partitions=False,
-        metadata=None,
+        definition_metadata=None,
     )
     assert manager.load_input(input_context) == "8"
 
@@ -342,7 +339,6 @@ def test_non_asset_out():
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -351,7 +347,7 @@ def test_non_asset_out():
         dagster_type=resolve_dagster_type(int),
         has_asset_key=False,
         has_asset_partitions=False,
-        metadata=None,
+        definition_metadata=None,
     )
     assert manager.load_input(input_context) == 7
 
@@ -391,7 +387,6 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema2"},
         resource_config=resource_config,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -402,7 +397,6 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -443,7 +437,6 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
 
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
@@ -458,7 +451,6 @@ def test_output_schema_defaults():
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -493,7 +485,6 @@ def test_output_schema_defaults():
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
-        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
     assert table_slice.schema == "schema1"
@@ -553,7 +544,7 @@ def test_default_load_type():
         dagster_type=asset1.op.outs["result"].dagster_type,
         asset_key=asset_key,
         has_asset_partitions=False,
-        metadata=None,
+        definition_metadata=None,
     )
 
     manager.handle_output(output_context, 1)

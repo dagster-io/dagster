@@ -96,6 +96,7 @@ class InputContext:
             )
             or {}
         )
+        self._user_generated_metadata = {}
         self._upstream_output = upstream_output
         self._dagster_type = dagster_type
         self._log = log_manager
@@ -203,11 +204,11 @@ class InputContext:
 
     @public
     @property
-    def definition_metadata(self) -> Optional[ArbitraryMetadataMapping]:
+    def definition_metadata(self) -> ArbitraryMetadataMapping:
         """A dict of metadata that is assigned to the InputDefinition that we're loading.
         This property only contains metadata passed in explicitly with :py:class:`AssetIn`
-        or :py:class:`In`. To access metadata of an upstream asset or operation definition,
-        use the metadata in :py:attr:`.InputContext.upstream_output`.
+        or :py:class:`In`. To access metadata of an upstream asset or op definition,
+        use the definition_metadata in :py:attr:`.InputContext.upstream_output`.
         """
         return self._definition_metadata
 
@@ -493,7 +494,10 @@ class InputContext:
         from dagster._core.events import DagsterEvent
 
         metadata = check.mapping_param(metadata, "metadata", key_type=str)
-        self._metadata = {**self._metadata, **normalize_metadata(metadata)}
+        self._user_generated_metadata = {
+            **self._user_generated_metadata,
+            **normalize_metadata(metadata),
+        }
         if self.has_asset_key:
             check.opt_str_param(description, "description")
 
@@ -534,8 +538,8 @@ class InputContext:
         return self._observations
 
     def consume_metadata(self) -> Mapping[str, MetadataValue]:
-        result = self._metadata
-        self._metadata = {}
+        result = self._user_generated_metadata
+        self._user_generated_metadata = {}
         return result
 
 

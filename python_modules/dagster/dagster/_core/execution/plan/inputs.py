@@ -188,7 +188,10 @@ class FromLoadableAsset(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -313,7 +316,10 @@ class FromInputManager(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -491,7 +497,10 @@ class FromStepOutput(
         )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
