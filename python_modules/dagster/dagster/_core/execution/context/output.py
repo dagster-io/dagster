@@ -121,12 +121,10 @@ class OutputContext:
         self._name = name
         self._job_name = job_name
         self._run_id = run_id
-        self._definition_metadata = (
-            normalize_renamed_param(
-                definition_metadata, "definition_metadata", metadata, "metadata"
-            )
-            or {}
+        normalized_metadata = normalize_renamed_param(
+            definition_metadata, "definition_metadata", metadata, "metadata"
         )
+        self._definition_metadata = normalized_metadata or {}
         self._mapping_key = mapping_key
         self._config = config
         self._op_def = op_def
