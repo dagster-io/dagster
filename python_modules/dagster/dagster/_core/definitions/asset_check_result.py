@@ -76,10 +76,17 @@ class AssetCheckResult(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
         spec_check_names_by_asset_key = (
-            step_context.job_def.asset_layer.get_check_names_by_asset_key_for_node_handle(
+            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
                 step_context.node_handle.root
             )
         )
+
+        if not spec_check_names_by_asset_key:
+            raise DagsterInvariantViolationError(
+                "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
+                "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
+                "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
+            )
 
         asset_keys_with_specs = spec_check_names_by_asset_key.keys()
 

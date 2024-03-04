@@ -695,11 +695,6 @@ class AssetLayer(NamedTuple):
             else None
         )
 
-    def get_check_names_by_asset_key_for_node_handle(
-        self, node_handle: NodeHandle
-    ) -> Mapping[AssetKey, AbstractSet[str]]:
-        return self.check_names_by_asset_key_by_node_handle[node_handle]
-
     def asset_checks_def_for_node(
         self, node_handle: NodeHandle
     ) -> Optional["AssetChecksDefinition"]:
