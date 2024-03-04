@@ -137,6 +137,7 @@ setup(
             "syrupy>=4.0.0",
             "tox==3.25.0",
             "morefs[asynclocal]; python_version>='3.8'",
+            "rapidfuzz",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
