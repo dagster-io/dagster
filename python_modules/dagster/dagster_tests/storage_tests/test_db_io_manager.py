@@ -158,8 +158,9 @@ def test_asset_out_partitioned():
         asset_key=asset_key,
         resource_config=resource_config,
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
-        metadata={"partition_expr": "abc"},
+        definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -207,8 +208,9 @@ def test_asset_out_static_partitioned():
         asset_key=asset_key,
         resource_config=resource_config,
         asset_partition_keys=["red"],
-        metadata={"partition_expr": "abc"},
+        definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -256,8 +258,9 @@ def test_asset_out_multiple_static_partitions():
         asset_key=asset_key,
         resource_config=resource_config,
         asset_partition_keys=["red", "yellow"],
-        metadata={"partition_expr": "abc"},
+        definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -336,7 +339,10 @@ def test_non_asset_out():
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
-        name="table1", definition_metadata={"schema": "schema1"}, resource_config=resource_config
+        name="table1",
+        definition_metadata={"schema": "schema1"},
+        resource_config=resource_config,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -385,6 +391,7 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema2"},
         resource_config=resource_config,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -395,6 +402,7 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -435,6 +443,7 @@ def test_asset_schema_defaults():
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
 
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
@@ -446,7 +455,10 @@ def test_output_schema_defaults():
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
-        name="table1", definition_metadata={"schema": "schema1"}, resource_config=resource_config
+        name="table1",
+        definition_metadata={"schema": "schema1"},
+        resource_config=resource_config,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
@@ -481,6 +493,7 @@ def test_output_schema_defaults():
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
+        metadata=None,  # placeholder until metadata is deprecated on InputContext
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
     assert table_slice.schema == "schema1"

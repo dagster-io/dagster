@@ -853,7 +853,7 @@ def build_output_context(
     Args:
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
-        metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
+        definition_metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
@@ -869,6 +869,7 @@ def build_output_context(
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
+        metadata (Optional[Mapping[str, Any]]): Deprecated. Use definition_metadata instead.
 
     Examples:
         .. code-block:: python
