@@ -1,4 +1,6 @@
 import os
+import re
+import subprocess
 from typing import Any, Dict, cast
 
 from dagster import (
@@ -85,3 +87,18 @@ def test_dbt_cli_no_jinja_log_info() -> None:
         event.raw_event["info"]["name"] == "JinjaLogInfo"
         for event in dbt_cli_parse_invocation.stream_raw_events()
     )
+
+
+def test_dbt_cli_no_jinja_log_info_raw() -> None:
+    # Ensure `log_columns_in_relation.sql` does not produce empty `{}` statements when run outside of the context of `dagster-dbt`
+    result = subprocess.run(
+        ["dbt", "parse", "--no-partial-parse", "--no-use-colors"],
+        capture_output=True,
+        text=True,
+        cwd=test_metadata_path,
+        check=False,
+    )
+
+    pattern = r"\d{2}:\d{2}:\d{2}\s+{}$"  # eg. `16:31:51  {}`
+
+    assert not any(re.match(pattern, line) for line in result.stdout.splitlines())
