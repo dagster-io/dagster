@@ -65,17 +65,6 @@ Alert policies are configured on a per-deployment basis. For example, asset aler
 
    - **Alert policy name** - Enter a name for the alert policy. For example, `slack_urgent_failure`
    - **Description** - Enter a description for the alert policy
-
-   For asset-based alerts, fill out these additional options:
-
-   - **Asset group** - Select the asset group to monitor. You will have the option to select from all asset groups in the deployment.
-   - **Asset key** - Select the asset key to monitor. You will have the option to select from all asset keys in the deployment. **Note:** If you select an asset group, you will not be able to select an asset key.
-   - **Events** - Select whether the alert should trigger on asset materialization failure, asset materialization success, asset check error, asset check warn, asset check passed, or asset check failure to execute
-
-   For job-based alerts, fill out these additional options:
-
-   - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
-   - **Events** - Select whether the alert should trigger on job success, failure, or both
    - **Notification service** - Select the service for the alert policy:
 
      - **Slack** - If you haven't connected Slack, click the **Connect to Slack** button to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
@@ -110,6 +99,23 @@ Alert policies are configured on a per-deployment basis. For example, asset aler
        width={1571}
        height={514}
        />
+
+   For asset-based alerts, fill out these additional options:
+
+   - **Asset group** - Select the asset group to monitor. You will have the option to select from all asset groups in the deployment.
+   - **Asset key** - Select the asset key to monitor. You will have the option to select from all asset keys in the deployment. **Note:** If you select an asset group, you will not be able to select an asset key.
+   - **Events** - Select whether the alert should trigger on asset materialization failure, asset materialization success, asset check error, asset check warn, asset check passed, or asset check failure to execute
+   - **Notification Service** - Asset alerts have an additional notification option to email asset owners (experimental). <Image
+     alt="Email alert configured to alert asset owners"
+     src="/images/dagster-cloud/alerts/email-owners-alert-creation.png"
+     width={1518}
+     height={330}
+     />
+
+   For job-based alerts, fill out these additional options:
+
+   - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
+   - **Events** - Select whether the alert should trigger on job success, failure, or both
 
 7. When finished, click **Save policy**.
 
