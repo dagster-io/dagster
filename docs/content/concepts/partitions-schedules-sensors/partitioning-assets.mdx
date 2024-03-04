@@ -156,8 +156,7 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context: AssetExecutionContext):
-    ...
+def images(context: AssetExecutionContext): ...
 ```
 
 Partition keys can be added and removed for a given dynamic partition set. For example, the following code snippet demonstrates the usage of a [sensor](/concepts/partitions-schedules-sensors/sensors) to detect the presence of a new partition and then trigger a run for that partition:
@@ -256,8 +255,7 @@ partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
 
 
 @asset(partitions_def=partitions_def)
-def events():
-    ...
+def events(): ...
 
 
 @asset(
@@ -271,8 +269,7 @@ def events():
         )
     ],
 )
-def yesterday_event_stats():
-    ...
+def yesterday_event_stats(): ...
 ```
 
 </TabItem>
@@ -296,8 +293,7 @@ partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
 
 
 @asset(partitions_def=partitions_def)
-def events():
-    ...
+def events(): ...
 
 
 @asset(
@@ -310,8 +306,7 @@ def events():
         )
     },
 )
-def yesterday_event_stats(events):
-    ...
+def yesterday_event_stats(events): ...
 ```
 
 </TabItem>
@@ -340,13 +335,11 @@ hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00"
 
 
 @asset(partitions_def=hourly_partitions_def)
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(partitions_def=hourly_partitions_def)
-def asset2():
-    ...
+def asset2(): ...
 
 
 partitioned_asset_job = define_asset_job(

@@ -39,13 +39,11 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 This example assumes that `asset1` will be materialized in some other way - e.g. manually, via a [sensor](/concepts/partitions-schedules-sensors/sensors), or via a [schedule](/concepts/partitions-schedules-sensors/schedules).
@@ -64,13 +62,11 @@ from dagster import (
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(deps=[asset1])
-def asset2():
-    ...
+def asset2(): ...
 
 
 defs = Definitions(
@@ -101,8 +97,7 @@ wait_for_all_parents_policy = AutoMaterializePolicy.eager().with_rules(
 
 
 @asset(auto_materialize_policy=wait_for_all_parents_policy)
-def asset1(upstream1, upstream2):
-    ...
+def asset1(upstream1, upstream2): ...
 ```
 
 #### Auto-materialize even if some parents are missing
@@ -118,8 +113,7 @@ allow_missing_parents_policy = AutoMaterializePolicy.eager().without_rules(
 
 
 @asset(auto_materialize_policy=allow_missing_parents_policy)
-def asset1(upstream1, upstream2):
-    ...
+def asset1(upstream1, upstream2): ...
 ```
 
 #### Auto-materialize root assets on a regular cadence
@@ -136,8 +130,7 @@ materialize_on_cron_policy = AutoMaterializePolicy.eager().with_rules(
 
 
 @asset(auto_materialize_policy=materialize_on_cron_policy)
-def root_asset():
-    ...
+def root_asset(): ...
 ```
 
 ### Auto-materialization and partitions
@@ -152,8 +145,7 @@ from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
     partitions_def=DailyPartitionsDefinition(start_date="2020-10-10"),
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(
@@ -161,8 +153,7 @@ def asset1():
     auto_materialize_policy=AutoMaterializePolicy.eager(),
     deps=[asset1],
 )
-def asset2():
-    ...
+def asset2(): ...
 ```
 
 If the last partition of `asset1` is re-materialized, e.g. manually from the UI, then the corresponding partition of `asset2` will be auto-materialized after.
@@ -181,8 +172,7 @@ from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
         max_materializations_per_minute=7
     ),
 )
-def asset1():
-    ...
+def asset1(): ...
 ```
 
 For time-partitioned assets, the `N` most recent partitions will be selected from the set of candidates to be materialized. For other types of partitioned assets, the selection will be random.
@@ -208,6 +198,5 @@ def source_file():
     deps=[source_file],
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
 ```

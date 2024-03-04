@@ -405,8 +405,7 @@ class ExternalIOManager(IOManager):
         # setup stateful cache
         self._cache = {}
 
-    def handle_output(self, context: OutputContext, obj):
-        ...
+    def handle_output(self, context: OutputContext, obj): ...
 
     def load_input(self, context: InputContext):
         if context.asset_key in self._cache:
