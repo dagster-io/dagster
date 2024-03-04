@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 class ScheduleLaunchResult(NamedTuple):
     launch: bool = True
     explicit_launching_slice: Optional["AssetSlice"] = None
+    cursor: Optional[str] = None
 
 
 class EvaluationResult(NamedTuple):
@@ -444,6 +445,11 @@ class SchedulingExecutionContext(NamedTuple):
                 stale_resolver=stale_status_resolver,
             ),
         )
+
+    @property
+    def previous_cursor(self) -> Optional[str]:
+        # TODO implement
+        return None
 
     @property
     def effective_dt(self) -> datetime:
