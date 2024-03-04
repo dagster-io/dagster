@@ -70,7 +70,6 @@ from dagster._utils.container import (
     retrieve_containerized_utilization_metrics,
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.typed_dict import init_optional_typeddict
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -141,7 +140,7 @@ class DagsterCodeServerUtilizationMetrics(TypedDict):
     per_api_metrics: Dict[str, GrpcApiMetrics]
 
 
-_UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
+_UTILIZATION_METRICS = check.init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
 
 
 def _update_threadpool_metrics(executor: FuturesAwareThreadPoolExecutor) -> None:
@@ -178,7 +177,9 @@ def _get_request_count(api_name: str) -> Optional[int]:
 
 def _set_request_count(api_name: str, value: Any) -> None:
     if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
-        _UTILIZATION_METRICS["per_api_metrics"][api_name] = init_optional_typeddict(GrpcApiMetrics)
+        _UTILIZATION_METRICS["per_api_metrics"][api_name] = check.init_optional_typeddict(
+            GrpcApiMetrics
+        )
     _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"] = value
 
 
