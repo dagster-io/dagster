@@ -916,6 +916,14 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             # first tick of evaluating this condition
             context.previous_evaluation_state is None
             or context.previous_evaluation_timestamp is None
+            # This additional check is neccessary as it is possible for this cursor to be None
+            # even if the previous state is not None in the case that this asset and none of its
+            # parents have been detected as materialized at any point. While in theory this should
+            # not cause issues, in past versions we were not properly capturing materializations
+            # of external assets, causing this detection to be faulty. This ensures that we can
+            # properly re-calculate this value even in the case that we've incorrectly considered
+            # a parent as unmaterialized in the past.
+            or context.previous_max_storage_id is None
             # new cron tick has happened since the previous tick
             or passed_time_window.end.timestamp() > context.previous_evaluation_timestamp
         ):
