@@ -17,6 +17,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.scheduler.instigation import (
     InstigatorStatus,
@@ -38,8 +39,9 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    asset_daemon_cursor_from_instigator_serialized_cursor,
+    asset_daemon_cursor_from_serialized_cursors,
     get_has_migrated_to_sensors,
+    load_asset_scoped_cursors,
     set_auto_materialize_paused,
 )
 from dagster._serdes.serdes import serialize_value
@@ -396,7 +398,7 @@ def test_auto_materialize_sensor_no_transition():
 
         # new sensor started with an empty cursor, reached evaluation ID 1
         assert (
-            asset_daemon_cursor_from_instigator_serialized_cursor(
+            asset_daemon_cursor_from_serialized_cursors(
                 cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
                 None,
             ).evaluation_id
@@ -417,7 +419,7 @@ def test_auto_materialize_sensor_no_transition():
         )
         # now on evaluation ID 2
         assert (
-            asset_daemon_cursor_from_instigator_serialized_cursor(
+            asset_daemon_cursor_from_serialized_cursors(
                 cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
                 None,
             ).evaluation_id
@@ -483,7 +485,7 @@ def test_auto_materialize_sensor_transition():
         for sensor_state in sensor_states:
             # cursor was propagated to each sensor, so all subsequent evaluation IDs are higher
             assert (
-                asset_daemon_cursor_from_instigator_serialized_cursor(
+                asset_daemon_cursor_from_serialized_cursors(
                     cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
                     None,
                 ).evaluation_id
@@ -716,6 +718,29 @@ def test_auto_materialize_sensor_ticks(num_threads):
                     seen_evaluation_ids.add(evaluation_id)
                     assert prev_evaluation_id is None or prev_evaluation_id > evaluation_id
                     prev_evaluation_id = evaluation_id
+
+
+def test_auto_materialize_migrate_cursor_to_sensors():
+    one_asset_never_materialized_scenario = basic_scenarios[0]
+    with get_daemon_instance() as instance:
+        result = one_asset_never_materialized_scenario.evaluate_daemon(instance)
+        cursor = result.serialized_cursor
+
+    with get_daemon_instance(
+        extra_overrides={
+            "auto_materialize": {
+                "use_sensors": True,
+            }
+        },
+    ) as instance:
+        instance.daemon_cursor_storage.set_cursor_values(
+            {
+                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: cursor,
+            }
+        )
+        result = daemon_scenario.evaluate_daemon(instance)
+        stored_asset_scoped_cursors = load_asset_scoped_cursors({AssetKey(["A"])}, instance)
+        assert AssetKey(["A"]) in stored_asset_scoped_cursors
 
 
 def test_default_purge() -> None:

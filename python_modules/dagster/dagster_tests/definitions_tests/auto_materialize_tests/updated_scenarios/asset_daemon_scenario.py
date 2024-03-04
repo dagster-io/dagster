@@ -53,7 +53,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     _get_pre_sensor_auto_materialize_cursor,
-    asset_daemon_cursor_from_instigator_serialized_cursor,
+    asset_daemon_cursor_from_serialized_cursors,
     get_current_evaluation_id,
 )
 from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
@@ -229,7 +229,7 @@ class AssetDaemonScenarioState(ScenarioState):
                         sensor.get_external_origin_id(), sensor.selector_id
                     )
                 )
-                new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
+                new_cursor = asset_daemon_cursor_from_serialized_cursors(
                     cast(
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
