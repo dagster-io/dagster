@@ -549,11 +549,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         ]
         for parent_asset_key in self.asset_graph.get_parents(child_asset_key):
-            # ignore missing and non-executable parents
-            if not (
-                self.asset_graph.has_asset(parent_asset_key)
-                and self.asset_graph.is_executable(parent_asset_key)
-            ):
+            # ignore non-existent parents
+            if not self.asset_graph.has_asset(parent_asset_key):
                 continue
 
             # if the parent has not been updated at all since the latest_storage_id, then skip
@@ -899,11 +896,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if parent_key in ignored_parent_keys:
                 continue
 
-            # ignore non-existent or unexecutable parents
-            if not (
-                self.asset_graph.has_asset(parent_key)
-                and self.asset_graph.is_executable(parent_key)
-            ):
+            # ignore non-existent parents
+            if not self.asset_graph.has_asset(parent_key):
                 continue
 
             # when mapping from unpartitioned assets to time partitioned assets, we ignore
