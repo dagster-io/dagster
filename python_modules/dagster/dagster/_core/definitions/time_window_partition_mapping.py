@@ -131,7 +131,6 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        # TODO: Why isn't this handled?
         if isinstance(downstream_partitions_subset, AllPartitionsSubset):
             assert downstream_partitions_def
             downstream_partitions_subset = downstream_partitions_def.subset_with_all_partitions(

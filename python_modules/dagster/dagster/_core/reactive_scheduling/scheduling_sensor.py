@@ -26,12 +26,11 @@ from dagster._serdes.serdes import serialize_value, whitelist_for_serdes
 class SensorSpec(NamedTuple):
     # TODO Make this optional and have autonaming scheme
     name: str
-    # TODO: Support tick cron rather than just minimum interval
-    # tick_cron: str = "* * * * *"
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED
     description: Optional[str] = None
+    # TODO: Possiblye support tick cron rather than just minimum interval
+    # tick_cron: str = "* * * * *"
     minimum_interval_seconds: int = 10
-    # other sensor-y things
 
 
 class ReactiveSensorInfo:
