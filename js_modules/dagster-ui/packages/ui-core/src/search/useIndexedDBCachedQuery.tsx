@@ -30,9 +30,11 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
 
   React.useEffect(() => {
     (async () => {
-      const {value} = await lru.get('cache');
-      if (value) {
-        setData(value);
+      if (await lru.has('cache')) {
+        const {value} = await lru.get('cache');
+        if (value) {
+          setData(value);
+        }
       }
     })();
   }, [lru]);
