@@ -89,7 +89,7 @@ def test_dbt_cli_no_jinja_log_info() -> None:
     )
 
 
-def test_dbt_cli_no_jinja_log_info_raw() -> None:
+def test_dbt_raw_cli_no_empty_jinja_log_info() -> None:
     # Ensure `log_columns_in_relation.sql` does not produce empty `{}` statements when run outside of the context of `dagster-dbt`
     result = subprocess.run(
         ["dbt", "--log-format", "json", "--no-partial-parse", "parse"],
