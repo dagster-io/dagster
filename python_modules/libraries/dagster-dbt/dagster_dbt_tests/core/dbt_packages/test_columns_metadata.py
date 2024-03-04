@@ -74,3 +74,14 @@ def test_columns_metadata(test_metadata_manifest: Dict[str, Any]) -> None:
     )
 
     assert result.success
+
+
+def test_dbt_cli_no_jinja_log_info() -> None:
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt_cli_parse_invocation = dbt.cli(["parse"])
+
+    assert dbt_cli_parse_invocation.is_successful()
+    assert not any(
+        event.raw_event["info"]["name"] == "JinjaLogInfo"
+        for event in dbt_cli_parse_invocation.stream_raw_events()
+    )
