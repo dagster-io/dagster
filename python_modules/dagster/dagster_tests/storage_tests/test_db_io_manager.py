@@ -119,7 +119,7 @@ def test_asset_out_columns():
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
         has_asset_partitions=False,
-        metadata={"columns": ["apple", "banana"]},
+        definition_metadata={"columns": ["apple", "banana"]},
     )
     assert manager.load_input(input_context) == 7
 
