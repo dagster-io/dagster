@@ -982,6 +982,8 @@ class DbtCliResource(ConfigurableResource):
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             **os.environ.copy(),
+            # An environment variable to indicate that the dbt CLI is being invoked from Dagster.
+            "DAGSTER_DBT_CLI": "true",
             # Run dbt with unbuffered output.
             "PYTHONUNBUFFERED": "1",
             # Disable anonymous usage statistics for performance.
