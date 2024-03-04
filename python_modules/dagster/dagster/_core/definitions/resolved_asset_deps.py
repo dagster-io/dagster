@@ -51,6 +51,8 @@ def resolve_similar_asset_names(
     """
     similar_names: List[AssetKey] = []
 
+    target_asset_key_split = ("/".join(target_asset_key.path)).split("/")
+
     for asset_key in asset_keys:
         try:
             from rapidfuzz import fuzz
@@ -84,10 +86,13 @@ def resolve_similar_asset_names(
             and max(len(asset_key.path), len(target_asset_key.path)) > 1
         )
 
+        matches_slashes_turned_to_prefix_gaps = asset_key.path == target_asset_key_split
+
         if (
             is_same_prefix_similar_name
             or is_similar_prefix_same_name
             or is_off_by_one_prefix_component_same_name
+            or matches_slashes_turned_to_prefix_gaps
         ):
             similar_names.append(asset_key)
     return similar_names
