@@ -342,45 +342,6 @@ def execute_sensor_iteration(
                 f" sensors due to the following error: {location_entry.load_error}"
             )
 
-    if log_verbose_checks:
-        unloadable_sensor_states = {
-            selector_id: sensor_state
-            for selector_id, sensor_state in all_sensor_states.items()
-            if selector_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
-        }
-
-        for sensor_state in unloadable_sensor_states.values():
-            sensor_name = sensor_state.origin.instigator_name
-            code_location_origin = (
-                sensor_state.origin.external_repository_origin.code_location_origin
-            )
-
-            location_name = code_location_origin.location_name
-            repo_name = sensor_state.origin.external_repository_origin.repository_name
-            if (
-                location_name not in workspace_snapshot
-                or not workspace_snapshot[location_name].code_location
-            ):
-                logger.warning(
-                    f"Sensor {sensor_name} was started from a location "
-                    f"{location_name} that can no longer be found in the workspace. "
-                    "You can turn off this sensor in the Dagster UI from the Status tab."
-                )
-            elif not check.not_none(  # checked above
-                workspace_snapshot[location_name].code_location
-            ).has_repository(repo_name):
-                logger.warning(
-                    f"Could not find repository {repo_name} in location {location_name} to "
-                    + f"run sensor {sensor_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagster UI from the Status tab.",
-                )
-            else:
-                logger.warning(
-                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagster UI from the "
-                    "Status tab.",
-                )
-
     if not sensors:
         if log_verbose_checks:
             logger.debug("Not checking for any runs since no sensors have been started.")
