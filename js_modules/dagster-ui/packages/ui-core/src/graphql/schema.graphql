@@ -1420,6 +1420,7 @@ type Run implements PipelineRun {
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
+  hasUnconstrainedRootNodes: Boolean!
 }
 
 type AssetCheckhandle {
