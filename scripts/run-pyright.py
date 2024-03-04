@@ -88,7 +88,7 @@ parser.add_argument(
         "Update `requirements-pinned.txt` for selected environments (implies `--rebuild`). The"
         " virtual env for the selected environment will be rebuilt using the abstract requirements"
         " specified in `requirements.txt`. After the environment is built, the full dependency list"
-        " will be extracted with `pip freeze` and written to `requirements-pinned.txt` (this is"
+        " will be extracted with `uv pip freeze` and written to `requirements-pinned.txt` (this is"
         " what is used in CI and for building the default venv)."
     ),
 )
@@ -112,6 +112,7 @@ class Params(TypedDict):
     json: bool
     rebuild: bool
     update_pins: bool
+    venv_python: str
 
 
 class Position(TypedDict):
@@ -166,16 +167,10 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
-# Help reduce build errors
-EXTRA_PIP_INSTALL_ARGS: Final = [
-    # find-links for M1 lookup of grpcio wheels
-    "--find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels",
-]
-
 
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
-    return os.path.join(env_root, rel_path) if rel_path else env_root
+    return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
 
 def load_path_file(path: str) -> Sequence[str]:
@@ -214,7 +209,11 @@ def get_params(args: argparse.Namespace) -> Params:
             sys.exit(0)
     else:
         mode = "path"
-        targets = args.paths
+        targets = args.pathsBUILDKIT
+
+    venv_python = (
+        subprocess.run(["which", "python"], check=True, capture_output=True).stdout.decode().strip()
+    )
     return Params(
         mode=mode,
         targets=targets,
@@ -222,6 +221,7 @@ def get_params(args: argparse.Namespace) -> Params:
         json=args.json,
         rebuild=args.rebuild,
         unannotated=args.unannotated,
+        venv_python=venv_python,
     )
 
 
@@ -262,8 +262,9 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
     return env_path_map
 
 
-def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
+def normalize_env(env: str, rebuild: bool, update_pins: bool, venv_python: str) -> None:
     venv_path = os.path.join(get_env_path(env), ".venv")
+    python_path = f"{venv_path}/bin/python"
     if (rebuild or update_pins) and os.path.exists(venv_path):
         print(f"Removing existing virtualenv for pyright environment {env}...")
         subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
@@ -271,19 +272,22 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
         print(f"Creating virtualenv for pyright environment {env}...")
         if update_pins:
             src_requirements_path = get_env_path(env, "requirements.txt")
-            extra_pip_install_args = EXTRA_PIP_INSTALL_ARGS
+            extra_pip_install_args = []
         else:
             src_requirements_path = get_env_path(env, "requirements-pinned.txt")
-            extra_pip_install_args = [*EXTRA_PIP_INSTALL_ARGS, "--no-deps"]
+            extra_pip_install_args = ["--no-deps"]
         dest_requirements_path = f"requirements-{env}.txt"
         build_venv_cmd = " && ".join(
             [
-                f"python -m venv {venv_path}",
-                f"{venv_path}/bin/pip install -U pip setuptools wheel",
+                f"uv venv --python={venv_python} --seed {venv_path}",
+                f"uv pip install --python {python_path} -U pip setuptools wheel",
                 " ".join(
                     [
-                        f"{venv_path}/bin/pip",
+                        "uv",
+                        "pip",
                         "install",
+                        "--python",
+                        python_path,
                         "-r",
                         dest_requirements_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
@@ -316,15 +320,20 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
 def update_pinned_requirements(env: str) -> None:
     print(f"Updating pinned requirements for pyright environment {env}...")
     venv_path = os.path.join(get_env_path(env), ".venv")
+    python_path = f"{venv_path}/bin/python"
     raw_dep_list = subprocess.run(
-        f"{venv_path}/bin/pip freeze", capture_output=True, shell=True, text=True, check=True
+        f"uv pip freeze --python={python_path}",
+        capture_output=True,
+        shell=True,
+        text=True,
+        check=True,
     ).stdout
     is_internal = not os.path.exists("python_modules/dagster")
-    oss_root = "${DAGSTER_GIT_REPO_DIR}/" if is_internal else ""
-    dep_list = re.sub(
-        r"-e git.*?dagster-io/dagster.*?\&subdirectory=(.+)", f"-e {oss_root}\\1", raw_dep_list
-    )
-    dep_list = re.sub(r"-e git.*?dagster-io/internal.*?\&subdirectory=(.+)", "-e \\1", dep_list)
+    oss_root_ref = "${DAGSTER_GIT_REPO_DIR}/" if is_internal else ""
+    resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
+    resolved_internal_root = os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"].rstrip("/")
+    dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", f"-e {oss_root_ref}\\1", raw_dep_list)
+    dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
     with open(get_env_path(env, "requirements-pinned.txt"), "w") as f:
         f.write(dep_list)
 
@@ -335,8 +344,9 @@ def run_pyright(
     rebuild: bool,
     unannotated: bool,
     pinned_deps: bool,
+    venv_python: str,
 ) -> RunResult:
-    normalize_env(env, rebuild, pinned_deps)
+    normalize_env(env, rebuild, pinned_deps, venv_python)
     with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
@@ -499,6 +509,7 @@ if __name__ == "__main__":
             rebuild=params["rebuild"],
             unannotated=params["unannotated"],
             pinned_deps=params["update_pins"],
+            venv_python=params["venv_python"],
         )
         for env in env_path_map
     ]
