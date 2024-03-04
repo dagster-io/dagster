@@ -12,6 +12,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
+from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -709,12 +710,25 @@ class KeysAssetSelection(AssetSelection, frozen=True):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self.selected_keys)
-        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
+        invalid_keys = list(key for key in specified_keys if key not in asset_graph.all_asset_keys)
+
+        suggestions = ""
+        # Arbitrary limit to avoid huge error messages
+        for invalid_key in invalid_keys[:4]:
+            similar_names = resolve_similar_asset_names(invalid_key, asset_graph.all_asset_keys)
+            if similar_names:
+                # Arbitrarily limit to 10 similar names to avoid a huge error message
+                subset_similar_names = similar_names[:10]
+                similar_to_string = ", ".join(
+                    (similar.to_string() for similar in subset_similar_names)
+                )
+                suggestions += f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of the following?\n\t{similar_to_string}"
+
         if invalid_keys:
             raise DagsterInvalidSubsetError(
                 f"AssetKey(s) {invalid_keys} were selected, but no AssetsDefinition objects supply "
                 "these keys. Make sure all keys are spelled correctly, and all AssetsDefinitions "
-                "are correctly added to the `Definitions`."
+                f"are correctly added to the `Definitions`.{suggestions}"
             )
         return specified_keys
 
