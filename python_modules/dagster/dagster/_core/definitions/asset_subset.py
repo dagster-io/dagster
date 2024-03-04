@@ -43,6 +43,20 @@ class AssetSubsetSerializer(NamedTupleSerializer):
         return value
 
 
+def is_subset_compatible_with_partitions_def(
+    asset_subset: "AssetSubset", partitions_def: Optional[PartitionsDefinition]
+) -> bool:
+    if asset_subset.is_partitioned:
+        # for some PartitionSubset types, we have access to the underlying partitions
+        # definitions, so we can ensure those are identical
+        if isinstance(asset_subset.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
+            return asset_subset.value.partitions_def == partitions_def
+        else:
+            return partitions_def is not None
+    else:
+        return partitions_def is None
+
+
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class AssetSubset(NamedTuple):
     """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
@@ -85,18 +99,14 @@ class AssetSubset(NamedTuple):
         else:
             return len(self.subset_value)
 
+    @property
+    def is_empty(self) -> bool:
+        return not bool(self.size)
+
     def _is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
     ) -> bool:
-        if self.is_partitioned:
-            # for some PartitionSubset types, we have access to the underlying partitions
-            # definitions, so we can ensure those are identical
-            if isinstance(self.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
-                return self.value.partitions_def == partitions_def
-            else:
-                return partitions_def is not None
-        else:
-            return partitions_def is None
+        return is_subset_compatible_with_partitions_def(self, partitions_def)
 
     def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
         if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):

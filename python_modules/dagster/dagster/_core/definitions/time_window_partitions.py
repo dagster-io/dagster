@@ -548,6 +548,9 @@ class TimeWindowPartitionsDefinition(
             ]
         return partition_key_time_windows
 
+    def partition_key_for_dt(self, dt: datetime) -> str:
+        return dst_safe_strftime(dt, self.timezone, self.fmt, self.cron_schedule)
+
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         partition_key_dt = pendulum.instance(
             dst_safe_strptime(partition_key, self.timezone, self.fmt)
