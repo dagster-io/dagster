@@ -25,6 +25,10 @@ from dagster._core.definitions.asset_subset import (
     ValidAssetSubset,
     is_subset_compatible_with_partitions_def,
 )
+from dagster._core.definitions.auto_materialize_rule import (
+    CronEvaluationData,
+    get_new_asset_partitions_to_request,
+)
 from dagster._core.definitions.data_version import StaleStatus
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
@@ -485,6 +489,22 @@ class AssetGraphView:
                 unsynced_pks.add(partition_key)
 
         return self.slice_factory.from_partition_keys(asset_slice.asset_key, unsynced_pks)
+
+    # TODO add corresponding method to AssetSlice
+    def asset_slice_since_cron(
+        self, asset_key: AssetKey, cron_data: "CronEvaluationData"
+    ) -> "AssetSlice":
+        asset_partitions = get_new_asset_partitions_to_request(
+            cron_data=cron_data,
+            asset_key=asset_key,
+            partitions_def=self.asset_info_of(asset_key).partitions_def,
+            dynamic_partitions_store=self.queryer,
+            all_partitions=False,  # do not override logic
+        )
+
+        return self.slice_factory.from_partition_keys(
+            asset_key, {ap.partition_key for ap in asset_partitions}
+        )
 
     def _create_upstream_asset_graph_subset(
         self, starting_asset_slice: AssetSlice

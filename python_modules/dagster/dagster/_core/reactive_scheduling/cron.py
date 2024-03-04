@@ -1,11 +1,15 @@
 from typing import NamedTuple, Optional
 
+import pendulum
+
+from dagster._core.definitions.auto_materialize_rule import CronEvaluationData
 from dagster._core.reactive_scheduling.asset_graph_view import AssetSlice
 from dagster._core.reactive_scheduling.scheduling_policy import (
     ScheduleLaunchResult,
     SchedulingExecutionContext,
     SchedulingPolicy,
 )
+from dagster._core.reactive_scheduling.scheduling_sensor import SensorSpec
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 
@@ -22,35 +26,30 @@ class CronCursor(NamedTuple):
 
 
 class Cron(SchedulingPolicy):
-    def __init__(self, cron_schedule: str, timezone: str = "UTC") -> None:
+    def __init__(self, cron_schedule: str, timezone: str, sensor_spec: SensorSpec) -> None:
+        super().__init__(sensor_spec=sensor_spec)
         self.cron_schedule = cron_schedule
         self.timezone = timezone
-
-    # tick_settings = TickSettings(
-    #     tick_cron="* * * * *",
-    # )
 
     def schedule_launch(
         self, context: SchedulingExecutionContext, asset_slice: AssetSlice
     ) -> ScheduleLaunchResult:
         cron_cursor = CronCursor.deserialize(context.previous_cursor)
-        # previous_launch_dt = (
-        #     pendulum.from_timestamp(cron_cursor.previous_launch_timestamp)
-        #     if cron_cursor and cron_cursor.previous_launch_timestamp
-        #     else None
-        # )
+        previous_launch_dt = (
+            pendulum.from_timestamp(cron_cursor.previous_launch_timestamp)
+            if cron_cursor and cron_cursor.previous_launch_timestamp
+            else None
+        )
 
-        # TODO implement
-        asset_slice_since_cron = context.asset_graph_view.slice_factory.empty(asset_slice.asset_key)
-        # asset_slice_since_cron = graph.get_partition_range_since_cron(
-        #     asset_key=context.ticked_asset_key,
-        #     cron_data=CronEvaluationData(
-        #         cron_schedule=self.cron_schedule,
-        #         timezone=self.timezone,
-        #         previous_datetime=previous_launch_dt,
-        #         current_datetime=context.tick_dt,
-        #     ),
-        # )
+        asset_slice_since_cron = context.asset_graph_view.asset_slice_since_cron(
+            asset_key=asset_slice.asset_key,
+            cron_data=CronEvaluationData(
+                cron_schedule=self.cron_schedule,
+                timezone=self.timezone,
+                previous_datetime=previous_launch_dt,
+                current_datetime=context.effective_dt,
+            ),
+        )
 
         if asset_slice_since_cron.is_empty:
             return ScheduleLaunchResult(

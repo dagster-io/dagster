@@ -420,12 +420,18 @@ class AssetSchedulingInfo(NamedTuple):
 
 
 class SchedulingExecutionContext(NamedTuple):
+    asset_graph_view: "AssetGraphView"
+    # todo remove default
+    previous_cursor: Optional[str] = None
+
     @staticmethod
     def create(
         instance: "DagsterInstance",
         repository_def: "RepositoryDefinition",
         effective_dt: datetime,
         last_event_id: Optional[int],
+        # todo  remove default
+        previous_cursor: Optional[str] = None,
     ) -> "SchedulingExecutionContext":
         from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
         from dagster._core.reactive_scheduling.asset_graph_view import (
@@ -444,12 +450,8 @@ class SchedulingExecutionContext(NamedTuple):
                 ),
                 stale_resolver=stale_status_resolver,
             ),
+            previous_cursor=previous_cursor,
         )
-
-    @property
-    def previous_cursor(self) -> Optional[str]:
-        # TODO implement
-        return None
 
     @property
     def effective_dt(self) -> datetime:
@@ -458,8 +460,6 @@ class SchedulingExecutionContext(NamedTuple):
     @property
     def last_event_id(self) -> Optional[int]:
         return self.asset_graph_view.temporal_context.last_event_id
-
-    asset_graph_view: "AssetGraphView"
 
     def empty_slice(self, asset_key: AssetKey) -> "AssetSlice":
         return self.slice_factory.empty(asset_key)
