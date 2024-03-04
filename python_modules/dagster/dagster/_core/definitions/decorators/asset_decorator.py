@@ -579,37 +579,36 @@ def multi_asset(
             by this function.
         check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
             execute in the decorated function after materializing the assets.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are upstream
-            dependencies, but do not pass an input to the multi_asset.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
+            Set of asset keys that are upstream dependencies, but do not pass an input to the
+            multi_asset.
 
     Examples:
         .. code-block:: python
 
-            # Use IO managers to handle I/O:
             @multi_asset(
-                outs={
-                    "my_string_asset": AssetOut(),
-                    "my_int_asset": AssetOut(),
-                }
-            )
-            def my_function(upstream_asset: int):
-                result = upstream_asset + 1
-                return str(result), result
-
-            # Handle I/O on your own:
-            @multi_asset(
-                outs={
-                    "asset1": AssetOut(),
-                    "asset2": AssetOut(),
-                },
-                deps=["asset0"],
+                specs=[
+                    AssetSpec("asset1", deps=["asset0"]),
+                    AssetSpec("asset2", deps=["asset0"]),
+                ]
             )
             def my_function():
                 asset0_value = load(path="asset0")
                 asset1_result, asset2_result = do_some_transformation(asset0_value)
                 write(asset1_result, path="asset1")
                 write(asset2_result, path="asset2")
-                return None, None
+
+            # Or use IO managers to handle I/O:
+            @multi_asset(
+                outs={
+                    "asset1": AssetOut(),
+                    "asset2": AssetOut(),
+                }
+            )
+            def my_function(asset0):
+                asset1_value = do_some_transformation(asset0)
+                asset2_value = do_some_other_transformation(asset0)
+                return asset1_value, asset2_value
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
