@@ -5,6 +5,7 @@ import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {WriteAssetVisitToLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   AssetsCatalogRootQuery,
@@ -82,6 +83,10 @@ export const AssetsCatalogRoot = () => {
     );
   }
 
+  // If the asset exists, add it to the recently visited list
+  if (currentPath && currentPath.length) {
+    WriteAssetVisitToLocalStorage({path: currentPath});
+  }
   return <AssetView assetKey={{path: currentPath}} trace={trace} />;
 };
 
