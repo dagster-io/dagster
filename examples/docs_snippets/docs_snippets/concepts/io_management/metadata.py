@@ -49,9 +49,9 @@ class MyIOManager(ConfigurableIOManager):
             )
 
     def load_input(self, context: InputContext):
-        if context.upstream_output and context.upstream_output.metadata:
-            table_name = context.upstream_output.metadata["table"]
-            schema = context.upstream_output.metadata["schema"]
+        if context.upstream_output and context.upstream_output.definition_metadata:
+            table_name = context.upstream_output.definition_metadata["table"]
+            schema = context.upstream_output.definition_metadata["schema"]
             return read_dataframe_from_table(name=table_name, schema=schema)
         else:
             raise Exception("Upstream output doesn't have schema and metadata set")

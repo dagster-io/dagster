@@ -25,7 +25,7 @@ def materialize_expect_metadata(assets_def: AssetsDefinition):
                 assert context.definition_metadata["fruit"] == "apple"
 
         def load_input(self, context):
-            assert context.upstream_output.metadata["fruit"] == "apple"
+            assert context.upstream_output.definition_metadata["fruit"] == "apple"
 
     assert materialize(
         assets=[assets_def, downstream_asset],

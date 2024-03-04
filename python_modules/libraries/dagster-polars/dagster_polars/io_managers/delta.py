@@ -152,8 +152,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 # when using AllPartitionMappings and native DeltaLake partitioning
                 elif (
                     context.upstream_output is not None
-                    and context.upstream_output.metadata is not None
-                    and context.upstream_output.metadata.get("partition_by") is not None
+                    and context.upstream_output.definition_metadata is not None
+                    and context.upstream_output.definition_metadata.get("partition_by") is not None
                     and type_annotation in SINGLE_LOADING_TYPES
                     and context.upstream_output.asset_info is not None
                     and context.upstream_output.asset_info.partitions_def is not None
@@ -299,8 +299,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if isinstance(context, InputContext):
             if (
                 context.upstream_output is not None
-                and context.upstream_output.metadata is not None
-                and context.upstream_output.metadata.get("partition_by") is not None
+                and context.upstream_output.definition_metadata is not None
+                and context.upstream_output.definition_metadata.get("partition_by") is not None
             ):
                 # upstream asset has "partition_by" metadata set, so partitioning for it is handled by DeltaLake itself
                 return path
