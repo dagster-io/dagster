@@ -520,3 +520,14 @@ def test_to_default_asset_output_events() -> None:
         "Execution Duration": FloatMetadataValue(60.0),
         "rows_affected": IntMetadataValue(100),
     }
+
+
+def test_dbt_cli_no_jinja_log_info() -> None:
+    dbt = DbtCliResource(project_dir=test_jaffle_shop_path)  # type: ignore
+    dbt_cli_parse_invocation = dbt.cli(["parse"])
+
+    assert dbt_cli_parse_invocation.is_successful()
+    assert not any(
+        event.raw_event["info"]["name"] == "JinjaLogInfo"
+        for event in dbt_cli_parse_invocation.stream_raw_events()
+    )
