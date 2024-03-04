@@ -8,7 +8,6 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.host_representation import ExternalJob

@@ -308,12 +308,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -369,9 +367,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
     # to be removed once the instance is garbage collected.
-    _TEMP_DIRS: (
-        "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]"
-    ) = weakref.WeakKeyDictionary()
+    _TEMP_DIRS: "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]" = (
+        weakref.WeakKeyDictionary()
+    )
 
     def __init__(
         self,

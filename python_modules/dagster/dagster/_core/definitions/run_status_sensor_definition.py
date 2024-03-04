@@ -389,8 +389,7 @@ def build_run_status_sensor_context(
 @overload
 def run_failure_sensor(
     name: RunFailureSensorEvaluationFn,
-) -> SensorDefinition:
-    ...
+) -> SensorDefinition: ...
 
 
 @overload
@@ -430,8 +429,7 @@ def run_failure_sensor(
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
-]:
-    ...
+]: ...
 
 
 @deprecated_param(

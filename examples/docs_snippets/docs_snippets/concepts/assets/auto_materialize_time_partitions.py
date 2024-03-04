@@ -5,8 +5,7 @@ from dagster import AutoMaterializePolicy, DailyPartitionsDefinition, asset
     partitions_def=DailyPartitionsDefinition(start_date="2020-10-10"),
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(
@@ -14,5 +13,4 @@ def asset1():
     auto_materialize_policy=AutoMaterializePolicy.eager(),
     deps=[asset1],
 )
-def asset2():
-    ...
+def asset2(): ...

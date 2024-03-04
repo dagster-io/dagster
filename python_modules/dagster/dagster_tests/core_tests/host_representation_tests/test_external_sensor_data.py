@@ -7,8 +7,7 @@ from dagster._core.host_representation.external_data import external_sensor_data
 
 def test_external_sensor_has_asset_selection():
     @sensor(asset_selection=["asset1", "asset2"])
-    def sensor1():
-        ...
+    def sensor1(): ...
 
     defs = Definitions(sensors=[sensor1])
 
@@ -20,20 +19,17 @@ def test_external_sensor_has_asset_selection():
 
 def test_unserializable_asset_selection():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     class MySpecialAssetSelection(AssetSelection, frozen=True):
         def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
     @sensor(asset_selection=MySpecialAssetSelection())
-    def sensor1():
-        ...
+    def sensor1(): ...
 
     defs = Definitions(assets=[asset1, asset2])
     assert external_sensor_data_from_def(

@@ -3,8 +3,7 @@ from dagster import define_asset_job, job
 
 
 @job(tags={"dagster/max_runtime": 10})
-def my_job():
-    ...
+def my_job(): ...
 
 
 asset_job = define_asset_job(

@@ -1,4 +1,5 @@
 """Structured representations of system events."""
+
 import logging
 import os
 import sys

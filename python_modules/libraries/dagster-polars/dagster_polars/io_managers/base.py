@@ -183,8 +183,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         df: pl.DataFrame,
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
-    ):
-        ...
+    ): ...
 
     @abstractmethod
     def sink_df_to_path(
@@ -193,28 +192,24 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         df: pl.LazyFrame,
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
-    ):
-        ...
+    ): ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
-    ) -> pl.LazyFrame:
-        ...
+    ) -> pl.LazyFrame: ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Literal[True]
-    ) -> LazyFrameWithMetadata:
-        ...
+    ) -> LazyFrameWithMetadata: ...
 
     @abstractmethod
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
-        ...
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]: ...
 
     # tmp fix until https://github.com/dagster-io/dagster/pull/19294 is merged
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:

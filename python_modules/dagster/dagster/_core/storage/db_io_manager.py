@@ -68,28 +68,26 @@ class DbTypeHandler(ABC, Generic[T]):
 class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection: T) -> None:
-        ...
+    def delete_table_slice(
+        context: OutputContext, table_slice: TableSlice, connection: T
+    ) -> None: ...
 
     @staticmethod
     @abstractmethod
-    def get_select_statement(table_slice: TableSlice) -> str:
-        ...
+    def get_select_statement(table_slice: TableSlice) -> str: ...
 
     @staticmethod
     @abstractmethod
     def ensure_schema_exists(
         context: OutputContext, table_slice: TableSlice, connection: T
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @staticmethod
     @abstractmethod
     @contextmanager
     def connect(
         context: Union[OutputContext, InputContext], table_slice: TableSlice
-    ) -> Iterator[T]:
-        ...
+    ) -> Iterator[T]: ...
 
 
 class DbIOManager(IOManager):

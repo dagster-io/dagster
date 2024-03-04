@@ -12,12 +12,10 @@ def test_io_manager():
     daily = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=daily)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(partitions_def=daily)
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     assert materialize(
         [asset1, asset2],

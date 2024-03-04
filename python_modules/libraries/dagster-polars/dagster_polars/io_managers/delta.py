@@ -254,14 +254,12 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     @overload
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
-    ) -> pl.LazyFrame:
-        ...
+    ) -> pl.LazyFrame: ...
 
     @overload
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Literal[True]
-    ) -> LazyFrameWithMetadata:
-        ...
+    ) -> LazyFrameWithMetadata: ...
 
     def scan_df_from_path(
         self,

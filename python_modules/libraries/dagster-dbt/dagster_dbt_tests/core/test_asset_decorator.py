@@ -47,8 +47,7 @@ def test_manifest_argument(
     ]:
 
         @dbt_assets(manifest=manifest_param)
-        def my_dbt_assets():
-            ...
+        def my_dbt_assets(): ...
 
         assert my_dbt_assets.keys == {
             AssetKey(key)
@@ -204,8 +203,7 @@ def test_selections(
         select=select,
         exclude=exclude,
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
@@ -217,8 +215,7 @@ def test_selections(
 @pytest.mark.parametrize("name", [None, "custom"])
 def test_with_custom_name(test_jaffle_shop_manifest: Dict[str, Any], name: Optional[str]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, name=name)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     expected_name = name or "my_dbt_assets"
 
@@ -232,8 +229,7 @@ def test_partitions_def(
     test_jaffle_shop_manifest: Dict[str, Any], partitions_def: Optional[PartitionsDefinition]
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, partitions_def=partitions_def)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.partitions_def == partitions_def
 
@@ -243,8 +239,7 @@ def test_io_manager_key(
     test_jaffle_shop_manifest: Dict[str, Any], io_manager_key: Optional[str]
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, io_manager_key=io_manager_key)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
@@ -301,8 +296,7 @@ def test_backfill_policy(
         backfill_policy=backfill_policy,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.backfill_policy == expected_backfill_policy
 
@@ -311,8 +305,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     op_tags = {"a": "b", "c": "d"}
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, op_tags=op_tags)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.op.tags == {
         **op_tags,
@@ -321,8 +314,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     }
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, op_tags=op_tags, select="raw_customers+")
-    def my_dbt_assets_with_select():
-        ...
+    def my_dbt_assets_with_select(): ...
 
     assert my_dbt_assets_with_select.op.tags == {
         **op_tags,
@@ -331,8 +323,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
     }
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, op_tags=op_tags, exclude="raw_customers+")
-    def my_dbt_assets_with_exclude():
-        ...
+    def my_dbt_assets_with_exclude(): ...
 
     assert my_dbt_assets_with_exclude.op.tags == {
         **op_tags,
@@ -347,8 +338,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
         select="raw_customers+",
         exclude="customers",
     )
-    def my_dbt_assets_with_select_and_exclude():
-        ...
+    def my_dbt_assets_with_select_and_exclude(): ...
 
     assert my_dbt_assets_with_select_and_exclude.op.tags == {
         **op_tags,
@@ -369,8 +359,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
             manifest=test_jaffle_shop_manifest,
             op_tags={"dagster-dbt/select": "raw_customers+"},
         )
-        def select_tag():
-            ...
+        def select_tag(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -384,8 +373,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
             manifest=test_jaffle_shop_manifest,
             op_tags={"dagster-dbt/exclude": "raw_customers+"},
         )
-        def exclude_tag():
-            ...
+        def exclude_tag(): ...
 
 
 def test_with_asset_key_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
@@ -397,8 +385,7 @@ def test_with_asset_key_replacements(test_jaffle_shop_manifest: Dict[str, Any]) 
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.keys_by_input_name == {
         "__subset_input__model_jaffle_shop_stg_customers": AssetKey(["prefix", "stg_customers"]),
@@ -453,8 +440,7 @@ def test_with_partition_mappings(
         dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
         partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     dependencies_with_self_dependencies = {
         # Self dependency enabled with `+meta.dagster.has_self_dependency`
@@ -486,8 +472,7 @@ def test_with_description_replacements(test_jaffle_shop_manifest: Dict[str, Any]
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for description in my_dbt_assets.descriptions_by_key.values():
         assert description == expected_description
@@ -504,8 +489,7 @@ def test_with_metadata_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for metadata in my_dbt_assets.metadata_by_key.values():
         assert metadata["customized"] == "metadata"
@@ -522,8 +506,7 @@ def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> N
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for group in my_dbt_assets.group_names_by_key.values():
         assert group == expected_group
@@ -542,8 +525,7 @@ def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: Dict[str,
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for freshness_policy in my_dbt_assets.freshness_policies_by_key.values():
         assert freshness_policy == expected_freshness_policy
@@ -564,8 +546,7 @@ def test_with_auto_materialize_policy_replacements(
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     for auto_materialize_policy in my_dbt_assets.auto_materialize_policies_by_key.values():
         assert auto_materialize_policy == expected_auto_materialize_policy
@@ -573,8 +554,7 @@ def test_with_auto_materialize_policy_replacements(
 
 def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     auto_materialize_policies = my_dbt_assets.auto_materialize_policies_by_key.values()
     assert auto_materialize_policies
@@ -585,8 +565,7 @@ def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: Dict[str, A
 
 def test_dbt_meta_freshness_policy(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     freshness_policies = my_dbt_assets.freshness_policies_by_key.values()
     assert freshness_policies
@@ -599,8 +578,7 @@ def test_dbt_meta_freshness_policy(test_meta_config_manifest: Dict[str, Any]) ->
 
 def test_dbt_meta_asset_key(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     # Assert that source asset keys are set properly.
     assert AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]) in set(
@@ -617,8 +595,7 @@ def test_dbt_meta_asset_key(test_meta_config_manifest: Dict[str, Any]) -> None:
 
 def test_dbt_config_group(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     assert my_dbt_assets.group_names_by_key == {
         AssetKey(["customers"]): "default",
@@ -637,8 +614,7 @@ def test_dbt_config_group(test_meta_config_manifest: Dict[str, Any]) -> None:
 
 def test_dbt_with_downstream_asset_via_definition(test_meta_config_manifest: Dict[str, Any]):
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     @asset(deps=[my_dbt_assets])
     def downstream_of_dbt():
@@ -653,8 +629,7 @@ def test_dbt_with_downstream_asset_via_definition(test_meta_config_manifest: Dic
 
 def test_dbt_with_downstream_asset(test_meta_config_manifest: Dict[str, Any]):
     @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     @asset(deps=[AssetKey("orders"), AssetKey(["customized", "staging", "payments"])])
     def downstream_of_dbt():
@@ -731,8 +706,7 @@ def test_dbt_with_python_interleaving(
     }
 
     @asset(key_prefix="dagster", deps=["raw_customers"])
-    def python_augmented_customers():
-        ...
+    def python_augmented_customers(): ...
 
     defs = Definitions(
         assets=[my_dbt_assets, python_augmented_customers],
@@ -817,8 +791,7 @@ def test_dbt_with_invalid_self_dependencies(
     ) as exc_info:
 
         @dbt_assets(manifest=test_asset_key_exceptions_manifest)
-        def my_dbt_assets():
-            ...
+        def my_dbt_assets(): ...
 
     assert expected_error_message in str(exc_info.value)
 
@@ -850,7 +823,6 @@ def test_dbt_with_duplicate_asset_keys(test_meta_config_manifest: Dict[str, Any]
             manifest=test_meta_config_manifest,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
         )
-        def my_dbt_assets():
-            ...
+        def my_dbt_assets(): ...
 
     assert expected_error_message in str(exc_info.value)

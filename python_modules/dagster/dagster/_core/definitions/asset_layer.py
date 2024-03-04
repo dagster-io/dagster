@@ -237,9 +237,9 @@ def _get_dependency_node_output_handles(
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node_output_handle[
-            node_output_handle
-        ] = dependency_node_output_handles
+        dep_node_output_handles_by_node_output_handle[node_output_handle] = (
+            dependency_node_output_handles
+        )
 
     return dependency_node_output_handles
 
@@ -462,9 +462,9 @@ class AssetLayer(NamedTuple):
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[
-                        (node_handle, input_asset_key)
-                    ] = partition_mapping
+                    partition_mappings_by_asset_dep[(node_handle, input_asset_key)] = (
+                        partition_mapping
+                    )
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from

@@ -105,8 +105,7 @@ class StepInputSource(ABC):
     @abstractmethod
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
     def required_resource_keys(self, _job_def: JobDefinition) -> AbstractSet[str]:
         return set()

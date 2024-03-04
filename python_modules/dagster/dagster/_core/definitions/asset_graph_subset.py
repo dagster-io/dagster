@@ -382,12 +382,12 @@ class AssetGraphSubset(NamedTuple):
         for asset_key in asset_keys:
             partitions_def = asset_graph.get_partitions_def(asset_key)
             if partitions_def:
-                partitions_subsets_by_asset_key[
-                    asset_key
-                ] = partitions_def.empty_subset().with_partition_keys(
-                    partitions_def.get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_store,
-                        current_time=current_time,
+                partitions_subsets_by_asset_key[asset_key] = (
+                    partitions_def.empty_subset().with_partition_keys(
+                        partitions_def.get_partition_keys(
+                            dynamic_partitions_store=dynamic_partitions_store,
+                            current_time=current_time,
+                        )
                     )
                 )
             else:

@@ -328,16 +328,16 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
             # display in the UI
             self._partially_initialized_fivetran_instance = fivetran_resource_def
             # The processed copy is used to query the Fivetran instance
-            self._fivetran_instance: (
-                FivetranResource
-            ) = self._partially_initialized_fivetran_instance.process_config_and_initialize()
+            self._fivetran_instance: FivetranResource = (
+                self._partially_initialized_fivetran_instance.process_config_and_initialize()
+            )
         else:
             self._partially_initialized_fivetran_instance = fivetran_resource_def(
                 build_init_resource_context()
             )
-            self._fivetran_instance: (
-                FivetranResource
-            ) = self._partially_initialized_fivetran_instance
+            self._fivetran_instance: FivetranResource = (
+                self._partially_initialized_fivetran_instance
+            )
 
         self._key_prefix = key_prefix
         self._connector_to_group_fn = connector_to_group_fn

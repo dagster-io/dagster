@@ -310,8 +310,7 @@ class CodeLocation(AbstractContextManager):
         )
 
     @abstractmethod
-    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
-        ...
+    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
 
 
 class InProcessCodeLocation(CodeLocation):

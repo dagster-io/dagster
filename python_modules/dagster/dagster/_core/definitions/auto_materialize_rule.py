@@ -547,12 +547,12 @@ class MaterializeOnParentUpdatedRule(
             else updated_and_will_update_parents
         )
 
-        updated_parent_assets_by_asset_partition: Dict[
-            AssetKeyPartitionKey, Set[AssetKey]
-        ] = defaultdict(set)
-        will_update_parent_assets_by_asset_partition: Dict[
-            AssetKeyPartitionKey, Set[AssetKey]
-        ] = defaultdict(set)
+        updated_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+            defaultdict(set)
+        )
+        will_update_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+            defaultdict(set)
+        )
 
         for updated_or_will_update_parent in filtered_updated_and_will_update_parents:
             for child in asset_partitions_by_updated_parents.get(updated_or_will_update_parent, []):

@@ -371,8 +371,7 @@ def test_multi_asset_sensor_invocation_resources() -> None:
 def test_multi_asset_sensor_with_source_assets() -> None:
     # upstream_asset1 exists in another repository
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
-    def upstream_asset1():
-        ...
+    def upstream_asset1(): ...
 
     upstream_asset1_source = SourceAsset(
         key=upstream_asset1.key,
@@ -380,8 +379,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
     )
 
     @asset()
-    def downstream_asset(upstream_asset1):
-        ...
+    def downstream_asset(upstream_asset1): ...
 
     @multi_asset_sensor(
         monitored_assets=[

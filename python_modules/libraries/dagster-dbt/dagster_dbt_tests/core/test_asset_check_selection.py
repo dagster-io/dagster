@@ -21,8 +21,7 @@ def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsD
         manifest=test_asset_checks_manifest,
         dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     return my_dbt_assets
 

@@ -45,16 +45,13 @@ def test_direct_sensor_definition_instantiation():
 
 def test_coerce_to_asset_selection():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset
-    def asset3():
-        ...
+    def asset3(): ...
 
     assets = [asset1, asset2, asset3]
 

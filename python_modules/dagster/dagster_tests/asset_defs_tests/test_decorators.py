@@ -576,8 +576,7 @@ def test_op_tags():
     tags_stringified = {"apple": "banana", "orange": '{"rind": "fsd", "segment": "fjdskl"}'}
 
     @asset(op_tags=tags)
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert my_asset.op.tags == tags_stringified
 
@@ -611,8 +610,7 @@ def test_kwargs_with_context():
     assert my_asset.op(build_op_context(), upstream=5) == 7
 
     @asset
-    def upstream():
-        ...
+    def upstream(): ...
 
     assert materialize_to_memory([upstream, my_asset]).success
 
@@ -631,8 +629,7 @@ def test_kwargs_multi_asset():
     assert my_asset.op(upstream=5) == (7,)
 
     @asset
-    def upstream():
-        ...
+    def upstream(): ...
 
     assert materialize_to_memory([upstream, my_asset]).success
 
@@ -652,8 +649,7 @@ def test_kwargs_multi_asset_with_context():
     assert my_asset.op(build_op_context(), upstream=5) == (7,)
 
     @asset
-    def upstream():
-        ...
+    def upstream(): ...
 
     assert materialize_to_memory([upstream, my_asset]).success
 
@@ -733,8 +729,7 @@ def test_asset_retry_policy():
     retry_policy = RetryPolicy()
 
     @asset(retry_policy=retry_policy)
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert my_asset.op.retry_policy == retry_policy
 
@@ -749,8 +744,7 @@ def test_multi_asset_retry_policy():
         },
         retry_policy=retry_policy,
     )
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert my_asset.op.retry_policy == retry_policy
 
@@ -839,8 +833,7 @@ def test_invalid_self_dep_no_time_dimension():
 
 def test_asset_in_nothing():
     @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
-    def asset1():
-        ...
+    def asset1(): ...
 
     assert AssetKey("upstream") in asset1.keys_by_input_name.values()
     assert materialize_to_memory([asset1]).success
@@ -848,8 +841,7 @@ def test_asset_in_nothing():
 
 def test_asset_in_nothing_and_something():
     @asset
-    def other_upstream():
-        ...
+    def other_upstream(): ...
 
     @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
     def asset1(other_upstream):
@@ -938,8 +930,7 @@ def test_graph_asset_partition_mapping():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @op(ins={"in1": In(Nothing)})
     def my_op(context):
@@ -1245,8 +1236,7 @@ def test_multi_asset_with_auto_materialize_policy():
             "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
         }
     )
-    def my_asset():
-        ...
+    def my_asset(): ...
 
     assert my_asset.auto_materialize_policies_by_key == {
         AssetKey("o2"): AutoMaterializePolicy.eager(),
@@ -1281,8 +1271,7 @@ def test_error_on_asset_key_provided():
     ):
 
         @asset(key="the_asset", key_prefix="foo")
-        def one():
-            ...
+        def one(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1290,8 +1279,7 @@ def test_error_on_asset_key_provided():
     ):
 
         @asset(key="the_asset", name="foo")
-        def two():
-            ...
+        def two(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1299,8 +1287,7 @@ def test_error_on_asset_key_provided():
     ):
 
         @asset(key="the_asset", name="foo", key_prefix="bar")
-        def three():
-            ...
+        def three(): ...
 
 
 def test_dynamic_graph_asset_ins():
@@ -1313,8 +1300,7 @@ def test_dynamic_graph_asset_ins():
         return x
 
     @asset
-    def foo():
-        ...
+    def foo(): ...
 
     all_assets = [foo]
 
@@ -1333,8 +1319,7 @@ def test_graph_inputs_error():
     try:
 
         @graph_asset(ins={"start": AssetIn(dagster_type=Nothing)})
-        def _():
-            ...
+        def _(): ...
 
     except DagsterInvalidDefinitionError as err:
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
@@ -1342,8 +1327,7 @@ def test_graph_inputs_error():
     try:
 
         @graph(ins={"start": GraphIn()})
-        def _():
-            ...
+        def _(): ...
 
     except DagsterInvalidDefinitionError as err:
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
