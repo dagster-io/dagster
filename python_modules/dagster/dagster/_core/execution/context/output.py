@@ -230,7 +230,8 @@ class OutputContext:
     @property
     def definition_metadata(self) -> ArbitraryMetadataMapping:
         """A dict of the metadata that is assigned to the OutputDefinition that produced
-        the output.
+        the output. Metadata is assigned to an OutputDefinition either directly on the OutputDefinition
+        or in the @asset decorator.
         """
         return self._definition_metadata
 
