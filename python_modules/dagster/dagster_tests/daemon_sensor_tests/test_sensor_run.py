@@ -1202,6 +1202,9 @@ def test_bad_load_sensor_repository(
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
+        assert instance.get_instigator_state(
+            invalid_state.instigator_origin_id, invalid_state.selector_id
+        )
 
 
 def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
@@ -1234,6 +1237,9 @@ def test_bad_load_sensor(executor, instance, workspace_context, external_repo):
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(invalid_state.instigator_origin_id, invalid_state.selector_id)
         assert len(ticks) == 0
+        assert instance.get_instigator_state(
+            invalid_state.instigator_origin_id, invalid_state.selector_id
+        )
 
 
 def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):

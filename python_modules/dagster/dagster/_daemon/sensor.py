@@ -323,6 +323,7 @@ def execute_sensor_iteration(
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
     sensors: Dict[str, ExternalSensor] = {}
+
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
@@ -336,11 +337,12 @@ def execute_sensor_iteration(
                         all_sensor_states.get(selector_id)
                     ).is_running:
                         sensors[selector_id] = sensor
-        elif location_entry.load_error and log_verbose_checks:
-            logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for"
-                f" sensors due to the following error: {location_entry.load_error}"
-            )
+        elif location_entry.load_error:
+            if log_verbose_checks:
+                logger.warning(
+                    f"Could not load location {location_entry.origin.location_name} to check for"
+                    f" sensors due to the following error: {location_entry.load_error}"
+                )
 
     if not sensors:
         if log_verbose_checks:
