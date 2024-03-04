@@ -190,7 +190,7 @@ class FromLoadableAsset(
 
         metadata = {
             **load_input_context.definition_metadata,
-            **load_input_context.consume_metadata(),
+            **load_input_context.consume_logged_metadata(),
         }
 
         yield DagsterEvent.loaded_input(
@@ -318,7 +318,7 @@ class FromInputManager(
 
         metadata = {
             **load_input_context.definition_metadata,
-            **load_input_context.consume_metadata(),
+            **load_input_context.consume_logged_metadata(),
         }
 
         yield DagsterEvent.loaded_input(
@@ -499,7 +499,7 @@ class FromStepOutput(
 
         metadata = {
             **load_input_context.definition_metadata,
-            **load_input_context.consume_metadata(),
+            **load_input_context.consume_logged_metadata(),
         }
 
         yield DagsterEvent.loaded_input(

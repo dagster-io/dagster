@@ -537,7 +537,14 @@ class InputContext:
         """
         return self._observations
 
-    def consume_metadata(self) -> Mapping[str, MetadataValue]:
+    def consume_logged_metadata(self) -> Mapping[str, MetadataValue]:
+        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+
+        If consume_logged_metadata has not yet been called, this will yield all logged events since
+        the call to `load_input`. If consume_logged_metadata has been called, it will yield all
+        events since the last time consume_logged_metadata was called. Designed for internal
+        use. Users should never need to invoke this method.
+        """
         result = self._user_generated_metadata
         self._user_generated_metadata = {}
         return result
