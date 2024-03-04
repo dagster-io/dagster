@@ -957,8 +957,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
-        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_a")].keys == two_assets.keys
+        assert context.assets_defs_by_key[AssetKey("asset_b")].keys == two_assets.keys
         assert len(context.assets_defs_by_key) == 2
 
     @repository

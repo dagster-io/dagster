@@ -40,6 +40,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
+from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -232,6 +233,19 @@ def build_caching_repository_data_from_list(
             asset_checks_defs.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
+
+    # Resolve all asset dependencies. An asset dependency is resolved when it's key is an AssetKey
+    # not subject to any further manipulation.
+    resolved_deps = ResolvedAssetDependencies(assets_defs, [])
+    assets_defs = [
+        ad.with_attributes(
+            input_asset_key_replacements={
+                raw_key: resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
+                for input_name, raw_key in ad.keys_by_input_name.items()
+            }
+        )
+        for ad in assets_defs
+    ]
 
     if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
