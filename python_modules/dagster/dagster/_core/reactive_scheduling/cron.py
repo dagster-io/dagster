@@ -2,7 +2,6 @@ from typing import NamedTuple, Optional
 
 import pendulum
 
-from dagster._core.definitions.auto_materialize_rule import CronEvaluationData
 from dagster._core.reactive_scheduling.asset_graph_view import AssetSlice
 from dagster._core.reactive_scheduling.scheduling_policy import (
     ScheduleLaunchResult,
@@ -26,10 +25,10 @@ class CronCursor(NamedTuple):
 
 
 class Cron(SchedulingPolicy):
-    def __init__(self, cron_schedule: str, timezone: str, sensor_spec: SensorSpec) -> None:
+    def __init__(self, cron_schedule: str, cron_timezone: str, sensor_spec: SensorSpec) -> None:
         super().__init__(sensor_spec=sensor_spec)
         self.cron_schedule = cron_schedule
-        self.timezone = timezone
+        self.cron_timezone = cron_timezone
 
     def schedule_launch(
         self, context: SchedulingExecutionContext, asset_slice: AssetSlice
@@ -41,14 +40,10 @@ class Cron(SchedulingPolicy):
             else None
         )
 
-        asset_slice_since_cron = context.asset_graph_view.asset_slice_since_cron(
-            asset_key=asset_slice.asset_key,
-            cron_data=CronEvaluationData(
-                cron_schedule=self.cron_schedule,
-                timezone=self.timezone,
-                previous_datetime=previous_launch_dt,
-                current_datetime=context.effective_dt,
-            ),
+        asset_slice_since_cron = asset_slice.compute_since_cron(
+            cron_schedule=self.cron_schedule,
+            cron_timezone=self.cron_timezone,
+            previous_dt=previous_launch_dt,
         )
 
         if asset_slice_since_cron.is_empty:

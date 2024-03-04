@@ -232,6 +232,19 @@ class AssetSlice:
             ),
         )
 
+    def compute_since_cron(
+        self,
+        cron_schedule: str,
+        cron_timezone: str,
+        previous_dt: Optional[datetime],
+    ) -> "AssetSlice":
+        return self._asset_graph_view.asset_slice_since_cron(
+            self.asset_key,
+            cron_schedule=cron_schedule,
+            cron_timezone=cron_timezone,
+            previous_dt=previous_dt,
+        )
+
     @property
     def is_empty(self) -> bool:
         return self._valid_asset_subset.is_empty
@@ -492,10 +505,23 @@ class AssetGraphView:
 
     # TODO add corresponding method to AssetSlice
     def asset_slice_since_cron(
-        self, asset_key: AssetKey, cron_data: "CronEvaluationData"
+        self,
+        asset_key: AssetKey,
+        cron_schedule: str,
+        cron_timezone: str,
+        previous_dt: Optional[datetime],
     ) -> "AssetSlice":
+        # return the asset slice containing all the partitions after
+        # the previous datetime, subject to the cron schedule. In effect
+        # time moves "forward" to the next cron tick, and then returns
+        # the time window from that time to the effective time
         asset_partitions = get_new_asset_partitions_to_request(
-            cron_data=cron_data,
+            cron_data=CronEvaluationData(
+                cron_schedule=cron_schedule,
+                timezone=cron_timezone,
+                previous_datetime=previous_dt,
+                current_datetime=self.effective_dt,
+            ),
             asset_key=asset_key,
             partitions_def=self.asset_info_of(asset_key).partitions_def,
             dynamic_partitions_store=self.queryer,

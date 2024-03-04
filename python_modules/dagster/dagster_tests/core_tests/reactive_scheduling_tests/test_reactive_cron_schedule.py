@@ -14,7 +14,7 @@ from dagster._core.reactive_scheduling.scheduling_sensor import SensorSpec
 
 def test_daily_cron_schedule_no_previous_launch() -> None:
     daily_midnight_cron = Cron(
-        cron_schedule="0 0 * * *", timezone="UTC", sensor_spec=SensorSpec("test_sensor")
+        cron_schedule="0 0 * * *", cron_timezone="UTC", sensor_spec=SensorSpec("test_sensor")
     )
 
     @asset(scheduling_policy=daily_midnight_cron)
@@ -47,7 +47,7 @@ def test_daily_cron_schedule_no_previous_launch() -> None:
 
 def test_daily_cron_schedule_previous_launch_in_window() -> None:
     daily_midnight_cron = Cron(
-        cron_schedule="0 0 * * *", timezone="UTC", sensor_spec=SensorSpec("test_sensor")
+        cron_schedule="0 0 * * *", cron_timezone="UTC", sensor_spec=SensorSpec("test_sensor")
     )
 
     @asset(scheduling_policy=daily_midnight_cron)
