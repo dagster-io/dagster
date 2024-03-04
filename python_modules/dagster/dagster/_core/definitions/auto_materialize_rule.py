@@ -916,6 +916,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             # first tick of evaluating this condition
             context.previous_evaluation_state is None
             or context.previous_evaluation_timestamp is None
+            or context.previous_max_storage_id is None
             # new cron tick has happened since the previous tick
             or passed_time_window.end.timestamp() > context.previous_evaluation_timestamp
         ):
