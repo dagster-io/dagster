@@ -149,7 +149,7 @@ class AssetDaemonContext:
         return [
             key
             for key in self.auto_materialize_asset_keys_and_parents
-            if (self.asset_graph.has_asset(key) and self.asset_graph.is_materializable(key))
+            if self.asset_graph.has_asset(key)
         ]
 
     @property
