@@ -199,7 +199,6 @@ export const useGlobalSearch = () => {
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
     key: 'SearchPrimary',
-    variables: {},
   });
 
   const {
@@ -209,7 +208,6 @@ export const useGlobalSearch = () => {
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
     key: 'SearchSecondary',
-    variables: {},
   });
 
   const consumeBufferEffect = useCallback(
@@ -245,7 +243,7 @@ export const useGlobalSearch = () => {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(results);
-    consumeBufferEffect(primarySearchBuffer, secondarySearch.current);
+    consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
   }, [consumeBufferEffect, secondaryData]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);

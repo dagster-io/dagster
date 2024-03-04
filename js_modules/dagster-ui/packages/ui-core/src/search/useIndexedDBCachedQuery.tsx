@@ -15,7 +15,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
 }: {
   key: string;
   query: DocumentNode;
-  variables: TVariables;
+  variables?: TVariables;
 }) {
   const client = useApolloClient();
 
