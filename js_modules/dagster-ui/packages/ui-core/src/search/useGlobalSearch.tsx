@@ -1,9 +1,15 @@
-import {gql, useLazyQuery} from '@apollo/client';
-import {useCallback, useRef} from 'react';
+import {gql} from '@apollo/client';
+import {useCallback, useEffect, useRef} from 'react';
 
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
 import {SearchResult, SearchResultType} from './types';
-import {SearchPrimaryQuery, SearchSecondaryQuery} from './types/useGlobalSearch.types';
+import {
+  SearchPrimaryQuery,
+  SearchPrimaryQueryVariables,
+  SearchSecondaryQuery,
+  SearchSecondaryQueryVariables,
+} from './types/useGlobalSearch.types';
+import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -186,37 +192,23 @@ export const useGlobalSearch = () => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
-  const primary = useLazyQuery<SearchPrimaryQuery>(SEARCH_PRIMARY_QUERY, {
-    // Don't use the cache because it is slow and we only make this request once so we don't need the cache
-    fetchPolicy: 'no-cache',
-    onCompleted: (data: SearchPrimaryQuery) => {
-      const results = primaryDataToSearchResults({data});
-      if (!primarySearch.current) {
-        primarySearch.current = createSearchWorker('primary', fuseOptions);
-      }
-      primarySearch.current.update(results);
-      consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-    },
+  const {
+    data: primaryData,
+    fetch: fetchPrimaryData,
+    loading: primaryDataLoading,
+  } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
+    query: SEARCH_PRIMARY_QUERY,
+    key: 'SearchPrimary',
   });
 
-  const secondary = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
-    // Don't use the cache because it is slow and we only make this request once so we don't need the cache
-    fetchPolicy: 'no-cache',
-    onCompleted: (data: SearchSecondaryQuery) => {
-      const results = secondaryDataToSearchResults({data});
-      if (!secondarySearch.current) {
-        secondarySearch.current = createSearchWorker('secondary', fuseOptions);
-      }
-      secondarySearch.current.update(results);
-      consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-    },
+  const {
+    data: secondaryData,
+    fetch: fetchSecondaryData,
+    loading: secondaryDataLoading,
+  } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
+    query: SEARCH_SECONDARY_QUERY,
+    key: 'SearchSecondary',
   });
-
-  const primarySearchBuffer = useRef<IndexBuffer | null>(null);
-  const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
-
-  const [performPrimaryLazyQuery, primaryResult] = primary;
-  const [performSecondaryLazyQuery, secondaryResult] = secondary;
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
@@ -230,14 +222,37 @@ export const useGlobalSearch = () => {
     [],
   );
 
+  useEffect(() => {
+    if (!primaryData) {
+      return;
+    }
+    const results = primaryDataToSearchResults({data: primaryData});
+    if (!primarySearch.current) {
+      primarySearch.current = createSearchWorker('primary', fuseOptions);
+    }
+    primarySearch.current.update(results);
+    consumeBufferEffect(primarySearchBuffer, primarySearch.current);
+  }, [consumeBufferEffect, primaryData]);
+
+  useEffect(() => {
+    if (!secondaryData) {
+      return;
+    }
+    const results = secondaryDataToSearchResults({data: secondaryData});
+    if (!secondarySearch.current) {
+      secondarySearch.current = createSearchWorker('secondary', fuseOptions);
+    }
+    secondarySearch.current.update(results);
+    consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
+  }, [consumeBufferEffect, secondaryData]);
+
+  const primarySearchBuffer = useRef<IndexBuffer | null>(null);
+  const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
+
   const initialize = useCallback(() => {
-    if (!primaryResult.data && !primaryResult.loading) {
-      performPrimaryLazyQuery();
-    }
-    if (!secondaryResult.data && !secondaryResult.loading) {
-      performSecondaryLazyQuery();
-    }
-  }, [performPrimaryLazyQuery, performSecondaryLazyQuery, primaryResult, secondaryResult]);
+    fetchPrimaryData();
+    fetchSecondaryData();
+  }, [fetchPrimaryData, fetchSecondaryData]);
 
   const searchIndex = useCallback(
     (
@@ -301,7 +316,7 @@ export const useGlobalSearch = () => {
 
   return {
     initialize,
-    loading: !primaryResult.data || !secondaryResult.data,
+    loading: primaryDataLoading || secondaryDataLoading,
     searchPrimary,
     searchSecondary,
     terminate,
