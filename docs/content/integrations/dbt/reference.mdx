@@ -534,6 +534,15 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ## Emit column schema as materialization metadata <Experimental />
 
+<Note>
+  <strong>
+    Emitting column schema as materialization metadata is currently an
+    experimental feature.{" "}
+  </strong>{" "}
+  To use this feature, you'll need to be on at least `dagster==1.6.6` and
+  `dagster-dbt==0.22.6`.
+</Note>
+
 Dagster allows you to emit column schema [materialization metadata](/concepts/assets/software-defined-assets#recording-materialization-metadata), which includes the column names and data types of your materialized dbt models, seeds, and snapshots.
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
