@@ -45,7 +45,7 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
-import {StaleReasonsTags} from '../assets/Stale';
+import {StaleReasonsTag} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -526,11 +526,10 @@ const AssetViewPageHeaderTags = ({
     return (
       <>
         {definition ? (
-          <StaleReasonsTags
+          <StaleReasonsTag
             liveData={liveData}
             assetKey={definition.assetKey}
             onClick={onShowUpstream}
-            include="all"
           />
         ) : null}
         {definition?.isSource ? (
@@ -568,11 +567,10 @@ const AssetViewPageHeaderTags = ({
         <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}
       {definition && (
-        <StaleReasonsTags
+        <StaleReasonsTag
           liveData={liveData}
           assetKey={definition.assetKey}
           onClick={onShowUpstream}
-          include="all"
         />
       )}
       {definition && (

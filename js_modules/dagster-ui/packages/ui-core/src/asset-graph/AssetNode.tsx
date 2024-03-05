@@ -15,7 +15,7 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {StaleReasonsTags} from '../assets/Stale';
+import {StaleReasonsTag} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -34,7 +34,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
 
   return (
     <AssetInsetForHoverEffect>
-      <AssetTopTags definition={definition} liveData={liveData} />
+      <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
           <AssetName $isSource={isSource}>
@@ -63,7 +63,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
-            <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
           <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -76,17 +75,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
     </AssetInsetForHoverEffect>
   );
 }, isEqual);
-
-interface AssetTopTagsProps {
-  definition: AssetNodeFragment;
-  liveData?: LiveDataForNode;
-}
-
-const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
-  <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
-    <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
-  </Box>
-);
 
 const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;

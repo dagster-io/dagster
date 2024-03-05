@@ -22,7 +22,7 @@ export const LiveStates = () => {
       ...scenario.definition,
       assetKey: {
         ...scenario.definition.assetKey,
-        path: [],
+        path: [] as string[],
       },
     };
     definitionCopy.assetKey.path = scenario.liveData
@@ -36,6 +36,10 @@ export const LiveStates = () => {
         [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
       });
       return null;
+    }
+
+    if (definitionCopy.assetKey.path.includes('asset10')) {
+      console.log(scenario);
     }
 
     return (

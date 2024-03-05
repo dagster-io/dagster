@@ -14,7 +14,7 @@ import {
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetLiveDataProvider.types';
-import {RunStatus, StaleStatus} from '../graphql/types';
+import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
 
 /**
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
@@ -154,6 +154,7 @@ export interface LiveDataForNode {
   staleStatus: StaleStatus | null;
   staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
   assetChecks: AssetCheckLiveFragment[];
+  changedReason: Array<ChangeReason>;
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
@@ -165,6 +166,7 @@ export interface LiveDataForNode {
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
   unstartedRunIds: [],
+  changedReason: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
@@ -217,6 +219,7 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
+    changedReason: [],
     lastMaterializationRunStatus:
       latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
         ? latestRunForAsset.status
