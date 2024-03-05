@@ -32,6 +32,20 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 # `AutoMaterializeRule`.
 SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interval_minutes"
 
+# SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET lives on the metadata of external assets that are
+# created for undefined but referenced assets during asset graph normalization. For example, in the
+# below definitions, `foo` is referenced by upstream `bar` but has no corresponding definition:
+#
+#
+#     @asset(deps=["foo"])
+#     def bar(context: AssetExecutionContext):
+#         ...
+#
+#     defs=Definitions(assets=[bar])
+#
+# During normalization we create a "stub" definition for `foo` and attach this metadata to it.
+SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET = "dagster/auto_created_stub_asset"
+
 
 @whitelist_for_serdes
 class AssetExecutionType(Enum):

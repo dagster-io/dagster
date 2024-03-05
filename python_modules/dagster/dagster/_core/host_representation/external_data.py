@@ -1651,20 +1651,7 @@ def external_asset_nodes_from_defs(
 
         group_name_by_asset_key.update(asset_layer.group_names_by_assets())
 
-    asset_keys_without_definitions = all_upstream_asset_keys.difference(assets_defs_by_key.keys())
-
-    asset_nodes = [
-        ExternalAssetNode(
-            asset_key=asset_key,
-            dependencies=list(deps[asset_key].values()),
-            depended_by=list(dep_by[asset_key].values()),
-            execution_type=AssetExecutionType.UNEXECUTABLE,
-            job_names=[],
-            group_name=group_name_by_asset_key.get(asset_key),
-            code_version=code_version_by_asset_key.get(asset_key),
-        )
-        for asset_key in asset_keys_without_definitions
-    ]
+    asset_nodes: List[ExternalAssetNode] = []
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]
@@ -1744,11 +1731,15 @@ def external_asset_nodes_from_defs(
 
     # Ensure any external assets that are have no nodes in any job are included in the asset graph
     for asset in assets_defs_by_key.values():
-        for key in [
-            key
-            for key in asset.keys
-            if (key not in node_defs_by_asset_key) and key not in asset_keys_without_definitions
-        ]:
+        for key in [key for key in asset.keys if key not in node_defs_by_asset_key]:
+            # This is in place to preserve an implicit behavior in the Dagster UI where stub
+            # dependencies were rendered as if they weren't part of the default asset group.
+            group_name = (
+                None
+                if asset.is_auto_created_stub
+                else group_name_by_asset_key.get(key, DEFAULT_GROUP_NAME)
+            )
+
             asset_nodes.append(
                 ExternalAssetNode(
                     asset_key=key,
@@ -1758,7 +1749,7 @@ def external_asset_nodes_from_defs(
                     job_names=[],
                     op_description=asset.descriptions_by_key.get(key),
                     metadata=asset.metadata_by_key.get(key),
-                    group_name=asset.group_names_by_key.get(key),
+                    group_name=group_name,
                     is_source=True,
                     is_observable=asset.is_observable,
                     auto_observe_interval_minutes=asset.auto_observe_interval_minutes,
