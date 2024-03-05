@@ -29,6 +29,8 @@ export default class MyDocument extends Document {
                   (function(ss,ex){ window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));}; (function(d,s){ fs=d.getElementsByTagName(s)[0]; function ce(src){ var cs=d.createElement(s); cs.src=src; cs.async=1; fs.parentNode.insertBefore(cs,fs); }; ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js'); })(document,'script'); })('bElvO73vM0E8ZMqj');`,
                 }}
               />
+              <co-pilot copilot_id="dagster"></co-pilot>
+              <script type="module" src="https://ui.scoutos.com/copilot.js"></script>
             </>
           )}
         </Head>
