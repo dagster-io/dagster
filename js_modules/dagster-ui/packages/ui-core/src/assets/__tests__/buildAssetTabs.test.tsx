@@ -9,6 +9,8 @@ import {
   buildConfigTypeField,
   buildDimensionPartitionKeys,
   buildPartitionDefinition,
+  buildRegularConfigType,
+  buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
 } from '../../graphql/types';
@@ -135,22 +137,19 @@ describe('buildAssetTabs', () => {
   });
 
   // Copied from browser
-  const definitionWithoutPartition: AssetViewDefinitionNodeFragment = {
+  const definitionWithoutPartition = buildAssetNode({
     id: 'dagster_test.toys.repo.auto_materialize_repo_1.["lazy_downstream_1"]',
     groupName: 'default',
     partitionDefinition: null,
     partitionKeysByDimension: [],
-    repository: {
+    repository: buildRepository({
       id: '4d9fd77c222a797eb8427fcbe1968799ebc24de8',
       name: 'auto_materialize_repo_1',
-      location: {
+      location: buildRepositoryLocation({
         id: 'dagster_test.toys.repo',
         name: 'dagster_test.toys.repo',
-        __typename: 'RepositoryLocation',
-      },
-      __typename: 'Repository',
-    },
-    __typename: 'AssetNode',
+      }),
+    }),
     description: null,
     graphName: null,
     targetingInstigators: [],
@@ -161,34 +160,30 @@ describe('buildAssetTabs', () => {
     backfillPolicy: null,
     freshnessPolicy: null,
     requiredResources: [],
-    configField: {
+    configField: buildConfigTypeField({
       name: 'config',
       isRequired: false,
-      configType: {
+      configType: buildRegularConfigType({
         givenName: 'Any',
-        __typename: 'RegularConfigType',
         key: 'Any',
         description: null,
         isSelector: false,
         typeParamKeys: [],
         recursiveConfigTypes: [],
-      },
-      __typename: 'ConfigTypeField',
-    },
+      }),
+    }),
     hasMaterializePermission: true,
     computeKind: null,
     isPartitioned: false,
     isObservable: false,
     isExecutable: true,
     isSource: false,
-    assetKey: {
+    assetKey: buildAssetKey({
       path: ['lazy_downstream_1'],
-      __typename: 'AssetKey',
-    },
+    }),
     metadataEntries: [],
     owners: [],
-    type: {
-      __typename: 'RegularDagsterType',
+    type: buildRegularDagsterType({
       key: 'Any',
       name: 'Any',
       displayName: 'Any',
@@ -198,78 +193,71 @@ describe('buildAssetTabs', () => {
       isBuiltin: true,
       isNothing: false,
       metadataEntries: [],
-      inputSchemaType: {
+      inputSchemaType: buildCompositeConfigType({
         key: 'Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4',
         description: null,
         isSelector: true,
         typeParamKeys: [],
         fields: [
-          {
+          buildConfigTypeField({
             name: 'json',
             description: null,
             isRequired: true,
             configTypeKey: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             defaultValueAsJson: null,
-            __typename: 'ConfigTypeField',
-          },
-          {
+          }),
+          buildConfigTypeField({
             name: 'pickle',
             description: null,
             isRequired: true,
             configTypeKey: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             defaultValueAsJson: null,
-            __typename: 'ConfigTypeField',
-          },
-          {
+          }),
+          buildConfigTypeField({
             name: 'value',
             description: null,
             isRequired: true,
             configTypeKey: 'Any',
             defaultValueAsJson: null,
-            __typename: 'ConfigTypeField',
-          },
+          }),
         ],
-        __typename: 'CompositeConfigType',
         recursiveConfigTypes: [
-          {
+          buildCompositeConfigType({
             key: 'Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2',
             description: null,
             isSelector: false,
             typeParamKeys: [],
             fields: [
-              {
+              buildConfigTypeField({
                 name: 'path',
                 description: null,
                 isRequired: true,
                 configTypeKey: 'String',
                 defaultValueAsJson: null,
-                __typename: 'ConfigTypeField',
-              },
+              }),
             ],
-            __typename: 'CompositeConfigType',
-          },
-          {
+          }),
+          buildRegularConfigType({
             givenName: 'String',
             __typename: 'RegularConfigType',
             key: 'String',
             description: '',
             isSelector: false,
             typeParamKeys: [],
-          },
-          {
+          }),
+          buildRegularConfigType({
             givenName: 'Any',
-            __typename: 'RegularConfigType',
             key: 'Any',
             description: null,
             isSelector: false,
             typeParamKeys: [],
-          },
+          }),
         ],
-      },
+      }),
       outputSchemaType: null,
       innerTypes: [],
-    },
-  };
+    }),
+  });
   const params = {};
 
   it('shows all tabs', () => {
