@@ -12,6 +12,7 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -161,7 +162,7 @@ const StaleReason = ({
   dependency: AssetNodeKeyFragment | null;
   assetKey: AssetKeyInput;
 }) => {
-  const innerContent = React.useMemo(() => {
+  const innerContent = useMemo(() => {
     if (!dependency) {
       return <Caption>{` ${reason}`}</Caption>;
     }
