@@ -145,7 +145,7 @@ Partition keys can be added and removed for a given dynamic partition set. For e
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
 images_job = define_asset_job(
-    "images_job", AssetSelection.keys("images"), partitions_def=images_partitions_def
+    "images_job", AssetSelection.assets("images"), partitions_def=images_partitions_def
 )
 
 

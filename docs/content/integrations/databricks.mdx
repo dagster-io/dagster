@@ -123,7 +123,7 @@ def my_databricks_table(context: AssetExecutionContext) -> None:
 
 materialize_databricks_table = define_asset_job(
     name="materialize_databricks_table",
-    selection=AssetSelection.keys("my_databricks_table"),
+    selection=AssetSelection.assets(my_databricks_table),
 )
 ```
 

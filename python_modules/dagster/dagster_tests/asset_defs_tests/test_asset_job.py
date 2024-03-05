@@ -1484,7 +1484,7 @@ def test_empty_asset_job():
     def b(a):
         pass
 
-    empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
+    empty_selection = AssetSelection.assets("a", "b") - AssetSelection.assets("a", "b")
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
