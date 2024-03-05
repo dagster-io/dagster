@@ -15,18 +15,18 @@ from pathlib import Path
 # import os
 ```
 
-The `Path` class from the `pathlib` standard library will help us create an accurate pointer to where our dbt project is. At the bottom of this same file, add the following line:
+The `Path` class from the `pathlib` standard library will help us create an accurate pointer to where our dbt project is. At the bottom of `constants.py`, add the following line:
 
 ```python
 DBT_DIRECTORY = Path(__file__).joinpath("..", "..", "..", "analytics").resolve()
 ```
 
-TODO: Tim to update as these instructions as the old instructions use `os.path.join`
-
 This line creates a new constant called `DBT_DIRECTORY`. This line might look a little complicated, so let’s break it down:
 
-- It uses `constants.py`'s file location (via `__file__`) as a point of reference for finding the dbt project
-- The arguments in `joinpath` point us towards our dbt project in `analytics`
+- It uses the location of the `constants.py` file (via `__file__`) as a point of reference for finding the dbt project
+- The arguments in `joinpath` point us towards our dbt project by appending the following to the current path:
+   - Three directory levels up (`"..", "..", ".."`)
+   - A directory named `analytics`, which is the directory containing our dbt project
 - The `resolve` method turns that path into an absolute file path that points to the dbt project correctly from any file we’re working in
 
 Now that you can access your dbt project from any other file with the `DBT_DIRECTORY` constant, let’s move on to the first place where you’ll use it: creating the Dagster resource that will run dbt.
