@@ -14,28 +14,6 @@ To partition an incremental dbt model, you’ll need first to partition your `@d
 
 ---
 
-## Defining a new daily partition
-
-Let’s start by defining a new daily partition for the model.
-
-In `dagster_university/partitions/init.py`, make the following changes:
-
-1. import `DailyPartitionsDefinition` from `dagster`, and
-2. Define a new `daily_partition` like the following:
-
-   ```python
-   from dagster import MonthlyPartitionsDefinition, WeeklyPartitionsDefinition, DailyPartitionsDefinition
-
-   # ...existing partitions here
-
-   daily_partition = DailyPartitionsDefinition(
-       start_date=start_date,
-       end_date=end_date
-   )
-   ```
-
----
-
 ## Defining an incremental selector
 
 We have a few changes to make to our dbt setup to get things working. In `dagster_university/assets/dbt.py`:
