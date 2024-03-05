@@ -10,8 +10,8 @@ from dagster import (
     asset,
     define_asset_job,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
+from dagster._core.definitions.internal_asset_graph import AssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
@@ -202,7 +202,7 @@ def _get_run_stats(partition_statuses):
 
 
 def _execute_asset_backfill_iteration_no_side_effects(
-    graphql_context, backfill_id: str, asset_graph: ExternalAssetGraph
+    graphql_context, backfill_id: str, asset_graph: HostAssetGraph
 ) -> None:
     """Executes an asset backfill iteration and updates the serialized asset backfill data.
     However, does not execute side effects i.e. launching runs.
@@ -251,7 +251,7 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
 def _mock_asset_backfill_runs(
     graphql_context,
     asset_key: AssetKey,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     backfill_id: str,
     status: DagsterRunStatus,
     partition_key: Optional[str],
@@ -555,7 +555,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         # since launching the run will cause test process will hang forever.
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = ExternalAssetGraph.from_external_repository(repository)
+        asset_graph = HostAssetGraph.from_external_repository(repository)
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
 
         # Launch the run that runs forever
@@ -793,7 +793,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = ExternalAssetGraph.from_external_repository(repository)
+        asset_graph = HostAssetGraph.from_external_repository(repository)
 
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
 
@@ -836,7 +836,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
     def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        asset_graph = ExternalAssetGraph.from_external_repository(repository)
+        asset_graph = HostAssetGraph.from_external_repository(repository)
 
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),

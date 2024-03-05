@@ -31,7 +31,7 @@ from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
@@ -576,7 +576,7 @@ class AssetBackfillData(NamedTuple):
 
 
 def create_asset_backfill_data_from_asset_partitions(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     asset_selection: Sequence[AssetKey],
     partition_names: Sequence[str],
     dynamic_partitions_store: DynamicPartitionsStore,
@@ -617,7 +617,7 @@ class AssetBackfillIterationResult(NamedTuple):
 
 def _get_requested_asset_partitions_from_run_requests(
     run_requests: Sequence[RunRequest],
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance_queryer: CachingInstanceQueryer,
 ) -> AbstractSet[AssetKeyPartitionKey]:
     requested_partitions = set()
@@ -663,7 +663,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     backfill_id: str,
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     previous_asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillData]]:
@@ -884,7 +884,7 @@ def execute_asset_backfill_iteration(
 
     workspace_context = workspace_process_context.create_request_context()
 
-    asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
+    asset_graph = HostAssetGraph.from_workspace(workspace_context)
 
     if not backfill.is_asset_backfill:
         check.failed("Backfill must be an asset backfill")
@@ -1053,7 +1053,7 @@ def get_canceling_asset_backfill_iteration_data(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     instance_queryer: CachingInstanceQueryer,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     backfill_start_time: datetime,
 ) -> Iterable[Optional[AssetBackfillData]]:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
@@ -1091,7 +1091,7 @@ def get_canceling_asset_backfill_iteration_data(
 def get_asset_backfill_iteration_materialized_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[Optional[AssetGraphSubset]]:
     """Returns the partitions that have been materialized by the backfill.
@@ -1135,7 +1135,7 @@ def get_asset_backfill_iteration_materialized_partitions(
 def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     backfill_start_time: datetime,
 ) -> AssetGraphSubset:
@@ -1171,7 +1171,7 @@ def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int
 def execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     run_tags: Mapping[str, str],
     backfill_start_time: datetime,
@@ -1310,7 +1310,7 @@ def can_run_with_parent(
     parent: AssetKeyPartitionKey,
     candidate: AssetKeyPartitionKey,
     candidates_unit: Iterable[AssetKeyPartitionKey],
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
 ) -> bool:
@@ -1380,7 +1380,7 @@ def can_run_with_parent(
 
 
 def should_backfill_atomic_asset_partitions_unit(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     candidates_unit: Iterable[AssetKeyPartitionKey],
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_subset: AssetGraphSubset,
@@ -1438,7 +1438,7 @@ def should_backfill_atomic_asset_partitions_unit(
 
 
 def _get_failed_asset_partitions(
-    instance_queryer: CachingInstanceQueryer, backfill_id: str, asset_graph: ExternalAssetGraph
+    instance_queryer: CachingInstanceQueryer, backfill_id: str, asset_graph: HostAssetGraph
 ) -> Sequence[AssetKeyPartitionKey]:
     """Returns asset partitions that materializations were requested for as part of the backfill, but
     will not be materialized.

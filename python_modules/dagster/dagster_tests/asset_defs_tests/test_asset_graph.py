@@ -24,13 +24,13 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
+from dagster._core.definitions.internal_asset_graph import AssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
@@ -55,7 +55,7 @@ def to_external_asset_graph(assets, asset_checks=None) -> IAssetGraph:
     external_asset_nodes = external_asset_nodes_from_defs(
         repo.get_all_jobs(), repo.asset_graph.assets_defs
     )
-    return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
+    return HostAssetGraph.from_repository_handles_and_external_asset_nodes(
         [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
         external_asset_checks=external_asset_checks_from_defs(repo.get_all_jobs()),
     )
@@ -419,7 +419,7 @@ def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., IAssetG
 
     asset_graph = asset_graph_from_assets([partitioned_source, downstream_of_partitioned_source])
 
-    if isinstance(asset_graph, ExternalAssetGraph):
+    if isinstance(asset_graph, HostAssetGraph):
         pytest.xfail("not supported with ExternalAssetGraph")
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))

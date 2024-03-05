@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, 
 import dagster._check as check
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -30,7 +30,7 @@ class RunRequestExecutionData(NamedTuple):
 
 
 def _get_implicit_job_name_for_assets(
-    asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
+    asset_graph: HostAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
     job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
@@ -53,7 +53,7 @@ def _execution_plan_targets_asset_selection(
 
 
 def _get_job_execution_data_from_run_request(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
@@ -114,7 +114,7 @@ def _create_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -188,7 +188,7 @@ def _create_asset_run(
         # likely is outdated and targeting the wrong job, refetch the asset
         # graph from the workspace
         workspace = workspace_process_context.create_request_context()
-        asset_graph = ExternalAssetGraph.from_workspace(workspace)
+        asset_graph = HostAssetGraph.from_workspace(workspace)
 
     check.failed(
         f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
@@ -201,7 +201,7 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -274,7 +274,7 @@ def submit_asset_runs_in_chunks(
     chunk_size: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
     backfill_id: Optional[str] = None,

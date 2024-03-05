@@ -6,7 +6,7 @@ import pendulum
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
@@ -154,7 +154,7 @@ class PartitionBackfill(
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
                     self.serialized_asset_backfill_data,
-                    ExternalAssetGraph.from_workspace(workspace),
+                    HostAssetGraph.from_workspace(workspace),
                 )
             else:
                 return True
@@ -171,7 +171,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = HostAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -188,7 +188,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = HostAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -205,7 +205,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = HostAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -220,7 +220,7 @@ class PartitionBackfill(
             return 0
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = HostAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -238,7 +238,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = HostAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:

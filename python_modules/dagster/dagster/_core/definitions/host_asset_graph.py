@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     )
 
 
-class ExternalAssetGraph(IAssetGraph):
+class HostAssetGraph(IAssetGraph):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, "ExternalAssetNode"],
@@ -50,7 +50,7 @@ class ExternalAssetGraph(IAssetGraph):
         self._repo_handles_by_key = repo_handles_by_key
 
     @classmethod
-    def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
+    def from_workspace(cls, context: IWorkspace) -> "HostAssetGraph":
         code_locations = (
             location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
@@ -78,9 +78,7 @@ class ExternalAssetGraph(IAssetGraph):
         )
 
     @classmethod
-    def from_external_repository(
-        cls, external_repository: ExternalRepository
-    ) -> "ExternalAssetGraph":
+    def from_external_repository(cls, external_repository: ExternalRepository) -> "HostAssetGraph":
         return cls.from_repository_handles_and_external_asset_nodes(
             repo_handle_external_asset_nodes=[
                 (external_repository.handle, asset_node)
@@ -94,7 +92,7 @@ class ExternalAssetGraph(IAssetGraph):
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         external_asset_checks: Sequence["ExternalAssetCheck"],
-    ) -> "ExternalAssetGraph":
+    ) -> "HostAssetGraph":
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes

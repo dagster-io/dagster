@@ -300,7 +300,7 @@ class AssetConditionEvaluationContext:
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
-        from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+        from dagster._core.definitions.host_asset_graph import HostAssetGraph
 
         return (
             # both assets must be materializable
@@ -318,7 +318,7 @@ class AssetConditionEvaluationContext:
             )
             # the parent must be in the same repository to be materialized alongside the candidate
             and (
-                not isinstance(self.asset_graph, ExternalAssetGraph)
+                not isinstance(self.asset_graph, HostAssetGraph)
                 or self.asset_graph.get_repository_handle(child_key)
                 == self.asset_graph.get_repository_handle(parent_key)
             )

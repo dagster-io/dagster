@@ -41,7 +41,7 @@ from dagster import (
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
     PartitionsByAssetSelector,
@@ -436,7 +436,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
 
 def make_backfill_data(
     some_or_all: str,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance: DagsterInstance,
     current_time: datetime.datetime,
 ) -> AssetBackfillData:
@@ -459,7 +459,7 @@ def make_backfill_data(
 
 
 def make_random_subset(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
@@ -493,7 +493,7 @@ def make_random_subset(
 
 def make_subset_from_partition_keys(
     partition_keys: Sequence[str],
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
@@ -516,7 +516,7 @@ def make_subset_from_partition_keys(
 
 def get_asset_graph(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> ExternalAssetGraph:
+) -> HostAssetGraph:
     assets_defs_by_key = {
         key: assets_def
         for assets in assets_by_repo_name.values()
@@ -540,7 +540,7 @@ def get_asset_graph(
 def execute_asset_backfill_iteration_consume_generator(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
     counter = Counter()
@@ -564,7 +564,7 @@ def execute_asset_backfill_iteration_consume_generator(
 
 
 def run_backfill_to_completion(
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
@@ -702,7 +702,7 @@ def _requested_asset_partitions_in_run_request(
 
 def external_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> ExternalAssetGraph:
+) -> HostAssetGraph:
     from_repository_handles_and_external_asset_nodes = []
 
     for repo_name, assets in assets_by_repo_name.items():
@@ -717,7 +717,7 @@ def external_asset_graph_from_assets_by_repo_name(
             [(repo_handle, asset_node) for asset_node in external_asset_nodes]
         )
 
-    return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
+    return HostAssetGraph.from_repository_handles_and_external_asset_nodes(
         from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
     )
 

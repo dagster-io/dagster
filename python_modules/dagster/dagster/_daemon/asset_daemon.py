@@ -20,7 +20,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
 )
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -485,7 +485,7 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_to_sensors(instance):
                     # Do a one-time migration to create the cursors for each sensor, based on the
                     # existing cursor for the legacy AMP tick
-                    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+                    asset_graph = HostAssetGraph.from_workspace(workspace)
                     pre_sensor_cursor = _get_pre_sensor_auto_materialize_cursor(
                         instance, asset_graph
                     )
@@ -647,7 +647,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        asset_graph = ExternalAssetGraph.from_workspace(workspace)
+        asset_graph = HostAssetGraph.from_workspace(workspace)
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None
@@ -671,7 +671,7 @@ class AssetDaemon(DagsterDaemon):
 
             if sensor:
                 eligible_keys = check.not_none(sensor.asset_selection).resolve(
-                    ExternalAssetGraph.from_external_repository(check.not_none(repository))
+                    HostAssetGraph.from_external_repository(check.not_none(repository))
                 )
             else:
                 eligible_keys = {
@@ -832,7 +832,7 @@ class AssetDaemon(DagsterDaemon):
         tick: InstigatorTick,
         sensor: Optional[ExternalSensor],
         workspace_process_context: IWorkspaceProcessContext,
-        asset_graph: ExternalAssetGraph,
+        asset_graph: HostAssetGraph,
         auto_materialize_asset_keys: Set[AssetKey],
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],

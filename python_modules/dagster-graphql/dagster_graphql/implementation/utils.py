@@ -24,7 +24,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -88,7 +88,7 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 
 def assert_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
-    asset_graph: ExternalAssetGraph,
+    asset_graph: HostAssetGraph,
     asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
 ) -> None:

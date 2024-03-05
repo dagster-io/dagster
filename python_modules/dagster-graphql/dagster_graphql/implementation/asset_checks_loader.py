@@ -6,7 +6,7 @@ from dagster import (
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
@@ -125,7 +125,7 @@ class AssetChecksLoader:
             self._context.instance, check_keys=all_check_keys
         )
 
-        asset_graph = ExternalAssetGraph.from_workspace(self._context)
+        asset_graph = HostAssetGraph.from_workspace(self._context)
         graphene_checks: Mapping[AssetKey, AssetChecksOrErrorUnion] = {}
         for asset_key in self._asset_keys:
             if asset_key in errors:

@@ -5,7 +5,7 @@ import graphene
 from dagster import AssetCheckKey
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.selector import (
     InstigatorSelector,
@@ -950,11 +950,11 @@ class GrapheneQuery(graphene.ObjectType):
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        def load_asset_graph() -> ExternalAssetGraph:
+        def load_asset_graph() -> HostAssetGraph:
             if repo is not None:
-                return ExternalAssetGraph.from_external_repository(repo)
+                return HostAssetGraph.from_external_repository(repo)
             else:
-                return ExternalAssetGraph.from_workspace(graphene_info.context)
+                return HostAssetGraph.from_workspace(graphene_info.context)
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
