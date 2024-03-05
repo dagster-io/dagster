@@ -25,7 +25,7 @@ We have a few changes to make to our dbt setup to get things working. In `dagste
    import json
    ```
 
-   This imports the new `daily_partition` and the `json` standard module. We’ll use the `json` module to format how we tell dbt what partition to materialize.
+   This imports the `daily_partition` from `/dagster-university/partitions/__init__.py` and the `json` standard module. We’ll use the `json` module to format how we tell dbt what partition to materialize.
 
 2. We now need a way to indicate that we’re selecting or excluding incremental models, so we’ll make a new constant in the `dbt.py` file called `INCREMENTAL_SELECTOR:`
 
