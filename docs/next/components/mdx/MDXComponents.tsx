@@ -4,22 +4,22 @@
 
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
-import { LATEST_VERSION } from 'util/version';
+import {LATEST_VERSION} from 'util/version';
 
-import { Tab, Transition } from '@headlessui/react';
+import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
-import { PersistentTabContext } from 'components/PersistentTabContext';
+import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import Icons from '../Icons';
 import Link from '../Link';
-import { Note, Warning } from '../markdoc/Callouts';
+import {Note, Warning} from '../markdoc/Callouts';
 
 import 'react-medium-image-zoom/dist/styles.css';
-import { RenderedDAG } from './RenderedDAG';
+import {RenderedDAG} from './RenderedDAG';
 import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
