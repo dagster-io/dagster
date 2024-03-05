@@ -579,6 +579,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
 
+    @property
+    def repository_def(self):
+        return self.plan_data.job.get_repository_definition()
+
     # In this mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
     @property

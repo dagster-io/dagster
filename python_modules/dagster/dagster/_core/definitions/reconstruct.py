@@ -265,6 +265,10 @@ class ReconstructableJob(
             self.asset_check_selection,
         )
 
+    @lru_cache(maxsize=1)
+    def get_repository_definition(self) -> "RepositoryDefinition":
+        return self.repository.get_definition()
+
     def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
