@@ -58,7 +58,7 @@ export const StaleReasonsLabel = ({
     <Body color={Colors.textYellow()}>
       <Popover
         position="top"
-        content={<StaleCausesPopoverSummary causes={liveData.staleCauses} />}
+        content={<StaleCausesPopoverSummary causes={liveData.staleCauses} assetKey={assetKey} />}
         interactionKind="hover"
         className="chunk-popover-target"
       >
@@ -88,7 +88,7 @@ export const StaleReasonsTags = ({
       {Object.entries(groupedCauses(assetKey, include, liveData)).map(([label, causes]) => (
         <Popover
           key={label}
-          content={<StaleCausesPopoverSummary causes={causes} />}
+          content={<StaleCausesPopoverSummary causes={causes} assetKey={assetKey} />}
           position="top"
           interactionKind="hover"
           className="chunk-popover-target"
