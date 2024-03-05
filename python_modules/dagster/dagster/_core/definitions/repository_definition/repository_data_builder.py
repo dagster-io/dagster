@@ -23,7 +23,7 @@ from dagster._config.pythonic_config import (
     ResourceWithKeyMapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
@@ -457,7 +457,7 @@ def _process_and_validate_target(
 
 
 def _validate_auto_materialize_sensors(
-    sensors: Iterable[SensorDefinition], asset_graph: AssetGraph
+    sensors: Iterable[SensorDefinition], asset_graph: IAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
     sensor_names_by_asset_key: Dict[AssetKey, str] = {}

@@ -38,7 +38,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -661,7 +661,7 @@ def run_backfill_to_completion(
 
 
 def _requested_asset_partitions_in_run_request(
-    run_request: RunRequest, asset_graph: AssetGraph
+    run_request: RunRequest, asset_graph: IAssetGraph
 ) -> Set[AssetKeyPartitionKey]:
     asset_keys = run_request.asset_selection
     assert asset_keys is not None

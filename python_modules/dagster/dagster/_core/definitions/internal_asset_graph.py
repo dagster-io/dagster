@@ -2,7 +2,7 @@ from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph, AssetKeyOrCheckKey
+from dagster._core.definitions.asset_graph_interface import AssetKeyOrCheckKey, IAssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
@@ -20,7 +20,7 @@ from dagster._core.selector.subset_selector import DependencyGraph, generate_ass
 from dagster._utils.cached_method import cached_method
 
 
-class InternalAssetGraph(AssetGraph):
+class InternalAssetGraph(IAssetGraph):
     def __init__(
         self,
         assets_defs: Sequence[AssetsDefinition],

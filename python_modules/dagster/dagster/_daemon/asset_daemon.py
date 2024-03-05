@@ -18,7 +18,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -118,7 +118,7 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
 
 
 def _get_pre_sensor_auto_materialize_cursor(
-    instance: DagsterInstance, full_asset_graph: Optional[AssetGraph]
+    instance: DagsterInstance, full_asset_graph: Optional[IAssetGraph]
 ) -> AssetDaemonCursor:
     """Gets a deserialized cursor by either reading from the new cursor key and simply deserializing
     the value, or by reading from the old cursor key and converting the legacy cursor into the
@@ -179,7 +179,7 @@ def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCurso
 
 
 def asset_daemon_cursor_from_instigator_serialized_cursor(
-    serialized_cursor: Optional[str], asset_graph: Optional[AssetGraph]
+    serialized_cursor: Optional[str], asset_graph: Optional[IAssetGraph]
 ) -> AssetDaemonCursor:
     """This method decompresses the serialized cursor and returns a deserialized cursor object,
     converting from the legacy cursor format if necessary.

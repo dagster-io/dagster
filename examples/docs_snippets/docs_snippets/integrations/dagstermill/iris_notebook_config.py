@@ -1,5 +1,5 @@
 from dagster import asset
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 
 

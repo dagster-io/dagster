@@ -67,7 +67,7 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-class AssetGraph(ABC):
+class IAssetGraph(ABC):
     @property
     @abstractmethod
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]: ...
@@ -691,7 +691,7 @@ class AssetGraph(ABC):
 
 
 def sort_key_for_asset_partition(
-    asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey
+    asset_graph: IAssetGraph, asset_partition: AssetKeyPartitionKey
 ) -> float:
     """Returns an integer sort key such that asset partitions are sorted in the order in which they
     should be materialized. For assets without a time window partition dimension, this is always 0.
@@ -748,7 +748,7 @@ class ToposortedPriorityQueue:
 
     def __init__(
         self,
-        asset_graph: AssetGraph,
+        asset_graph: IAssetGraph,
         items: Iterable[AssetKeyPartitionKey],
         include_full_execution_set: bool,
     ):

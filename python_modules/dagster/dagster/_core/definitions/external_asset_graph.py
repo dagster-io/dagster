@@ -24,7 +24,7 @@ from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._utils.cached_method import cached_method
 
-from .asset_graph import AssetGraph, AssetKeyOrCheckKey
+from .asset_graph_interface import AssetKeyOrCheckKey, IAssetGraph
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     )
 
 
-class ExternalAssetGraph(AssetGraph):
+class ExternalAssetGraph(IAssetGraph):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, "ExternalAssetNode"],

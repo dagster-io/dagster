@@ -52,7 +52,7 @@ from dagster._core.definitions.asset_daemon_context import (
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -720,7 +720,7 @@ def with_auto_materialize_policy(
 
 def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
-    asset_graph: AssetGraph,
+    asset_graph: IAssetGraph,
     targeted_assets: Optional[AbstractSet[AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets

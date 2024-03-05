@@ -29,7 +29,7 @@ from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..asset_graph import AssetGraph
+from ..asset_graph_interface import IAssetGraph
 from ..asset_subset import AssetSubset, ValidAssetSubset
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ class AssetConditionEvaluationContext:
         return self.root_ref or self
 
     @property
-    def asset_graph(self) -> AssetGraph:
+    def asset_graph(self) -> IAssetGraph:
         return self.instance_queryer.asset_graph
 
     @property

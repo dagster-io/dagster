@@ -27,7 +27,7 @@ from dagster._core.definitions.asset_daemon_context import (
     build_run_requests,
     build_run_requests_with_backfill_policies,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -268,7 +268,7 @@ class AssetBackfillData(NamedTuple):
         return self.target_subset.get_partitions_subset(asset_key)
 
     def get_target_root_partitions_subset(
-        self, asset_graph: AssetGraph
+        self, asset_graph: IAssetGraph
     ) -> Optional[PartitionsSubset]:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
         target_partitioned_asset_keys = {
@@ -301,7 +301,7 @@ class AssetBackfillData(NamedTuple):
             return None
 
     def get_targeted_asset_keys_topological_order(
-        self, asset_graph: AssetGraph
+        self, asset_graph: IAssetGraph
     ) -> Sequence[AssetKey]:
         """Returns a topological ordering of asset keys targeted by the backfill
         that exist in the asset graph.
@@ -311,7 +311,7 @@ class AssetBackfillData(NamedTuple):
         return [k for k in asset_graph.toposorted_asset_keys if k in self.target_subset.asset_keys]
 
     def get_backfill_status_per_asset_key(
-        self, asset_graph: AssetGraph
+        self, asset_graph: IAssetGraph
     ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
         """Returns a list containing each targeted asset key's backfill status.
         This list orders assets topologically and only contains statuses for assets that are
@@ -407,7 +407,7 @@ class AssetBackfillData(NamedTuple):
         )
 
     @classmethod
-    def is_valid_serialization(cls, serialized: str, asset_graph: AssetGraph) -> bool:
+    def is_valid_serialization(cls, serialized: str, asset_graph: IAssetGraph) -> bool:
         storage_dict = json.loads(serialized)
         return AssetGraphSubset.can_deserialize(
             storage_dict["serialized_target_subset"], asset_graph
@@ -415,7 +415,7 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def from_serialized(
-        cls, serialized: str, asset_graph: AssetGraph, backfill_start_timestamp: float
+        cls, serialized: str, asset_graph: IAssetGraph, backfill_start_timestamp: float
     ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
@@ -440,7 +440,7 @@ class AssetBackfillData(NamedTuple):
     @classmethod
     def from_partitions_by_assets(
         cls,
-        asset_graph: AssetGraph,
+        asset_graph: IAssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
         backfill_start_time: datetime,
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
@@ -492,7 +492,7 @@ class AssetBackfillData(NamedTuple):
     @classmethod
     def from_asset_partitions(
         cls,
-        asset_graph: AssetGraph,
+        asset_graph: IAssetGraph,
         partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
@@ -554,7 +554,7 @@ class AssetBackfillData(NamedTuple):
         return cls.empty(target_subset, backfill_start_time, dynamic_partitions_store)
 
     def serialize(
-        self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: AssetGraph
+        self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: IAssetGraph
     ) -> str:
         storage_dict = {
             "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
@@ -763,7 +763,7 @@ def _submit_runs_and_update_backfill_in_chunks(
 
 def _check_target_partitions_subset_is_valid(
     asset_key: AssetKey,
-    asset_graph: AssetGraph,
+    asset_graph: IAssetGraph,
     target_partitions_subset: Optional[PartitionsSubset],
     instance_queryer: CachingInstanceQueryer,
 ) -> None:
@@ -823,7 +823,7 @@ def _check_target_partitions_subset_is_valid(
 def _check_validity_and_deserialize_asset_backfill_data(
     workspace_context: BaseWorkspaceRequestContext,
     backfill: "PartitionBackfill",
-    asset_graph: AssetGraph,
+    asset_graph: IAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> Optional[AssetBackfillData]:
