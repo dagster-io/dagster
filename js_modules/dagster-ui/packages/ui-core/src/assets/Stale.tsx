@@ -8,6 +8,7 @@ import {
   Colors,
   Icon,
   Popover,
+  Tag,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
@@ -127,7 +128,13 @@ function groupedCauses(
   return groupBy(all, (cause) => cause.label);
 }
 
-const StaleCausesPopoverSummary = ({causes}: {causes: LiveDataForNode['staleCauses']}) => (
+const StaleCausesPopoverSummary = ({
+  causes,
+  assetKey,
+}: {
+  causes: LiveDataForNode['staleCauses'];
+  assetKey: AssetKeyInput;
+}) => (
   <Box style={{width: '300px'}}>
     <Box padding={12} border="bottom" style={{fontWeight: 600}}>
       Changes since last materialization:
@@ -138,7 +145,7 @@ const StaleCausesPopoverSummary = ({causes}: {causes: LiveDataForNode['staleCaus
           <Link to={assetDetailsPathForKey(cause.key)}>
             <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono>
           </Link>
-          <StaleReason reason={cause.reason} dependency={cause.dependency} />
+          <StaleReason reason={cause.reason} dependency={cause.dependency} assetKey={assetKey} />
         </Box>
       ))}
     </Box>
@@ -148,29 +155,39 @@ const StaleCausesPopoverSummary = ({causes}: {causes: LiveDataForNode['staleCaus
 const StaleReason = ({
   reason,
   dependency,
+  assetKey,
 }: {
   reason: string;
   dependency: AssetNodeKeyFragment | null;
+  assetKey: AssetKeyInput;
 }) => {
-  if (!dependency) {
-    return <Caption>{` ${reason}`}</Caption>;
-  }
+  const innerContent = React.useMemo(() => {
+    if (!dependency) {
+      return <Caption>{` ${reason}`}</Caption>;
+    }
 
-  const dependencyName = displayNameForAssetKey(dependency);
-  const dependencyPythonName = dependencyName.replace(/ /g, '');
-  if (reason.endsWith(`${dependencyPythonName}`)) {
-    const reasonUpToDep = reason.slice(0, -dependencyPythonName.length);
+    const dependencyName = displayNameForAssetKey(dependency);
+    const dependencyPythonName = dependencyName.replace(/ /g, '');
+    if (reason.endsWith(`${dependencyPythonName}`)) {
+      const reasonUpToDep = reason.slice(0, -dependencyPythonName.length);
+      return (
+        <Caption>
+          {` ${reasonUpToDep}`}
+          <Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>
+        </Caption>
+      );
+    }
+
     return (
       <Caption>
-        {` ${reasonUpToDep}`}
-        <Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>
+        {` ${reason} `}(<Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>)
       </Caption>
     );
-  }
-
+  }, [dependency, reason]);
   return (
-    <Caption>
-      {` ${reason} `}(<Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>)
-    </Caption>
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+      <Tag icon="asset">{displayNameForAssetKey(assetKey)}</Tag>
+      {innerContent}
+    </Box>
   );
 };
