@@ -21,7 +21,13 @@ export const CollapsibleSection = ({
     <Box flex={{direction: 'column'}}>
       <Box
         {...headerWrapperProps}
-        flex={{direction: 'row', alignItems: 'center', gap: 6, ...(headerWrapperProps?.flex || {})}}
+        flex={{
+          direction: 'row',
+          alignItems: 'center',
+          gap: 6,
+          grow: 1,
+          ...(headerWrapperProps?.flex || {}),
+        }}
         onClick={() => {
           setIsCollapsed(!isCollapsed);
           headerWrapperProps?.onClick?.();
