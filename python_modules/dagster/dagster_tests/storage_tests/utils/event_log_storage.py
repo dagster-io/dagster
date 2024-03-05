@@ -4839,6 +4839,86 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == "fizbuz"
 
+    def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
+        if self.can_wipe():
+            storage.wipe()
+
+        for _ in range(2):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id="fizbuz",
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=AssetKey(["my_asset"]), check_name="my_check"
+                        ),
+                    ),
+                )
+            )
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Updated 2 rows for asset check evaluation",
+        ):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id="fizbuz",
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluation(
+                            asset_key=AssetKey(["my_asset"]),
+                            check_name="my_check",
+                            passed=True,
+                            metadata={},
+                            target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                                storage_id=42, run_id="fizbuz", timestamp=3.3
+                            ),
+                            severity=AssetCheckSeverity.ERROR,
+                        ),
+                    ),
+                )
+            )
+
+    def test_asset_check_evaluation_without_planned_event(self, storage: EventLogStorage):
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="fizbuz",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluation(
+                        asset_key=AssetKey(["my_asset"]),
+                        check_name="my_check",
+                        passed=True,
+                        metadata={},
+                        target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                            storage_id=42, run_id="fizbuz", timestamp=3.3
+                        ),
+                        severity=AssetCheckSeverity.ERROR,
+                    ),
+                ),
+            )
+        )
+
+        # since no planned event is logged, we don't create a row in the sumary table
+        assert not storage.get_asset_check_execution_history(
+            AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
+        )
+
     def test_external_asset_event(
         self,
         storage: EventLogStorage,
