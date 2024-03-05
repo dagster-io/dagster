@@ -7,6 +7,7 @@ import styled from 'styled-components';
 
 import {AssetGlobalLineageButton, AssetPageHeader} from './AssetPageHeader';
 import {ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
+import {FetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
@@ -15,6 +16,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {TagIcon} from '../graph/OpTags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
@@ -128,11 +130,11 @@ function getGreeting(timezone: string) {
 const CountForAssetType = ({children, assetsCount}: AssetOverviewCategoryProps) => {
   return (
     <Box
-      flex={{direction: 'row', justifyContent: 'space-between'}}
+      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
       style={{width: 'calc(33% - 16px)'}}
     >
-      <div>{children}</div>
-      <AssetCount>{assetsCount} assets</AssetCount>
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{children}</Box>
+      {assetsCount !== 0 && <AssetCount>{assetsCount} assets</AssetCount>}
     </Box>
   );
 };
@@ -201,6 +203,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
   const {
     timezone: [timezone],
   } = useContext(TimeContext);
+  const recentlyVisitedAssets = FetchRecentlyVisitedAssetsFromLocalStorage();
 
   if (assetsQuery.loading) {
     return (
@@ -239,6 +242,21 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
           </Box>
         </Box>
         <Box flex={{direction: 'column'}}>
+          {recentlyVisitedAssets.length > 0 && (
+            <>
+              <SectionHeader sectionName="Recently visited" />
+              <SectionBody>
+                {recentlyVisitedAssets.map((assetKey, idx) => (
+                  <CountForAssetType key={idx} assetsCount={0}>
+                    <Icon name="asset" />
+                    <Link to={`/assets/${assetKey.path.join('/')}`}>
+                      {displayNameForAssetKey(assetKey)}
+                    </Link>
+                  </CountForAssetType>
+                ))}
+              </SectionBody>
+            </>
+          )}
           {Object.keys(assetCountBySection.countsByOwner).length > 0 && (
             <>
               <SectionHeader sectionName="Owner" />
@@ -257,10 +275,8 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
               <SectionBody>
                 {Object.entries(assetCountBySection.countsByComputeKind).map(([label, count]) => (
                   <CountForAssetType key={label} assetsCount={count}>
-                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      <TagIcon label={label} />
-                      <Link to={linkToAssetGraphComputeKind(label)}>{label}</Link>
-                    </Box>
+                    <TagIcon label={label} />
+                    <Link to={linkToAssetGraphComputeKind(label)}>{label}</Link>
                   </CountForAssetType>
                 ))}
               </SectionBody>
@@ -275,15 +291,13 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     key={JSON.stringify(assetGroupCount.groupMetadata)}
                     assetsCount={assetGroupCount.assetCount}
                   >
-                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      <Icon name="asset_group" />
-                      <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
-                        {assetGroupCount.groupMetadata.groupName}
-                      </Link>
-                      <span style={{color: Colors.textLighter()}}>
-                        {assetGroupCount.groupMetadata.repositoryLocationName}
-                      </span>
-                    </Box>
+                    <Icon name="asset_group" />
+                    <Link to={linkToAssetGraphGroup(assetGroupCount.groupMetadata)}>
+                      {assetGroupCount.groupMetadata.groupName}
+                    </Link>
+                    <span style={{color: Colors.textLighter()}}>
+                      {assetGroupCount.groupMetadata.repositoryLocationName}
+                    </span>
                   </CountForAssetType>
                 ))}
               </SectionBody>
@@ -298,12 +312,10 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
                     key={repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
                     assetsCount={countPerCodeLocation.assetCount}
                   >
-                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      <Icon name="folder" />
-                      <Link to={linkToCodeLocation(countPerCodeLocation.repoAddress)}>
-                        {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
-                      </Link>
-                    </Box>
+                    <Icon name="folder" />
+                    <Link to={linkToCodeLocation(countPerCodeLocation.repoAddress)}>
+                      {repoAddressAsHumanString(countPerCodeLocation.repoAddress)}
+                    </Link>
                   </CountForAssetType>
                 ))}
               </SectionBody>
