@@ -96,7 +96,8 @@ def test_get_cached_partition_status_changed_time_partitions():
         return asset, asset_job, asset_graph
 
     with instance_for_test() as created_instance:
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
 
         asset_records = list(created_instance.get_asset_records([asset_key]))
         assert len(asset_records) == 0

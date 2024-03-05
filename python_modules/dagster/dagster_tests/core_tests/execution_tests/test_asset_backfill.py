@@ -543,7 +543,8 @@ def execute_asset_backfill_iteration_consume_generator(
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
-    traced_counter.set(Counter())
+    counter = Counter()
+    traced_counter.set(counter)
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
@@ -556,8 +557,7 @@ def execute_asset_backfill_iteration_consume_generator(
             backfill_start_time=asset_backfill_data.backfill_start_time,
         ):
             if isinstance(result, AssetBackfillIterationResult):
-                counts = traced_counter.get().counts()
-                assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
+                assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
                 return result
 
     assert False

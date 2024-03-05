@@ -15,7 +15,6 @@ import sys
 import tempfile
 import threading
 import time
-from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
 from signal import Signals
@@ -639,7 +638,7 @@ def dict_without_keys(ddict, *keys):
 class Counter:
     def __init__(self):
         self._lock = threading.Lock()
-        self._counts = OrderedDict()
+        self._counts = {}
         super(Counter, self).__init__()
 
     def increment(self, key: str):
@@ -652,7 +651,10 @@ class Counter:
         return copy
 
 
-traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
+traced_counter: contextvars.ContextVar[Optional[Counter]] = contextvars.ContextVar(
+    "traced_counts",
+    default=None,
+)
 
 T_Callable = TypeVar("T_Callable", bound=Callable)
 

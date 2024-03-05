@@ -1142,8 +1142,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_latest_materialization_per_partition(self, graphql_context: WorkspaceRequestContext):
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="d")
-
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
 
         selector = infer_job_selector(graphql_context, "partition_materialization_job")
 
@@ -1153,7 +1153,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"pipelineSelector": selector, "partitions": ["c", "d"]},
         )
 
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert counts.get("DagsterInstance.get_run_records") == 1
 
         assert result.data
@@ -1465,7 +1465,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 1
 
     def test_dynamic_partitions(self, graphql_context: WorkspaceRequestContext):
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         selector = infer_job_selector(graphql_context, "dynamic_partitioned_assets_job")
 
         def _get_materialized_partitions():
@@ -1494,7 +1495,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 result.data["assetNodes"][i]["partitionKeysByDimension"][0]["partitionKeys"] == []
             )
 
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         partitions = ["foo", "bar", "baz"]
@@ -1942,7 +1943,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert sorted_asset_nodes[3]["type"]["displayName"] == "Any"
 
     def test_batch_fetch_only_once(self, graphql_context: WorkspaceRequestContext):
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         result = execute_dagster_graphql(
             graphql_context,
             BATCH_LOAD_ASSETS,
@@ -1951,7 +1953,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result.data
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert len(counts) == 1
         assert counts.get("DagsterInstance.get_asset_records") == 1
 
@@ -2309,13 +2311,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "dynamic_in_multipartitions_success_job",
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
-        traced_counter.set(Counter())
+        counter = Counter()
+        traced_counter.set(counter)
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
             variables={"pipelineSelector": selector},
         )
-        counts = traced_counter.get().counts()
+        counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         assert result.data
