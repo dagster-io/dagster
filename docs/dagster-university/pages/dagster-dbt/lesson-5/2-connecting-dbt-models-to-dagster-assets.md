@@ -49,7 +49,7 @@ Open the `assets/dbt.py` file and do the following:
     
 4. Now, let’s fill in the `get_asset_key` method with our own logic for defining asset keys.
     
-   1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model or source) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
+   1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model, source, seed, snapshot) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
        
       ```python
          @classmethod
