@@ -99,12 +99,12 @@ The following table contains the environment variables we need to create in Dags
 ---
 
 - `DUCKDB_DATABASE`
-- todo
+- The service token for a Motherduck database, formatted as `md:?motherduck_token=<insert_token_here>`. Refer to the [Motherduck documentation](https://motherduck.com/docs/authenticating-to-motherduck/#authentication-using-a-service-token) for more info.
 
 ---
 
 - `DAGSTER_ENVIRONMENT`
-- Set this to `prod`
+- Set this to `prod`.
 
 ---
 
