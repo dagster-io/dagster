@@ -50,7 +50,21 @@ class PointToPointInstrumentation {
     if (process.env.NODE_ENV === 'development') {
       console.log(`Finished trace ${traceId}`, trace);
     }
+    if (_listeners.length) {
+      _listeners.forEach((listener) => listener(trace));
+    }
   }
+}
+
+const _listeners: Array<(trace: TraceData) => void> = [];
+export function registerTraceListener(listener: (trace: TraceData) => void) {
+  _listeners.push(listener);
+  return () => {
+    const idx = _listeners.indexOf(listener);
+    if (idx !== -1) {
+      _listeners.splice(idx, 1);
+    }
+  };
 }
 
 const instrumentation = new PointToPointInstrumentation();
