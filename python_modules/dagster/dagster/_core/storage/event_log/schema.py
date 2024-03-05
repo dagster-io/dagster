@@ -193,6 +193,8 @@ db.Index(
     },
 )
 
+# This index doesn't enforce the uniqueness how we want it to because partition and run_id can be
+# null. Postgres and other dbms's consider each null value distinct.
 db.Index(
     "idx_asset_check_executions_unique",
     AssetCheckExecutionsTable.c.asset_key,
