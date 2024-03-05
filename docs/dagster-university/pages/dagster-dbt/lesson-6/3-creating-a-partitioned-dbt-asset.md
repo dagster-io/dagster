@@ -191,12 +191,10 @@ def incremental_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
 
 Finally, we’ll modify the `daily_metrics.sql` file to reflect that dbt knows what partition range is being materialized. Since the partition range is passed in as variables at runtime, the dbt model can access them using the `var` dbt macro.
 
-In `analytics/models/marts/daily_metrics.sql`, update the model's incremental logic to the following:
+In `analytics/models/marts/daily_metrics.sql`, update the contents of the model's incremental logic (`% if is_incremental %}`) to the following:
 
 ```sql
-{% if is_incremental() %}
-    where date_of_business >= strptime('{{ var('min_date') }}', '%c') and date_of_business < strptime('{{ var('max_date') }}', '%c')
-{% endif %}
+where date_of_business >= strptime('{{ var('min_date') }}', '%c') and date_of_business < strptime('{{ var('max_date') }}', '%c')
 ```
 
 Here, we’ve changed the logic to say that we only want to select rows between the `min_date` and the `max_date`. Note that we are turning the variables into timestamps using `strptime` because they’re loaded as strings.
