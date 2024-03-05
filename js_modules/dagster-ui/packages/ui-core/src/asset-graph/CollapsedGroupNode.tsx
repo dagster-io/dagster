@@ -221,7 +221,7 @@ export const useGroupNodeContextMenu = ({
       />
       <MenuItem
         icon="changes_present"
-        text="Materialize changed and missing"
+        text="Materialize outdated and missing"
         onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
       />
       {onFilterToGroup ? (

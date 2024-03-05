@@ -175,7 +175,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
     };
     return (
       <>
-        <Dialog isOpen={isOpen} onClose={onClose} title="Materialize changed and missing assets">
+        <Dialog isOpen={isOpen} onClose={onClose} title="Materialize outdated and missing assets">
           <DialogBody>{content()}</DialogBody>
           <DialogFooter topBorder>
             {loading ? (
