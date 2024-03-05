@@ -24,8 +24,8 @@ if TYPE_CHECKING:
         PartitionsDefinition,
         ResourceDefinition,
     )
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -176,7 +176,7 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        asset_graph: "InternalAssetGraph",
+        asset_graph: "AssetGraph",
         default_executor_def: Optional["ExecutorDefinition"] = None,
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":

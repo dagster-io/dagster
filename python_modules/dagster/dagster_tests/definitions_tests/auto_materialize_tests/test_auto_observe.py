@@ -6,8 +6,8 @@ from dagster._core.definitions.asset_daemon_context import (
     get_auto_observe_run_requests,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from pytest import fixture
 
 
@@ -15,7 +15,7 @@ def test_single_observable_source_asset_no_auto_observe():
     @observable_source_asset
     def asset1(): ...
 
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
 
     assert (
         len(
@@ -50,7 +50,7 @@ def single_auto_observe_asset_graph(request):
     def asset1(): ...
 
     observable = create_external_asset_from_source_asset(asset1) if request.param else asset1
-    asset_graph = InternalAssetGraph.from_assets([observable])
+    asset_graph = AssetGraph.from_assets([observable])
     return asset_graph
 
 
@@ -105,7 +105,7 @@ def test_reconcile():
     @observable_source_asset(auto_observe_interval_minutes=30)
     def asset1(): ...
 
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()
 
     run_requests, cursor, _ = AssetDaemonContext(

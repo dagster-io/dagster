@@ -52,6 +52,7 @@ from dagster._core.definitions.asset_daemon_context import (
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -65,7 +66,6 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
@@ -194,7 +194,7 @@ class AssetReconciliationScenario(
             or isinstance(a, SourceAsset)
             for a in assets
         ):
-            asset_graph = InternalAssetGraph.from_assets(assets, asset_checks=asset_checks)
+            asset_graph = AssetGraph.from_assets(assets, asset_checks=asset_checks)
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
                 if asset_selection is not None

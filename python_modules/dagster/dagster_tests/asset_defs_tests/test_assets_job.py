@@ -35,12 +35,12 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
@@ -1366,7 +1366,7 @@ dbt_asset_def = AssetsDefinition(
 )
 
 my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
-    asset_graph=InternalAssetGraph.from_assets(
+    asset_graph=AssetGraph.from_assets(
         with_resources(
             [dbt_asset_def, fivetran_asset],
             resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
@@ -1431,7 +1431,7 @@ def test_job_preserved_with_asset_subset():
         },
         description="my cool job",
         tags={"yay": 1},
-    ).resolve(asset_graph=InternalAssetGraph.from_assets([asset_one, two, three]))
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_one, two, three]))
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1456,7 +1456,7 @@ def test_job_default_config_preserved_with_asset_subset():
         assert context.op_execution_context.op_config["baz"] == 3
 
     foo_job = define_asset_job("foo_job").resolve(
-        asset_graph=InternalAssetGraph.from_assets([asset_one, two, three])
+        asset_graph=AssetGraph.from_assets([asset_one, two, three])
     )
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
@@ -1476,7 +1476,7 @@ def test_empty_asset_job():
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
-        asset_graph=InternalAssetGraph.from_assets([a, b])
+        asset_graph=AssetGraph.from_assets([a, b])
     )
     assert empty_job.all_node_defs == []
 

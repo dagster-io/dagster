@@ -24,13 +24,13 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
@@ -62,7 +62,7 @@ def to_external_asset_graph(assets, asset_checks=None) -> IAssetGraph:
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets", params=[InternalAssetGraph.from_assets, to_external_asset_graph]
+    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
 )
 def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], IAssetGraph]:
     return request.param
@@ -321,7 +321,7 @@ def test_custom_unsupported_partition_mapping():
         )
         def child(parent): ...
 
-    internal_asset_graph = InternalAssetGraph.from_assets([parent, child])
+    internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:

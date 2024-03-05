@@ -14,7 +14,7 @@ from dagster import (
     asset,
     define_asset_job,
 )
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.events import (
     AssetMaterializationPlannedData,
@@ -42,7 +42,7 @@ def test_get_cached_status_unpartitioned():
     def asset1():
         return 1
 
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     asset_key = AssetKey("asset1")
@@ -86,12 +86,12 @@ def test_get_cached_partition_status_changed_time_partitions():
         return 1
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
         asset._partitions_def = new_partitions_def  # noqa: SLF001
-        asset_graph = InternalAssetGraph.from_assets([asset])
+        asset_graph = AssetGraph.from_assets([asset])
         asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         return asset, asset_job, asset_graph
 
@@ -136,12 +136,12 @@ def test_get_cached_partition_status_by_asset():
         return 1
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
         asset._partitions_def = new_partitions_def  # noqa: SLF001
-        asset_graph = InternalAssetGraph.from_assets([asset])
+        asset_graph = AssetGraph.from_assets([asset])
         asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         return asset, asset_job, asset_graph
 
@@ -222,7 +222,7 @@ def test_multipartition_get_cached_partition_status():
         return 1
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -278,7 +278,7 @@ def test_cached_status_on_wipe():
         return 1
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -310,7 +310,7 @@ def test_dynamic_partitions_status_not_cached():
         return 1
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -335,7 +335,7 @@ def test_failure_cache():
             raise Exception()
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -453,7 +453,7 @@ def test_failure_cache_added():
             raise Exception()
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -487,7 +487,7 @@ def test_failure_cache_in_progress_runs():
             raise Exception()
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -581,7 +581,7 @@ def test_cache_cancelled_runs():
             raise Exception()
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -682,7 +682,7 @@ def test_failure_cache_concurrent_materializations():
             raise Exception()
 
     asset_key = AssetKey("asset1")
-    asset_graph = InternalAssetGraph.from_assets([asset1])
+    asset_graph = AssetGraph.from_assets([asset1])
     define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
@@ -758,7 +758,7 @@ def test_failed_partitioned_asset_converted_to_multipartitioned():
         raise Exception("oops")
 
     with instance_for_test() as created_instance:
-        asset_graph = InternalAssetGraph.from_assets([my_asset])
+        asset_graph = AssetGraph.from_assets([my_asset])
         my_job = define_asset_job("asset_job", partitions_def=daily_def).resolve(
             asset_graph=asset_graph
         )
@@ -773,7 +773,7 @@ def test_failed_partitioned_asset_converted_to_multipartitioned():
                 "b": StaticPartitionsDefinition(["a", "b"]),
             }
         )
-        asset_graph = InternalAssetGraph.from_assets([my_asset])
+        asset_graph = AssetGraph.from_assets([my_asset])
         my_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         asset_key = AssetKey("my_asset")
 

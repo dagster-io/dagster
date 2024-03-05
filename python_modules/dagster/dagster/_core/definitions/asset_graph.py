@@ -20,7 +20,7 @@ from dagster._core.selector.subset_selector import DependencyGraph, generate_ass
 from dagster._utils.cached_method import cached_method
 
 
-class InternalAssetGraph(IAssetGraph):
+class AssetGraph(IAssetGraph):
     def __init__(
         self,
         assets_defs: Sequence[AssetsDefinition],
@@ -104,9 +104,9 @@ class InternalAssetGraph(IAssetGraph):
         cls,
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
-    ) -> "InternalAssetGraph":
+    ) -> "AssetGraph":
         assets_defs = cls.normalize_assets(all_assets)
-        return InternalAssetGraph(
+        return AssetGraph(
             assets_defs=assets_defs,
             asset_checks_defs=asset_checks or [],
         )

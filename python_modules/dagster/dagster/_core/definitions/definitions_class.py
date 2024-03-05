@@ -18,9 +18,9 @@ from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -570,6 +570,6 @@ class Definitions:
         """
         return self._created_pending_or_normal_repo
 
-    def get_asset_graph(self) -> InternalAssetGraph:
+    def get_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
