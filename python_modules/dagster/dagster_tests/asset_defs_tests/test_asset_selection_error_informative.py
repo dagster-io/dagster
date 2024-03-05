@@ -9,8 +9,7 @@ from dagster._core.errors import DagsterInvalidSubsetError
 @pytest.mark.parametrize("asset_key_prefix", [[], ["my_prefix"]])
 def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
     @asset(group_name=group_name, key_prefix=asset_key_prefix)
-    def asset1():
-        ...
+    def asset1(): ...
 
     my_job = define_asset_job("my_job", selection=AssetSelection.keys(asset_key_prefix + ["asst1"]))
 
@@ -24,8 +23,7 @@ def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
 
 def test_typo_asset_selection_no_similar() -> None:
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     my_job = define_asset_job("my_job", selection=AssetSelection.keys("not_close_to_asset1"))
 
@@ -39,16 +37,13 @@ def test_typo_asset_selection_no_similar() -> None:
 
 def test_typo_asset_selection_many_similar() -> None:
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def assets1():
-        ...
+    def assets1(): ...
 
     @asset
-    def asst():
-        ...
+    def asst(): ...
 
     my_job = define_asset_job("my_job", selection=AssetSelection.keys("asst1"))
 
@@ -66,8 +61,7 @@ def test_typo_asset_selection_many_similar() -> None:
 
 def test_typo_asset_selection_wrong_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     my_job = define_asset_job("my_job", selection=AssetSelection.keys(["my", "prfix", "asset1"]))
 
@@ -83,8 +77,7 @@ def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
     # In the case that the user has a typo in the key and the prefix, we don't suggest the asset since it's too different.
 
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     my_job = define_asset_job("my_job", selection=AssetSelection.keys(["my", "prfix", "asset4"]))
 
@@ -98,8 +91,7 @@ def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
 
 def test_one_off_component_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     # One more component in the prefix
     my_job = define_asset_job(
