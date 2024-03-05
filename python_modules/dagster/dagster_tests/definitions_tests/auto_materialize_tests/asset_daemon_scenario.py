@@ -220,8 +220,7 @@ class AssetSpecWithPartitionsDef(
         AssetSpec._fields + ("partitions_def",),
         defaults=(None,) * (1 + len(AssetSpec._fields)),
     )
-):
-    ...
+): ...
 
 
 class MultiAssetSpec(NamedTuple):

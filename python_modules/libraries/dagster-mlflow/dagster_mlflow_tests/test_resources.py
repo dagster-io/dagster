@@ -1,5 +1,4 @@
-"""Unit testing the Mlflow class.
-"""
+"""Unit testing the Mlflow class."""
 
 import logging
 import random

@@ -229,8 +229,7 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
             super().__init__()
 
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        ...
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator): ...
 
     class CustomDagsterDbtTranslatorWithPassThrough(DagsterDbtTranslator):
         def __init__(self, test_arg: str, *args, **kwargs):

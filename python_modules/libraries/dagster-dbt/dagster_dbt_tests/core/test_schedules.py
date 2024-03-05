@@ -52,8 +52,7 @@ def test_dbt_build_schedule(
     default_status: DefaultScheduleStatus,
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(): ...
 
     test_daily_schedule = build_schedule_from_dbt_selection(
         [my_dbt_assets],

@@ -302,9 +302,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[
-        AssetsDefinition, SourceAsset
-    ] = assets_with_partitions_defs[0]
+    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
+        assets_with_partitions_defs[0]
+    )
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()
@@ -345,9 +345,9 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
                 NodeOutputHandle(node_handle, output_name=output_name)
             ] = check_spec
 
-    blocking_asset_check_output_handles_by_asset_key: Dict[
-        AssetKey, Set[NodeOutputHandle]
-    ] = defaultdict(set)
+    blocking_asset_check_output_handles_by_asset_key: Dict[AssetKey, Set[NodeOutputHandle]] = (
+        defaultdict(set)
+    )
     for node_output_handle, check_spec in check_specs_by_node_output_handle.items():
         if check_spec.blocking:
             blocking_asset_check_output_handles_by_asset_key[check_spec.asset_key].add(

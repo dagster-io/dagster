@@ -172,8 +172,7 @@ def new_resource_runtime() -> "Definitions":
     class DatabaseResource(ConfigurableResource):
         table: str
 
-        def read(self):
-            ...
+        def read(self): ...
 
     @asset
     def data_from_database(db_conn: DatabaseResource):
@@ -666,12 +665,10 @@ def with_complex_state_example() -> None:
     class DBConnection:
         ...
 
-        def query(self, body: str):
-            ...
+        def query(self, body: str): ...
 
     @contextmanager  # type: ignore
-    def get_database_connection(username: str, password: str):
-        ...
+    def get_database_connection(username: str, password: str): ...
 
     class MyClientResource(ConfigurableResource):
         username: str
@@ -708,8 +705,7 @@ def new_resource_testing_with_state_ops() -> None:
     class MyClient:
         ...
 
-        def query(self, body: str):
-            ...
+        def query(self, body: str): ...
 
     class MyClientResource(ConfigurableResource):
         username: str
@@ -757,8 +753,7 @@ def new_resource_on_sensor() -> None:
             return requests.get(self.url).json()
 
     @job
-    def process_user():
-        ...
+    def process_user(): ...
 
     @sensor(job=process_user)
     def process_new_users_sensor(
@@ -821,8 +816,7 @@ def new_resource_on_schedule() -> None:
             return dt.strftime(self.format)
 
     @job
-    def process_data():
-        ...
+    def process_data(): ...
 
     @schedule(job=process_data, cron_schedule="* * * * *")
     def process_data_schedule(

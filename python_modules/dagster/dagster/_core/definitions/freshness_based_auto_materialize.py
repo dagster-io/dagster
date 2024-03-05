@@ -7,6 +7,7 @@
     i.e. it`s late enough to pull in the required data time, and early enough to not go over the
     maximum lag minutes.
 """
+
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 

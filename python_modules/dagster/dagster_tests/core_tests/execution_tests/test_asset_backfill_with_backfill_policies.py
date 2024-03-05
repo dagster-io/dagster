@@ -500,8 +500,7 @@ def test_dynamic_partitions_multi_run_backfill_policy():
         backfill_policy=BackfillPolicy.multi_run(),
         partitions_def=DynamicPartitionsDefinition(name="apple"),
     )
-    def asset1() -> None:
-        ...
+    def asset1() -> None: ...
 
     assets_by_repo_name = {"repo": [asset1]}
     asset_graph = get_asset_graph(assets_by_repo_name)
@@ -543,8 +542,7 @@ def test_dynamic_partitions_single_run_backfill_policy():
         backfill_policy=BackfillPolicy.single_run(),
         partitions_def=DynamicPartitionsDefinition(name="apple"),
     )
-    def asset1() -> None:
-        ...
+    def asset1() -> None: ...
 
     assets_by_repo_name = {"repo": [asset1]}
     asset_graph = get_asset_graph(assets_by_repo_name)

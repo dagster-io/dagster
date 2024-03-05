@@ -88,8 +88,7 @@ def test_config_annotation_no_config_schema_err() -> None:
     ):
 
         @configured(do_something, config_schema={"simplified_param": str})
-        def do_something_simplified(config_in: DoSomethingSimplifiedConfig):
-            ...
+        def do_something_simplified(config_in: DoSomethingSimplifiedConfig): ...
 
 
 def test_config_annotation_extra_param_err() -> None:
@@ -110,5 +109,4 @@ def test_config_annotation_extra_param_err() -> None:
     ):
 
         @configured(do_something)
-        def do_something_simplified(config_in: DoSomethingSimplifiedConfig, useless_param: str):
-            ...
+        def do_something_simplified(config_in: DoSomethingSimplifiedConfig, useless_param: str): ...

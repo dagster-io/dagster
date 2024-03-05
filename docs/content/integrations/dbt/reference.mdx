@@ -179,8 +179,7 @@ In this example, we use the <PyObject module="dagster_dbt" object="build_schedul
 from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets():
-    ...
+def my_dbt_assets(): ...
 
 daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
     [my_dbt_assets],
@@ -199,8 +198,7 @@ from dagster import define_asset_job, ScheduleDefinition
 from dagster_dbt import build_dbt_asset_selection, dbt_assets
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets():
-    ...
+def my_dbt_assets(): ...
 
 # selects all models tagged with "daily", and all their downstream asset dependencies
 daily_selection = build_dbt_asset_selection(
@@ -589,8 +587,7 @@ Dagster allows you to define existing assets as upstream dependencies of dbt mod
 from dagster import asset
 
 @asset
-def upstream():
-    ...
+def upstream(): ...
 ```
 
 In order to define this asset as an upstream dependency for a dbt model, you'll need to first declare it as a [data source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) in the `sources.yml` file. Here, you can explicitly provide your asset key to a source table:
@@ -643,8 +640,7 @@ from dagster import asset, AssetExecutionContext
 from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
 
 @dbt_assets(manifest=MANIFEST_PATH)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    ...
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource): ...
 
 @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
 def orders():
@@ -692,8 +688,7 @@ from dagster_dbt import get_asset_key_for_model
 from dagster import asset
 
 @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
-def my_downstream_asset():
-    ...
+def my_downstream_asset(): ...
 ```
 
 In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.

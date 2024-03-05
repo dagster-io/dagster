@@ -12,6 +12,7 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readable, etc) just handle the json case effectively.
 """
+
 import collections.abc
 import dataclasses
 from abc import ABC, abstractmethod
@@ -236,8 +237,7 @@ T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
-def whitelist_for_serdes(__cls: T_Type) -> T_Type:
-    ...
+def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 
 
 @overload
@@ -252,8 +252,7 @@ def whitelist_for_serdes(
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     is_pickleable: bool = True,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
@@ -536,8 +535,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.field_serializers = field_serializers or {}
 
     @abstractmethod
-    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]:
-        ...
+    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]: ...
 
     def unpack(
         self,
@@ -638,8 +636,7 @@ class ObjectSerializer(Serializer, Generic[T]):
 
     @property
     @abstractmethod
-    def constructor_param_names(self) -> Sequence[str]:
-        ...
+    def constructor_param_names(self) -> Sequence[str]: ...
 
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__
@@ -700,8 +697,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: UnpackedValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        ...
+    ) -> PackableValue: ...
 
     @abstractmethod
     def pack(
@@ -709,8 +705,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> JsonSerializableValue:
-        ...
+    ) -> JsonSerializableValue: ...
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
@@ -752,8 +747,7 @@ def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> T_Scalar:
-    ...
+) -> T_Scalar: ...
 
 
 @overload  # for all the types that serialize to JSON object
@@ -769,8 +763,7 @@ def pack_value(
     ],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Mapping[str, JsonSerializableValue]:
-    ...
+) -> Mapping[str, JsonSerializableValue]: ...
 
 
 @overload
@@ -778,8 +771,7 @@ def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Sequence[JsonSerializableValue]:
-    ...
+) -> Sequence[JsonSerializableValue]: ...
 
 
 def pack_value(
@@ -899,8 +891,7 @@ def deserialize_value(
     val: str,
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -908,8 +899,7 @@ def deserialize_value(
     val: str,
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -917,8 +907,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def deserialize_value(
@@ -1016,8 +1005,7 @@ def unpack_value(
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -1026,8 +1014,7 @@ def unpack_value(
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -1036,8 +1023,7 @@ def unpack_value(
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def unpack_value(

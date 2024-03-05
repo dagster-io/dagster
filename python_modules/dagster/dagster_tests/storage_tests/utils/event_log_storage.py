@@ -4920,8 +4920,7 @@ class TestEventLogStorage:
         )
         assert len(storage.get_logs_for_run(test_run_id)) == 1
 
-        class BlowUp(Exception):
-            ...
+        class BlowUp(Exception): ...
 
         # now try to delete
         with pytest.raises(BlowUp):

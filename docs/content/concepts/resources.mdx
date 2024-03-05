@@ -196,8 +196,7 @@ from dagster import ConfigurableResource, Definitions, asset
 class DatabaseResource(ConfigurableResource):
     table: str
 
-    def read(self):
-        ...
+    def read(self): ...
 
 @asset
 def data_from_database(db_conn: DatabaseResource):
@@ -348,12 +347,10 @@ from pydantic import PrivateAttr
 class DBConnection:
     ...
 
-    def query(self, body: str):
-        ...
+    def query(self, body: str): ...
 
 @contextmanager
-def get_database_connection(username: str, password: str):
-    ...
+def get_database_connection(username: str, password: str): ...
 
 class MyClientResource(ConfigurableResource):
     username: str

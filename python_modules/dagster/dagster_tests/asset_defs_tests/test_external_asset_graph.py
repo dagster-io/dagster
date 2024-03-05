@@ -33,16 +33,14 @@ from dagster._core.workspace.workspace import (
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 defs1 = Definitions(assets=[asset1])
 
 
 @asset
-def asset2():
-    ...
+def asset2(): ...
 
 
 defs2 = Definitions(assets=[asset2])
@@ -60,8 +58,7 @@ downstream_defs = Definitions(assets=[asset1_source, downstream])
 
 
 @asset(deps=[asset1])
-def downstream_non_arg_dep():
-    ...
+def downstream_non_arg_dep(): ...
 
 
 downstream_defs_no_source = Definitions(assets=[downstream_non_arg_dep])
@@ -441,13 +438,11 @@ def test_cycle_status(instance):
 
 
 @asset
-def single_materializable_asset():
-    ...
+def single_materializable_asset(): ...
 
 
 @observable_source_asset
-def single_observable_asset():
-    ...
+def single_observable_asset(): ...
 
 
 dup_materialization_defs_a = Definitions(assets=[single_materializable_asset])

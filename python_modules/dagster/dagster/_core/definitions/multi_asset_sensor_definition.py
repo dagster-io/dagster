@@ -140,12 +140,12 @@ class MultiAssetSensorContextCursor:
                 break
             else:
                 partition_key, event_id, trailing_unconsumed_partitioned_event_ids = cursor_list
-                self._cursor_component_by_asset_key[
-                    str_asset_key
-                ] = MultiAssetSensorAssetCursorComponent(
-                    latest_consumed_event_partition=partition_key,
-                    latest_consumed_event_id=event_id,
-                    trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
+                self._cursor_component_by_asset_key[str_asset_key] = (
+                    MultiAssetSensorAssetCursorComponent(
+                        latest_consumed_event_partition=partition_key,
+                        latest_consumed_event_id=event_id,
+                        trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
+                    )
                 )
 
                 self.initial_latest_consumed_event_ids_by_asset_key[str_asset_key] = event_id
@@ -419,9 +419,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 and record.asset_entry.last_materialization_record.storage_id
                 > (self._get_cursor(record.asset_entry.asset_key).latest_consumed_event_id or 0)
             ):
-                asset_event_records[
-                    record.asset_entry.asset_key
-                ] = record.asset_entry.last_materialization_record
+                asset_event_records[record.asset_entry.asset_key] = (
+                    record.asset_entry.last_materialization_record
+                )
 
         return asset_event_records
 
@@ -806,9 +806,9 @@ class MultiAssetSensorCursorAdvances:
             if materialization:
                 self._advanced_record_ids_by_key[asset_key].add(materialization.storage_id)
 
-                self._partition_key_by_record_id[
-                    materialization.storage_id
-                ] = materialization.partition_key
+                self._partition_key_by_record_id[materialization.storage_id] = (
+                    materialization.partition_key
+                )
 
     def get_cursor_with_advances(
         self,

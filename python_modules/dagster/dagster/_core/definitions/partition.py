@@ -940,13 +940,11 @@ class PartitionsSubset(ABC, Generic[T_str]):
         partitions_def: PartitionsDefinition[T_str],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Iterable[T_str]:
-        ...
+    ) -> Iterable[T_str]: ...
 
     @abstractmethod
     @public
-    def get_partition_keys(self) -> Iterable[T_str]:
-        ...
+    def get_partition_keys(self) -> Iterable[T_str]: ...
 
     @abstractmethod
     def get_partition_key_ranges(
@@ -954,12 +952,10 @@ class PartitionsSubset(ABC, Generic[T_str]):
         partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[PartitionKeyRange]:
-        ...
+    ) -> Sequence[PartitionKeyRange]: ...
 
     @abstractmethod
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]":
-        ...
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]": ...
 
     def with_partition_key_range(
         self,
@@ -993,15 +989,13 @@ class PartitionsSubset(ABC, Generic[T_str]):
         )
 
     @abstractmethod
-    def serialize(self) -> str:
-        ...
+    def serialize(self) -> str: ...
 
     @classmethod
     @abstractmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition[T_str], serialized: str
-    ) -> "PartitionsSubset[T_str]":
-        ...
+    ) -> "PartitionsSubset[T_str]": ...
 
     @classmethod
     @abstractmethod
@@ -1011,23 +1005,19 @@ class PartitionsSubset(ABC, Generic[T_str]):
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
     @abstractmethod
-    def __contains__(self, value) -> bool:
-        ...
+    def __contains__(self, value) -> bool: ...
 
     @classmethod
     @abstractmethod
     def empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> "PartitionsSubset[T_str]":
-        ...
+    ) -> "PartitionsSubset[T_str]": ...
 
     def to_serializable_subset(self) -> "PartitionsSubset":
         return self

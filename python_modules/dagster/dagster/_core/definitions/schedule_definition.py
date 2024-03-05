@@ -608,9 +608,9 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[
-                Union[Callable[..., Any], DecoratedScheduleFunction]
-            ] = None
+            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
+                None
+            )
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:

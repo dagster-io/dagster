@@ -1625,16 +1625,13 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     SERIALIZATION_VERSION = 1
 
     @abstractproperty
-    def included_time_windows(self) -> Sequence[TimeWindow]:
-        ...
+    def included_time_windows(self) -> Sequence[TimeWindow]: ...
 
     @abstractproperty
-    def num_partitions(self) -> int:
-        ...
+    def num_partitions(self) -> int: ...
 
     @abstractproperty
-    def partitions_def(self) -> TimeWindowPartitionsDefinition:
-        ...
+    def partitions_def(self) -> TimeWindowPartitionsDefinition: ...
 
     def _get_partition_time_windows_not_in_subset(
         self,
@@ -1704,22 +1701,18 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         return partition_keys
 
     @abstractproperty
-    def first_start(self) -> datetime:
-        ...
+    def first_start(self) -> datetime: ...
 
     @abstractproperty
-    def is_empty(self) -> bool:
-        ...
+    def is_empty(self) -> bool: ...
 
     @abstractmethod
-    def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool:
-        ...
+    def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool: ...
 
     @abstractmethod
     def with_partitions_def(
         self, partitions_def: TimeWindowPartitionsDefinition
-    ) -> "BaseTimeWindowPartitionsSubset":
-        ...
+    ) -> "BaseTimeWindowPartitionsSubset": ...
 
     def get_partition_key_ranges(
         self,

@@ -30,8 +30,7 @@ from dagster._core.definitions.source_asset import (
 
 
 @overload
-def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAsset:
-    ...
+def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAsset: ...
 
 
 @overload
@@ -51,8 +50,7 @@ def observable_source_asset(
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-) -> "_ObservableSourceAsset":
-    ...
+) -> "_ObservableSourceAsset": ...
 
 
 @experimental

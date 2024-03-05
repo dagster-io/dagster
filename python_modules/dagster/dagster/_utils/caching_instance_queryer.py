@@ -501,10 +501,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             before_cursor not in self._asset_partitions_cache
             or asset_key not in self._asset_partitions_cache[before_cursor]
         ):
-            self._asset_partitions_cache[before_cursor][
-                asset_key
-            ] = self.instance.get_materialized_partitions(
-                asset_key=asset_key, before_cursor=before_cursor
+            self._asset_partitions_cache[before_cursor][asset_key] = (
+                self.instance.get_materialized_partitions(
+                    asset_key=asset_key, before_cursor=before_cursor
+                )
             )
 
         return self._asset_partitions_cache[before_cursor][asset_key]
@@ -516,9 +516,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Returns a list of partitions for a partitions definition."""
         if partitions_def_name not in self._dynamic_partitions_cache:
-            self._dynamic_partitions_cache[
-                partitions_def_name
-            ] = self.instance.get_dynamic_partitions(partitions_def_name)
+            self._dynamic_partitions_cache[partitions_def_name] = (
+                self.instance.get_dynamic_partitions(partitions_def_name)
+            )
         return self._dynamic_partitions_cache[partitions_def_name]
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
@@ -749,9 +749,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         }
         # keep track of the maximum storage id at which an asset partition was updated after
         for asset_partition in queryed_updated_asset_partitions:
-            self._asset_partition_versions_updated_after_cursor_cache[
-                asset_partition
-            ] = after_cursor
+            self._asset_partition_versions_updated_after_cursor_cache[asset_partition] = (
+                after_cursor
+            )
         return {*updated_asset_partitions, *queryed_updated_asset_partitions}
 
     def get_asset_partitions_updated_after_cursor(

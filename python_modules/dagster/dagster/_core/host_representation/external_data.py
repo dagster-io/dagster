@@ -3,6 +3,7 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -660,8 +661,7 @@ class ExternalExecutionParamsErrorData(
 
 class ExternalPartitionsDefinitionData(ABC):
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition:
-        ...
+    def get_partitions_definition(self) -> PartitionsDefinition: ...
 
 
 @whitelist_for_serdes
@@ -1565,9 +1565,9 @@ def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
     assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
 ) -> Sequence[ExternalAssetNode]:
-    node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
-    ] = defaultdict(list)
+    node_defs_by_asset_key: Dict[AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]] = (
+        defaultdict(list)
+    )
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, RawMetadataMapping] = dict()

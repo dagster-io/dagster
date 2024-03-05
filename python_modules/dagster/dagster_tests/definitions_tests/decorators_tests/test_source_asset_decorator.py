@@ -54,29 +54,25 @@ def test_no_context_observable_asset():
 
 def test_key_and_name_args():
     @observable_source_asset(key=["apple", "banana"])
-    def key_specified():
-        ...
+    def key_specified(): ...
 
     assert key_specified.key == AssetKey(["apple", "banana"])
     assert key_specified.op.name == "apple__banana"
 
     @observable_source_asset(key_prefix=["apple", "banana"])
-    def key_prefix_specified():
-        ...
+    def key_prefix_specified(): ...
 
     assert key_prefix_specified.key == AssetKey(["apple", "banana", "key_prefix_specified"])
     assert key_prefix_specified.op.name == "apple__banana__key_prefix_specified"
 
     @observable_source_asset(name="peach")
-    def name_specified():
-        ...
+    def name_specified(): ...
 
     assert name_specified.key == AssetKey(["peach"])
     assert name_specified.op.name == "peach"
 
     @observable_source_asset(key_prefix=["apple", "banana"], name="peach")
-    def key_prefix_and_name_specified():
-        ...
+    def key_prefix_and_name_specified(): ...
 
     assert key_prefix_and_name_specified.key == AssetKey(["apple", "banana", "peach"])
     assert key_prefix_and_name_specified.op.name == "apple__banana__peach"
@@ -87,8 +83,7 @@ def test_key_and_name_args():
     ):
 
         @observable_source_asset(key_prefix=["apple", "banana"], key=["peach", "nectarine"])
-        def key_prefix_and_key_specified():
-            ...
+        def key_prefix_and_key_specified(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -96,15 +91,13 @@ def test_key_and_name_args():
     ):
 
         @observable_source_asset(name=["peach"], key=["peach", "nectarine"])
-        def name_and_key_specified():
-            ...
+        def name_and_key_specified(): ...
 
 
 def test_op_tags():
     tags = {"foo": "bar"}
 
     @observable_source_asset(op_tags=tags)
-    def op_tags_specified():
-        ...
+    def op_tags_specified(): ...
 
     assert op_tags_specified.op.tags == tags

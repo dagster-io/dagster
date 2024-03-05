@@ -12,5 +12,4 @@ def source_file():
     deps=[source_file],
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def asset1():
-    ...
+def asset1(): ...
