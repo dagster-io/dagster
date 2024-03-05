@@ -75,9 +75,9 @@ def test_typo_upstream_asset_many_similar() -> None:
         match=(
             r"Input asset .*\"asst1\".* is not produced by any of the provided asset ops and is"
             r" not one of the provided sources. Did you mean one of the following\?"
-            rf"\n\t{re.escape(asst.key.to_string())},"
-            rf" {re.escape(asset1.key.to_string())},"
-            rf" {re.escape(assets1.key.to_string())}"
+            rf"\n\t{re.escape(asset1.key.to_string())},"
+            rf" {re.escape(assets1.key.to_string())},"
+            rf" {re.escape(asst.key.to_string())}"
         ),
     ):
         Definitions(assets=[asst, asset1, assets1, asset2])

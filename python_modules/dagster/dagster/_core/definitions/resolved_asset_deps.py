@@ -95,7 +95,7 @@ def resolve_similar_asset_names(
             or matches_slashes_turned_to_prefix_gaps
         ):
             similar_names.append(asset_key)
-    return similar_names
+    return sorted(similar_names, key=lambda key: key.to_string())
 
 
 def resolve_assets_def_deps(
