@@ -455,6 +455,7 @@ pytzdata==2020.1
 pyyaml==6.0.1
 pyzmq==25.1.2
 querystring-parser==1.2.4
+rapidfuzz==3.6.1
 readme-renderer==43.0
 referencing==0.31.1
 regex==2023.12.25
