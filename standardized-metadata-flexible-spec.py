@@ -22,23 +22,14 @@ class NamespacedMetadata(BaseModel, ABC):
     def namespace(cls) -> str:
         raise NotImplementedError()
 
-    @classmethod
-    @abstractmethod
-    def version(cls) -> str:
-        """Versions are expected to be SemVer strings."""
-        raise NotImplementedError()
-
     def keys(self):
         dictionary = self.dict()
         return {
             f"{self.namespace()}/{key}" for key in dictionary.keys() if dictionary[key] is not None
-        } | {f"{self.namespace()}/_version"}
+        }
 
     def __getitem__(self, key):
-        if key == f"{self.namespace()}/_version":
-            return self.version()
-        else:
-            return self.dict()[key.split("/", 1)[1]]
+        return self.dict()[key.split("/", 1)[1]]
 
     @classmethod
     def from_metadata_dict(cls, metadata_dict: Mapping[str, Any]):
@@ -67,10 +58,6 @@ class AssetMetadata(NamespacedMetadata):
     def namespace(cls) -> str:
         return "dagster"
 
-    @classmethod
-    def version(cls) -> str:
-        return "1.0.0"
-
 
 ####################################################################################################
 # Metadata that's relevant to assets that are tables. Lives inside the "dagster.table" package.
@@ -92,10 +79,6 @@ class TableMetadata(NamespacedMetadata):
     @classmethod
     def namespace(cls) -> str:
         return "dagster.table"
-
-    @classmethod
-    def version(cls) -> str:
-        return "1.0.0"
 
 
 class TableObservationMetadata(TableMetadata):
@@ -136,10 +119,6 @@ class SnowflakeTableMetadata(NamespacedMetadata):
     @classmethod
     def namespace(cls) -> str:
         return "dagster_snowflake"
-
-    @classmethod
-    def version(cls) -> str:
-        return "1.0.0"
 
 
 ####################################################################################################
@@ -186,16 +165,13 @@ def asset2():
             "dagster.table/num_rows_inserted": 5,
             "dagster.table/columns": [{"name": "user_id", "data_type": "str"}],
             "dagster.table/num_rows_total": 500,
-            "dagster.table/_version": "1.0.0",
             "dagster/storage_kind": "snowflake",
             "dagster/storage_address_string": "my_db.my_schema.asset1",
-            "dagster/_version": "1.0.0",
             "dagster_snowflake/snowflake_address": {
                 "database": "my_db",
                 "db_schema": "my_schema",
                 "table_name": "asset1",
             },
-            "dagster_snowflake/_version": "1.0.0",
             "staging_address": {
                 "database": "my_staging_db",
                 "db_schema": "my_schema",
@@ -240,4 +216,4 @@ def test():
     asset2_result = asset2()
     assert TableObservationMetadata.from_metadata_dict(asset1_result.metadata).num_rows_total == 500
     assert asset1_result.metadata == asset2_result.metadata
-    assert len(get_ui_metadata_table_rows(asset1_result.metadata)) == 11
+    assert len(get_ui_metadata_table_rows(asset1_result.metadata)) == 8
