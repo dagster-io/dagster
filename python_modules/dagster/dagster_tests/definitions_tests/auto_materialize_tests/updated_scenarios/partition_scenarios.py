@@ -46,7 +46,7 @@ from .asset_daemon_scenario_states import (
 partition_scenarios = [
     AssetDaemonScenario(
         id="one_asset_one_partition_never_materialized",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
@@ -55,7 +55,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_two_partitions_never_materialized",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=two_partitions_def,
         ).with_all_eager(2),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
@@ -65,7 +65,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_one_partition_never_materialized",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
@@ -74,7 +74,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_one_partition_already_requested",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
@@ -84,7 +84,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_one_partition_already_materialized",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
@@ -93,7 +93,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_one_partition_already_materialized",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(
@@ -104,7 +104,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_both_upstream_partitions_materialized",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             partitions_def=two_partitions_def
         ).with_all_eager(2),
         execution_fn=lambda state: state.with_runs(
@@ -119,7 +119,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_one_partition_one_run",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
@@ -128,7 +128,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="parent_rematerialized_one_partition",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(
@@ -140,7 +140,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="unpartitioned_to_dynamic_partitions",
-        initial_state=two_assets_in_sequence.with_asset_properties(
+        initial_spec=two_assets_in_sequence.with_asset_properties(
             keys=["B"], partitions_def=dynamic_partitions_def
         ).with_all_eager(10),
         execution_fn=lambda state: state.with_runs(run_request("A"))
@@ -162,7 +162,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_never_materialized",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_spec=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=2, hours=4)
         .with_all_eager(),
@@ -172,7 +172,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_never_materialized_respect_discards",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_spec=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=30, hours=4)
         .with_all_eager(),
@@ -197,7 +197,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_two_years_never_materialized",
-        initial_state=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
+        initial_spec=one_asset.with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(years=2, hours=4)
         .with_all_eager(),
@@ -207,7 +207,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_to_daily_partitions_never_materialized",
-        initial_state=hourly_to_daily.with_current_time(time_partitions_start_str)
+        initial_spec=hourly_to_daily.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=3, hours=1)
         .with_all_eager(100),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
@@ -221,7 +221,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_to_daily_partitions_never_materialized2",
-        initial_state=hourly_to_daily.with_current_time(time_partitions_start_str)
+        initial_spec=hourly_to_daily.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, hours=4)
         .with_all_eager(100),
         execution_fn=lambda state: state.with_runs(
@@ -245,7 +245,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_to_daily_nonexistent_partitions",
-        initial_state=hourly_to_daily.with_asset_properties(
+        initial_spec=hourly_to_daily.with_asset_properties(
             keys=["B"], partitions_def=daily_partitions_def._replace(end_offset=1)
         )
         # allow nonexistent upstream partitions
@@ -293,7 +293,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="hourly_to_daily_nonexistent_partitions_become_existent",
-        initial_state=hourly_to_daily.with_asset_properties(
+        initial_spec=hourly_to_daily.with_asset_properties(
             keys=["B"], partitions_def=daily_partitions_def._replace(end_offset=1)
         )
         .with_current_time(time_partitions_start_str)
@@ -338,7 +338,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="time_dimension_multipartitioned",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=time_multipartitions_def,
         )
         .with_current_time(time_partitions_start_str)
@@ -355,7 +355,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="static_multipartitioned",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=static_multipartitions_def,
         ).with_all_eager(100),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
@@ -367,7 +367,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="partitioned_after_non_partitioned_multiple_updated",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             keys=["C"], partitions_def=daily_partitions_def
         )
         .with_current_time(time_partitions_start_str)
@@ -390,7 +390,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_depends_on_two_nonexistent_partitions",
-        initial_state=one_asset_depends_on_two.with_asset_properties(
+        initial_spec=one_asset_depends_on_two.with_asset_properties(
             partitions_def=hourly_partitions_def
         )
         .with_asset_properties(
@@ -441,7 +441,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_fan_in_partitions",
-        initial_state=two_assets_in_sequence_fan_in_partitions.with_asset_properties(
+        initial_spec=two_assets_in_sequence_fan_in_partitions.with_asset_properties(
             keys=["B"], auto_materialize_policy=AutoMaterializePolicy.eager()
         ),
         execution_fn=lambda state: state.evaluate_tick()
@@ -463,7 +463,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_fan_out_partitions",
-        initial_state=two_assets_in_sequence_fan_out_partitions.with_all_eager(100),
+        initial_spec=two_assets_in_sequence_fan_out_partitions.with_all_eager(100),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"], partition_key="1"))
         .with_not_started_runs()
@@ -485,7 +485,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_self_dependency",
-        initial_state=one_asset_self_dependency.with_all_eager()
+        initial_spec=one_asset_self_dependency.with_all_eager()
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(hours=2),
         execution_fn=lambda state: state.evaluate_tick()
@@ -531,7 +531,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_self_dependency_multi_partitions_def",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             partitions_def=time_multipartitions_def,
             deps=[
                 AssetDep(
@@ -580,7 +580,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="three_assets_in_sequence_self_dependency_in_middle",
-        initial_state=three_assets_in_sequence.with_asset_properties(
+        initial_spec=three_assets_in_sequence.with_asset_properties(
             partitions_def=daily_partitions_def
         )
         .with_asset_properties(
@@ -681,7 +681,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="unpartitioned_downstream_of_asymmetric_time_assets_in_series",
-        initial_state=three_assets_in_sequence.with_asset_properties(
+        initial_spec=three_assets_in_sequence.with_asset_properties(
             keys=["A"],
             partitions_def=daily_partitions_def._replace(
                 start=time_partitions_start_datetime + datetime.timedelta(days=4)
@@ -710,7 +710,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="partition_pops_into_existence_after_parent_update",
-        initial_state=two_assets_depend_on_one.with_asset_properties(
+        initial_spec=two_assets_depend_on_one.with_asset_properties(
             "A",
             # new partitions come into being one day early
             partitions_def=daily_partitions_def._replace(end_offset=1),
