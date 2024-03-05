@@ -21,7 +21,6 @@ from dagster import (
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_selection import (
     AllAssetCheckSelection,
     AllSelection,
@@ -41,6 +40,7 @@ from dagster._core.definitions.asset_selection import (
     UpstreamAssetSelection,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
@@ -533,7 +533,7 @@ def test_all_asset_selection_subclasses_serializable():
 
 def test_to_serializable_asset_selection():
     class UnserializableAssetSelection(AssetSelection, frozen=True):
-        def resolve_inner(self, asset_graph: IAssetGraph) -> AbstractSet[AssetKey]:
+        def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
     @asset

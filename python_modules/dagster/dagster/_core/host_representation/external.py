@@ -185,7 +185,7 @@ class ExternalRepository:
     @property
     @cached_method
     def _external_sensors(self) -> Dict[str, "ExternalSensor"]:
-        from dagster._core.definitions.host_asset_graph import HostAssetGraph
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
         sensor_datas = {
             external_sensor_data.name: ExternalSensor(external_sensor_data, self._handle)
@@ -193,7 +193,7 @@ class ExternalRepository:
         }
 
         if self._instance.auto_materialize_use_sensors:
-            asset_graph = HostAssetGraph.from_external_repository(self)
+            asset_graph = RemoteAssetGraph.from_external_repository(self)
 
             has_any_auto_observe_source_assets = False
 

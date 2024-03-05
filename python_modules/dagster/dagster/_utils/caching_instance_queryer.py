@@ -18,9 +18,9 @@ from typing import (
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -67,7 +67,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def __init__(
         self,
         instance: DagsterInstance,
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
         evaluation_time: Optional[datetime] = None,
         logger: Optional[logging.Logger] = None,
     ):
@@ -96,7 +96,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._instance
 
     @property
-    def asset_graph(self) -> IAssetGraph:
+    def asset_graph(self) -> BaseAssetGraph:
         return self._asset_graph
 
     @property

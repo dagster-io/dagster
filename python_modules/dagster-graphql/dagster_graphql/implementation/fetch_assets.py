@@ -23,12 +23,12 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.host_asset_graph import HostAssetGraph
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
     PartitionsDefinition,
     PartitionsSubset,
 )
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     PartitionRangeStatus,
@@ -211,7 +211,7 @@ def get_asset_nodes_by_asset_key(
 
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
-        asset_graph=lambda: HostAssetGraph.from_workspace(graphene_info.context),
+        asset_graph=lambda: RemoteAssetGraph.from_workspace(graphene_info.context),
     )
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)

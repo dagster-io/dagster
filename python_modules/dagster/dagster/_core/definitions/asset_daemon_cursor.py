@@ -25,7 +25,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_graph_interface import IAssetGraph
+from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
     from .asset_condition.asset_condition import (
@@ -168,7 +168,7 @@ def get_backcompat_asset_condition_evaluation_state(
 
 
 def backcompat_deserialize_asset_daemon_cursor_str(
-    cursor_str: str, asset_graph: Optional[IAssetGraph], default_evaluation_id: int
+    cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
 ) -> AssetDaemonCursor:
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
@@ -272,7 +272,7 @@ class LegacyAssetDaemonCursorWrapper(NamedTuple):
 
     serialized_cursor: str
 
-    def get_asset_daemon_cursor(self, asset_graph: Optional[IAssetGraph]) -> AssetDaemonCursor:
+    def get_asset_daemon_cursor(self, asset_graph: Optional[BaseAssetGraph]) -> AssetDaemonCursor:
         return backcompat_deserialize_asset_daemon_cursor_str(
             self.serialized_cursor, asset_graph, 0
         )

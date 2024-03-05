@@ -24,8 +24,8 @@ from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._utils.cached_method import cached_method
 
-from .asset_graph_interface import AssetKeyOrCheckKey, IAssetGraph
 from .backfill_policy import BackfillPolicy
+from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     )
 
 
-class HostAssetGraph(IAssetGraph):
+class RemoteAssetGraph(BaseAssetGraph):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, "ExternalAssetNode"],
@@ -50,7 +50,7 @@ class HostAssetGraph(IAssetGraph):
         self._repo_handles_by_key = repo_handles_by_key
 
     @classmethod
-    def from_workspace(cls, context: IWorkspace) -> "HostAssetGraph":
+    def from_workspace(cls, context: IWorkspace) -> "RemoteAssetGraph":
         code_locations = (
             location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
@@ -78,7 +78,9 @@ class HostAssetGraph(IAssetGraph):
         )
 
     @classmethod
-    def from_external_repository(cls, external_repository: ExternalRepository) -> "HostAssetGraph":
+    def from_external_repository(
+        cls, external_repository: ExternalRepository
+    ) -> "RemoteAssetGraph":
         return cls.from_repository_handles_and_external_asset_nodes(
             repo_handle_external_asset_nodes=[
                 (external_repository.handle, asset_node)
@@ -92,7 +94,7 @@ class HostAssetGraph(IAssetGraph):
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         external_asset_checks: Sequence["ExternalAssetCheck"],
-    ) -> "HostAssetGraph":
+    ) -> "RemoteAssetGraph":
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes

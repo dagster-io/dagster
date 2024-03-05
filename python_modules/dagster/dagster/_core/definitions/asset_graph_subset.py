@@ -30,8 +30,8 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_graph_interface import IAssetGraph
 from .asset_subset import AssetSubset
+from .base_asset_graph import BaseAssetGraph
 from .events import AssetKey, AssetKeyPartitionKey
 
 
@@ -79,7 +79,7 @@ class AssetGraphSubset(NamedTuple):
             len(subset) for subset in self.partitions_subsets_by_asset_key.values()
         )
 
-    def get_asset_subset(self, asset_key: AssetKey, asset_graph: IAssetGraph) -> AssetSubset:
+    def get_asset_subset(self, asset_key: AssetKey, asset_graph: BaseAssetGraph) -> AssetSubset:
         """Returns an AssetSubset representing the subset of a specific asset that this
         AssetGraphSubset contains.
         """
@@ -97,7 +97,7 @@ class AssetGraphSubset(NamedTuple):
             )
 
     def get_partitions_subset(
-        self, asset_key: AssetKey, asset_graph: Optional[IAssetGraph] = None
+        self, asset_key: AssetKey, asset_graph: Optional[BaseAssetGraph] = None
     ) -> PartitionsSubset:
         if asset_graph:
             partitions_def = asset_graph.get_partitions_def(asset_key)
@@ -139,7 +139,7 @@ class AssetGraphSubset(NamedTuple):
             return partitions_subset is not None and asset.partition_key in partitions_subset
 
     def to_storage_dict(
-        self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: IAssetGraph
+        self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: BaseAssetGraph
     ) -> Mapping[str, object]:
         return {
             "partitions_subsets_by_asset_key": {
@@ -242,7 +242,7 @@ class AssetGraphSubset(NamedTuple):
     def from_asset_partition_set(
         cls,
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
     ) -> "AssetGraphSubset":
         partitions_by_asset_key = defaultdict(set)
         non_partitioned_asset_keys = set()
@@ -265,7 +265,9 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
-    def can_deserialize(cls, serialized_dict: Mapping[str, Any], asset_graph: IAssetGraph) -> bool:
+    def can_deserialize(
+        cls, serialized_dict: Mapping[str, Any], asset_graph: BaseAssetGraph
+    ) -> bool:
         serializable_partitions_ids = serialized_dict.get(
             "serializable_partitions_def_ids_by_asset_key", {}
         )
@@ -297,7 +299,7 @@ class AssetGraphSubset(NamedTuple):
     def from_storage_dict(
         cls,
         serialized_dict: Mapping[str, Any],
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
         allow_partial: bool = False,
     ) -> "AssetGraphSubset":
         serializable_partitions_ids = serialized_dict.get(
@@ -357,7 +359,7 @@ class AssetGraphSubset(NamedTuple):
     @classmethod
     def all(
         cls,
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
         current_time: datetime,
     ) -> "AssetGraphSubset":
@@ -372,7 +374,7 @@ class AssetGraphSubset(NamedTuple):
     def from_asset_keys(
         cls,
         asset_keys: Iterable[AssetKey],
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
         current_time: datetime,
     ) -> "AssetGraphSubset":

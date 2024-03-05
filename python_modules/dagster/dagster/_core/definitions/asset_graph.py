@@ -2,7 +2,6 @@ from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph_interface import AssetKeyOrCheckKey, IAssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
@@ -10,6 +9,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -20,7 +20,7 @@ from dagster._core.selector.subset_selector import DependencyGraph, generate_ass
 from dagster._utils.cached_method import cached_method
 
 
-class AssetGraph(IAssetGraph):
+class AssetGraph(BaseAssetGraph):
     def __init__(
         self,
         assets_defs: Sequence[AssetsDefinition],

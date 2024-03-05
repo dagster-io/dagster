@@ -52,7 +52,7 @@ from dagster._core.definitions.asset_daemon_context import (
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
 )
-from dagster._core.definitions.asset_graph_interface import IAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -61,15 +61,15 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.host_asset_graph import HostAssetGraph
-from dagster._core.definitions.internal_asset_graph import AssetGraph
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
@@ -391,7 +391,7 @@ class AssetReconciliationScenario(
                     assert (
                         workspace.get_code_location_error("test_location") is None
                     ), workspace.get_code_location_error("test_location")
-                    asset_graph = HostAssetGraph.from_workspace(workspace)
+                    asset_graph = RemoteAssetGraph.from_workspace(workspace)
 
             auto_materialize_asset_keys = (
                 self.asset_selection.resolve(asset_graph)
@@ -720,7 +720,7 @@ def with_auto_materialize_policy(
 
 def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
-    asset_graph: IAssetGraph,
+    asset_graph: BaseAssetGraph,
     targeted_assets: Optional[AbstractSet[AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets

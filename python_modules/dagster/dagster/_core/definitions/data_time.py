@@ -18,8 +18,8 @@ from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph_interface import IAssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -43,7 +43,7 @@ DATA_TIME_METADATA_KEY = "dagster/data_time"
 
 class CachingDataTimeResolver:
     _instance_queryer: CachingInstanceQueryer
-    _asset_graph: IAssetGraph
+    _asset_graph: BaseAssetGraph
 
     def __init__(self, instance_queryer: CachingInstanceQueryer):
         self._instance_queryer = instance_queryer
@@ -53,7 +53,7 @@ class CachingDataTimeResolver:
         return self._instance_queryer
 
     @property
-    def asset_graph(self) -> IAssetGraph:
+    def asset_graph(self) -> BaseAssetGraph:
         return self.instance_queryer.asset_graph
 
     ####################

@@ -38,9 +38,9 @@ from .asset_condition.asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
 from .asset_daemon_cursor import AssetDaemonCursor
-from .asset_graph_interface import IAssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
+from .base_asset_graph import BaseAssetGraph
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
 
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 
 def get_implicit_auto_materialize_policy(
-    asset_key: AssetKey, asset_graph: IAssetGraph
+    asset_key: AssetKey, asset_graph: BaseAssetGraph
 ) -> Optional[AutoMaterializePolicy]:
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
     auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
@@ -84,7 +84,7 @@ class AssetDaemonContext:
         self,
         evaluation_id: int,
         instance: "DagsterInstance",
-        asset_graph: IAssetGraph,
+        asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
         materialize_run_tags: Optional[Mapping[str, str]],
         observe_run_tags: Optional[Mapping[str, str]],
@@ -129,7 +129,7 @@ class AssetDaemonContext:
         return self._cursor
 
     @property
-    def asset_graph(self) -> IAssetGraph:
+    def asset_graph(self) -> BaseAssetGraph:
         return self.instance_queryer.asset_graph
 
     @property
@@ -346,7 +346,7 @@ class AssetDaemonContext:
 
 def build_run_requests(
     asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: IAssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     assets_to_reconcile_by_partitions_def_partition_key: Mapping[
@@ -393,7 +393,7 @@ def build_run_requests(
 
 def build_run_requests_with_backfill_policies(
     asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: IAssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
@@ -560,7 +560,7 @@ def _build_run_request_for_partition_key_range(
 def get_auto_observe_run_requests(
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
     current_timestamp: float,
-    asset_graph: IAssetGraph,
+    asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
     auto_observe_asset_keys: AbstractSet[AssetKey],
 ) -> Sequence[RunRequest]:
