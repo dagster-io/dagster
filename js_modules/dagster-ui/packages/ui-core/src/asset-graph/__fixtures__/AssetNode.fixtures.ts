@@ -103,7 +103,7 @@ export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
 export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   stepKey: 'asset2',
   unstartedRunIds: ['ABCDEF'],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -125,7 +125,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
 export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   stepKey: 'asset3',
   unstartedRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -147,7 +147,7 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
 export const LiveDataForNodeRunFailed: LiveDataForNode = {
   stepKey: 'asset4',
   unstartedRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -175,7 +175,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   stepKey: 'asset5',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -196,7 +196,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
 export const LiveDataForNodeMaterialized: LiveDataForNode = {
   stepKey: 'asset6',
   unstartedRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -220,7 +220,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   stepKey: 'asset7',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -303,7 +303,7 @@ export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   stepKey: 'asset8',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -328,7 +328,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
   stepKey: 'asset9',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -356,7 +356,7 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   stepKey: 'asset10',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -384,7 +384,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   stepKey: 'asset11',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -412,7 +412,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
 
 export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   stepKey: 'asset12',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -443,7 +443,7 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterializationRunStatus: null,
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -470,7 +470,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   stepKey: 'source_asset2',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -493,7 +493,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   stepKey: 'source_asset3',
   unstartedRunIds: [],
   inProgressRunIds: ['ABCDEF'],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -524,7 +524,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -548,7 +548,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -576,7 +576,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
   },
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -610,7 +610,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -634,7 +634,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: null,
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -668,7 +668,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   staleCauses: [],
   assetChecks: [],
   freshnessInfo: null,
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -698,7 +698,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonData],
   assetChecks: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -717,7 +717,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
 export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
   stepKey: 'asset23',
   unstartedRunIds: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -774,7 +774,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
     numFailed: 0,
   },
   opNames: [],
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,
@@ -784,7 +784,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
 
 export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   stepKey: 'asset25',
-  changedReason: [
+  changedReasons: [
     ChangeReason.NEW,
     ChangeReason.CODE_VERSION,
     ChangeReason.INPUTS,

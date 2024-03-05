@@ -30,6 +30,7 @@ export type AssetViewDefinitionQuery = {
           isSource: boolean;
           isExecutable: boolean;
           hasMaterializePermission: boolean;
+          changedReasons: Array<Types.ChangeReason>;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
@@ -15855,6 +15856,7 @@ export type AssetViewDefinitionNodeFragment = {
   isSource: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
+  changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;

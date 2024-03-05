@@ -23,7 +23,7 @@ import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, ChangeReason, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
-type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus' | 'changedReason'>;
+type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus' | 'changedReasons'>;
 
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
@@ -142,7 +142,7 @@ export const StaleReasonsTag = ({
     );
   }, [assetKey, include, liveData, onClick]);
 
-  const isNew = liveData?.changedReason.includes(ChangeReason.NEW);
+  const isNew = liveData?.changedReasons?.includes(ChangeReason.NEW);
 
   return (
     <Box
@@ -152,7 +152,7 @@ export const StaleReasonsTag = ({
     >
       {staleTag}
       {isNew ? (
-        <NewInBranchTag changedReason={liveData!.changedReason} assetKey={assetKey} />
+        <NewInBranchTag changedReasons={liveData!.changedReasons!} assetKey={assetKey} />
       ) : null}
     </Box>
   );
@@ -265,13 +265,13 @@ const StaleReason = ({
 };
 
 export const NewInBranchTag = ({
-  changedReason,
+  changedReasons,
   assetKey,
 }: {
-  changedReason: ChangeReason[];
+  changedReasons: ChangeReason[];
   assetKey: AssetKeyInput;
 }) => {
-  const changes = changedReason.filter((reason) => reason !== ChangeReason.NEW);
+  const changes = changedReasons.filter((reason) => reason !== ChangeReason.NEW);
 
   function getDescription(change: ChangeReason) {
     switch (change) {

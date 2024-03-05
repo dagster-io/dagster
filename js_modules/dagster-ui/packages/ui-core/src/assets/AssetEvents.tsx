@@ -207,6 +207,7 @@ export const AssetEvents = ({
                   assetKey={assetKey}
                   stepKey={assetNode ? stepKeyForAsset(assetNode) : undefined}
                   latestRunForPartition={null}
+                  changedReasons={assetNode?.changedReasons}
                 />
               ) : (
                 <AssetPartitionDetailEmpty />

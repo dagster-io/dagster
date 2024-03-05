@@ -154,7 +154,7 @@ export interface LiveDataForNode {
   staleStatus: StaleStatus | null;
   staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
   assetChecks: AssetCheckLiveFragment[];
-  changedReason: Array<ChangeReason>;
+  changedReasons?: Array<ChangeReason>;
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
@@ -166,7 +166,7 @@ export interface LiveDataForNode {
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
   unstartedRunIds: [],
-  changedReason: [],
+  changedReasons: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
@@ -219,7 +219,7 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
-    changedReason: [],
+    changedReasons: [],
     lastMaterializationRunStatus:
       latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
         ? latestRunForAsset.status

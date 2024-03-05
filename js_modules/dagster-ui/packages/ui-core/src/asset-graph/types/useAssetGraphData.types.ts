@@ -17,6 +17,7 @@ export type AssetGraphQuery = {
     hasMaterializePermission: boolean;
     graphName: string | null;
     jobNames: Array<string>;
+    changedReasons: Array<Types.ChangeReason>;
     opNames: Array<string>;
     opVersion: string | null;
     description: string | null;
@@ -44,6 +45,7 @@ export type AssetNodeForGraphQueryFragment = {
   hasMaterializePermission: boolean;
   graphName: string | null;
   jobNames: Array<string>;
+  changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
   opVersion: string | null;
   description: string | null;

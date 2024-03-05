@@ -181,6 +181,7 @@ export const AssetPartitionDetail = ({
   latestRunForPartition,
   staleCauses,
   staleStatus,
+  changedReasons,
 }: {
   assetKey: AssetKey;
   group: AssetEventGroup;
@@ -191,6 +192,7 @@ export const AssetPartitionDetail = ({
   stepKey?: string;
   staleCauses?: LiveDataForNode['staleCauses'];
   staleStatus?: LiveDataForNode['staleStatus'];
+  changedReasons?: LiveDataForNode['changedReasons'];
 }) => {
   const {latest, partition, all} = group;
 
@@ -248,7 +250,10 @@ export const AssetPartitionDetail = ({
             {hasStaleLoadingState ? (
               <Spinner purpose="body-text" />
             ) : staleCauses && staleStatus ? (
-              <StaleReasonsTag liveData={{staleCauses, staleStatus}} assetKey={assetKey} />
+              <StaleReasonsTag
+                liveData={{staleCauses, staleStatus, changedReasons}}
+                assetKey={assetKey}
+              />
             ) : undefined}
           </div>
         ) : (

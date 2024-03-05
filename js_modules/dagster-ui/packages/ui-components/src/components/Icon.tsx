@@ -106,6 +106,7 @@ import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import ms_teams from '../icon-svgs/ms_teams.svg';
 import multi_asset from '../icon-svgs/multi_asset.svg';
+import new_in_branch from '../icon-svgs/new_in_branch.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import observation from '../icon-svgs/observation.svg';
@@ -310,6 +311,7 @@ export const Icons = {
   menu,
   menu_book,
   more_horiz,
+  new_in_branch,
   nightlight,
   no_access,
   people,
