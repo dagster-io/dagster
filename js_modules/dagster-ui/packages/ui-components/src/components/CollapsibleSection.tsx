@@ -8,11 +8,13 @@ export const CollapsibleSection = ({
   headerWrapperProps,
   children,
   isInitiallyCollapsed = false,
+  arrowSide = 'left',
 }: {
   header: React.ReactNode;
   headerWrapperProps?: React.ComponentProps<typeof Box>;
   children: React.ReactNode;
   isInitiallyCollapsed?: boolean;
+  arrowSide?: 'left' | 'right';
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(isInitiallyCollapsed);
   return (
@@ -25,11 +27,23 @@ export const CollapsibleSection = ({
           headerWrapperProps?.onClick?.();
         }}
       >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
-        />
-        <div>{header}</div>
+        {arrowSide === 'left' ? (
+          <>
+            <Icon
+              name="arrow_drop_down"
+              style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
+            />
+            <div>{header}</div>
+          </>
+        ) : (
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>{header}</div>
+            <Icon
+              name="arrow_drop_down"
+              style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
+            />
+          </Box>
+        )}
       </Box>
       {isCollapsed ? null : children}
     </Box>
