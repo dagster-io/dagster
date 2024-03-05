@@ -34,6 +34,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -653,6 +654,20 @@ def test_source_assets():
     all_assets = list(my_repo.assets_defs_by_key.values())
     assert len(all_assets) == 2
     assert {key.to_user_string() for a in all_assets for key in a.keys} == {"foo", "bar"}
+
+
+def test_assets_checks():
+    foo = SourceAsset(key=AssetKey("foo"))
+
+    @asset_check(asset=foo)
+    def foo_check():
+        return True
+
+    @repository
+    def my_repo():
+        return [foo, foo_check]
+
+    assert my_repo.asset_checks_defs_by_key[next(iter(foo_check.keys))] == foo_check
 
 
 def test_direct_assets():

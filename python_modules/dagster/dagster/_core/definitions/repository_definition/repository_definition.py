@@ -43,6 +43,7 @@ from .valid_definitions import (
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
@@ -251,6 +252,12 @@ class RepositoryDefinition:
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         """Mapping[AssetKey, AssetsDefinition]: The assets definitions defined in the repository."""
         return self._repository_data.get_assets_defs_by_key()
+
+    @public
+    @property
+    def asset_checks_defs_by_key(self) -> Mapping[AssetKey, "AssetChecksDefinition"]:
+        """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
+        return self._repository_data.get_asset_checks_defs_by_key()
 
     @property
     def external_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
