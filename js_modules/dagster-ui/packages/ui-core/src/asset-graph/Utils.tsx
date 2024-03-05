@@ -219,7 +219,7 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
-    changedReasons: [],
+    changedReasons: assetNode.changedReasons,
     lastMaterializationRunStatus:
       latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
         ? latestRunForAsset.status

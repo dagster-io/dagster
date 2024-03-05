@@ -249,12 +249,12 @@ export const AssetPartitionDetail = ({
             ) : undefined}
             {hasStaleLoadingState ? (
               <Spinner purpose="body-text" />
-            ) : staleCauses && staleStatus ? (
+            ) : (
               <StaleReasonsTag
                 liveData={{staleCauses, staleStatus, changedReasons}}
                 assetKey={assetKey}
               />
-            ) : undefined}
+            )}
           </div>
         ) : (
           <Heading color={Colors.textLight()}>No partition selected</Heading>

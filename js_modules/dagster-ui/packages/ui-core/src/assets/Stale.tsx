@@ -23,7 +23,9 @@ import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, ChangeReason, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
-type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus' | 'changedReasons'>;
+type StaleDataForNode = Partial<
+  Pick<LiveDataForNode, 'staleCauses' | 'staleStatus' | 'changedReasons'>
+>;
 
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
@@ -77,7 +79,7 @@ export const StaleReasonsLabel = ({
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
 }) => {
-  if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
+  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
     return null;
   }
 
@@ -109,7 +111,7 @@ export const StaleReasonsTag = ({
   onClick?: () => void;
 }) => {
   const staleTag = useMemo(() => {
-    if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
+    if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
       return <div />;
     }
     const label = (
@@ -183,7 +185,7 @@ const StaleCausesPopoverSummary = ({
   include: 'all' | 'upstream' | 'self';
 }) => {
   const grouped = groupedCauses(assetKey, include, liveData);
-  const totalCauses = liveData?.staleCauses.length;
+  const totalCauses = liveData?.staleCauses?.length;
 
   if (!totalCauses) {
     // Should never happen since the parent of this component should check that the asset is stale before rendering the popover
@@ -210,7 +212,12 @@ const StaleCausesPopoverSummary = ({
               </CaptionSubtitle>
             </Box>
             {causes.map((cause, idx) => (
-              <StaleReason key={idx} reason={cause.reason} dependency={cause.dependency} />
+              <StaleReason
+                key={idx}
+                reason={cause.reason}
+                dependency={cause.dependency}
+                assetKey={assetKey}
+              />
             ))}
           </Box>
         );
@@ -223,6 +230,7 @@ const StaleReason = ({
   reason,
   dependency,
 }: {
+  assetKey: AssetKeyInput;
   reason: string;
   dependency: AssetNodeKeyFragment | null;
 }) => {
