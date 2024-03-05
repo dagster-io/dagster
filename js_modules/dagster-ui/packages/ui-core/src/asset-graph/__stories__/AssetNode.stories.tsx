@@ -38,10 +38,6 @@ export const LiveStates = () => {
       return null;
     }
 
-    if (definitionCopy.assetKey.path.includes('asset10')) {
-      console.log(scenario);
-    }
-
     return (
       <>
         <SetCacheEntry />
