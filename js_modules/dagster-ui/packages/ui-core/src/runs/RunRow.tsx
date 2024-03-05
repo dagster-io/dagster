@@ -199,7 +199,6 @@ export const RunRow = ({
                     setShowQueueCriteria(true);
                   }}
                   color={Colors.textLight()}
-                  style={{margin: '-4px', padding: '4px'}}
                 >
                   View queue criteria
                 </ButtonLink>
