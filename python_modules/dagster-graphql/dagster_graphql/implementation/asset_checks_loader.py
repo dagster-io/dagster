@@ -136,7 +136,7 @@ class AssetChecksLoader:
                     can_execute_individually = (
                         GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
                         if len(
-                            asset_graph.get_required_asset_and_check_keys(external_check.key) or []
+                            asset_graph.get_execution_set_asset_and_check_keys(external_check.key)
                         )
                         <= 1
                         # NOTE: once we support multi checks, we'll need to add a case for

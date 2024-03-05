@@ -237,37 +237,37 @@ class ExternalAssetGraph(AssetGraph):
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
         return {node.asset_key for node in self.asset_nodes if job_name in node.job_names}
 
-    def get_required_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(
         self, asset_or_check_key: AssetKeyOrCheckKey
     ) -> AbstractSet[AssetKeyOrCheckKey]:
         if isinstance(asset_or_check_key, AssetKey):
-            atomic_execution_unit_id = self.get_asset_node(
+            execution_set_identifier = self.get_asset_node(
                 asset_or_check_key
-            ).atomic_execution_unit_id
+            ).execution_set_identifier
         else:  # AssetCheckKey
-            atomic_execution_unit_id = self.get_asset_check(
+            execution_set_identifier = self.get_asset_check(
                 asset_or_check_key
-            ).atomic_execution_unit_id
-        if atomic_execution_unit_id is None:
-            return set()
+            ).execution_set_identifier
+        if execution_set_identifier is None:
+            return {asset_or_check_key}
         else:
             return {
                 *(
                     node.asset_key
                     for node in self.asset_nodes
-                    if node.atomic_execution_unit_id == atomic_execution_unit_id
+                    if node.execution_set_identifier == execution_set_identifier
                 ),
                 *(
                     node.key
                     for node in self.asset_checks
-                    if node.atomic_execution_unit_id == atomic_execution_unit_id
+                    if node.execution_set_identifier == execution_set_identifier
                 ),
             }
 
-    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+    def get_execution_set_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         return {
             key
-            for key in self.get_required_asset_and_check_keys(asset_key)
+            for key in self.get_execution_set_asset_and_check_keys(asset_key)
             if isinstance(key, AssetKey)
         }
 

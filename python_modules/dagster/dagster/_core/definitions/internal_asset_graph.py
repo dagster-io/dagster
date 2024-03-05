@@ -136,11 +136,11 @@ class InternalAssetGraph(AssetGraph):
             if ad.group_names_by_key[key] == group_name
         }
 
-    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+    def get_execution_set_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         asset = self.get_assets_def(asset_key)
-        return set() if len(asset.keys) <= 1 or asset.can_subset else asset.keys
+        return {asset_key} if len(asset.keys) <= 1 or asset.can_subset else asset.keys
 
-    def get_required_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(
         self, asset_or_check_key: AssetKeyOrCheckKey
     ) -> AbstractSet[AssetKeyOrCheckKey]:
         if isinstance(asset_or_check_key, AssetKey):
@@ -148,14 +148,14 @@ class InternalAssetGraph(AssetGraph):
         else:  # AssetCheckKey
             # only checks emitted by AssetsDefinition have required keys
             if self.has_asset_check(asset_or_check_key):
-                return set()
+                return {asset_or_check_key}
             else:
                 asset = self.get_assets_def_for_check(asset_or_check_key)
                 if asset is None or asset_or_check_key not in asset.check_keys:
-                    return set()
+                    return {asset_or_check_key}
         has_checks = len(asset.check_keys) > 0
         if asset.can_subset or len(asset.keys) <= 1 and not has_checks:
-            return set()
+            return {asset_or_check_key}
         else:
             return {*asset.keys, *asset.check_keys}
 
