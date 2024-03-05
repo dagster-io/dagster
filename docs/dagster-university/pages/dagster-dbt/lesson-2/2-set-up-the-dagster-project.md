@@ -55,7 +55,7 @@ cp .env.example .env
 pip install -e ".[dev]"
 ```
 
-The `e` flag installs the project in editable mode, you can modify existing Dagster assets without having to reload the code location. This allows you to shorten the time it takes to test a change. However, you’ll need to reload the code location in the Dagster UI when adding new assets or installing additional dependencies.
+The `e` flag installs the project in editable mode so you can modify existing Dagster assets without having to reload the code location. This allows you to shorten the time it takes to test a change. However, you’ll need to reload the code location in the Dagster UI when adding new assets or installing additional dependencies.
 
 To confirm everything works:
 

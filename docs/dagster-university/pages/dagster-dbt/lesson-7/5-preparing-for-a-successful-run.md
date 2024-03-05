@@ -7,7 +7,7 @@ lesson: '7'
 # Preparing for a successful run
 
 {% callout %}
->💡 **Heads up! This section is optional.** The goal of this lesson was to teach you how to successfully **deploy** to Dagster Cloud, which you completed in the last section. Preparing for a successful run in Dagster Cloud requires using some external services, which may not translate to the external services so we’ve opted to make this section optional.
+>💡 **Heads up! This section is optional.** The goal of this lesson was to teach you how to successfully **deploy** to Dagster Cloud, which you completed in the last section. Preparing for a successful run in Dagster Cloud requires using some external services, which may not translate to the external services you prefer to use. As such, we’ve opted to make this section optional.
 {% /callout %}
 
 In previous lessons, you followed along by adding our example code to your local project. You successfully materialized the assets in the project and stored the resulting data in a local DuckDB database.
@@ -144,4 +144,5 @@ Repeat these steps until all the environment variables have been added.
 
 ## Running the pipeline
 
-TODO: Add once unblocked
+At this point, you're ready to run the pipeline in production! Navigate to the asset graph, click **Materialize all**, and watch as it all comes together:
+

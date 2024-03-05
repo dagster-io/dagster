@@ -12,7 +12,6 @@ In the finished Dagster Essentials project, there should be a file called `asset
 
 ```python
 from pathlib import Path
-# import os
 ```
 
 The `Path` class from the `pathlib` standard library will help us create an accurate pointer to where our dbt project is. At the bottom of `constants.py`, add the following line:
