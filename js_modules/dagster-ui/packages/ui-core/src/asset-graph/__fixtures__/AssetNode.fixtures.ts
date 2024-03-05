@@ -870,14 +870,14 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Stale',
     liveData: LiveDataForNodeMaterializedAndStale,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Upstream code version', 'Feb'],
+    expectedText: ['Outdated', 'Feb'],
   },
 
   {
     title: 'Materialized and Stale and Overdue',
     liveData: LiveDataForNodeMaterializedAndStaleAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Upstream code version', 'Overdue', 'Feb'],
+    expectedText: ['Outdated', 'Overdue', 'Feb'],
   },
 
   {
