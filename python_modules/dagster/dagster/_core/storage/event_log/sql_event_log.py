@@ -2830,10 +2830,13 @@ class SqlEventLogStorage(EventLogStorage):
                     ),
                 )
             ).rowcount
-        if rows_updated != 1:
+
+        # 0 isn't normally expected, but occurs with the external instance of step launchers where
+        # they don't have planned events.
+        if rows_updated > 1:
             raise DagsterInvariantViolationError(
-                "Expected to update one row for asset check evaluation, but updated"
-                f" {rows_updated}."
+                f"Updated {rows_updated} rows for asset check evaluation {evaluation.asset_check_key} "
+                "as a result of duplicate AssetCheckPlanned events."
             )
 
     def get_asset_check_execution_history(
