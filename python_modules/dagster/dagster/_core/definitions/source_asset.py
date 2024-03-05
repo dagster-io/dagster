@@ -400,7 +400,7 @@ class SourceAsset(ResourceAddable):
                 io_manager_def=self.io_manager_def,
                 description=self.description,
                 partitions_def=self.partitions_def,
-                group_name=group_name,
+                group_name=group_name or self.group_name,
                 resource_defs=self.resource_defs,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
