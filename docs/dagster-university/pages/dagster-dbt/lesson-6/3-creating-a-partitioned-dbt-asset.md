@@ -168,7 +168,10 @@ Here, we’ve changed the logic to say that we only want to select rows between 
 
 That’s it! Now you can check out the new `daily_metrics` asset in Dagster.
 
-1. In the Dagster UI, reload the code location. Once loaded, you should see the new partitioned `daily_metrics` asset.
+1. In the Dagster UI, reload the code location. Once loaded, you should see the new partitioned `daily_metrics` asset:
+
+   ![daily_metrics asset in the Asset Graph of the Dagster UI](/images/dagster-dbt/lesson-6/daily-metrics-asset.png)
+
 2. Click the `daily_metrics` asset and then the **Materialize selected** button. You’ll be prompted to select some partitions first.
 3. Once the run starts, navigate to the run’s details page to check out the event logs. The executed dbt command should look something like this:
    ```bash
