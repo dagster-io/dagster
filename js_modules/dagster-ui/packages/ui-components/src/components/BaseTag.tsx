@@ -13,7 +13,6 @@ interface Props {
   rightIcon?: React.ReactNode;
   label?: React.ReactNode;
   tooltipText?: string;
-  fontSize?: string;
 }
 
 const BaseTagTooltipStyle: React.CSSProperties = {
@@ -38,15 +37,9 @@ export const BaseTag = (props: Props) => {
     rightIcon,
     label,
     tooltipText,
-    fontSize = '12px',
   } = props;
   return (
-    <StyledTag
-      $fillColor={fillColor}
-      $interactive={interactive}
-      $textColor={textColor}
-      $fontSize={fontSize}
-    >
+    <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
       {icon || null}
       {label !== undefined && label !== null ? (
         <span
@@ -69,7 +62,6 @@ interface StyledTagProps {
   $fillColor: string;
   $interactive: boolean;
   $textColor: string;
-  $fontSize: string;
 }
 
 export const StyledTag = styled.div<StyledTagProps>`
@@ -79,7 +71,7 @@ export const StyledTag = styled.div<StyledTagProps>`
   cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'inherit')};
   display: inline-flex;
   flex-direction: row;
-  font-size: ${({$fontSize}) => $fontSize};
+  font-size: 12px;
   line-height: 16px;
   align-items: center;
   padding: 4px 8px;

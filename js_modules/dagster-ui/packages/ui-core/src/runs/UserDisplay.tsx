@@ -10,19 +10,7 @@ type Props = {
  * Can be overridden using `LaunchpadHooksContext`
  * This is primarily used to display users in filter dropdown + users in table cells
  */
-export function UserDisplay({email, isFilter, size}: Props) {
-  let fontSize;
-  switch (size) {
-    case 'small':
-      fontSize = '14px';
-      break;
-    case 'normal':
-      fontSize = '14px';
-      break;
-    default:
-      fontSize = '12px';
-  }
-
+export function UserDisplay({email, isFilter}: Props) {
   const icon = <SubwayDot label={email} blobSize={16} fontSize={10} />;
   return isFilter ? (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -30,11 +18,6 @@ export function UserDisplay({email, isFilter, size}: Props) {
       {email}
     </Box>
   ) : (
-    <BaseTag
-      key="user"
-      icon={<div style={{margin: '0 4px 0 -4px'}}>{icon}</div>}
-      label={email}
-      fontSize={fontSize}
-    />
+    <BaseTag key="user" icon={<div style={{margin: '0 4px 0 -4px'}}>{icon}</div>} label={email} />
   );
 }

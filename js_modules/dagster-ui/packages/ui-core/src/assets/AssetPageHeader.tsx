@@ -2,7 +2,6 @@
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import {
   Box,
-  Button,
   Colors,
   Heading,
   Icon,
@@ -16,6 +15,7 @@ import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {AnchorButton} from '../ui/AnchorButton';
 
 type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
 
@@ -118,11 +118,9 @@ export const AssetGlobalLineageLink = () => (
 );
 
 export const AssetGlobalLineageButton = () => (
-  <Link to="/asset-groups">
-    <Button intent="primary" icon={<Icon name="schema" />}>
-      View global asset lineage
-    </Button>
-  </Link>
+  <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
+    View global asset lineage
+  </AnchorButton>
 );
 
 const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
