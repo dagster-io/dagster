@@ -27,6 +27,7 @@ def sling_assets(
     *,
     replication_config: SlingReplicationParam,
     dagster_sling_translator: DagsterSlingTranslator = DagsterSlingTranslator(),
+    name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -38,13 +39,14 @@ def sling_assets(
     spec and descriptions, see `Sling's Documentation <https://docs.slingdata.io/sling-cli/run/configuration>`_.
 
     Args:
-        replication_config: Union[Mapping[str, Any], str, Path]: A path to a Sling replication config, or a dictionary
+        replication_config (Union[Mapping[str, Any], str, Path]): A path to a Sling replication config, or a dictionary
             of a replication config.
-        dagster_sling_translator: DagsterSlingTranslator: Allows customization of how to map a Sling stream to a Dagster
+        dagster_sling_translator: (DagsterSlingTranslator): Allows customization of how to map a Sling stream to a Dagster
           AssetKey.
-        partitions_def: Optional[PartitionsDefinition]: The partitions definition for this asset.
-        backfill_policy: Optional[BackfillPolicy]: The backfill policy for this asset.
-        op_tags: Optional[Mapping[str, Any]]: The tags for this asset.
+        name (Optional[str]: The name of the op.
+        partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset.
+        backfill_policy (Optional[BackfillPolicy]): The backfill policy for this asset.
+        op_tags (Optional[Mapping[str, Any]]): The tags for this asset.
 
     Examples:
         Running a sync by providing a path to a Sling Replication config:
@@ -100,7 +102,7 @@ def sling_assets(
 
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
-            name="sling_asset_definition",
+            name=name,
             compute_kind="sling",
             partitions_def=partitions_def,
             can_subset=False,

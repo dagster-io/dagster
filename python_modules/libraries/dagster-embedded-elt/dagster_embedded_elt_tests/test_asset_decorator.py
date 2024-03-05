@@ -82,3 +82,23 @@ def test_runs_base_sling_config(
     assert res.success
     counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == 3
+
+
+def test_with_custom_name(replication_config: SlingReplicationParam):
+    @sling_assets(replication_config=replication_config)
+    def my_sling_assets():
+        ...
+
+    assert my_sling_assets.op.name == "my_sling_assets"
+
+    @sling_assets(replication_config=replication_config)
+    def my_other_assets():
+        ...
+
+    assert my_other_assets.op.name == "my_other_assets"
+
+    @sling_assets(replication_config=replication_config, name="custom_name")
+    def my_third_sling_assets():
+        ...
+
+    assert my_third_sling_assets.op.name == "custom_name"
