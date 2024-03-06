@@ -3,7 +3,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {StaleReasonsTags} from './Stale';
+import {ChangedReasonsTag} from './ChangedReasons';
+import {StaleReasonsTag} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
 import {
   AssetMaterializationFragment,
@@ -118,7 +119,13 @@ export const LatestMaterializationMetadata = ({
                 <Box flex={{gap: 8, alignItems: 'center'}}>
                   <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
                   {liveData && (
-                    <StaleReasonsTags assetKey={assetKey} liveData={liveData} include="all" />
+                    <>
+                      <StaleReasonsTag assetKey={assetKey} liveData={liveData} />
+                      <ChangedReasonsTag
+                        changedReasons={liveData?.changedReasons}
+                        assetKey={assetKey}
+                      />
+                    </>
                   )}
                 </Box>
               </td>

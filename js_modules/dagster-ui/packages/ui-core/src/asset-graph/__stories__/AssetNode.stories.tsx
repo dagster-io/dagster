@@ -22,7 +22,7 @@ export const LiveStates = () => {
       ...scenario.definition,
       assetKey: {
         ...scenario.definition.assetKey,
-        path: [],
+        path: [] as string[],
       },
     };
     definitionCopy.assetKey.path = scenario.liveData

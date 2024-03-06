@@ -15,7 +15,8 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {StaleReasonsTags} from '../assets/Stale';
+import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -34,7 +35,13 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
 
   return (
     <AssetInsetForHoverEffect>
-      <AssetTopTags definition={definition} liveData={liveData} />
+      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+        <ChangedReasonsTag
+          changedReasons={liveData?.changedReasons}
+          assetKey={definition.assetKey}
+        />
+      </Box>
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
           <AssetName $isSource={isSource}>
@@ -63,7 +70,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
-            <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
           <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -76,17 +82,6 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
     </AssetInsetForHoverEffect>
   );
 }, isEqual);
-
-interface AssetTopTagsProps {
-  definition: AssetNodeFragment;
-  liveData?: LiveDataForNode;
-}
-
-const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
-  <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
-    <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
-  </Box>
-);
 
 const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;
@@ -181,6 +176,9 @@ export const AssetNodeMinimal = ({
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
+  const isChanged = liveData?.changedReasons?.length;
+  const isStale = isAssetStale(liveData);
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
@@ -196,6 +194,15 @@ export const AssetNodeMinimal = ({
             $background={background}
             $border={border}
           >
+            {isChanged ? (
+              <MinimalNodeChangedDot
+                changedReasons={liveData.changedReasons!}
+                assetKey={assetKey}
+              />
+            ) : null}
+            {isStale ? (
+              <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
+            ) : null}
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
@@ -219,6 +226,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     graphName
     hasMaterializePermission
     jobNames
+    changedReasons
     opNames
     opVersion
     description
