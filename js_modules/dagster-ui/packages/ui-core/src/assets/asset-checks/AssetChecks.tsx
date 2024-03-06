@@ -143,6 +143,8 @@ export const AssetChecks = ({
   const lastExecution = selectedCheck.executionForLatestMaterialization;
   const targetMaterialization = lastExecution?.evaluation?.targetMaterialization;
 
+  console.log({lastExecution});
+
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       {didDismissAssetChecksBanner ? null : (
@@ -303,7 +305,7 @@ export const AssetChecks = ({
                     </Box>
                   ) : null}
                 </div>
-                {lastExecution?.evaluation?.metadataEntries ? (
+                {lastExecution?.evaluation?.metadataEntries.length ? (
                   <Box flex={{direction: 'column', gap: 6}}>
                     <Subtitle2>Metadata</Subtitle2>
                     <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
@@ -485,8 +487,8 @@ export const ASSET_CHECKS_QUERY = gql`
           }
           ... on AssetChecks {
             checks {
-              ...AssetCheckTableFragment
               ...ExecuteChecksButtonCheckFragment
+              ...AssetCheckTableFragment
             }
           }
         }
