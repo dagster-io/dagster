@@ -46,17 +46,17 @@ from dagster._serdes.serdes import serialize_value
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
-from .asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-)
 from .base_scenario import (
     run_request,
 )
-from .updated_scenarios.asset_daemon_scenario_states import (
+from .scenario_specs import (
     one_asset,
     two_assets_in_sequence,
     two_partitions_def,
+)
+from .updated_scenarios.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
 )
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import (

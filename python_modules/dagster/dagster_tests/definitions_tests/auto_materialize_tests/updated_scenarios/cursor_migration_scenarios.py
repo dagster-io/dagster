@@ -7,22 +7,19 @@ from dagster_tests.definitions_tests.auto_materialize_tests.updated_scenarios.cr
     get_cron_policy,
 )
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-    day_partition_key,
-    hour_partition_key,
-)
 from ..base_scenario import (
     run_request,
 )
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     daily_partitions_def,
+    day_partition_key,
+    hour_partition_key,
     hourly_partitions_def,
     one_asset,
     three_assets_in_sequence,
     time_partitions_start_str,
 )
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 cursor_migration_scenarios = [
     AssetDaemonScenario(

@@ -1,12 +1,12 @@
 from dagster import AutoMaterializeAssetPartitionsFilter, AutoMaterializePolicy, AutoMaterializeRule
 
-from ..asset_daemon_scenario import AssetDaemonScenario
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     one_asset_depends_on_two,
     three_assets_in_sequence,
     two_assets_in_sequence,
 )
+from .asset_daemon_scenario import AssetDaemonScenario
 
 filter_latest_run_tag_key_policy = (
     AutoMaterializePolicy.eager()

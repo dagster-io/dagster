@@ -1,7 +1,5 @@
 import dataclasses
-import datetime
 import itertools
-import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import (
@@ -19,7 +17,6 @@ import dagster._check as check
 from dagster import (
     AssetKey,
     DagsterInstance,
-    MultiPartitionKey,
     RunRequest,
     RunsFilter,
 )
@@ -48,14 +45,9 @@ from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster._core.scheduler.instigation import (
-    SensorInstigatorData,
-    TickStatus,
-)
+from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import (
-    wait_for_futures,
-)
+from dagster._core.test_utils import wait_for_futures
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
@@ -64,34 +56,11 @@ from dagster._daemon.asset_daemon import (
     asset_daemon_cursor_from_instigator_serialized_cursor,
     get_current_evaluation_id,
 )
-from dagster._serdes.serdes import (
-    DeserializationError,
-    deserialize_value,
-    serialize_value,
-)
+from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 
-from .base_scenario import run_request
-from .scenario_state import (
-    ScenarioSpec,
-    ScenarioState,
-    get_code_location_origin,
-)
-
-
-def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
-    """Returns the partition key of a day partition delta days from the initial time."""
-    return (time + datetime.timedelta(days=delta - 1)).strftime("%Y-%m-%d")
-
-
-def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
-    """Returns the partition key of a day partition delta days from the initial time."""
-    return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
-
-
-def multi_partition_key(**kwargs) -> MultiPartitionKey:
-    """Returns a MultiPartitionKey based off of the given kwargs."""
-    return MultiPartitionKey(kwargs)
+from ..base_scenario import run_request
+from ..scenario_state import ScenarioSpec, ScenarioState, get_code_location_origin
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -161,7 +130,6 @@ class AssetDaemonScenarioState(ScenarioState):
     run_requests: Sequence[RunRequest] = field(default_factory=list)
     serialized_cursor: str = field(default=serialize_value(AssetDaemonCursor.empty(0)))
     evaluations: Sequence[AssetConditionEvaluation] = field(default_factory=list)
-    logger: logging.Logger = field(default=logging.getLogger("dagster.amp"))
     tick_index: int = 1
 
     # set by scenario runner
