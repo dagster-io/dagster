@@ -31,7 +31,7 @@ def taxi_zones_file():
 
     with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
         output_file.write(raw_taxi_zones.content)
-    num_rows = MetadataValue.int(len(pd.read_csv(constants.TAXI_ZONES_FILE_PATH)))
+    num_rows = len(pd.read_csv(constants.TAXI_ZONES_FILE_PATH))
 
     return MaterializeResult(
         metadata={
