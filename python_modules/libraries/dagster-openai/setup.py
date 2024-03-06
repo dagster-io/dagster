@@ -11,8 +11,7 @@ def get_version():
     return version["__version__"]
 
 
-# TODO: replace by `ver = get_version()` when we add back a version.py file and publish library to pypi.
-ver = "1!0+dev"
+ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
