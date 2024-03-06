@@ -26,7 +26,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from ..dbt_projects import (
     test_dbt_alias_path,
@@ -826,3 +826,71 @@ def test_dbt_with_duplicate_asset_keys(test_meta_config_manifest: Dict[str, Any]
         def my_dbt_assets(): ...
 
     assert expected_error_message in str(exc_info.value)
+
+
+def test_dbt_with_duplicate_source_asset_keys(
+    test_duplicate_source_asset_key_manifest: Dict[str, Any],
+) -> None:
+    expected_error_message = "\n".join(
+        [
+            "The following dbt resources have the asset key `['duplicate']`:",
+            "  - `source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_customers` (models/sources.yml)",
+            "  - `source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_orders` (models/sources.yml)",
+            "  - `source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_payments` (models/sources.yml)",
+        ]
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+    ) as exc_info:
+
+        @dbt_assets(manifest=test_duplicate_source_asset_key_manifest)
+        def my_dbt_assets_with_duplicate_source_asset_keys(): ...
+
+    assert expected_error_message in str(exc_info.value)
+
+    # Duplicate dbt model asset keys are still not allowed.
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            asset_key = super().get_asset_key(dbt_resource_props)
+            if asset_key in [AssetKey("orders"), AssetKey("customers")]:
+                return AssetKey(["duplicate"])
+
+            return asset_key
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+    ):
+
+        @dbt_assets(
+            manifest=test_duplicate_source_asset_key_manifest,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(
+                settings=DagsterDbtTranslatorSettings(enable_duplicate_source_asset_keys=True)
+            ),
+        )
+        def my_dbt_assets_with_duplicate_model_asset_keys(): ...
+
+    @dbt_assets(
+        manifest=test_duplicate_source_asset_key_manifest,
+        dagster_dbt_translator=DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_duplicate_source_asset_keys=True)
+        ),
+    )
+    def my_dbt_assets(): ...
+
+    assert set(my_dbt_assets.keys_by_input_name.values()) == {
+        AssetKey(["duplicate"]),
+        AssetKey(["stg_customers"]),
+        AssetKey(["stg_orders"]),
+        AssetKey(["stg_payments"]),
+    }
+    assert set(my_dbt_assets.keys_by_output_name.values()) == {
+        AssetKey(["stg_customers"]),
+        AssetKey(["stg_orders"]),
+        AssetKey(["stg_payments"]),
+        AssetKey(["customers"]),
+        AssetKey(["orders"]),
+    }
