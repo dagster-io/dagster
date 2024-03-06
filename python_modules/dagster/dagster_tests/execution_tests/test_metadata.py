@@ -1,11 +1,15 @@
+from datetime import datetime
 from pathlib import Path
 
+import pendulum
 import pytest
+import pytz
 from dagster import (
     AssetMaterialization,
     AssetObservation,
     BoolMetadataValue,
     DagsterEventType,
+    DateTimeMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -118,6 +122,55 @@ def test_metadata_asset_observation():
     assert entry_map["url"] == UrlMetadataValue
     assert entry_map["float"] == FloatMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
+
+
+def test_normalize_datetime_metadata():
+    pendulum_dt_with_timezone = pendulum.datetime(2021, 1, 1, tz="UTC")
+    pendulum_dt_with_timezone_metadata_val = normalize_metadata({"foo": pendulum_dt_with_timezone})[
+        "foo"
+    ]
+    assert pendulum_dt_with_timezone_metadata_val == DateTimeMetadataValue(
+        timestamp=pendulum_dt_with_timezone.timestamp(), timezone="UTC"
+    )
+    assert pendulum_dt_with_timezone_metadata_val.value == pendulum_dt_with_timezone
+
+    assert (
+        normalize_metadata({"foo": pendulum.datetime(2024, 3, 6, 12, tz="America/New_York")})[
+            "foo"
+        ].timestamp
+        == normalize_metadata(
+            {"foo": pendulum.datetime(2024, 3, 6, 9, tz=pytz.timezone("America/Los_Angeles"))}
+        )["foo"].timestamp
+    )
+
+    pendulum_dt_without_timezone = pendulum.datetime(2021, 1, 1)
+    assert pendulum_dt_without_timezone.tzinfo is not None
+    pendulum_dt_without_timezone_metadata_val = normalize_metadata(
+        {"foo": pendulum_dt_with_timezone}
+    )["foo"]
+    assert pendulum_dt_without_timezone_metadata_val == DateTimeMetadataValue(
+        timestamp=pendulum_dt_with_timezone.timestamp(),
+        timezone=pendulum_dt_without_timezone.tzinfo.tzname(pendulum_dt_without_timezone),
+    )
+    assert pendulum_dt_without_timezone_metadata_val.value == pendulum_dt_without_timezone
+
+    normal_dt_with_timezone = pytz.timezone("EST").localize(datetime(2024, 3, 6, 12, 0, 0))
+    assert normalize_metadata({"foo": normal_dt_with_timezone})["foo"] == DateTimeMetadataValue(
+        timestamp=normal_dt_with_timezone.timestamp(), timezone="EST"
+    )
+
+    assert (
+        normalize_metadata(
+            {"foo": pytz.timezone("America/New_York").localize(datetime(2024, 3, 6, 12, 0, 0))}
+        )["foo"].timestamp
+        == normalize_metadata(
+            {"foo": pytz.timezone("America/Los_Angeles").localize(datetime(2024, 3, 6, 9, 0, 0))}
+        )["foo"].timestamp
+    )
+
+    normal_dt_without_timezone = datetime(2024, 3, 6, 12, 0, 0)
+    with pytest.raises(CheckError, match="Datetime metadata values must have timezones"):
+        normalize_metadata({"foo": normal_dt_without_timezone})["foo"]
 
 
 def test_unknown_metadata_value():
