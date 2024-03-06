@@ -153,8 +153,8 @@ export const StaleReasonsTag = ({
       style={{height: 24}}
     >
       {staleTag}
-      {isNew ? (
-        <NewInBranchTag changedReasons={liveData!.changedReasons!} assetKey={assetKey} />
+      {liveData?.changedReasons?.length ? (
+        <NewOrChangedInBranchTag changedReasons={liveData.changedReasons} assetKey={assetKey} />
       ) : null}
     </Box>
   );
@@ -262,6 +262,7 @@ const StaleReason = ({
       </>
     );
   }, [dependency, reason]);
+
   return (
     <Box
       padding={{vertical: 8, horizontal: 12}}
@@ -272,7 +273,7 @@ const StaleReason = ({
   );
 };
 
-export const NewInBranchTag = ({
+export const NewOrChangedInBranchTag = ({
   changedReasons,
   assetKey,
 }: {
@@ -296,6 +297,7 @@ export const NewInBranchTag = ({
   return (
     <Popover
       position="top"
+      isOpen={changes.length ? undefined : false}
       content={
         <Box flex={{direction: 'column'}}>
           <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
@@ -324,7 +326,7 @@ export const NewInBranchTag = ({
       <BaseTag
         fillColor={Colors.backgroundCyan()}
         textColor={Colors.textCyan()}
-        label="New in branch"
+        label={changes.length ? 'Changed in branch' : 'Modified in branch'}
         icon={<Icon name="new_in_branch" color={Colors.accentCyan()} />}
       />
     </Popover>

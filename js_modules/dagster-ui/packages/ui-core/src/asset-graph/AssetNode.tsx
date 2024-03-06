@@ -15,7 +15,7 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {StaleReasonsTag} from '../assets/Stale';
+import {StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -169,6 +169,9 @@ export const AssetNodeMinimal = ({
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
+  const isChanged = liveData?.changedReasons?.length;
+  const isStale = isAssetStale(liveData);
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
@@ -184,6 +187,8 @@ export const AssetNodeMinimal = ({
             $background={background}
             $border={border}
           >
+            {isChanged ? <MinimalNodeChangedDot /> : null}
+            {isStale ? <MinimalNodeStaleDot /> : null}
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
@@ -356,4 +361,45 @@ export const AssetDescription = styled.div<{$color: string}>`
 
 const TooltipStyled = styled(Tooltip)`
   height: 100%;
+`;
+
+const MinimalNodeChangedDot = styled.div`
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: ${Colors.backgroundCyan()};
+  &:after {
+    display: block;
+    position: absolute;
+    content: ' ';
+    left: 5px;
+    top: 5px;
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background-color: ${Colors.accentCyan()};
+  }
+`;
+const MinimalNodeStaleDot = styled.div`
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: ${Colors.backgroundYellow()};
+  &:after {
+    display: block;
+    position: absolute;
+    content: ' ';
+    left: 5px;
+    top: 5px;
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background-color: ${Colors.accentYellow()};
+  }
 `;
