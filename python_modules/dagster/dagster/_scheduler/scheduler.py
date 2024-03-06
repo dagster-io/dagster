@@ -142,6 +142,8 @@ def execute_scheduler_iteration_loop(
     max_tick_retries: int,
     shutdown_event: threading.Event,
 ) -> "DaemonIterator":
+    from dagster._daemon.daemon import SpanMarker
+
     scheduler_run_futures: Dict[str, Future] = {}
 
     submit_threadpool_executor = None
@@ -169,6 +171,7 @@ def execute_scheduler_iteration_loop(
             start_time = pendulum.now("UTC").timestamp()
             end_datetime_utc = pendulum.now("UTC")
 
+            yield SpanMarker.START_SPAN
             yield from launch_scheduled_runs(
                 workspace_process_context,
                 logger,
@@ -179,7 +182,7 @@ def execute_scheduler_iteration_loop(
                 max_catchup_runs=max_catchup_runs,
                 max_tick_retries=max_tick_retries,
             )
-            yield
+            yield SpanMarker.END_SPAN
             end_time = pendulum.now("UTC").timestamp()
 
             next_minute_time = _get_next_scheduler_iteration_time(start_time)
