@@ -1,20 +1,20 @@
 # mypy: disable-error-code=annotation-unchecked
 
 import gc
-from typing import Dict, NamedTuple
+from typing import Dict, NamedTuple, Tuple
 
 import objgraph
 from dagster._utils.cached_method import cached_method
 
 
-def test_cached_method():
+def test_cached_method() -> None:
     class MyClass:
-        def __init__(self, attr1):
+        def __init__(self, attr1) -> None:
             self._attr1 = attr1
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1):
+        def my_method(self, arg1) -> Tuple:
             self.calls.append(arg1)
             return (arg1, self._attr1)
 
@@ -31,13 +31,13 @@ def test_cached_method():
     assert obj2.calls == ["a", "b"]
 
 
-def test_kwargs_order_irrelevant_and_no_kwargs():
+def test_kwargs_order_irrelevant_and_no_kwargs() -> None:
     class MyClass:
-        def __init__(self):
+        def __init__(self) -> None:
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1, arg2):
+        def my_method(self, arg1, arg2) -> Tuple:
             self.calls.append(arg1)
             return arg1, arg2
 
@@ -47,7 +47,7 @@ def test_kwargs_order_irrelevant_and_no_kwargs():
     assert len(obj1.calls) == 1
 
 
-def test_does_not_leak():
+def test_does_not_leak() -> None:
     class LeakTestKey(NamedTuple):
         attr: str
 
@@ -76,10 +76,10 @@ def test_does_not_leak():
     assert objgraph.count("LeakTestValue") == 0
 
 
-def test_collisions():
+def test_collisions() -> None:
     class MyClass:
         @cached_method
-        def stuff(self, a=None, b=None):
+        def stuff(self, a=None, b=None) -> Dict:
             return {"a": a, "b": b}
 
     obj = MyClass()

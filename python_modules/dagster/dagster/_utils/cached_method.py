@@ -53,9 +53,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
     """
     cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
 
-    arg_names = get_arg_names(method)
-
-    arg_lookup = {arg_ordinal: arg_name for arg_ordinal, arg_name in enumerate(arg_names[1:])}
+    arg_names = None
 
     @wraps(method)
     def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
@@ -67,9 +65,15 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
         canonical_kwargs = None
         if args:
+            # nonlocal required to bind to variable in enclosing scope
+            nonlocal arg_names
+            # only create the lookup table on demand to avoid overhead
+            # if the cached method is never called with positional arguments
+            arg_names = arg_names if arg_names is not None else get_arg_names(method)
+
             translated_kwargs = {}
             for arg_ordinal, arg_value in enumerate(args):
-                arg_name = arg_lookup[arg_ordinal]
+                arg_name = arg_names[arg_ordinal]
                 translated_kwargs[arg_name] = arg_value
             if kwargs:
                 # only copy if both args and kwargs were passed
