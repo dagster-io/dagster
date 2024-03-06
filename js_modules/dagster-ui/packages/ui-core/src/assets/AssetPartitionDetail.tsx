@@ -19,6 +19,7 @@ import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {ChangedReasonsTag} from './ChangedReasons';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {StaleReasonsTag} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
@@ -250,10 +251,10 @@ export const AssetPartitionDetail = ({
             {hasStaleLoadingState ? (
               <Spinner purpose="body-text" />
             ) : (
-              <StaleReasonsTag
-                liveData={{staleCauses, staleStatus, changedReasons}}
-                assetKey={assetKey}
-              />
+              <>
+                <StaleReasonsTag liveData={{staleCauses, staleStatus}} assetKey={assetKey} />
+                <ChangedReasonsTag changedReasons={changedReasons} assetKey={assetKey} />
+              </>
             )}
           </div>
         ) : (

@@ -21,6 +21,7 @@ import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetA
 import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
@@ -526,11 +527,17 @@ const AssetViewPageHeaderTags = ({
     return (
       <>
         {definition ? (
-          <StaleReasonsTag
-            liveData={liveData}
-            assetKey={definition.assetKey}
-            onClick={onShowUpstream}
-          />
+          <>
+            <StaleReasonsTag
+              liveData={liveData}
+              assetKey={definition.assetKey}
+              onClick={onShowUpstream}
+            />
+            <ChangedReasonsTag
+              changedReasons={liveData?.changedReasons}
+              assetKey={definition.assetKey}
+            />
+          </>
         ) : null}
         {definition?.isSource ? (
           <Tag>Source Asset</Tag>
@@ -566,16 +573,20 @@ const AssetViewPageHeaderTags = ({
       {definition && definition.freshnessPolicy && (
         <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}
-      {definition && (
-        <StaleReasonsTag
-          liveData={liveData}
-          assetKey={definition.assetKey}
-          onClick={onShowUpstream}
-        />
-      )}
-      {definition && (
-        <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
-      )}
+      {definition ? (
+        <>
+          <StaleReasonsTag
+            liveData={liveData}
+            assetKey={definition.assetKey}
+            onClick={onShowUpstream}
+          />
+          <ChangedReasonsTag
+            changedReasons={liveData?.changedReasons}
+            assetKey={definition.assetKey}
+          />
+          <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
+        </>
+      ) : null}
     </>
   );
 };

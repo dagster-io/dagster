@@ -15,7 +15,8 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {StaleReasonsTag, isAssetStale} from '../assets/Stale';
+import {MinimalNodeChangedDot} from '../assets/ChangedReasons';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -187,8 +188,13 @@ export const AssetNodeMinimal = ({
             $background={background}
             $border={border}
           >
-            {isChanged ? <MinimalNodeChangedDot /> : null}
-            {isStale ? <MinimalNodeStaleDot /> : null}
+            {isChanged ? (
+              <MinimalNodeChangedDot
+                changedReasons={liveData.changedReasons!}
+                assetKey={assetKey}
+              />
+            ) : null}
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
@@ -361,45 +367,4 @@ export const AssetDescription = styled.div<{$color: string}>`
 
 const TooltipStyled = styled(Tooltip)`
   height: 100%;
-`;
-
-const MinimalNodeChangedDot = styled.div`
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background-color: ${Colors.backgroundCyan()};
-  &:after {
-    display: block;
-    position: absolute;
-    content: ' ';
-    left: 5px;
-    top: 5px;
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: ${Colors.accentCyan()};
-  }
-`;
-const MinimalNodeStaleDot = styled.div`
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background-color: ${Colors.backgroundYellow()};
-  &:after {
-    display: block;
-    position: absolute;
-    content: ' ';
-    left: 5px;
-    top: 5px;
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: ${Colors.accentYellow()};
-  }
 `;

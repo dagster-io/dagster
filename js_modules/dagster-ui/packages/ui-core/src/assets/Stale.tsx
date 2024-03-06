@@ -14,19 +14,21 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
-import {useMemo} from 'react';
+import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
-import {AssetKeyInput, ChangeReason, StaleCauseCategory, StaleStatus} from '../graphql/types';
+import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
-type StaleDataForNode = Partial<
-  Pick<LiveDataForNode, 'staleCauses' | 'staleStatus' | 'changedReasons'>
->;
-
+type StaleDataForNode = {
+  staleCauses?: LiveDataForNode['staleCauses'];
+  staleStatus?: LiveDataForNode['staleStatus'];
+  changedReasons?: LiveDataForNode['changedReasons'];
+};
 export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
@@ -99,6 +101,7 @@ export const StaleReasonsLabel = ({
   );
 };
 
+// Includes the cha
 export const StaleReasonsTag = ({
   assetKey,
   liveData,
@@ -110,22 +113,17 @@ export const StaleReasonsTag = ({
   include?: 'all' | 'upstream' | 'self';
   onClick?: () => void;
 }) => {
-  const staleTag = useMemo(() => {
-    if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
-      return <div />;
-    }
-    const label = (
-      <Caption>Outdated ({numberFormatter.format(liveData.staleCauses.length)})</Caption>
-    );
-    return (
-      <Popover
-        content={
-          <StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} include={include} />
-        }
-        position="top"
-        interactionKind="hover"
-        className="chunk-popover-target"
-      >
+  if (!isAssetStale(liveData) || !liveData?.staleCauses?.length) {
+    return <div />;
+  }
+  const label = <Caption>Outdated ({numberFormatter.format(liveData.staleCauses.length)})</Caption>;
+  return (
+    <Box
+      flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
+      padding={{horizontal: 4}}
+      style={{height: 24}}
+    >
+      <StaleCausesPopover assetKey={assetKey} liveData={liveData} include={include}>
         <BaseTag
           fillColor={Colors.backgroundYellow()}
           textColor={Colors.textYellow()}
@@ -140,23 +138,33 @@ export const StaleReasonsTag = ({
             )
           }
         />
-      </Popover>
-    );
-  }, [assetKey, include, liveData, onClick]);
-
-  const isNew = liveData?.changedReasons?.includes(ChangeReason.NEW);
-
-  return (
-    <Box
-      flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
-      padding={{horizontal: 4}}
-      style={{height: 24}}
-    >
-      {staleTag}
-      {liveData?.changedReasons?.length ? (
-        <NewOrChangedInBranchTag changedReasons={liveData.changedReasons} assetKey={assetKey} />
-      ) : null}
+      </StaleCausesPopover>
     </Box>
+  );
+};
+
+export const StaleCausesPopover = ({
+  liveData,
+  assetKey,
+  include,
+  children,
+}: {
+  assetKey: AssetKeyInput;
+  liveData?: StaleDataForNode;
+  include?: 'all' | 'upstream' | 'self';
+  children: React.ReactNode;
+}) => {
+  return (
+    <Popover
+      content={
+        <StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} include={include} />
+      }
+      position="top-left"
+      interactionKind="hover"
+      className="chunk-popover-target"
+    >
+      {children}
+    </Popover>
   );
 };
 
@@ -178,11 +186,11 @@ function groupedCauses(
 const StaleCausesPopoverSummary = ({
   assetKey,
   liveData,
-  include,
+  include = 'all',
 }: {
   assetKey: AssetKeyInput;
   liveData?: StaleDataForNode;
-  include: 'all' | 'upstream' | 'self';
+  include?: 'all' | 'upstream' | 'self';
 }) => {
   const grouped = groupedCauses(assetKey, include, liveData);
   const totalCauses = liveData?.staleCauses?.length;
@@ -273,62 +281,37 @@ const StaleReason = ({
   );
 };
 
-export const NewOrChangedInBranchTag = ({
-  changedReasons,
+export const MinimalNodeStaleDot = ({
+  liveData,
   assetKey,
 }: {
-  changedReasons: ChangeReason[];
+  liveData?: StaleDataForNode;
   assetKey: AssetKeyInput;
 }) => {
-  const changes = changedReasons.filter((reason) => reason !== ChangeReason.NEW);
-
-  function getDescription(change: ChangeReason) {
-    switch (change) {
-      case ChangeReason.NEW:
-        return '';
-      case ChangeReason.CODE_VERSION:
-        return 'has a modified code version';
-      case ChangeReason.INPUTS:
-        return 'has modified dependencies';
-      case ChangeReason.PARTITIONS_DEFINITION:
-        return 'has a modified partition definition';
-    }
-  }
   return (
-    <Popover
-      position="top"
-      isOpen={changes.length ? undefined : false}
-      content={
-        <Box flex={{direction: 'column'}}>
-          <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-            <Subtitle2>
-              {numberFormatter.format(changes.length)}{' '}
-              {ifPlural(changes.length, 'change', 'changes')} in this branch
-            </Subtitle2>
-          </Box>
-          {changes.map((change) => {
-            return (
-              <Box
-                key={change}
-                padding={{vertical: 8, horizontal: 12}}
-                flex={{direction: 'row', alignItems: 'center', gap: 4}}
-              >
-                <Tag icon="asset">{displayNameForAssetKey(assetKey)}</Tag>
-                {getDescription(change)}
-              </Box>
-            );
-          })}
-        </Box>
-      }
-      interactionKind="hover"
-      className="chunk-popover-target"
-    >
-      <BaseTag
-        fillColor={Colors.backgroundCyan()}
-        textColor={Colors.textCyan()}
-        label={changes.length ? 'Modified in branch' : 'Modified in branch'}
-        icon={<Icon name="new_in_branch" color={Colors.accentCyan()} />}
-      />
-    </Popover>
+    <StaleCausesPopover liveData={liveData} assetKey={assetKey}>
+      <MinimalNodeStaleDotElement />
+    </StaleCausesPopover>
   );
 };
+
+const MinimalNodeStaleDotElement = styled.div`
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: ${Colors.backgroundYellow()};
+  &:after {
+    display: block;
+    position: absolute;
+    content: ' ';
+    left: 5px;
+    top: 5px;
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background-color: ${Colors.accentYellow()};
+  }
+`;
