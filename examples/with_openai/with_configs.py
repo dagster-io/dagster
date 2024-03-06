@@ -21,15 +21,13 @@ from dagster import (
 )
 from dagster_openai import OpenAIResource
 from filelock import FileLock
-from langchain.chains.qa_with_sources import stuff_prompt, load_qa_with_sources_chain
+from langchain.chains.qa_with_sources import stuff_prompt
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema.output_parser import StrOutputParser
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
-from langchain.llms.openai import OpenAIChat
-from langchain.prompts import ChatPromptTemplate
 
 docs_partitions_def = DynamicPartitionsDefinition(name="docs")
 
