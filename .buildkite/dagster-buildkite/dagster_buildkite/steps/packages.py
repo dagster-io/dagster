@@ -561,6 +561,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-pandas",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-gcp",
         env_vars=[
             "AWS_ACCESS_KEY_ID",
