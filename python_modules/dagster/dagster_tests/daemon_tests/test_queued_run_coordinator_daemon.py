@@ -1206,6 +1206,39 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                     ["run-1", "run-2"]
                 )
 
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            {
+                "tag_concurrency_limits": [{"key": "database", "value": "tiny", "limit": 0}],
+                "block_op_concurrency_limited_runs": {"enabled": True},
+            },
+        ],
+    )
+    def test_multiple_blocks(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        external_job = self.get_external_concurrency_job(workspace)
+        foo_key = AssetKey(["prefix", "foo_limited_asset"])
+
+        # foo is blocked, but bar is not
+        instance.event_log_storage.set_concurrency_slots("foo", 0)
+
+        self.submit_run(
+            instance,
+            external_job,
+            workspace,
+            run_id="run-1",
+            asset_selection=set([foo_key]),
+            tags={"database": "tiny"},
+        )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set()
+
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture

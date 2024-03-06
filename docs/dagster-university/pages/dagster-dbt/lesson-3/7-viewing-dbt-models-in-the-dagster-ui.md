@@ -48,7 +48,7 @@ After clicking around a bit and seeing the dbt models within Dagster, the next s
 
 The run’s page should look similar to this:
 
-![TODO](/images/dagster-dbt/lesson-3/dbt-run-details-page.png)
+![Run details page in the Dagster UI](/images/dagster-dbt/lesson-3/dbt-run-details-page.png)
 
 Notice that there is only one “block,” or step, in this chart. That’s because Dagster runs dbt as it’s intended to be run: in a single execution of a `dbt` CLI command. This step will be named after the `@dbt_assets` -decorated asset, which we called `dbt_analytics` in the `assets/dbt.py` file.
 

@@ -22,7 +22,7 @@ Refer to [the dbt documentation](https://docs.getdbt.com/reference/dbt_project.y
 
 ## profiles.yml
 
-The next file we’ll cover is the `profiles.yml` file. This file contains connection details for your data platform, such as those for the DuckDB database we’ll use in this course. In this step, we’ll set up a `dev` environment for the project to use, which is where the DuckDB is located.
+The next file we’ll cover is the `profiles.yml` file. This file contains connection details for your data platform, such as those for the DuckDB database we’ll use in this course. In this step, we’ll set up a `dev` environment for the project to use, which is where the DuckDB database is located.
 
 Before we start working, you should know:
 
