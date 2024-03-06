@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,6 +16,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
@@ -57,6 +59,7 @@ RawMetadataValue = Union[
     int,
     List[Any],
     str,
+    datetime,
     None,
 ]
 
@@ -125,6 +128,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif isinstance(raw_value, datetime):
+        return MetadataValue.datetime(raw_value)
     elif raw_value is None:
         return MetadataValue.null()
 
@@ -405,6 +410,18 @@ class MetadataValue(ABC, Generic[T_Packable]):
             value (bool): The bool value for a metadata entry.
         """
         return BoolMetadataValue(value)
+
+    @public
+    @staticmethod
+    def datetime(datetime: datetime) -> "DateTimeMetadataValue":
+        """Static constructor for a metadata value wrapping a datetime as
+        :py:class:`DateTimeMetadataValue`. Can be used as the value type for the `metadata`
+        parameter for supported events.
+
+        Args:
+            datetime (datetime.datetime): The datetime value for a metadata entry.
+        """
+        return DateTimeMetadataValue.from_datetime(datetime)
 
     @public
     @staticmethod
@@ -810,6 +827,53 @@ class BoolMetadataValue(
 
     def __new__(cls, value: Optional[bool]):
         return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
+
+
+@whitelist_for_serdes
+class DateTimeMetadataValue(
+    NamedTuple(
+        "_DateTimeMetadataValue",
+        [
+            ("timestamp", PublicAttr[float]),
+            ("timezone", PublicAttr[str]),
+        ],
+    ),
+    MetadataValue[datetime],
+):
+    """Container class for metadata value that's a datetime.
+
+    Args:
+        timestamp (float): Seconds since the unix epoch.
+        timezone (str): String representing the timezone.
+    """
+
+    def __new__(cls, timestamp: float, timezone: str):
+        return super(DateTimeMetadataValue, cls).__new__(
+            cls, check.float_param(timestamp, "timestamp"), check.str_param(timezone, "timezone")
+        )
+
+    @public
+    @staticmethod
+    def from_datetime(dt: datetime) -> "DateTimeMetadataValue":
+        """Constructs a new DateTimeMetadataValue from a datetime object. The datetime object must have
+        a timezone.
+        """
+        tzinfo = dt.tzinfo
+
+        if tzinfo is None:
+            check.failed(
+                f"Datetime metadata values must have timezones, but {dt.isoformat()} does not"
+            )
+        tzname = tzinfo.tzname(dt)
+        if tzname is None:
+            check.failed(f"Couldn't find name for timezone {tzname}")
+        return DateTimeMetadataValue(timestamp=dt.timestamp(), timezone=tzname)
+
+    @public
+    @property
+    def value(self) -> datetime:
+        """Returns this DateTimeMetadataValue as a Pendulum datetime object."""
+        return pendulum.from_timestamp(timestamp=self.timestamp, tz=self.timezone)
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
