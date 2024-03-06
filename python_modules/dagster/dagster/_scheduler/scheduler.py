@@ -5,7 +5,7 @@ import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
 
 import pendulum
 from typing_extensions import Self
@@ -219,7 +219,7 @@ def launch_scheduled_runs(
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
     schedules: Dict[str, ExternalSchedule] = {}
-    error_locations: Set[str] = set()
+    error_locations = set()
 
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
@@ -234,19 +234,21 @@ def launch_scheduled_runs(
         elif location_entry.load_error:
             error_locations.add(location_entry.origin.location_name)
 
-    # Remove any schedule states that can no longer be found in the workspace
-    # (so that if they are later added back again, their timestamps will start at the correct place)
+    # Remove any schedule states that were previously created with DECLARED_IN_CODE
+    # and can no longer be found in the workspace (so that if they are later added
+    # back again, their timestamps will start at the correct place)
     states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
         if selector_id not in schedules
+        and schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
     ]
     for state in states_to_delete:
         location_name = state.origin.external_repository_origin.code_location_origin.location_name
-        # don't clean up state if its location is an error state
+        # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
             logger.info(
-                f"Removing state for schedule {state.instigator_name} "
+                f"Removing state for automatically running schedule {state.instigator_name} "
                 f"that is no longer present in {location_name}."
             )
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
