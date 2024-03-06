@@ -60,7 +60,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.daemon import DaemonIterator, DagsterDaemon
+from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -414,13 +414,14 @@ class AssetDaemon(DagsterDaemon):
 
             while True:
                 start_time = pendulum.now("UTC").timestamp()
+                yield SpanMarker.START_SPAN
                 yield from self._run_iteration_impl(
                     workspace_process_context,
                     threadpool_executor=threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
                 )
-                yield None
+                yield SpanMarker.END_SPAN
                 end_time = pendulum.now("UTC").timestamp()
                 loop_duration = end_time - start_time
                 sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)

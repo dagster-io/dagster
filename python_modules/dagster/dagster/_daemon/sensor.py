@@ -8,7 +8,6 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Dict,
-    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -20,7 +19,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
@@ -63,11 +62,12 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
 
+    from dagster._daemon.daemon import DaemonIterator
+
+
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
-
-TDaemonGenerator: TypeAlias = Iterator[Optional[SerializableErrorInfo]]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -248,12 +248,14 @@ def execute_sensor_iteration_loop(
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> TDaemonGenerator:
+) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
+    from dagster._daemon.daemon import SpanMarker
+
     sensor_tick_futures: Dict[str, Future] = {}
     while True:
         start_time = pendulum.now("UTC").timestamp()
@@ -261,6 +263,7 @@ def execute_sensor_iteration_loop(
             # provide a way of organically ending the loop to support test environment
             break
 
+        yield SpanMarker.START_SPAN
         yield from execute_sensor_iteration(
             workspace_process_context,
             logger,
@@ -270,7 +273,7 @@ def execute_sensor_iteration_loop(
         )
         # Yield to check for heartbeats in case there were no yields within
         # execute_sensor_iteration
-        yield None
+        yield SpanMarker.END_SPAN
 
         end_time = pendulum.now("UTC").timestamp()
 
