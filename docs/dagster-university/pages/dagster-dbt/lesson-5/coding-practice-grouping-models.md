@@ -8,7 +8,7 @@ lesson: '5'
 
 Override the `get_group_name` method in your `CustomizedDagsterDbtTranslator` to group each dbt model by their layer (`marts` and `staging`).
 
-**Hint:** `dbt_resource_props` is Python dictionary with a structure that contains something like this:
+**Hint:** `dbt_resource_props` is a Python dictionary with a structure that similar to the following:
 
 ```json
 {
@@ -33,8 +33,6 @@ Override the `get_group_name` method in your `CustomizedDagsterDbtTranslator` to
 ## Check your work
 
 The method you built should look similar to the following code. Click **View answer** to view it.
-
-**If there are differences**, compare what you wrote to the code below and change them, as this method will be used as-is in future lessons.
 
 ```python {% obfuscated="true" %}
 @classmethod

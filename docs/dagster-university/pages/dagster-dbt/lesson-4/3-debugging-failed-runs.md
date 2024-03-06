@@ -47,8 +47,7 @@ In these logs, we can see that DuckDB can’t find the `zone_population` column 
 Now that we know what the problem is, let’s fix it:
 
 1. Remove the `zone_population` column from the `stg_zones` model
-2. Rebuild the dbt manifest by running `dbt parse` in the terminal
-3. In the Dagster UI, reload the code location to allow Dagster to pick up the changes.
+2. In the Dagster UI, reload the code location to allow Dagster to pick up the changes.
 
 At this point, if you materialize the  `stg_zones` asset again, the run should be successful:
 

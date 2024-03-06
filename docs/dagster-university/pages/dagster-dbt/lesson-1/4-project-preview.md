@@ -6,7 +6,7 @@ lesson: '1'
 
 # Project preview
 
-In this course, we’ll focus on integrating a dbt project with Dagster from end to end. We’ll build on the Dagster project used in the Dagster Essentials course, which uses data from [NYC OpenData](https://opendata.cityofnewyork.us/).  If you haven’t completed Dagster Essentials, no worries - you can clone the finished project and build from there. We’ll do this in the next lesson.
+In this course, we’ll focus on integrating a dbt project with Dagster from end to end. We’ll build on the Dagster project used in the Dagster Essentials course, which uses data from [NYC OpenData](https://opendata.cityofnewyork.us/). If you haven’t completed Dagster Essentials, no worries - we'll show you what to do in the next lesson.
 
 By the end of the course, you will:
 

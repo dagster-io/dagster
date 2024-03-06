@@ -85,7 +85,7 @@ This creates a path to where we want to save the chart. The `get_path_for_env` u
 Now we’re ready to create the asset!
 
 1. Open the `assets/metrics.py` file.
-2. At the end of the file, define a new asset called `airport_trips` with the the existing `DuckDBResource` named `database` and it will return a `MaterializeResult`, indicating that we'll be returning some metadata:
+2. At the end of the file, define a new asset called `airport_trips` with the existing `DuckDBResource` named `database` and it will return a `MaterializeResult`, indicating that we'll be returning some metadata:
     
     ```python
     def airport_trips(database: DuckDBResource) -> MaterializeResult:
