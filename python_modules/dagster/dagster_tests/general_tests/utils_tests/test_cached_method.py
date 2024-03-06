@@ -4,7 +4,7 @@ import gc
 from typing import Dict, NamedTuple, Tuple
 
 import objgraph
-from dagster._utils.cached_method import cached_method
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 
 def test_cached_method() -> None:
@@ -105,12 +105,19 @@ def test_ordinal_args() -> None:
     a2 = obj.stuff(2, None)
     b2 = obj.stuff(None, 2)
 
-    assert a1 != b1
-    assert a1 != a2
-    assert b1 != b2
+    assert obj.stuff(1, None) is obj.stuff(a=1, b=None)
+    assert obj.stuff(1, b=None) is obj.stuff(a=1, b=None)
+
+    assert a1 is not b1
+    assert a1 is not a2
+    assert b1 is not b2
 
 
-def test_doc_string_scenario_canonicalized_cache_entry() -> None:
+def test_scenario_documented_in_cached_method_doc_block() -> None:
+    # This following example was used in the docblock to demonstrate
+    # the difference with functools. In cached_method, these
+    # share the same cache entry, whereas in functools.lru_cache
+    # they would have three entries.
     class MyClass:
         @cached_method
         def a_method(self, arg1: str, arg2: int) -> str:
@@ -123,3 +130,4 @@ def test_doc_string_scenario_canonicalized_cache_entry() -> None:
 
     # only one entry
     assert len(obj.__dict__) == 1
+    assert len(obj.__dict__["a_method" + CACHED_METHOD_FIELD_SUFFIX]) == 1

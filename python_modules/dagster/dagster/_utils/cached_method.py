@@ -69,7 +69,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             nonlocal arg_names
             # only create the lookup table on demand to avoid overhead
             # if the cached method is never called with positional arguments
-            arg_names = arg_names if arg_names is not None else get_arg_names(method)
+            arg_names = arg_names if arg_names is not None else get_arg_names(method)[1:]
 
             translated_kwargs = {}
             for arg_ordinal, arg_value in enumerate(args):
@@ -120,7 +120,8 @@ def _make_key(
 
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than
-    s a nested structure that would take more memory.
+    as a nested structure that would take more memory.
+
     If there is only a single argument and its data type is known to cache
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
