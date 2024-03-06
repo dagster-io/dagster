@@ -926,7 +926,7 @@ def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bo
                     },
                     "pod_template_spec_metadata": {
                         "annotations": annotations,
-                    }
+                    },
                 },
             }
         }
