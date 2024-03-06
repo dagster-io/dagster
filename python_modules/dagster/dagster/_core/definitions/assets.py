@@ -72,7 +72,7 @@ from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_group_name
 
 if TYPE_CHECKING:
-    from .asset_graph import AssetKeyOrCheckKey
+    from .base_asset_graph import AssetKeyOrCheckKey
     from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"

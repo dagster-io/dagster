@@ -20,7 +20,7 @@ from dagster._annotations import deprecated, experimental
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
         AssetKeyPartitionKey,
@@ -374,19 +374,19 @@ class CachingStaleStatusResolver:
 
     _instance: "DagsterInstance"
     _instance_queryer: Optional["CachingInstanceQueryer"]
-    _asset_graph: Optional["AssetGraph"]
-    _asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
+    _asset_graph: Optional["BaseAssetGraph"]
+    _asset_graph_load_fn: Optional[Callable[[], "BaseAssetGraph"]]
 
     def __init__(
         self,
         instance: "DagsterInstance",
-        asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
+        asset_graph: Union["BaseAssetGraph", Callable[[], "BaseAssetGraph"]],
     ):
-        from dagster._core.definitions.asset_graph import AssetGraph
+        from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
         self._instance_queryer = None
-        if isinstance(asset_graph, AssetGraph):
+        if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
         else:
@@ -602,7 +602,7 @@ class CachingStaleStatusResolver:
         return root_causes
 
     @property
-    def asset_graph(self) -> "AssetGraph":
+    def asset_graph(self) -> "BaseAssetGraph":
         if self._asset_graph is None:
             self._asset_graph = check.not_none(self._asset_graph_load_fn)()
         return self._asset_graph

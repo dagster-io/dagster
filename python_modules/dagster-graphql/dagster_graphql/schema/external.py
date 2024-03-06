@@ -7,8 +7,8 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
@@ -275,7 +275,7 @@ class GrapheneRepository(graphene.ObjectType):
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
         self._stale_status_loader = StaleStatusLoader(
             instance=instance,
-            asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
+            asset_graph=lambda: RemoteAssetGraph.from_external_repository(repository),
         )
         self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
 

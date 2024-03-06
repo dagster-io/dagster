@@ -27,13 +27,13 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
@@ -47,7 +47,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 
 
-def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
+def to_external_asset_graph(assets, asset_checks=None) -> BaseAssetGraph:
     @repository
     def repo():
         return assets + (asset_checks or [])
@@ -55,16 +55,16 @@ def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
     external_asset_nodes = external_asset_nodes_from_defs(
         repo.get_all_jobs(), repo.asset_graph.assets_defs
     )
-    return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
+    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
         [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
         external_asset_checks=external_asset_checks_from_defs(repo.get_all_jobs()),
     )
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets", params=[InternalAssetGraph.from_assets, to_external_asset_graph]
+    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
 )
-def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], AssetGraph]:
+def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], BaseAssetGraph]:
     return request.param
 
 
@@ -131,7 +131,7 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
 
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
     def parent(): ...
@@ -163,7 +163,7 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
         )
 
 
-def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., AssetGraph]):
+def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
     def parent(): ...
 
@@ -197,7 +197,9 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
         )
 
 
-def test_get_parent_partitions_fan_in(asset_graph_from_assets: Callable[..., AssetGraph]) -> None:
+def test_get_parent_partitions_fan_in(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+) -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def parent(): ...
 
@@ -235,7 +237,7 @@ def test_get_parent_partitions_fan_in(asset_graph_from_assets: Callable[..., Ass
 
 
 def test_get_parent_partitions_non_default_partition_mapping(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
     def parent(): ...
@@ -321,7 +323,7 @@ def test_custom_unsupported_partition_mapping():
         )
         def child(parent): ...
 
-    internal_asset_graph = InternalAssetGraph.from_assets([parent, child])
+    internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:
@@ -341,7 +343,7 @@ def test_custom_unsupported_partition_mapping():
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @multi_asset(outs={"a": AssetOut(), "b": AssetOut()})
     def non_subsettable_multi_asset(): ...
@@ -354,7 +356,7 @@ def test_required_multi_asset_sets_non_subsettable_multi_asset(
 
 
 def test_required_multi_asset_sets_subsettable_multi_asset(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @multi_asset(
         outs={"a": AssetOut(), "b": AssetOut()},
@@ -368,7 +370,7 @@ def test_required_multi_asset_sets_subsettable_multi_asset(
 
 
 def test_required_multi_asset_sets_graph_backed_multi_asset(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @op
     def op1():
@@ -391,7 +393,7 @@ def test_required_multi_asset_sets_graph_backed_multi_asset(
 
 
 def test_required_multi_asset_sets_same_op_in_different_assets(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @op
     def op1(): ...
@@ -405,7 +407,7 @@ def test_required_multi_asset_sets_same_op_in_different_assets(
         assert asset_graph.get_execution_set_asset_keys(asset_def.key) == {asset_def.key}
 
 
-def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., AssetGraph]):
+def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     partitioned_source = SourceAsset(
@@ -419,14 +421,14 @@ def test_partitioned_source_asset(asset_graph_from_assets: Callable[..., AssetGr
 
     asset_graph = asset_graph_from_assets([partitioned_source, downstream_of_partitioned_source])
 
-    if isinstance(asset_graph, ExternalAssetGraph):
-        pytest.xfail("not supported with ExternalAssetGraph")
+    if isinstance(asset_graph, RemoteAssetGraph):
+        pytest.xfail("not supported with RemoteAssetGraph")
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
     assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
 
 
-def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., AssetGraph]):
+def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -516,7 +518,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., AssetGr
 
 
 def test_bfs_filter_asset_subsets_different_mappings(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
@@ -573,7 +575,9 @@ def test_bfs_filter_asset_subsets_different_mappings(
     )
 
 
-def test_asset_graph_subset_contains(asset_graph_from_assets: Callable[..., AssetGraph]) -> None:
+def test_asset_graph_subset_contains(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+) -> None:
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -607,7 +611,7 @@ def test_asset_graph_subset_contains(asset_graph_from_assets: Callable[..., Asse
     assert AssetKeyPartitionKey(partitioned2.key, "2022-01-01") not in asset_graph_subset
 
 
-def test_asset_graph_difference(asset_graph_from_assets: Callable[..., AssetGraph]):
+def test_asset_graph_difference(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -666,11 +670,13 @@ def test_asset_graph_difference(asset_graph_from_assets: Callable[..., AssetGrap
     )
 
 
-def test_asset_graph_partial_deserialization(asset_graph_from_assets: Callable[..., AssetGraph]):
+def test_asset_graph_partial_deserialization(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+):
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
-    def get_ag1() -> AssetGraph:
+    def get_ag1() -> BaseAssetGraph:
         @asset(partitions_def=daily_partitions_def)
         def partitioned1(): ...
 
@@ -685,7 +691,7 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets: Callable[.
 
         return asset_graph_from_assets([partitioned1, partitioned2, unpartitioned1, unpartitioned2])
 
-    def get_ag2() -> AssetGraph:
+    def get_ag2() -> BaseAssetGraph:
         @asset(partitions_def=daily_partitions_def)
         def partitioned1(): ...
 
@@ -744,7 +750,7 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets: Callable[.
 
 
 def test_required_assets_and_checks_by_key_check_decorator(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     @asset
     def asset0(): ...
@@ -758,7 +764,7 @@ def test_required_assets_and_checks_by_key_check_decorator(
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset0")
@@ -779,7 +785,7 @@ def test_required_assets_and_checks_by_key_asset_decorator(
 
 
 def test_required_assets_and_checks_by_key_multi_asset(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset1")
@@ -819,7 +825,7 @@ def test_required_assets_and_checks_by_key_multi_asset(
 
 
 def test_required_assets_and_checks_by_key_multi_asset_single_asset(
-    asset_graph_from_assets: Callable[..., AssetGraph],
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset0")

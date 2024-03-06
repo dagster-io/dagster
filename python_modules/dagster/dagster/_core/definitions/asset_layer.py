@@ -44,8 +44,8 @@ from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+    from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition_mapping import PartitionMapping
     from dagster._core.execution.context.output import OutputContext

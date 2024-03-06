@@ -118,7 +118,7 @@ def get_expected_data_time_for_asset_key(
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
-    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
     asset_key = context.asset_key
     asset_graph = context.asset_graph
@@ -135,7 +135,7 @@ def get_expected_data_time_for_asset_key(
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
-            if isinstance(asset_graph, ExternalAssetGraph) and context.will_update_asset_partition(
+            if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
                 AssetKeyPartitionKey(parent_key)
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)

@@ -21,7 +21,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -171,7 +171,7 @@ def _make_context(instance: DagsterInstance, defs_attrs):
 
 
 def test_get_repository_handle(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(_make_context(instance, ["defs1", "defs2"]))
+    asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["defs1", "defs2"]))
 
     assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle1 = asset_graph.get_repository_handle(asset1.key)
@@ -185,7 +185,7 @@ def test_get_repository_handle(instance):
 
 
 def test_cross_repo_dep_with_source_asset(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(
+    asset_graph = RemoteAssetGraph.from_workspace(
         _make_context(instance, ["defs1", "downstream_defs"])
     )
     assert len(asset_graph.external_asset_keys) == 0
@@ -208,7 +208,7 @@ def test_cross_repo_dep_with_source_asset(instance):
 
 
 def test_cross_repo_dep_no_source_asset(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(
+    asset_graph = RemoteAssetGraph.from_workspace(
         _make_context(instance, ["defs1", "downstream_defs_no_source"])
     )
     assert len(asset_graph.external_asset_keys) == 0
@@ -233,14 +233,14 @@ def test_cross_repo_dep_no_source_asset(instance):
 
 
 def test_partitioned_source_asset(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
+    asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
     assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
 
 
 def test_get_implicit_job_name_for_assets(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(_make_context(instance, ["defs1", "defs2"]))
+    asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["defs1", "defs2"]))
     assert (
         asset_graph.get_implicit_job_name_for_assets([asset1.key], external_repo=None)
         == "__ASSET_JOB"
@@ -255,7 +255,7 @@ def test_get_implicit_job_name_for_assets(instance):
     )
 
     partitioned_defs_workspace = _make_context(instance, ["partitioned_defs"])
-    asset_graph = ExternalAssetGraph.from_workspace(partitioned_defs_workspace)
+    asset_graph = RemoteAssetGraph.from_workspace(partitioned_defs_workspace)
     external_repo = next(
         iter(partitioned_defs_workspace.code_locations[0].get_repositories().values())
     )
@@ -279,7 +279,7 @@ def test_get_implicit_job_name_for_assets(instance):
         == "__ASSET_JOB_0"
     )
 
-    asset_graph = ExternalAssetGraph.from_workspace(
+    asset_graph = RemoteAssetGraph.from_workspace(
         _make_context(instance, ["different_partitions_defs"])
     )
     assert (
@@ -322,7 +322,7 @@ def test_get_implicit_job_name_for_assets(instance):
 
 
 def test_auto_materialize_policy(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
+    asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["partitioned_defs"]))
 
     assert asset_graph.get_auto_materialize_policy(
         AssetKey("downstream_of_partitioned_source")
@@ -347,7 +347,7 @@ partition_mapping_defs = Definitions(assets=[static_partitioned_asset, partition
 
 
 def test_partition_mapping(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(
+    asset_graph = RemoteAssetGraph.from_workspace(
         _make_context(instance, ["partition_mapping_defs"])
     )
     assert isinstance(
@@ -398,9 +398,7 @@ backfill_assets_defs = Definitions(
 
 
 def test_assets_with_backfill_policies(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(
-        _make_context(instance, ["backfill_assets_defs"])
-    )
+    asset_graph = RemoteAssetGraph.from_workspace(_make_context(instance, ["backfill_assets_defs"]))
     assert (
         asset_graph.get_backfill_policy(AssetKey("static_partitioned_single_run_backfill_asset"))
         == BackfillPolicy.single_run()
@@ -429,7 +427,7 @@ cycle_defs_b = Definitions(assets=[b])
 
 
 def test_cycle_status(instance):
-    asset_graph = ExternalAssetGraph.from_workspace(
+    asset_graph = RemoteAssetGraph.from_workspace(
         _make_context(instance, ["cycle_defs_a", "cycle_defs_b"])
     )
     resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
@@ -459,7 +457,7 @@ def test_dup_node_detection(instance):
             re.DOTALL,
         ),
     ):
-        ExternalAssetGraph.from_workspace(
+        RemoteAssetGraph.from_workspace(
             _make_context(instance, ["dup_materialization_defs_a", "dup_materialization_defs_b"])
         )
 
@@ -469,6 +467,6 @@ def test_dup_node_detection(instance):
             r'Only one OBSERVATION node is allowed per asset.*"single_observable_asset"', re.DOTALL
         ),
     ):
-        ExternalAssetGraph.from_workspace(
+        RemoteAssetGraph.from_workspace(
             _make_context(instance, ["dup_observation_defs_a", "dup_observation_defs_b"])
         )

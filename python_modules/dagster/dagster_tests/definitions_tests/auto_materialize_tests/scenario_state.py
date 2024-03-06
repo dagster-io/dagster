@@ -30,7 +30,6 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -165,7 +164,7 @@ class ScenarioSpec:
 
     @property
     def asset_graph(self) -> AssetGraph:
-        return InternalAssetGraph.from_assets(self.assets)
+        return AssetGraph.from_assets(self.assets)
 
     def with_additional_repositories(
         self,

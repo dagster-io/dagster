@@ -18,9 +18,9 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -118,7 +118,7 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
 
 
 def _get_pre_sensor_auto_materialize_cursor(
-    instance: DagsterInstance, full_asset_graph: Optional[AssetGraph]
+    instance: DagsterInstance, full_asset_graph: Optional[BaseAssetGraph]
 ) -> AssetDaemonCursor:
     """Gets a deserialized cursor by either reading from the new cursor key and simply deserializing
     the value, or by reading from the old cursor key and converting the legacy cursor into the
@@ -179,7 +179,7 @@ def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCurso
 
 
 def asset_daemon_cursor_from_instigator_serialized_cursor(
-    serialized_cursor: Optional[str], asset_graph: Optional[AssetGraph]
+    serialized_cursor: Optional[str], asset_graph: Optional[BaseAssetGraph]
 ) -> AssetDaemonCursor:
     """This method decompresses the serialized cursor and returns a deserialized cursor object,
     converting from the legacy cursor format if necessary.
@@ -485,7 +485,7 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_to_sensors(instance):
                     # Do a one-time migration to create the cursors for each sensor, based on the
                     # existing cursor for the legacy AMP tick
-                    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+                    asset_graph = RemoteAssetGraph.from_workspace(workspace)
                     pre_sensor_cursor = _get_pre_sensor_auto_materialize_cursor(
                         instance, asset_graph
                     )
@@ -647,7 +647,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        asset_graph = ExternalAssetGraph.from_workspace(workspace)
+        asset_graph = RemoteAssetGraph.from_workspace(workspace)
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None
@@ -671,7 +671,7 @@ class AssetDaemon(DagsterDaemon):
 
             if sensor:
                 eligible_keys = check.not_none(sensor.asset_selection).resolve(
-                    ExternalAssetGraph.from_external_repository(check.not_none(repository))
+                    RemoteAssetGraph.from_external_repository(check.not_none(repository))
                 )
             else:
                 eligible_keys = {
@@ -832,7 +832,7 @@ class AssetDaemon(DagsterDaemon):
         tick: InstigatorTick,
         sensor: Optional[ExternalSensor],
         workspace_process_context: IWorkspaceProcessContext,
-        asset_graph: ExternalAssetGraph,
+        asset_graph: RemoteAssetGraph,
         auto_materialize_asset_keys: Set[AssetKey],
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],

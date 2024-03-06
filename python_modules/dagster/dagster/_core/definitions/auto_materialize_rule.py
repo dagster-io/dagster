@@ -46,7 +46,7 @@ from dagster._utils.schedules import (
 )
 
 from .asset_condition.asset_condition_evaluation_context import AssetConditionEvaluationContext
-from .asset_graph import sort_key_for_asset_partition
+from .base_asset_graph import sort_key_for_asset_partition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_condition.asset_condition import (

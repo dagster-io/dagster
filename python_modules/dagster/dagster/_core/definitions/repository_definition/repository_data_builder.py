@@ -31,9 +31,9 @@ from dagster._core.definitions.assets_job import (
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.internal_asset_graph import InternalAssetGraph
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partitioned_schedule import (
@@ -107,7 +107,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
 
 def _resolve_unresolved_job_def_lambda(
     unresolved_job_def: UnresolvedAssetJobDefinition,
-    asset_graph: InternalAssetGraph,
+    asset_graph: AssetGraph,
     default_executor_def: Optional[ExecutorDefinition],
     top_level_resources: Optional[Mapping[str, ResourceDefinition]],
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
@@ -232,7 +232,7 @@ def build_caching_repository_data_from_list(
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    asset_graph = InternalAssetGraph.from_assets(
+    asset_graph = AssetGraph.from_assets(
         [*assets_defs, *source_assets], asset_checks=asset_checks_defs
     )
     if assets_defs or source_assets or asset_checks_defs:
@@ -368,7 +368,7 @@ def build_caching_repository_data_from_dict(
         elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
             repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
-                asset_graph=InternalAssetGraph.from_assets([]),
+                asset_graph=AssetGraph.from_assets([]),
                 default_executor_def=None,
             )
         elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):
@@ -457,7 +457,7 @@ def _process_and_validate_target(
 
 
 def _validate_auto_materialize_sensors(
-    sensors: Iterable[SensorDefinition], asset_graph: AssetGraph
+    sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
     sensor_names_by_asset_key: Dict[AssetKey, str] = {}

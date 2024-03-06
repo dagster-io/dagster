@@ -29,8 +29,8 @@ from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..asset_graph import AssetGraph
 from ..asset_subset import AssetSubset, ValidAssetSubset
+from ..base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
     from ..asset_daemon_context import AssetDaemonContext
@@ -131,7 +131,7 @@ class AssetConditionEvaluationContext:
         return self.root_ref or self
 
     @property
-    def asset_graph(self) -> AssetGraph:
+    def asset_graph(self) -> BaseAssetGraph:
         return self.instance_queryer.asset_graph
 
     @property
@@ -300,7 +300,7 @@ class AssetConditionEvaluationContext:
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
-        from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
         return (
             # both assets must be materializable
@@ -318,7 +318,7 @@ class AssetConditionEvaluationContext:
             )
             # the parent must be in the same repository to be materialized alongside the candidate
             and (
-                not isinstance(self.asset_graph, ExternalAssetGraph)
+                not isinstance(self.asset_graph, RemoteAssetGraph)
                 or self.asset_graph.get_repository_handle(child_key)
                 == self.asset_graph.get_repository_handle(parent_key)
             )

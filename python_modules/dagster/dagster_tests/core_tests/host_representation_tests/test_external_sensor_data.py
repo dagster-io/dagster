@@ -1,7 +1,7 @@
 from typing import AbstractSet
 
 from dagster import AssetKey, AssetSelection, Definitions, asset, sensor
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.host_representation.external_data import external_sensor_data_from_def
 
 
@@ -25,7 +25,7 @@ def test_unserializable_asset_selection():
     def asset2(): ...
 
     class MySpecialAssetSelection(AssetSelection, frozen=True):
-        def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        def resolve_inner(self, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
             return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
 
     @sensor(asset_selection=MySpecialAssetSelection())

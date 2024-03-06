@@ -34,12 +34,12 @@ from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
@@ -127,7 +127,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
             rule_evaluation_data=data_type(**transformed_kwargs),
         )
 
-    def resolve(self, asset_key: AssetKey, asset_graph: AssetGraph) -> AssetSubsetWithMetadata:
+    def resolve(self, asset_key: AssetKey, asset_graph: BaseAssetGraph) -> AssetSubsetWithMetadata:
         """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
         partitions that it applies to.
         """

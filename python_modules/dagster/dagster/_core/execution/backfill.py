@@ -5,9 +5,9 @@ import pendulum
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
@@ -117,7 +117,7 @@ class PartitionBackfill(
             self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
         )
 
-    def get_asset_backfill_data(self, asset_graph: AssetGraph) -> AssetBackfillData:
+    def get_asset_backfill_data(self, asset_graph: BaseAssetGraph) -> AssetBackfillData:
         if self.serialized_asset_backfill_data:
             asset_backfill_data = AssetBackfillData.from_serialized(
                 self.serialized_asset_backfill_data, asset_graph, self.backfill_timestamp
@@ -154,7 +154,7 @@ class PartitionBackfill(
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
                     self.serialized_asset_backfill_data,
-                    ExternalAssetGraph.from_workspace(workspace),
+                    RemoteAssetGraph.from_workspace(workspace),
                 )
             else:
                 return True
@@ -171,7 +171,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = RemoteAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -188,7 +188,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = RemoteAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -205,7 +205,7 @@ class PartitionBackfill(
             return None
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = RemoteAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -220,7 +220,7 @@ class PartitionBackfill(
             return 0
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = RemoteAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -238,7 +238,7 @@ class PartitionBackfill(
             return []
 
         if self.is_asset_backfill:
-            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            asset_graph = RemoteAssetGraph.from_workspace(workspace)
             try:
                 asset_backfill_data = self.get_asset_backfill_data(asset_graph)
             except DagsterDefinitionChangedDeserializationError:
@@ -333,7 +333,7 @@ class PartitionBackfill(
         self,
         asset_backfill_data: AssetBackfillData,
         dynamic_partitions_store: DynamicPartitionsStore,
-        asset_graph: AssetGraph,
+        asset_graph: BaseAssetGraph,
     ) -> "PartitionBackfill":
         is_backcompat = self.serialized_asset_backfill_data is not None
         return PartitionBackfill(
@@ -360,7 +360,7 @@ class PartitionBackfill(
     def from_asset_partitions(
         cls,
         backfill_id: str,
-        asset_graph: AssetGraph,
+        asset_graph: BaseAssetGraph,
         partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         backfill_timestamp: float,
@@ -399,7 +399,7 @@ class PartitionBackfill(
     def from_partitions_by_assets(
         cls,
         backfill_id: str,
-        asset_graph: AssetGraph,
+        asset_graph: BaseAssetGraph,
         backfill_timestamp: float,
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
