@@ -73,7 +73,7 @@ cron_scenarios = [
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned_rule_added_later",
-        initial_state=one_asset.with_asset_properties(
+        initial_spec=one_asset.with_asset_properties(
             # this policy will never materialize the asset
             auto_materialize_policy=AutoMaterializePolicy(
                 rules={AutoMaterializeRule.skip_on_parent_missing()}
