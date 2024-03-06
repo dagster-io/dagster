@@ -10,6 +10,7 @@ import {
 } from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
+import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, ChangeReason} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
@@ -21,7 +22,8 @@ export const ChangedReasonsTag = ({
   changedReasons?: ChangeReason[];
   assetKey: AssetKeyInput;
 }) => {
-  if (!changedReasons?.length) {
+  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
+  if (!changedReasons?.length || !flagExperimentalBranchDiff) {
     return null;
   }
   return (
@@ -45,6 +47,10 @@ export const ChangedReasonsPopover = ({
   assetKey: AssetKeyInput;
   children: React.ReactNode;
 }) => {
+  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
+  if (!flagExperimentalBranchDiff) {
+    return null;
+  }
   const modifiedChanges = changedReasons.filter((reason) => reason !== ChangeReason.NEW);
   function getDescription(change: ChangeReason) {
     switch (change) {
@@ -100,6 +106,10 @@ export const MinimalNodeChangedDot = ({
   changedReasons: ChangeReason[];
   assetKey: AssetKeyInput;
 }) => {
+  const flagExperimentalBranchDiff = featureEnabled(FeatureFlag.flagExperimentalBranchDiff);
+  if (!flagExperimentalBranchDiff) {
+    return null;
+  }
   return (
     <ChangedReasonsPopover changedReasons={changedReasons} assetKey={assetKey}>
       <MinimalNodeChangedDotContainer />

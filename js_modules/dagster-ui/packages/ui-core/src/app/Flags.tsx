@@ -13,6 +13,7 @@ export const FeatureFlag = {
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
   flagUseNewAutomationPage: 'flagUseNewAutomationPage' as const,
   flagUseNewOverviewPage: 'flagUseNewOverviewPage' as const,
+  flagExperimentalBranchDiff: 'flagExperimentalBranchDiff' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
