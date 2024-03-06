@@ -383,7 +383,7 @@ def get_dbt_multi_asset_args(
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
 
-    dbt_unique_ids_by_asset_key: Dict[AssetKey, Set[str]] = {}
+    dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
@@ -391,7 +391,11 @@ def get_dbt_multi_asset_args(
         output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
-        dbt_unique_ids_by_asset_key.setdefault(asset_key, set()).add(unique_id)
+        unique_ids_for_asset_key, resource_types_for_asset_key = (
+            dbt_unique_id_and_resource_types_by_asset_key.setdefault(asset_key, (set(), set()))
+        )
+        unique_ids_for_asset_key.add(unique_id)
+        resource_types_for_asset_key.add(dbt_resource_props["resource_type"])
 
         outs[output_name] = AssetOut(
             key=asset_key,
@@ -435,9 +439,13 @@ def get_dbt_multi_asset_args(
                     dbt_parent_resource_props=dbt_parent_resource_props,
                 )
 
-                dbt_unique_ids_by_asset_key.setdefault(parent_asset_key, set()).add(
-                    parent_unique_id
+                parent_unique_ids_for_asset_key, parent_resource_types_for_asset_key = (
+                    dbt_unique_id_and_resource_types_by_asset_key.setdefault(
+                        parent_asset_key, (set(), set())
+                    )
                 )
+                parent_unique_ids_for_asset_key.add(parent_unique_id)
+                parent_resource_types_for_asset_key.add(dbt_parent_resource_props["resource_type"])
 
                 if parent_partition_mapping:
                     experimental_warning("DagsterDbtTranslator.get_partition_mapping")
@@ -471,8 +479,15 @@ def get_dbt_multi_asset_args(
 
     dbt_unique_ids_by_duplicate_asset_key = {
         asset_key: sorted(unique_ids)
-        for asset_key, unique_ids in dbt_unique_ids_by_asset_key.items()
+        for asset_key, (
+            unique_ids,
+            resource_types,
+        ) in dbt_unique_id_and_resource_types_by_asset_key.items()
         if len(unique_ids) != 1
+        and not (
+            resource_types == set(["source"])
+            and dagster_dbt_translator.settings.enable_duplicate_source_asset_keys
+        )
     }
     if dbt_unique_ids_by_duplicate_asset_key:
         error_messages = []
