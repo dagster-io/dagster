@@ -326,7 +326,7 @@ export const NewOrChangedInBranchTag = ({
       <BaseTag
         fillColor={Colors.backgroundCyan()}
         textColor={Colors.textCyan()}
-        label={changes.length ? 'Changed in branch' : 'Modified in branch'}
+        label={changes.length ? 'Modified in branch' : 'Modified in branch'}
         icon={<Icon name="new_in_branch" color={Colors.accentCyan()} />}
       />
     </Popover>
