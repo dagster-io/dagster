@@ -13,6 +13,7 @@ from .dbt_projects import (
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
+    test_dbt_source_freshness_path,
     test_duplicate_source_asset_key_path,
     test_jaffle_shop_path,
     test_meta_config_path,
@@ -39,8 +40,10 @@ def setup_duckdb_dbfile_path_fixture(worker_id: str) -> None:
     """Set `DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH` to generate a unique duckdb dbfile path
     for each pytest-xdist worker.
     """
-    jaffle_shop_duckdb_dbfile_path = f"target/{worker_id}_jaffle_shop.duckdb"
+    jaffle_shop_duckdb_db_file_name = f"{worker_id}_jaffle_shop"
+    jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"] = jaffle_shop_duckdb_db_file_name
     os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"] = jaffle_shop_duckdb_dbfile_path
 
 
@@ -114,6 +117,11 @@ def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_dbt_semantic_models_manifest", scope="session")
 def test_dbt_semantic_models_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_dbt_semantic_models_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")
+def test_dbt_source_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_source_freshness_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_duplicate_source_asset_key_manifest", scope="session")
