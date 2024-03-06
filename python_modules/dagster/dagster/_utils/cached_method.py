@@ -50,6 +50,15 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
     With this decorator, keyword and non-keyword arg usage is canonicalized and the above
     calls result in the same cache entry
+
+    Using ordinal arguments rather than kwargs represents introduces about 15% more overhead
+    per call.
+
+    However, the use of _any_ @cached_method decorated method a introduces ~20x (as in 2100%)
+    overhead per call over undecorated methods, so use this carefully. The operation
+    that this caches should be expensive enough so that 15% overhead on the function
+    call is immaterial.  See for https://github.com/dagster-io/dagster/pull/20212
+    script, data, and discussion of these matters.
     """
     cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
 
@@ -65,6 +74,9 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
         canonical_kwargs = None
         if args:
+            # Entering this block introduces about 15% overhead per call
+            # See top-level docblock for more details.
+
             # nonlocal required to bind to variable in enclosing scope
             nonlocal arg_names
             # only create the lookup table on demand to avoid overhead
