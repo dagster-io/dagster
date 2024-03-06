@@ -20,7 +20,6 @@ import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
-import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
@@ -225,11 +224,7 @@ const StaleCausesPopoverSummary = ({
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
                 key={idx}
               >
-                <StaleReason
-                  reason={cause.reason}
-                  dependency={cause.dependency}
-                  assetKey={assetKey}
-                />
+                <StaleReason cause={cause} />
               </Box>
             ))}
           </Box>
@@ -239,16 +234,17 @@ const StaleCausesPopoverSummary = ({
   );
 };
 
-const StaleReason = ({
-  reason,
-  dependency,
-}: {
-  assetKey: AssetKeyInput;
-  reason: string;
-  dependency: AssetNodeKeyFragment | null;
-}) => {
+const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses']>[0]}) => {
+  const {dependency, reason, key} = cause;
   if (!dependency) {
-    return <Caption>{` ${reason}`}</Caption>;
+    return (
+      <>
+        <Link to={assetDetailsPathForKey(key)}>
+          <Tag icon="asset">{displayNameForAssetKey(key)}</Tag>
+        </Link>
+        <Caption>{` ${reason}`}</Caption>
+      </>
+    );
   }
 
   const dependencyName = displayNameForAssetKey(dependency);

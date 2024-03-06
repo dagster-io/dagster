@@ -24,6 +24,7 @@ export const ChangedReasonsTag = ({
   if (!changedReasons) {
     return null;
   }
+  console.log({changedReasons});
   return (
     <ChangedReasonsPopover changedReasons={changedReasons} assetKey={assetKey}>
       <BaseTag
