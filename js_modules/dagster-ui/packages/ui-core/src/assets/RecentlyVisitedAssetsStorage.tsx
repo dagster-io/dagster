@@ -3,7 +3,7 @@ import {AssetKey} from './types';
 const RECENTLY_VISITED_ASSETS_CACHE_SIZE = 10;
 const RECENTLY_VISITED_ASSETS_STORAGE_KEY = 'recentlyVisitedAssets';
 
-export function WriteAssetVisitToLocalStorage(assetKey: AssetKey) {
+export function writeAssetVisitToLocalStorage(assetKey: AssetKey) {
   if (typeof window !== 'undefined') {
     const visitedAssetsStringified = localStorage.getItem(RECENTLY_VISITED_ASSETS_STORAGE_KEY);
     const visitedAssets: AssetKey[] = visitedAssetsStringified
@@ -29,7 +29,7 @@ export function WriteAssetVisitToLocalStorage(assetKey: AssetKey) {
   }
 }
 
-export function FetchRecentlyVisitedAssetsFromLocalStorage(): AssetKey[] {
+export function fetchRecentlyVisitedAssetsFromLocalStorage(): AssetKey[] {
   if (typeof window !== 'undefined') {
     const visitedAssetsStringified = localStorage.getItem(RECENTLY_VISITED_ASSETS_STORAGE_KEY);
     return visitedAssetsStringified ? JSON.parse(visitedAssetsStringified) : [];

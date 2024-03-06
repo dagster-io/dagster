@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {AssetGlobalLineageButton, AssetPageHeader} from './AssetPageHeader';
 import {ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
-import {FetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
+import {fetchRecentlyVisitedAssetsFromLocalStorage} from './RecentlyVisitedAssetsStorage';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {
   AssetCatalogTableQuery,
@@ -203,7 +203,7 @@ export const AssetsOverview = ({viewerName}: {viewerName?: string}) => {
   const {
     timezone: [timezone],
   } = useContext(TimeContext);
-  const recentlyVisitedAssets = FetchRecentlyVisitedAssetsFromLocalStorage();
+  const recentlyVisitedAssets = fetchRecentlyVisitedAssetsFromLocalStorage();
 
   if (assetsQuery.loading) {
     return (
