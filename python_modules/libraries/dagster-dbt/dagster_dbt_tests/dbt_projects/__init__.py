@@ -9,6 +9,7 @@ test_dbt_alias_path = projects_path.joinpath("test_dagster_dbt_alias")
 test_dbt_model_versions_path = projects_path.joinpath("test_dagster_dbt_model_versions")
 test_dbt_python_interleaving_path = projects_path.joinpath("test_dagster_dbt_python_interleaving")
 test_dbt_semantic_models_path = projects_path.joinpath("test_dagster_dbt_semantic_models")
+test_dbt_source_freshness_path = projects_path.joinpath("test_dagster_dbt_source_freshness")
 test_duplicate_source_asset_key_path = projects_path.joinpath(
     "test_dagster_duplicate_source_asset_key"
 )

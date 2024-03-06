@@ -136,7 +136,7 @@ class DbtCliEventMessage:
         adapter_response = self.raw_event["data"].get("run_result", {}).get("adapter_response", {})
         adapter_response_metadata = self._process_adapter_response_metadata(adapter_response)
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
-        if not event_node_info:
+        if not event_node_info or event_node_info["resource_type"] == "source":
             return
 
         dagster_dbt_translator = validate_translator(dagster_dbt_translator)
