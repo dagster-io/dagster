@@ -6,7 +6,7 @@ lesson: '3'
 
 # Viewing dbt models in the Dagster UI
 
-Once all the work above has been done, you’re ready to see your dbt models represented as assets! Here’s how you can find your models:
+Once you finished everything from the previous sections, you’re ready to see your dbt models represented as assets! Here’s how you can find your models:
 
 1. If you haven't yet, run `dagster dev` in your command line, and then navigate to the asset graph in the UI.
 2. Expand the `default` group in the asset graph.
