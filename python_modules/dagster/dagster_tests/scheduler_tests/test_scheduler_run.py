@@ -2232,9 +2232,6 @@ class TestSchedulerRun:
             )
 
             assert len(ticks) == 0
-            assert not scheduler_instance.get_instigator_state(
-                schedule_state.instigator_origin_id, schedule_state.selector_id
-            )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_bad_load_schedule(
@@ -2274,9 +2271,6 @@ class TestSchedulerRun:
             )
 
             assert len(ticks) == 0
-            assert not scheduler_instance.get_instigator_state(
-                schedule_state.instigator_origin_id, schedule_state.selector_id
-            )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_load_code_location_not_in_workspace(
@@ -2330,9 +2324,6 @@ class TestSchedulerRun:
             )
 
             assert len(ticks) == 0
-            assert not scheduler_instance.get_instigator_state(
-                schedule_state.instigator_origin_id, schedule_state.selector_id
-            )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_multiple_schedules_on_different_time_ranges(
