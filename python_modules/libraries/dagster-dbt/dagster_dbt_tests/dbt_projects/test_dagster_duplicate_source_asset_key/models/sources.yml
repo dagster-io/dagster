@@ -4,16 +4,5 @@ sources:
   - name: jaffle_shop
     tables:
       - name: raw_customers
-        meta:
-          dagster:
-            asset_key: ["duplicate"]
-
       - name: raw_orders
-        meta:
-          dagster:
-            asset_key: ["duplicate"]
-
       - name: raw_payments
-        meta:
-          dagster:
-            asset_key: ["duplicate"]
