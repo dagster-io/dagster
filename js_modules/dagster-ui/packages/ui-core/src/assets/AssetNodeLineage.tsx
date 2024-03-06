@@ -72,7 +72,7 @@ export const AssetNodeLineage = ({
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
-            intent="none"
+            primary={false}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (

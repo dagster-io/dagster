@@ -169,12 +169,12 @@ export const LaunchAssetExecutionButton = ({
   scope,
   preferredJobName,
   additionalDropdownOptions,
-  intent = 'primary',
+  primary = true,
   showChangedAndMissingOption = true,
 }: {
   scope: AssetsInScope;
   showChangedAndMissingOption?: boolean;
-  intent?: 'primary' | 'none';
+  primary?: boolean;
   preferredJobName?: string;
   additionalDropdownOptions?: {
     label: string;
@@ -203,7 +203,7 @@ export const LaunchAssetExecutionButton = ({
     return (
       <Tooltip content={disabledMessage} position="bottom-right">
         <Button
-          intent={intent}
+          intent={primary ? 'primary' : undefined}
           icon={<Icon name="materialization" />}
           data-testid={testId('materialize-button')}
           disabled
@@ -233,7 +233,7 @@ export const LaunchAssetExecutionButton = ({
           useDisabledButtonTooltipFix
         >
           <MaterializeButton
-            intent={intent}
+            intent={primary ? 'primary' : undefined}
             data-testid={testId('materialize-button')}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={{
@@ -293,7 +293,7 @@ export const LaunchAssetExecutionButton = ({
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
             disabled={!firstOption.assetKeys.length}
-            intent={intent}
+            intent={primary ? 'primary' : undefined}
           />
         </Popover>
       </Box>

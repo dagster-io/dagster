@@ -306,7 +306,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
           <Box style={{margin: '-4px 0'}}>
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
-                intent="primary"
+                primary
                 scope={{all: [definition], skipAllTerm: true}}
               />
             ) : definition && definition.jobNames.length > 0 && upstream ? (
