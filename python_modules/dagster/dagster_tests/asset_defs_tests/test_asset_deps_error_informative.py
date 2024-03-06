@@ -1,5 +1,6 @@
 import re
 import time
+from importlib.util import find_spec
 from typing import List
 
 import pytest
@@ -8,20 +9,19 @@ from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
 @pytest.mark.parametrize("group_name", [None, "my_group"])
 @pytest.mark.parametrize("asset_key_prefix", [[], ["my_prefix"]])
-def test_typo_upstream_asset_one_similar(rapidfuzz_installed, group_name, asset_key_prefix) -> None:
+def test_typo_upstream_asset_one_similar(group_name, asset_key_prefix) -> None:
     @asset(group_name=group_name, key_prefix=asset_key_prefix)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(
         group_name=group_name,
         key_prefix=asset_key_prefix,
         ins={"asst1": AssetIn(asset_key_prefix + ["asst1"])},
     )
-    def asset2(asst1):
-        ...
+    def asset2(asst1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -36,12 +36,10 @@ def test_typo_upstream_asset_one_similar(rapidfuzz_installed, group_name, asset_
 
 def test_typo_upstream_asset_no_similar() -> None:
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2(not_close_to_asset1):
-        ...
+    def asset2(not_close_to_asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -53,22 +51,19 @@ def test_typo_upstream_asset_no_similar() -> None:
         Definitions(assets=[asset1, asset2])
 
 
-def test_typo_upstream_asset_many_similar(rapidfuzz_installed) -> None:
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
+def test_typo_upstream_asset_many_similar() -> None:
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def assets1():
-        ...
+    def assets1(): ...
 
     @asset
-    def asst():
-        ...
+    def asst(): ...
 
     @asset
-    def asset2(asst1):
-        ...
+    def asset2(asst1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -83,14 +78,13 @@ def test_typo_upstream_asset_many_similar(rapidfuzz_installed) -> None:
         Definitions(assets=[asst, asset1, assets1, asset2])
 
 
-def test_typo_upstream_asset_wrong_prefix(rapidfuzz_installed) -> None:
+@pytest.mark.skipif(not find_spec("rapidfuzz"), reason="Rapidfuzz not installed")
+def test_typo_upstream_asset_wrong_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my", "prfix", "asset1"]))})
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -107,12 +101,10 @@ def test_typo_upstream_asset_wrong_prefix_and_wrong_key() -> None:
     # In the case that the user has a typo in the key and the prefix, we don't suggest the asset since it's too different.
 
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my", "prfix", "asset4"]))})
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -126,13 +118,11 @@ def test_typo_upstream_asset_wrong_prefix_and_wrong_key() -> None:
 
 def test_one_off_component_prefix() -> None:
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     # One more component in the prefix
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my", "prefix", "nested", "asset1"]))})
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -146,8 +136,7 @@ def test_one_off_component_prefix() -> None:
 
     # One fewer component in the prefix
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my", "asset1"]))})
-    def asset3(asset1):
-        ...
+    def asset3(asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -162,13 +151,11 @@ def test_one_off_component_prefix() -> None:
 
 def test_accidentally_using_slashes() -> None:
     @asset(key_prefix=["my", "prefix"])
-    def asset1():
-        ...
+    def asset1(): ...
 
     # Use slashes instead of list
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my/prefix/asset1"]))})
-    def asset2(asset1):
-        ...
+    def asset2(asset1): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -192,8 +179,7 @@ def test_perf() -> None:
     for i in range(NUM_ASSETS_TO_TEST_PERF):
 
         @asset(name="asset_" + str(i))
-        def my_asset():
-            ...
+        def my_asset(): ...
 
         assets.append(my_asset.key)
 
