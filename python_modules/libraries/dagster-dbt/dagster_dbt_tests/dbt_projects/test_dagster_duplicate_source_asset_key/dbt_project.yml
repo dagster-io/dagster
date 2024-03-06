@@ -24,3 +24,8 @@ models:
     materialized: table
     staging:
       materialized: view
+
+sources:
+  +meta:
+    dagster:
+      asset_key: ["duplicate"]
