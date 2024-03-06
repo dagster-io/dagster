@@ -410,6 +410,7 @@ class AssetLayer(NamedTuple):
         asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"],
         observable_source_assets_by_node_handle: Mapping[NodeHandle, "SourceAsset"],
         source_assets: Sequence["SourceAsset"],
+        loadable_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
     ) -> "AssetLayer":
         """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
@@ -419,7 +420,11 @@ class AssetLayer(NamedTuple):
                 this AssetLayer for.
             assets_defs_by_outer_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
+            loadable_assets (Sequence[Union[AssetsDefinition, SourceAsset]]): A list of AssetsDefinition objects that are not executed, but represent upstream dependencies of the graph.
+                We need to include these in the AssetLayer in case checks are executing without their underlying asset, and need to introspect information about them.
         """
+        from .assets import AssetsDefinition, SourceAsset
+
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
@@ -562,6 +567,15 @@ class AssetLayer(NamedTuple):
         }
 
         source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+
+        for asset in loadable_assets:
+            if isinstance(asset, AssetsDefinition):
+                assets_defs_by_key[asset.key] = asset
+            elif isinstance(asset, SourceAsset):
+                source_assets_by_key[asset.key] = asset
+            else:
+                check.failed("Should never get here")
+
         for node_handle, source_asset in observable_source_assets_by_node_handle.items():
             node_def = cast(NodeDefinition, source_asset.node_def)
             check.invariant(len(node_def.output_defs) == 1)

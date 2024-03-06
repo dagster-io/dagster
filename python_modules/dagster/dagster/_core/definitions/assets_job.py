@@ -257,6 +257,7 @@ def build_assets_job(
         source_assets=resolved_source_assets,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
         observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
+        loadable_assets=loadable_assets,
     )
 
     all_resource_defs = get_all_resource_defs(
