@@ -4,7 +4,6 @@ from .resources import (
     OpenAIResource as OpenAIResource,
     with_usage_metadata as with_usage_metadata,
 )
+from .version import __version__
 
-# TODO: replace version by `__version__` when we add back a version.py file and publish library to pypi.
-#  Import with `from .version import __version__`
-DagsterLibraryRegistry.register("dagster-openai", "1!0+dev")
+DagsterLibraryRegistry.register("dagster-openai", __version__)
