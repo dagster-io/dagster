@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import AbstractSet, Callable, Dict, Hashable, Mapping, Tuple, Type, TypeVar
+from typing import Callable, Dict, Hashable, Mapping, Tuple, TypeVar
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -126,7 +126,6 @@ class _HashedSeq(list):
 
 def _make_key(
     canonical_kwargs: Mapping[str, object],
-    fasttypes: AbstractSet[Type[object]] = {int, str},
 ) -> Hashable:
     """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 
@@ -145,7 +144,8 @@ def _make_key(
     # if single fast (str/int) arg, use that value for hash
     if len(canonical_kwargs) == 1:
         k, v = next(iter(canonical_kwargs.items()))
-        if type(v) in fasttypes:
+        type_v = type(v)
+        if type_v is str or type_v is int:
             return f"{k}.{v}"
 
     return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
