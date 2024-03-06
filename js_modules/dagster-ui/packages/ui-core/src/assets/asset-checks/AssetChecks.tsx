@@ -42,7 +42,7 @@ import {
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {COMMON_COLLATOR} from '../../app/Util';
+import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
@@ -124,13 +124,18 @@ export const AssetChecks = ({
   }
 
   if (data.assetNodeOrError.__typename === 'AssetNode') {
-    switch (data.assetNodeOrError.assetChecksOrError.__typename) {
+    const type = data.assetNodeOrError.assetChecksOrError.__typename;
+    switch (type) {
       case 'AssetCheckNeedsAgentUpgradeError':
         return <AgentUpgradeRequired />;
       case 'AssetCheckNeedsMigrationError':
         return <MigrationRequired />;
       case 'AssetCheckNeedsUserCodeUpgrade':
         return <NeedsUserCodeUpgrade />;
+      case 'AssetChecks':
+        break;
+      default:
+        assertUnreachable(type);
     }
   }
 
