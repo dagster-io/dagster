@@ -1,6 +1,8 @@
-# dagster_university
+## Dagster University: Dagster + dbt
 
-This is a [Dagster](https://dagster.io/) project made to accompany Dagster University coursework.
+This is the **starter** version of the [Dagster](https://dagster.io/) project made to accompany Dagster University's [Dagster + dbt course](https://courses.dagster.io/courses/dagster-dbt).
+
+> **Looking for the finished project for the Dagster + dbt course?** Use the [`module/dagster-and-dbt` branch](https://github.com/dagster-io/project-dagster-university/tree/module/dagster-and-dbt).
 
 ## Getting started
 
