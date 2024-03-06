@@ -3,6 +3,10 @@ from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph, AssetKeyOrCheckKey
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetSpec,
+)
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -10,6 +14,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 from dagster._utils.cached_method import cached_method
@@ -39,16 +44,68 @@ class InternalAssetGraph(AssetGraph):
         }
 
     @staticmethod
+    def normalize_assets(
+        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        checks_defs: Optional[Iterable[AssetChecksDefinition]] = None,
+    ) -> Sequence[AssetsDefinition]:
+        """Normalize a mixed list of AssetsDefinition and SourceAsset to a list of AssetsDefinition.
+
+        Normalization includse:
+
+        - Converting any SourceAsset to an AssetDefinition
+        - Resolving all relative asset keys (that sometimes specify dependencies) to absolute asset
+          keys
+        - Creating unexecutable external asset definitions for any keys referenced by asset checks
+          or as dependencies, but for which no definition was provided.
+        """
+        from dagster._core.definitions.external_asset import (
+            create_external_asset_from_source_asset,
+            external_asset_from_spec,
+        )
+
+        checks_defs = checks_defs or []
+
+        # Convert any source assets to external assets
+        assets_defs = [
+            create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
+            for a in assets
+        ]
+        all_keys = {k for asset_def in assets_defs for k in asset_def.keys}
+
+        # Resolve all asset dependencies. An asset dependency is resolved when its key is an
+        # AssetKey not subject to any further manipulation.
+        resolved_deps = ResolvedAssetDependencies(assets_defs, [])
+        assets_defs = [
+            ad.with_attributes(
+                input_asset_key_replacements={
+                    raw_key: resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
+                    for input_name, raw_key in ad.keys_by_input_name.items()
+                }
+            )
+            for ad in assets_defs
+        ]
+
+        # Create unexecutable external assets definitions for any referenced keys for which no
+        # definition was provided.
+        all_referenced_asset_keys = {
+            *(key for asset_def in assets_defs for key in asset_def.dependency_keys),
+            *(checks_def.asset_key for checks_def in checks_defs),
+        }
+        for key in all_referenced_asset_keys.difference(all_keys):
+            assets_defs.append(
+                external_asset_from_spec(
+                    AssetSpec(key=key, metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+                )
+            )
+        return assets_defs
+
+    @classmethod
     def from_assets(
+        cls,
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
         asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
-        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-
-        assets_defs = [
-            create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
-            for a in all_assets
-        ]
+        assets_defs = cls.normalize_assets(all_assets)
         return InternalAssetGraph(
             assets_defs=assets_defs,
             asset_checks_defs=asset_checks or [],

@@ -48,7 +48,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     repo_def = recon_repo.get_definition()
 
     asset_keys = parse_asset_selection(
-        assets_defs=list(repo_def.assets_defs_by_key.values()),
+        assets_defs=list(repo_def.asset_graph.assets_defs),
         asset_selection=kwargs["select"].split(","),
     )
 
@@ -95,14 +95,14 @@ def asset_list_command(**kwargs):
     select = kwargs.get("select")
     if select is not None:
         asset_keys = parse_asset_selection(
-            assets_defs=list(repo_def.assets_defs_by_key.values()),
+            assets_defs=list(repo_def.asset_graph.assets_defs),
             asset_selection=select.split(","),
             raise_on_clause_has_no_matches=False,
         )
     else:
         asset_keys = [
             asset_key
-            for assets_def in repo_def.assets_defs_by_key.values()
+            for assets_def in repo_def.asset_graph.assets_defs
             for asset_key in assets_def.keys
         ]
 
