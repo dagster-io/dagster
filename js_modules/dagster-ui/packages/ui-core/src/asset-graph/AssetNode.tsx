@@ -35,7 +35,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
 
   return (
     <AssetInsetForHoverEffect>
-      <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+      <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
           <AssetName $isSource={isSource}>
