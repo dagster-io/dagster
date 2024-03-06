@@ -41,6 +41,7 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -142,6 +143,8 @@ export const AssetChecks = ({
   const lastExecution = selectedCheck.executionForLatestMaterialization;
   const targetMaterialization = lastExecution?.evaluation?.targetMaterialization;
 
+  console.log({lastExecution});
+
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       {didDismissAssetChecksBanner ? null : (
@@ -241,6 +244,7 @@ export const AssetChecks = ({
             <CollapsibleSection
               header={<Subtitle2>About</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
+              arrowSide="right"
             >
               <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
                 <Body2>
@@ -267,11 +271,12 @@ export const AssetChecks = ({
             <CollapsibleSection
               header={<Subtitle2>Latest execution</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
+              arrowSide="right"
             >
-              <Box padding={{top: 12}}>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
+              <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24}}>
                   <Box flex={{direction: 'column', gap: 6}}>
-                    <Subtitle2>Evaluation Result</Subtitle2>
+                    <Subtitle2>Evaluation result</Subtitle2>
                     <div>
                       <AssetCheckStatusTag
                         execution={selectedCheck.executionForLatestMaterialization}
@@ -300,11 +305,18 @@ export const AssetChecks = ({
                     </Box>
                   ) : null}
                 </div>
+                {lastExecution?.evaluation?.metadataEntries.length ? (
+                  <Box flex={{direction: 'column', gap: 6}}>
+                    <Subtitle2>Metadata</Subtitle2>
+                    <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
+                  </Box>
+                ) : null}
               </Box>
             </CollapsibleSection>
             <CollapsibleSection
               header={<Subtitle2>Execution history</Subtitle2>}
               headerWrapperProps={headerWrapperProps}
+              arrowSide="right"
             >
               <Box padding={{top: 12}}>
                 {lastExecution ? (
@@ -352,7 +364,11 @@ const CheckExecutions = ({assetKey, checkName}: {assetKey: AssetKeyInput; checkN
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const executions = queryResult.data?.assetCheckExecutions;
+  const executions = React.useMemo(
+    // Remove first element since the latest execution info is already shown above
+    () => queryResult.data?.assetCheckExecutions.slice(1),
+    [queryResult],
+  );
 
   const runHistory = () => {
     if (!executions) {
@@ -363,7 +379,7 @@ const CheckExecutions = ({assetKey, checkName}: {assetKey: AssetKeyInput; checkN
         <Table>
           <thead>
             <tr>
-              <th style={{width: '160px'}}>Evaluation Result</th>
+              <th style={{width: '160px'}}>Evaluation result</th>
               <th style={{width: '200px'}}>Timestamp</th>
               <th style={{width: '200px'}}>Target materialization</th>
               <th>Metadata</th>
@@ -471,8 +487,8 @@ export const ASSET_CHECKS_QUERY = gql`
           }
           ... on AssetChecks {
             checks {
-              ...AssetCheckTableFragment
               ...ExecuteChecksButtonCheckFragment
+              ...AssetCheckTableFragment
             }
           }
         }
