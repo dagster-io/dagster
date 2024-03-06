@@ -15,7 +15,7 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {MinimalNodeChangedDot} from '../assets/ChangedReasons';
+import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -35,7 +35,13 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
 
   return (
     <AssetInsetForHoverEffect>
-      <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} include="upstream" />
+        <ChangedReasonsTag
+          changedReasons={liveData?.changedReasons}
+          assetKey={definition.assetKey}
+        />
+      </Box>
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
           <AssetName $isSource={isSource}>

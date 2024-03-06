@@ -251,10 +251,10 @@ export const AssetPartitionDetail = ({
             {hasStaleLoadingState ? (
               <Spinner purpose="body-text" />
             ) : (
-              <>
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <StaleReasonsTag liveData={{staleCauses, staleStatus}} assetKey={assetKey} />
                 <ChangedReasonsTag changedReasons={changedReasons} assetKey={assetKey} />
-              </>
+              </Box>
             )}
           </div>
         ) : (
