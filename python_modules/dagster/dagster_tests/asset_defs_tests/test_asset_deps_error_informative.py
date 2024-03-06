@@ -10,7 +10,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 @pytest.mark.parametrize("group_name", [None, "my_group"])
 @pytest.mark.parametrize("asset_key_prefix", [[], ["my_prefix"]])
-def test_typo_upstream_asset_one_similar(group_name, asset_key_prefix) -> None:
+def test_typo_upstream_asset_one_similar(rapidfuzz_installed, group_name, asset_key_prefix) -> None:
     @asset(group_name=group_name, key_prefix=asset_key_prefix)
     def asset1():
         ...
@@ -53,7 +53,7 @@ def test_typo_upstream_asset_no_similar() -> None:
         Definitions(assets=[asset1, asset2])
 
 
-def test_typo_upstream_asset_many_similar() -> None:
+def test_typo_upstream_asset_many_similar(rapidfuzz_installed) -> None:
     @asset
     def asset1():
         ...
@@ -83,7 +83,7 @@ def test_typo_upstream_asset_many_similar() -> None:
         Definitions(assets=[asst, asset1, assets1, asset2])
 
 
-def test_typo_upstream_asset_wrong_prefix() -> None:
+def test_typo_upstream_asset_wrong_prefix(rapidfuzz_installed) -> None:
     @asset(key_prefix=["my", "prefix"])
     def asset1():
         ...
