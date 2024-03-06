@@ -1,22 +1,20 @@
 # mypy: disable-error-code=annotation-unchecked
 
 import gc
-from typing import NamedTuple
+from typing import Dict, NamedTuple, Tuple
 
 import objgraph
-import pytest
-from dagster._check import CheckError
-from dagster._utils.cached_method import cached_method
+from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 
-def test_cached_method():
+def test_cached_method() -> None:
     class MyClass:
-        def __init__(self, attr1):
+        def __init__(self, attr1) -> None:
             self._attr1 = attr1
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1):
+        def my_method(self, arg1) -> Tuple:
             self.calls.append(arg1)
             return (arg1, self._attr1)
 
@@ -33,13 +31,13 @@ def test_cached_method():
     assert obj2.calls == ["a", "b"]
 
 
-def test_kwargs_order_irrelevant_and_no_kwargs():
+def test_kwargs_order_irrelevant_and_no_kwargs() -> None:
     class MyClass:
-        def __init__(self):
+        def __init__(self) -> None:
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1, arg2):
+        def my_method(self, arg1, arg2) -> Tuple:
             self.calls.append(arg1)
             return arg1, arg2
 
@@ -48,11 +46,8 @@ def test_kwargs_order_irrelevant_and_no_kwargs():
     assert obj1.my_method(arg2=5, arg1="a") == ("a", 5)
     assert len(obj1.calls) == 1
 
-    with pytest.raises(CheckError, match="does not support non-keyword arguments"):
-        obj1.my_method("a", 5)
 
-
-def test_does_not_leak():
+def test_does_not_leak() -> None:
     class LeakTestKey(NamedTuple):
         attr: str
 
@@ -81,10 +76,10 @@ def test_does_not_leak():
     assert objgraph.count("LeakTestValue") == 0
 
 
-def test_collisions():
+def test_collisions() -> None:
     class MyClass:
         @cached_method
-        def stuff(self, a=None, b=None):
+        def stuff(self, a=None, b=None) -> Dict:
             return {"a": a, "b": b}
 
     obj = MyClass()
@@ -96,3 +91,43 @@ def test_collisions():
     assert a1 != b1
     assert a1 != a2
     assert b1 != b2
+
+
+def test_ordinal_args() -> None:
+    class MyClass:
+        @cached_method
+        def stuff(self, a, b) -> Dict:
+            return {"a": a, "b": b}
+
+    obj = MyClass()
+    a1 = obj.stuff(1, None)
+    b1 = obj.stuff(None, 1)
+    a2 = obj.stuff(2, None)
+    b2 = obj.stuff(None, 2)
+
+    assert obj.stuff(1, None) is obj.stuff(a=1, b=None)
+    assert obj.stuff(1, b=None) is obj.stuff(a=1, b=None)
+
+    assert a1 is not b1
+    assert a1 is not a2
+    assert b1 is not b2
+
+
+def test_scenario_documented_in_cached_method_doc_block() -> None:
+    # This following example was used in the docblock to demonstrate
+    # the difference with functools. In cached_method, these
+    # share the same cache entry, whereas in functools.lru_cache
+    # they would have three entries.
+    class MyClass:
+        @cached_method
+        def a_method(self, arg1: str, arg2: int) -> str:
+            return arg1 + str(arg2)
+
+    obj = MyClass()
+    assert obj.a_method(arg1="a", arg2=5) == "a5"
+    assert obj.a_method(arg2=5, arg1="a") == "a5"
+    assert obj.a_method("a", 5) == "a5"
+
+    # only one entry
+    assert len(obj.__dict__) == 1
+    assert len(obj.__dict__["a_method" + CACHED_METHOD_FIELD_SUFFIX]) == 1

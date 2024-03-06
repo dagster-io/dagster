@@ -3,7 +3,7 @@ from typing import AbstractSet, Callable, Dict, Hashable, Mapping, Tuple, Type, 
 
 from typing_extensions import Concatenate, ParamSpec
 
-from dagster import _check as check
+from dagster._seven import get_arg_names
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -48,10 +48,21 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             obj.a_method(arg2=5, arg1="a")
             obj.a_method("a", 5)
 
-    With this decorator, the first two would point to the same cache entry, and non-kwarg arguments
-    are not allowed.
+    With this decorator, keyword and non-keyword arg usage is canonicalized and the above
+    calls result in the same cache entry
+
+    Using ordinal arguments rather than kwargs represents introduces about 15% more overhead
+    per call.
+
+    However, the use of _any_ @cached_method decorated method a introduces ~20x (as in 2100%)
+    overhead per call over undecorated methods, so use this carefully. The operation
+    that this caches should be expensive enough so that 15% overhead on the function
+    call is immaterial.  See for https://github.com/dagster-io/dagster/pull/20212
+    script, data, and discussion of these matters.
     """
     cache_attr_name = method.__name__ + CACHED_METHOD_FIELD_SUFFIX
+
+    arg_names = None
 
     @wraps(method)
     def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
@@ -61,7 +72,32 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
         else:
             cache = getattr(self, cache_attr_name)
 
-        key = _make_key(args, kwargs)
+        canonical_kwargs = None
+        if args:
+            # Entering this block introduces about 15% overhead per call
+            # See top-level docblock for more details.
+
+            # nonlocal required to bind to variable in enclosing scope
+            nonlocal arg_names
+            # only create the lookup table on demand to avoid overhead
+            # if the cached method is never called with positional arguments
+            arg_names = arg_names if arg_names is not None else get_arg_names(method)[1:]
+
+            translated_kwargs = {}
+            for arg_ordinal, arg_value in enumerate(args):
+                arg_name = arg_names[arg_ordinal]
+                translated_kwargs[arg_name] = arg_value
+            if kwargs:
+                # only copy if both args and kwargs were passed
+                canonical_kwargs = {**translated_kwargs, **kwargs}
+            else:
+                # no copy
+                canonical_kwargs = translated_kwargs
+        else:
+            # no copy
+            canonical_kwargs = kwargs
+
+        key = _make_key(canonical_kwargs)
         if key not in cache:
             result = method(self, *args, **kwargs)
             cache[key] = result
@@ -89,8 +125,7 @@ class _HashedSeq(list):
 
 
 def _make_key(
-    args: Tuple[object, ...],
-    kwds: Mapping[str, object],
+    canonical_kwargs: Mapping[str, object],
     fasttypes: AbstractSet[Type[object]] = {int, str},
 ) -> Hashable:
     """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
@@ -98,25 +133,19 @@ def _make_key(
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than
     as a nested structure that would take more memory.
+
     If there is only a single argument and its data type is known to cache
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
     """
-    if args:
-        check.failed(
-            "@cached_method does not support non-keyword arguments, because doing so would"
-            " enable functionally identical sets of arguments to correspond to different cache"
-            " keys.",
-        )
-
     # if no args return a shared value
-    if not kwds:
+    if not canonical_kwargs:
         return NO_ARGS_HASH_VALUE
 
     # if single fast (str/int) arg, use that value for hash
-    if len(kwds) == 1:
-        k, v = next(iter(kwds.items()))
+    if len(canonical_kwargs) == 1:
+        k, v = next(iter(canonical_kwargs.items()))
         if type(v) in fasttypes:
             return f"{k}.{v}"
 
-    return _HashedSeq(tuple(sorted(kwds.items())))
+    return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
