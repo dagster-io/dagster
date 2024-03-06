@@ -294,8 +294,7 @@ class MaterializeOnCronRule(
         self, context: AssetConditionEvaluationContext
     ) -> Sequence[datetime.datetime]:
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        # if it's the first time evaluating this rule, then just count the latest tick as missed
-        if not context.previous_evaluation or not context.previous_evaluation_timestamp:
+        if not context.previous_evaluation_timestamp:
             previous_dt = next(
                 reverse_cron_string_iterator(
                     end_timestamp=context.evaluation_time.timestamp(),
@@ -315,9 +314,11 @@ class MaterializeOnCronRule(
             missed_ticks.append(dt)
         return missed_ticks
 
-    def get_new_candidate_asset_partitions(
-        self, context: AssetConditionEvaluationContext, missed_ticks: Sequence[datetime.datetime]
+    def get_new_asset_partitions_to_request(
+        self, context: AssetConditionEvaluationContext
     ) -> AbstractSet[AssetKeyPartitionKey]:
+        missed_ticks = self.missed_cron_ticks(context)
+
         if not missed_ticks:
             return set()
 
@@ -381,20 +382,9 @@ class MaterializeOnCronRule(
     ) -> "AssetConditionResult":
         from .asset_condition.asset_condition import AssetConditionResult
 
-        missed_ticks = self.missed_cron_ticks(context)
-        new_asset_partitions = self.get_new_candidate_asset_partitions(context, missed_ticks)
-
-        # if it's the first time evaluating this rule, must query for the actual subset that has
-        # been materialized since the previous cron tick, as materializations may have happened
-        # before the previous evaluation, which
-        # `context.materialized_requested_or_discarded_since_previous_tick_subset` would not capture
-        if context.previous_evaluation is None:
-            new_asset_partitions -= context.instance_queryer.get_asset_subset_updated_after_time(
-                asset_key=context.asset_key, after_time=missed_ticks[-1]
-            ).asset_partitions
-
+        new_asset_partitions_to_request = self.get_new_asset_partitions_to_request(context)
         asset_subset_to_request = AssetSubset.from_asset_partitions_set(
-            context.asset_key, context.partitions_def, new_asset_partitions
+            context.asset_key, context.partitions_def, new_asset_partitions_to_request
         ) | (
             context.previous_true_subset.as_valid(context.partitions_def)
             - context.materialized_requested_or_discarded_since_previous_tick_subset
