@@ -131,11 +131,12 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
       </div>
       <div className="-mt-px flex w-0 flex-1 justify-end">
         {currentPageIndex === totalPageCount - 1 ? null : (
-          (<NextLink
+          <NextLink
             href={{
               query: {...query, page: currentPageIndex + 2},
             }}
-            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+          >
             Next{/* Heroicon name: arrow-narrow-right */}
             <svg
               className="ml-3 h-5 w-5 text-gray-400"
@@ -150,8 +151,7 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
                 clipRule="evenodd"
               />
             </svg>
-
-          </NextLink>)
+          </NextLink>
         )}
       </div>
     </nav>
@@ -166,7 +166,7 @@ function PaginationItem(props: {targetIndex: number; isCurrentPage?: boolean}) {
   const {query} = useRouter();
 
   return (
-    (<NextLink
+    <NextLink
       href={{
         query: {...query, page: targetIndex + 1},
       }}
@@ -174,10 +174,9 @@ function PaginationItem(props: {targetIndex: number; isCurrentPage?: boolean}) {
         'inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700':
           true,
         'border-indigo-500 text-indigo-600': isCurrentPage,
-      })}>
-
+      })}
+    >
       {targetIndex + 1}
-
-    </NextLink>)
+    </NextLink>
   );
 }
