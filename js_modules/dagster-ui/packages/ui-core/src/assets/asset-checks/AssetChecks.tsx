@@ -41,6 +41,7 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -270,7 +271,7 @@ export const AssetChecks = ({
               headerWrapperProps={headerWrapperProps}
               arrowSide="right"
             >
-              <Box padding={{top: 12}}>
+              <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24}}>
                   <Box flex={{direction: 'column', gap: 6}}>
                     <Subtitle2>Evaluation result</Subtitle2>
@@ -301,13 +302,13 @@ export const AssetChecks = ({
                       </Link>
                     </Box>
                   ) : null}
-                  {lastExecution?.evaluation?.metadataEntries ? (
-                    <Box flex={{direction: 'column', gap: 6}}>
-                      <Subtitle2>Metadata</Subtitle2>
-                      <MetadataCell metadataEntries={lastExecution.evaluation.metadataEntries} />
-                    </Box>
-                  ) : null}
                 </div>
+                {lastExecution?.evaluation?.metadataEntries ? (
+                  <Box flex={{direction: 'column', gap: 6}}>
+                    <Subtitle2>Metadata</Subtitle2>
+                    <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
+                  </Box>
+                ) : null}
               </Box>
             </CollapsibleSection>
             <CollapsibleSection
