@@ -47,13 +47,6 @@ export const AssetsCatalogRoot = () => {
   );
 
   React.useEffect(() => {
-    console.log('using effect');
-    console.log(queryResult);
-    console.log(Boolean(currentPath));
-    console.log(Boolean(currentPath.length));
-    console.log(Boolean(queryResult.loading));
-    console.log(Boolean(queryResult.data));
-
     // If the asset exists, add it to the recently visited list
     if (
       currentPath &&
