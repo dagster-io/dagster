@@ -286,6 +286,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             for run in batch:
                 if tag_concurrency_limits_counter.is_blocked(run):
                     to_remove.append(run)
+                    continue
                 else:
                     tag_concurrency_limits_counter.update_counters_with_launched_item(run)
 
@@ -294,6 +295,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
                     to_remove.append(run)
+                    continue
                 elif global_concurrency_limits_counter:
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
 
@@ -302,6 +304,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 if location_name and location_name in paused_location_names:
                     to_remove.append(run)
+                    continue
 
             for run in to_remove:
                 batch.remove(run)
