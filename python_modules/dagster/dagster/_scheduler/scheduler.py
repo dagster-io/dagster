@@ -1,11 +1,24 @@
 import datetime
 import logging
+import os
+import random
 import sys
 import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Generator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import pendulum
 from typing_extensions import Self
@@ -54,7 +67,13 @@ if TYPE_CHECKING:
 # how often do we update the job row in the database with the last iteration timestamp.  This
 # creates a checkpoint so that if the cron schedule changes, we don't try to backfill schedule ticks
 # from the start of the schedule, just since the last recorded iteration interval.
-LAST_RECORDED_ITERATION_INTERVAL_SECONDS = 3600
+LAST_ITERATION_CHECKPOINT_INTERVAL_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_INTERVAL_SECONDS", "3600")
+)
+
+LAST_ITERATION_CHECKPOINT_JITTER_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_JITTER_SECONDS", "600")
+)
 
 
 class _ScheduleLaunchContext(AbstractContextManager):
@@ -135,6 +154,35 @@ def _get_next_scheduler_iteration_time(start_time: float) -> float:
     return last_minute_time + SECONDS_IN_MINUTE
 
 
+class ScheduleIterationTimes(NamedTuple):
+    """Timestamp information returned by each scheduler iteration that the core scheduler
+    loop can use to intelligently schedule the next tick.
+
+    last_iteration_timestamp is used by subsequent evaluations of this schedule to ensure that we
+    don't accidentally create incorrect runs after the cronstring changes (it is stored in memory
+    in these objects and is also periodically persisted on the schedule row in the database -
+    see _write_and_get_next_checkpoint_timestamp).
+
+    next_iteration_timestamp is the timestamp until which the scheduler can wait until running this
+    schedule again (assuming the cron schedule has not changed) - either because that's the next
+    time we know the schedule needs to run based on the last time we evaluated its cron string,
+    or because that's the next time we've determined that we should update the persisted
+    last_iteration_timestamp value for this schedule described above (this is written on a fixed
+    interval plus a random jitter value to ensure not every schedule tries to do this at once -
+    this value is also determined in _write_and_get_next_checkpoint_timestamp.).
+    """
+
+    cron_schedule: Union[str, Sequence[str]]
+    next_iteration_timestamp: float
+    last_iteration_timestamp: float
+
+    def should_run_next_iteration(self, schedule: ExternalSchedule, now_timestamp: float):
+        if schedule.cron_schedule != self.cron_schedule:
+            # cron schedule has changed - always run next iteration to check
+            return True
+        return now_timestamp >= self.next_iteration_timestamp
+
+
 def execute_scheduler_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -145,6 +193,7 @@ def execute_scheduler_iteration_loop(
     from dagster._daemon.daemon import SpanMarker
 
     scheduler_run_futures: Dict[str, Future] = {}
+    iteration_times: Dict[str, ScheduleIterationTimes] = {}
 
     submit_threadpool_executor = None
     threadpool_executor = None
@@ -176,6 +225,7 @@ def execute_scheduler_iteration_loop(
                 workspace_process_context,
                 logger,
                 end_datetime_utc=end_datetime_utc,
+                iteration_times=iteration_times,
                 threadpool_executor=threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 scheduler_run_futures=scheduler_run_futures,
@@ -198,6 +248,7 @@ def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     end_datetime_utc: "DateTime",
+    iteration_times: Dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     scheduler_run_futures: Optional[Dict[str, Future]] = None,
@@ -287,11 +338,29 @@ def launch_scheduled_runs(
                         "scheduler_run_futures dict must be passed with threadpool_executor"
                     )
 
-                # only allow one tick per schedule to be in flight
+                if external_schedule.selector_id in scheduler_run_futures:
+                    if scheduler_run_futures[external_schedule.selector_id].done():
+                        try:
+                            result = scheduler_run_futures[external_schedule.selector_id].result()
+                            iteration_times[external_schedule.selector_id] = result
+                        except Exception:
+                            # Log exception and continue on rather than erroring the whole scheduler loop
+                            logger.exception(
+                                f"Error getting tick result for schedule {external_schedule.name}"
+                            )
+                        del scheduler_run_futures[external_schedule.selector_id]
+                    else:
+                        # only allow one tick per schedule to be in flight
+                        continue
+
+                previous_iteration_times = iteration_times.get(external_schedule.selector_id)
                 if (
-                    external_schedule.selector_id in scheduler_run_futures
-                    and not scheduler_run_futures[external_schedule.selector_id].done()
+                    previous_iteration_times
+                    and not previous_iteration_times.should_run_next_iteration(
+                        external_schedule, end_datetime_utc.timestamp()
+                    )
                 ):
+                    # Not enough time has passed for this schedule, don't bother creating a thread
                     continue
 
                 future = threadpool_executor.submit(
@@ -306,14 +375,30 @@ def launch_scheduled_runs(
                     tick_retention_settings,
                     schedule_debug_crash_flags,
                     submit_threadpool_executor=submit_threadpool_executor,
+                    in_memory_last_iteration_timestamp=(
+                        previous_iteration_times.last_iteration_timestamp
+                        if previous_iteration_times
+                        else None
+                    ),
                 )
                 scheduler_run_futures[external_schedule.selector_id] = future
                 yield
 
             else:
+                previous_iteration_times = iteration_times.get(external_schedule.selector_id)
+                if (
+                    previous_iteration_times
+                    and not previous_iteration_times.should_run_next_iteration(
+                        external_schedule, end_datetime_utc.timestamp()
+                    )
+                ):
+                    # Not enough time has passed for this schedule, don't bother executing
+                    continue
+
                 # evaluate the schedules in a loop, synchronously, yielding to allow the schedule daemon to
                 # heartbeat
-                yield from launch_scheduled_runs_for_schedule_iterator(
+                found_iteration_times = False
+                for yielded_value in launch_scheduled_runs_for_schedule_iterator(
                     workspace_process_context,
                     logger,
                     external_schedule,
@@ -324,6 +409,24 @@ def launch_scheduled_runs(
                     tick_retention_settings,
                     schedule_debug_crash_flags,
                     submit_threadpool_executor=None,
+                    in_memory_last_iteration_timestamp=(
+                        previous_iteration_times.last_iteration_timestamp
+                        if previous_iteration_times
+                        else None
+                    ),
+                ):
+                    if isinstance(yielded_value, ScheduleIterationTimes):
+                        check.invariant(
+                            not found_iteration_times,
+                            "launch_scheduled_runs_for_schedule_iterator yielded more than one ScheduleIterationTimes",
+                        )
+                        found_iteration_times = True
+                        iteration_times[external_schedule.selector_id] = yielded_value
+                    else:
+                        yield yielded_value
+                check.invariant(
+                    found_iteration_times,
+                    "launch_scheduled_runs_for_schedule_iterator did not yield a ScheduleIterationTimes",
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -342,23 +445,28 @@ def launch_scheduled_runs_for_schedule(
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
-) -> None:
+    in_memory_last_iteration_timestamp: Optional[float],
+) -> ScheduleIterationTimes:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
-    list(
-        launch_scheduled_runs_for_schedule_iterator(
-            workspace_process_context,
-            logger,
-            external_schedule,
-            schedule_state,
-            end_datetime_utc,
-            max_catchup_runs,
-            max_tick_retries,
-            tick_retention_settings,
-            schedule_debug_crash_flags,
-            submit_threadpool_executor=submit_threadpool_executor,
-        )
-    )
+    iteration_times = None
+    for yielded_value in launch_scheduled_runs_for_schedule_iterator(
+        workspace_process_context,
+        logger,
+        external_schedule,
+        schedule_state,
+        end_datetime_utc,
+        max_catchup_runs,
+        max_tick_retries,
+        tick_retention_settings,
+        schedule_debug_crash_flags,
+        submit_threadpool_executor=submit_threadpool_executor,
+        in_memory_last_iteration_timestamp=in_memory_last_iteration_timestamp,
+    ):
+        if isinstance(yielded_value, ScheduleIterationTimes):
+            iteration_times = yielded_value
+
+    return check.not_none(iteration_times)
 
 
 def launch_scheduled_runs_for_schedule_iterator(
@@ -372,7 +480,8 @@ def launch_scheduled_runs_for_schedule_iterator(
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
-) -> "DaemonIterator":
+    in_memory_last_iteration_timestamp: Optional[float],
+) -> Generator[Union[None, SerializableErrorInfo, ScheduleIterationTimes], None, None]:
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -394,17 +503,20 @@ def launch_scheduled_runs_for_schedule_iterator(
                 start_timestamp_utc,
                 latest_tick.timestamp,
                 instigator_data.last_iteration_timestamp or 0.0,
+                in_memory_last_iteration_timestamp or 0.0,
             )
         else:
             start_timestamp_utc = max(
                 start_timestamp_utc,
                 latest_tick.timestamp + 1,
                 instigator_data.last_iteration_timestamp or 0.0,
+                in_memory_last_iteration_timestamp or 0.0,
             )
     else:
         start_timestamp_utc = max(
             start_timestamp_utc,
             instigator_data.last_iteration_timestamp or 0.0,
+            in_memory_last_iteration_timestamp or 0.0,
         )
 
     schedule_name = external_schedule.name
@@ -414,18 +526,35 @@ def launch_scheduled_runs_for_schedule_iterator(
         timezone_str = "UTC"
 
     tick_times: List[datetime.datetime] = []
+
+    now_timestamp = end_datetime_utc.timestamp()
+
+    next_iteration_timestamp = None
+
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
-        if next_time.timestamp() > end_datetime_utc.timestamp():
+        next_tick_timestamp = next_time.timestamp()
+        if next_tick_timestamp > now_timestamp:
+            next_iteration_timestamp = next_tick_timestamp
             break
 
         tick_times.append(next_time)
 
     if not tick_times:
-        _log_iteration_timestamp(
+        next_checkpoint_timestamp = _write_and_get_next_checkpoint_timestamp(
             instance,
             schedule_state,
             instigator_data,
-            end_datetime_utc.timestamp(),
+            now_timestamp,
+        )
+
+        next_iteration_timestamp = min(
+            check.not_none(next_iteration_timestamp), next_checkpoint_timestamp
+        )
+
+        yield ScheduleIterationTimes(
+            cron_schedule=external_schedule.cron_schedule,
+            next_iteration_timestamp=next_iteration_timestamp,
+            last_iteration_timestamp=now_timestamp,
         )
         return
 
@@ -507,8 +636,6 @@ def launch_scheduled_runs_for_schedule_iterator(
                             failure_count=tick_context.failure_count,
                         )
                         yield error_data
-                        return
-
                 else:
                     error_data = serializable_error_info_from_exc_info(sys.exc_info())
                     tick_context.update_state(
@@ -517,15 +644,31 @@ def launch_scheduled_runs_for_schedule_iterator(
                         failure_count=tick_context.failure_count + 1,
                     )
                     yield error_data
-                    return
+
+                # Plan to run the same tick again right away
+                yield ScheduleIterationTimes(
+                    cron_schedule=external_schedule.cron_schedule,
+                    next_iteration_timestamp=now_timestamp,
+                    last_iteration_timestamp=now_timestamp,
+                )
+                return
 
     # now log the iteration timestamp
-    _log_iteration_timestamp(
+    next_checkpoint_timestamp = _write_and_get_next_checkpoint_timestamp(
         instance,
         schedule_state,
         instigator_data,
         end_datetime_utc.timestamp(),
     )
+    next_iteration_timestamp = min(
+        check.not_none(next_iteration_timestamp), next_checkpoint_timestamp
+    )
+    yield ScheduleIterationTimes(
+        cron_schedule=external_schedule.cron_schedule,
+        next_iteration_timestamp=next_iteration_timestamp,
+        last_iteration_timestamp=now_timestamp,
+    )
+    return
 
 
 class SubmitRunRequestResult(NamedTuple):
@@ -824,13 +967,13 @@ def _create_scheduler_run(
     )
 
 
-def _log_iteration_timestamp(
+def _write_and_get_next_checkpoint_timestamp(
     instance: DagsterInstance,
     schedule_state: InstigatorState,
     instigator_data: ScheduleInstigatorData,
     iteration_timestamp: float,
-):
-    # Utility function that logs iteration timestamps for schedules that are running, to record a
+) -> float:
+    # Utility function that writes iteration timestamps for schedules that are running, to record a
     # successful iteration, regardless of whether or not a tick was processed or not.  This is so
     # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
     # that the schedule was turned on to the last time that the schedule was processed in a valid
@@ -839,10 +982,15 @@ def _log_iteration_timestamp(
     # Rather than logging every single iteration, we log every hour.  This means that if the cron
     # schedule changes to run to a time that is less than an hour ago, when the code location is
     # deployed, a tick might be registered for that time, with a run kicking off.
+
+    # Returns the next timestamp that we should plan to log the last_iteration_timestamp - with some
+    # additional jitter so that threads won't all come back at the exact same time
+    random_jitter_offset = random.randint(0, LAST_ITERATION_CHECKPOINT_JITTER_SECONDS)
+
     if (
         not instigator_data.last_iteration_timestamp
-        or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL_SECONDS
-        < iteration_timestamp
+        or instigator_data.last_iteration_timestamp + LAST_ITERATION_CHECKPOINT_INTERVAL_SECONDS
+        <= iteration_timestamp
     ):
         instance.update_instigator_state(
             schedule_state.with_data(
@@ -853,3 +1001,12 @@ def _log_iteration_timestamp(
                 )
             )
         )
+        return (
+            iteration_timestamp + LAST_ITERATION_CHECKPOINT_INTERVAL_SECONDS + random_jitter_offset
+        )
+
+    return (
+        instigator_data.last_iteration_timestamp
+        + LAST_ITERATION_CHECKPOINT_INTERVAL_SECONDS
+        + random_jitter_offset
+    )
