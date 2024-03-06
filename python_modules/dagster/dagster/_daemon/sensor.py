@@ -310,7 +310,6 @@ def execute_sensor_iteration(
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
     sensors: Dict[str, ExternalSensor] = {}
-
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
