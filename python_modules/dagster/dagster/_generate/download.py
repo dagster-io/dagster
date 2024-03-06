@@ -31,6 +31,7 @@ AVAILABLE_EXAMPLES = [
     "development_to_production",
     "feature_graph_backed_assets",
     "project_dagster_university_start",
+    "project_du_dbt_starter",
     "project_fully_featured",
     "project_analytics",
     "with_airflow",
