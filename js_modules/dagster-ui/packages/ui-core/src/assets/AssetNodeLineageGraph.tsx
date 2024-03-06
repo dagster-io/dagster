@@ -8,7 +8,7 @@ import {AssetKey, AssetViewParams} from './types';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
-import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
+import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
@@ -88,6 +88,29 @@ export const AssetNodeLineageGraph = ({
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
+              <foreignObject
+                {...group.bounds}
+                key={`${group.id}-outline`}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <GroupOutline $minimal={scale < MINIMAL_SCALE} />
+              </foreignObject>
+            ))}
+
+          <AssetEdges
+            selected={null}
+            highlighted={highlighted}
+            edges={layout.edges}
+            viewportRect={viewportRect}
+            direction="horizontal"
+          />
+
+          {Object.values(layout.groups)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .sort((a, b) => a.id.length - b.id.length)
+            .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
                 <ExpandedGroupNode
                   group={{
@@ -99,14 +122,6 @@ export const AssetNodeLineageGraph = ({
                 />
               </foreignObject>
             ))}
-
-          <AssetEdges
-            selected={null}
-            highlighted={highlighted}
-            edges={layout.edges}
-            viewportRect={viewportRect}
-            direction="horizontal"
-          />
 
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
