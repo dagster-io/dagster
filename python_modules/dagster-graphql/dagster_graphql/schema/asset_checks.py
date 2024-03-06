@@ -222,12 +222,12 @@ class GrapheneAssetChecksOrError(graphene.Union):
         name = "AssetChecksOrError"
 
 
-class GrapheneAssetCheckHandle(graphene.ObjectType):
+class GrapheneAssetCheckKey(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
-        name = "AssetCheckhandle"
+        name = "AssetCheckKey"
 
-    def __init__(self, handle: AssetCheckKey):
-        super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))
+    def __init__(self, key: AssetCheckKey):
+        super().__init__(name=key.name, assetKey=GrapheneAssetKey(path=key.asset_key.path))

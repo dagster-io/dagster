@@ -64,7 +64,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
-import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
+import {asAssetCheckKeyInput, asAssetKeyInput} from '../assets/asInput';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
@@ -209,7 +209,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       pipelineName: pipeline.name,
       solidSelection: currentSession.solidSelection || undefined,
       assetSelection: currentSession.assetSelection?.map(asAssetKeyInput) || [],
-      assetCheckSelection: currentSession.assetChecksAvailable?.map(asAssetCheckHandleInput) || [],
+      assetCheckSelection: currentSession.assetChecksAvailable?.map(asAssetCheckKeyInput) || [],
     };
   }, [
     currentSession.solidSelection,
@@ -341,8 +341,8 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           ? currentSession.assetSelection.map(asAssetKeyInput)
           : [],
         assetCheckSelection: currentSession.includeSeparatelyExecutableChecks
-          ? [...includedChecks, ...executableChecks].map(asAssetCheckHandleInput)
-          : [...includedChecks].map(asAssetCheckHandleInput),
+          ? [...includedChecks, ...executableChecks].map(asAssetCheckKeyInput)
+          : [...includedChecks].map(asAssetCheckKeyInput),
       },
       mode: currentSession.mode || 'default',
       executionMetadata: {

@@ -235,7 +235,13 @@ export enum AssetCheckExecutionResolvedStatus {
   SUCCEEDED = 'SUCCEEDED',
 }
 
-export type AssetCheckHandleInput = {
+export type AssetCheckKey = {
+  __typename: 'AssetCheckKey';
+  assetKey: AssetKey;
+  name: Scalars['String'];
+};
+
+export type AssetCheckKeyInput = {
   assetKey: AssetKeyInput;
   name: Scalars['String'];
 };
@@ -259,12 +265,6 @@ export enum AssetCheckSeverity {
   ERROR = 'ERROR',
   WARN = 'WARN',
 }
-
-export type AssetCheckhandle = {
-  __typename: 'AssetCheckhandle';
-  assetKey: AssetKey;
-  name: Scalars['String'];
-};
 
 export type AssetChecks = {
   __typename: 'AssetChecks';
@@ -2061,7 +2061,7 @@ export type JobMetadataEntry = MetadataEntry & {
 };
 
 export type JobOrPipelineSelector = {
-  assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
+  assetCheckSelection?: InputMaybe<Array<AssetCheckKeyInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
   jobName?: InputMaybe<Scalars['String']>;
   pipelineName?: InputMaybe<Scalars['String']>;
@@ -3419,7 +3419,7 @@ export type PipelineRuns = {
 };
 
 export type PipelineSelector = {
-  assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
+  assetCheckSelection?: InputMaybe<Array<AssetCheckKeyInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
   pipelineName: Scalars['String'];
   repositoryLocationName: Scalars['String'];
@@ -4204,7 +4204,7 @@ export type ResumeBackfillSuccess = {
 
 export type Run = PipelineRun & {
   __typename: 'Run';
-  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+  assetCheckSelection: Maybe<Array<AssetCheckKey>>;
   assetMaterializations: Array<MaterializationEvent>;
   assetSelection: Maybe<Array<AssetKey>>;
   assets: Array<Asset>;
@@ -5738,12 +5738,30 @@ export const buildAssetCheckExecution = (
   };
 };
 
-export const buildAssetCheckHandleInput = (
-  overrides?: Partial<AssetCheckHandleInput>,
+export const buildAssetCheckKey = (
+  overrides?: Partial<AssetCheckKey>,
   _relationshipsToOmit: Set<string> = new Set(),
-): AssetCheckHandleInput => {
+): {__typename: 'AssetCheckKey'} & AssetCheckKey => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetCheckHandleInput');
+  relationshipsToOmit.add('AssetCheckKey');
+  return {
+    __typename: 'AssetCheckKey',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'voluptas',
+  };
+};
+
+export const buildAssetCheckKeyInput = (
+  overrides?: Partial<AssetCheckKeyInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetCheckKeyInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckKeyInput');
   return {
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
@@ -5751,7 +5769,7 @@ export const buildAssetCheckHandleInput = (
         : relationshipsToOmit.has('AssetKeyInput')
         ? ({} as AssetKeyInput)
         : buildAssetKeyInput({}, relationshipsToOmit),
-    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'fugiat',
   };
 };
 
@@ -5788,24 +5806,6 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   return {
     __typename: 'AssetCheckNeedsUserCodeUpgrade',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
-  };
-};
-
-export const buildAssetCheckhandle = (
-  overrides?: Partial<AssetCheckhandle>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'AssetCheckhandle'} & AssetCheckhandle => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetCheckhandle');
-  return {
-    __typename: 'AssetCheckhandle',
-    assetKey:
-      overrides && overrides.hasOwnProperty('assetKey')
-        ? overrides.assetKey!
-        : relationshipsToOmit.has('AssetKey')
-        ? ({} as AssetKey)
-        : buildAssetKey({}, relationshipsToOmit),
-    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
   };
 };
 

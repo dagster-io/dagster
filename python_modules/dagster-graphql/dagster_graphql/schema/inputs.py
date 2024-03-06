@@ -16,12 +16,12 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
         name = "AssetKeyInput"
 
 
-class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
+class GrapheneAssetCheckKeyInput(graphene.InputObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKeyInput)
     name = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "AssetCheckHandleInput"
+        name = "AssetCheckKeyInput"
 
 
 class GrapheneExecutionTag(graphene.InputObjectType):
@@ -86,7 +86,7 @@ class GraphenePipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
-    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckKeyInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a
@@ -123,7 +123,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
-    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckKeyInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""

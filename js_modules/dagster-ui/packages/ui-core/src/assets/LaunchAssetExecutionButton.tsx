@@ -22,7 +22,7 @@ import {
 import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
+import {asAssetKeyInput, getAssetCheckKeyInputs} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {
@@ -659,7 +659,7 @@ export function executionParamsForAssetJob(
       repositoryName: repoAddress.name,
       pipelineName: jobName,
       assetSelection: assets.map(asAssetKeyInput),
-      assetCheckSelection: getAssetCheckHandleInputs(assets, jobName),
+      assetCheckSelection: getAssetCheckKeyInputs(assets, jobName),
     },
   };
 }

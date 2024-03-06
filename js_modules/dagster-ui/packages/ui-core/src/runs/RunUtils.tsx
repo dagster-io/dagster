@@ -15,7 +15,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
-import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
+import {asAssetCheckKeyInput, asAssetKeyInput} from '../assets/asInput';
 import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../graphql/types';
 
@@ -163,7 +163,7 @@ export function getReexecutionParamsForSelection(input: {
       solidSelection: run.solidSelection,
       assetSelection: run.assetSelection ? run.assetSelection.map(asAssetKeyInput) : [],
       assetCheckSelection: run.assetCheckSelection
-        ? run.assetCheckSelection.map(asAssetCheckHandleInput)
+        ? run.assetCheckSelection.map(asAssetCheckKeyInput)
         : [],
     },
   };
