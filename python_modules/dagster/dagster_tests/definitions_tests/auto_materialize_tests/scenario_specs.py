@@ -1,5 +1,7 @@
+import datetime
+
 import pendulum
-from dagster import AssetSpec, StaticPartitionsDefinition
+from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
@@ -10,7 +12,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from ..scenario_state import MultiAssetSpec, ScenarioSpec
+from .scenario_state import MultiAssetSpec, ScenarioSpec
 
 ############
 # PARTITIONS
@@ -96,3 +98,23 @@ two_assets_in_sequence_fan_out_partitions = two_assets_in_sequence.with_asset_pr
     deps=[AssetDep("A", partition_mapping=StaticPartitionMapping({"1": ["1", "2", "3"]}))],
 )
 dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
+
+###########
+# UTILITIES
+###########
+
+
+def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
+    """Returns the partition key of a day partition delta days from the initial time."""
+    return (time + datetime.timedelta(days=delta - 1)).strftime("%Y-%m-%d")
+
+
+def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
+    """Returns the partition key of a day partition delta days from the initial time."""
+    return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
+
+
+def multi_partition_key(**kwargs) -> MultiPartitionKey:
+    """Returns a MultiPartitionKey based off of the given kwargs."""
+    return MultiPartitionKey(kwargs)

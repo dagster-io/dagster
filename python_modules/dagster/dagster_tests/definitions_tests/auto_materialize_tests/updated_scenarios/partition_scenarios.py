@@ -11,21 +11,15 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-    day_partition_key,
-    hour_partition_key,
-    multi_partition_key,
-)
-from ..base_scenario import (
-    run_request,
-)
-from .asset_daemon_scenario_states import (
+from ..base_scenario import run_request
+from ..scenario_specs import (
     daily_partitions_def,
+    day_partition_key,
     dynamic_partitions_def,
+    hour_partition_key,
     hourly_partitions_def,
     hourly_to_daily,
+    multi_partition_key,
     one_asset,
     one_asset_depends_on_two,
     one_asset_self_dependency,
@@ -42,6 +36,7 @@ from .asset_daemon_scenario_states import (
     two_assets_in_sequence_fan_out_partitions,
     two_partitions_def,
 )
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 partition_scenarios = [
     AssetDaemonScenario(

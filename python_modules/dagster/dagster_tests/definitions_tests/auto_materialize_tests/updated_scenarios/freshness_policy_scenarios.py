@@ -3,13 +3,10 @@ from dagster._core.definitions.asset_spec import AssetSpec
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
-from ..asset_daemon_scenario import (
-    AssetDaemonScenario,
-    day_partition_key,
-)
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     daily_partitions_def,
+    day_partition_key,
     diamond,
     one_asset,
     one_asset_depends_on_two,
@@ -17,6 +14,7 @@ from .asset_daemon_scenario_states import (
     two_assets_depend_on_one,
     two_assets_in_sequence,
 )
+from .asset_daemon_scenario import AssetDaemonScenario
 
 freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)

@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import json
+import logging
 import os
 import sys
 from collections import namedtuple
@@ -231,6 +232,7 @@ class ScenarioState:
 
     scenario_spec: ScenarioSpec
     instance: DagsterInstance = field(default_factory=lambda: DagsterInstance.ephemeral())
+    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
 
     @property
     def current_time(self) -> datetime.datetime:

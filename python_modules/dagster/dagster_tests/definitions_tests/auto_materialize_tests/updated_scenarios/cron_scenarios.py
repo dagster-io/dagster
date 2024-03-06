@@ -5,11 +5,11 @@ from dagster._core.definitions.auto_materialize_rule import (
     WaitingOnAssetsRuleEvaluationData,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec, hour_partition_key
 from ..base_scenario import run_request
-from .asset_daemon_scenario_states import (
+from ..scenario_specs import (
     daily_partitions_def,
     dynamic_partitions_def,
+    hour_partition_key,
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
@@ -17,6 +17,7 @@ from .asset_daemon_scenario_states import (
     time_partitions_start_str,
     two_partitions_def,
 )
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 
 def get_cron_policy(
