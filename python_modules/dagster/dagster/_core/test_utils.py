@@ -616,6 +616,7 @@ def test_counter():
 
 def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
+    results = {}
     for target_id, future in futures.copy().items():
         if timeout is not None:
             future_timeout = max(0, timeout - (time.time() - start_time))
@@ -623,8 +624,10 @@ def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None
             future_timeout = None
 
         if not future.done():
-            future.result(timeout=future_timeout)
+            results[target_id] = future.result(timeout=future_timeout)
             del futures[target_id]
+
+    return results
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):
