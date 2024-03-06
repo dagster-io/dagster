@@ -10,6 +10,8 @@ Did you realize that your dbt models have already been scheduled to run on a reg
 
 Check it out in the Dagster UI by clicking **Overview** in the top navigation bar, then the **Jobs** tab. Click `trip_update_job` to check out the job’s details. It looks like the dbt models are already attached to this job!
 
+![dbt assets in the trip_update_job in the Dagster UI](/images/dagster-dbt/lesson-5/trip-update-job-dbt-assets.png)
+
 Pretty cool, right? Let’s check out the code that made this happen. Open the `dagster_university/jobs/__init__.py` and look at the definition for `trip_update_job`:
 
 ```python
@@ -61,7 +63,9 @@ The function will return an `AssetSelection` of the dbt models that match your d
     
 4. Reload the code location and confirm that the dbt models are not in the `trip_update_job` anymore!
 
-You might notice that the `airport_trips` asset is still scheduled to run with this job! That’s because the `build_dbt_asset_selection` function only selects *dbt models* and **not** Dagster assets. 
+   ![trip_update_job without dbt models](/images/dagster-dbt/lesson-5/job-with-dbt-models.png)
+
+You might notice that the `airport_trips` asset is still scheduled to run with this job! That’s because the `build_dbt_asset_selection` function only selects *dbt models* and **not** Dagster assets.
 
 If you want to also exclude the new `airport_trips` asset from this job, modify the `dbt_trips_selection` to include all *downstream assets*, too. Because we’re using Dagster’s native functionality to select all downstream assets, we can now drop the `+` from the dbt selector:
 
@@ -69,7 +73,9 @@ If you want to also exclude the new `airport_trips` asset from this job, modify 
 dbt_trips_selection = build_dbt_asset_selection([dbt_analytics], "stg_trips").downstream()
 ```
 
-Reload the code location and look at the `trip_update_job` once more to verify that everything looks right.
+Reload the code location and look at the `trip_update_job` once more to verify that everything looks right:
+
+![trip_update_job with the airport_trips asset](/images/dagster-dbt/lesson-5/job-without-dbt-models.png)
 
 {% callout %}
 > 💡 **Want an even more convenient utility to do this work for you?** Consider using the similar [`build_schedule_from_dbt_selection`](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.build_schedule_from_dbt_selection) function to quickly create a job and schedule for a given dbt selection.

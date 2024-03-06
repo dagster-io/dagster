@@ -14,28 +14,6 @@ To partition an incremental dbt model, you’ll need first to partition your `@d
 
 ---
 
-## Defining a new daily partition
-
-Let’s start by defining a new daily partition for the model.
-
-In `dagster_university/partitions/init.py`, make the following changes:
-
-1. import `DailyPartitionsDefinition` from `dagster`, and
-2. Define a new `daily_partition` like the following:
-
-   ```python
-   from dagster import MonthlyPartitionsDefinition, WeeklyPartitionsDefinition, DailyPartitionsDefinition
-
-   # ...existing partitions here
-
-   daily_partition = DailyPartitionsDefinition(
-       start_date=start_date,
-       end_date=end_date
-   )
-   ```
-
----
-
 ## Defining an incremental selector
 
 We have a few changes to make to our dbt setup to get things working. In `dagster_university/assets/dbt.py`:
@@ -47,7 +25,7 @@ We have a few changes to make to our dbt setup to get things working. In `dagste
    import json
    ```
 
-   This imports the new `daily_partition` and the `json` standard module. We’ll use the `json` module to format how we tell dbt what partition to materialize.
+   This imports the `daily_partition` from `/dagster-university/partitions/__init__.py` and the `json` standard module. We’ll use the `json` module to format how we tell dbt what partition to materialize.
 
 2. We now need a way to indicate that we’re selecting or excluding incremental models, so we’ll make a new constant in the `dbt.py` file called `INCREMENTAL_SELECTOR:`
 
@@ -143,7 +121,68 @@ def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
 At this point, the `dagster_university/assets/dbt.py` file should look like this:
 
 ```python
-TODO
+import os
+import json
+from dagster import AssetExecutionContext, AssetKey
+from dagster_dbt import dbt_assets, DbtCliResource, DagsterDbtTranslator
+
+from .constants import DBT_DIRECTORY
+from ..partitions import daily_partition
+from ..resources import dbt_resource
+
+
+INCREMENTAL_SELECTOR = "config.materialized:incremental"
+
+
+class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+    @classmethod
+    def get_asset_key(cls, dbt_resource_props):
+        resource_type = dbt_resource_props["resource_type"]
+        name = dbt_resource_props["name"]
+        if resource_type == "source":
+            return AssetKey(f"taxi_{name}")
+        else:
+            return super().get_asset_key(dbt_resource_props)
+
+
+dbt_resource.cli(["--quiet", "parse"]).wait()
+
+if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+    dbt_manifest_path = (
+        dbt_resource.cli(["--quiet", "parse"])
+        .wait()
+        .target_path.joinpath("manifest.json")
+    )
+else:
+    dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+
+
+@dbt_assets(
+    manifest=dbt_manifest_path,
+    dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+    exclude=INCREMENTAL_SELECTOR,
+)
+def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+@dbt_assets(
+    manifest=dbt_manifest_path,
+    dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+    select=INCREMENTAL_SELECTOR,
+    partitions_def=daily_partition,
+)
+def incremental_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
+    time_window = context.partition_time_window
+    dbt_vars = {
+        "min_date": time_window.start.isoformat(),
+        "max_date": time_window.end.isoformat(),
+    }
+
+    yield from dbt.cli(
+        ["build", "--vars", json.dumps(dbt_vars)], context=context
+    ).stream()
+
 ```
 
 ---
@@ -152,15 +191,11 @@ TODO
 
 Finally, we’ll modify the `daily_metrics.sql` file to reflect that dbt knows what partition range is being materialized. Since the partition range is passed in as variables at runtime, the dbt model can access them using the `var` dbt macro.
 
-In `analytics/models/marts/daily_metrics.sql`, update the model's incremental logic to the following:
+In `analytics/models/marts/daily_metrics.sql`, update the contents of the model's incremental logic (`% if is_incremental %}`) to the following:
 
 ```sql
-`{% if is_incremental() %}`
-    where date_of_business >= strptime('{{ var('min_date') }}', '%c') and date_of_business < strptime('{{ var('max_date') }}', '%c')
-`{% endif %}`
+where date_of_business >= strptime('{{ var('min_date') }}', '%c') and date_of_business < strptime('{{ var('max_date') }}', '%c')
 ```
-
-**TODO: AWARE THIS IS BROKEN - NEEDS A MARKDOC FIX**
 
 Here, we’ve changed the logic to say that we only want to select rows between the `min_date` and the `max_date`. Note that we are turning the variables into timestamps using `strptime` because they’re loaded as strings.
 
@@ -170,7 +205,10 @@ Here, we’ve changed the logic to say that we only want to select rows between 
 
 That’s it! Now you can check out the new `daily_metrics` asset in Dagster.
 
-1. In the Dagster UI, reload the code location. Once loaded, you should see the new partitioned `daily_metrics` asset.
+1. In the Dagster UI, reload the code location. Once loaded, you should see the new partitioned `daily_metrics` asset:
+
+   ![daily_metrics asset in the Asset Graph of the Dagster UI](/images/dagster-dbt/lesson-6/daily-metrics-asset.png)
+
 2. Click the `daily_metrics` asset and then the **Materialize selected** button. You’ll be prompted to select some partitions first.
 3. Once the run starts, navigate to the run’s details page to check out the event logs. The executed dbt command should look something like this:
    ```bash

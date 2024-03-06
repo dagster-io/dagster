@@ -14,7 +14,7 @@ At this point, you’ve loaded your dbt models as Dagster assets and linked the 
 
 In this section, you’ll learn how to do this by defining a new Dagster asset that depends on a dbt model. We’ll make some metrics in a dbt model and then use Python to generate a chart with that data.
 
-If you’re familiar with New York City, you might know that there are three major airports - JFK, LGA, and EWR - in different parts of the metropolitan area. Hypothetically, you’re curious how their final destination impacts the airport they fly into. For example, how many people staying in Queens flew into LGA?
+If you’re familiar with New York City, you might know that there are three major airports - JFK, LGA, and EWR - in different parts of the metropolitan area. Let's say you’re curious if a traveler's final destination impacts the airport they fly into. For example, how many people staying in Queens flew into LGA?
 
 ---
 
@@ -102,7 +102,9 @@ Now we’re ready to create the asset!
     
     **Note:** Because Dagster doesn’t discriminate and treats all dbt models as assets, you’ll add this dependency just like you would with any other asset.
     
-4. Fill in the body of the function with the following code to follow a similar pattern to your project’s existing pipelines: query for the data, use a library to generate a chart, save the chart as a file, and embed the chart:
+4. Fill in the body of the function with the following code to follow a similar pattern to your project’s existing pipelines: query for the data, use a library to generate a chart, save the chart as a file, and embed the chart.
+
+   At this point, the `airport_trips` asset should look like this:
     
    ```python
     @asset(
@@ -154,4 +156,6 @@ Now we’re ready to create the asset!
     )
    ```
 
-5. Reload your code location to see the new `airport_trips` asset within the `metrics` group. Notice how the asset graph links the dependency between the `location_metrics` dbt asset and the new `airport_trips` chart asset.
+5. Reload your code location to see the new `airport_trips` asset within the `metrics` group. Notice how the asset graph links the dependency between the `location_metrics` dbt asset and the new `airport_trips` chart asset:
+
+   ![The airport_trips asset in the Asset Graph of the Dagster UI](/images/dagster-dbt/lesson-5/airport-trips-asset.png)

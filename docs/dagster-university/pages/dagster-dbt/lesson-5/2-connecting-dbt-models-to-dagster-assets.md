@@ -6,9 +6,11 @@ lesson: '5'
 
 # Connecting dbt models to Dagster assets
 
-With where we left off, you may have noticed that the sources for your dbt projects are not just tables that exist in DuckDB, but also *assets* that Dagster created. However, the staging models that use those sources aren’t linked to the Dagster assets that produced them.
+With where we left off, you may have noticed that the sources for your dbt projects are not just tables that exist in DuckDB, but also *assets* that Dagster created. However, the staging models (`stg_trips`, `stg_zones`) that use those sources aren’t linked to the Dagster assets (`taxi_trips`, `taxi_zones`) that produced them:
 
-Let’s fix that by telling Dagster that the dbt sources are the tables that the `taxi_trips` and `taxi_zones` asset definitions produce. To match up these assets, we’ll override dbt’s asset key with the name `taxi_trips`. By having the asset keys line up, Dagster will know that these assets are the same and should merge them.
+![dbt models unconnected to Dagster assets](/images/dagster-dbt/lesson-5/unconnected-sources-assets.png)
+
+Let’s fix that by telling Dagster that the dbt sources are the tables that the `taxi_trips` and `taxi_zones` asset definitions produce. To match up these assets, we'll override the dbt assets' keys. By having the asset keys line up, Dagster will know that these assets are the same and should merge them.
 
 This is accomplished by changing the dbt source’s asset keys to be the same as the matching assets that Dagster makes. In this case, the dbt source’s default asset key is `raw_taxis/trips`, and the table that we’re making with Dagster has an asset key of `taxi_trips`.
 
@@ -49,7 +51,7 @@ Open the `assets/dbt.py` file and do the following:
     
 4. Now, let’s fill in the `get_asset_key` method with our own logic for defining asset keys.
     
-   1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model or source) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
+   1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model, source, seed, snapshot) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
        
       ```python
          @classmethod

@@ -10,7 +10,7 @@ Now is the moment that we’ve been building up to since the beginning of this m
 
 ---
 
-## Turn dbt models into assets with  @dbt_assets
+## Turning dbt models into assets with  @dbt_assets
 
 The star of the show here is the `@dbt_assets` decorator. This is a specialized asset decorator that wraps around a dbt project to tell Dagster what dbt models exist. In the body of the `@dbt_assets` definition, you write exactly how you want Dagster to run your dbt models.
 
