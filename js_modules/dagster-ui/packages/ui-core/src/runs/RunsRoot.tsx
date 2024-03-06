@@ -149,7 +149,7 @@ export const RunsRoot = () => {
         {currentTab === 'queued' ? (
           <TerminateAllRunsButton
             refetch={combinedRefreshState.refetch}
-            filter={{statuses: Array.from(queuedStatuses)}}
+            filter={{...filter, statuses: Array.from(queuedStatuses)}}
             disabled={
               runQueryResult.data?.queuedCount.__typename === 'Runs'
                 ? runQueryResult.data?.queuedCount.count === 0
@@ -159,7 +159,7 @@ export const RunsRoot = () => {
         ) : currentTab === 'in-progress' ? (
           <TerminateAllRunsButton
             refetch={combinedRefreshState.refetch}
-            filter={{statuses: Array.from(inProgressStatuses)}}
+            filter={{...filter, statuses: Array.from(inProgressStatuses)}}
             disabled={
               runQueryResult.data?.inProgressCount.__typename === 'Runs'
                 ? runQueryResult.data?.inProgressCount.count === 0
