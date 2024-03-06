@@ -837,6 +837,10 @@
         ]
       },
       {
+        "title": "OpenAI",
+        "path": "/integrations/openai"
+      },
+      {
         "title": "Pandas",
         "path": "/integrations/pandas"
       },
