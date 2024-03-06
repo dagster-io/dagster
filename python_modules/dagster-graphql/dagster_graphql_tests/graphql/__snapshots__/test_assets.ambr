@@ -329,6 +329,13 @@
         dict({
           'key': dict({
             'path': list([
+              'output_then_hang_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'single_run_backfill_policy_asset',
             ]),
           }),
@@ -680,6 +687,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["one"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["output_then_hang_asset"]',
       }),
       dict({
         'freshnessInfo': None,
