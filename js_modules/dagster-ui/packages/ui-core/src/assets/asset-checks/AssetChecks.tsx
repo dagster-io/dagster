@@ -21,7 +21,13 @@ import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ASSET_CHECK_DETAILS_QUERY, MetadataCell} from './AssetCheckDetailModal';
+import {
+  ASSET_CHECK_DETAILS_QUERY,
+  AgentUpgradeRequired,
+  MetadataCell,
+  MigrationRequired,
+  NeedsUserCodeUpgrade,
+} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
@@ -115,6 +121,17 @@ export const AssetChecks = ({
 
   if (!data) {
     return null;
+  }
+
+  if (data.assetNodeOrError.__typename === 'AssetNode') {
+    switch (data.assetNodeOrError.assetChecksOrError.__typename) {
+      case 'AssetCheckNeedsAgentUpgradeError':
+        return <AgentUpgradeRequired />;
+      case 'AssetCheckNeedsMigrationError':
+        return <MigrationRequired />;
+      case 'AssetCheckNeedsUserCodeUpgrade':
+        return <NeedsUserCodeUpgrade />;
+    }
   }
 
   if (!checks.length || !selectedCheck || !assetNode) {
