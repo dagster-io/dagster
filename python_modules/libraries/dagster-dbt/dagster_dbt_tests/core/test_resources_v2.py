@@ -26,7 +26,11 @@ from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from ..dbt_projects import test_exceptions_path, test_jaffle_shop_path
+from ..dbt_projects import (
+    test_dbt_source_freshness_path,
+    test_exceptions_path,
+    test_jaffle_shop_path,
+)
 
 
 @pytest.fixture(name="dbt", scope="module")
@@ -296,6 +300,19 @@ def test_dbt_cli_debug_execution(
         yield from dbt.cli(["--debug", "build"], context=context).stream()
 
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+
+def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_source_freshness_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+        yield from dbt.cli(["source", "freshness"], raise_on_error=False).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_source_freshness_path))},
+    )
     assert result.success
 
 
