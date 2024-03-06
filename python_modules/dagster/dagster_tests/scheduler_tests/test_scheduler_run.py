@@ -821,7 +821,6 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                     max_tick_retries=0,
                     tick_retention_settings={},
                     schedule_debug_crash_flags=None,
-                    log_verbose_checks=False,
                     submit_threadpool_executor=None,
                 )
             )

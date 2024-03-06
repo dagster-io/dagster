@@ -126,7 +126,6 @@ class _ScheduleLaunchContext(AbstractContextManager):
 
 
 SECONDS_IN_MINUTE = 60
-VERBOSE_LOGS_INTERVAL = 60
 
 
 def _get_next_scheduler_iteration_time(start_time: float) -> float:
@@ -166,15 +165,10 @@ def execute_scheduler_iteration_loop(
                     )
                 )
 
-        last_verbose_time = None
         while True:
             start_time = pendulum.now("UTC").timestamp()
             end_datetime_utc = pendulum.now("UTC")
 
-            # occasionally enable verbose logging (doing it always would be too much)
-            verbose_logs_iteration = (
-                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-            )
             yield from launch_scheduled_runs(
                 workspace_process_context,
                 logger,
@@ -184,13 +178,9 @@ def execute_scheduler_iteration_loop(
                 scheduler_run_futures=scheduler_run_futures,
                 max_catchup_runs=max_catchup_runs,
                 max_tick_retries=max_tick_retries,
-                log_verbose_checks=verbose_logs_iteration,
             )
             yield
             end_time = pendulum.now("UTC").timestamp()
-
-            if verbose_logs_iteration:
-                last_verbose_time = end_time
 
             next_minute_time = _get_next_scheduler_iteration_time(start_time)
 
@@ -211,7 +201,6 @@ def launch_scheduled_runs(
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
-    log_verbose_checks: bool = True,
 ) -> "DaemonIterator":
     instance = workspace_process_context.instance
 
@@ -243,11 +232,6 @@ def launch_scheduled_runs(
                     ).is_running:
                         schedules[selector_id] = schedule
         elif location_entry.load_error:
-            if log_verbose_checks:
-                logger.warning(
-                    f"Could not load location {location_entry.origin.location_name} to check for"
-                    f" schedules due to the following error: {location_entry.load_error}"
-                )
             error_locations.add(location_entry.origin.location_name)
 
     # Remove any schedule states that were previously created with DECLARED_IN_CODE
@@ -270,14 +254,8 @@ def launch_scheduled_runs(
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if not schedules:
-        if log_verbose_checks:
-            logger.debug("Not checking for any runs since no schedules have been started.")
         yield
         return
-
-    if log_verbose_checks:
-        schedule_names = ", ".join([schedule.name for schedule in schedules.values()])
-        logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
     for external_schedule in schedules.values():
         error_info = None
@@ -324,7 +302,6 @@ def launch_scheduled_runs(
                     max_tick_retries,
                     tick_retention_settings,
                     schedule_debug_crash_flags,
-                    log_verbose_checks=log_verbose_checks,
                     submit_threadpool_executor=submit_threadpool_executor,
                 )
                 scheduler_run_futures[external_schedule.selector_id] = future
@@ -343,7 +320,6 @@ def launch_scheduled_runs(
                     max_tick_retries,
                     tick_retention_settings,
                     schedule_debug_crash_flags,
-                    log_verbose_checks=log_verbose_checks,
                     submit_threadpool_executor=None,
                 )
         except Exception:
@@ -362,7 +338,6 @@ def launch_scheduled_runs_for_schedule(
     max_tick_retries: int,
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    log_verbose_checks: bool,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ) -> None:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
@@ -378,7 +353,6 @@ def launch_scheduled_runs_for_schedule(
             max_tick_retries,
             tick_retention_settings,
             schedule_debug_crash_flags,
-            log_verbose_checks,
             submit_threadpool_executor=submit_threadpool_executor,
         )
     )
@@ -394,7 +368,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     max_tick_retries: int,
     tick_retention_settings: Mapping[TickStatus, int],
     schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    log_verbose_checks: bool,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ) -> "DaemonIterator":
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
@@ -436,11 +409,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
         timezone_str = "UTC"
-        if log_verbose_checks:
-            logger.warn(
-                f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
-                "an execution_timezone in its definition."
-            )
 
     tick_times: List[datetime.datetime] = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
@@ -450,9 +418,6 @@ def launch_scheduled_runs_for_schedule_iterator(
         tick_times.append(next_time)
 
     if not tick_times:
-        if log_verbose_checks:
-            logger.info(f"No new tick times to evaluate for {schedule_name}")
-
         _log_iteration_timestamp(
             instance,
             schedule_state,
