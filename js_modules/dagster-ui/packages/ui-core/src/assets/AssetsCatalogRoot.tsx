@@ -47,6 +47,13 @@ export const AssetsCatalogRoot = () => {
   );
 
   React.useEffect(() => {
+    console.log('using effect');
+    console.log(queryResult);
+    console.log(Boolean(currentPath));
+    console.log(Boolean(currentPath.length));
+    console.log(Boolean(queryResult.loading));
+    console.log(Boolean(queryResult.data));
+
     // If the asset exists, add it to the recently visited list
     if (
       currentPath &&
@@ -103,7 +110,7 @@ export const AssetsCatalogRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default AssetsCatalogRoot;
 
-const ASSETS_CATALOG_ROOT_QUERY = gql`
+export const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
