@@ -1412,7 +1412,7 @@ def external_repository_data_from_def(
     resource_datas = repository_def.get_top_level_resources()
     asset_graph = external_asset_nodes_from_defs(
         jobs,
-        assets_defs_by_key=repository_def.assets_defs_by_key,
+        assets_defs=repository_def.asset_graph.assets_defs,
     )
 
     nested_resource_map = _get_nested_resources_map(
@@ -1566,7 +1566,7 @@ def external_asset_checks_from_defs(
 
 def external_asset_nodes_from_defs(
     job_defs: Sequence[JobDefinition],
-    assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
+    assets_defs: Iterable[AssetsDefinition],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]] = (
         defaultdict(list)
@@ -1733,7 +1733,7 @@ def external_asset_nodes_from_defs(
         )
 
     # Ensure any external assets that are have no nodes in any job are included in the asset graph
-    for asset in assets_defs_by_key.values():
+    for asset in assets_defs:
         for key in [key for key in asset.keys if key not in node_defs_by_asset_key]:
             # This is in place to preserve an implicit behavior in the Dagster UI where stub
             # dependencies were rendered as if they weren't part of the default asset group.
