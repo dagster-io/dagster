@@ -50,6 +50,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
     ExternalJobOrigin,
     InProcessCodeLocationOrigin,
@@ -529,6 +530,16 @@ def create_test_daemon_workspace_context(
             grpc_server_registry=grpc_server_registry,
         ) as workspace_process_context:
             yield workspace_process_context
+
+
+def load_external_repo(
+    workspace_context: WorkspaceProcessContext, repo_name: str
+) -> ExternalRepository:
+    code_location = next(
+        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+    ).code_location
+    assert code_location
+    return code_location.get_repository(repo_name)
 
 
 def remove_none_recursively(obj: T) -> T:
