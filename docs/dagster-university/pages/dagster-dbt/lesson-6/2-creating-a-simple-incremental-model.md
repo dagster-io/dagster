@@ -6,7 +6,7 @@ lesson: '6'
 
 # Creating an incremental model
 
-As mentioned, partitions don’t *replace* incremental models, but you’ll soon see how you can expand the functionality of incremental models by partitioning them. In fact, we’ll first write an incremental dbt model and then show you how to use Dagster to partition it.
+As mentioned, partitions don’t *replace* incremental models, but you’ll soon see how you can expand their functionality by partitioning them. In fact, we’ll first write an incremental dbt model and then show you how to use Dagster to partition it.
 
 This model will be a series of stats about all New York taxi trips. It would be expensive to compute this every day because of the granularity of the metrics and the fact that some of the measures are computationally expensive to calculate. Therefore, this model will be incremental.
 

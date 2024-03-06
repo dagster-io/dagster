@@ -33,7 +33,7 @@ To demonstrate, we’re going to intentionally make a bug in our dbt model code,
    dbt parse
    ```
 
-3. Navigate to the Dagster UI and reload the code location by either clicking the **Reload Definitions** button or using **Option+Shift+R**. **Note:** Your first terminal window with `dagster dev` should still be running.
+3. Navigate to the Dagster UI and reload the code location by either clicking the **Reload definitions** button or using **Option+Shift+R**. **Note:** Your first terminal window with `dagster dev` should still be running.
 
 4. On the asset graph, locate the `stg_zones` asset. You’ll see a yellow **Code version** tag indicating that Dagster recognized the SQL code changed:
 
@@ -54,8 +54,7 @@ In these logs, we can see that DuckDB can’t find the `zone_population` column 
 Now that we know what the problem is, let’s fix it:
 
 1. Remove the `zone_population` column from the `stg_zones` model
-2. Rebuild the dbt manifest by running `dbt parse` in the terminal
-3. In the Dagster UI, reload the code location to allow Dagster to pick up the changes.
+2. In the Dagster UI, reload the code location to allow Dagster to pick up the changes.
 
 At this point, if you materialize the  `stg_zones` asset again, the run should be successful:
 
