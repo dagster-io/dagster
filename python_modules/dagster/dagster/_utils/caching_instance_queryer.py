@@ -383,7 +383,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return None
 
     def run_has_tag(self, run_id: str, tag_key: str, tag_value: Optional[str]) -> bool:
-        run_tags = cast(DagsterRun, self._get_run_by_id(run_id)).tags
+        run = self._get_run_by_id(run_id)
+        if run is None:
+            return False
+
+        run_tags = run.tags
+
         if tag_value is None:
             return tag_key in run_tags
         else:
