@@ -31,6 +31,8 @@ export default class MyDocument extends Document {
               />
             </>
           )}
+          <co-pilot copilot_id="dagster"></co-pilot>
+          <script type="module" src="https://ui.scoutos.com/copilot.js"></script>
         </Head>
         <body>
           <Main />
