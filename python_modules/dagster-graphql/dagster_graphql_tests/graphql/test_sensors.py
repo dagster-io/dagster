@@ -1165,7 +1165,8 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     if not instance.supports_batch_tick_queries:
         pytest.skip("storage cannot batch fetch")
 
-    traced_counter.set(Counter())
+    counter = Counter()
+    traced_counter.set(counter)
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context,
@@ -1175,7 +1176,6 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     assert result.data
     assert "repositoryOrError" in result.data
     assert "sensors" in result.data["repositoryOrError"]
-    counter = traced_counter.get()
     counts = counter.counts()
     assert counts
     assert len(counts) == 3
