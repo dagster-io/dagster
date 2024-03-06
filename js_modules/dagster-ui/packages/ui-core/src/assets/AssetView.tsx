@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
-import {Link, useLocation} from 'react-router-dom';
+import {Link, Redirect, useLocation} from 'react-router-dom';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
@@ -27,6 +27,7 @@ import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
 import {
   AssetViewDefinitionNodeFragment,
@@ -167,6 +168,10 @@ export const AssetView = ({assetKey, trace}: Props) => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
+    if (definition?.isSource) {
+      return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
+    }
+
     return (
       <AssetPartitions
         assetKey={assetKey}
