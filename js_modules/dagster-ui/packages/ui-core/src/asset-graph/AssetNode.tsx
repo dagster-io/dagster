@@ -194,7 +194,9 @@ export const AssetNodeMinimal = ({
                 assetKey={assetKey}
               />
             ) : null}
-            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
+            {isStale ? (
+              <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} include="upstream" />
+            ) : null}
             <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
             </AssetNodeSpinnerContainer>
